@@ -1,0 +1,18 @@
+BIBD(  9,  18,  8,  4,  3)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             1               2               2
+             2               2               2
+             6               1               1
+             8               2               2
+             9               1               1
+            16               1               1
+            32               1               1
+           144               1               1
+    ________________________________________________
+         Total:             11              11
+
+        11 matrices constructed in 0.01 sec.
+        11 matrices have no replicated blocks
+        19 matrices were fully constructed

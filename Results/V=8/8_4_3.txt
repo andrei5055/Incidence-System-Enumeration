@@ -1,0 +1,15 @@
+BIBD(  8,  14,  7,  4,  3)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+            12               1               1
+            21               1               1
+            48               1               1
+          1344               1               1
+    ________________________________________________
+         Total:              4               4
+
+         4 matrices constructed in  0.00
+         4 matrices have no replicated blocks
+         4 matrices were fully constructed
+        15 threads were used

@@ -1,0 +1,27 @@
+BIBD(  7,  63, 27,  3,  9)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             1           16043               0
+             2            1123               0
+             3             353               0
+             4             113               0
+             6              69               0
+             8              26               0
+            12              22               0
+            16               3               0
+            21               7               0
+            24              17               0
+            36               1               0
+            42               2               0
+            48               1               0
+            72               1               0
+           144               1               0
+           168               3               0
+    ________________________________________________
+         Total:          17785               0
+
+     17785 matrices constructed in  3.79
+         0 matrices have no replicated blocks
+     34970 matrices were fully constructed
+        15 threads were used

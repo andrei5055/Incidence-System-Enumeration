@@ -1,0 +1,24 @@
+BIBD( 16,  24,  9,  6,  3)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             1           18413           18413
+             2             333             333
+             3             100             100
+             4              52              52
+             6               6               6
+             8               1               1
+             9               4               4
+            12               3               3
+            16               1               1
+            18               2               2
+            54               1               1
+            72               3               3
+           432               1               1
+    ________________________________________________
+         Total:          18920           18920
+
+     18920 matrices constructed in  1:05.20
+     18920 matrices have no replicated blocks
+     27938 matrices were fully constructed
+        15 threads launched on level 5 
