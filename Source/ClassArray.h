@@ -12,54 +12,55 @@
 #include <assert.h>
 #include <memory>
 #include <new>   //only supports Win32 and Mac
+#include "DataTypes.h"
 
 template<class TYPE, class ARG_TYPE>
 class CClassArray
 {
 public:
 	// Construction & destruction
-	CClassArray()									{ m_pData = NULL; m_nSize = m_nMaxSize = m_nGrowBy = 0; }
-	~CClassArray();
+	CC CClassArray()								{ m_pData = NULL; m_nSize = m_nMaxSize = m_nGrowBy = 0; }
+	CC ~CClassArray();
 	
 	// Attributes
-	size_t GetSize() const								{ return m_nSize; }
-	size_t GetUpperBound() const						{ return m_nSize-1; }
-	void SetSize(size_t nNewSize, int nGrowBy = -1);
+	CC inline size_t GetSize() const				{ return m_nSize; }
+	CK inline size_t GetUpperBound() const			{ return m_nSize-1; }
+	CC void SetSize(size_t nNewSize, int nGrowBy = -1);
 	
 	// Operations
 	// Clean up
-	void FreeExtra();
-	void RemoveAll()								{ SetSize(0, -1); }
+	CK void FreeExtra();
+	CK void RemoveAll()								{ SetSize(0, -1); }
 	
 	// Accessing elements
-	TYPE GetAt(size_t nIndex) const					{ assert(nIndex < m_nSize); return m_pData[nIndex]; }
-	void SetAt(size_t nIndex, ARG_TYPE newElement)	{ assert(nIndex < m_nSize); m_pData[nIndex] = newElement; }
-	TYPE& ElementAt(size_t nIndex)					{ assert(nIndex < m_nSize); return m_pData[nIndex]; }
+	CC TYPE GetAt(size_t nIndex) const				{ return m_pData[nIndex]; }
+	CK void SetAt(size_t nIndex, ARG_TYPE element)	{ m_pData[nIndex] = element; }
+	CK TYPE& ElementAt(size_t nIndex)				{ return m_pData[nIndex]; }
 	
 	// Direct Access to the element data (may return NULL)
-	const TYPE* GetData() const						{ return (const TYPE*)m_pData; }
-	TYPE* GetData()									{ return (TYPE*)m_pData; }
+	CK const TYPE* GetData() const					{ return (const TYPE*)m_pData; }
+	CK TYPE* GetData()								{ return (TYPE*)m_pData; }
 	
 	// Potentially growing the array
-	void SetAtGrow(size_t nIndex, ARG_TYPE newElement);
-	size_t Add(ARG_TYPE newElement)					{ size_t nIndex = m_nSize;	SetAtGrow(nIndex, newElement); return nIndex; }
-	int Append(const CClassArray& src);
-	void Copy(const CClassArray& src);
+	CC void SetAtGrow(size_t nIndex, ARG_TYPE newElement);
+	CC size_t Add(ARG_TYPE newElement)				{ const size_t nIndex = m_nSize; SetAtGrow(nIndex, newElement); return nIndex; }
+	CK int Append(const CClassArray& src);
+	CK void Copy(const CClassArray& src);
 	
 	// overloaded operator helpers
-	TYPE operator[](int nIndex) const				{ return GetAt(nIndex); }
-	TYPE& operator[](int nIndex)					{ return ElementAt(nIndex); }
+	CK TYPE operator[](int nIndex) const			{ return GetAt(nIndex); }
+	CK TYPE& operator[](int nIndex)					{ return ElementAt(nIndex); }
 	
 	// Operations that move elements around
-	void InsertAt(size_t nIndex, ARG_TYPE newElement, int nCount = 1);
-	void RemoveAt(size_t nIndex, int nCount = 1);
-	void InsertAt(size_t nStartIndex, CClassArray* pNewArray);
+	CC void InsertAt(size_t nIndex, ARG_TYPE newElement, int nCount = 1);
+	CK void RemoveAt(size_t nIndex, int nCount = 1);
+	CK void InsertAt(size_t nStartIndex, CClassArray* pNewArray);
 	
 	// Implementation
 protected:
-	void ConstructElements(TYPE* pElements, size_t nCount);
-	void DestructElements(TYPE* pElements, size_t nCount);
-	void CopyElements(TYPE* pDest, const TYPE* pSrc, int nCount);
+	CC void ConstructElements(TYPE* pElements, size_t nCount);
+	CC void DestructElements(TYPE* pElements, size_t nCount);
+	CK void CopyElements(TYPE* pDest, const TYPE* pSrc, int nCount);
 	
 	TYPE* m_pData;   // the actual array of data
 	size_t m_nSize;  // # of elements (upperBound - 1)
@@ -82,9 +83,7 @@ CClassArray<TYPE, ARG_TYPE>::~CClassArray()
 
 template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
-{
-	assert(nNewSize >= 0);
-	
+{	
 	if (nGrowBy != -1)
 		m_nGrowBy = nGrowBy;  // set new size
 	
@@ -209,17 +208,15 @@ void CClassArray<TYPE, ARG_TYPE>::FreeExtra()
 template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::SetAtGrow(size_t nIndex, ARG_TYPE newElement)
 {
-	assert(nIndex >= 0);
-	
 	if (nIndex >= m_nSize)
 		SetSize(nIndex+1, -1);
+
 	m_pData[nIndex] = newElement;
 }
 
 template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::InsertAt(size_t nIndex, ARG_TYPE newElement, int nCount /*=1*/)
 {
-	assert(nIndex >= 0);    // will expand to meet need
 	assert(nCount > 0);     // zero or negative size not allowed
 	
 	if (nIndex >= m_nSize)
@@ -235,8 +232,14 @@ void CClassArray<TYPE, ARG_TYPE>::InsertAt(size_t nIndex, ARG_TYPE newElement, i
 		// destroy intial data before copying over it
 		DestructElements(&m_pData[nOldSize], nCount);
 		// shift old data up to fill gap
+#define USE_MEM_MOVE	0
+#if  USE_MEM_MOVE
 		memmove(&m_pData[nIndex+nCount], &m_pData[nIndex],
 				(nOldSize-nIndex) * sizeof(TYPE));
+#else
+		for (size_t i = GetSize(); i-- > nIndex + nCount;)
+			memcpy(m_pData + i, m_pData + i - nCount, sizeof(TYPE));
+#endif
 		// re-init slots we copied from
 		ConstructElements(&m_pData[nIndex], nCount);
 	}
@@ -250,7 +253,6 @@ void CClassArray<TYPE, ARG_TYPE>::InsertAt(size_t nIndex, ARG_TYPE newElement, i
 template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::RemoveAt(size_t nIndex, int nCount)
 {
-	assert(nIndex >= 0);
 	assert(nCount >= 0);
 	assert(nIndex + nCount <= m_nSize);
 	
@@ -267,7 +269,6 @@ template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::InsertAt(size_t nStartIndex, CClassArray* pNewArray)
 {
 	assert(pNewArray != NULL);
-	assert(nStartIndex >= 0);
 	
 	if (pNewArray->GetSize() > 0)
 	{

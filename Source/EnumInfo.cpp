@@ -2,25 +2,24 @@
 #include "DataTypes.h"
 #include "EnumInfo.h"
 #include "Enumerator.h"
+#include "ThreadEnumerator.h"
 
-CEnumInfo::CEnumInfo(const char *pStrToScreen) : m_pStrToScreen(pStrToScreen)
-{
-	resetCounters(); 
-	setReportBound(REPORT_INTERVAL_OBJ_NUMB);
-	m_pReportFileName = NULL;
-}
+template class CEnumInfo<MATRIX_ELEMENT_TYPE>;
+template class CInsSysEnumInfo<MATRIX_ELEMENT_TYPE>;
 
-void CEnumInfo::convertTime(float time, char *buffer, size_t lenBuf, bool alignment) const
+static const int outDiv[] = { ':', ':', ':', '.' };
+
+template<class T>
+size_t CEnumInfo<T>::convertTime(float time, char *buffer, size_t lenBuf, bool alignment) const
 {
 	const int secTime = (int)time;
 	const int minTime = secTime / 60;
 	const int hourTime = minTime / 60;
 	const int out[] = { hourTime / 24, hourTime % 24, minTime % 60, secTime % 60 };
-	const int outDiv[] = { ':', ':', ':', '.' };
 
 	bool flag = false;
 	char *pBuf = buffer;
-	for (int i = 0; i < sizeof(out) / sizeof(out[0]); i++) {
+	for (int i = 0; i < countof(outDiv); i++) {
 		if (out[i] > 0 || flag || outDiv[i] == '.') {
 			pBuf += sprintf_s(pBuf, lenBuf, (flag? "%02d%c" : "%2d%c"), out[i], outDiv[i]);
 			flag = true;
@@ -33,29 +32,50 @@ void CEnumInfo::convertTime(float time, char *buffer, size_t lenBuf, bool alignm
 		lenBuf -= 3;
 	}
 
-	sprintf_s(pBuf, lenBuf, "%02d\n", (int)(100 * (time - secTime)));
+	pBuf += sprintf_s(pBuf, lenBuf, "%02d%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
+	return pBuf - buffer;
 }
 
-void CEnumInfo::updateEnumInfo(const CEnumInfo *pInfo)
+template<class T>
+double CEnumInfo<T>::stringToTime(char *pTime)
+{
+	const double mult[] = { 3600 * 24, 3600, 60, 1, 0.01 };
+
+	double time = 0;
+	size_t i = countof(outDiv);
+	char *pDiv = NULL;
+	while (i-- && (pDiv = strrchr(pTime, outDiv[i])) != NULL) {
+		time += atoi(pDiv + 1) * mult[i + 1];
+		*pDiv = '\0';
+	}
+
+	pDiv = strrchr(pTime, ' ');
+	if (!pDiv)
+		pDiv = pTime;
+	else
+		pDiv++;
+
+	time += atoi(pDiv) * mult[i + 1];
+	return time;
+}
+
+template<class T>
+bool CEnumInfo<T>::compareTime(char *pTime1, char *pTime2)
+{
+	const double time1 = stringToTime(pTime1);
+	const double time2 = stringToTime(pTime2);
+	return time1 > time2;
+}
+
+template<class T>
+void CEnumInfo<T>::updateEnumInfo(const CEnumInfo<T> *pInfo)
 {
 	incrConstrCanonical(pInfo->constrCanonical());
 	incrConstrTotal(pInfo->constrTotal());
 }
 
-void CEnumInfo::updateConstrCounters(const CEnumerator *pInum)
-{
-	incrConstrCanonical();
-	if (simpleMatrFlag())
-		incNumbSimpleDesign();
-
-	const CCanonicityChecker *pCanon = pInum->canonChecker();
-	const size_t groupOrder = pCanon->groupOrder();
-	COrderInfo *pOrderInfo = addGroupOrder(groupOrder, 1, simpleMatrFlag() ? 1 : 0);
-	if (pCanon->groupIsTransitive())
-		pOrderInfo->addMatrixTrans(1, simpleMatrFlag() ? 1 : 0);
-}
-
-void CEnumInfo::setReportFileName(const char *pntr)
+template<class T>
+void CEnumInfo<T>::setReportFileName(const char *pntr)
 { 
 	delete [] reportFileName();
 	if (pntr) {
@@ -66,48 +86,64 @@ void CEnumInfo::setReportFileName(const char *pntr)
 		m_pReportFileName = NULL;
 }
 
-void CEnumInfo::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo)
+template<class T>
+void CEnumInfo<T>::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo)
 {
-	ulonglong nMatr = constrCanonical();
-	if (!strToScreen() || PRINT_SOLUTIONS)
+	// Only master will report the progress
+	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
 		return;
 
-	ulonglong *pTestNumber;
+	const ulonglong nCanon = constrCanonical();
+	const ulonglong *pTestNumber;
+	bool reportNeeded = false;
+	clock_t currClock = clock();
 	switch (reportType) {
-		case t_reportNow:		
-		case t_reportByTime:	pTestNumber = NULL; break;
-		case t_matrConstructed:	pTestNumber = &nMatr;
+		case t_reportByTime:	if (currClock - prevClockReport() < CLOCKS_PER_SEC * 30)
+									return;
+
+								setPrevClockReport(currClock);
+								reportNeeded = true;
+		case t_reportNow:		pTestNumber = NULL; break;
+		case t_matrConstructed:	pTestNumber = &nCanon;
 								break;
-		case t_treadEnded:		pTestNumber = &m_nCounter;
+		case t_treadEnded:		if (currClock - prevClockReport() < CLOCKS_PER_SEC)
+									return;
+								pTestNumber = &m_nCounter;
 	}
 
-	if (!strToScreen() || (pTestNumber && *pTestNumber % reportInt()) || PRINT_SOLUTIONS)
+	if (pTestNumber && *pTestNumber % reportInt())
 		return;
 
-	std::cout << '\xd' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ") << nMatr << "  NRB: " << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() << "  Total: " << constrTotal();
-
-	switch (reportType) {
-		case t_matrConstructed:
-		case t_reportNow:
-		case t_treadEnded:	  pGroupInfo = this;
-		case t_reportByTime:
-			if (constrCanonical() >= reportBound()) {				
-				FOPEN(file, reportFileName(), "w");
-                if (file) {
-                    fprintf(file, "%s\n", strToScreen());
-                    outEnumInfo(file, false, pGroupInfo);
-                    incReportBound(REPORT_INTERVAL_OBJ_NUMB * (constrCanonical() - reportBound() + REPORT_INTERVAL_OBJ_NUMB - 1) / REPORT_INTERVAL_OBJ_NUMB);
-                }
-			}
+	if (reportNeeded || nCanon >= reportBound()) {
+		switch (reportType) {
+			case t_matrConstructed:
+			case t_reportNow:
+			case t_treadEnded:	  pGroupInfo = this;
+			case t_reportByTime:
+				{
+					FOPEN(file, reportFileName(), "w");
+					if (file) {
+						fprintf(file, "%s\n", strToScreen());
+						outEnumInfo(&file, false, pGroupInfo);
+						setReportBound(REPORT_INTERVAL_OBJ_NUMB * ((nCanon + REPORT_INTERVAL_OBJ_NUMB - 1) / REPORT_INTERVAL_OBJ_NUMB));
+					}
+				}
+		}
 	}
+
+	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
+	std::cout << '\xd' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ") 
+			  << "  Canon: " << nCanon 
+			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
+			  << "  Total: " << constrTotal()
+			  << "  RunTime: " << runTime << " min.                 ";
+			
 
 	// Adjust reportInt to report approx. 1 time per 60 seconds
-	clock_t currClock;
-	if (!pTestNumber || (currClock = clock()) == prevClock())
+	if (!pTestNumber || currClock == prevClock())
 		return;
 
-	const float timeInterval = (float)(currClock - prevClock()) / CLOCKS_PER_SEC;
-	const float averPermMin = 60 * (*pTestNumber - prevCounter()) / timeInterval;
+	const float averPermMin = 60 * CLOCKS_PER_SEC * (*pTestNumber - prevCounter()) / (float)(currClock - prevClock());
 	setPrevCounter(*pTestNumber);
 	setPrevClock(currClock);
 	size_t repInt = 1;
@@ -117,7 +153,8 @@ void CEnumInfo::reportProgress(t_reportCriteria reportType, const CGroupsInfo *p
 	setReportInt(repInt);
 }
 
-void CEnumInfo::reportProgress(const CThreadEnumerator *pThreadEnum, int nThread)
+template<class T>
+void CEnumInfo<T>::reportProgress(const CThreadEnumerator<T> *pThreadEnum, size_t nThread)
 {
 	if (nThread >= 1) {
 		// Save already collected information 
@@ -145,54 +182,115 @@ void CEnumInfo::reportProgress(const CThreadEnumerator *pThreadEnum, int nThread
 	}
 }
 
-void CEnumInfo::outEnumInfo(FILE *outFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
+template<class T>
+void CEnumInfo<T>::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
 {
+	setRunTime();
+	FILE *outFile = pOutFile ? *pOutFile : NULL;
+	if (!outFile)
+		return;
+
 	if (!pGroupInfo)
 		pGroupInfo = this;
 
 	pGroupInfo->printGroupInfo(outFile);
-	setRunTime();
 	const ulonglong nConstrMatr = constrCanonical();
 	char buff[256];
-	SPRINTF(buff, "\n%10llu matri%s constructed in ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
+	SPRINTF(buff, "\n%10llu matri%s"CONSTRUCTED_IN" ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
 	const size_t len = strlen(buff);
 	convertTime(runTime(), buff + len, countof(buff) - len, false);
 	outString(buff, outFile);
 
-	ulonglong nMatr = numbSimpleDesign();
+	const ulonglong nMatr = numbSimpleDesign();
 	if (nConstrMatr > 0) {
-		SPRINTF(buff, "%10llu matri%s ha%s no replicated blocks\n", nMatr, nMatr == 1 ? "x" : "ces", nConstrMatr == 1 ? "s" : "ve");
+		SPRINTF(buff, "%10llu matri%s ha%s no replicated blocks\n", nMatr, nMatr == 1 ? "x" : "ces", nMatr == 1 ? "s" : "ve");
 		outString(buff, outFile);
 	}
 
 	SPRINTF(buff, "%10llu matri%s fully constructed\n", constrTotal(), constrTotal() == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
-	if (USE_THREADS >= 1)
-		SPRINTF(buff, "%10d threads launched on level %d \n", USE_THREADS, MT_LEVEL);
-	else
-		SPRINTF(buff, "        Single thread mode\n");
-
-	outString(buff, outFile);
-
-	SPRINTF(buff, "        Strong canonisity was %sused\n", USE_STRONG_CANONICITY_A? "" : "not ");
-	outString(buff, outFile);
-	FCLOSE(outFile);
-
+	outEnumInformation(pOutFile);
 	if (removeReportFile) // Remove temporary file with the intermediate results	
 		remove(reportFileName());
 }
 
-void CInsSysEnumInfo::updateEnumInfo(const CEnumInfo *pInfo)
+template<class T>
+void CEnumInfo<T>::outEnumAdditionalInfo(FILE **pOutFile) const
 {
-	CEnumInfo::updateEnumInfo(pInfo);
+	FILE *outFile = pOutFile ? *pOutFile : NULL;
+	if (!outFile)
+		return;
+
+	char buff[256];
+	SPRINTF(buff, "%10llu matri%s fully constructed\n", constrTotal(), constrTotal() == 1 ? "x was" : "ces were");
+	outString(buff, outFile);
+
+	outEnumInformation(pOutFile);
+}
+
+template<class T>
+void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
+{
+	FILE *outFile = pOutFile ? *pOutFile : NULL;
+	if (!outFile)
+		return;
+
+	char buff[256];
+	SPRINTF(buff, "\nUsing %lld-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
+	outString(buff, outFile);
+
+	const size_t nThreads = designInfo()->threadNumb;
+	if (USE_THREADS >= 1) {
+		if (printMTlevel)
+			SPRINTF(buff, "%10zu threads launched on level %d (%swaiting to finish mode)\n", nThreads, multiThreadLevel(), WAIT_THREADS ? "" : "not ");
+		else
+			SPRINTF(buff, "%10zu threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
+	} else
+		SPRINTF(buff, "        Single thread mode\n");
+
+	outString(buff, outFile);
+
+	if (nThreads >= 1 && CANON_ON_GPU) {
+		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+		outString(buff, outFile);
+	}
+
+	SPRINTF(buff, "        Canonicity of partial constructed matrix was %sused\n", USE_CANON_GROUP ? "" : "not ");
+	outString(buff, outFile);
+
+	SPRINTF(buff, "        Strong canonicity was %sused\n", USE_STRONG_CANONICITY ? "" : "not ");
+	outString(buff, outFile);
+
+	SPRINTF(buff, "        Super strong canonicity was %sused\n\n", USE_STRONG_CANONICITY_A ? "" : "not ");
+	outString(buff, outFile);
+	FCLOSE(outFile);
+	*pOutFile = NULL;
+}
+
+template<class T>
+void CInsSysEnumInfo<T>::updateEnumInfo(const CEnumInfo *pInfo)
+{
+	CEnumInfo<T>::updateEnumInfo(pInfo);
 	incNumbSimpleDesign(pInfo->numbSimpleDesign());
 }
 
-void CInsSysEnumInfo::reportResult(char *buffer, int lenBuffer) const
+template<class T>
+void CInsSysEnumInfo<T>::reportResult(char *buffer, int lenBuffer) const
 {
-	int len = sprintf_s(buffer, lenBuffer, "%s       %9llu       %9llu", strToScreen(), constrCanonical(), numbSimpleDesign());
+	size_t len = sprintf_s(buffer, lenBuffer, "%s       %9llu       %9llu", strToScreen(), constrCanonical(), numbSimpleDesign());
 	len += sprintf_s(buffer + len, lenBuffer - len, "       %8llu    ", constrTotal());
-	convertTime(runTime(), buffer + len, lenBuffer - len);
+	len += convertTime(runTime(), buffer + len, lenBuffer - len);
+
+	// Prepare the comments regarding the results
+	char *pResComment = NULL;
+	switch (getResType()) {
+	case t_resNew:			pResComment = "N"; break;
+	case t_resBetter:		pResComment = "B"; break;
+	case t_resWorse:		pResComment = "W"; break;
+	case t_resInconsistent:	pResComment = "???";
+	}
+
+	sprintf_s(buffer + len, lenBuffer - len, "  %s       \n", pResComment);
 }
 

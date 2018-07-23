@@ -1,24 +1,30 @@
+#pragma once
 #include <time.h>
 #include "GroupsInfo.h"
 
 class CTimerInfo
 {
 public:
-	inline void startClock()								{ setPrevClock(m_startClock = clock());  setReportInt(1);  setPrevCounter(0); }
+	CC inline CTimerInfo()									{}
+	CC inline ~CTimerInfo()									{}
+	CK inline void startClock()								{ setPrevClock(m_prevClockReport = m_startClock = clock());  setReportInt(1);  setPrevCounter(0); }
 	inline void setRunTime()								{ m_fRunTime = (float)(clock() - startTime()) / CLOCKS_PER_SEC; }
 	inline float runTime() const							{ return m_fRunTime; }
 protected:
 	inline clock_t prevClock() const						{ return m_prevClock; }
-	inline void setPrevClock(clock_t val)					{ m_prevClock = val; }
+	CK inline void setPrevClock(clock_t &val)				{ m_prevClock = val; }
+	inline clock_t prevClockReport() const					{ return m_prevClockReport; }
+	CK inline void setPrevClockReport(clock_t &val)			{ m_prevClockReport = val; }
 	inline size_t reportInt() const							{ return m_reportInt; }
-	inline void setReportInt(size_t val)					{ m_reportInt = val; }
+	CK inline void setReportInt(size_t val)					{ m_reportInt = val; }
 	inline ulonglong prevCounter() const					{ return m_prevCounter; }
-	inline void setPrevCounter(ulonglong value)				{ m_prevCounter = value; }
-private:
+	CK inline void setPrevCounter(ulonglong value)			{ m_prevCounter = value; }
 	inline clock_t startTime() const						{ return m_startClock; }
+private:
 
 	clock_t m_startClock;
 	clock_t m_prevClock;
+	clock_t m_prevClockReport;
 	size_t m_reportInt;
 	ulonglong m_prevCounter;
 	float m_fRunTime;
@@ -31,70 +37,137 @@ typedef enum {
 	t_treadEnded
 } t_reportCriteria;
 
-class CThreadEnumerator;
-class CEnumerator;
+typedef enum {
+	t_resNew,
+	t_resBetter,
+	t_resWorse,
+	t_resInconsistent
+} t_resType;
 
+typedef struct {
+	int v;
+	int k;
+	int lambda;
+	int t;
+	int mt_level;			// Matrix row number, where the threads will be launched
+	uint outType;			// Flags which define the output information of the task
+	uint grpOrder;			// Limits for order of the group of the matrices which will be printed 
+	size_t threadNumb;		// Number of threads launched to perform task
+	bool firstMatr;			// TRUE, when first matrix of the set was not yet outputted
+	bool noReplicatedBlocks;// TRUE, when only block designs with no replicated blocks should be constructed
+} designRaram;
+
+typedef enum {
+	t_Summary = 1,		// default
+	t_AllObject = 2,
+	t_Transitive = 4,
+	t_GroupOrderEQ = 8,
+	t_GroupOrderGT = 16,
+	t_GroupOrderLT = 32,
+} t_outputType;
+
+template<class T> class CThreadEnumerator;
+template<class T> class CCanonicityChecker;
+
+template<class T>
 class CEnumInfo : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
-	CEnumInfo(const char *pStrToScreen = NULL);
-	virtual ~CEnumInfo()									{ delete[] reportFileName(); }
+	CC CEnumInfo(const char *pStrToScreen = NULL) : m_pStrToScreen(pStrToScreen) {
+        resetCounters();
+		setReportBound(REPORT_INTERVAL_OBJ_NUMB);
+		m_pReportFileName = NULL;
+	}
+	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
 	#define constrCanonical()	numMatrices()
-	inline void incrConstrTotal(ulonglong val = 1)			{ addMatrOfType(val, t_totalConstr); }
+	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_totalConstr); }
 	#define constrTotal()		numMatrOfType(t_totalConstr)
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
+#if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL);
-	void reportProgress(const CThreadEnumerator *pTreadEnum, int nThread = 0);
+	void reportProgress(const CThreadEnumerator<T> *pTreadEnum, size_t nThread = 0);
+#endif
 	virtual ulonglong numbSimpleDesign() const				{ return 0; }
+	CC virtual void incNumbSimpleDesign(ulonglong v = 1)	{}
 	virtual void reportResult(char *buffer, int lenBuffer) const {}
-	virtual void init()										{ resetCounters(); }
+	CC virtual void init()									{ resetCounters(); }
 	virtual void updateEnumInfo(const CEnumInfo *pInfo);
-	virtual void setNoReplBlockFlag(bool val)				{}
-	virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
-	virtual void setSimpleMatrFlag(bool val)				{}
-	virtual bool simpleMatrFlag() const						{ return false; }
-	void updateConstrCounters(const CEnumerator *pInum);
+	CC virtual void setNoReplBlockFlag(bool val)			{}
+	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
+	CC void updateConstrCounters(int simpleMatrFlag, size_t groupOrder, bool groupIsTransitive) {
+		incrConstrCanonical();
+		if (simpleMatrFlag)
+			incNumbSimpleDesign();
+
+		COrderInfo *pOrderInfo = addGroupOrder(groupOrder, 1, simpleMatrFlag);
+		if (groupIsTransitive)
+			pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
+	}
+	void RecalcCountersByGroupOrders(const COrderInfo *pOrderInfo, size_t nElem) {
+		// Recalculating counters by the group order info
+		updateGroupInfo(pOrderInfo, nElem);
+
+		COrderInfo total;
+		calcCountersTotal(&total);
+		init();
+		resetNumbInfo(1);
+		const ulonglong nSimple = total.numMatrOfType(t_simple);
+		addMatrix(total.numMatrOfType(t_canonical), nSimple);
+		incNumbSimpleDesign(nSimple);
+	}
 	void setReportFileName(const char *pntr);
-	void outEnumInfo(FILE *outFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL);
-	void convertTime(float time, char *buffer, size_t lenBuf, bool alignment = true) const;
+	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL);
+	void outEnumAdditionalInfo(FILE **pOutFile) const;
+	size_t convertTime(float time, char *buffer, size_t lenBuf, bool alignment = true) const;
+	CK void setResType(t_resType resType)					{ m_nResType = resType; }
+	CC void resetEnumInfo()									{ init(); resetGroupsInfo(); }
+	static bool compareTime(char *time1, char *time2);
+	void outEnumInformation(FILE **pOutFile, bool printMTlevel = true) const;
+	inline void setDesignInfo(const designRaram *pParam)	{ m_pParam = pParam; }
+protected:
+	t_resType getResType() const							{ return m_nResType; }
 private:
-	inline void incrConstrCanonical(ulonglong val = 1)		{ addMatrOfType(val, t_canonical); }
-	virtual void incNumbSimpleDesign(ulonglong v = 1)		{}
-	inline void resetCounters()								{ m_nCounter = 0; }
+	static double stringToTime(char *pTime);
+	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_canonical); }
+	CC inline void resetCounters()							{ m_nCounter = 0; }
 	inline void incCounter()								{ m_nCounter++; }
 	inline void reportThreadProgress()						{ incCounter(); reportProgress(t_treadEnded); }
-	virtual void setNumbSimpleDesign(ulonglong v)			{}
-	inline void setReportBound(ulonglong val)				{ m_nReportBound = val; }
-	inline void incReportBound(ulonglong val)				{ m_nReportBound += val; }
+	CC virtual void setNumbSimpleDesign(ulonglong v)		{}
+	CC inline void setReportBound(ulonglong val)			{ m_nReportBound = val; }
 	inline ulonglong reportBound() const					{ return m_nReportBound; }
-	inline char *reportFileName() const						{ return m_pReportFileName; }
+	CC inline char *reportFileName() const					{ return m_pReportFileName; }
+	inline int multiThreadLevel() const 					{ return m_pParam->mt_level; }
+	inline const designRaram *designInfo() const			{ return m_pParam; }
 
 	ulonglong m_nCounter;
 	const char *m_pStrToScreen;
 	ulonglong m_nReportBound;
 	char *m_pReportFileName;
+	t_resType m_nResType;
+	int m_mtlevel;
+	const designRaram *m_pParam;
 }; 
 
-class CInsSysEnumInfo : public CEnumInfo
+template<class T>
+class CInsSysEnumInfo : public CEnumInfo<T>
 {
 public:
-	CInsSysEnumInfo(const char *pStrToScreen = NULL) : CEnumInfo(pStrToScreen)	{ setNoReplBlockFlag(false); resetCounter(); }
+	CC CInsSysEnumInfo(const char *pStrToScreen = NULL) : CEnumInfo<T>(pStrToScreen)	
+																	{ setNoReplBlockFlag(false); resetCounter(); }
+	CC ~CInsSysEnumInfo()											{}
 public:
 	virtual ulonglong numbSimpleDesign() const						{ return m_nSimpleDesign; }
+	CC virtual void incNumbSimpleDesign(ulonglong v = 1)			{ m_nSimpleDesign += v; }
 	virtual void reportResult(char *buffer, int lenBuffer) const;
-	virtual void init()												{ resetCounter();  CEnumInfo::init(); }
+	CC virtual void init()											{ resetCounter();  CEnumInfo::init(); }
 	virtual void updateEnumInfo(const CEnumInfo *pInfo);
-	virtual void setNoReplBlockFlag(bool val)						{ m_bNoReplBlockFlag = val; }
-	virtual bool constructedAllNoReplBlockMatrix() const			{ return m_bNoReplBlockFlag; }
-	virtual void setSimpleMatrFlag(bool val)						{ m_bSimpleMatrFlag = val; }
-	virtual bool simpleMatrFlag() const								{ return m_bSimpleMatrFlag; }
+	CC virtual void setNoReplBlockFlag(bool val)					{ m_bNoReplBlockFlag = val; }
+	CC virtual bool constructedAllNoReplBlockMatrix() const			{ return m_bNoReplBlockFlag; }
 private:
-	virtual void incNumbSimpleDesign(ulonglong v = 1)				{ m_nSimpleDesign += v; }
-	inline void resetCounter()										{ setNumbSimpleDesign(0); }
-	virtual void setNumbSimpleDesign(ulonglong v)					{ m_nSimpleDesign = v; }
+	CC inline void resetCounter()									{ setNumbSimpleDesign(0); }
+	CC virtual void setNumbSimpleDesign(ulonglong v)				{ m_nSimpleDesign = v; }
 
 	ulonglong m_nSimpleDesign;
 	bool m_bNoReplBlockFlag;
-	bool m_bSimpleMatrFlag;
 };

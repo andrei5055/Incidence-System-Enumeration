@@ -2,72 +2,73 @@
 #include "IntersectionStorage.h"
 #include "VariableMapping.h"
 
-#ifdef _MSC_VER
-#ifndef _CRTDBG_MAP_ALLOC
-#define _CRTDBG_MAP_ALLOC
-#endif
-#include <crtdbg.h>
-#endif
-#if defined(_MSC_VER) && defined(_DEBUG)
-#define new new(_NORMAL_BLOCK, THIS_FILE, __LINE__)
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+template class C_tDesignEnumerator<MATRIX_ELEMENT_TYPE>;
 
-C_tDesignEnumerator::C_tDesignEnumerator(const C_tDesign *pBIBD, bool matrOwner, bool noReplicatedBlocks) : CBIBD_Enumerator(pBIBD, matrOwner, noReplicatedBlocks)
+template<class T>
+C_tDesignEnumerator<T>::C_tDesignEnumerator(const C_tDesign<T> *pBIBD, bool matrOwner, bool noReplicatedBlocks, int treadIdx, uint nCanonChecker) :
+		CBIBD_Enumerator(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker)
+#if USE_EXRA_EQUATIONS
+		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
+#endif
 {
 	m_pIntersectionStorage = NULL;
-	m_pVarPntr = new CVariable *[matrix()->colNumb() << 1];
 
-	// For 3 design it will be enough and we won't realloc that memory
-	resetEquNumb();
-	allocateMemoryForEquations(matrix()->rowNumb());
+#if USE_EXRA_EQUATIONS
+	const size_t numElem = COrbToVar::numElement();
+	OrbToVarMapping *pntr = new OrbToVarMapping [numElem];
+	for (size_t i = 0; i < numElem; i++)
+		COrbToVar::addElement(pntr + i);
+#endif
 }
 
-C_tDesignEnumerator::~C_tDesignEnumerator()
+template<class T>
+C_tDesignEnumerator<T>::~C_tDesignEnumerator()
 {
     delete intersectionStorage();
-	releaseVariables();
-	delete [] varPntr();
-	for (auto i = equNumbMax(); i--;)
-		delete equation(i);
-
-	delete [] equPntr();
-	delete [] equIndx();
+#if USE_EXRA_EQUATIONS
+	delete [] COrbToVar::GetAt(0);
+#endif
 }
 
-bool C_tDesignEnumerator::makeFileName(char *buffer, int lenBuffer, const char *ext) const
+#if !CONSTR_ON_GPU
+template<class T>
+bool C_tDesignEnumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
+	const auto dirLength = getDirectory(buffer, lenBuffer);
 	const auto t = tDesign()->getT();
-	sprintf_s(buffer, lenBuffer, "%lu-(%lu_%lu_%lu).%s", t, rowNumb(), getInSys()->GetK(), tDesign()->lambda(), ext? ext : "txt");
+	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"-(" ME_FRMT"_" ME_FRMT"_" ME_FRMT")%s", t, rowNumb(), getInSys()->GetK(), tDesign()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }
 
-bool C_tDesignEnumerator::makeJobTitle(char *buffer, int lenBuffer, const char *comment) const
+template<class T>
+bool C_tDesignEnumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const char *comment) const
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();
-	sprintf_s(buffer, lenBuffer, "%lu-(%3lu, %3lu, %2lu)%s", t, rowNumb(), k, tDesign()->lambda(), comment);
+	sprintf_s(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s", t, rowNumb(), k, tDesign()->lambda(), comment);
 	return true;
 }
+#endif
 
-void C_tDesignEnumerator::prepareToTestExtraFeatures()
+template<class T>
+void C_tDesignEnumerator<T>::prepareToTestExtraFeatures()
 {
-	m_pIntersectionStorage = new CIntersectionStorage(tDesign()->getT(), rowNumb(), tDesign()->GetNumSet(t_lSet));
+	m_pIntersectionStorage = new CIntersectionStorage<T>(tDesign()->getT(), rowNumb(), tDesign()->GetNumSet(t_lSet));
 }
 
-PERMUT_ELEMENT_TYPE *C_tDesignEnumerator::getIntersectionParam(const size_t **ppNumb) const
+template<class T>
+PERMUT_ELEMENT_TYPE *C_tDesignEnumerator<T>::getIntersectionParam(const size_t **ppNumb) const
 {
-    const auto *pIntStorage = intersectionStorage();
-    const auto *pPrev = pIntStorage->rowsIntersection(currentRowNumb());
+	const auto *pPrev = intersectionStorage()->rowsIntersection(currentRowNumb());
     *ppNumb = pPrev->numbIntersection();
 	return pPrev->rowIntersectionPntr();
 }
 
-void C_tDesignEnumerator::prepareCheckSolutions(size_t nVar)
+template<class T>
+CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 {
 	if (currentRowNumb() <= 1)
-		return;			// Nothing to test
+		return NULL;			// Nothing to test
 
 	const auto lastRowIdx = currentRowNumb() - 1;
 	auto t = tDesign()->getT() - 2;
@@ -76,55 +77,63 @@ void C_tDesignEnumerator::prepareCheckSolutions(size_t nVar)
 
     const auto *pCurrRow = matrix()->GetRow(0);
 	const auto *pLastRow = matrix()->GetRow(lastRowIdx);
-	const size_t *pNumb;
-	PERMUT_ELEMENT_TYPE tuple[10];
-	auto *pTuple = t <= countof(tuple) ? tuple : new PERMUT_ELEMENT_TYPE[t];
-	MATRIX_ELEMENT_TYPE *matrixRowPntr[10];
-	auto *pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new MATRIX_ELEMENT_TYPE *[t];
-	auto *pIntersection = getIntersectionParam(&pNumb);
+	T tuple[10], *matrixRowPntr[10];
+	auto *pTuple = t <= countof(tuple) ? tuple : new T[t];
+	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T *[t];
 
 	// Create indices of block containing last element
-	PERMUT_ELEMENT_TYPE *ppBlockIdx = new PERMUT_ELEMENT_TYPE[tDesign()->GetR()];
+	const auto r = tDesign()->GetR();
+	auto ppBlockIdx = new MATRIX_ELEMENT_TYPE[r];
 	size_t idx = 0;
-	for (auto j = colNumb(); j--;)
-		if (*(pLastRow + j))
-			*(ppBlockIdx + idx++) = j;
-
 	const auto nCol = colNumb();
-    for (size_t i = 0; i < t; i++) {
-		if (i == 0) {
-			for (auto k = pNumb[i]; k--; pCurrRow += nCol) {
-				for (auto j = idx; j--;) {
-					if (*(pCurrRow + ppBlockIdx[j]))
-						*pIntersection++ = ppBlockIdx[j];
-				}
-			}
-		} else {
-			// Construct all (i+1)-subsets of first currentRowNumb() elements
-			size_t k = 0;
-			pTuple[0] = -1;
-			while (k != -1) {
-				size_t n = pTuple[k];
-				for (; k <= i; k++) {
-					pTuple[k] = ++n;
-					pMatrixRowPntr[k] = matrix()->GetRow(n);
-				}
+	for (T j = 0; j < nCol; j++) {
+		if (*(pLastRow + j)) {
+			*(ppBlockIdx + idx++) = j;
+			if (idx == r)
+				break;   // No more blocks, containing last element
+		}
+	}
 
-				for (auto j = idx; j--;) {
-					const auto blockIdx = ppBlockIdx[j];
-					size_t k = -1;
-					while (++k <= i && *(pMatrixRowPntr[k] + blockIdx));
-					if (k > i)
-						*pIntersection++ = blockIdx;
-				}
-
-				// Construct next (i+1) subset
-				k = i + 1;
-				n = lastRowIdx;
-				while (k-- && pTuple[k] == --n);
+	// Create indices of block containing 0-th and last, 1-st and last etc element.
+	const size_t *pNumb;
+	auto *pIntersection = getIntersectionParam(&pNumb);
+	const auto lambda = tDesign()->GetNumSet(t_lSet)->GetAt(0);
+	for (auto k = pNumb[0]; k--; pCurrRow += nCol, pIntersection += lambda) {
+		size_t i = 0;
+		for (size_t j = 0; j  < r; j++) {
+			if (*(pCurrRow + ppBlockIdx[j])) {
+				*(pIntersection + i) = ppBlockIdx[j];
+				if (++i == lambda)
+					break;	// No more blocks, containing two last elements
 			}
 		}
-    }
+	}
+
+	for (size_t i = 1; i < t; i++) {
+		// Construct all (i+1)-subsets of first currentRowNumb() elements
+		size_t k = 0;
+		pTuple[0] = -1;
+		while (k != -1) {
+			auto n = pTuple[k];
+			for (; k <= i; k++) {
+				pTuple[k] = ++n;
+				pMatrixRowPntr[k] = matrix()->GetRow(n);
+			}
+
+			for (auto j = idx; j--;) {
+				const auto blockIdx = ppBlockIdx[j];
+				size_t k = -1;
+				while (++k <= i && *(pMatrixRowPntr[k] + blockIdx));
+				if (k > i)
+					*pIntersection++ = blockIdx;
+			}
+
+			// Construct next (i+1) subset
+			k = i + 1;
+			n = lastRowIdx;
+			while (k-- && pTuple[k] == --n);
+		}
+	}
 
 	if (pTuple != tuple)
 		delete[] pTuple;
@@ -134,11 +143,18 @@ void C_tDesignEnumerator::prepareCheckSolutions(size_t nVar)
 
 	delete[] ppBlockIdx;
 
-	constructAdditionalEquations(t, nVar);
+#if USE_EXRA_EQUATIONS
+	return constructExtraEquations(t, nVar);
+#else
+	return NULL;
+#endif
 }
 
-bool C_tDesignEnumerator::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const 
-{ 
+template<class T>
+bool C_tDesignEnumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const 
+{
+#if USE_EXRA_EQUATIONS == 0
+	// Check if solution is valid (for elimination of invalid solutions)
 	if (currentRowNumb() <= 1)
 		return true;		// Nothing to test
 
@@ -169,43 +185,26 @@ bool C_tDesignEnumerator::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const
     }
     
 //	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1);
+#endif
     return true;
 }
 
-void C_tDesignEnumerator::releaseVariables()
-{
-	for (auto i = equNumb(); i--;)
-		equation(i)->releaseEquation();
-
-	resetEquNumb();
-}
-
-void C_tDesignEnumerator::setEquation(CEquation *pEqu, size_t idx)
-{ 
-	*(equPntr() + idx) = pEqu;
-
-	// Change equIndx to be able find this equation by it's initial index  
-	const auto pVar = pEqu->firstVariable();
-	*(equIndx() + pVar->equIdx()) = idx;
-}
-
-void C_tDesignEnumerator::setEquation(CEquation *pEquFrom, const CEquation *pEquTo)
-{
-	const auto pVar = pEquTo->firstVariable();
-	setEquation(pEquFrom, *(equIndx() + pVar->equIdx()));
-}
-
-void C_tDesignEnumerator::constructAdditionalEquations(size_t t, size_t nVar)
+#if USE_EXRA_EQUATIONS
+template<class T>
+CVariableMapping *C_tDesignEnumerator<T>::constructExtraEquations(size_t t, size_t nVar)
 {
 	const CColOrbit *pColOrbit = colOrbit(currentRowNumb());
 	if (!pColOrbit)		// This could happend for last 1-2 rows
-		return;		
+		return NULL;		
 
 	const CColOrbit *pColOrbitIni = colOrbitIni(currentRowNumb());
 
-	releaseVariables();
-	memset(varPntr(), 0, nVar * sizeof(*varPntr()));
+	resetVarPtr(nVar);
 
+	CColOrbit *pUnforcedIni = forcibleLambda(currentRowNumb()) ? unforcedOrbits(currentRowNumb())[0] : NULL;
+
+	const auto pKSet = tDesign()->GetNumSet(t_kSet);
+	const auto k = pKSet->GetAt(0);
 	const auto pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
@@ -214,152 +213,78 @@ void C_tDesignEnumerator::constructAdditionalEquations(size_t t, size_t nVar)
 	for (size_t i = 0; i < t; i++) {
 		const auto lambdaPrev = lambda;
 		lambda = pLambdaSet->GetAt(i + 1);
-		// Loop over the equations for current lambda as their right parts
-		for (auto k = pNumb[i]; k--; equIdx++) {
-			CVariable *pFirstVar, *pCurrVar, *pPrevVar;
-			pFirstVar = pCurrVar = pPrevVar = NULL;
-			const CColOrbit *pColOrbitTmp = pColOrbit;
-			size_t numVar, nVarInEquation;
-			nVarInEquation = numVar = 0;
-			size_t j = 0;
-			while (j < lambdaPrev) {
-				const size_t nCol = *(pIntersection + j);
-				const void *pColOrbitLast = (char *)pColOrbitIni + nCol * colOrbitLen();
-				while (pColOrbitTmp < pColOrbitLast) {
-					numVar++;
-					pColOrbitTmp = pColOrbitTmp->next();
+		// Loop over the equations for current lambda as their lambda right parts
+		for (auto n = pNumb[i]; n--; equIdx++) {
+			
+			CVariable *pFirstVar, *pCurrVar;
+			pFirstVar = pCurrVar = NULL;
+
+			size_t j, nVarInEquation, idxMap, idx, adjLambda;
+			j = nVarInEquation = idxMap = idx = adjLambda = 0;
+
+			while (true) {
+				// idx - index of the first block of the next block's orbit, containing current (i+2)-tuple of elements
+				// nCol - starting column (first block number) of the next block's orbit
+				const size_t nCol = *(pIntersection + idx);
+				const CColOrbit *pColOrbitLast = (CColOrbit *)((char *)pColOrbitIni + nCol * colOrbitLen());
+
+				const OrbToVarMapping *pVarMap;
+				do {
+					pVarMap = COrbToVar::GetAt(idxMap++);
+				} while (pVarMap->pColOrb < pColOrbitLast);
+
+				if (pVarMap->pColOrb == pColOrbitLast) {			
+					const size_t numVar = pVarMap->nVar;
+					pCurrVar = new CVariable(equIdx, numVar, pCurrVar);
+
+					if (!pFirstVar)
+						pFirstVar = pCurrVar;
+
+					addVariable(pCurrVar, numVar);
+					nVarInEquation++;
+				}
+				else {
+					// Forcible orbits found
+					if (pColOrbitLast->colomnWeight() != k)
+						adjLambda++;	// it's a all last 1's orbit
+
+					// to use previous orb-to-var mapping one more time 
+					idxMap--;    
 				}
 
-				nVarInEquation++;
-				pCurrVar = new CVariable(equIdx, numVar, pCurrVar);
-
-				if (!pFirstVar)
-					pFirstVar = pCurrVar;
-
-				if (*(varPntr() + numVar))
-					pCurrVar->setSameVarNextEqu(*(varPntr() + numVar + nVar));
+				if ((j += pColOrbitLast->length()) < lambdaPrev)
+					idx += pColOrbitLast->length();
 				else
-					*(varPntr() + numVar) = pCurrVar;
-
-				*(varPntr() + numVar + nVar) = pCurrVar;
-				j += pColOrbitTmp->lenght();
+					break;
 			}
 
-			// Make a loop of variables appearing in current equation
-			pFirstVar->linkVariable(pCurrVar);
-			addEquation(pFirstVar, nVarInEquation, lambda);
+			if (pFirstVar) {
+				// Make a loop of variables appearing in the current equation
+				pFirstVar->linkVariable(pCurrVar);
+				addEquation(pFirstVar, nVarInEquation, lambda - adjLambda);
+			}
+
+			pIntersection += lambdaPrev;
 		}
 	}
 
-	// Make the loop of all appearance of given variable in different equations
-	for (auto i = nVar; i--;) {
-		auto pVar = varPntr()[i];
-		if (pVar)
-			pVar->setSameVarNextEqu(varPntr()[i + nVar]);
-	}
-
-	solveAdditionalEquations();
+	closeVarloop();
+	return solveExtraEquations();
 }
 
-int C_tDesignEnumerator::solveAdditionalEquations()
+template<class T>
+void C_tDesignEnumerator<T>::addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb)
 {
-	CVariableMapping VarValue(10), *pVarValue = &VarValue;
-	pVarValue->resetMapping();
-	// Loop over all constructed equations
-
-	auto iMax = equNumb();
-	size_t i = 0;
-	while (i < iMax) {
-		CEquation *pEquation = equation(i);
-		if (pEquation->numbVar() == 1) {
-			// We found trivial equation
-			const auto pVariable = pEquation->firstVariable();
-			const auto varValue = pEquation->rightPart();
-			
-			pVarValue->addMapping(pVariable->varIndex(), varValue);
-
-			// Get next equation with the current variable
-			// (we needd to do it BEFORE releasing this variable)
-			auto pVariableNext = pVariable->sameVarNextEqu();
-			// Release current equation and copy last equation of the system to the current slot
-			pEquation->releaseEquation();
-			if (i < --iMax)
-				setEquation(equation(iMax), i);
-
-			CVariable *pVariableTmp, *pVarTmp, *pTmp;
-			while (pVariableNext != pVariable) {
-				pVariableNext = (pVariableTmp = pVariableNext)->sameVarNextEqu();
-
-				CEquation *pCurrEquation = equation(pVariableTmp);
-				if (pCurrEquation->rightPart() < varValue)
-					return -1;    // no solution
-				
-				auto *pVarNext = pVariableTmp->nextVarSameEqu();
-				if (pCurrEquation->rightPart() == varValue) {
-					// The values of all remaining variables of current equation are 0's
-					while (pVarNext != pVariableTmp) {
-						pVarNext = (pVarTmp = pVarNext)->nextVarSameEqu();
-						// Map variable with it's value 0
-						pVarValue->addMapping(pVarTmp->varIndex(), 0);
-						// ... and remove this variable from remaining equations
-						auto *pNxt = pVarTmp->sameVarNextEqu();
-						while (pNxt != pVarTmp) {
-							pNxt = (pTmp = pNxt)->sameVarNextEqu();
-							pTmp->prevVarSameEqu()->linkVariable(pTmp->nextVarSameEqu());
-							delete pTmp;
-						}
-						delete pVarTmp;
-					}
-
-					// Current equation already solved and we need to delete it and move the last equation to its place
-					setEquation(equation(--iMax), pCurrEquation);
-				}
-				else {
-					if (pVarNext == pVariableTmp)  // Only one variable in this equation
-						return -1;     
-
-					// Adjust right part
-					pCurrEquation->adjustRightPart(varValue);
-					// Remove variable
-					pTmp->prevVarSameEqu()->linkVariable(pVarNext);
-					delete pVariableTmp;
-				}
-			}
-		} else 
-			i++;
-	}
-
-	setEquNumb(iMax);
-	return 0;
+	OrbToVarMapping *pOrbToVar = COrbToVar::GetAt(COrbToVar::numb());
+	pOrbToVar->nVar = nVar;
+	pOrbToVar->pColOrb = pColOrb;
+	COrbToVar::incNumb();
 }
 
-void C_tDesignEnumerator::allocateMemoryForEquations(size_t nEqu)
-{
-	setEquNumbMax(nEqu);
-	m_pEquPntr = new CEquation *[equNumbMax()];
-	m_pEquIndx = new VECTOR_ELEMENT_TYPE[equNumbMax()];
-	for (auto i = equNumb(); i < nEqu; i++)
-		m_pEquPntr[i] = new CEquation();
-}
+#endif
 
-void C_tDesignEnumerator::addEquation(CVariable *pFirstVar, size_t nVar, size_t lambda)
-{
-	if (equNumb() == equNumbMax()) {
-		auto *pTmp = equPntr();
-		auto *pIdx = equIndx();
-		allocateMemoryForEquations(equNumbMax() << 1);
-		memcpy(equPntr(), pTmp, equNumb() * sizeof(*pTmp));
-		memcpy(equIndx(), pIdx, equNumb() * sizeof(*pIdx));
-		delete[] pTmp;
-		delete[] pIdx;
-	}
-
-	equPntr()[m_nEquNumb]->initEquation(pFirstVar, nVar, lambda);
-	equIndx()[m_nEquNumb] = m_nEquNumb;
-	m_nEquNumb++;
-}
-
-void C_tDesignEnumerator::copyInfoFromMaster(const CEnumerator *pMaster)
+template<class T>
+void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator *pMaster)
 {
 	prepareToTestExtraFeatures();
 	auto t = tDesign()->getT() - 2;
@@ -385,15 +310,16 @@ void C_tDesignEnumerator::copyInfoFromMaster(const CEnumerator *pMaster)
 	}
 }
 
-bool C_tDesignEnumerator::TestFeatures(CEnumInfo *pEnumInfo)
+template<class T>
+bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
 {
-	if (!CBIBD_Enumerator::TestFeatures(pEnumInfo))
+	if (!CBIBD_Enumerator::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
 
 	const auto t = tDesign()->getT();
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	const auto pRow = new MATRIX_ELEMENT_TYPE *[t];
-	auto *pTuple = new PERMUT_ELEMENT_TYPE[t];
+	auto pTuple = new MATRIX_ELEMENT_TYPE[t];
 	bool retVal = true;
 	size_t i = 2; 
 	while (retVal && ++i <= t) {
@@ -402,9 +328,9 @@ bool C_tDesignEnumerator::TestFeatures(CEnumInfo *pEnumInfo)
 		pTuple[0] = -1;
 		do {
 			// Create next tuple
-			size_t val = pTuple[k];
+			auto val = pTuple[k];
 			for (size_t j = k; j < i; j++)
-				pRow[j] = matrix()->GetRow(pTuple[j] = ++val);
+				pRow[j] = pMatrix->GetRow(pTuple[j] = ++val);
 
 			// Check constructed tuple:
 			size_t lambda = 0;
@@ -431,3 +357,54 @@ bool C_tDesignEnumerator::TestFeatures(CEnumInfo *pEnumInfo)
 	delete[] pRow;
 	return retVal;
 }
+
+/*
+1. System of equations for 2-d (starting from 0) row of 3-design is:
+x0 + x1 = labda_2
+x2 + x3 = r - lambda_2
+x0 + x2 = lambda_2
+x0      = lambda_3
+
+First three equations are regular equations for 2-design, last one is the conditions for intersection of first three row.
+The solution of (1) is:
+x0 = lamda_3
+x1 = lamba_2 - lambda_3
+x2 = lamba_2 - lambda_3
+x3 = r - 2 * lambda_2 + lambda_3
+
+2. System of equations for 3-d (starting from 0) row of 3-design is:
+x0 + x1 = labda_3
+x2 + x3 = lambda_2 - lambda_3
+x4 + x5 = lambda_2 - lambda_3
+x6 + x7 = r - 2 * lambda_2 + lambda_3
+x0 + x2 + x4 + x6 = lambda2
+x0 + x1 = lambda_3
+x0 + x2 = lambda_3
+x0 + x4 = lambda_3
+
+First five equations are regular equations for 2-design, last three is the conditions for intersection of 3-d row with (0,1), (0,2) and (1,2)
+a) We can remove equation 6, since 1st is exactly the same.
+x1 = x2 = x4 ==> from last 3 equation
+
+Now we can re-write 2-d and 5-th equations as (2a)
+x1 + x3 = lambda_2 - lambda_3
+x1 + x6 = lambda_2 - lambda_3
+
+Therefore, x3 = x5 = x6 ==> from 2-d and 3-d of (2) and (2a)
+Now (2) has the same solutions as (2b)
+x0 + x1 = lambda_3
+x1 + x3 = lambda_2 - lambda_3
+x3 + x7 = r - 2 * lambda_2 + lambda_3
+
+Obviously, 0 <= x7 <= b - (r  + r - lambda_2 + r - 2 * lambda_2 + lambda_3) = b - 3 * (r - lambda_2) - lambda_3
+We know that 
+b = v*(v-1)*lambda_2/(k*(k-1)) 
+r = (v-1)*lambda_2/(k-1)
+
+And we can see that x3 = x5 = x6
+x0 = a
+x1 = x2 = x4 = lambda_3 - a
+x3 = x5 = x6 = lambda_2 - 2 * lambda_3 + a
+x7 = r - 3 * (lambda_2 - lambda_3) - a
+
+*/
