@@ -109,9 +109,9 @@ CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 		}
 	}
 
-	for (size_t i = 1; i < t; i++) {
+	for (int i = 1; i < t; i++) {
 		// Construct all (i+1)-subsets of first currentRowNumb() elements
-		size_t k = 0;
+		int k = 0;
 		pTuple[0] = -1;
 		while (k != -1) {
 			auto n = pTuple[k];
@@ -122,9 +122,9 @@ CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 
 			for (auto j = idx; j--;) {
 				const auto blockIdx = ppBlockIdx[j];
-				size_t k = -1;
-				while (++k <= i && *(pMatrixRowPntr[k] + blockIdx));
-				if (k > i)
+				int m = -1;
+				while (++m <= i && *(pMatrixRowPntr[m] + blockIdx));
+				if (m > i)
 					*pIntersection++ = blockIdx;
 			}
 
@@ -169,7 +169,7 @@ bool C_tDesignEnumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) co
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);
-    for (size_t i = 0; i < t; i++) {
+    for (int i = 0; i < t; i++) {
 		const auto lambdaPrev = lambda;
         lambda = pLambdaSet->GetAt(i+1);
 		for (size_t k = pNumb[i]; k--; pIntersection += lambdaPrev) {
@@ -302,7 +302,7 @@ void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator *pMaster)
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	PERMUT_ELEMENT_TYPE *pIntersectionTo = getIntersectionParam(&pNumb);
 	const auto *pIntersectionFrom = dynamic_cast<const C_tDesignEnumerator *>(pMaster)->getIntersectionParam(&pNumb);
-	for (size_t i = 0; i < t; i++) {
+	for (int i = 0; i < t; i++) {
 		const size_t len = pNumb[i] * pLambdaSet->GetAt(i);;
 		memcpy(pIntersectionTo, pIntersectionFrom, len * sizeof(*pIntersectionTo));
 		pIntersectionTo += len;

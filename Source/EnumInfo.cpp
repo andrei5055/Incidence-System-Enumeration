@@ -163,7 +163,7 @@ void CEnumInfo<T>::reportProgress(const CThreadEnumerator<T> *pThreadEnum, size_
 		const ulonglong nrbTotal = numbSimpleDesign();
 		CGroupsInfo groupsInfo;
 		groupsInfo.updateGroupInfo(this);
-		for (int i = 0; i < nThread; i++, pThreadEnum++) {
+		for (size_t i = 0; i < nThread; i++, pThreadEnum++) {
 			if (pThreadEnum->code() != t_threadRunning)
 				continue;
 
@@ -237,7 +237,7 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 		return;
 
 	char buff[256];
-	SPRINTF(buff, "\nUsing %lld-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
+	SPRINTF(buff, "\nUsing %Id-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
 	outString(buff, outFile);
 
 	const size_t nThreads = designInfo()->threadNumb;

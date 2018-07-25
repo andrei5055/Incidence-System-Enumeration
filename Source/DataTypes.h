@@ -54,13 +54,22 @@
 #define OUT_RESULT					1 && (CONSTR_ON_GPU == 0 && (CANON_ON_GPU == 0 || CANON_ON_GPU))
 
 #ifdef WIN
-	// For Memory leakage detection
-	#define _CRTDBG_MAP_ALLOC
-	#include <stdlib.h>
-	#include <crtdbg.h>
+
 
 #ifndef USE_CUDA
 #ifdef _DEBUG  
+	// For Memory leakage detection
+	#define CHECK_MEMORY_LEAK		0
+#if CHECK_MEMORY_LEAK
+	#define _CRTDBG_MAP_ALLOC
+	#include <stdlib.h>
+	#include <crtdbg.h>
+#else
+	#define _CrtSetReportMode(x,y)
+	#define _CrtSetReportFile(x,y)
+	#define _CrtDumpMemoryLeaks()
+#endif
+
 #define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__) 
 #define new DEBUG_CLIENTBLOCK  
 #else  
@@ -90,6 +99,7 @@
 #else
     #define OS  "Mac OS"
 	#define _CrtSetReportMode(x,y)
+	#define _CrtSetReportFile(x,y)
 	#define _CrtDumpMemoryLeaks()
 #endif
 
