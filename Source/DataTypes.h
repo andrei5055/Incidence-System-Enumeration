@@ -101,6 +101,7 @@
 	#define _CrtSetReportMode(x,y)
 	#define _CrtSetReportFile(x,y)
 	#define _CrtDumpMemoryLeaks()
+  #define USE_ASM				  0
 #endif
 
 #define USE_EXRA_EQUATIONS			0   // Construct and use additional equations (for instance, for t-designs)
@@ -166,14 +167,15 @@ extern std::mutex out_mutex;
 	#define FOPEN(x, y, z)	  	 FILE *x; fopen_s(&x, y, z)
 #else
 	#define sprintf_s(x, y, ...) sprintf(x, __VA_ARGS__)
-	#define strcpy_s(x, y, ...)  strcpy(x, __VA_ARGS__)
+	#define strcpy_s(x, y, z)    strcpy(x, z)
 	#define memcpy_s(x, y, ...)  memcpy(x, __VA_ARGS__)
 	#define FOPEN(x, y, z)	  	 FILE *x = fopen(y, z)
 #endif
 
 #define FCLOSE(file)			if (file) fclose(file)
 
-#define SPRINTF(x, ...)			snprintf(x, sizeof(x), __VA_ARGS__)
+#define SNPRINTF(x, len, ...)			snprintf(x, len, __VA_ARGS__)
+#define SPRINTF(x, ...)			      SNPRINTF(x, sizeof(x), __VA_ARGS__)
 #define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which 
 #define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
 

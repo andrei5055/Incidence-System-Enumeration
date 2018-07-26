@@ -24,9 +24,9 @@ if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Build type not specified: Use Release by default.")
 endif(NOT CMAKE_BUILD_TYPE)
 
+#-DWIN
 # Definition of Macros
 add_definitions(
-   -DWIN 
    -D_DEBUG 
    -D_CONSOLE 
    -D_LIB 

@@ -36,7 +36,7 @@ bool C_tDesignEnumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const 
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer);
 	const auto t = tDesign()->getT();
-	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"-(" ME_FRMT"_" ME_FRMT"_" ME_FRMT")%s",
+	SNPRINTF(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"-(" ME_FRMT"_" ME_FRMT"_" ME_FRMT")%s",
 						t, this->rowNumb(), this->getInSys()->GetK(), tDesign()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }
@@ -46,7 +46,7 @@ bool C_tDesignEnumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const cha
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();
-	sprintf_s(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s",
+	SNPRINTF(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s",
 						t, this->rowNumb(), k, tDesign()->lambda(), comment);
 	return true;
 }

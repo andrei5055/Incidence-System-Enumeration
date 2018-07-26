@@ -8,247 +8,246 @@
 		<Option virtualFolders="CMake Files\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug"/>
+				<Option working_dir="/home/andreii/Projects/ISE/CDTools/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug"/>
+				<Option working_dir="/home/andreii/Projects/ISE/CDTools/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="CDTools">
-				<Option output="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/CDTools.exe" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add option="-DWIN"/>
-					<Add option="-D_DEBUG"/>
-					<Add option="-D_CONSOLE"/>
-					<Add option="-D_LIB"/>
-					<Add option="-DUNICODE"/>
-					<Add option="-D_UNICODE"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/include"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/include-fixed"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/../../../../i686-w64-mingw32/include"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/i686-w64-mingw32"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/backward"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 CDTools"/>
-					<CompileFile command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="CDTools/fast">
-				<Option output="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/CDTools.exe" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add option="-DWIN"/>
-					<Add option="-D_DEBUG"/>
-					<Add option="-D_CONSOLE"/>
-					<Add option="-D_LIB"/>
-					<Add option="-DUNICODE"/>
-					<Add option="-D_UNICODE"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/include"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/include-fixed"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.9.1/../../../../i686-w64-mingw32/include"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/i686-w64-mingw32"/>
-					<Add directory="C:/Program Files (x86)/mingw-w64/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/backward"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 CDTools/fast"/>
-					<CompileFile command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
-				<Option working_dir="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug"/>
+				<Option working_dir="/home/andreii/Projects/ISE/CDTools/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="C:/PROGRA~2/MINGW-~1/mingw32/bin/mingw32-make.exe -f &quot;C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CDTools">
+				<Option output="/home/andreii/Projects/ISE/CDTools/cmake-build-debug/CDTools" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/andreii/Projects/ISE/CDTools/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_DEBUG"/>
+					<Add option="-D_CONSOLE"/>
+					<Add option="-D_LIB"/>
+					<Add option="-DUNICODE"/>
+					<Add option="-D_UNICODE"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 CDTools"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CDTools/fast">
+				<Option output="/home/andreii/Projects/ISE/CDTools/cmake-build-debug/CDTools" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/andreii/Projects/ISE/CDTools/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_DEBUG"/>
+					<Add option="-D_CONSOLE"/>
+					<Add option="-D_LIB"/>
+					<Add option="-DUNICODE"/>
+					<Add option="-D_UNICODE"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 CDTools/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/andreii/Projects/ISE/CDTools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/BIBD_Enumerator.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/BIBD_Enumerator.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/CanonicityChecker.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/CanonicityChecker.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ClassArray.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ClassArray.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbitManager.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ColOrbitManager.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbitManager.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ColOrbitManager.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ColOrbits.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ColOrbits.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/DataTypes.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/EnumInfo.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/EnumInfo.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Enumerator.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Enumerator.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/EquSystem.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/EquSystem.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Equation.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Equation.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/GroupsInfo.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/GroupsInfo.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysEnumerator.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InSysEnumerator.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InSysRowEquation.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InSysRowEquation.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InSysSolver.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InSysSolver.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InsSysEnumerator.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/InsSysEnumerator.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/IntersectionStorage.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/IntersectionStorage.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/IntersectionStorage.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/IntersectionStorage.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Matrix.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Matrix.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Matrix.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/MatrixCanonChecker.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/MatrixCanonChecker.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/PermutStorage.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/PermutStorage.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/RightPartFilter.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/RightPartFilter.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/RowSolution.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/RowSolution.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ThreadEnumerator.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/ThreadEnumerator.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Variable.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Variable.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/VariableMapping.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/VariableMapping.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Vector.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/Vector.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/main.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/main.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/matrix.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/matrix.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/stdafx.cpp">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.cpp">
+		<Unit filename="/home/andreii/Projects/ISE/Source/stdafx.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h">
+		<Unit filename="/home/andreii/Projects/ISE/Source/targetver.h">
 			<Option target="CDTools"/>
 		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/targetver.h">
-			<Option target="CDTools"/>
-		</Unit>
-		<Unit filename="C:/Users/Andrei/Documents/Incidence-System-Enumeration/CDTools/CMakeLists.txt">
+		<Unit filename="/home/andreii/Projects/ISE/CDTools/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
 	</Project>

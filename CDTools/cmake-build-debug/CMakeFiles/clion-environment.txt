@@ -1,4 +1,2 @@
-ToolSet: w64 3.1@C:\Program Files (x86)\mingw-w64\mingw32
 Options: 
-
-Options:
+CMake: 3.8.2@/home/andreii/clion-2017.2.3/bin/cmake/bin/cmake

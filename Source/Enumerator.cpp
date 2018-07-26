@@ -31,7 +31,7 @@
 	#include <direct.h>
 	#define MKDIR(x) _mkdir(x)
 #elif defined(__linux__)
-	#define MKDIR(x)  mkdir(dirName), 0777)
+	#define MKDIR(x)  mkdir(dirName, 0777)
 #else
 	"Please define corresponding method for making directory"
 #endif
@@ -481,7 +481,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
 			if (compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
-				strcpy_s(jobTitle, buff);
+				strcpy_s(jobTitle, countof(jobTitle), buff);
 				strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
 
 				if (betterResults) {
@@ -650,7 +650,7 @@ size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 
 	sprintf_s(dirName + lenPrefix, lenBuffer - lenPrefix, "%d", rowNumb);
 #else
-	const size_t lenDirName = sprintf_s(dirName, lenBuffer, "V =%4d", rowNumb);
+	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "V =%4d", rowNumb);
 #endif
 	int retVal = 0;
 	if (!fileExists(dirName, false))

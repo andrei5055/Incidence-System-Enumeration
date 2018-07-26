@@ -6,39 +6,39 @@
 
 #IncludeRegexTransform: 
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.cpp
+/home/andreii/Projects/ISE/Source/BIBD_Enumerator.cpp
 BIBD_Enumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.h
+/home/andreii/Projects/ISE/Source/BIBD_Enumerator.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.h
+/home/andreii/Projects/ISE/Source/BIBD_Enumerator.h
 InsSysEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InsSysEnumerator.h
+/home/andreii/Projects/ISE/Source/InsSysEnumerator.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.cpp
+/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.cpp
 C_tDesignEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.h
+/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.h
 IntersectionStorage.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/IntersectionStorage.h
+/home/andreii/Projects/ISE/Source/IntersectionStorage.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.h
+/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.h
 BIBD_Enumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/BIBD_Enumerator.h
+/home/andreii/Projects/ISE/Source/BIBD_Enumerator.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.cpp
+/home/andreii/Projects/ISE/Source/CanonicityChecker.cpp
 Enumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.h
+/home/andreii/Projects/ISE/Source/Enumerator.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.h
+/home/andreii/Projects/ISE/Source/CanonicityChecker.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 PermutStorage.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.h
+/home/andreii/Projects/ISE/Source/PermutStorage.h
 ColOrbits.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ClassArray.h
+/home/andreii/Projects/ISE/Source/ClassArray.h
 assert.h
 -
 memory
@@ -48,37 +48,37 @@ new
 cstring
 -
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbitManager.cpp
+/home/andreii/Projects/ISE/Source/ColOrbitManager.cpp
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbitManager.h
+/home/andreii/Projects/ISE/Source/ColOrbitManager.h
 iostream
 -
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 ColOrbits.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 cuda_runtime.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/cuda_runtime.h
+/home/andreii/Projects/ISE/Source/cuda_runtime.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.cpp
+/home/andreii/Projects/ISE/Source/ColOrbits.cpp
 matrix.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/matrix.h
+/home/andreii/Projects/ISE/Source/matrix.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 Vector.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h
+/home/andreii/Projects/ISE/Source/Vector.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 host_defines.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/host_defines.h
+/home/andreii/Projects/ISE/Source/host_defines.h
 afx.h
 -
 afxtempl.h
 -
 ClassArray.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ClassArray.h
+/home/andreii/Projects/ISE/Source/ClassArray.h
 iostream
 -
 stdlib.h
@@ -90,31 +90,31 @@ mutex
 boost/thread/thread.hpp
 -
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.cpp
+/home/andreii/Projects/ISE/Source/EnumInfo.cpp
 stdafx.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h
+/home/andreii/Projects/ISE/Source/stdafx.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 EnumInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 Enumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.h
+/home/andreii/Projects/ISE/Source/Enumerator.h
 ThreadEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.h
+/home/andreii/Projects/ISE/Source/ThreadEnumerator.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 time.h
 -
 GroupsInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.h
+/home/andreii/Projects/ISE/Source/GroupsInfo.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.cpp
+/home/andreii/Projects/ISE/Source/Enumerator.cpp
 InsSysEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InsSysEnumerator.h
+/home/andreii/Projects/ISE/Source/InsSysEnumerator.h
 CanonicityChecker.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.h
+/home/andreii/Projects/ISE/Source/CanonicityChecker.h
 ThreadEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.h
+/home/andreii/Projects/ISE/Source/ThreadEnumerator.h
 iostream
 -
 system_error
@@ -128,11 +128,11 @@ boost/thread/thread_pool.hpp
 thread
 -
 InSysSolver.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h
+/home/andreii/Projects/ISE/Source/InSysSolver.h
 EnumInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 GroupsInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.h
+/home/andreii/Projects/ISE/Source/GroupsInfo.h
 sys/stat.h
 -
 direct.h
@@ -140,175 +140,175 @@ direct.h
 mutex
 -
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.h
+/home/andreii/Projects/ISE/Source/Enumerator.h
 RowSolution.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.h
+/home/andreii/Projects/ISE/Source/RowSolution.h
 InSysSolver.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h
+/home/andreii/Projects/ISE/Source/InSysSolver.h
 ColOrbitManager.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbitManager.h
+/home/andreii/Projects/ISE/Source/ColOrbitManager.h
 matrix.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/matrix.h
+/home/andreii/Projects/ISE/Source/matrix.h
 EnumInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.cpp
+/home/andreii/Projects/ISE/Source/EquSystem.cpp
 EquSystem.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h
+/home/andreii/Projects/ISE/Source/EquSystem.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h
+/home/andreii/Projects/ISE/Source/EquSystem.h
 Equation.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.h
+/home/andreii/Projects/ISE/Source/Equation.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.cpp
+/home/andreii/Projects/ISE/Source/Equation.cpp
 Equation.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.h
+/home/andreii/Projects/ISE/Source/Equation.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Equation.h
+/home/andreii/Projects/ISE/Source/Equation.h
 Variable.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.h
+/home/andreii/Projects/ISE/Source/Variable.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.cpp
+/home/andreii/Projects/ISE/Source/GroupsInfo.cpp
 GroupsInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.h
+/home/andreii/Projects/ISE/Source/GroupsInfo.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/GroupsInfo.h
+/home/andreii/Projects/ISE/Source/GroupsInfo.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysEnumerator.cpp
+/home/andreii/Projects/ISE/Source/InSysEnumerator.cpp
 InsSysEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InsSysEnumerator.h
+/home/andreii/Projects/ISE/Source/InsSysEnumerator.h
 RightPartFilter.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.h
+/home/andreii/Projects/ISE/Source/RightPartFilter.h
 EnumInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 EquSystem.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h
+/home/andreii/Projects/ISE/Source/EquSystem.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.cpp
+/home/andreii/Projects/ISE/Source/InSysRowEquation.cpp
 InSysRowEquation.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.h
+/home/andreii/Projects/ISE/Source/InSysRowEquation.h
 EquSystem.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h
+/home/andreii/Projects/ISE/Source/EquSystem.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.h
+/home/andreii/Projects/ISE/Source/InSysRowEquation.h
 Vector.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h
+/home/andreii/Projects/ISE/Source/Vector.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.cpp
+/home/andreii/Projects/ISE/Source/InSysSolver.cpp
 InSysSolver.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h
+/home/andreii/Projects/ISE/Source/InSysSolver.h
 RowSolution.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.h
+/home/andreii/Projects/ISE/Source/RowSolution.h
 EquSystem.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EquSystem.h
+/home/andreii/Projects/ISE/Source/EquSystem.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h
+/home/andreii/Projects/ISE/Source/InSysSolver.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InsSysEnumerator.h
+/home/andreii/Projects/ISE/Source/InsSysEnumerator.h
 Enumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Enumerator.h
+/home/andreii/Projects/ISE/Source/Enumerator.h
 RightPartFilter.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.h
+/home/andreii/Projects/ISE/Source/RightPartFilter.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/IntersectionStorage.cpp
+/home/andreii/Projects/ISE/Source/IntersectionStorage.cpp
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/IntersectionStorage.h
+/home/andreii/Projects/ISE/Source/IntersectionStorage.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 Vector.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h
+/home/andreii/Projects/ISE/Source/Vector.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Matrix.cpp
+/home/andreii/Projects/ISE/Source/Matrix.cpp
 iostream
 -
 stdafx.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h
+/home/andreii/Projects/ISE/Source/stdafx.h
 matrix.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/matrix.h
+/home/andreii/Projects/ISE/Source/matrix.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.cpp
+/home/andreii/Projects/ISE/Source/PermutStorage.cpp
 PermutStorage.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.h
+/home/andreii/Projects/ISE/Source/PermutStorage.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/PermutStorage.h
+/home/andreii/Projects/ISE/Source/PermutStorage.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 stdio.h
 -
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.cpp
+/home/andreii/Projects/ISE/Source/RightPartFilter.cpp
 RightPartFilter.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.h
+/home/andreii/Projects/ISE/Source/RightPartFilter.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RightPartFilter.h
+/home/andreii/Projects/ISE/Source/RightPartFilter.h
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.cpp
+/home/andreii/Projects/ISE/Source/RowSolution.cpp
 RowSolution.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.h
+/home/andreii/Projects/ISE/Source/RowSolution.h
 CanonicityChecker.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.h
+/home/andreii/Projects/ISE/Source/CanonicityChecker.h
 InSysSolver.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysSolver.h
+/home/andreii/Projects/ISE/Source/InSysSolver.h
 ColOrbits.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/RowSolution.h
+/home/andreii/Projects/ISE/Source/RowSolution.h
 InSysRowEquation.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/InSysRowEquation.h
+/home/andreii/Projects/ISE/Source/InSysRowEquation.h
 ColOrbits.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.cpp
+/home/andreii/Projects/ISE/Source/ThreadEnumerator.cpp
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ThreadEnumerator.h
+/home/andreii/Projects/ISE/Source/ThreadEnumerator.h
 C_tDesignEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.h
+/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.h
 EnumInfo.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/EnumInfo.h
+/home/andreii/Projects/ISE/Source/EnumInfo.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.cpp
+/home/andreii/Projects/ISE/Source/Variable.cpp
 Variable.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.h
+/home/andreii/Projects/ISE/Source/Variable.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Variable.h
+/home/andreii/Projects/ISE/Source/Variable.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.cpp
+/home/andreii/Projects/ISE/Source/VariableMapping.cpp
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 DataTypes.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/DataTypes.h
+/home/andreii/Projects/ISE/Source/DataTypes.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.cpp
+/home/andreii/Projects/ISE/Source/Vector.cpp
 Vector.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h
+/home/andreii/Projects/ISE/Source/Vector.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/Vector.h
+/home/andreii/Projects/ISE/Source/Vector.h
 vector
 -
 VariableMapping.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/VariableMapping.h
+/home/andreii/Projects/ISE/Source/VariableMapping.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/main.cpp
+/home/andreii/Projects/ISE/Source/main.cpp
 stdafx.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h
+/home/andreii/Projects/ISE/Source/stdafx.h
 C_tDesignEnumerator.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/C_tDesignEnumerator.h
+/home/andreii/Projects/ISE/Source/C_tDesignEnumerator.h
 iostream
 -
 fstream
@@ -326,17 +326,17 @@ iterator
 functional
 -
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/matrix.h
+/home/andreii/Projects/ISE/Source/matrix.h
 ColOrbits.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/ColOrbits.h
+/home/andreii/Projects/ISE/Source/ColOrbits.h
 CanonicityChecker.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/CanonicityChecker.h
+/home/andreii/Projects/ISE/Source/CanonicityChecker.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.cpp
+/home/andreii/Projects/ISE/Source/stdafx.cpp
 stdafx.h
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h
+/home/andreii/Projects/ISE/Source/stdafx.h
 
-C:/Users/Andrei/Documents/Incidence-System-Enumeration/Source/stdafx.h
+/home/andreii/Projects/ISE/Source/stdafx.h
 stdio.h
 -
 

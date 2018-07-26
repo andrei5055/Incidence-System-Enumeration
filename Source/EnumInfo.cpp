@@ -21,18 +21,18 @@ size_t CEnumInfo<T>::convertTime(float time, char *buffer, size_t lenBuf, bool a
 	char *pBuf = buffer;
 	for (int i = 0; i < countof(outDiv); i++) {
 		if (out[i] > 0 || flag || outDiv[i] == '.') {
-			pBuf += sprintf_s(pBuf, lenBuf, (flag? "%02d%c" : "%2d%c"), out[i], outDiv[i]);
+			pBuf += SNPRINTF(pBuf, lenBuf, (flag? "%02d%c" : "%2d%c"), out[i], outDiv[i]);
 			flag = true;
 		} else
 		if (alignment)
-			pBuf += sprintf_s(pBuf, lenBuf, "   ");
+			pBuf += SNPRINTF(pBuf, lenBuf, "   ");
 		else
 			continue;
 
 		lenBuf -= 3;
 	}
 
-	pBuf += sprintf_s(pBuf, lenBuf, "%02d%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
+	pBuf += SNPRINTF(pBuf, lenBuf, "%02d%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
 	return pBuf - buffer;
 }
 
@@ -278,9 +278,9 @@ void CInsSysEnumInfo<T>::updateEnumInfo(const CEnumInfo<T> *pInfo)
 template<class T>
 void CInsSysEnumInfo<T>::reportResult(char *buffer, int lenBuffer) const
 {
-	size_t len = sprintf_s(buffer, lenBuffer, "%s       %9llu       %9llu",
+	size_t len = SNPRINTF(buffer, lenBuffer, "%s       %9llu       %9llu",
 						   this->strToScreen(), this->constrCanonical(), numbSimpleDesign());
-	len += sprintf_s(buffer + len, lenBuffer - len, "       %8llu    ", this->constrTotal());
+	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->constrTotal());
 	len += this->convertTime(this->runTime(), buffer + len, lenBuffer - len);
 
 	// Prepare the comments regarding the results
@@ -292,6 +292,6 @@ void CInsSysEnumInfo<T>::reportResult(char *buffer, int lenBuffer) const
 	case t_resInconsistent:	pResComment = "???";
 	}
 
-	sprintf_s(buffer + len, lenBuffer - len, "  %s       \n", pResComment);
+	SNPRINTF(buffer + len, lenBuffer - len, "  %s       \n", pResComment);
 }
 

@@ -70,9 +70,9 @@ class CMatrix : public CMatrixData<T>
 
 		if (matrNumber > 0) {
 			if (pCanonCheck)
-				sprintf_s(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
+        SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
 			else
-				sprintf_s(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
+        SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
 		}
 #if PRINT_CURRENT_MATRIX
 		else {
@@ -107,7 +107,7 @@ class CMatrix : public CMatrixData<T>
 			for (size_t j = 0; j < nCol; j++)
 				*(pBuf + j) = pSymb[*(pRow + j)];
 
-			strcpy_s(pBuf + nCol, 2, "\n");
+      SNPRINTF(pBuf + nCol, 2, "\n");
 			if (pFile)
 				fputs(pBuf, pFile);
 			else

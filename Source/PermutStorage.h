@@ -97,9 +97,9 @@ void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, T lenPerm) const
 	char *pBuffer = new char[len += 2];
 	char *pBuf = pBuffer;
 	for (size_t i = 0; i < lenPerm; i++)
-		pBuf += sprintf_s(pBuf, len - (pBuf - pBuffer), format, *(perm + i));
+		pBuf += SNPRINTF(pBuf, len - (pBuf - pBuffer), format, *(perm + i));
 
-	strcpy_s(pBuf, len - (pBuf - pBuffer), "\n");
+	SNPRINTF(pBuf, len - (pBuf - pBuffer), "\n");
 	outString(pBuffer, file);
 	delete[] pBuffer;
 }

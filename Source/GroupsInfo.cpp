@@ -9,9 +9,9 @@ void CNumbInfo::addMatrix(const CNumbInfo *pNumbInfo)
 void CNumbInfo::outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const
 {
 	for (auto j = t_canonical; j < t_design_type_total; j = (t_design_type)(j + 1))
-		poz += sprintf_s(buffer + poz, lenBuf - poz, "      %10llu", numMatrOfType(j));
+		poz += SNPRINTF(buffer + poz, lenBuf - poz, "      %10llu", numMatrOfType(j));
 
-	sprintf_s(buffer + poz, lenBuf - poz, "\n");
+	SNPRINTF(buffer + poz, lenBuf - poz, "\n");
 }
 
 void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo)
