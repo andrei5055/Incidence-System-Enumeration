@@ -1,12 +1,12 @@
 #pragma once
 #include "Vector.h"
 
-#define CRowEquation CSimpleArray
+//#define CRowEquation CSimpleArray
 
 class CEquSystem;
 
 template <class T>
-class CInSysRowEquation : public CRowEquation<T>
+class CInSysRowEquation : public CSimpleArray<T>
 {
 public:
 	CK CInSysRowEquation(size_t len, bool tDesignEnum);
@@ -18,9 +18,9 @@ public:
 
 	CK void addVarMapping(int idx, T to, T from)					{ varMapping(idx)->addMapping(to, from); }
 	CK int resolveTrivialEquations(const T *pRightPart, T *pResult, size_t nVar, CVariableMapping<T> *pVariation) const;
-	CK inline auto variableMinValPntr() const						{ return CRowEquation<T>::elementPntr(); }
-	CK inline T *variableMaxValPntr() const							{ return CRowEquation<T>::elementPntr() + memShift(); }
-	CK inline T *variableMaxLimitPntr() const						{ return CRowEquation<T>::elementPntr() + (memShift() << 1); }
+	CK inline T *variableMinValPntr() const						{ return CSimpleArray<T>::elementPntr(); }
+	CK inline T *variableMaxValPntr() const							{ return CSimpleArray<T>::elementPntr() + memShift(); }
+	CK inline T *variableMaxLimitPntr() const						{ return CSimpleArray<T>::elementPntr() + (memShift() << 1); }
 	CK inline void setEquSystem(CEquSystem *pEquSystem)				{ m_pEquSystem = pEquSystem; }
 #if USE_EXRA_EQUATIONS
 	size_t excludeVariables(CVariableMapping<T> *pVarValue, int adj = 1) const;
@@ -41,7 +41,7 @@ private:
 };
 
 template<class T>
-CInSysRowEquation<T>::CInSysRowEquation(size_t len, bool tDesignEnum) : m_memShift(len), m_bTDesignEnum(tDesignEnum), CRowEquation(3 * len)
+CInSysRowEquation<T>::CInSysRowEquation(size_t len, bool tDesignEnum) : m_memShift(len), m_bTDesignEnum(tDesignEnum), CSimpleArray<T>(3 * len)
 {
 	m_pVarMapping = new CVariableMapping<T> *[3];
 	m_pVarMapping[t_singleNoLambda] = new CVariableMapping<T>(len);

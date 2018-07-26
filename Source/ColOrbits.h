@@ -60,7 +60,7 @@ template<class T>class CColOrbitIS : public CColOrbit<T>
  public:
 	 CC CColOrbitIS()													{ setColomnWeight(0); } 
 	 CC ~CColOrbitIS()													{} 
-	 virtual CC void InitEntryCntrs(const CColOrbit *pParent, int idx = 0)	{ setColomnWeight(pParent->colomnWeight() + idx); }
+	 virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx = 0)	{ setColomnWeight(pParent->colomnWeight() + idx); }
 	 virtual CC int colomnWeight() const								{ return m_nColomnWeight; }
  protected:
 

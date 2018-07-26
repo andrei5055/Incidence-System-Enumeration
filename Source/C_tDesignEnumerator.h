@@ -43,7 +43,7 @@ protected:
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb);
 #endif
 private:
-	inline C_tDesign<T> *tDesign() const { return static_cast<C_tDesign<T> *>(getInSys()); }
+	inline C_tDesign<T> *tDesign() const { return static_cast<C_tDesign<T> *>(this->getInSys()); }
 	inline CIntersectionStorage<T> *intersectionStorage() const { return m_pIntersectionStorage; }
 
 #if USE_EXRA_EQUATIONS	

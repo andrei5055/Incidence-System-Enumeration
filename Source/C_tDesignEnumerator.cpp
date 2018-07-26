@@ -6,7 +6,7 @@ template class C_tDesignEnumerator<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
 C_tDesignEnumerator<T>::C_tDesignEnumerator(const C_tDesign<T> *pBIBD, bool matrOwner, bool noReplicatedBlocks, int treadIdx, uint nCanonChecker) :
-		CBIBD_Enumerator(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker)
+		CBIBD_Enumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker)
 #if USE_EXRA_EQUATIONS
 		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
 #endif
@@ -34,9 +34,10 @@ C_tDesignEnumerator<T>::~C_tDesignEnumerator()
 template<class T>
 bool C_tDesignEnumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
-	const auto dirLength = getDirectory(buffer, lenBuffer);
+	const auto dirLength = this->getDirectory(buffer, lenBuffer);
 	const auto t = tDesign()->getT();
-	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"-(" ME_FRMT"_" ME_FRMT"_" ME_FRMT")%s", t, rowNumb(), getInSys()->GetK(), tDesign()->lambda(), ext ? ext : FILE_NAME(""));
+	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"-(" ME_FRMT"_" ME_FRMT"_" ME_FRMT")%s",
+						t, this->rowNumb(), this->getInSys()->GetK(), tDesign()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }
 
@@ -45,7 +46,8 @@ bool C_tDesignEnumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const cha
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();
-	sprintf_s(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s", t, rowNumb(), k, tDesign()->lambda(), comment);
+	sprintf_s(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s",
+						t, this->rowNumb(), k, tDesign()->lambda(), comment);
 	return true;
 }
 #endif
@@ -53,7 +55,7 @@ bool C_tDesignEnumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const cha
 template<class T>
 void C_tDesignEnumerator<T>::prepareToTestExtraFeatures()
 {
-	m_pIntersectionStorage = new CIntersectionStorage<T>(tDesign()->getT(), rowNumb(), tDesign()->GetNumSet(t_lSet));
+	m_pIntersectionStorage = new CIntersectionStorage<T>(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
 }
 
 template<class T>

@@ -196,7 +196,7 @@ void CEnumInfo<T>::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGr
 	pGroupInfo->printGroupInfo(outFile);
 	const ulonglong nConstrMatr = constrCanonical();
 	char buff[256];
-	SPRINTF(buff, "\n%10llu matri%s"CONSTRUCTED_IN" ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
+	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
 	const size_t len = strlen(buff);
 	convertTime(runTime(), buff + len, countof(buff) - len, false);
 	outString(buff, outFile);

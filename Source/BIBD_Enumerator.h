@@ -6,7 +6,7 @@ class CBIBD_Enumerator : public C_InSysEnumerator<T>
 {
 public:
 	CK CBIBD_Enumerator(const C_BIBD<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
-		C_InSysEnumerator(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
+		C_InSysEnumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
@@ -22,49 +22,49 @@ protected:
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL) const;
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
-	CK virtual bool checkForcibleLambda(size_t fLambda) const { return fLambda == getInSys()->lambda(); }
+	CK virtual bool checkForcibleLambda(size_t fLambda) const { return fLambda == this->getInSys()->lambda(); }
 };
 
 template<class T>
 bool CBIBD_Enumerator<T>::sortSolutions(CRowSolution<T> *pSolution, PERMUT_ELEMENT_TYPE idx)
 {
-	if (currentRowNumb() + 1 == rowNumb())
+	if (this->currentRowNumb() + 1 == this->rowNumb())
 		return true;        // We will be here when lambda > 1 AND one of the colOrbits was splitted into 2 parts  
 							// in previous row. (6,10,5,3,2) is one such example.
 
 	if (!pSolution->numSolutions())
 		return false;
 
-	pSolution->sortSolutions(useCanonGroup() ? this : NULL);
-	if (!pSolution->findFirstValidSolution(inSysRowEquation()->variableMaxLimitPntr(), GetData()))
+	pSolution->sortSolutions(this->useCanonGroup() ? this : NULL);
+	if (!pSolution->findFirstValidSolution(this->inSysRowEquation()->variableMaxLimitPntr(), this->GetData()))
 		return false;
 
-	return checkChoosenSolution(pSolution, currentRowNumb(), idx);
+	return checkChoosenSolution(pSolution, this->currentRowNumb(), idx);
 }
 
 #if CONSTR_ON_GPU
 #define OUT_STRING(buf, len, ...)
 #else
-#define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, outFile()); }
+#define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, this->outFile()); }
 #endif
 
 template<class T>
 bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
 {
-	const auto paramR = getInSys()->GetR();
-	const auto paramLambda = getInSys()->lambda();
-	const auto iMax = rowNumb();
+	const auto paramR = this->getInSys()->GetR();
+	const auto paramLambda = this->getInSys()->lambda();
+	const auto iMax = this->rowNumb();
 	for (T i = 0; i < iMax; i++) {
 		const auto pRow = pMatrix->GetRow(i);
 		T r = 0;
-		for (auto j = colNumb(); j--;)
+		for (auto j = this->colNumb(); j--;)
 			r += *(pRow + j);
 
 		if (r != paramR) {
 #if !CONSTR_ON_GPU
-			(static_cast<const CMatrix<T> *>(pMatrix))->printOut(outFile());
+			(static_cast<const CMatrix<T> *>(pMatrix))->printOut(this->outFile());
 #endif
-			OUT_STRING(buff, 256, "Wrong number of units in the row # "ME_FRMT": "ME_FRMT" != "ME_FRMT"\n", i, r, getInSys()->GetR());
+			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, this->getInSys()->GetR());
 			THROW();
 			return false;
 		}
@@ -72,33 +72,34 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 		for (T j = 0; j < i; j++) {
 			T lambda = 0;
 			const auto pRowCurr = pMatrix->GetRow(j);
-			for (auto k = colNumb(); k--;)
+			for (auto k = this->colNumb(); k--;)
 				lambda += *(pRowCurr + k) * *(pRow + k);
 
 			if (lambda != paramLambda) {
-				OUT_STRING(buff, 256, "Wrong number of common units in the rows ("ME_FRMT", "ME_FRMT"): "ME_FRMT" != "ME_FRMT"\n", i, j, lambda, getInSys()->lambda());
+				OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
+									 i, j, lambda, this->getInSys()->lambda());
 				THROW();
 				return false;
 			}
 		}
 	}
 
-	const auto paramK = getInSys()->GetK();
+	const auto paramK = this->getInSys()->GetK();
 	bool noReplicatedBlockFound = true;
-	for (auto i = colNumb(); i--;) {
+	for (auto i = this->colNumb(); i--;) {
 		T k = 0;
-		for (auto j = rowNumb(); j--;)
+		for (auto j = this->rowNumb(); j--;)
 			k += *(pMatrix->GetRow(j) + i);
 
 		if (k != paramK) {
-			OUT_STRING(buff, 256, "Wrong number of units in the column # "ME_FRMT": "ME_FRMT" != "ME_FRMT"\n", i, k, paramK);
+			OUT_STRING(buff, 256, "Wrong number of units in the column # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, k, paramK);
 			THROW();
 			return false;
 		}
 
 		if (noReplicatedBlockFound && i) {
 			const auto iPrev = i - 1;
-			auto j = rowNumb();
+			auto j = this->rowNumb();
 			while (j-- && *(pMatrix->GetRow(j) + i) == *(pMatrix->GetRow(j) + iPrev));
 			noReplicatedBlockFound = j != MATRIX_ELEMENT_MAX;
 		}
@@ -119,7 +120,7 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 	}
 #endif
 
-	return noReplicatedBlocks() ? noReplicatedBlockFound : true;
+	return this->noReplicatedBlocks() ? noReplicatedBlockFound : true;
 }
 
 template<class T>
@@ -130,9 +131,9 @@ bool CBIBD_Enumerator<T>::solutionsForRightSideNeeded(const T *pRighPart, const 
 	if (nRow == 3) {
 		// Condition should eliminate right part with x1 = 0 for some BIBD, and (8, 4, 3) is one of them
 		if (!*pRighPart && *pCurrSolution == 1) {
-			const auto k = getInSys()->GetK();
-			const auto lambda = getInSys()->lambda();
-			const auto v = rowNumb();
+			const auto k = this->getInSys()->GetK();
+			const auto lambda = this->getInSys()->lambda();
+			const auto v = this->rowNumb();
 			if ((k - 2) * lambda == v - 2)
 				return false;
 		}
@@ -147,8 +148,8 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allow to skip testing of some solutions for some rows
 	if (nRow == 3) {
-		const CRowSolution<T> *pPrevSolution = rowStuff(nRow - 1);
-		const auto lambda = getInSys()->lambda();
+		const CRowSolution<T> *pPrevSolution = this->rowStuff(nRow - 1);
+		const auto lambda = this->getInSys()->lambda();
 		// Number of units used for first fragments of the 3-d row
 		const int x0 = *pPrevSolution->solution(usedSolIndex);
 
@@ -164,8 +165,8 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 			// an + a(n-1) *(n-2)/(n-1) + .... + a2 * 1/(n-1) >= (lambda * (k - 2) - (v - 2)) / (n - 1)
 
 			if (x0 == 2) {
-				const auto k = getInSys()->GetK();
-				const auto v = rowNumb();
+				const auto k = this->getInSys()->GetK();
+				const auto v = this->rowNumb();
 				// The difference represent minimal number of descendants of the solution used for 3-d row
 				if (lambda * (k - 2) > v) {
 					// lambda * (k - 2) - v + 2 > 2 should be use as: lambda * (k - 2) > v
@@ -181,7 +182,7 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 					//    0 0 1 1
 					// When we change 3-d and 4-th row with these two AND columns 1 -2 with 3-4 we will increase the code
 					// of the matrix. Because of that this matrix cannot be canonical.
-					const bool useCanonGroup = USE_CANON_GROUP && groupOrder() > 1;
+					const bool useCanonGroup = USE_CANON_GROUP && this->groupOrder() > 1;
 					auto pSol = pCurrSolution;
 					while ((pSol = pSol->NextSolution(useCanonGroup)) != NULL) {
 						const auto *pSolValue = pSol->currSolution();
@@ -198,7 +199,7 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 		}
 	}
 
-	return pCurrSolution->checkChoosenSolution(colOrbit(nRow), matrix()->rowNumb() - nRow, getInSys()->GetK());
+	return pCurrSolution->checkChoosenSolution(this->colOrbit(nRow), this->matrix()->rowNumb() - nRow, this->getInSys()->GetK());
 }
 
 

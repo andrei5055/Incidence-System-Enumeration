@@ -19,7 +19,7 @@ typedef struct {
                                                 { m_equIdx = eIdx; m_varIdx = vIdx; m_val = v; }
     CK inline int equIdx() const                { return m_equIdx; }
     CK inline size_t varIdx() const             { return m_varIdx; }
-    CK inline auto val() const					{ return m_val; }
+    CK inline VECTOR_ELEMENT_TYPE val() const					{ return m_val; }
 } FilterData;
 
 template<class T>

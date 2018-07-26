@@ -49,10 +49,10 @@ class CMatrix : public CMatrixData<T>
     CK CMatrix(const CMatrix *pMatrix, const int *pPermRow, const int *pPermCol)
 	{
 		Init(pMatrix->rowNumb(), pMatrix->colNumb());
-		for (auto i = rowNumb(); i--;) {
+		for (auto i = this->rowNumb(); i--;) {
 			T *pRow = GetRow(i);
 			const T *pRowFrom = pMatrix->GetRow(*(pPermRow + i));
-			for (auto j = colNumb(); j--;)
+			for (auto j = this->colNumb(); j--;)
 				*(pRow + j) = *(pRowFrom + *(pPermCol + j));
 		}
 	}
@@ -60,9 +60,9 @@ class CMatrix : public CMatrixData<T>
 	void printOut(FILE *pFile = NULL, T nRow = MATRIX_ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CCanonicityChecker<T> *pCanonCheck = NULL) const
 	{
 		if (nRow == (T)-1)
-			nRow = rowNumb();
+			nRow = this->rowNumb();
 
-		auto nCol = colNumb();
+		auto nCol = this->colNumb();
 		char buffer[256], *pBuf = buffer;
 		size_t lenBuf = sizeof(buffer);
 		if (nCol >= lenBuf - 4)
@@ -89,7 +89,7 @@ class CMatrix : public CMatrixData<T>
 
 		// Let's make the symbol table
 		char symbols[32], *pSymb = symbols;
-		int nMax = maxElement() + 1;
+		int nMax = this->maxElement() + 1;
 		if (nMax > sizeof(symbols))
 			pSymb = new char[nMax];
 
@@ -150,7 +150,7 @@ class C_InSys : public CMatrix<T>
 		m_ppNumbSet = pMaster->numbSet();
 
 		// Copy first nRow rows of master's matrix
-		const size_t len = colNumb() * sizeof(*GetRow(0));
+		const size_t len = this->colNumb() * sizeof(*this->GetRow(0));
 		for (T i = 0; i < nRow; i++)
 			memcpy(GetRow(i), pMaster->GetRow(i), len);
 	}
@@ -170,7 +170,7 @@ class C_InSys : public CMatrix<T>
 	CK inline CVector<T> *GetNumSet(t_numbSetType t) const	{ return *(m_ppNumbSet + t); }
 	CK inline uchar GetT() const							{ return m_t; }
 	CK inline T GetK() const								{ return GetNumSet(t_kSet)->GetAt(0); }
-	CK inline T GetR() const								{ return colNumb() * GetK() / rowNumb(); }
+	CK inline T GetR() const								{ return this->colNumb() * GetK() / this->rowNumb(); }
 	CK inline T lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
 	CK inline CVector<T> **numbSet() const					{ return m_ppNumbSet; }
 private:
@@ -195,9 +195,9 @@ protected:
 										if (!lambda)
 											return;
 
-										AddValueToNumSet(k, t_kSet);
-										AddValueToNumSet(lambda * (v - 1) / (k - 1), t_rSet);
-										AddValueToNumSet(lambda, t_lSet);
+										this->AddValueToNumSet(k, t_kSet);
+										this->AddValueToNumSet(lambda * (v - 1) / (k - 1), t_rSet);
+										this->AddValueToNumSet(lambda, t_lSet);
 									}
 };
 
@@ -206,10 +206,10 @@ class C_tDesign : public C_BIBD<T>
 {
 public:
 	CK C_tDesign(int t, int v, int k, int lambda);
-	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), C_BIBD(pMaster, nRow) {}
+	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), C_BIBD<T>(pMaster, nRow) {}
 	CK ~C_tDesign()											{}
 	CK inline T getT() const								{ return m_t; }
-	CK inline T lambda() const								{ return GetNumSet(t_lSet)->GetAt(getT() - 2); }
+	CK inline T lambda() const								{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
 private:
 	const T m_t;
 };

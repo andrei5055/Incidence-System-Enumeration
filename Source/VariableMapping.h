@@ -25,7 +25,7 @@ template <class T>
 class CVariableMapping : public CMapping<T>
 {
 public:
-	CK CVariableMapping(size_t len = 1) : CMapping<T>(len)	{ resetMapping(); }
+	CK CVariableMapping(size_t len = 1) : CMapping<T>(len)	{ this->resetMapping(); }
 	CK CVariableMapping(T varIdx, T varValue, size_t len = 1) : CMapping<T>(varIdx, varValue, len) {}
     CK virtual int resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping *pVariation) const;
 	bool findVariable(T varID, uint *pIdx);
@@ -46,7 +46,7 @@ class CSingleLambda : public CVariableMapping<T>
 {
 public:
     CK CSingleLambda(size_t len) : CVariableMapping<T>(len)      {}
-    CK virtual int resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping *pVariation) const;
+    CK virtual int resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping<T> *pVariation) const;
 };
 
 template <class T>
@@ -54,7 +54,7 @@ class CDualLambda : public CVariableMapping<T>
 {
 public:
     CK CDualLambda(size_t len) : CVariableMapping<T>(len)        {}
-    CK virtual int resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping *pVariation) const;
+    CK virtual int resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping<T> *pVariation) const;
 #if USE_EXRA_EQUATIONS
 	virtual CVariableMapping *addDefinedVariables(CVariableMapping *pResMapping, const T *pResult, CVariable **pVar, const CVariableMapping *pVariation = NULL) const;
 #endif
@@ -63,8 +63,8 @@ public:
 template<class T>
 int CVariableMapping<T>::resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping<T> *pVariation) const
 {
-	const auto *pTo = getLastMapping();
-	while (pTo > getMappingPntr()) {
+	const auto *pTo = this->getLastMapping();
+	while (pTo > this->getMappingPntr()) {
 		pTo -= 2;
 		*(pResult + *pTo) = *(pRightPart + *(pTo + 1));
 	}
@@ -76,8 +76,8 @@ template<class T>
 int CSingleLambda<T>::resolveMapping(const T *pRightPart, const T *pResultMax, T *pResult, CVariableMapping<T> *pVariation) const
 {
 	int lambda = 0;
-	const auto *pTo = getLastMapping();
-	while (pTo > getMappingPntr()) {
+	const auto *pTo = this->getLastMapping();
+	while (pTo > this->getMappingPntr()) {
 		pTo -= 2;
 		lambda += *(pResult + *pTo) = *(pRightPart + *(pTo + 1));
 	}
@@ -91,8 +91,8 @@ int CDualLambda<T>::resolveMapping(const T *pRightPart, const T *pResultMax, T *
 	// In this function we also construct pVariation - the list of variables
 	// with their limits to be added to their minimal values
 	int lambda = 0;
-	const auto *pTo = getLastMapping();
-	while (pTo > getMappingPntr()) {
+	const auto *pTo = this->getLastMapping();
+	while (pTo > this->getMappingPntr()) {
 		pTo -= 2;
 		// Index of the current "lambda" variable
 		const auto idx = *pTo - 1;

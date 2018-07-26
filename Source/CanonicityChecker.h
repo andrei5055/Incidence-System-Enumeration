@@ -42,8 +42,8 @@ public:
 	CK inline size_t constructGroup()				{ return permStorage()->constructGroup(); }
 	CK inline size_t findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size_t idx, VECTOR_ELEMENT_TYPE *pMem, size_t *pCanonIdx, int &nCanon)
 													{ return permStorage()->findSolutionIndex(pFirst, idx, pMem, pCanonIdx, nCanon); }
-	CC inline auto permStorage() const				{ return m_pPermutStorage; }
-	CC inline auto improvedSolution() const			{ return m_pImprovedSol; }
+	CC inline CPermutStorage<T> *permStorage() const				{ return m_pPermutStorage; }
+	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const			{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
 
 protected:
@@ -62,10 +62,10 @@ private:
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
 	CC inline T numRow() const						{ return m_nNumRow; }
     CC inline T numCol() const						{ return static_cast<T>(m_pPermutCol->numElement()); }
-#define orbits()	elementPntr()
+#define orbits()	this->elementPntr()
 	CC void updateGroupOrder();
-    CC inline auto colNumbStorage() const			{ return m_nColNumbStorage; }
-    CC inline auto counter() const					{ return m_pCounter; }
+    CC inline CColNumbStorage **colNumbStorage() const			{ return m_nColNumbStorage; }
+    CC inline CCounter<int> *counter() const					{ return m_pCounter; }
 	CC inline void setColIndex(T *p)				{ m_pColIndex = p; }
 	CC inline T *colIndex() const					{ return m_pColIndex; }
 	CC inline void setNumColOrb(T v)				{ m_nNumColOrb = v; }

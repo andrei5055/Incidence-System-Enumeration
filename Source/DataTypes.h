@@ -64,14 +64,14 @@
 	#define _CRTDBG_MAP_ALLOC
 	#include <stdlib.h>
 	#include <crtdbg.h>
+	#define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__)
+	#define new DEBUG_CLIENTBLOCK
 #else
 	#define _CrtSetReportMode(x,y)
 	#define _CrtSetReportFile(x,y)
 	#define _CrtDumpMemoryLeaks()
 #endif
 
-#define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__) 
-#define new DEBUG_CLIENTBLOCK  
 #else  
 #define DEBUG_CLIENTBLOCK  
 #endif // _DEBUG  
@@ -173,7 +173,7 @@ extern std::mutex out_mutex;
 
 #define FCLOSE(file)			if (file) fclose(file)
 
-#define SPRINTF(x, ...)			sprintf_s(x, sizeof(x), __VA_ARGS__)
+#define SPRINTF(x, ...)			snprintf(x, sizeof(x), __VA_ARGS__)
 #define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which 
 #define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
 
@@ -193,7 +193,7 @@ typedef unsigned long long	ulonglong;
 #define MATRIX_ELEMENT_IS_BYTE	(MATRIX_ELEMENT_TYPE == uchar)
 #if MATRIX_ELEMENT_IS_BYTE
 #define _FRMT				"u"
-#define ME_FRMT				"%"_FRMT
+#define ME_FRMT				"%" _FRMT
 #define MATRIX_ELEMENT_MAX	UINT8_MAX 
 #endif
 
@@ -231,8 +231,8 @@ class CCounter : public CSimpleArray<T> {
 public:
     CC CCounter(size_t len) : CSimpleArray<T>(len)  { resetArray(); }
 	CC ~CCounter()									{}
-	CC inline void resetArray()						{ memset(elementPntr(), 0, numElement() * sizeof(T)); }
-	CC inline void incCounter(int idx)              { ++*(elementPntr() + idx); }
+	CC inline void resetArray()						{ memset(this->elementPntr(), 0, this->numElement() * sizeof(T)); }
+	CC inline void incCounter(int idx)              { ++*(this->elementPntr() + idx); }
 private:
 };
 
@@ -242,7 +242,7 @@ public:
 	CC CContainer(size_t len) : CSimpleArray<T>(len){ resetArray(); }
 	CC ~CContainer()								{}
     CC inline void resetArray()                     { m_nNumb = 0; }
-	CC inline void addElement(T val)                { *(elementPntr() + m_nNumb++) = val; }
+	CC inline void addElement(T val)                { *(this->elementPntr() + m_nNumb++) = val; }
     CC inline size_t numb() const                   { return m_nNumb; }
     inline void incNumb()                           { m_nNumb++; }
 	inline size_t GetSize() const					{ return numb(); }
@@ -263,11 +263,11 @@ public:
 	void restoreLastMapping(size_t n = 1)			{ m_nMapPos += n << 1; }
     CK inline void resetMapping()                   { m_nMapPos = 0; }
 	inline uint nElement() const					{ return getMapPosition() >> 1; }
-	CK inline const T *getMappingPntr() const       { return elementPntr(); }
+	CK inline const T *getMappingPntr() const       { return this->elementPntr(); }
     CK inline const T *getLastMapping() const		{ return getMappingPntr() + getMapPosition(); }
 	const T *findMapping(T to, const T *pTo = NULL, const T *pToLast = NULL) const;
     bool isEmpty() const                            { return !m_nMapPos; }
-	inline void adjustElement(int idx, T val = 1)   { *(elementPntr() + idx) -= val; }
+	inline void adjustElement(int idx, T val = 1)   { *(this->elementPntr() + idx) -= val; }
 protected:
 	CK inline uint getMapPosition() const           { return m_nMapPos; }
     
@@ -277,7 +277,7 @@ protected:
 template <class T>
 void CMapping<T>::addMapping(T to, T from)
 {
-	assert(m_nMapPos < (numElement() << 1));
+	assert(m_nMapPos < (this->numElement() << 1));
 	T *pTo = (T *)getLastMapping();
     *pTo = to;
     *(pTo+1) = from;

@@ -13,7 +13,7 @@
 #define _TCHAR char
 #define _tmain main
 #else
-#include <tchar.h>
+// #include <tchar.h>
 #endif
 
 

@@ -83,11 +83,11 @@ class CMatrixCol : public CColOrbitManager<T>
 {
 public:
 	CC CMatrixCol(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner) :
-		CColOrbitManager(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
+		CColOrbitManager<T>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
 		initiateMatrixCol(pMatrix, IS_enum, matrOwner);
 	}
 	CC CMatrixCol(CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
-		CColOrbitManager(maxElem + 1, rowNumb, colNumb) {
+		CColOrbitManager<T>(maxElem + 1, rowNumb, colNumb) {
 		initiateMatrixCol(pMatrix, IS_enum, false);
 	}
 	CC ~CMatrixCol() {
@@ -107,7 +107,7 @@ public:
 	CC inline void setOutFile(FILE *file)			{ m_pFile = file; }
 #endif
 	inline FILE *outFile() const					{ return m_pFile; }
-	inline auto outFilePntr()						{ return &m_pFile; }
+	inline FILE **outFilePntr()						{ return &m_pFile; }
 protected:
 	CC inline void setIS_Enumerator(bool val)		{ m_bIS_Emunerator = val; }
 private:
@@ -416,7 +416,7 @@ public:
 	virtual bool makeJobTitle(char *buffer, int len, const char *comment = "") const	
 															{ return false; }
 	CK virtual VECTOR_ELEMENT_TYPE getX0_3() const          { return 0; }
-	CK inline auto rowStuffPntr() const						{ return m_pRow;  }
+	CK inline CRowSolution<T> **rowStuffPntr() const						{ return m_pRow;  }
     CK virtual size_t firstUnforcedRow() const              { return 0; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)  {}
 	CK virtual size_t *forcibleLambdaPntr() const           { return NULL; }
@@ -427,13 +427,13 @@ public:
 	size_t copyColOrbitInfo(T nRow) const;
 #endif
 protected:
-	CK inline C_InSys<T> *getInSys() const					{ return IS_enumerator()? (C_InSys<T> *)matrix() : NULL; }
+	CK inline C_InSys<T> *getInSys() const					{ return this->IS_enumerator()? (C_InSys<T> *)this->matrix() : NULL; }
     CK virtual void setX0_3(VECTOR_ELEMENT_TYPE value)      {}
-	CK inline CRowEquation<T> *rowEquation() const			{ return m_pRowEquation; }
+	CK inline CSimpleArray<T> *rowEquation() const			{ return m_pRowEquation; }
 	virtual int unforcedElement(const CColOrbit<T> *p, int nRow) const    { return -1; }
     CK virtual bool sortSolutions(CRowSolution<T> *p, size_t idx) { return false;  /* not implemented */ }
-	CK inline void setRowEquation(CRowEquation<T> *pntr)    { m_pRowEquation = pntr; }
-    CK inline T rowNumb() const								{ return matrix()->rowNumb(); }
+	CK inline void setRowEquation(CSimpleArray<T> *pntr)    { m_pRowEquation = pntr; }
+    CK inline T rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
 #else
@@ -481,7 +481,7 @@ private:
 #endif
 
 	CRowSolution<T> **m_pRow;
-	CRowEquation<T> *m_pRowEquation;
+  CSimpleArray<T> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 #if CANON_ON_GPU
 	CGPU_CanonChecker<T> *m_pGPU_CanonChecker;
@@ -490,7 +490,7 @@ private:
 
 template<class T>
 CEnumerator<T>::CEnumerator(const CMatrix<T> *pMatrix, bool IS_enum, bool matrOwner, int treadIdx, uint nCanonChecker) :
-	CMatrixCanonChecker(pMatrix, IS_enum, matrOwner)
+	CMatrixCanonChecker<T>(pMatrix, IS_enum, matrOwner)
 {
 	m_pRow = new CRowSolution<T> *[pMatrix->rowNumb()];
 	setRowEquation(NULL);
@@ -500,7 +500,7 @@ CEnumerator<T>::CEnumerator(const CMatrix<T> *pMatrix, bool IS_enum, bool matrOw
 template<class T>
 CEnumerator<T>::~CEnumerator()
 {
-	delete[] rowStuff(rowMaster());
+	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
 	delete rowEquation();
 	releaseGPU_CanonChecker();

@@ -5,9 +5,9 @@ template class CBIBD_Enumerator<MATRIX_ELEMENT_TYPE>;
 template<class T>
 int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) const
 {
-	const size_t diffWeight = getInSys()->GetK() - pOrb->colomnWeight();
+	const size_t diffWeight = this->getInSys()->GetK() - pOrb->colomnWeight();
 	if (diffWeight)
-		return diffWeight == rowNumb() - nRow ? 1 : -1;
+		return diffWeight == this->rowNumb() - nRow ? 1 : -1;
 
 	// All units are there
 	return 0;
@@ -17,18 +17,20 @@ int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) con
 template<class T>
 bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
-	const auto dirLength = getDirectory(buffer, lenBuffer) ;
-	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", rowNumb(), getInSys()->GetK(), getInSys()->lambda(), ext ? ext : FILE_NAME(""));
+	const auto dirLength = this->getDirectory(buffer, lenBuffer) ;
+	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", rowNumb(),
+						this->getInSys()->GetK(), this->getInSys()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }
 
 template<class T>
 bool CBIBD_Enumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const char *comment) const
 {
-	const auto v = rowNumb();
-	const auto b = matrix()->colNumb();
-	const auto k = getInSys()->GetK();
-	sprintf_s(buffer, lenBuffer, "BIBD(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", %2" _FRMT")%s", v, b, b * k / v, k, getInSys()->lambda(), comment);
+	const auto v = this->rowNumb();
+	const auto b = this->matrix()->colNumb();
+	const auto k = this->getInSys()->GetK();
+	sprintf_s(buffer, lenBuffer, "BIBD(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", %2" _FRMT")%s", v, b, b * k / v, k,
+						this->getInSys()->lambda(), comment);
 	return true;
 }
 #endif

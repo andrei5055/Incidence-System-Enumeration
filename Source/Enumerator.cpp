@@ -27,7 +27,7 @@
 #include "EnumInfo.h"
 #include "GroupsInfo.h"
 #include <sys/stat.h>
-#include <direct.h>  
+// #include <direct.h>
 #include <mutex>  
 
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX

@@ -42,12 +42,12 @@ template<class T>
 class CRowSolution : public CVector<T>
 {
 public:
- 	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector(size * nVect, pCoord) {
+ 	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<T>(size * nVect, pCoord) {
 																	setSolutionPerm(NULL);
 																	InitSolutions(size, nVect, pCoord);
 																}
     CK ~CRowSolution()											{ delete solutionPerm(); }
-    CK inline const T *firstSolution() const					{ return GetData(); }
+    CK inline const T *firstSolution() const					{ return this->GetData(); }
 	CK inline const T *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionSize(); }
 	CK inline const T *currSolution() const						{ return firstSolution() + variantIndex() * solutionSize(); }
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
@@ -114,7 +114,7 @@ template<class T>
 T *CRowSolution<T>::newSolution()
 {
 	const auto numSolution = solutionIndex() + 1;
-	if (GetSize() < numSolution * solutionSize())
+	if (this->GetSize() < numSolution * solutionSize())
 		IncreaseVectorSize(solutionSize());
 
 	auto pntr = currSolution();

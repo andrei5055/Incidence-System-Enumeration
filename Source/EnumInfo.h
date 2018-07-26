@@ -160,8 +160,8 @@ public:
 	virtual ulonglong numbSimpleDesign() const						{ return m_nSimpleDesign; }
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)			{ m_nSimpleDesign += v; }
 	virtual void reportResult(char *buffer, int lenBuffer) const;
-	CC virtual void init()											{ resetCounter();  CEnumInfo::init(); }
-	virtual void updateEnumInfo(const CEnumInfo *pInfo);
+	CC virtual void init()											{ resetCounter();  CEnumInfo<T>::init(); }
+	virtual void updateEnumInfo(const CEnumInfo<T> *pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)					{ m_bNoReplBlockFlag = val; }
 	CC virtual bool constructedAllNoReplBlockMatrix() const			{ return m_bNoReplBlockFlag; }
 private:

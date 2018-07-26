@@ -70,7 +70,7 @@ private:
 };
 
 template<class T>
-CInSysSolver<T>::CInSysSolver(size_t len, int t) : CVariableMapping(len), m_t(t)
+CInSysSolver<T>::CInSysSolver(size_t len, int t) : CVariableMapping<T>(len), m_t(t)
 {
 #if USE_EXRA_EQUATIONS
 	setVarValues(new CVariableMapping(len));
@@ -138,7 +138,7 @@ T *CInSysSolver<T>::findAllSolutionsForLambda(T *pResult, int lambdaToSplit) CON
 template<class T>
 int CInSysSolver<T>::splitLambda(int &lambdaToSplit, T *pResult, int mapIdx) CONST
 {
-	const auto *pToLast = getLastMapping();
+	const auto *pToLast = this->getLastMapping();
 #if USE_EXRA_EQUATIONS
 	auto *pVarDefined = equSystem()->varDefinedPtr();
 	bool changeVar = mapIdx >= 0; // Do we need change first variable here?
@@ -146,7 +146,7 @@ int CInSysSolver<T>::splitLambda(int &lambdaToSplit, T *pResult, int mapIdx) CON
 	printResults(pResult, lambdaToSplit, -1, *(pTo + 2));
 
 #else
-	const auto *pTo = getMappingPntr() + mapIdx - 2;
+	const auto *pTo = this->getMappingPntr() + mapIdx - 2;
 #endif
 
 	VECTOR_ELEMENT_TYPE variation;
@@ -206,7 +206,7 @@ int CInSysSolver<T>::splitLambda(int &lambdaToSplit, T *pResult, int mapIdx) CON
 		if (!equSystem()->isSolved())
 			return -1;
 #endif
-		return (int)(pTo - getMappingPntr());
+		return (int)(pTo - this->getMappingPntr());
 	}
 
 	return -1;
@@ -258,8 +258,8 @@ bool CInSysSolver<T>::findDiffIndex(int &lambdaToSplit, T *pResult, int *pMapIdx
 	lambdaToSplit = 0;
 #endif
 
-	const auto *pFirst = getMappingPntr();
-    const auto *pCurr  = getLastMapping();
+	const auto *pFirst = this->getMappingPntr();
+    const auto *pCurr  = this->getLastMapping();
     T *pCurrVar;
     
     // Counts total amount of splitted units AFTER pTo and define if it's possible to split one more unit in the same area

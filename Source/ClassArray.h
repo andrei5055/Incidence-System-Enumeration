@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <memory>
 #include <new>   //only supports Win32 and Mac
+#include <cstring>
 #include "DataTypes.h"
 
 template<class TYPE, class ARG_TYPE>
@@ -282,7 +283,7 @@ template<class TYPE, class ARG_TYPE>
 void CClassArray<TYPE, ARG_TYPE>::ConstructElements(TYPE* pElements, size_t nCount)
 {
 	// first do bit-wise zero initialization
-	memset((void*)pElements, 0, nCount * sizeof(TYPE));
+	std::memset((void*)pElements, 0, nCount * sizeof(TYPE));
 	// then call the constructor(s)
 	for (; nCount--; pElements++)
 		::new((void*)pElements) TYPE;
