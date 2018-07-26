@@ -59,7 +59,7 @@ C_InSysEnumerator<T>::C_InSysEnumerator(const C_InSys<T> *pInSys, bool matrOwner
 	CInSysSolver<T>(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<T>(pInSys->colNumb())
 {
 	const auto nCol = pInSys->colNumb();
-	setRowEquation(new CInSysRowEquation<T>(nCol, pInSys->GetT() > 2));
+	this->setRowEquation(new CInSysRowEquation<T>(nCol, pInSys->GetT() > 2));
 	setX0_3(nCol);
 	m_pRightPartFilter = new CRightPartFilter<T>(nCol);
 	const auto nRow = pInSys->rowNumb();
@@ -114,7 +114,7 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 
 	// When we are using the group of canonical matrix, we need to adjust previously constructed
 	// generators of the automorphism group on columns (because some of them could be forcibly constructed
-	setUseCanonGroup(USE_CANON_GROUP && this->groupOrder() > 1);
+	this->setUseCanonGroup(USE_CANON_GROUP && this->groupOrder() > 1);
 
 	int buffer[256], *pColGroupIdx = NULL;
 	size_t lenPermut;
@@ -131,8 +131,8 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 	rightPartFilter()->reset();
 
 	int colGroupIdx = 0;
-	const auto *pColOrbPrev = colOrbit(nRow - 1);
-	CColOrbit<T> *pColOrbit, *pColOrbitNext = colOrbit(nRow);
+	const auto *pColOrbPrev = this->colOrbit(nRow - 1);
+	CColOrbit<T> *pColOrbit, *pColOrbitNext = this->colOrbit(nRow);
 #if USE_EXRA_EQUATIONS
 	setColOrbitForCurrentRow(pColOrbitNext);
 	const size_t nextRowOrbShift = pIS->colNumb() * colOrbitLen();
@@ -260,8 +260,8 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 {
 	const auto nRow = this->currentRowNumb();
 	const auto nRowPrev = nRow - 1;
-	const auto pPrevRowSolution = rowStuff(nRowPrev);
-	auto pCurrRowSolution = rowStuff(nRow);
+	const auto pPrevRowSolution = this->rowStuff(nRowPrev);
+	auto pCurrRowSolution = this->rowStuff(nRow);
 	pCurrRowSolution->setSolutionSize(nVar);
 	pCurrRowSolution->resetSolution();
 	const auto pFirstSol = pPrevRowSolution->firstSolution();
@@ -273,7 +273,7 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 
 	// We will keep the variation intervals of "lambda" variables from the 2-variable equations
 	// Because there are no more than nVar/2 of them, we will use
-	initSolver(pCurrRowSolution, pRowEquation->variableMinValPntr());
+	this->initSolver(pCurrRowSolution, pRowEquation->variableMinValPntr());
 
 	const auto pLambdaSet = this->getInSys()->GetNumSet(t_lSet);
 	// For all possible right parts of the systems
@@ -374,7 +374,7 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 #if USE_EXRA_EQUATIONS
 				equSystem()->resetVariables(nVar);
 #endif
-				VECTOR_ELEMENT_TYPE *pResultTmp = findAllSolutionsForLambda(pResult, lambdaToSplit);
+				VECTOR_ELEMENT_TYPE *pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
 				if (!pResultTmp) {
 					// There are no solution for current lambda from pLambdaSet
 					// Since lambda set is ordered, we will not find solutions for
@@ -414,7 +414,7 @@ void C_InSysEnumerator<T>::addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbi
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());
 	else
-		setColOrbitCurr(pColOrbit->next());
+		this->setColOrbitCurr(pColOrbit->next());
 
 	// All remaining elements of all columns
 	// of the current orbit should be equal to 0 or 1, respectively
@@ -432,7 +432,7 @@ template<class T>
 void C_InSysEnumerator<T>::setVariableLimit(size_t nVar, T len, size_t nRowToBuild, size_t k, int colWeight)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
-	SetAt(nVar, static_cast<T>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
+	this->SetAt(nVar, static_cast<T>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
 	// Maximal value of any Xi cannot be bigger then X0_3, when i-th group of column

@@ -15,8 +15,8 @@ template<class T>
 bool CVariableMapping<T>::findVariable(T varID, uint *pIdx)
 {
 	// Try to find variable in the ordered array of variable IDs 
-	while (*pIdx < getMapPosition()) {
-		const auto curVarId = *(getMappingPntr() + *pIdx);
+	while (*pIdx < this->getMapPosition()) {
+		const auto curVarId = *(this->getMappingPntr() + *pIdx);
 		if (curVarId > varID)
 			return false;
 

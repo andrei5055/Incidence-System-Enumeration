@@ -115,7 +115,7 @@ T *CRowSolution<T>::newSolution()
 {
 	const auto numSolution = solutionIndex() + 1;
 	if (this->GetSize() < numSolution * solutionSize())
-		IncreaseVectorSize(solutionSize());
+		this->IncreaseVectorSize(solutionSize());
 
 	auto pntr = currSolution();
 	nextSolutionIndex();

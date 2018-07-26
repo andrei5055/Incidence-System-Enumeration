@@ -27,7 +27,15 @@
 #include "EnumInfo.h"
 #include "GroupsInfo.h"
 #include <sys/stat.h>
-// #include <direct.h>
+#if defined(_WIN32) || defined(_WIN64)
+	#include <direct.h>
+	#define MKDIR(x) _mkdir(x)
+#elif defined(__linux__)
+	#define MKDIR(x)  mkdir(dirName), 0777)
+#else
+	"Please define corresponding method for making directory"
+#endif
+
 #include <mutex>  
 
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
@@ -87,7 +95,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 	while (true) {
 		if (loopingTime > REPORT_INTERVAL) {
 			// We run this loop enough to send report message
-			enumInfo()->reportProgress(threadEnum, nThread);
+			this->enumInfo()->reportProgress(threadEnum, nThread);
 			loopingTime = 0;
 		}
 
@@ -112,9 +120,9 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 		switch (pEnum->code()) {
 			case t_threadFinished:
 				LAUNCH_CANONICITY_TESTING(pEnum, this);
-				enumInfo()->updateGroupInfo(pEnum->enumInfo());
+				this->enumInfo()->updateGroupInfo(pEnum->enumInfo());
 				thread_message(thrIdx, "finished", code);
-				enumInfo()->reportProgress(pEnum);
+				this->enumInfo()->reportProgress(pEnum);
 				if (code == t_threadNotUsed) {
 					pEnum->setCode(t_threadNotUsed);
 					continue;
@@ -175,8 +183,8 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 
 		// Create a new file for output of the enumeration results
 		FOPEN(file, buff, "w");
-		setOutFile(file);
-		outString(jobTitle, outFile());      
+		this->setOutFile(file);
+		outString(jobTitle, this->outFile());
 	}
 
 	// Create file name for the output of intermediate results 
@@ -198,7 +206,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 		thread_group *pThreadpool = NULL;
 	#endif
 #endif
-	auto pMatrix = static_cast<const CMatrix<T> *>(matrix());
+	auto pMatrix = static_cast<const CMatrix<T> *>(this->matrix());
 
 	// Allocate memory for the orbits of two consecutive rows
 	T nRow;
@@ -206,9 +214,9 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 	InitRowSolutions(pMaster);
 	const bool threadFlag = pMaster != NULL;
 	if (threadFlag) {
-		setCurrentRowNumb(nRow = pMaster->currentRowNumb());
+		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
 		pRowSolution = pMaster->rowStuff(nRow);
-		setOutFile(pMaster->outFile());
+		this->setOutFile(pMaster->outFile());
 		setX0_3(pMaster->getX0_3());
 		const auto firstUnforced = pMaster->firstUnforcedRow();
 		if (firstUnforced > 0) {
@@ -218,7 +226,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 	} else {
 		nRow = 0;
 		pRowSolution = setFirstRowSolutions();
-		setEnumInfo(pEnumInfo);
+		this->setEnumInfo(pEnumInfo);
 		pEnumInfo->startClock();
 
 #if USE_THREADS_ENUM 
@@ -246,7 +254,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 
 	// For multi-threaded version we need to test only one top level solution
 	const size_t nRowEnd = nRow ? nRow + 1 : 0;
-    initiateColOrbits(rowNumb(), IS_enumerator(), pMaster);
+    this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
 	T level;
 	while (pRowSolution) {
 
@@ -326,34 +334,34 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 				bool flag = true;
 				if (!TestCanonicityOnGPU()) {
 					EXIT(-1);
-					if (TestCanonicity(nRow, this, t_saveRowToChange + t_saveRowPermutations, &level)) {
+					if (this->TestCanonicity(nRow, this, t_saveRowToChange + t_saveRowPermutations, &level)) {
 						//					Construct Aut(D)
 						//					int ddd = canonChecker()->constructGroup();
 						int matrFlags;
-						if (TestFeatures(pEnumInfo, matrix(), &matrFlags)) {
+						if (TestFeatures(pEnumInfo, this->matrix(), &matrFlags)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
 								pEnumInfo->setNoReplBlockFlag(false);
 								level = getInSys()->GetK();
 								flag = false;
 							}
 							else {
-								pEnumInfo->updateConstrCounters(matrFlags, groupOrder(), groupIsTransitive());
+								pEnumInfo->updateConstrCounters(matrFlags, this->groupOrder(), this->groupIsTransitive());
 #if !CONSTR_ON_GPU
-								if (printMatrix(pParam)) {
+								if (this->printMatrix(pParam)) {
 									mtx.lock();
 									if (pParam->firstMatr) {
 										pParam->firstMatr = false;
-										outString(BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, outFile());
+										outString(BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, this->outFile());
 									}
 
-									pMatrix->printOut(outFile(), nRow, pEnumInfo->constrCanonical(), this);
+									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->constrCanonical(), this);
 									mtx.unlock();
 								}
 #endif
 #if PRINT_SOLUTIONS
 								ccc = 0;
 #endif
-								if (!rowMaster())  // We are not in the slave thread
+								if (!this->rowMaster())  // We are not in the slave thread
 									REPORT_PROGRESS(pEnumInfo, t_matrConstructed);
 							}
 						}
@@ -364,13 +372,13 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 
 				if (!flag) {
 					while (--nRow > level) {
-						setCurrentRowNumb(nRow);
+						this->setCurrentRowNumb(nRow);
 						rowStuff(nRow)->resetSolution();
-						resetColOrbitCurr();
-						resetUnforcedColOrb();
+						this->resetColOrbitCurr();
+						this->resetUnforcedColOrb();
 					}
 					pRowSolution = rowStuff(nRow);
-					setCurrentRowNumb(nRow);
+					this->setCurrentRowNumb(nRow);
 				}
 				else {
 					nRow--;
@@ -378,10 +386,10 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 				}
 			}
 			else {
-				setCurrentRowNumb(nRow);
-				setColOrbitCurr(pColOrb);
-				setCurrUnforcedOrbPtr(nRow);
-				if (!USE_CANON_GROUP || TestCanonicity(nRow, this, 0, &level, pRowSolution)) {
+				this->setCurrentRowNumb(nRow);
+				this->setColOrbitCurr(pColOrb);
+				this->setCurrUnforcedOrbPtr(nRow);
+				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, 0, &level, pRowSolution)) {
 					// We need to get lastRightPartIndex here and use later because 
 					// for multi-thread configuration it could be changed by master
 					const PERMUT_ELEMENT_TYPE lastRightPartIndex = pRowSolution->solutionIndex();
@@ -394,7 +402,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 					}
 
 					if (!useCanonGroup)
-						setGroupOrder(1);
+						this->setGroupOrder(1);
 
 					setPrintResultRowNumber(nRow);
 					pRowSolution = FindRowSolution(lastRightPartIndex);
@@ -429,10 +437,10 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 #endif
 		while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
             rowStuff(nRow)->resetSolution();
-            resetColOrbitCurr();
-            resetUnforcedColOrb();
+            this->resetColOrbitCurr();
+            this->resetUnforcedColOrb();
 			if (nRow-- > nRowEnd) {
-				setCurrentRowNumb(nRow);
+				this->setCurrentRowNumb(nRow);
 				pRowSolution = rowStuff(nRow);
 			} else
 				break;
@@ -444,7 +452,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 		threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, pParam->threadNumb);
 #endif
 
-    closeColOrbits();
+    this->closeColOrbits();
 
 	const ulonglong retVal = pEnumInfo->constrCanonical();
 	if (!threadFlag || !USE_THREADS_ENUM) {
@@ -461,9 +469,9 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 #if !CONSTR_ON_GPU
 		// We are not in the slave thread
 		if (!pParam->firstMatr)
-			outString(END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", outFile());
+			outString(END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
-		pEnumInfo->outEnumInfo(outFilePntr(), lenName == 0);
+		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0);
 
 		t_resType resType;
 		if (lenName) {
@@ -497,9 +505,9 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 		pEnumInfo->setResType(resType);
 
 		if (pParam->outType & t_Summary)
-			pEnumInfo->outEnumInformation(outFilePntr());
+			pEnumInfo->outEnumInformation(this->outFilePntr());
 
-		setEnumInfo(NULL);
+		this->setEnumInfo(NULL);
 #endif
 
 #if SOLUTION_STATISTICS
@@ -517,17 +525,17 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 template<class T>
 CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
 {
-    const auto nRow = currentRowNumb();
+    const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
-	auto *pRow = matrix()->GetRow(nRow);
-	memset(pRow, 0, sizeof(*pRow) * colNumb());
+	auto *pRow = this->matrix()->GetRow(nRow);
+	memset(pRow, 0, sizeof(*pRow) * this->colNumb());
 
-	const auto *pColOrbit = colOrbit(nRow);
-    auto *pNextRowColOrbit = colOrbit(nRow+1);
+	const auto *pColOrbit = this->colOrbit(nRow);
+    auto *pNextRowColOrbit = this->colOrbit(nRow+1);
     
-	const int maxElement = rank() - 1;
-    const auto colOrbLen = colOrbitLen();
-	const auto *pColOrbitIni = colOrbitIni(nRow);
+	const int maxElement = this->rank() - 1;
+    const auto colOrbLen = this->colOrbitLen();
+	const auto *pColOrbitIni = this->colOrbitIni(nRow);
     CColOrbit<T> *pNextRowColOrbitNew = NULL;
     CColOrbit<T> *pColOrbitLast = NULL;
 	while (pColOrbit) {
@@ -536,7 +544,7 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
 		const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
         auto lenRemaining = pColOrbit->length();
 		auto *pRowCurr = pRow + nColCurr;
-		for (int i = rank(); i--;) {
+		for (int i = this->rank(); i--;) {
 			const auto lenFragm = i? pRowSolution[maxElement - i] : lenRemaining;
 			if (!lenFragm)
 				continue;
@@ -575,9 +583,9 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
 	if (getUnforcedColOrbPntr()) {
         // Set unforced elements:
         for (auto row = firstUnforcedRow(); row <= nRow; row++) {
-			const auto *pColOrbitIni = colOrbitIni(row);
-			auto **ppUnforced = unforcedOrbits(row);
-            for (int i = 1; i < rank(); i++) {
+			const auto *pColOrbitIni = this->colOrbitIni(row);
+			auto **ppUnforced = this->unforcedOrbits(row);
+            for (int i = 1; i < this->rank(); i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
                     const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
@@ -646,8 +654,8 @@ size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 #endif
 	int retVal = 0;
 	if (!fileExists(dirName, false))
-		retVal = _mkdir(dirName);
-	
+		retVal = MKDIR(dirName);
+
 	if (retVal)
 		return 0;	// directory could not be used
 
@@ -723,7 +731,7 @@ bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pB
 	FCLOSE(filePrev);
 	return retVal;
 }
-
+/*
 template<class T>
 bool CEnumerator<T>::printMatrix(const designRaram *pParam) const
 {
@@ -734,9 +742,9 @@ bool CEnumerator<T>::printMatrix(const designRaram *pParam) const
 		outType & t_GroupOrderLT && groupOrder() < pParam->grpOrder ||
 		outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
 }
-
+*/
 #if USE_STRONG_CANONICITY_A
-void CEnumerator::checkUnusedSolutions(CRowSolution *pRowSolution)
+void CEnumerator<T>::checkUnusedSolutions(CRowSolution *pRowSolution)
 {
 	if (!pRowSolution)
 		return;

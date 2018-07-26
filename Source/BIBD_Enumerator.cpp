@@ -18,7 +18,7 @@ template<class T>
 bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer) ;
-	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", rowNumb(),
+	sprintf_s(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", this->rowNumb(),
 						this->getInSys()->GetK(), this->getInSys()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }

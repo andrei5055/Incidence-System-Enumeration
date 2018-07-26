@@ -61,7 +61,7 @@ void C_tDesignEnumerator<T>::prepareToTestExtraFeatures()
 template<class T>
 PERMUT_ELEMENT_TYPE *C_tDesignEnumerator<T>::getIntersectionParam(const size_t **ppNumb) const
 {
-	const auto *pPrev = intersectionStorage()->rowsIntersection(currentRowNumb());
+	const auto *pPrev = intersectionStorage()->rowsIntersection(this->currentRowNumb());
     *ppNumb = pPrev->numbIntersection();
 	return pPrev->rowIntersectionPntr();
 }
@@ -69,16 +69,16 @@ PERMUT_ELEMENT_TYPE *C_tDesignEnumerator<T>::getIntersectionParam(const size_t *
 template<class T>
 CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 {
-	if (currentRowNumb() <= 1)
+	if (this->currentRowNumb() <= 1)
 		return NULL;			// Nothing to test
 
-	const auto lastRowIdx = currentRowNumb() - 1;
+	const auto lastRowIdx = this->currentRowNumb() - 1;
 	auto t = tDesign()->getT() - 2;
-	if (t >= currentRowNumb())
+	if (t >= this->currentRowNumb())
 		t = lastRowIdx;
 
-    const auto *pCurrRow = matrix()->GetRow(0);
-	const auto *pLastRow = matrix()->GetRow(lastRowIdx);
+    const auto *pCurrRow = this->matrix()->GetRow(0);
+	const auto *pLastRow = this->matrix()->GetRow(lastRowIdx);
 	T tuple[10], *matrixRowPntr[10];
 	auto *pTuple = t <= countof(tuple) ? tuple : new T[t];
 	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T *[t];
@@ -87,7 +87,7 @@ CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 	const auto r = tDesign()->GetR();
 	auto ppBlockIdx = new MATRIX_ELEMENT_TYPE[r];
 	size_t idx = 0;
-	const auto nCol = colNumb();
+	const auto nCol = this->colNumb();
 	for (T j = 0; j < nCol; j++) {
 		if (*(pLastRow + j)) {
 			*(ppBlockIdx + idx++) = j;
@@ -119,7 +119,7 @@ CVariableMapping<T> *C_tDesignEnumerator<T>::prepareCheckSolutions(size_t nVar)
 			auto n = pTuple[k];
 			for (; k <= i; k++) {
 				pTuple[k] = ++n;
-				pMatrixRowPntr[k] = matrix()->GetRow(n);
+				pMatrixRowPntr[k] = this->matrix()->GetRow(n);
 			}
 
 			for (auto j = idx; j--;) {
@@ -157,17 +157,17 @@ bool C_tDesignEnumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) co
 {
 #if USE_EXRA_EQUATIONS == 0
 	// Check if solution is valid (for elimination of invalid solutions)
-	if (currentRowNumb() <= 1)
+	if (this->currentRowNumb() <= 1)
 		return true;		// Nothing to test
 
 	auto t = tDesign()->getT() - 2;
-	if (t >= currentRowNumb())
-		t = currentRowNumb() - 1;
+	if (t >= this->currentRowNumb())
+		t = this->currentRowNumb() - 1;
 
-    MakeRow(pSol);
+    this->MakeRow(pSol);
 
     const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
-    const auto *pCurrRow = matrix()->GetRow(currentRowNumb());
+    const auto *pCurrRow = this->matrix()->GetRow(this->currentRowNumb());
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);
@@ -286,15 +286,15 @@ void C_tDesignEnumerator<T>::addColOrbitForVariable(size_t nVar, CColOrbit *pCol
 #endif
 
 template<class T>
-void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator *pMaster)
+void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator<T> *pMaster)
 {
 	prepareToTestExtraFeatures();
 	auto t = tDesign()->getT() - 2;
 	if (t == 1)
 		return;			// Nothing to copy for 3-design
 
-	if (t >= currentRowNumb())
-		t = currentRowNumb() - 1;
+	if (t >= this->currentRowNumb())
+		t = this->currentRowNumb() - 1;
 
 	t--;
 	const size_t *pNumb;
@@ -315,7 +315,7 @@ void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator *pMaster)
 template<class T>
 bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
 {
-	if (!CBIBD_Enumerator::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
+	if (!CBIBD_Enumerator<T>::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
 
 	const auto t = tDesign()->getT();
@@ -336,7 +336,7 @@ bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrix
 
 			// Check constructed tuple:
 			size_t lambda = 0;
-			for (auto n = colNumb(); n--;) {
+			for (auto n = this->colNumb(); n--;) {
 				auto j = i;
 				while (j-- && *(pRow[j] + n));
 				if (j == -1)
@@ -350,7 +350,7 @@ bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrix
 				
 			// Find first element of the tuple to be changed
 			k = i;
-			val = rowNumb();
+			val = this->rowNumb();
 			while (k-- && pTuple[k] == --val);
 		} while (k != -1);
 	}

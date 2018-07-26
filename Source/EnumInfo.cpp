@@ -269,7 +269,7 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 }
 
 template<class T>
-void CInsSysEnumInfo<T>::updateEnumInfo(const CEnumInfo *pInfo)
+void CInsSysEnumInfo<T>::updateEnumInfo(const CEnumInfo<T> *pInfo)
 {
 	CEnumInfo<T>::updateEnumInfo(pInfo);
 	incNumbSimpleDesign(pInfo->numbSimpleDesign());
@@ -278,13 +278,14 @@ void CInsSysEnumInfo<T>::updateEnumInfo(const CEnumInfo *pInfo)
 template<class T>
 void CInsSysEnumInfo<T>::reportResult(char *buffer, int lenBuffer) const
 {
-	size_t len = sprintf_s(buffer, lenBuffer, "%s       %9llu       %9llu", strToScreen(), constrCanonical(), numbSimpleDesign());
-	len += sprintf_s(buffer + len, lenBuffer - len, "       %8llu    ", constrTotal());
-	len += convertTime(runTime(), buffer + len, lenBuffer - len);
+	size_t len = sprintf_s(buffer, lenBuffer, "%s       %9llu       %9llu",
+						   this->strToScreen(), this->constrCanonical(), numbSimpleDesign());
+	len += sprintf_s(buffer + len, lenBuffer - len, "       %8llu    ", this->constrTotal());
+	len += this->convertTime(this->runTime(), buffer + len, lenBuffer - len);
 
 	// Prepare the comments regarding the results
-	char *pResComment = NULL;
-	switch (getResType()) {
+	const char *pResComment = NULL;
+	switch (this->getResType()) {
 	case t_resNew:			pResComment = "N"; break;
 	case t_resBetter:		pResComment = "B"; break;
 	case t_resWorse:		pResComment = "W"; break;

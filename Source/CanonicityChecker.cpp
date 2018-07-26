@@ -453,6 +453,16 @@ bool CCanonicityChecker<T>::groupIsTransitive() const
 	return true;
 }
 
+template<class T>
+bool CCanonicityChecker<T>::printMatrix(const designRaram *pParam) const
+{
+	const uint outType = pParam->outType;
+	return	outType & t_AllObject ||
+			  outType & t_Transitive && groupIsTransitive() ||
+			  outType & t_GroupOrderGT && groupOrder() > pParam->grpOrder ||
+			  outType & t_GroupOrderLT && groupOrder() < pParam->grpOrder ||
+			  outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
+}
 /*
 template<class T>
 bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo, T *pRowOut, CRowSolution<T> *pRowSolution)

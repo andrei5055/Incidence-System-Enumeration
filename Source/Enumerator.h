@@ -458,7 +458,7 @@ private:
     CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
     CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
-	CK bool printMatrix(const designRaram *pParam) const;
+//	CK bool printMatrix(const designRaram *pParam) const;
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else

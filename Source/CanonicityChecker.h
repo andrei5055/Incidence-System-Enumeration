@@ -45,6 +45,7 @@ public:
 	CC inline CPermutStorage<T> *permStorage() const				{ return m_pPermutStorage; }
 	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const			{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
+	bool printMatrix(const designRaram *pParam) const;
 
 protected:
 	CC inline int rank() const						{ return m_rank; }

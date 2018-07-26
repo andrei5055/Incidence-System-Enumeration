@@ -13,6 +13,7 @@
 #include <iterator>
 #include <functional>
 
+#define SDL_MAIN_HANDLED
 using namespace std;
 
 int find_T_designParam(int v, int k, int lambda)
@@ -213,7 +214,7 @@ static size_t getInteger(const string &str, size_t *pPos) {
 	return tmp == "YES"? 1 : 0;
 }
 
-int _tmain(int argc, _TCHAR* argv[])
+int _tmain(int argc, char * argv[])
 {
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
@@ -275,7 +276,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (line.size() <= 2 || line[0] == ';' || line[0] == '/' && line[1] == '/')
 			continue;				// Skip line if it is a comment OR too short
 
-		transform(line.begin(), line.end(), line.begin(), toupper);
+		transform(line.begin(), line.end(), line.begin(), ::toupper);
 
 		if (line.find("END_JOB") != string::npos)
 			break;
@@ -295,7 +296,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			if (!line.length())
 				continue;
 
-			transform(line.begin(), line.end(), line.begin(), toupper);
+			transform(line.begin(), line.end(), line.begin(), ::toupper);
 		}
 		
 		size_t pos = find(line, "THREAD_NUMBER");

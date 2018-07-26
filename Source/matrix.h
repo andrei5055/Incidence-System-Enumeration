@@ -45,7 +45,7 @@ template<class T>
 class CMatrix : public CMatrixData<T>
 {
  public:
- 	CK CMatrix(T nRows, T nCols = 0, T maxElement = 1)	{ Init(nRows, nCols, maxElement); }
+ 	CK CMatrix(T nRows, T nCols = 0, T maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
     CK CMatrix(const CMatrix *pMatrix, const int *pPermRow, const int *pPermCol)
 	{
 		Init(pMatrix->rowNumb(), pMatrix->colNumb());
@@ -103,7 +103,7 @@ class CMatrix : public CMatrixData<T>
 			*(pSymb + i) = 'A' + i - 10;
 
 		for (T i = 0; i < nRow; i++) {
-			auto pRow = GetRow(i);
+			auto pRow = this->GetRow(i);
 			for (size_t j = 0; j < nCol; j++)
 				*(pBuf + j) = pSymb[*(pRow + j)];
 
@@ -152,7 +152,7 @@ class C_InSys : public CMatrix<T>
 		// Copy first nRow rows of master's matrix
 		const size_t len = this->colNumb() * sizeof(*this->GetRow(0));
 		for (T i = 0; i < nRow; i++)
-			memcpy(GetRow(i), pMaster->GetRow(i), len);
+			memcpy(this->GetRow(i), pMaster->GetRow(i), len);
 	}
 
 	CK ~C_InSys() {

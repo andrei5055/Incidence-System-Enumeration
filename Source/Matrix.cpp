@@ -5,7 +5,7 @@
 template class C_tDesign<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
-C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD(v, k, t), m_t(t)
+C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD<T>(v, k, t), m_t(t)
 {
 	// Define all lambdas: 
 	int i = t;
@@ -16,13 +16,13 @@ C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD(v, k, t), m_t(
 	}
 
 	// Initiate BIBD's parameter
-	Init_BIBD_param(v, k, lambda);
+	this->Init_BIBD_param(v, k, lambda);
 
 	// Add remaining lambda's to Lambda set
 	while (++i < t)
-		AddValueToNumSet(pLambda[i - 2], t_lSet);
+		this->AddValueToNumSet(pLambda[i - 2], t_lSet);
 
 	// Initiate matrix 
-	Init(v, lambda * v * (v - 1) / (k * (k - 1)));
+	this->Init(v, lambda * v * (v - 1) / (k * (k - 1)));
 	delete[] pLambda;
 }
