@@ -229,7 +229,7 @@ void CColOrbitManager<T>::restoreColOrbitInfo(T nRow, const size_t *pColOrbInfo)
 template<class T>
 void CColOrbitManager<T>::closeColOrbits() const
 {
-	delete[] colOrbitsIni()[WAIT_THREADS ? rowMaster() : 0];
+	delete[] colOrbitsIni();
 	delete[] colOrbitPntr();
 }
 

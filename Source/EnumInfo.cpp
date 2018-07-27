@@ -240,19 +240,20 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 	SPRINTF(buff, "\nUsing %Id-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
 	outString(buff, outFile);
 
-	const size_t nThreads = designInfo()->threadNumb;
+	const auto nThreads = designInfo()->threadNumb;
 	if (USE_THREADS >= 1) {
 		if (printMTlevel)
-			SPRINTF(buff, "%10zu threads launched on level %d (%swaiting to finish mode)\n", nThreads, multiThreadLevel(), WAIT_THREADS ? "" : "not ");
+			SPRINTF(buff, "%10d threads launched on level %d (%swaiting to finish mode)\n", nThreads,
+					multiThreadLevel(), WAIT_THREADS ? "" : "not ");
 		else
-			SPRINTF(buff, "%10zu threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
+			SPRINTF(buff, "%10d threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
 	} else
 		SPRINTF(buff, "        Single thread mode\n");
 
 	outString(buff, outFile);
 
 	if (nThreads >= 1 && CANON_ON_GPU) {
-		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+		SPRINTF(buff, "        Canonicity was tested on GPU by %d checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
 		outString(buff, outFile);
 	}
 

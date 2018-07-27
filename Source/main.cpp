@@ -4,14 +4,14 @@
 #include "stdafx.h"
 #include "C_tDesignEnumerator.h"
 
-#include <iostream>
+//#include <iostream>
 #include <fstream>
-#include <string>
-#include <cctype>
+//#include <string>
+//#include <cctype>
 #include <algorithm>
-#include <numeric>
+//#include <numeric>
 #include <iterator>
-#include <functional>
+//#include <functional>
 
 #define SDL_MAIN_HANDLED
 using namespace std;
@@ -33,19 +33,19 @@ int find_T_designParam(int v, int k, int lambda)
 }
 
 // trim from start (in place)
-static inline void ltrim(std::string &s) {
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-		std::not1(std::ptr_fun<int, int>(std::isspace))));
+static inline void ltrim(string &s) {
+	s.erase(s.begin(), find_if(s.begin(), s.end(),
+		not1(ptr_fun<int, int>(isspace))));
 }
 
 // trim from end (in place)
-static inline void rtrim(std::string &s) {
-	s.erase(std::find_if(s.rbegin(), s.rend(),
-		std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+static inline void rtrim(string &s) {
+	s.erase(find_if(s.rbegin(), s.rend(),
+		not1(ptr_fun<int, int>(isspace))).base(), s.end());
 }
 
 // trim from both ends (in place)
-static inline void trim(std::string &s) {
+static inline void trim(string &s) {
 	ltrim(s);
 	rtrim(s);
 }
@@ -153,7 +153,7 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, FILE **outF
 
 	char buff[256], buffer[256];
 	MAKE_JOB_TITLE(pInSysEnum, buff, countof(buff));
-	std::cout << buff;
+	cout << buff;
 	CInsSysEnumInfo<T> enumInfo(buff);
 	enumInfo.setDesignInfo(pParam);
 	if (outFile) {
@@ -172,7 +172,7 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, FILE **outF
 		pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, &enumInfo);
 		enumInfo.reportResult(buffer, countof(buffer));
 		outString(buffer, pSummaryFileName);
-		std::cout << "\xd" << buffer;
+		cout << "\xd" << buffer;
 	}
 	catch (...) {
 		pInSysEnum->closeFile();
@@ -214,7 +214,7 @@ static size_t getInteger(const string &str, size_t *pPos) {
 	return tmp == "YES"? 1 : 0;
 }
 
-int _tmain(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);

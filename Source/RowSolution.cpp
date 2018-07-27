@@ -231,7 +231,7 @@ void CRowSolution<T>::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, const T *
         if (pSol)
             idx = *(pSol + idx * solutionSize());
         
-        pBuf += sprintf_s(pBuf, sizeof(buffer) - (pBuf - buffer), "%2zu", idx % 100);
+        pBuf += sprintf_s(pBuf, sizeof(buffer) - (pBuf - buffer), "%2zd", idx % 100);
         if (pBuf >= buffer + sizeof(buffer) - 2)
 			outString(pBuf = buffer, file);
     }
@@ -269,7 +269,7 @@ void CRowSolution<T>::printSolutions(FILE *file, bool markNextUsed) const
 	char buffer[2048];
 	if (numSolutions() >= sizeof(buffer) / 2) {
         if (markNextUsed) {
-			SPRINTF(buffer, "Using solution # %zu out of %zu\n", solutionIndex(), numSolutions());
+			SPRINTF(buffer, "Using solution # %d out of %d\n", solutionIndex(), numSolutions());
 			outString(buffer, file);
 		}
 	}

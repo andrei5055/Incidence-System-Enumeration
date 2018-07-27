@@ -429,7 +429,7 @@ typedef struct {
 	int mt_level;			// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task
 	uint grpOrder;			// Limits for order of the group of the matrices which will be printed
-	size_t threadNumb;		// Number of threads launched to perform task
+	int threadNumb;			// Number of threads launched to perform task
 	bool firstMatr;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks;// TRUE, when only block designs with no replicated blocks should be constructed
 } designRaram;
