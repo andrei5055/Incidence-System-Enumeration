@@ -246,7 +246,7 @@ int main(int argc, char * argv[])
 	cudaDeviceSetLimit(cudaLimitMallocHeapSize, 256 * 1024 * 1024);
 
 	if (argc == 1) {
-		printf("Progran \"%s\" launched without parameters\n", (const char *)argv[0]);
+		printf("Program \"%s\" launched without parameters\n", (const char *)argv[0]);
 		abort();
 	}
 

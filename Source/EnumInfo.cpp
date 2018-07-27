@@ -237,7 +237,7 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 		return;
 
 	char buff[256];
-	SPRINTF(buff, "\nUsing %Id-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
+	SPRINTF(buff, "\nUsing %zd-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
 	outString(buff, outFile);
 
 	const auto nThreads = designInfo()->threadNumb;

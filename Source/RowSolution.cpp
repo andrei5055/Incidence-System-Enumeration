@@ -268,8 +268,8 @@ void CRowSolution<T>::printSolutions(FILE *file, bool markNextUsed) const
 	MUTEX_LOCK(out_mutex);
 	char buffer[2048];
 	if (numSolutions() >= sizeof(buffer) / 2) {
-        if (markNextUsed) {
-			SPRINTF(buffer, "Using solution # %d out of %d\n", solutionIndex(), numSolutions());
+  	if (markNextUsed) {
+			SPRINTF(buffer, "Using solution # %zd out of %zd\n", solutionIndex(), numSolutions());
 			outString(buffer, file);
 		}
 	}
