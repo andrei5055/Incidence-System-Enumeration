@@ -1,3 +1,0 @@
-/home/andreii/Projects/ISE/CDTools/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/andreii/Projects/ISE/CDTools/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/andreii/Projects/ISE/CDTools/cmake-build-debug/CMakeFiles/CDTools.dir
