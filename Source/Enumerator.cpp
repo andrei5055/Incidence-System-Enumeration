@@ -659,7 +659,7 @@ size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 	if (retVal)
 		return 0;	// directory could not be used
 
-	dirName[lenDirName] = '\\';
+	dirName[lenDirName] = '/';
 	return lenDirName + 1;
 }
 

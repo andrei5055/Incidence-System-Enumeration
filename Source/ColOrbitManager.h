@@ -64,6 +64,7 @@ private:
 	CColOrbit<T> **m_pColOrbIni;
 	size_t m_nColOrbLen;
 	size_t m_nRowMaster;
+	bool m_IS_enumerator;
 };
 
 template<class T>
@@ -98,6 +99,7 @@ void CColOrbitManager<T>::ReleaseColOrbitManager()
 template<class T>
 void CColOrbitManager<T>::initiateColOrbits(size_t nRow, bool using_IS_enumerator, const CColOrbitManager<T> *pMaster, void *pMem)
 {
+	m_IS_enumerator = using_IS_enumerator;
 	// Number of CColOrbits taken from pMaster
 	setRowMaster(pMaster ? pMaster->currentRowNumb() + 1 : 0);
 	const size_t fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
@@ -229,7 +231,12 @@ void CColOrbitManager<T>::restoreColOrbitInfo(T nRow, const size_t *pColOrbInfo)
 template<class T>
 void CColOrbitManager<T>::closeColOrbits() const
 {
-	delete[] colOrbitsIni();
+	auto pntr = colOrbitsIni()[WAIT_THREADS ? rowMaster() : 0];
+	if (m_IS_enumerator)
+		delete[] ((CColOrbitIS<T> *)pntr);
+	else
+		delete[] ((CColOrbitCS<T> *)pntr);
+
 	delete[] colOrbitPntr();
 }
 

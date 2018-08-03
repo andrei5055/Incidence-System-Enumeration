@@ -74,7 +74,7 @@ template class CInSysSolver<MATRIX_ELEMENT_TYPE>;
 			return NULL;
 
 		FILE *file;
-		if (fopen_s(&file, "C:\\ttt\\TTT.txt", ppp++ ? "a" : "w"))
+		if (fopen_s(&file, "C:/ttt/TTT.txt", ppp++ ? "a" : "w"))
 			return NULL;
 
 		return file;
