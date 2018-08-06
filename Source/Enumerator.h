@@ -458,6 +458,8 @@ private:
     CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
     CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
+	inline void setDesignParams(designRaram *pntr)          { m_pParam = pntr; }
+	inline designRaram *designParams() const                { return m_pParam; }
 //	CK bool printMatrix(const designRaram *pParam) const;
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
@@ -481,8 +483,9 @@ private:
 #endif
 
 	CRowSolution<T> **m_pRow;
-  CSimpleArray<T> *m_pRowEquation;
+	CSimpleArray<T> *m_pRowEquation;
 	bool m_bUseCanogGroup;
+	designRaram *m_pParam;
 #if CANON_ON_GPU
 	CGPU_CanonChecker<T> *m_pGPU_CanonChecker;
 #endif

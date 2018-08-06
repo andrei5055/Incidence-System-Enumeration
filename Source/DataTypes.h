@@ -164,12 +164,14 @@ extern std::mutex out_mutex;
 #define INTERMEDIATE_RESULTS	"_tmp"
 
 #ifdef WIN
-	#define FOPEN(x, y, z)	  	 FILE *x; fopen_s(&x, y, z)
+	#define OPEN_FILE(x, y, z)	 fopen_s(&x, y, z)
+    #define FOPEN(x, y, z)	  	 FILE *x; OPEN_FILE(x, y, z)
 #else
 	#define sprintf_s(x, y, ...) sprintf(x, __VA_ARGS__)
 	#define strcpy_s(x, y, z)    strcpy(x, z)
 	#define memcpy_s(x, y, ...)  memcpy(x, __VA_ARGS__)
-	#define FOPEN(x, y, z)	  	 FILE *x = fopen(y, z)
+    #define OPEN_FILE(x, y, z)	 x = fopen(y, z)
+	#define FOPEN(x, y, z)	  	 FILE *OPEN_FILE(x, y, z)
 #endif
 
 #define FCLOSE(file)			if (file) fclose(file)
@@ -429,9 +431,10 @@ typedef struct {
 	int mt_level;			// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task
 	uint grpOrder;			// Limits for order of the group of the matrices which will be printed
-	int threadNumb;			// Number of threads launched to perform task
+	size_t threadNumb;		// Number of threads launched to perform task
 	bool firstMatr;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks;// TRUE, when only block designs with no replicated blocks should be constructed
+	std::string workingDir; // Current working directory name
 } designRaram;
 
 #define VAR_1		1

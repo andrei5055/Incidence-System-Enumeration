@@ -132,7 +132,7 @@ void CEnumInfo<T>::reportProgress(t_reportCriteria reportType, const CGroupsInfo
 	}
 
 	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
-	std::cout << '\xd' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ") 
+	std::cout << '\r' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ")
 			  << "  Canon: " << nCanon 
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
 			  << "  Total: " << constrTotal()
@@ -243,17 +243,17 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 	const auto nThreads = designInfo()->threadNumb;
 	if (USE_THREADS >= 1) {
 		if (printMTlevel)
-			SPRINTF(buff, "%10d threads launched on level %d (%swaiting to finish mode)\n", nThreads,
+			SPRINTF(buff, "%10zd threads launched on level %d (%swaiting to finish mode)\n", nThreads,
 					multiThreadLevel(), WAIT_THREADS ? "" : "not ");
 		else
-			SPRINTF(buff, "%10d threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
+			SPRINTF(buff, "%10zd threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
 	} else
 		SPRINTF(buff, "        Single thread mode\n");
 
 	outString(buff, outFile);
 
 	if (nThreads >= 1 && CANON_ON_GPU) {
-		SPRINTF(buff, "        Canonicity was tested on GPU by %d checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
 		outString(buff, outFile);
 	}
 

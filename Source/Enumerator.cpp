@@ -114,7 +114,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 
 		CThreadEnumerator<T> *pEnum = threadEnum + thrIdx;
 #if WRITE_MULTITHREAD_LOG 
-		fprintf(file, "==>thrIdx = %2d  CODE = %d\n", thrIdx, pEnum->code());
+		fprintf(file, "==>thrIdx = %2d  CODE = %d  nThread= %d\n", thrIdx, pEnum->code(), nThread);
 		fclose(file);
 #endif
 		switch (pEnum->code()) {
@@ -151,6 +151,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 template<class T>
 ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pMaster, t_threadCode *pTreadCode)
 {
+	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
 	char buff[256], jobTitle[256];
@@ -262,9 +263,6 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 
 #if USE_THREADS_ENUM
 		if (!nRowEnd && nRow == mt_level) {
-#if WRITE_MULTITHREAD_LOG
-			for (int i = threadNumb; i--;) threadEnum[i].setThreadID(i);
-#endif
 			// We are in master enumerator
 			while (pRowSolution) {
 				(pThreadEnum+thrIdx)->setupThreadForBIBD(this, nRow, thrIdx);
@@ -650,7 +648,7 @@ size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 
 	sprintf_s(dirName + lenPrefix, lenBuffer - lenPrefix, "%d", rowNumb);
 #else
-	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "V =%4d", rowNumb);
+	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "%sV =%4d", designParams()->workingDir.c_str(), rowNumb);
 #endif
 	int retVal = 0;
 	if (!fileExists(dirName, false))

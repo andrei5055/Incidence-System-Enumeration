@@ -1,17 +1,17 @@
 ﻿// BIBD.cpp : Defines the entry point for the console application.
-//
+// 
 
 #include "stdafx.h"
 #include "C_tDesignEnumerator.h"
 
-//#include <iostream>
+//#include <iostream> 
 #include <fstream>
-//#include <string>
+#include <string>      // for getline
 //#include <cctype>
 #include <algorithm>
 //#include <numeric>
 #include <iterator>
-//#include <functional>
+#include <functional>   // for ptr_fun
 
 #define SDL_MAIN_HANDLED
 using namespace std;
@@ -34,7 +34,7 @@ int find_T_designParam(int v, int k, int lambda)
 
 // trim from start (in place)
 static inline void ltrim(string &s) {
-	s.erase(s.begin(), find_if(s.begin(), s.end(),
+ 	s.erase(s.begin(), find_if(s.begin(), s.end(),
 		not1(ptr_fun<int, int>(isspace))));
 }
 
@@ -134,11 +134,13 @@ static bool getTParam(const string &paramText, designRaram *param)
 }
 
 template <class T>
-bool RunOperation(designRaram *pParam, const char *pSummaryFileName, FILE **outFile)
+bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath)
 {
 	if (pParam->v <= 0)
 		return false;
 
+	const string workingDir = pParam->workingDir + pSummaryFileName;
+	const char *pSummFile = workingDir.c_str();
 	InitCanonInfo(pParam->threadNumb);
 	C_InSys<T> *pInSys = NULL;
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
@@ -156,9 +158,10 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, FILE **outF
 	cout << buff;
 	CInsSysEnumInfo<T> enumInfo(buff);
 	enumInfo.setDesignInfo(pParam);
-	if (outFile) {
-		enumInfo.outEnumInformation(outFile, false);
-		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummaryFileName);
+	if (FirstPath) {
+		FOPEN(outFile, pSummFile, "w");
+		enumInfo.outEnumInformation(&outFile, false);
+		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
 	}
 
 	const bool resetMTlevel = pParam->mt_level == 0;
@@ -171,8 +174,8 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, FILE **outF
 	try {
 		pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, &enumInfo);
 		enumInfo.reportResult(buffer, countof(buffer));
-		outString(buffer, pSummaryFileName);
-		cout << "\xd" << buffer;
+		outString(buffer, pSummFile);
+		cout << '\r' << buffer;
 	}
 	catch (...) {
 		pInSysEnum->closeFile();
@@ -224,7 +227,6 @@ int main(int argc, char * argv[])
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
 
 	const char *pSummaryFile = "EnumSummary.txt";
-	FOPEN(outFile, pSummaryFile, "w");
 	cudaDeviceReset();
 	/*
 	int nDevices;
@@ -262,7 +264,8 @@ int main(int argc, char * argv[])
 	designRaram param;
 	memset(&param, 0, sizeof(param));
 	param.threadNumb = USE_THREADS;
-	param.noReplicatedBlocks = false;
+	param.noReplicatedBlocks = false;;
+	string newWorkDir = "./";
 
 	// By default, we enumerating BIBDs 
 	t_parsingStage stage = t_objectTypeStage;
@@ -299,7 +302,16 @@ int main(int argc, char * argv[])
 			transform(line.begin(), line.end(), line.begin(), ::toupper);
 		}
 		
-		size_t pos = find(line, "THREAD_NUMBER");
+		size_t pos = find(line, "WORKING_DIR");
+		if (pos != string::npos) {
+			newWorkDir = line.substr(pos + 1);
+			if (newWorkDir.c_str()[newWorkDir.length() - 1] != '/')
+				newWorkDir += '/';
+
+			continue;
+		}
+
+		pos = find(line, "THREAD_NUMBER");
 		if (pos != string::npos) {
 			// Define the number of threads launched to perform task
 			const size_t threadNumb = getInteger(line, &pos);
@@ -429,7 +441,10 @@ int main(int argc, char * argv[])
 		}
 
 		param.outType = outType;
-		if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, firstRun ? &outFile : NULL))
+		if (newWorkDir != param.workingDir || firstRun)
+			param.workingDir = newWorkDir;
+
+		if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, firstRun))
 			break;
 
 		firstRun = false;
