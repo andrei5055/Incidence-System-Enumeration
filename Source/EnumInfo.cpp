@@ -137,7 +137,7 @@ void CEnumInfo<T>::reportProgress(t_reportCriteria reportType, const CGroupsInfo
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
 			  << "  Total: " << constrTotal()
 			  << "  RunTime: " << runTime << " min.                 ";
-			
+	fflush(stdout);
 
 	// Adjust reportInt to report approx. 1 time per 60 seconds
 	if (!pTestNumber || currClock == prevClock())
