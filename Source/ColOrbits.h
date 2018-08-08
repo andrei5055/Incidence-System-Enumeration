@@ -19,7 +19,7 @@ template<class T> class CColOrbit //: public CArray<int, int>
 	inline CC CColOrbit *next() const					{ return m_pNext; }
 	inline CC void setNext(CColOrbit *pntr)             { m_pNext = pntr; }
 	virtual CC void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
-	virtual unsigned int *getEntryCntrs() const			{ return NULL; }
+	virtual CC unsigned int *getEntryCntrs() const		{ return NULL; }
 	virtual CC int colomnWeight() const					{ return 0; }
     CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
 	CC void clone(const CColOrbit *pColOrb);
@@ -69,11 +69,10 @@ template<class T>class CColOrbitIS : public CColOrbit<T>
 	 int m_nColomnWeight;
 };
 
-#ifndef USE_CUDA		// NOT yet implemented for GPU
 template<class T>class CColOrbitCS : public CColOrbit<T>
 {// Orbits for Colored Incidence Systems
  public:
-	~CColOrbitCS()														{ delete [] getEntryCntrs(); }
+	CC ~CColOrbitCS()													 { delete [] getEntryCntrs(); }
 	virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx) {
 		memcpy(getEntryCntrs(), pParent->getEntryCntrs(), maxElement() * sizeof(getEntryCntrs()[0]));
 		++*(getEntryCntrs() + idx);
@@ -85,12 +84,11 @@ template<class T>class CColOrbitCS : public CColOrbit<T>
 	}
 
 	inline static void setMaxElement(int maxElement)					{ m_maxElement = maxElement; }
-	inline unsigned int *getEntryCntrs() const							{ return m_pEntryCntrs; }
+	inline CC unsigned int *getEntryCntrs() const						{ return m_pEntryCntrs; }
  
  protected:
  private:
-	inline static int maxElement()										{ return m_maxElement; }
+	inline CC static int maxElement()									{ return m_maxElement; }
 	unsigned int *m_pEntryCntrs;
 	static int m_maxElement;
 };
-#endif
