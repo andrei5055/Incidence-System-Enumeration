@@ -71,15 +71,17 @@ typedef enum {
 	t_Canonicity
 } t_operationType;
 
-static bool getBIBDParam(const string &paramText, designRaram *param)
+static bool getBIBDParam(const string &paramText, designRaram *param, bool BIBD_flag = true)
 {
 	int i = 0;
 	int j = 0;
+	int flag = 0;
 	while (true) {
 		int num = 0;
+		char symb;
 		while (true) {
-			char symb = paramText[i++];
-			if (symb == ',' || symb == '\0')
+			symb = paramText[i++];
+			if (symb == ',' || symb == '\0' || j == 3 && flag && symb == '}')
 				break;
 
 			if (symb == ' ') {
@@ -88,6 +90,15 @@ static bool getBIBDParam(const string &paramText, designRaram *param)
 
 				break;
 			}
+			else
+			if (j == 3 && symb == '{') {
+				// Only lambda can be set with multiple values
+				if (flag || num)
+					return false;
+
+				flag = 1;
+				continue;
+			}
 
 			symb -= '0';
 			if (symb < 0 || symb > 9)
@@ -95,14 +106,29 @@ static bool getBIBDParam(const string &paramText, designRaram *param)
 
 			num = 10 * num + symb;
 		}
+
+		if (j == 3) {
+			param->lambda.push_back(num);
+			if (symb == '}')
+				return true;
+
+			continue;
+		}
+
 		if (j++ == 2) {
-			param->lambda = num;
-			break;
-		} else
+			if (BIBD_flag) {
+				param->lambda.push_back(num);
+				return true;
+			}
+
+			param->r = num;
+			continue;
+		}
+
 		if (j == 2)
 			param->k = num;
 		else
-		   param->v = num;
+			param->v = num;
 	}
 
 	return true;
@@ -145,11 +171,11 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 	C_InSys<T> *pInSys = NULL;
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
 	if (pParam->t <= 2) {
-		pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda);
+		pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
 		pInSysEnum = new CBIBD_Enumerator<T>(static_cast<C_BIBD<T> *>(pInSys), false, pParam->noReplicatedBlocks);
 	}
 	else {
-		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda);
+		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda[0]);
 		pInSysEnum = new  C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), false, pParam->noReplicatedBlocks);
 	}
 
@@ -192,7 +218,7 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 
 static size_t find(const string &str, const char *strValue)
 {
-	size_t pos = str.find(strValue);
+	const size_t pos = str.find(strValue);
 	return pos != string::npos ? pos + strlen(strValue) : pos;
 }
 
@@ -281,9 +307,6 @@ int main(int argc, char * argv[])
 
 		transform(line.begin(), line.end(), line.begin(), ::toupper);
 
-		if (line.find("END_JOB") != string::npos)
-			break;
-
 		if (line[0] == '/' && line[1] == '*') {
 			// Commented out part of the input file
 			// Let's find the closing 
@@ -301,7 +324,10 @@ int main(int argc, char * argv[])
 
 			transform(line.begin(), line.end(), line.begin(), ::toupper);
 		}
-		
+
+		if (line.find("END_JOB") != string::npos)
+			break;
+
 		size_t pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
 			newWorkDir = line.substr(pos + 1);
@@ -425,11 +451,11 @@ int main(int argc, char * argv[])
 							break;
 						}
 
-		case t_BIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param))
-							from = beg;
+		case t_BIBD:	
+		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param))
+							from = beg + 1;
 
 						break;
-		case t_PBIBD:
 
 		case t_InsidenceSystem: 
 						break;

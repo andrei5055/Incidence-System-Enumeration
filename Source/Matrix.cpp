@@ -16,7 +16,7 @@ C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD<T>(v, k, t), m
 	}
 
 	// Initiate BIBD's parameter
-	this->Init_BIBD_param(v, k, lambda);
+	this->InitParam(v, k, lambda);
 
 	// Add remaining lambda's to Lambda set
 	while (++i < t)

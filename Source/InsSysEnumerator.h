@@ -15,8 +15,8 @@ public:
 	CK virtual bool isTDesign_enumerator(size_t t) const		{ return false; }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK int define_MT_level(int v) const							{ return v / 2; }
-	CK int define_MT_level(const designRaram *pParam) const	{ return pParam->lambda == 1? pParam->v / pParam->k : define_MT_level(pParam->v); }
-
+	CK int define_MT_level(const designRaram *pParam) const		{ return pParam->lambda[0] == 1? 
+																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 protected:
 	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }
 	CK virtual bool sortSolutions(CRowSolution<T> *ptr, size_t idx);

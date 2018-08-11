@@ -187,11 +187,11 @@ class C_BIBD : public C_InSys<T>
 {
  public:
 	CK C_BIBD(int v, int k, int t, int lambda = 0) : C_InSys<T>(v, lambda * v * (v - 1) / (k * (k - 1)), t) 
-													{ Init_BIBD_param(v, k, lambda); }
+													{ InitParam(v, k, lambda); }
 	CK C_BIBD(const C_BIBD *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
 	CK ~C_BIBD() {}
 protected:
-	CK void Init_BIBD_param(int v, int k, int lambda) {
+	CK void InitParam(int v, int k, int lambda) {
 										if (!lambda)
 											return;
 
@@ -199,6 +199,27 @@ protected:
 										this->AddValueToNumSet(lambda * (v - 1) / (k - 1), t_rSet);
 										this->AddValueToNumSet(lambda, t_lSet);
 									}
+};
+
+template<class T>
+class C_PBIBD : public C_InSys<T>
+{
+public:
+	CK C_PBIBD(int v, int k, int r, const std::vector<int> &lambda) : C_InSys<T>(v, v * r/k, 2)
+	{
+		InitParam(v, k, lambda);
+	}
+	CK C_PBIBD(const C_PBIBD *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
+	CK ~C_PBIBD() {}
+protected:
+	CK void InitParam(int v, int k, int lambda) {
+		if (!lambda)
+			return;
+
+		this->AddValueToNumSet(k, t_kSet);
+		this->AddValueToNumSet(lambda * (v - 1) / (k - 1), t_rSet);
+		this->AddValueToNumSet(lambda, t_lSet);
+	}
 };
 
 template<class T>

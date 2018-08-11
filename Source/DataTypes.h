@@ -1,5 +1,5 @@
 #pragma once
-
+#include <vector>
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -426,7 +426,8 @@ void setPrintResultNumVar(size_t numVar);
 typedef struct {
 	int v;
 	int k;
-	int lambda;
+	int r;
+	std::vector<int> lambda;
 	int t;
 	int mt_level;			// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task
