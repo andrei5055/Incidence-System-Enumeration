@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "C_tDesignEnumerator.h"
+#include "PBIBD_Enumerator.h"
 
 //#include <iostream> 
 #include <fstream>
@@ -61,7 +62,8 @@ typedef enum {
 	t_BIBD,			// default
 	t_tDesign,
 	t_PBIBD,
-	t_InsidenceSystem
+	t_InsidenceSystem,
+	t_UncoordGraph
 } t_objectType;
 
 typedef enum {
@@ -160,7 +162,7 @@ static bool getTParam(const string &paramText, designRaram *param)
 }
 
 template <class T>
-bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath)
+bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectType objType, bool FirstPath)
 {
 	if (pParam->v <= 0)
 		return false;
@@ -171,12 +173,27 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 	C_InSys<T> *pInSys = NULL;
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
 	if (pParam->t <= 2) {
-		pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
-		pInSysEnum = new CBIBD_Enumerator<T>(static_cast<C_BIBD<T> *>(pInSys), false, pParam->noReplicatedBlocks);
+		if (pParam->lambda.size() == 1) {
+			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
+			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+		}
+		else {
+			switch (objType) {
+			case t_PBIBD:
+				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
+				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+				break;
+			case t_UncoordGraph:
+				pInSys = new C_UncoordinatedGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
+				pInSysEnum = new C_UncoordinatedGraph_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+				break;
+			default: return false;
+			}
+		}
 	}
 	else {
 		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda[0]);
-		pInSysEnum = new  C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), false, pParam->noReplicatedBlocks);
+		pInSysEnum = new C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), false, pParam->noReplicatedBlocks);
 	}
 
 	char buff[256], buffer[256];
@@ -290,7 +307,7 @@ int main(int argc, char * argv[])
 	designRaram param;
 	memset(&param, 0, sizeof(param));
 	param.threadNumb = USE_THREADS;
-	param.noReplicatedBlocks = false;;
+	param.noReplicatedBlocks = false;
 	string newWorkDir = "./";
 
 	// By default, we enumerating BIBDs 
@@ -383,6 +400,9 @@ int main(int argc, char * argv[])
 		else
 		if (line.find("INCIDENCE") != string::npos)
 			objType = t_InsidenceSystem;
+		else
+		if (line.find("UNCOORDINATED_GRAPH") != string::npos)
+			objType = t_UncoordGraph;
 
 		// Define output type
 		pos = find(line, "OUTPUT");
@@ -451,8 +471,9 @@ int main(int argc, char * argv[])
 							break;
 						}
 
+		case t_UncoordGraph:
 		case t_BIBD:	
-		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param))
+		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, objType == t_BIBD))
 							from = beg + 1;
 
 						break;
@@ -470,7 +491,7 @@ int main(int argc, char * argv[])
 		if (newWorkDir != param.workingDir || firstRun)
 			param.workingDir = newWorkDir;
 
-		if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, firstRun))
+		if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, objType, firstRun))
 			break;
 
 		firstRun = false;

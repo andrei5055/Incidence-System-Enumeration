@@ -93,7 +93,7 @@
     <ClInclude Include="..\Source\MatrixCanonChecker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\TDesignEnumerator.h">
+    <ClInclude Include="..\Source\PBIBD_Enumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

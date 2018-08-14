@@ -1,11 +1,17 @@
 #pragma once
 #include "InsSysEnumerator.h"
 
+#if CONSTR_ON_GPU
+#define OUT_STRING(buf, len, ...)
+#else
+#define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, this->outFile()); }
+#endif
+
 template<class T>
 class CBIBD_Enumerator : public C_InSysEnumerator<T>
 {
 public:
-	CK CBIBD_Enumerator(const C_BIBD<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
+	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
 		C_InSysEnumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
@@ -20,6 +26,11 @@ protected:
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 #endif
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL) const;
+	CK virtual bool checkLambda(T lambda) const			{ return lambda == getInSys()->lambda(); }
+	CK virtual void ReportLamdaProblem(T i, T j, T lambda) const {
+		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
+			i, j, lambda, getInSys()->lambda());
+	}
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const { return fLambda == this->getInSys()->lambda(); }
@@ -42,17 +53,10 @@ bool CBIBD_Enumerator<T>::sortSolutions(CRowSolution<T> *pSolution, PERMUT_ELEME
 	return checkChoosenSolution(pSolution, this->currentRowNumb(), idx);
 }
 
-#if CONSTR_ON_GPU
-#define OUT_STRING(buf, len, ...)
-#else
-#define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, this->outFile()); }
-#endif
-
 template<class T>
 bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
 {
 	const auto paramR = this->getInSys()->GetR();
-	const auto paramLambda = this->getInSys()->lambda();
 	const auto iMax = this->rowNumb();
 	for (T i = 0; i < iMax; i++) {
 		const auto pRow = pMatrix->GetRow(i);
@@ -75,9 +79,8 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 			for (auto k = this->colNumb(); k--;)
 				lambda += *(pRowCurr + k) * *(pRow + k);
 
-			if (lambda != paramLambda) {
-				OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
-									 i, j, lambda, this->getInSys()->lambda());
+			if (!checkLambda(lambda)) {
+				ReportLamdaProblem(i, j, lambda);
 				THROW();
 				return false;
 			}

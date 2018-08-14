@@ -178,10 +178,10 @@
     <ClInclude Include="..\Source\IntersectionStorage.h" />
     <ClInclude Include="..\Source\matrix.h" />
     <ClInclude Include="..\Source\MatrixCanonChecker.h" />
+    <ClInclude Include="..\Source\PBIBD_Enumerator.h" />
     <ClInclude Include="..\Source\PermutStorage.h" />
     <ClInclude Include="..\Source\RightPartFilter.h" />
     <ClInclude Include="..\Source\RowSolution.h" />
-    <ClInclude Include="..\Source\TDesignEnumerator.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />

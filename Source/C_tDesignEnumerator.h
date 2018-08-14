@@ -8,8 +8,7 @@ typedef struct {
 
 typedef CContainer<OrbToVarMapping *> COrbToVar;
 template<class T> class CIntersectionStorage;
-//template<class T> class C_tDesign;
-template<class T> class CEnumerator;
+//template<class T> class CEnumerator;
 
 template<class T>
 class C_tDesignEnumerator : public CBIBD_Enumerator<T>

@@ -205,21 +205,27 @@ template<class T>
 class C_PBIBD : public C_InSys<T>
 {
 public:
-	CK C_PBIBD(int v, int k, int r, const std::vector<int> &lambda) : C_InSys<T>(v, v * r/k, 2)
-	{
-		InitParam(v, k, lambda);
+	CK C_PBIBD(int v, int k, int r, const std::vector<int> &lambdaSet) : C_InSys<T>(v, v * r/k, 2) {
+		InitParam(v, k, r, lambdaSet);
 	}
 	CK C_PBIBD(const C_PBIBD *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
 	CK ~C_PBIBD() {}
 protected:
-	CK void InitParam(int v, int k, int lambda) {
-		if (!lambda)
-			return;
-
+	CK void InitParam(int v, int k, int r, const std::vector<int> &lambdaSet) {
 		this->AddValueToNumSet(k, t_kSet);
-		this->AddValueToNumSet(lambda * (v - 1) / (k - 1), t_rSet);
-		this->AddValueToNumSet(lambda, t_lSet);
+		this->AddValueToNumSet(r, t_rSet);
+		for (auto lambda : lambdaSet)
+			this->AddValueToNumSet(lambda, t_lSet);
 	}
+};
+
+template<class T>
+class C_UncoordinatedGraph : public C_PBIBD<T>
+{
+public:
+	CK C_UncoordinatedGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
+		C_PBIBD(v, k, r, lambdaSet) {}
+	CK ~C_UncoordinatedGraph()		{}
 };
 
 template<class T>

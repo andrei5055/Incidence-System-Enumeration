@@ -44,6 +44,7 @@ private:
 
 #if USE_THREADS
 #include "C_tDesignEnumerator.h"
+#include "PBIBD_Enumerator.h"
 #include "EnumInfo.h"
 template<class T> class C_InSysEnumerator;
 template<class T> class C_tDesignEnumerator;
@@ -61,8 +62,14 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 		}
 		else {
 			if (pInsSysEnum->isTDesign_enumerator(2)) {
-				auto pSlaveBIBD = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
-				m_pEnum = new CBIBD_Enumerator<T>(pSlaveBIBD, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				if (pInsSysEnum->isPBIB_enumerator()) {
+					auto pSlaveBIBD = new C_PBIBD<T>((const C_PBIBD<T> *)(pInSys), nRow);
+					m_pEnum = new CPBIBD_Enumerator<T>(pSlaveBIBD, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				}
+				else {
+					auto pSlaveBIBD = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
+					m_pEnum = new CBIBD_Enumerator<T>(pSlaveBIBD, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				}
 			}
 		}
 

@@ -14,6 +14,7 @@ public:
 	CK virtual size_t *forcibleLambdaPntr() const               { return m_pForsibleLambda; }
 	CK virtual bool isTDesign_enumerator(size_t t) const		{ return false; }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
+	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }
 	CK int define_MT_level(const designRaram *pParam) const		{ return pParam->lambda[0] == 1? 
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
