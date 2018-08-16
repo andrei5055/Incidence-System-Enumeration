@@ -56,21 +56,25 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 	if (pMaster->IS_enumerator()) {
 		auto *pInsSysEnum = (const C_InSysEnumerator<T> *)(pMaster);
 		auto *pInSys = static_cast<const C_InSys<T> *>(pInsSysEnum->matrix());
-		if (pInsSysEnum->isTDesign_enumerator(3)) {
-			auto pSlaveDesign = new C_tDesign<T>((const C_tDesign<T> *)(pInSys), nRow);
-			m_pEnum = new C_tDesignEnumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
-		}
-		else {
-			if (pInsSysEnum->isTDesign_enumerator(2)) {
-				if (pInsSysEnum->isPBIB_enumerator()) {
-					auto pSlaveBIBD = new C_PBIBD<T>((const C_PBIBD<T> *)(pInSys), nRow);
-					m_pEnum = new CPBIBD_Enumerator<T>(pSlaveBIBD, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
-				}
-				else {
-					auto pSlaveBIBD = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
-					m_pEnum = new CBIBD_Enumerator<T>(pSlaveBIBD, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
-				}
+		C_InSys<T> *pSlaveDesign;
+		switch (pInSys->objectType()) {
+		case t_BIBD:
+			    pSlaveDesign = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
+				m_pEnum = new CBIBD_Enumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				break;
+		case t_tDesign: {
+				auto pSlaveTDesign = new C_tDesign<T>((const C_tDesign<T> *)(pInSys), nRow);
+				m_pEnum = new C_tDesignEnumerator<T>(pSlaveTDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				break;
 			}
+		case t_PBIBD:
+				pSlaveDesign = new C_PBIBD<T>((const C_PBIBD<T> *)(pInSys), nRow);
+				m_pEnum = new CPBIBD_Enumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				break;
+		case t_InconsistentGraph:
+			    pSlaveDesign = new CInconsistentGraph<T>((const CInconsistentGraph<T> *)(pInSys), nRow);
+				m_pEnum = new CInconsistentGraph_Enumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				break;
 		}
 
 		m_pEnum->setEnumInfo(new CInsSysEnumInfo<T>());

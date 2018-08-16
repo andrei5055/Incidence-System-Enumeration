@@ -470,7 +470,7 @@ private:
 #if CANON_ON_GPU
 	CK inline void setGPU_CanonChecker(CGPU_CanonChecker<T> *pntr) { m_pGPU_CanonChecker = pntr; }
 	bool TestCanonicityOnGPU() {
-		int matrFlags;
+		int matrFlags = 0;
 		if (!TestFeatures(enumInfo(), matrix(), &matrFlags))
 			return true;
 

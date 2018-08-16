@@ -59,14 +59,6 @@ typedef enum {
 } t_parsingStage;
 
 typedef enum {
-	t_BIBD,			// default
-	t_tDesign,
-	t_PBIBD,
-	t_InsidenceSystem,
-	t_UncoordGraph
-} t_objectType;
-
-typedef enum {
 	t_Enumeration,	// default
 	t_Automorphism,
 	t_Isomorphism,
@@ -176,6 +168,7 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectTyp
 		if (pParam->lambda.size() == 1) {
 			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
 			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+			objType = t_BIBD;
 		}
 		else {
 			switch (objType) {
@@ -183,9 +176,9 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectTyp
 				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
 				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
 				break;
-			case t_UncoordGraph:
-				pInSys = new C_UncoordinatedGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new C_UncoordinatedGraph_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+			case t_InconsistentGraph:
+				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
+				pInSysEnum = new CInconsistentGraph_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
 				break;
 			default: return false;
 			}
@@ -194,7 +187,10 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectTyp
 	else {
 		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda[0]);
 		pInSysEnum = new C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), false, pParam->noReplicatedBlocks);
+		objType = t_tDesign;
 	}
+
+	pInSys->setObjectType(objType);
 
 	char buff[256], buffer[256];
 	MAKE_JOB_TITLE(pInSysEnum, buff, countof(buff));
@@ -401,8 +397,8 @@ int main(int argc, char * argv[])
 		if (line.find("INCIDENCE") != string::npos)
 			objType = t_InsidenceSystem;
 		else
-		if (line.find("UNCOORDINATED_GRAPH") != string::npos)
-			objType = t_UncoordGraph;
+		if (line.find("INCONSISTENT_GRAPH") != string::npos)
+			objType = t_InconsistentGraph;
 
 		// Define output type
 		pos = find(line, "OUTPUT");
@@ -471,7 +467,7 @@ int main(int argc, char * argv[])
 							break;
 						}
 
-		case t_UncoordGraph:
+		case t_InconsistentGraph:
 		case t_BIBD:	
 		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, objType == t_BIBD))
 							from = beg + 1;

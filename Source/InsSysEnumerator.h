@@ -2,6 +2,11 @@
 #include "Enumerator.h"
 #include "RightPartFilter.h"
 
+typedef enum {
+	t_noReplicatedBlock = 1,
+	t_trahsitiveGroup = 2,
+} tMatrFlags;
+
 template<class T>
 class C_InSysEnumerator : public CEnumerator<T>, public CInSysSolver<T>, public CVector<T>
 {
@@ -12,7 +17,6 @@ public:
 	CK virtual size_t firstUnforcedRow() const                  { return m_firstUnforcedRow; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)      { m_firstUnforcedRow = rowNum; }
 	CK virtual size_t *forcibleLambdaPntr() const               { return m_pForsibleLambda; }
-	CK virtual bool isTDesign_enumerator(size_t t) const		{ return false; }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }

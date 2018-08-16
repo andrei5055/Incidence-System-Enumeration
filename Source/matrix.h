@@ -5,7 +5,7 @@
 template<class T>
 class CMatrixData {
 public:
-	CK CMatrixData()						{}
+	CK CMatrixData()						{ setDataOwner(false); }
 	CK ~CMatrixData()						{ if (dataOwner()) delete [] m_pData; }
 	CC void InitWithData(T nRows, T nCols = 0, T maxElement = 1) {
 		Init(nRows, nCols, maxElement, (uchar *)this + sizeof(*this));
@@ -18,6 +18,19 @@ public:
 	CC inline void setDataOwner(bool val)	{ m_bDataOwner = val; }
 	CK inline T *GetDataPntr() const		{ return m_pData; }
 	CK inline size_t lenData() const		{ return m_nLenData; }
+	void InitTransposed(const CMatrixData<T> *pMatr) {
+		Init(pMatr->rowNumb(), pMatr->colNumb());
+		T *pMatrData = GetDataPntr();
+		T *pMatrSrc = pMatr->GetDataPntr();
+		for (T i = 0; i < rowNumb(); ++i) {
+			for (T j = 0; j < colNumb(); ++j)
+				*(pMatrData + j) = *(pMatrSrc + j * colNumb());
+
+			pMatrSrc++;
+			pMatrData += colNumb();
+		}
+	}
+
 protected:
 
 	CC void Init(T nRows, T nCols, T maxElement = 1, T *data = NULL) {
@@ -133,6 +146,15 @@ typedef enum {
         t_lSet
 } t_numbSetType;
 
+typedef enum {
+	t_BIBD,			// default
+	t_tDesign,
+	t_PBIBD,
+	t_InsidenceSystem,
+	t_InconsistentGraph
+} t_objectType;
+
+
 template<class T> 
 class C_InSys : public CMatrix<T>
 {
@@ -173,10 +195,13 @@ class C_InSys : public CMatrix<T>
 	CK inline T GetR() const								{ return this->colNumb() * GetK() / this->rowNumb(); }
 	CK inline T lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
 	CK inline CVector<T> **numbSet() const					{ return m_ppNumbSet; }
+	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }
+	CK inline t_objectType objectType() const				{ return m_objectType; }
 private:
 	CK inline void setDataOwner(bool val)					{ m_bDataOwner = val; }
 	CK inline bool isDataOwner() const  					{ return m_bDataOwner; }
 
+	t_objectType m_objectType;
 	CVector<T> **m_ppNumbSet;
 	bool m_bDataOwner;
 	const uchar m_t;
@@ -208,7 +233,7 @@ public:
 	CK C_PBIBD(int v, int k, int r, const std::vector<int> &lambdaSet) : C_InSys<T>(v, v * r/k, 2) {
 		InitParam(v, k, r, lambdaSet);
 	}
-	CK C_PBIBD(const C_PBIBD *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
+	CK C_PBIBD(const C_InSys<T> *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
 	CK ~C_PBIBD() {}
 protected:
 	CK void InitParam(int v, int k, int r, const std::vector<int> &lambdaSet) {
@@ -220,12 +245,13 @@ protected:
 };
 
 template<class T>
-class C_UncoordinatedGraph : public C_PBIBD<T>
+class CInconsistentGraph : public C_PBIBD<T>
 {
 public:
-	CK C_UncoordinatedGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
+	CK CInconsistentGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
 		C_PBIBD(v, k, r, lambdaSet) {}
-	CK ~C_UncoordinatedGraph()		{}
+	CK CInconsistentGraph(const C_InSys<T> *pMaster, size_t nRow) : C_PBIBD<T>(pMaster, nRow) {}
+	CK ~CInconsistentGraph()		{}
 };
 
 template<class T>

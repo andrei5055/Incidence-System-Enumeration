@@ -11,7 +11,6 @@ public:
 protected:
 	CK virtual bool checkLambda(T lambdaCur) const;
 	CK virtual void ReportLamdaProblem(T i, T j, T lambda) const;
-
 };
 
 template<class T>
@@ -43,20 +42,29 @@ void CPBIBD_Enumerator<T>::ReportLamdaProblem(T i, T j, T lambda) const {
 }
 
 template<class T>
-class C_UncoordinatedGraph_Enumerator : public CPBIBD_Enumerator<T>
+class CInconsistentGraph_Enumerator : public CPBIBD_Enumerator<T>
 {
 public:
-	CK C_UncoordinatedGraph_Enumerator(const C_InSys<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
-		CPBIBD_Enumerator(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
+	CK CInconsistentGraph_Enumerator(const C_InSys<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
+		CPBIBD_Enumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
 protected:
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const;
 };
 
 template<class T>
-bool C_UncoordinatedGraph_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
+bool CInconsistentGraph_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
 {
-	if (!CPBIBD_Enumerator::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
+	if (!CPBIBD_Enumerator<T>::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
+
+	if (!this->groupIsTransitive())
+		return false;
+
+	*pMatrFlags |= t_trahsitiveGroup;
+
+	// Need to check that transposed matrix is not isomorphic to constructed one
+	CMatrixData<T> transpMatr;
+	transpMatr.InitTransposed(pMatrix);
 
 	return true;
 }

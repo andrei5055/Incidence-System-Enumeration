@@ -335,7 +335,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 					if (this->TestCanonicity(nRow, this, t_saveRowToChange + t_saveRowPermutations, &level)) {
 						//					Construct Aut(D)
 						//					int ddd = canonChecker()->constructGroup();
-						int matrFlags;
+						int matrFlags = 0;
 						if (TestFeatures(pEnumInfo, this->matrix(), &matrFlags)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
 								pEnumInfo->setNoReplBlockFlag(false);
@@ -343,7 +343,8 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 								flag = false;
 							}
 							else {
-								pEnumInfo->updateConstrCounters(matrFlags, this->groupOrder(), this->groupIsTransitive());
+								const bool groupIsTransitive = matrFlags & t_trahsitiveGroup || this->groupIsTransitive();
+								pEnumInfo->updateConstrCounters(matrFlags, this->groupOrder(), groupIsTransitive);
 #if !CONSTR_ON_GPU
 								if (this->printMatrix(pParam)) {
 									mtx.lock();

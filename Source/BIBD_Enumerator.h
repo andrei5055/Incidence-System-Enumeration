@@ -16,8 +16,6 @@ public:
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
-	CK virtual bool isTDesign_enumerator(size_t t)  const { return t <= 2; }
-
 protected:
 	CK virtual bool sortSolutions(CRowSolution<T> *ptr, PERMUT_ELEMENT_TYPE idx);
 	virtual int unforcedElement(const CColOrbit<T> *p, int nRow) const;
@@ -108,8 +106,8 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 		}
 	}
 
-	if (pMatrFlags)
-		*pMatrFlags = noReplicatedBlockFound ? 1 : 0;
+	if (pMatrFlags && noReplicatedBlockFound)
+		*pMatrFlags = t_noReplicatedBlock;
 
 	//	pEnumInfo->setSimpleMatrFlag(noReplicatedBlockFound);
 

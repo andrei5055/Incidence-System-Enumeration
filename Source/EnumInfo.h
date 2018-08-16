@@ -82,8 +82,9 @@ public:
 	virtual void updateEnumInfo(const CEnumInfo *pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)			{}
 	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
-	CC void updateConstrCounters(int simpleMatrFlag, size_t groupOrder, bool groupIsTransitive) {
+	CC void updateConstrCounters(int matrFlag, size_t groupOrder, bool groupIsTransitive) {
 		incrConstrCanonical();
+		const ulonglong simpleMatrFlag = matrFlag & t_noReplicatedBlock ? 1 : 0;
 		if (simpleMatrFlag)
 			incNumbSimpleDesign();
 

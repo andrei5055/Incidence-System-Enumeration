@@ -187,7 +187,6 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 			const auto *pColOrbitIni = colOrbitIni[nRow];
 			const auto *pColOrbit = colOrbit[nRow];
 			while (pColOrbit) {
-
 				// Define the number of column to start with
 				const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
 				const auto orbLen = pColOrbit->length();

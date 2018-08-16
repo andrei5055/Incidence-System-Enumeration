@@ -23,7 +23,6 @@ public:
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 	CK virtual bool isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const;
-	CK virtual bool isTDesign_enumerator(size_t t) const { return t <= tDesign()->getT(); }
 	PERMUT_ELEMENT_TYPE *getIntersectionParam(const size_t **ppNumb) const;
 protected:
 #if !CONSTR_ON_GPU
