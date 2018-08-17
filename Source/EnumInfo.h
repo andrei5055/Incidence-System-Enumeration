@@ -53,6 +53,11 @@ typedef enum {
 	t_GroupOrderLT = 32,
 } t_outputType;
 
+typedef enum {
+	t_noReplicatedBlock = 1 << 1,
+	t_trahsitiveGroup   = 1 << 2,
+} t_MatrixFlags;
+
 template<class T> class CThreadEnumerator;
 template<class T> class CCanonicityChecker;
 

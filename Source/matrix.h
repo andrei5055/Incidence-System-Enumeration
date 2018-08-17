@@ -249,7 +249,7 @@ class CInconsistentGraph : public C_PBIBD<T>
 {
 public:
 	CK CInconsistentGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
-		C_PBIBD(v, k, r, lambdaSet) {}
+		C_PBIBD<T>(v, k, r, lambdaSet) {}
 	CK CInconsistentGraph(const C_InSys<T> *pMaster, size_t nRow) : C_PBIBD<T>(pMaster, nRow) {}
 	CK ~CInconsistentGraph()		{}
 };

@@ -82,11 +82,11 @@ template<class T>
 class CMatrixCol : public CColOrbitManager<T>
 {
 public:
-	CC CMatrixCol(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner) :
+	CC CMatrixCol(const CMatrixData<T> *pMatrix, bool IS_enum = false, bool matrOwner = false) :
 		CColOrbitManager<T>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
 		initiateMatrixCol(pMatrix, IS_enum, matrOwner);
 	}
-	CC CMatrixCol(CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
+	CC CMatrixCol(const CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
 		CColOrbitManager<T>(maxElem + 1, rowNumb, colNumb) {
 		initiateMatrixCol(pMatrix, IS_enum, false);
 	}
@@ -446,7 +446,7 @@ protected:
 	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
 
 private:
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL) const { return true; }
+	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
 	CK virtual CRowSolution<T> *setFirstRowSolutions()		{ return NULL; }
 	CK CRowSolution<T> *FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK virtual size_t MakeSystem() = 0;

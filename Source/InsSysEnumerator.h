@@ -2,11 +2,6 @@
 #include "Enumerator.h"
 #include "RightPartFilter.h"
 
-typedef enum {
-	t_noReplicatedBlock = 1,
-	t_trahsitiveGroup = 2,
-} tMatrFlags;
-
 template<class T>
 class C_InSysEnumerator : public CEnumerator<T>, public CInSysSolver<T>, public CVector<T>
 {

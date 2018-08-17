@@ -29,8 +29,9 @@ bool CBIBD_Enumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const char *
 	const auto v = this->rowNumb();
 	const auto b = this->matrix()->colNumb();
 	const auto k = this->getInSys()->GetK();
-	SNPRINTF(buffer, lenBuffer, "BIBD(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", %2" _FRMT")%s", v, b, b * k / v, k,
-						this->getInSys()->lambda(), comment);
+	auto len = SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
+	len += addLambdaInfo(buffer + len, lenBuffer - len);
+	SNPRINTF(buffer + len, lenBuffer - len, ")%s", comment);
 	return true;
 }
 #endif

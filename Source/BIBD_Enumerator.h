@@ -23,12 +23,14 @@ protected:
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 #endif
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL) const;
-	CK virtual bool checkLambda(T lambda) const			{ return lambda == getInSys()->lambda(); }
+	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
+	CK virtual bool checkLambda(T lambda) const			{ return lambda == this->getInSys()->lambda(); }
 	CK virtual void ReportLamdaProblem(T i, T j, T lambda) const {
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
-			i, j, lambda, getInSys()->lambda());
+			i, j, lambda, this->getInSys()->lambda());
 	}
+  CK virtual const char *getObjName() const                             { return "BIBD"; }
+  CK virtual size_t addLambdaInfo(char *buffer, size_t lenBuffer) const { return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, this->getInSys()->lambda()); }
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const { return fLambda == this->getInSys()->lambda(); }
@@ -52,7 +54,7 @@ bool CBIBD_Enumerator<T>::sortSolutions(CRowSolution<T> *pSolution, PERMUT_ELEME
 }
 
 template<class T>
-bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
+bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags, CEnumerator<T> *pEnum) const
 {
 	const auto paramR = this->getInSys()->GetR();
 	const auto iMax = this->rowNumb();

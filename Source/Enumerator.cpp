@@ -336,7 +336,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 						//					Construct Aut(D)
 						//					int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
-						if (TestFeatures(pEnumInfo, this->matrix(), &matrFlags)) {
+						if (TestFeatures(pEnumInfo, this->matrix(), &matrFlags, this)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
 								pEnumInfo->setNoReplBlockFlag(false);
 								level = getInSys()->GetK();

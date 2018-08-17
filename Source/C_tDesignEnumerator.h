@@ -32,7 +32,7 @@ protected:
 	CK virtual void prepareToTestExtraFeatures();
 	CK virtual void copyInfoFromMaster(const CEnumerator<T> *pMaster);
 	CK virtual bool constructing_t_Design() { return true; }
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL) const;
+	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
 #if USE_EXRA_EQUATIONS
 	CK virtual CEquSystem *equSystem() { return this; }
 	CK virtual void prepareToFindRowSolution() { equSystem()->resetArray(); }

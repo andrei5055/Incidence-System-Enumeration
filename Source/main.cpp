@@ -431,7 +431,6 @@ int main(int argc, char * argv[])
 						outType |= t_GroupOrderEQ;
 					}
 
-
 					if (!(outType & (t_GroupOrderEQ | t_GroupOrderGT | t_GroupOrderLT))) {
 						printf("Cannot define group order from: \"%s\"\n", output.c_str());
 						printf("Will use the default output\n");

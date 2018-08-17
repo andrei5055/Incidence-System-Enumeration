@@ -313,7 +313,7 @@ void C_tDesignEnumerator<T>::copyInfoFromMaster(const CEnumerator<T> *pMaster)
 }
 
 template<class T>
-bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags) const
+bool C_tDesignEnumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags, CEnumerator<T> *pEnum) const
 {
 	if (!CBIBD_Enumerator<T>::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
