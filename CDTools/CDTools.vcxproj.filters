@@ -167,5 +167,8 @@
     <ClCompile Include="..\Source\InSysRowEquation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\IGraphNeighborhoodStructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

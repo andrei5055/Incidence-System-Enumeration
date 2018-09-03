@@ -6,7 +6,7 @@ template<class T>
 class CMatrixData {
 public:
 	CK CMatrixData()						{ setDataOwner(false); }
-	CK ~CMatrixData()						{ if (dataOwner()) delete [] m_pData; }
+	CK virtual ~CMatrixData()				{ if (dataOwner()) delete [] m_pData; }
 	CC void InitWithData(T nRows, T nCols = 0, T maxElement = 1) {
 		Init(nRows, nCols, maxElement, (uchar *)this + sizeof(*this));
 	}
@@ -18,13 +18,22 @@ public:
 	CC inline void setDataOwner(bool val)	{ m_bDataOwner = val; }
 	CK inline T *GetDataPntr() const		{ return m_pData; }
 	CK inline size_t lenData() const		{ return m_nLenData; }
-	void InitTransposed(const CMatrixData<T> *pMatr) {
-		Init(pMatr->rowNumb(), pMatr->colNumb());
+	void InitTransposed(const CMatrixData<T> *pMatr, int mult = 1) {
+		Init(pMatr->colNumb(), pMatr->rowNumb() * mult);
 		T *pMatrData = GetDataPntr();
 		T *pMatrSrc = pMatr->GetDataPntr();
 		for (T i = 0; i < rowNumb(); ++i) {
-			for (T j = 0; j < colNumb(); ++j)
-				*(pMatrData + j) = *(pMatrSrc + j * colNumb());
+			if (mult == 1) {
+				for (T j = 0; j < pMatr->rowNumb(); ++j)
+					*(pMatrData + j) = *(pMatrSrc + j * colNumb());
+			}
+			else {
+				for (T j = 0; j < pMatr->rowNumb(); ++j) {
+					const auto val = *(pMatrSrc + j * colNumb());
+					for (T k = 0; k < mult; ++k)
+						*(pMatrData + j * mult + k) = val;
+				}
+			}
 
 			pMatrSrc++;
 			pMatrData += colNumb();
@@ -83,9 +92,9 @@ class CMatrix : public CMatrixData<T>
 
 		if (matrNumber > 0) {
 			if (pCanonCheck)
-        SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
+				SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
 			else
-        SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
+				SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
 		}
 #if PRINT_CURRENT_MATRIX
 		else {
@@ -145,15 +154,6 @@ typedef enum {
         t_kSet,
         t_lSet
 } t_numbSetType;
-
-typedef enum {
-	t_BIBD,			// default
-	t_tDesign,
-	t_PBIBD,
-	t_InsidenceSystem,
-	t_InconsistentGraph
-} t_objectType;
-
 
 template<class T> 
 class C_InSys : public CMatrix<T>

@@ -45,12 +45,12 @@ typedef enum {
 } t_resType;
 
 typedef enum {
-	t_Summary = 1,		// default
-	t_AllObject = 2,
-	t_Transitive = 4,
-	t_GroupOrderEQ = 8,
-	t_GroupOrderGT = 16,
-	t_GroupOrderLT = 32,
+	t_Summary =		  1<<0,		// default
+	t_AllObject =	  1<<1,
+	t_Transitive =    1<<2,
+	t_GroupOrderEQ =  1<<3,
+	t_GroupOrderGT =  1<<4,
+	t_GroupOrderLT =  1<<5,
 } t_outputType;
 
 typedef enum {
@@ -117,7 +117,7 @@ public:
 	CC void resetEnumInfo()									{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
 	void outEnumInformation(FILE **pOutFile, bool printMTlevel = true) const;
-	inline void setDesignInfo(const designRaram *pParam)	{ m_pParam = pParam; }
+	inline void setDesignInfo(designRaram *pParam)			{ m_pParam = pParam; }
 protected:
 	t_resType getResType() const							{ return m_nResType; }
 private:
@@ -131,7 +131,7 @@ private:
 	inline ulonglong reportBound() const					{ return m_nReportBound; }
 	CC inline char *reportFileName() const					{ return m_pReportFileName; }
 	inline int multiThreadLevel() const 					{ return m_pParam->mt_level; }
-	inline const designRaram *designInfo() const			{ return m_pParam; }
+	inline designRaram *designInfo() const					{ return m_pParam; }
 
 	ulonglong m_nCounter;
 	const char *m_pStrToScreen;
@@ -139,7 +139,7 @@ private:
 	char *m_pReportFileName;
 	t_resType m_nResType;
 	int m_mtlevel;
-	const designRaram *m_pParam;
+	designRaram *m_pParam;
 }; 
 
 template<class T>

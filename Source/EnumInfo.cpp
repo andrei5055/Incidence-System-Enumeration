@@ -238,7 +238,7 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 
 	char buff[256];
 	SPRINTF(buff, "\nUsing %zd-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
-	outString(buff, outFile);
+	auto outLen = outString(buff, outFile);
 
 	const auto nThreads = designInfo()->threadNumb;
 	if (USE_THREADS >= 1) {
@@ -250,23 +250,24 @@ void CEnumInfo<T>::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 	} else
 		SPRINTF(buff, "        Single thread mode\n");
 
-	outString(buff, outFile);
+	outLen += outString(buff, outFile);
 
 	if (nThreads >= 1 && CANON_ON_GPU) {
 		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
-		outString(buff, outFile);
+		outLen += outString(buff, outFile);
 	}
 
 	SPRINTF(buff, "        Canonicity of partial constructed matrix was %sused\n", USE_CANON_GROUP ? "" : "not ");
-	outString(buff, outFile);
+	outLen += outString(buff, outFile);
 
 	SPRINTF(buff, "        Strong canonicity was %sused\n", USE_STRONG_CANONICITY ? "" : "not ");
-	outString(buff, outFile);
+	outLen += outString(buff, outFile);
 
 	SPRINTF(buff, "        Super strong canonicity was %sused\n\n", USE_STRONG_CANONICITY_A ? "" : "not ");
-	outString(buff, outFile);
+	outLen += outString(buff, outFile);
 	FCLOSE(outFile);
 	*pOutFile = NULL;
+	designInfo()->rewindLen = outLen;
 }
 
 template<class T>

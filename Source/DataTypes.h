@@ -14,7 +14,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					3
+#define USE_THREADS					0
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -334,17 +334,21 @@ extern int nnn;
 	#define END_NUMBER			91
 	#define CHECK_CONSTR(x, y)    enumInfo()->constrCanonical() >= x && enumInfo()->constrCanonical() <= y
 #else
-	#define CHECK_CONSTR(x, y)
+#define CHECK_CONSTR(x, y)		true
 #endif
 
+#define MAKE_OUTPUT()			CHECK_VAL(ccc) && CHECK_CONSTR(START_NUMBER, END_NUMBER)
+
 #if PRINT_SOLUTIONS
-	#define OUTPUT_SOLUTION(x,file,f)		if (CHECK_VAL(ccc) CHECK_CONSTR(START_NUMBER, END_NUMBER)) { x->printSolutions(file, f); }
+	#define OUTPUT_SOLUTION(x,file,f)		if (MAKE_OUTPUT()) \
+												{ x->printSolutions(file, f); }
 #else
     #define OUTPUT_SOLUTION(x,file, f)
 #endif
 
 #if PRINT_CURRENT_MATRIX
-#define OUTPUT_MATRIX(x, y, z)				if (PRINT_CURRENT_MATRIX && CHECK_VAL(ccc)  CHECK_CONSTR(START_NUMBER, END_NUMBER)) { MUTEX_LOCK(out_mutex); x->printOut(y, z, ccc);  MUTEX_UNLOCK(out_mutex); }
+#define OUTPUT_MATRIX(x, y, z)				if (PRINT_CURRENT_MATRIX && MAKE_OUTPUT()) \
+												{ MUTEX_LOCK(out_mutex); x->printOut(y, z, ccc);  MUTEX_UNLOCK(out_mutex); }
 #else
     #define OUTPUT_MATRIX(x, y, z)
 #endif
@@ -375,8 +379,8 @@ void thread_message(int threadIdx, const char *pComment, t_threadCode code, void
 	#define thread_message(threadIdx, pComment, code, ...)
 #endif
 
-void outString(const char *str, FILE *file);
-void outString(const char *str, const char *fileName, const char *mode = "a");
+size_t outString(const char *str, FILE *file);
+size_t outString(const char *str, const char *fileName, const char *mode = "a");
 
 #if PRINT_RESULTS
 #define PR_EQU_NUMB				20
@@ -423,7 +427,17 @@ void setPrintResultNumVar(size_t numVar);
 #define setPrintResultNumVar(nVar)
 #endif
 
+
+typedef enum {
+	t_BIBD,			// default
+	t_tDesign,
+	t_PBIBD,
+	t_InsidenceSystem,
+	t_InconsistentGraph
+} t_objectType;
+
 typedef struct {
+	t_objectType objType;
 	int v;
 	int k;
 	int r;
@@ -436,6 +450,8 @@ typedef struct {
 	bool firstMatr;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks;// TRUE, when only block designs with no replicated blocks should be constructed
 	std::string workingDir; // Current working directory name
+	std::string logFile = "";    // 
+	size_t rewindLen = 0;   // Length of the portion of log file, which probably will be rewinded
 } designRaram;
 
 #define VAR_1		1

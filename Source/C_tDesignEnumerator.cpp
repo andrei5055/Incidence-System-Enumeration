@@ -203,7 +203,7 @@ CVariableMapping *C_tDesignEnumerator<T>::constructExtraEquations(size_t t, size
 
 	resetVarPtr(nVar);
 
-	CColOrbit *pUnforcedIni = forcibleLambda(currentRowNumb()) ? unforcedOrbits(currentRowNumb())[0] : NULL;
+	CColOrbit *pUnforcedIni = forcibleLambda(currentRowNumb()) != -1 ? unforcedOrbits(currentRowNumb())[0] : NULL;
 
 	const auto pKSet = tDesign()->GetNumSet(t_kSet);
 	const auto k = pKSet->GetAt(0);
@@ -247,7 +247,7 @@ CVariableMapping *C_tDesignEnumerator<T>::constructExtraEquations(size_t t, size
 				}
 				else {
 					// Forcible orbits found
-					if (pColOrbitLast->colomnWeight() != k)
+					if (pColOrbitLast->columnWeight() != k)
 						adjLambda++;	// it's a all last 1's orbit
 
 					// to use previous orb-to-var mapping one more time 

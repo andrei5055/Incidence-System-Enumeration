@@ -25,7 +25,7 @@ protected:
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
 	CK CColOrbit<T> **unforcedOrbits(size_t nRow) const			{ return getUnforcedColOrbPntr() + this->rank() * nRow; }
-	CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const		{ return forcibleLambda(this->currentRowNumb()) ? this->unforcedColOrbPntr() : NULL; }
+	CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const		{ return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr() : NULL; }
 	CK inline size_t forcibleLambda(size_t i) const             { return *(forcibleLambdaPntr() + i); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
@@ -142,7 +142,7 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
 		equationIdx++;
-		const auto diffWeight = k - pColOrbit->colomnWeight();
+		const auto diffWeight = k - pColOrbit->columnWeight();
 		if (!diffWeight || diffWeight == nRowToBuild) {
 			colGroupIdx++;			// We need to skip this column's orbit
 									// All remaining elements of all columns
@@ -170,8 +170,8 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 
 		int mapSetIdx;
 		const auto currLen = pColOrbit->length();
-		setVariableLimit(nVar, currLen, nRowToBuild, k, pColOrbit->colomnWeight());
-		if (pColOrbit->colomnWeight() != pColOrbPrev->colomnWeight()) {
+		setVariableLimit(nVar, currLen, nRowToBuild, k, pColOrbit->columnWeight());
+		if (pColOrbit->columnWeight() != pColOrbPrev->columnWeight()) {
 			addColOrbitForVariable(nVar, pColOrbit);
 			auto len = pColOrbPrev->length() - currLen;
 			// Column weight was changed. It means that x[i] > 0
@@ -202,7 +202,7 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 #endif
 				}
 				else {
-					setVariableLimit(++nVar, len, nRowToBuild, k, pColOrbPrev->colomnWeight());
+					setVariableLimit(++nVar, len, nRowToBuild, k, pColOrbPrev->columnWeight());
 					pColOrbitNext = (pColOrbit = pColOrbitNext)->next();
 					if (pColGroupIdx)
 						pColGroupIdx[nVar] = colGroupIdx++;

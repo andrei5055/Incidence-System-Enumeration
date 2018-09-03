@@ -42,6 +42,8 @@ public:
 	CK inline size_t constructGroup()				{ return permStorage()->constructGroup(); }
 	CK inline size_t findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size_t idx, VECTOR_ELEMENT_TYPE *pMem, size_t *pCanonIdx, int &nCanon)
 													{ return permStorage()->findSolutionIndex(pFirst, idx, pMem, pCanonIdx, nCanon); }
+    CC inline T * permRow() const					{ return m_pPermutRow->elementPntr(); }
+	CC inline T * permCol() const					{ return m_pPermutCol->elementPntr(); }
 	CC inline CPermutStorage<T> *permStorage() const				{ return m_pPermutStorage; }
 	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const			{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
@@ -54,8 +56,6 @@ private:
 	CC T next_permutation(T idx = MATRIX_ELEMENT_MAX);
     CC void addAutomorphism(bool rowPermut = true);
     CC int checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const;
-    CC inline T * permRow() const					{ return m_pPermutRow->elementPntr(); }
-    CC inline T * permCol() const					{ return m_pPermutCol->elementPntr(); }
     CC inline void setStabilizerLength(T len)		{ m_nStabLength = len; }
     CC inline T stabilizerLength() const			{ return m_nStabLength; }
     CC inline void setStabilizerLengthAut(T l)		{ m_nStabLengthAut = l; }
@@ -136,7 +136,6 @@ CCanonicityChecker<T>::~CCanonicityChecker()
 	delete solutionStorage();
 #endif
 }
-
 
 template<class T>
 bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo, T *pRowOut, CRowSolution<T> *pRowSolution)

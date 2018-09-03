@@ -5,7 +5,7 @@ template class CBIBD_Enumerator<MATRIX_ELEMENT_TYPE>;
 template<class T>
 int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) const
 {
-	const size_t diffWeight = this->getInSys()->GetK() - pOrb->colomnWeight();
+	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
 	if (diffWeight)
 		return diffWeight == this->rowNumb() - nRow ? 1 : -1;
 

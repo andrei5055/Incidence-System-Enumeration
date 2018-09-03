@@ -3,7 +3,8 @@
 
 template<class T> class CRowSolution;
 
-template<class T> class CColOrbit //: public CArray<int, int>
+template<class T> 
+class CColOrbit
 {
  public:
 	CC CColOrbit() {
@@ -13,17 +14,17 @@ template<class T> class CColOrbit //: public CArray<int, int>
 		assignOrbID(myOrbID);
 	}
 
-	virtual CC ~CColOrbit()								{}   
- 	void CC Init(T length, CColOrbit *pNext = NULL)		{ setLength(length); setNext(pNext); }
-	inline CC T length() const							{ return m_nLength; }
-	inline CC CColOrbit *next() const					{ return m_pNext; }
-	inline CC void setNext(CColOrbit *pntr)             { m_pNext = pntr; }
-	virtual CC void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
-	virtual CC unsigned int *getEntryCntrs() const		{ return NULL; }
-	virtual CC int colomnWeight() const					{ return 0; }
+	CC virtual ~CColOrbit()								{}   
+ 	CC void Init(T length, CColOrbit *pNext = NULL)		{ setLength(length); setNext(pNext); }
+	CC inline T length() const							{ return m_nLength; }
+	CC inline CColOrbit *next() const					{ return m_pNext; }
+	CC inline void setNext(CColOrbit *pntr)             { m_pNext = pntr; }
+	CC virtual void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
+	CC virtual unsigned int *getEntryCntrs() const		{ return NULL; }
+	CC virtual int columnWeight() const					{ return 0; }
     CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
 	CC void clone(const CColOrbit *pColOrb);
-	inline CC void setLength(T len)						{ m_nLength = len; }
+	CC inline void setLength(T len)						{ m_nLength = len; }
 private:
 	T m_nLength;
 	CColOrbit<T> *m_pNext;
@@ -58,15 +59,15 @@ void CColOrbit<T>::clone(const CColOrbit<T> *pColOrb)
 template<class T>class CColOrbitIS : public CColOrbit<T>
 {// Orbits for Incidence Systems
  public:
-	 CC CColOrbitIS()													{ setColomnWeight(0); } 
+	 CC CColOrbitIS()													{ setColumnWeight(0); } 
 	 CC ~CColOrbitIS()													{} 
-	 virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx = 0)	{ setColomnWeight(pParent->colomnWeight() + idx); }
-	 virtual CC int colomnWeight() const								{ return m_nColomnWeight; }
+	 virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx = 0)	{ setColumnWeight(pParent->columnWeight() + idx); }
+	 virtual CC int columnWeight() const								{ return m_nColumnWeight; }
  protected:
 
  private:
-	 virtual CC void setColomnWeight(int val)							{ m_nColomnWeight = val; }
-	 int m_nColomnWeight;
+	 virtual CC void setColumnWeight(int val)							{ m_nColumnWeight = val; }
+	 int m_nColumnWeight;
 };
 
 template<class T>class CColOrbitCS : public CColOrbit<T>

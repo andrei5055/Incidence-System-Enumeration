@@ -656,17 +656,19 @@ T CCanonicityChecker<T>::getLenPermutCol(T **permCol) const
 	return numColOrb();
 }
 
-void outString(const char *str, FILE *file)
+size_t outString(const char *str, FILE *file)
 {
     if (file)
-        fputs(str, file);
-    else
-		std::cout << str;
+        return fwrite(str, sizeof(*str), strlen(str), file) + 1;
+
+	std::cout << str;
+	return -1;
 }    
 
-void outString(const char *str, const char *fileName, const char *mode)
+size_t outString(const char *str, const char *fileName, const char *mode)
 {
 	FOPEN(file, fileName, mode);
-	outString(str, file);
+	const auto retVal = outString(str, file);
 	FCLOSE(file);
+	return retVal;
 }

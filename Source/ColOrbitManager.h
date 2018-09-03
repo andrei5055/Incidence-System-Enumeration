@@ -30,6 +30,7 @@ public:
 	CC inline CColOrbit<T> **colOrbits() const			{ return m_pColOrb; }
     CC inline T currentRowNumb() const					{ return m_nCurrRow; }
 	CC inline CColOrbit<T> **colOrbitsIni() const		{ return m_pColOrbIni; }
+	CC inline int rankMatr() const						{ return m_nRank; }
 	CC void initiateColOrbits(size_t nRow, bool using_IS_enumerator, const CColOrbitManager<T> *pMaster = NULL, void *pMem = NULL);
 	CK void copyColOrbitInfo(const CColOrbitManager<T> *pColOrb, T nRow);
 	CC void restoreColOrbitInfo(T nRow, const size_t *pColOrbInfo) const;
@@ -47,7 +48,6 @@ protected:
     CC inline void setCurrentRowNumb(T n)				{ m_nCurrRow = n; }
 	CC inline CColOrbit<T> **unforcedColOrbPntr() const	{ return m_ppUnforcedColOrb; }
 	CK inline CColOrbit<T> *colOrbit(size_t idx) const	{ return m_pColOrb[idx]; }
-    CC inline int rankMatr() const                      { return m_nRank; }
 	CC inline size_t rowMaster() const					{ return m_nRowMaster; }
 private:
 	CK inline size_t unfColIdx(size_t r, int idx = 0) const{ return r * rankMatr() + idx; }

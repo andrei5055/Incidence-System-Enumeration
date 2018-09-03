@@ -46,13 +46,14 @@ int ccc = 0;
 std::mutex out_mutex;
 #endif
 
-bool fileExists(const char *path, bool file = true)
+template class CEnumerator<MATRIX_ELEMENT_TYPE>;
+
+template<class T>
+bool CEnumerator<T>::fileExists(const char *path, bool file) const
 {
 	struct stat info;
 	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
 }
-
-template class CEnumerator<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
 CRowSolution<T> *CEnumerator<T>::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
@@ -183,7 +184,12 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 			lenName = 0;
 
 		// Create a new file for output of the enumeration results
-		FOPEN(file, buff, "w");
+		const auto newFile = this->createNewFile(buff);
+		const auto seekFile = !newFile && SeekLogFile() ? long(designParams()->rewindLen) : 0;
+		FOPEN(file, buff, newFile ? "w" : (seekFile ? "r+t" : "a"));
+		if (seekFile)  // Previously written end of the log file needs to be removed
+			fseek(file, -seekFile, SEEK_END);
+
 		this->setOutFile(file);
 		outString(jobTitle, this->outFile());
 	}
@@ -258,7 +264,6 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
     this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
 	T level;
 	while (pRowSolution) {
-
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 
 #if USE_THREADS_ENUM
@@ -321,6 +326,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 #endif		
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			OUTPUT_SOLUTION(pRowSolution, outFile(), true);
+
 			const auto *pCurrSolution = pRowSolution->currSolution();
 			auto *pColOrb = MakeRow(pCurrSolution);
 			if (nRow == 2)
@@ -350,7 +356,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 									mtx.lock();
 									if (pParam->firstMatr) {
 										pParam->firstMatr = false;
-										outString(BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, this->outFile());
+										outString(" \n" BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, this->outFile());
 									}
 
 									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->constrCanonical(), this);
@@ -468,7 +474,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 #if !CONSTR_ON_GPU
 		// We are not in the slave thread
 		if (!pParam->firstMatr)
-			outString(END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
+			outString("\n" END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
 		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0);
 
@@ -489,8 +495,9 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 					resType = t_resBetter;
 				}
 				else {
-					if (pParam->firstMatr)
-						remove(jobTitle);	// Deleting new file only when it does not contain matrices
+					if (pParam->firstMatr && pParam->objType != t_InconsistentGraph)
+						remove(jobTitle);	// Deleting new file only when it does not contain matrices and 
+					                        // we are not constracting the inconsistent graph
 
 					resType = t_resWorse;
 				}
@@ -626,31 +633,13 @@ void CEnumerator<T>::InitRowSolutions(const CEnumerator<T> *pMaster)
 template<class T>
 size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 {
-	const auto rowNumb = getInSys()->rowNumb();
-#if 0
-	const char *pDirNamePrefix = "V =";
-	size_t lenPrefix = strlen(pDirNamePrefix);
-	const size_t lenName = 4;
-	const size_t lenDirName = lenPrefix + lenName + 1;
-	if (lenBuffer <= lenDirName)
-		return 0;
+	const auto pParam = designParams();
+	auto rowNumb = getInSys()->rowNumb(); 
+	if (pParam->objType == t_InconsistentGraph)
+		rowNumb *= pParam->r / pParam->k;
 
-	// Define the length of text representation of the rowNumb in decimal format
-	size_t len = lenName;
-	auto nRow = rowNumb;
-	while (nRow /= 10)
-		len--;
+	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "%sV =%4d", pParam->workingDir.c_str(), rowNumb);
 
-	memcpy(dirName, pDirNamePrefix, lenPrefix);
-	if (len > 0) {
-		memset(dirName + lenPrefix, ' ', len);
-		lenPrefix += len;
-	}
-
-	sprintf_s(dirName + lenPrefix, lenBuffer - lenPrefix, "%d", rowNumb);
-#else
-	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "%sV =%4d", designParams()->workingDir.c_str(), rowNumb);
-#endif
 	int retVal = 0;
 	if (!fileExists(dirName, false))
 		retVal = MKDIR(dirName);
@@ -730,18 +719,7 @@ bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pB
 	FCLOSE(filePrev);
 	return retVal;
 }
-/*
-template<class T>
-bool CEnumerator<T>::printMatrix(const designRaram *pParam) const
-{
-	const uint outType = pParam->outType;
-	return	outType & t_AllObject ||
-		outType & t_Transitive && groupIsTransitive() ||
-		outType & t_GroupOrderGT && groupOrder() > pParam->grpOrder ||
-		outType & t_GroupOrderLT && groupOrder() < pParam->grpOrder ||
-		outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
-}
-*/
+
 #if USE_STRONG_CANONICITY_A
 void CEnumerator<T>::checkUnusedSolutions(CRowSolution *pRowSolution)
 {

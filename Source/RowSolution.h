@@ -355,7 +355,7 @@ template<class T>
 void CRowSolution<T>::sortSolutionByGroup(CCanonicityChecker<T> *pCanonChecker)
 {
 	pCanonChecker->constructGroup();
-	// Since we removed the indeces corresponding to the forcibly constructed colOrbits 
+	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
 	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
 
 	uchar *pCanonFlags;
@@ -419,7 +419,7 @@ bool CRowSolution<T>::checkChoosenSolution(const CColOrbit<T> *pColOrbit, size_t
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionSize(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();
-		const size_t limitWeight = minVal * (kMin - pColOrbit->colomnWeight());
+		const size_t limitWeight = minVal * (kMin - pColOrbit->columnWeight());
 		// To start, we need to set the solution index to -1
 		setSolutionIndex((PERMUT_ELEMENT_TYPE)-1);
 		do {

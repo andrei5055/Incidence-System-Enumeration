@@ -198,6 +198,7 @@
     <ClCompile Include="..\Source\Equation.cpp" />
     <ClCompile Include="..\Source\EquSystem.cpp" />
     <ClCompile Include="..\Source\GroupsInfo.cpp" />
+    <ClCompile Include="..\Source\IGraphNeighborhoodStructure.cpp" />
     <ClCompile Include="..\Source\InSysEnumerator.cpp" />
     <ClCompile Include="..\Source\InSysRowEquation.cpp" />
     <ClCompile Include="..\Source\InSysSolver.cpp" />

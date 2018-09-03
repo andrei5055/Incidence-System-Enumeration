@@ -8,9 +8,7 @@
 //#include <iostream> 
 #include <fstream>
 #include <string>      // for getline
-//#include <cctype>
 #include <algorithm>
-//#include <numeric>
 #include <iterator>
 #include <functional>   // for ptr_fun
 
@@ -154,7 +152,7 @@ static bool getTParam(const string &paramText, designRaram *param)
 }
 
 template <class T>
-bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectType objType, bool FirstPath)
+bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath)
 {
 	if (pParam->v <= 0)
 		return false;
@@ -164,13 +162,9 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectTyp
 	InitCanonInfo(pParam->threadNumb);
 	C_InSys<T> *pInSys = NULL;
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
+	t_objectType objType = pParam->objType;
 	if (pParam->t <= 2) {
-		if (pParam->lambda.size() == 1) {
-			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
-			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
-			objType = t_BIBD;
-		}
-		else {
+		if (pParam->lambda.size() >= 1 || objType == t_InconsistentGraph) {
 			switch (objType) {
 			case t_PBIBD:
 				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
@@ -178,10 +172,15 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, t_objectTyp
 				break;
 			case t_InconsistentGraph:
 				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new CInconsistentGraph_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+				pInSysEnum = new CInconsistentGraph_Enumerator<T>(pInSys, false, FirstPath);
 				break;
 			default: return false;
 			}
+		}
+		else {
+			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
+			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+			objType = t_BIBD;
 		}
 	}
 	else {
@@ -304,7 +303,7 @@ int main(int argc, char * argv[])
 	memset(&param, 0, sizeof(param));
 	param.threadNumb = USE_THREADS;
 	param.noReplicatedBlocks = false;
-	string newWorkDir = "./";
+	std::string newWorkDir = "./";
 
 	// By default, we enumerating BIBDs 
 	t_parsingStage stage = t_objectTypeStage;
@@ -459,6 +458,7 @@ int main(int argc, char * argv[])
 
 		param.outType = outType;
 		param.t = 2;
+		param.lambda.resize(0);
 		size_t from = -1;
 		switch (objType) {
 		case t_tDesign:	if (!getTParam(line.substr(0, beg), &param)) {
@@ -483,11 +483,16 @@ int main(int argc, char * argv[])
 		}
 
 		param.outType = outType;
-		if (newWorkDir != param.workingDir || firstRun)
-			param.workingDir = newWorkDir;
+		if (param.workingDir != newWorkDir || firstRun)
+			param.workingDir = string(newWorkDir);
 
-		if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, objType, firstRun))
-			break;
+		if ((param.objType = objType) == t_InconsistentGraph) {
+			int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool firstPath);
+			InconsistentGraphs(&param, pSummaryFile, firstRun);
+		}
+		else
+			if (!RunOperation<MATRIX_ELEMENT_TYPE>(&param, pSummaryFile, firstRun))
+				break;
 
 		firstRun = false;
 	}
@@ -501,3 +506,4 @@ int main(int argc, char * argv[])
 // To 
 // cuda - memcheck --leak - check full . / CDTools_GPU.exe
 // nvprof CDTools_GPU.exe
+// C program to find GCD of two numbers

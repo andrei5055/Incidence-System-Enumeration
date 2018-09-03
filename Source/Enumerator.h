@@ -444,6 +444,10 @@ protected:
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const;
 	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
+	CK inline designRaram *designParams() const				{ return m_pParam; }
+	CK virtual bool fileExists(const char *path, bool file = true) const;
+	CK virtual bool createNewFile(const char *fName) const	{ return true; }
+	CK virtual bool SeekLogFile() const					{ return false; }
 
 private:
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
@@ -458,9 +462,8 @@ private:
     CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
     CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
+	virtual size_t forcibleLambda(size_t i) const			{ return -1; }
 	inline void setDesignParams(designRaram *pntr)          { m_pParam = pntr; }
-	inline designRaram *designParams() const                { return m_pParam; }
-//	CK bool printMatrix(const designRaram *pParam) const;
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else
