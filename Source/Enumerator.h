@@ -82,22 +82,22 @@ template<class T>
 class CMatrixCol : public CColOrbitManager<T>
 {
 public:
-	CC CMatrixCol(const CMatrixData<T> *pMatrix, bool IS_enum = false, bool matrOwner = false) :
+	CC CMatrixCol(const CMatrixData<T> *pMatrix, uint enumFlags = t_enumDefault) :
 		CColOrbitManager<T>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
-		initiateMatrixCol(pMatrix, IS_enum, matrOwner);
+		initiateMatrixCol(pMatrix, enumFlags);
 	}
-	CC CMatrixCol(const CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
+	CC CMatrixCol(const CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, uint enumFlags) :
 		CColOrbitManager<T>(maxElem + 1, rowNumb, colNumb) {
-		initiateMatrixCol(pMatrix, IS_enum, false);
+		initiateMatrixCol(pMatrix, enumFlags & (t_allFlags ^ t_matrixOwner));
 	}
 	CC ~CMatrixCol() {
 		if (isMatrOwner())
 			delete static_cast<const CMatrix<T> *>(matrix());
 	}
-	CC inline void initiateMatrixCol(const CMatrixData<T> *pMatrix, bool IS_Enum = true, bool matrOwner = false) {
+	CC inline void initiateMatrixCol(const CMatrixData<T> *pMatrix, uint enumFlags = t_IS_enumerator) {
 		m_pMatrix = pMatrix;
-		setMatrOwner(matrOwner);
-		setIS_Enumerator(IS_Enum);
+		setMatrOwner(enumFlags & t_matrixOwner);
+		setIS_Enumerator(enumFlags & t_IS_enumerator);
 		setOutFile(NULL);
 	}
 	CC inline const CMatrixData<T> *matrix() const	{ return m_pMatrix; }
@@ -126,9 +126,9 @@ template<class T>
 class CMatrixCanonChecker : public CMatrixCol<T>, public CCanonicityChecker<T>
 {
 public:
-	CC CMatrixCanonChecker(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner = false) :
-		CMatrixCol<T>(pMatrix, IS_enum, matrOwner),
-		CCanonicityChecker<T>(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1) 
+	CC CMatrixCanonChecker(const CMatrixData<T> *pMatrix, uint enumFlags) :
+		CMatrixCol<T>(pMatrix, enumFlags),
+		CCanonicityChecker<T>(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
 															{ setEnumInfo(NULL); }
 
 	CC CMatrixCanonChecker(CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
@@ -409,7 +409,7 @@ template<class T>
 class CEnumerator : public CMatrixCanonChecker<T>
 {
 public:
-	CK CEnumerator(const CMatrix<T> *pMatrix, bool IS_enum, bool matrOwner = false, int treadIdx = -1, uint nCanonChecker = 0);
+	CK CEnumerator(const CMatrix<T> *pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline CRowSolution<T> *rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
 	CK ulonglong Enumerate(designRaram *pParam, bool writeFile = false, CEnumInfo<T> *pEnumInfo = NULL, const CEnumerator<T> *pMaster = NULL, t_threadCode *pTreadCode = NULL);
@@ -420,13 +420,13 @@ public:
     CK virtual size_t firstUnforcedRow() const              { return 0; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)  {}
 	CK virtual size_t *forcibleLambdaPntr() const           { return NULL; }
-	CK virtual void prepareToFindRowSolution()				{}
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 #if CANON_ON_GPU
 	CK inline auto GPU_CanonChecker() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(T nRow) const;
 #endif
 protected:
+	CK virtual bool prepareToFindRowSolution()				{ return true; }
 	CK inline C_InSys<T> *getInSys() const					{ return this->IS_enumerator()? (C_InSys<T> *)this->matrix() : NULL; }
     CK virtual void setX0_3(VECTOR_ELEMENT_TYPE value)      {}
 	CK inline CSimpleArray<T> *rowEquation() const			{ return m_pRowEquation; }
@@ -447,7 +447,7 @@ protected:
 	CK inline designRaram *designParams() const				{ return m_pParam; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
-	CK virtual bool SeekLogFile() const					{ return false; }
+	CK virtual bool SeekLogFile() const						{ return false; }
 
 private:
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
@@ -495,8 +495,8 @@ private:
 };
 
 template<class T>
-CEnumerator<T>::CEnumerator(const CMatrix<T> *pMatrix, bool IS_enum, bool matrOwner, int treadIdx, uint nCanonChecker) :
-	CMatrixCanonChecker<T>(pMatrix, IS_enum, matrOwner)
+CEnumerator<T>::CEnumerator(const CMatrix<T> *pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	CMatrixCanonChecker<T>(pMatrix, enumFlags)
 {
 	m_pRow = new CRowSolution<T> *[pMatrix->rowNumb()];
 	setRowEquation(NULL);

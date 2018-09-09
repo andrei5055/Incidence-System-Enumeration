@@ -6,7 +6,7 @@ template<class T>
 class C_InSysEnumerator : public CEnumerator<T>, public CInSysSolver<T>, public CVector<T>
 {
 public:
-	CK C_InSysEnumerator(const C_InSys<T> *pInSysm, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_InSysEnumerator(const C_InSys<T> *pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_InSysEnumerator();
 	CK virtual T getX0_3() const								{ return m_x0_3; }
 	CK virtual size_t firstUnforcedRow() const                  { return m_firstUnforcedRow; }
@@ -54,8 +54,8 @@ private:
 };
 
 template<class T>
-C_InSysEnumerator<T>::C_InSysEnumerator(const C_InSys<T> *pInSys, bool matrOwner, bool noReplicatedBlocks, int treadIdx, uint nCanonChecker) :
-	m_bNoReplBlock(noReplicatedBlocks), CEnumerator<T>(pInSys, true, matrOwner, treadIdx, nCanonChecker),
+C_InSysEnumerator<T>::C_InSysEnumerator(const C_InSys<T> *pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	m_bNoReplBlock(enumFlags & t_noReplicatedBlocks), CEnumerator<T>(pInSys, enumFlags | t_IS_enumerator, treadIdx, nCanonChecker),
 	CInSysSolver<T>(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<T>(pInSys->colNumb())
 {
 	const auto nCol = pInSys->colNumb();

@@ -3,9 +3,8 @@
 
 #include "stdafx.h"
 #include "C_tDesignEnumerator.h"
-#include "PBIBD_Enumerator.h"
+#include "IG_Enumerator.h"
 
-//#include <iostream> 
 #include <fstream>
 #include <string>      // for getline
 #include <algorithm>
@@ -163,29 +162,30 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 	C_InSys<T> *pInSys = NULL;
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
 	t_objectType objType = pParam->objType;
+	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
 	if (pParam->t <= 2) {
-		if (pParam->lambda.size() >= 1 || objType == t_InconsistentGraph) {
+		if (pParam->lambda.size() > 1 || objType == t_InconsistentGraph) {
 			switch (objType) {
 			case t_PBIBD:
 				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
 			case t_InconsistentGraph:
 				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new CInconsistentGraph_Enumerator<T>(pInSys, false, FirstPath);
+				pInSysEnum = new CIG_Enumerator<T>(pInSys, enumFlags | t_outColumnOrbits, FirstPath);
 				break;
 			default: return false;
 			}
 		}
 		else {
 			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
-			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, false, pParam->noReplicatedBlocks);
+			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, enumFlags | t_outColumnOrbits);
 			objType = t_BIBD;
 		}
 	}
 	else {
 		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda[0]);
-		pInSysEnum = new C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), false, pParam->noReplicatedBlocks);
+		pInSysEnum = new C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), enumFlags);
 		objType = t_tDesign;
 	}
 

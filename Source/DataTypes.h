@@ -427,7 +427,6 @@ void setPrintResultNumVar(size_t numVar);
 #define setPrintResultNumVar(nVar)
 #endif
 
-
 typedef enum {
 	t_BIBD,			// default
 	t_tDesign,
@@ -436,12 +435,23 @@ typedef enum {
 	t_InconsistentGraph
 } t_objectType;
 
+typedef enum {
+	t_enumDefault			= 0,
+	t_IS_enumerator			= 1 << 0,
+	t_matrixOwner			= 1 << 1,
+	t_noReplicatedBlocks	= 1 << 2,
+	t_outColumnOrbits		= 1 << 3,
+	t_allFlags				= -1
+} t_EnumeratorFlags;
+
 typedef struct {
 	t_objectType objType;
 	int v;
 	int k;
 	int r;
 	std::vector<int> lambda;
+	std::vector<int> lambdaA;
+	std::vector<int> lambdaB;
 	int t;
 	int mt_level;			// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task

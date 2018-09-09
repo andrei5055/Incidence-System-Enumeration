@@ -58,7 +58,9 @@ bool CEnumerator<T>::fileExists(const char *path, bool file) const
 template<class T>
 CRowSolution<T> *CEnumerator<T>::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
-	prepareToFindRowSolution();
+	if (!prepareToFindRowSolution())
+		return NULL;
+
 	const size_t nVar = MakeSystem();
 	if (nVar == (size_t )-1)
         return NULL;
@@ -394,7 +396,7 @@ ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumIn
 				this->setCurrentRowNumb(nRow);
 				this->setColOrbitCurr(pColOrb);
 				this->setCurrUnforcedOrbPtr(nRow);
-				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, 0, &level, pRowSolution)) {
+				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &level, pRowSolution)) {
 					// We need to get lastRightPartIndex here and use later because 
 					// for multi-thread configuration it could be changed by master
 					const PERMUT_ELEMENT_TYPE lastRightPartIndex = pRowSolution->solutionIndex();

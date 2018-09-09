@@ -11,8 +11,8 @@ template<class T>
 class CBIBD_Enumerator : public C_InSysEnumerator<T>
 {
 public:
-	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0) :
-		C_InSysEnumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker) {}
+	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
+		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
@@ -115,7 +115,7 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 
 #if USE_THREADS < 2
 	// For multithread case it's not so easy to define that we will not construct the BIBDs with no replacated blocks
-	// Since this flag is optioanl and it's used for information only, we can skip this procedure.
+	// Since this flag is optional and it's used for information only, we can skip this procedure.
 	if (!(noReplicatedBlockFound || pEnumInfo->constructedAllNoReplBlockMatrix())) {
 		// This flag was not set yet
 		const auto *pSolution = rowStuff(paramK - 1)->currSolution(); // Is it correct for multi-thread case ???

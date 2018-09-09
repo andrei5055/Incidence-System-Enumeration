@@ -39,6 +39,49 @@ static bool isPrime(int k) {
 template <class T>
 bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath);
 
+bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax) {
+	// We also could try to use following
+	// Theorem 3: If iMin == 0 && val[0] > 1, then nVertex >= 3 * k - 2 * z,
+	//            where i - max index of a(i) != 0.
+	// Prof: follows from nVertex/2 - 2 * k >= k - 2 * i
+	//       k    |   k    |
+	//   111...111
+	//   000...000111...111
+	//   1..1000001..10000011...11???|
+	//     i        i       k-2*i    |
+	//   <-------- nVertex --------->|
+
+	if (!pMult[0]  && pVal[0] > 1) {
+		int i = iMax;
+		while (!pVal[i])
+			i--;
+
+		if (nVertex < 3 * k - 2 * i)
+			return false;	
+	}
+
+	// Theorem 3: If we do have identical elements (forming the groups), which belong to the same k blocks
+	// them:
+	//    a) k is divisible by size of the group a = (pVal[iMax] + 1)
+	//    b) k / a >= the minimal number of different groups 
+	if (pMult[iMax] == k && pVal[iMax] > 0) {
+		const int a = pVal[iMax] + 1;
+		if (k % a)
+			return false;
+
+		int kMin = 1;
+		for (int i = 0; i < iMax; ++i)
+			if (pVal[i])
+				kMin += 1;
+
+		if (kMin > k / a)
+			return false;
+	}
+
+	return true;
+}
+
+
 int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool firstPath)
 {
     int nVertex = pParam->v;
@@ -77,7 +120,7 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 		int sum0 = nVertex - 1;
 		int sum1 = k * (k - 1);
 		int i = iMax;
-		int num = kIsPrime ? sum0 - sum0%step[i] : minDivider(k) - 1;
+		int num = kIsPrime ? sum0 - sum0%step[i] : k / minDivider(k) - 1;
 		cout << "K = " << k << endl;
 
 		bool printMult = true;
@@ -86,12 +129,8 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 				sum0 -= num;
 				sum1 -= num * mult[i];
 				val[i] = num;
-				if (!sum0 && !sum1) {
+				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax)) {
 					// Set of parameters is constructed
-					// WE also could try to use following
-					// Theorem 3: If aMin == 0 && val[0] > 1, then nVertex/2 >= 3 * k - 2 * b,
-					//            where b - max index of a(i) != 0.
-					// Prof: follows from nVertex/2 - 2 * k >= k - 2 * b
 					char buffer[256], *pBuf;
 					if (printMult) {
 						printMult = false;
@@ -109,6 +148,8 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 					cout << buffer << endl;
 
 					pParam->lambda.resize(0);
+					pParam->lambdaA.resize(0);
+					pParam->lambdaB.resize(0);
 					pParam->r = k;
 					int jMax = iMax;
 					int n = val[jMax];
@@ -122,9 +163,17 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 					pParam->k = k / n;
 					pParam->v = nVertex / n;
 
+					// Define possible values for 
+					//   (a) mutual intersection of any two matrix rows;
+					//   (b) number of elements, which belong exactly to i common blocks
+					//   (c) number of elements, which belong to some block AND exactly to i common blocks 
 					for (int j = 0; j <= jMax; ++j) {
-						if (val[j])
-							pParam->lambda.push_back(mult[j]);
+						if (!val[j])
+							continue;
+
+						pParam->lambda.push_back(mult[j]);
+						pParam->lambdaA.push_back(val[j] / n);
+						pParam->lambdaB.push_back(val[j] * mult[j] / k / n);
 					}
 
 					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))

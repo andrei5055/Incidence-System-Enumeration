@@ -17,7 +17,7 @@ class C_tDesignEnumerator : public CBIBD_Enumerator<T>
 #endif
 {
 public:
-	CK C_tDesignEnumerator(const C_tDesign<T> *pBIBD, bool matrOwner = false, bool noReplicatedBlocks = false, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_tDesignEnumerator(const C_tDesign<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_tDesignEnumerator();
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
@@ -34,10 +34,10 @@ protected:
 	CK virtual bool constructing_t_Design() { return true; }
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
 #if USE_EXRA_EQUATIONS
-	CK virtual CEquSystem *equSystem() { return this; }
-	CK virtual void prepareToFindRowSolution() { equSystem()->resetArray(); }
+	CK virtual CEquSystem *equSystem()							{ return this; }
+	CK virtual bool prepareToFindRowSolution()					{ equSystem()->resetArray(); return true; }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit *pColOrb) { m_pColOrbForCurrentRow = pColOrb; COrbToVar::resetArray(); }
-	virtual CColOrbit *colOrbitForCurrentRow() const { return m_pColOrbForCurrentRow; }
+	virtual CColOrbit *colOrbitForCurrentRow() const			{ return m_pColOrbForCurrentRow; }
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb);
 #endif
 private:

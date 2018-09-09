@@ -11,7 +11,7 @@
 template class CCanonicityChecker<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
-void CCanonicityChecker<T>::InitCanonicityChecker(T nRow, size_t nCol, int rank, T *pMem)
+void CCanonicityChecker<T>::InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem)
 {
 	m_rank = rank;
 	CPermut::Init(nRow, pMem);
@@ -212,8 +212,8 @@ void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
         }
     } while (++idx < nRow);
     
-
 	if (!rowPermut) {
+		// Saving only column's orbit permutation
 		T *permCol;
 		const auto lenPerm = getLenPermutCol(&permCol);
 		if (groupOrder() == 1) {		// no permutations were saved yet
@@ -224,7 +224,13 @@ void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 		permStorage()->savePermut(lenPerm, permCol);
 	}
 	else {
-//		updateGroupOrder();
+		if (permColStorage()) {
+			// Saving both - row and column permutation
+			T *permCol;
+			const auto lenPerm = getLenPermutCol(&permCol);
+			permColStorage()->savePermut(lenPerm, permCol);
+		}
+
 		permStorage()->savePermut(numRow(), permRow());
 	}
 }
@@ -435,7 +441,7 @@ void CCanonicityChecker<T>::outputAutomorphismInfo(FILE *file) const
 	MUTEX_LOCK(out_mutex);
 	outString("\nOrbits and generating permutations:\n", file);
 	permStorage()->outputPerm(file, orbits(), numRow());
-	permStorage()->outputPermutations(file, numRow());
+	permStorage()->outputPermutations(file, numRow(), permColStorage());
 	MUTEX_UNLOCK(out_mutex);
 }
 
@@ -463,164 +469,7 @@ bool CCanonicityChecker<T>::printMatrix(const designRaram *pParam) const
 			  outType & t_GroupOrderLT && groupOrder() < pParam->grpOrder ||
 			  outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
 }
-/*
-template<class T>
-bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo, T *pRowOut, CRowSolution<T> *pRowSolution)
-{
-	// Construct trivial permutations for rows and columns
-	const bool rowPermut = outInfo & t_saveRowPermutations;
-	init(nRowMax--, rowPermut);
 
-	const auto *pMatr = pEnum->matrix();
-	const auto colOrbLen = pEnum->colOrbitLen();
-	const auto colNumb = pEnum->colNumb();
-	auto **colOrbit = pEnum->colOrbits();
-	auto **colOrbitIni = pEnum->colOrbitsIni();
-#ifndef USE_CUDA
-	const VECTOR_ELEMENT_TYPE *pCurrSolution;
-	size_t solutionSize;
-	if (pRowSolution) {
-		// Because the position of current solution (pRowSolution->solutionIndex()) 
-		// could be changed, let's take pointer here
-		// Don't worry about that and similar compilation warnings: For now we don't plan to call this method with pRowSolution != NULL
-		pCurrSolution = pRowSolution->currSolution();
-		solutionSize = pRowSolution->solutionSize();
-#if USE_STRONG_CANONICITY
-		solutionStorage()->clear();
-		pRowSolution->setLenOrbitOfSolution(0);
-#endif
-	}
-
-	size_t startIndex = 0;
-#endif
-
-	T *pColIndex = NULL;
-	T *pVarPerm = NULL;
-	bool retVal = true;
-	T nRow = MATRIX_ELEMENT_MAX;
-	while (true) {
-	next_permut:
-		nRow = next_permutation(nRow);
-		if (nRow == MATRIX_ELEMENT_MAX)
-			break;
-
-		OUTPUT_PERMUTATION(this, pEnum->outFile(), orbits(), numRow());
-
-		// Loop for all remaining matrix's rows
-		for (; nRow <= nRowMax; nRow++) {
-			const auto *pRow = pMatr->GetRow(nRow);
-			const auto *pRowPerm = pMatr->GetRow(*(permRow() + nRow));
-			const auto *pColOrbitIni = colOrbitIni[nRow];
-			const auto *pColOrbit = colOrbit[nRow];
- 			while (pColOrbit) {
-
-				// Define the number of column to start with
-				const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
-				const auto orbLen = pColOrbit->length();
-				int diff;
-				if (orbLen > 1)
-					diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
-				else
-					diff = (int)*(pRow + nColCurr) - *(pRowPerm + *(permCol() + nColCurr));
-
-				if (diff > 0)
-					goto next_permut;
-
-				if (!diff) {
-					pColOrbit = pColOrbit->next();
-					continue;
-				}
-
-#if RECURSIVE_CANON
-				if (orbLen > 1)
-					return false;
-
-				// Construct matrix, for just found permRow() and permCol()
-				CMatrix *pMatr = matrix();
-				CMatrix matr(pMatr, permRow(), permCol());
-				CCanonicityChecker canon(rowNumb(), colNumb(), rank());
-				setMatrix(&matr);
-				std::cout << "########";
-				matr.printOut();
-				setCanonChecker(&canon);
-
-				// Check, if this matrix is canonical
-				int level;
-				bool retVal = TestCanonicity(level);
-				setMatrix(pMatr);
-#else
-				if (pRowOut) {
-					if (outInfo & t_saveRowToChange)
-						*pRowOut = rowToChange(nRow);
-#ifndef USE_CUDA
-					else {
-						if (pRowSolution && !pRowSolution->isLastSolution()) {
-							// NOTE: No need to remove last solution, we will leave this level anyway
-							if (nRow < nRowMax) {
-								// We can remove all solutions which are in the same group with the solution just tested.
-								// We don't need them even as the right parts of our equations, because the usage of everyone 
-								// will make the matrix non canonical
-								pRowSolution->removeNoncanonicalSolutions(startIndex);
-							} else {
-								reconstructSolution(colOrbit[nRow], pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
-#if USE_STRONG_CANONICITY
-								if (solutionStorage()) {
-									for (auto *pSolution : *solutionStorage()) {
-										if (!MEMCMP(pSolution, improvedSolution(), solutionSize*sizeof(*pSolution)))
-											goto next_permut; // We already saw this solution
-									}
-								}
-
-								startIndex = pRowSolution->moveNoncanonicalSolutions(improvedSolution(), startIndex, solutionStorage(), pRowOut);
-								if (startIndex != SIZE_MAX) {
-									retVal = false;
-									// we will try to find better alternative
-									goto next_permut;
-								}
-#else
-								pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
-#endif
-							}
-						}
-					}
-#endif				
-				}
-
-				return false;
-#endif
-			}
-		}
-
-		// Automorphism found:
-#if (PRINT_CURRENT_MATRIX && PRINT_PERMUTATION)
-		outString("-----\n", pEnum->outFile());
-#endif
-		if (!rowPermut) {
-			// We are here to define the canonicity of partially constructed matrix AND
-			// we just found the nontrivial automorphism.
-			const auto *pColOrbitIni = colOrbitIni[nRow];
-			const auto *pColOrbit = colOrbit[nRow];
-			if (!pColIndex) // Index for columns was not yet constructed
-				pVarPerm = (pColIndex = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen)) + colNumb;
-
-			size_t varIdx = 0;
-			while (pColOrbit) {
-				const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
-				*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
-				pColOrbit = pColOrbit->next();
-			}
-		}
-
-		addAutomorphism(rowPermut);
-		nRow = MATRIX_ELEMENT_MAX - 1;
-	}
-
-	if (rowPermut)
-		updateGroupOrder();
-
-	return retVal;
-}
-*/
 template<class T>
 T CCanonicityChecker<T>::rowToChange(T nRow) const
 {

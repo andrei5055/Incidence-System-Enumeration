@@ -22,7 +22,7 @@
     <ProjectGuid>{F69B13B6-D50D-4970-935F-8A8B7C31E686}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CDTools</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>CDTools</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -172,6 +172,7 @@
     <ClInclude Include="..\Source\EquSystem.h" />
     <ClInclude Include="..\Source\GPU_CanonChecker.h" />
     <ClInclude Include="..\Source\GroupsInfo.h" />
+    <ClInclude Include="..\Source\IG_Enumerator.h" />
     <ClInclude Include="..\Source\InsSysEnumerator.h" />
     <ClInclude Include="..\Source\InSysRowEquation.h" />
     <ClInclude Include="..\Source\InSysSolver.h" />
@@ -199,6 +200,7 @@
     <ClCompile Include="..\Source\EquSystem.cpp" />
     <ClCompile Include="..\Source\GroupsInfo.cpp" />
     <ClCompile Include="..\Source\IGraphNeighborhoodStructure.cpp" />
+    <ClCompile Include="..\Source\IG_Enumerator.cpp" />
     <ClCompile Include="..\Source\InSysEnumerator.cpp" />
     <ClCompile Include="..\Source\InSysRowEquation.cpp" />
     <ClCompile Include="..\Source\InSysSolver.cpp" />

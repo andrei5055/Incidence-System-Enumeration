@@ -5,8 +5,8 @@
 template class C_tDesignEnumerator<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
-C_tDesignEnumerator<T>::C_tDesignEnumerator(const C_tDesign<T> *pBIBD, bool matrOwner, bool noReplicatedBlocks, int treadIdx, uint nCanonChecker) :
-		CBIBD_Enumerator<T>(pBIBD, matrOwner, noReplicatedBlocks, treadIdx, nCanonChecker)
+C_tDesignEnumerator<T>::C_tDesignEnumerator(const C_tDesign<T> *pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
+		CBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker)
 #if USE_EXRA_EQUATIONS
 		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
 #endif

@@ -37,6 +37,11 @@ void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem
 
 void CGroupsInfo::printGroupInfo(FILE *file) const
 {
+	size_t i = GetAt(0)->numMatrices() ? 0 : 1;
+	const size_t iMax = GetSize();
+	if (i == iMax)
+		return;			// Nothing was constructed
+
 #define SHIFT "    "
 	char buffer[256], line[256];
 	size_t len = SPRINTF(buffer, "\n" SHIFT "    |Aut(D)|          Nd:             Ns:            Ndt:            Nst:\n");
@@ -50,8 +55,6 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 	outString(line, file);
 
 	COrderInfo total(0, 0);
-	size_t i = GetAt(0)->numMatrices()? 0 : 1;
-	const size_t iMax = GetSize();
 	for (; i < iMax; i++) {
 		const COrderInfo *pInfo = GetAt(i);
 		total.addMatrix(pInfo);
