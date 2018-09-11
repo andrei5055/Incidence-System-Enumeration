@@ -29,6 +29,8 @@ protected:
 	CK inline size_t forcibleLambda(size_t i) const             { return *(forcibleLambdaPntr() + i); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
+	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
+	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker = NULL) const;
 
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbit, CColOrbit<T> *pPrev, int idx);
@@ -446,4 +448,13 @@ void C_InSysEnumerator<T>::setVariableLimit(size_t nVar, T len, size_t nRowToBui
 		len = 1;
 
 	inSysRowEquation()->setVariableMaxVal(nVar, len);
+}
+
+template<class T>
+void C_InSysEnumerator<T>::ConstructColumnPermutation(const CMatrixData<T> *pMatrix)
+{
+	C_InSys<T> transformedMatr;
+	transformedMatr.InitWithPermutedRows(pMatrix, permRow());
+	CanonizeByColumns(&transformedMatr, permColStorage()->allocateMemoryForPermut(pMatrix->colNumb()));
+	permColStorage()->setLenPerm(pMatrix->colNumb());
 }

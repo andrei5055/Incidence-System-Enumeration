@@ -24,6 +24,8 @@ typedef enum {
 	t_saveRowToChange		= (1 << 2)
 } t_canonOutInfo;
 
+template<class T> class CMatrix;
+template<class T> class CMatrixData;
 template<class T> class CMatrixCol;
 template<class T> class CRowSolution;
 
@@ -54,6 +56,8 @@ public:
 
 protected:
 	CC inline int rank() const						{ return m_rank; }
+	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix)		{}
+	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage = NULL, CCanonicityChecker *pCanonChecker = NULL) const	{}
 private:
     CC void init(T nRow, bool savePerm);
 	CC T next_permutation(T idx = MATRIX_ELEMENT_MAX);
@@ -273,7 +277,7 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 #if (PRINT_CURRENT_MATRIX && PRINT_PERMUTATION)
 		outString("-----\n", pEnum->outFile());
 #endif
-		if (!rowPermut || permColStorage()) {
+		if (!rowPermut) {
 			// We are here to define the canonicity of partially constructed 
 			// matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits 
@@ -289,6 +293,8 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 				*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
 				pColOrbit = pColOrbit->next();
 			}
+		} else if (permColStorage()) {
+			ConstructColumnPermutation(pEnum->matrix());
 		}
 
 		addAutomorphism(rowPermut);

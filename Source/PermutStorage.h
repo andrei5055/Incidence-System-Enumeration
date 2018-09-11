@@ -8,8 +8,8 @@ public:
 	CC CPermutStorage();
 	CC ~CPermutStorage()							{ delete[] permutMemory(); }
 	void outputPermutations(FILE *file, T len, const CPermutStorage<T> *pPermColumn = NULL) const;
-	void outputPerm(FILE *file, const T *perm, size_t lenPerm, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
-			char **ppFormat = NULL, size_t lenPerm2 = 0, const char *pColPerm = NULL) const;
+	void outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenPerm2 = 0, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
+			char **ppFormat = NULL, const char *pColPerm = NULL) const;
 	CK void adjustGenerators(int *pIdx, T lenIdx);
 	CK size_t constructGroup();
 	CK size_t findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size_t idx, VECTOR_ELEMENT_TYPE *pMem, size_t *pCanonIdx, int &nCanon);
@@ -18,6 +18,8 @@ public:
 	CC void savePermut(const T lenPermut, const T *perm = NULL);
 	CK inline T *getPermutByIndex(size_t i) const	{ return permutMemory() + i * lenPerm(); }
 	CK inline size_t numPerm() const				{ return lenMemUsed() / lenPerm(); }
+	CC T *allocateMemoryForPermut(T lenPermut);
+	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 protected:
 private:
 	CK inline size_t lenPermByte() const			{ return m_nLenPermByte;  }
@@ -27,9 +29,7 @@ private:
 	CC inline size_t lenMemUsed() const             { return m_nLenUsed; }
 	CC inline void setLenMemMax(size_t val)         { m_nLenMax = val; }
 	CC inline void setLenMemUsed(size_t val)        { m_nLenUsed = val; }
-	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 	CC inline void deallocateMemoryForPermut()		{ m_nLenUsed -= lenPerm(); }
-	CC T *allocateMemoryForPermut(T lenPermut);
 	void orderPermutations(size_t *pPermPerm);
 	CK T *multiplyPermutations(size_t firstPermIdx, size_t secondPermIdx, T *pMultRes = NULL, size_t *pToIdx = NULL);
 	CK void multiplyPermutations(size_t currPermIdx, size_t fromIdx, size_t toIdx, size_t permOrder, size_t lastIdx, size_t *pPermPerm);
@@ -89,14 +89,15 @@ void CPermutStorage<T>::savePermut(const T lenPermut, const T *perm)
 }
 
 template<class T>
-void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, size_t lenPerm, char **ppBuffer, size_t *pLenBuffer, 
-									char **ppFormat, size_t lenPerm2, const char *pColPerm) const
+void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenRowPerm, char **ppBuffer, size_t *pLenBuffer, 
+									char **ppFormat, const char *pColPerm) const
 {
 	size_t len;
 	char *pBuffer, *pFormat;
 	if (!ppBuffer || *ppBuffer == NULL) {
-		const auto lenFrmt = len = lenPerm < 10 ? 2 : lenPerm < 100 ? 3 : lenPerm < 1000 ? 4 : 5;
-		len *= (lenPerm + lenPerm2);
+		len = lenPerm + lenRowPerm;
+		const size_t lenFrmt = len < 10 ? 2 : len < 100 ? 3 : len < 1000 ? 4 : 5;
+		len *= lenFrmt;
 		len += 4;
 		pBuffer = new char[len + 8];
 		SPRINTF(pFormat = pBuffer + len, "%%%zud", lenFrmt);
@@ -134,18 +135,20 @@ void CPermutStorage<T>::outputPermutations(FILE *file, T lenPerm, const CPermutS
 	char *pFormat;
 	char *pBuffer = NULL;
 	char *pBufferRows = NULL;
-	size_t lenBuffer;
+	size_t lenBuffer, lenBufferCol;
 	for (size_t len = 0; len < lenMemUsed(); len += lenPerm) {
 		if (pPermColumn) {
 			auto lenPermCol = pPermColumn->lenPerm();
-			outputPerm(NULL, pPermColumn->permutMemory() + len, lenPerm, &pBuffer, &lenBuffer, &pFormat, lenPerm);
+			outputPerm(NULL, pPermColumn->permutMemory() + lenPermCol, lenPermCol, lenPerm, &pBuffer, &lenBufferCol, &pFormat);
 			if (!len) {
-				lenBuffer = lenBuffer >> 1;
-				pBufferRows = pBuffer + len;
+				lenBuffer = lenBufferCol;
+				lenBufferCol = (lenBufferCol - 4) / (lenPermCol + lenPerm) * lenPermCol + 2;
+				pBufferRows = pBuffer + lenBufferCol;
+				lenBuffer -= lenBufferCol;
 			}
 		}
 
-		outputPerm(file, permutMemory() + len, lenPerm, &pBufferRows, &lenBuffer, &pFormat, 0, pBuffer);
+		outputPerm(file, permutMemory() + len, lenPerm, 0, &pBufferRows, &lenBuffer, &pFormat, pBuffer);
 	}
 
 	if (pBuffer)

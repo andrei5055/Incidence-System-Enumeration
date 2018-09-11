@@ -18,7 +18,7 @@ public:
 	CC inline void setDataOwner(bool val)	{ m_bDataOwner = val; }
 	CK inline T *GetDataPntr() const		{ return m_pData; }
 	CK inline size_t lenData() const		{ return m_nLenData; }
-	void InitTransposed(const CMatrixData<T> *pMatr, int mult = 1) {
+	CK void InitTransposed(const CMatrixData<T> *pMatr, int mult = 1) {
 		Init(pMatr->colNumb(), pMatr->rowNumb() * mult);
 		T *pMatrData = GetDataPntr();
 		T *pMatrSrc = pMatr->GetDataPntr();
@@ -39,6 +39,14 @@ public:
 			pMatrData += colNumb();
 		}
 	}
+	CK void InitWithPermutedRows(const CMatrixData<T> *pMatr, T *pPermRows) {
+		Init(pMatr->rowNumb(), pMatr->colNumb());
+		const auto len = colNumb() * sizeof(T);
+		T *pMatrData = GetDataPntr() - len;
+		T *pMatrSrc = pMatr->GetDataPntr();
+		for (T i = 0; i < rowNumb(); ++i)
+			memcpy(pMatrData += len, pMatrSrc + pPermRows[i] * len, len);
+	}
 
 protected:
 
@@ -51,7 +59,7 @@ protected:
 		m_nMaxElement = maxElement;
 		setDataOwner(!data);
 		m_nLenData = m_nRows * m_nCols * sizeof(T);
-		m_pData = data? data : new T[m_nRows * m_nCols];
+		m_pData = data? data : m_nLenData? new T[m_nRows * m_nCols] : NULL;
 	}
 private:
 	CK inline bool dataOwner()	const		{ return m_bDataOwner; }
@@ -67,7 +75,7 @@ template<class T>
 class CMatrix : public CMatrixData<T>
 {
  public:
- 	CK CMatrix(T nRows, T nCols = 0, T maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
+ 	CK CMatrix(T nRows = 0, T nCols = 0, T maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
     CK CMatrix(const CMatrix *pMatrix, const int *pPermRow, const int *pPermCol)
 	{
 		Init(pMatrix->rowNumb(), pMatrix->colNumb());
@@ -129,7 +137,7 @@ class CMatrix : public CMatrixData<T>
 			for (size_t j = 0; j < nCol; j++)
 				*(pBuf + j) = pSymb[*(pRow + j)];
 
-      SNPRINTF(pBuf + nCol, 2, "\n");
+			SNPRINTF(pBuf + nCol, 2, "\n");
 			if (pFile)
 				fputs(pBuf, pFile);
 			else
@@ -177,8 +185,9 @@ class C_InSys : public CMatrix<T>
 			memcpy(this->GetRow(i), pMaster->GetRow(i), len);
 	}
 
+	CK C_InSys(int t = 2) : CMatrix<T>(), m_t(t) { m_ppNumbSet = NULL; }
 	CK ~C_InSys() {
-		if (!isDataOwner())
+		if (!m_ppNumbSet || !isDataOwner())
 			return;
 
 		for (int i = 0; i < 3; i++)

@@ -223,16 +223,8 @@ void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 
 		permStorage()->savePermut(lenPerm, permCol);
 	}
-	else {
-		if (permColStorage()) {
-			// Saving both - row and column permutation
-			T *permCol;
-			const auto lenPerm = getLenPermutCol(&permCol);
-			permColStorage()->savePermut(lenPerm, permCol);
-		}
-
+	else
 		permStorage()->savePermut(numRow(), permRow());
-	}
 }
 
 template<class T>
@@ -440,7 +432,7 @@ void CCanonicityChecker<T>::outputAutomorphismInfo(FILE *file) const
 {
 	MUTEX_LOCK(out_mutex);
 	outString("\nOrbits and generating permutations:\n", file);
-	permStorage()->outputPerm(file, orbits(), numRow());
+	permStorage()->outputPerm(file, orbits(), numRow(), permColStorage()? permColStorage()->lenPerm() : 0);
 	permStorage()->outputPermutations(file, numRow(), permColStorage());
 	MUTEX_UNLOCK(out_mutex);
 }
