@@ -39,43 +39,113 @@ static bool isPrime(int k) {
 template <class T>
 bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath);
 
-bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax) {
+bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax, int *pUsedFlags) {
+	const bool doubleFlag = pMult[iMax] == k && pVal[iMax];
 	// We also could try to use following
 	// Theorem 3: If iMin == 0 && val[0] > 1, then nVertex >= 3 * k - 2 * z,
 	//            where i - max index of a(i) != 0.
 	// Prof: follows from nVertex/2 - 2 * k >= k - 2 * i
-	//       k    |   k    |
-	//   111...111
-	//   000...000111...111
-	//   1..1000001..10000011...11???|
-	//     i        i       k-2*i    |
-	//   <-------- nVertex --------->|
+	//             k    |    k    | v - 2k  |       
+	// e1:   11111...111                    |
+	// e2:   00000...000111...1111          |
+	// e3:   1..110..0001..1100000???...????|
+	//       e1&e3      e2&e3         m     |
+	//       <------------- v ------------->|
+	//
 
-	if (!pMult[0]  && pVal[0] > 1) {
-		int i = iMax;
-		while (!pVal[i])
-			i--;
+	if (!pMult[0] && pVal[0]) {
+		// There are two elements (e1, e2) which do not belong to common block
+		// Rewrite possible intersections into compressed array
+		int idxMax = iMax;// -(doubleFlag ? 1 : 0);
+		int buff[256]; pUsedFlags = buff;
+		int *pMultTmp = pUsedFlags + idxMax + 1;
+		int i = 0;
+		if (pVal[0] > 1) {
+			// There are at least 2 elements which do not belong to any
+			// of the blocks of which contains the current element e2
+			// (it means that e2&e3 could be empty)
+			pMultTmp[i++] = 0;
+		}
 
-		if (nVertex < 3 * k - 2 * i)
-			return false;	
+		// Compress remaining lambda's
+		for (int j = 1; j <= idxMax; ++j) {
+			if (pVal[j])
+				pMultTmp[i++] = pMult[j];
+		}
+
+		// Number of elements in compressed array
+		idxMax = i;
+		// Number of blocks which contain none of (e1, e2) 
+		const int m = nVertex - 2 * k;
+
+		// Flags, which will mark the indices of the intersections 
+		// which coud be used as the intersections of the element e2
+		memset(pUsedFlags, 0, i * sizeof(pUsedFlags[0]));
+
+		// Loop over the number of possible common blocks of e1 and e3
+		while (i--) {			
+			const auto e1_e3 = pMultTmp[i];
+			for (int j = 0; j <= i; ++j) {
+				const auto def = k - (e1_e3 + pMultTmp[j]);
+				if (def < 0)	// Current and all following intersections 
+					break;		// cannot be used
+
+				if (def > m)
+					continue;
+
+				// The deficit of units row e3 could be replenished 
+				// in blocks which do not contain e1 or e2
+				// Mark both intersection as "used"
+				pUsedFlags[i] = pUsedFlags[j] = 1;
+			}
+
+			if (!pUsedFlags[i])
+				return false;   // We cannot find any any valid pair for current intersection e1&e3
+		} 
 	}
 
-	// Theorem 3: If we do have identical elements (forming the groups), which belong to the same k blocks
+	// Theorem 4: If we do have identical elements (forming the groups), which belong to the same k blocks
 	// them:
 	//    a) k is divisible by size of the group a = (pVal[iMax] + 1)
 	//    b) k / a >= the minimal number of different groups 
-	if (pMult[iMax] == k && pVal[iMax] > 0) {
+	if (doubleFlag) {
 		const int a = pVal[iMax] + 1;
 		if (k % a)
 			return false;
 
-		int kMin = 1;
-		for (int i = 0; i < iMax; ++i)
-			if (pVal[i])
-				kMin += 1;
+		int nGroups = 1;
+		for (int i = 0; i < iMax; ++i) {
+			const auto b = pVal[i] * pMult[i];
+			if (!b)
+				continue;
 
-		if (kMin > k / a)
+			if (b % a)
+				return false;
+			
+			nGroups++;
+		}
+
+		if (a * nGroups > k)
 			return false;
+	}
+
+	// Teorem 5:  if pMult[i] != 0, 
+	//   a) nVertex * pVal[i] % 2 == 0
+	//   b) k * [(pMult[i] * pVal[i]) / k] % 2 == 0
+	// Prof: (a) Calculate the number of full bipartite graph K(2, i) for 1 <= i <= k
+	//    with two vertices in one part and i vertex in another one
+	//		 (b) do the same for K(2, i) for 1 <= i <= k with the fixrd vertex
+	const auto iMin = pMult[0] ? 0 : 1;
+	if (nVertex % 2) {
+		for (int i = iMin; i <= iMax; ++i)
+			if (pVal[i] % 2)
+				return false;
+	}
+
+	if (k % 2) {
+		for (int i = iMin; i <= iMax; ++i)
+			if ((pVal[i] * pMult[i]) % 2)
+				return false;
 	}
 
 	return true;
@@ -92,9 +162,10 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 
 	const auto kMax = nVertex - 2;
 	const int len = kMax + 1;
-	int *mult = new int[len * 3];
+	int *mult = new int[len * 5];
 	int *step = mult + len;
 	int *val = step + len;
+	int *buffer = val + len;
 	for (int k = 3; k < kMax; ++k) {
 		// Theorem 1: k % (a(k) + 1) == 0
 		//    Consequence 1: max(a(k)) == k / min(divider(k)) - 1;
@@ -124,17 +195,19 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 		cout << "K = " << k << endl;
 
 		bool printMult = true;
+		int paramIdx = 0;
 		while (true) {
 			if (sum0 >= num && sum1 >= num * mult[i]) {
 				sum0 -= num;
 				sum1 -= num * mult[i];
 				val[i] = num;
-				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax)) {
+				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax, buffer)) {
 					// Set of parameters is constructed
 					char buffer[256], *pBuf;
 					if (printMult) {
 						printMult = false;
 						pBuf = buffer;
+						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "     ");
 						for (int j = 0; j <= iMax; ++j)
 							pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", mult[j]);
 
@@ -142,6 +215,7 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 					}
 
 					pBuf = buffer;
+					pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%3d: ", ++paramIdx);
 					for (int j = 0; j <= iMax; ++j)
 						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", val[j]);
 
@@ -188,7 +262,7 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 				}
 			}
 			else {
-				if (num > step[i]) {
+				if (num >= step[i]) {
 					num -= step[i];
 					continue;
 				}

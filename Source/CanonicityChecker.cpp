@@ -14,7 +14,6 @@ template<class T>
 void CCanonicityChecker<T>::InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem)
 {
 	m_rank = rank;
-	CPermut::Init(nRow, pMem);
 	m_pPermutRow = (CPermut *)(pMem += nRow);
 	m_pPermutRow->Init(nRow, pMem = (T *)((char *)pMem + sizeof(CPermut)));
 	m_pPermutCol = (CPermut *)(pMem += nRow);
@@ -55,8 +54,13 @@ void CCanonicityChecker<T>::init(T nRow, bool savePerm)
     memcpy(pCol, pRow, nRow * sizeof(*permCol()));
 	permStorage()->initPermutStorage();
 	setGroupOrder(1);
-	if (savePerm) 
+	if (savePerm) {
 		permStorage()->savePermut(numRow(), permRow());
+		if (permColStorage()) {
+			permColStorage()->initPermutStorage();
+			permColStorage()->savePermut(numCol(), pCol);
+		}
+	}
 }
 
 template<class T>
@@ -181,37 +185,28 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
 }
 
 template<class T>
+void CCanonicityChecker<T>::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bool rowPermut, bool calcGroupOrder)
+{
+	T idx = 0;
+	while (idx == permut[idx])
+		idx++;
+
+	if (calcGroupOrder) {
+		if (rowPermut && stabilizerLengthAut() > idx)
+			updateGroupOrder();
+
+		setStabilizerLength(idx);
+		setStabilizerLengthAut(idx);
+	}
+
+	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
+}
+
+template<class T>
 void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 {
-    const auto *array = permRow();
-	T idx = 0;
-    while (idx == array[idx])
-        idx++;
+	UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
 
-	if (rowPermut && stabilizerLengthAut() > idx)
-		updateGroupOrder();
-
-    setStabilizerLength(idx);
-	setStabilizerLengthAut(idx);
-    auto *pOrb = orbits();
-    const auto nRow = numRow();
-    do  {
-        auto i = *(pOrb + idx);
-        auto j = *(pOrb + array[idx]);
-        if (j == i)
-            continue;
-        
-        if (j < i) {
-            i ^= j;
-            i ^= j ^= i;
-        }
-        
-		for (auto k = nRow; k--;) {
-            if (*(pOrb+k) == j)
-                *(pOrb+k) = i;
-        }
-    } while (++idx < nRow);
-    
 	if (!rowPermut) {
 		// Saving only column's orbit permutation
 		T *permCol;
@@ -233,7 +228,7 @@ void CCanonicityChecker<T>::updateGroupOrder()
 	const auto i = stabilizerLengthAut();
 	auto idx = i;
 	int len = 1;
-	auto *pOrb = orbits();
+	const auto *pOrb = orbits();
 	while (++idx < numRow()) {
 		if (*(pOrb + idx) == i)
 			len++;
@@ -428,12 +423,12 @@ void CCanonicityChecker<T>::reconstructSolution(const CColOrbit<T> *pColOrbitSta
 }
 
 template<class T>
-void CCanonicityChecker<T>::outputAutomorphismInfo(FILE *file) const
+void CCanonicityChecker<T>::outputAutomorphismInfo(FILE *file, const CMatrixData<T> *pMatrix) const
 {
 	MUTEX_LOCK(out_mutex);
 	outString("\nOrbits and generating permutations:\n", file);
-	permStorage()->outputPerm(file, orbits(), numRow(), permColStorage()? permColStorage()->lenPerm() : 0);
-	permStorage()->outputPermutations(file, numRow(), permColStorage());
+	const T *pColOrbits = permColStorage() && (m_enumFlags & t_colOrbitsConstructed)? getColOrbits(0) : NULL;
+	permStorage()->outputAutomorphismInfo(file, orbits(), permColStorage(), pColOrbits, pMatrix);
 	MUTEX_UNLOCK(out_mutex);
 }
 

@@ -441,6 +441,9 @@ typedef enum {
 	t_matrixOwner			= 1 << 1,
 	t_noReplicatedBlocks	= 1 << 2,
 	t_outColumnOrbits		= 1 << 3,
+	t_outStabilizerOrbit	= 1 << 4,	// Keep the orbits of stabilizer of first elements
+	t_colOrbitsConstructed  = 1 << 5,
+	t_printTransposedMatrix = 1 << 6,
 	t_allFlags				= -1
 } t_EnumeratorFlags;
 

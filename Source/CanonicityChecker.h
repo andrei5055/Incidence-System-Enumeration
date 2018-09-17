@@ -30,14 +30,14 @@ template<class T> class CMatrixCol;
 template<class T> class CRowSolution;
 
 template<class T>
-class CCanonicityChecker : public CPermut
+class CCanonicityChecker
 {
 public:
     CC CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags = t_enumDefault);
     CC ~CCanonicityChecker();
 	void InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem);
 	CC bool TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo = 0, T *pRowOut = NULL, CRowSolution<T> *pRowSolution = NULL);
-    void outputAutomorphismInfo(FILE *file) const;
+    void outputAutomorphismInfo(FILE *file, const CMatrixData<T> *pMatrix = NULL) const;
 	CC inline uint groupOrder() const				{ return m_nGroupOrder; }
 	CC inline T numColOrb() const					{ return m_nNumColOrb; }
 	CC inline void setGroupOrder(uint val)			{ m_nGroupOrder = val; }
@@ -58,6 +58,9 @@ protected:
 	CC inline int rank() const						{ return m_rank; }
 	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix)		{}
 	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage = NULL, CCanonicityChecker *pCanonChecker = NULL) const	{}
+	CC inline T *getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
+	CC inline T *getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
+	inline bool checkProperty(uint flag) const		{ return m_enumFlags & flag; }
 private:
     CC void init(T nRow, bool savePerm);
 	CC T next_permutation(T idx = MATRIX_ELEMENT_MAX);
@@ -70,10 +73,10 @@ private:
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
 	CC inline T numRow() const						{ return m_nNumRow; }
     CC inline T numCol() const						{ return static_cast<T>(m_pPermutCol->numElement()); }
-#define orbits()	this->elementPntr()
+#define orbits()	m_pObits[0][0] 
 	CC void updateGroupOrder();
-    CC inline CColNumbStorage **colNumbStorage() const			{ return m_nColNumbStorage; }
-    CC inline CCounter<int> *counter() const					{ return m_pCounter; }
+    CC inline CColNumbStorage **colNumbStorage() const	{ return m_nColNumbStorage; }
+    CC inline CCounter<int> *counter() const			{ return m_pCounter; }
 	CC inline void setColIndex(T *p)				{ m_pColIndex = p; }
 	CC inline T *colIndex() const					{ return m_pColIndex; }
 	CC inline void setNumColOrb(T v)				{ m_nNumColOrb = v; }
@@ -84,6 +87,7 @@ private:
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const CColOrbit<T> *pColOrbitStart, const CColOrbit<T> *pColOrbit, 
 		size_t colOrbLen, const CColOrbit<T> *pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize);
+	void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -101,30 +105,47 @@ private:
     CPermut *m_pPermutCol;
     CColNumbStorage **m_nColNumbStorage;
 	CPermutStorage<T> *m_pPermutStorage[2];
+	T *m_pObits[2][2];
     CCounter<int> *m_pCounter;
 	T *m_pColIndex;
 	VECTOR_ELEMENT_TYPE *m_pImprovedSol;
-
+	const uint m_enumFlags;
 	uint m_nGroupOrder;
 	T m_nNumRow;
 	T m_nNumColOrb;
 };
 
 template<class T>
-CCanonicityChecker<T>::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags) : CPermut(nRow), m_rank(rank)
+CCanonicityChecker<T>::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags) : 
+	        m_rank(rank), m_enumFlags(enumFlags)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
 	setColIndex(new T[nCol << 1]);
 	m_pCounter = new CCounter<int>(rank);
-	setPermStorage(new CPermutStorage<T>());
-	setPermStorage(enumFlags & t_outColumnOrbits? new CPermutStorage<T>() : NULL, 1);
 	m_nColNumbStorage = new CColNumbStorage *[rank];
 	for (int i = rank; i--;)
 		m_nColNumbStorage[i] = new CColNumbStorage(nCol);
 
 	m_pImprovedSol = new VECTOR_ELEMENT_TYPE[(rank - 1) * nCol];
 	setSolutionStorage(new CSolutionStorage());
+	const auto mult = enumFlags & t_outStabilizerOrbit ? 2 : 1;
+	setPermStorage(new CPermutStorage<T>());
+
+	memset(m_pObits, 0, sizeof(m_pObits));
+	const auto len = nRow + (enumFlags & t_outColumnOrbits ? nCol : 0);
+	auto pntr = m_pObits[0][0] = new T[mult * len];	// memory to keep orbits of different types
+	if (enumFlags & t_outColumnOrbits) {
+		setPermStorage(new CPermutStorage<T>(), 1);
+		m_pObits[1][0] = pntr + mult * nRow;
+		if (mult > 1)
+			m_pObits[1][1] = m_pObits[1][0] + nCol;
+	}
+	else
+		setPermStorage(NULL, 1);
+
+	if (mult > 1)
+		m_pObits[0][1] = pntr + nRow;
 }
 
 template<class T>
@@ -141,6 +162,7 @@ CCanonicityChecker<T>::~CCanonicityChecker()
 	delete[] colNumbStorage();
 	delete[] colIndex();
 	delete[] improvedSolution();
+	delete[] m_pObits[0][0];
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif

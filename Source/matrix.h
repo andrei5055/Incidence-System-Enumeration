@@ -151,7 +151,7 @@ class CMatrix : public CMatrixData<T>
 			delete[] pSymb;
 
 		if (pCanonCheck && pCanonCheck->groupOrder() > 1)
-			pCanonCheck->outputAutomorphismInfo(pFile);
+			pCanonCheck->outputAutomorphismInfo(pFile, this);
 	}
 
  protected:

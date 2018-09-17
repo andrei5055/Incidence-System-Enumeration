@@ -1,5 +1,8 @@
+#pragma once
 #include "DataTypes.h"
 #include <stdio.h>
+
+template<class T> class CMatrixData;
 
 template<class T>
 class CPermutStorage
@@ -7,9 +10,10 @@ class CPermutStorage
 public:
 	CC CPermutStorage();
 	CC ~CPermutStorage()							{ delete[] permutMemory(); }
-	void outputPermutations(FILE *file, T len, const CPermutStorage<T> *pPermColumn = NULL) const;
-	void outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenPerm2 = 0, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
-			char **ppFormat = NULL, const char *pColPerm = NULL) const;
+	void outputAutomorphismInfo(FILE *file, const T *pRowOrbits, const CPermutStorage<T> *pPermColumn = NULL, 
+		const T *pColOrbits = NULL, const CMatrixData<T> *pMatrix = NULL) const;
+	void outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenPerm2 = 0, const char *pColPerm = NULL, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
+			char **ppFormat = NULL) const;
 	CK void adjustGenerators(int *pIdx, T lenIdx);
 	CK size_t constructGroup();
 	CK size_t findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size_t idx, VECTOR_ELEMENT_TYPE *pMem, size_t *pCanonIdx, int &nCanon);
@@ -20,6 +24,8 @@ public:
 	CK inline size_t numPerm() const				{ return lenMemUsed() / lenPerm(); }
 	CC T *allocateMemoryForPermut(T lenPermut);
 	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
+	void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, T idx = 0) const;
+	T *CreateOrbits(const CPermutStorage<T> *pPermColumn, const CMatrixData<T> *pMatrix, T *pOrbits = NULL) const;
 protected:
 private:
 	CK inline size_t lenPermByte() const			{ return m_nLenPermByte;  }
@@ -33,6 +39,11 @@ private:
 	void orderPermutations(size_t *pPermPerm);
 	CK T *multiplyPermutations(size_t firstPermIdx, size_t secondPermIdx, T *pMultRes = NULL, size_t *pToIdx = NULL);
 	CK void multiplyPermutations(size_t currPermIdx, size_t fromIdx, size_t toIdx, size_t permOrder, size_t lastIdx, size_t *pPermPerm);
+	void outputOrbits(FILE *file, const T *pOrbits, T len, const CPermutStorage<T> *pPermColumn = NULL) const;
+	void outputOrbits(FILE *file, const CPermutStorage<T> *pPermColumn,
+		const CMatrixData<T> *pMatrix, const T *pRowOrbits, const T *pColOrbits) const;
+	void outputPermutations(FILE *file, T len, const CPermutStorage<T> *pPermColumn = NULL,
+		const T *permutMemoryCol = NULL, const T *permutMemoryRow = NULL, int nOrbs = 0) const;
 
 	T *m_pPermutMem;
 	size_t m_nLenMax;
@@ -89,8 +100,8 @@ void CPermutStorage<T>::savePermut(const T lenPermut, const T *perm)
 }
 
 template<class T>
-void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenRowPerm, char **ppBuffer, size_t *pLenBuffer, 
-									char **ppFormat, const char *pColPerm) const
+void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, size_t lenPerm, size_t lenRowPerm, const char *pColPerm, 
+				char **ppBuffer, size_t *pLenBuffer, char **ppFormat) const
 {
 	size_t len;
 	char *pBuffer, *pFormat;
@@ -127,34 +138,6 @@ void CPermutStorage<T>::outputPerm(FILE *file, const T *perm, size_t lenPerm, si
 
 	if (!ppBuffer)
 		delete[] pBuffer;
-}
-
-template<class T>
-void CPermutStorage<T>::outputPermutations(FILE *file, T lenPerm, const CPermutStorage<T> *pPermColumn) const
-{
-	char *pFormat;
-	char *pBuffer = NULL;
-	char *pBufferRows = NULL;
-	size_t lenBuffer, lenBufferCol;
-	for (size_t len = 0; len < lenMemUsed(); len += lenPerm) {
-		if (pPermColumn) {
-			auto lenPermCol = pPermColumn->lenPerm();
-			outputPerm(NULL, pPermColumn->permutMemory() + lenPermCol, lenPermCol, lenPerm, &pBuffer, &lenBufferCol, &pFormat);
-			if (!len) {
-				lenBuffer = lenBufferCol;
-				lenBufferCol = (lenBufferCol - 4) / (lenPermCol + lenPerm) * lenPermCol + 2;
-				pBufferRows = pBuffer + lenBufferCol;
-				lenBuffer -= lenBufferCol;
-			}
-		}
-
-		outputPerm(file, permutMemory() + len, lenPerm, 0, &pBufferRows, &lenBuffer, &pFormat, pBuffer);
-	}
-
-	if (pBuffer)
-		delete[] pBuffer;
-	else
-		delete[] pBufferRows;
 }
 
 template<class T>

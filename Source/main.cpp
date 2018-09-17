@@ -171,15 +171,16 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
 			case t_InconsistentGraph:
+				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed;
 				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new CIG_Enumerator<T>(pInSys, enumFlags | t_outColumnOrbits, FirstPath);
+				pInSysEnum = new CIG_Enumerator<T>(pInSys, enumFlags, FirstPath);
 				break;
 			default: return false;
 			}
 		}
 		else {
 			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
-			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, enumFlags | t_outColumnOrbits);
+			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, enumFlags);
 			objType = t_BIBD;
 		}
 	}

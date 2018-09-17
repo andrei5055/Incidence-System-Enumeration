@@ -36,6 +36,16 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	if (!this->groupIsTransitive())
 		return false;
 
+	// Check the transitivity of the stabilizer of the  
+	// first element on the blocks to which it belongs
+	permStorage()->CreateOrbits(permColStorage(), pMatrix, getRowOrbits(0));
+	const T *pColOrbit = getColOrbits(0);
+	const auto k = this->getInSys()->GetK();
+	for (auto j = k; j--;) {
+		if (*(pColOrbit + j))
+			return false;
+	}
+
 	*pMatrFlags |= t_trahsitiveGroup;
 
 	const auto nCols = pMatrix->colNumb();
@@ -84,9 +94,9 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	else
 		retVal = memcmp(pntr, transpMatr.GetDataPntr(), transpMatr.lenData()) != 0;
 
-	if (retVal) {
+	if (retVal && checkProperty(t_printTransposedMatrix)) {
 		// Printing of the transposed matrix
-		transpMatr.printOut(this->outFile(), nCols, 99, &canonChecker);
+		transpMatr.printOut(this->outFile(), nCols, pEnumInfo->constrCanonical() + 1, &canonChecker);
 	}
 
 	return retVal;

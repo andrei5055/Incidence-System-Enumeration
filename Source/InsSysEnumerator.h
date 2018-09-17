@@ -455,6 +455,7 @@ void C_InSysEnumerator<T>::ConstructColumnPermutation(const CMatrixData<T> *pMat
 {
 	C_InSys<T> transformedMatr;
 	transformedMatr.InitWithPermutedRows(pMatrix, permRow());
-	CanonizeByColumns(&transformedMatr, permColStorage()->allocateMemoryForPermut(pMatrix->colNumb()));
-	permColStorage()->setLenPerm(pMatrix->colNumb());
+	const auto colNumb = pMatrix->colNumb();
+	CanonizeByColumns(&transformedMatr, permColStorage()->allocateMemoryForPermut(colNumb));
+	permColStorage()->setLenPerm(colNumb);
 }
