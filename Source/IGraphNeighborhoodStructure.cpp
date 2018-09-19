@@ -41,87 +41,28 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 
 bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax, int *pUsedFlags) {
 	const bool doubleFlag = pMult[iMax] == k && pVal[iMax];
-	// We also could try to use following
-	// Theorem 3: If iMin == 0 && val[0] > 1, then nVertex >= 3 * k - 2 * z,
-	//            where i - max index of a(i) != 0.
-	// Prof: follows from nVertex/2 - 2 * k >= k - 2 * i
-	//             k    |    k    | v - 2k  |       
-	// e1:   11111...111                    |
-	// e2:   00000...000111...1111          |
-	// e3:   1..110..0001..1100000???...????|
-	//       e1&e3      e2&e3         m     |
-	//       <------------- v ------------->|
-	//
-
-	if (!pMult[0] && pVal[0]) {
-		// There are two elements (e1, e2) which do not belong to common block
-		// Rewrite possible intersections into compressed array
-		int idxMax = iMax;// -(doubleFlag ? 1 : 0);
-		int buff[256]; pUsedFlags = buff;
-		int *pMultTmp = pUsedFlags + idxMax + 1;
-		int i = 0;
-		if (pVal[0] > 1) {
-			// There are at least 2 elements which do not belong to any
-			// of the blocks of which contains the current element e2
-			// (it means that e2&e3 could be empty)
-			pMultTmp[i++] = 0;
-		}
-
-		// Compress remaining lambda's
-		for (int j = 1; j <= idxMax; ++j) {
-			if (pVal[j])
-				pMultTmp[i++] = pMult[j];
-		}
-
-		// Number of elements in compressed array
-		idxMax = i;
-		// Number of blocks which contain none of (e1, e2) 
-		const int m = nVertex - 2 * k;
-
-		// Flags, which will mark the indices of the intersections 
-		// which coud be used as the intersections of the element e2
-		memset(pUsedFlags, 0, i * sizeof(pUsedFlags[0]));
-
-		// Loop over the number of possible common blocks of e1 and e3
-		while (i--) {			
-			const auto e1_e3 = pMultTmp[i];
-			for (int j = 0; j <= i; ++j) {
-				const auto def = k - (e1_e3 + pMultTmp[j]);
-				if (def < 0)	// Current and all following intersections 
-					break;		// cannot be used
-
-				if (def > m)
-					continue;
-
-				// The deficit of units row e3 could be replenished 
-				// in blocks which do not contain e1 or e2
-				// Mark both intersection as "used"
-				pUsedFlags[i] = pUsedFlags[j] = 1;
-			}
-
-			if (!pUsedFlags[i])
-				return false;   // We cannot find any any valid pair for current intersection e1&e3
-		} 
-	}
+	const int a = doubleFlag? pVal[iMax] + 1 : 1;
 
 	// Theorem 4: If we do have identical elements (forming the groups), which belong to the same k blocks
-	// them:
-	//    a) k is divisible by size of the group a = (pVal[iMax] + 1)
+	// then:
+	//    a) v and k are divisible by size of the group a = (pVal[iMax] + 1)
 	//    b) k / a >= the minimal number of different groups 
 	if (doubleFlag) {
-		const int a = pVal[iMax] + 1;
-		if (k % a)
+		if (nVertex % a || k % a)
 			return false;
 
 		int nGroups = 1;
 		for (int i = 0; i < iMax; ++i) {
+			if (pVal[i] % a)
+				return false;
+
 			const auto b = pVal[i] * pMult[i];
 			if (!b)
 				continue;
 
 			if (b % a)
 				return false;
-			
+
 			nGroups++;
 		}
 
@@ -147,10 +88,98 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 			if ((pVal[i] * pMult[i]) % 2)
 				return false;
 	}
+//	return true;
+	// We also could try to use following
+	// Theorem 3: If iMin == 0 && val[0] > 1, then nVertex >= 3 * k - 2 * z,
+	//            where i - max index of a(i) != 0.
+	// Prof: follows from nVertex/2 - 2 * k >= k - 2 * i
+	//            e1        e2 
+	//             k    |    k    | v - 2k  |       
+	// e1:   11111...111                    |
+	// e2:   00000...000111...1111          |
+	// e3:   1..110..0001..1100000???...????|
+	//       e1&e3      e2&e3         m     |
+	//       <------------- v ------------->|
+	//
+
+	if (!pMult[0] && pVal[0]) {
+		// There are two elements (e1, e2) which do not belong to common block
+		// Rewrite possible intersections into compressed array
+		int idxMax = iMax - (doubleFlag ? 1 : 0);
+		int buff[256]; pUsedFlags = buff;
+		int *pTmp = pUsedFlags + idxMax + 1;
+
+		// Maximal number of elements which have no common blocks with e2 
+		int nUsed0 = pVal[0] - a;
+		int i = 0;
+		if (nUsed0 > 0) {
+			// There are at least 2 elements which do not belong to any
+			// of the blocks of which contains the current element e2
+			// (it means that e2&e3 could be empty)
+			pTmp[i++] = 0;
+		}
+
+		// Compress remaining lambda's
+		for (int j = 1; j <= idxMax; ++j) {
+			if (pVal[j])
+				pTmp[i++] = j;
+		}
+
+		// Number of elements in compressed array
+		idxMax = i;
+		// Number of blocks which contain none of (e1, e2) 
+		const int m = nVertex - 2 * k;
+
+		// Flags, which will mark the indices of the intersections 
+		// which coud be used as the intersections of the element e2
+		memset(pUsedFlags, 0, i * sizeof(pUsedFlags[0]));
+
+		// Loop over the number of possible common blocks of e1 and e3
+		while (i--) {			
+			const auto e1_e3 = pMult[pTmp[i]];
+			const auto remK = k - e1_e3;  // remaining number of units which are not in e1   
+			for (int j = 0; j <= i; ++j) {
+				const auto def = remK - pMult[pTmp[j]];
+				if (def < 0)	// Current and all following intersections 
+					break;		// cannot be used
+
+				// Check if the deficite of units in row e3 could be replenished in last m block
+				if (def > m)
+					continue;  // it couldn't
+
+				// The deficit of units row e3 could be replenished 
+				// in blocks which do not contain e1 or e2
+				if (def && def == m) {
+					// e2 and e3 have no common blocks
+					// It is NOT possible to use this replenishment if we don't have
+					// enough elements which do not have common blocks with e2 
+					// To define that we should compare nUsed0 with a
+					if (nUsed0 < a)
+						continue;   // no luck
+
+					if (!pUsedFlags[i] && (j == i || remK < pMult[pTmp[j]])) {
+						// The i-th intersection was not yet used AND we do have last 
+						// chance to do it here. In that case we should not only compare 
+						// nUsed0 with the	# of elements, which have the same intersection
+						// e1_e3 (similar to e3, none of them can have common blocks with e2),
+						// but also modify nUsed0: 
+						nUsed0 -= pVal[pTmp[i]];
+						if (nUsed0 < 0)
+							return false;  // i-th intersection could not be used
+					}
+				}
+
+				// Mark both intersection as "used"
+				pUsedFlags[i] = pUsedFlags[j] = 1;
+			}
+
+			if (!pUsedFlags[i])
+				return false;   // We cannot find any any valid pair for current intersection e1&e3
+		} 
+	}
 
 	return true;
 }
-
 
 int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool firstPath)
 {
@@ -290,3 +319,109 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 
 	return 1;
 }
+/*
+
+Main lists: valid parameters accordint to Teorem 4 and 5
+  ! eliminated by Theorem 3
+v = 10
+K = 3
+    0  1
+1:  3  6
+K = 4
+    0  1  2  4
+1:  4  0  4  1
+2:  0  8  0  1
+3:  3  0  6  0
+4:  1  4  4  0
+K = 5
+K = 6
+    2  3  4  6
+1:  0  8  0  1
+2:  3  0  6  0
+3:  0  6  3  0
+K = 7
+
+v = 12
+K = 3
+    0  1
+1:  5  6
+K = 4
+    0  1  2  4
+1:  6  0  4  1
+2:  2  8  0  1
+3:  5  0  6  0
+4:  3  4  4  0
+5:  1  8  2  0
+K = 5
+    0  1  2  3
+1:  1  0 10  0
+K = 6
+     0  1  2  3  4  6
+ 1:  3  0  0  6  0  2
+ 2:  0  0  9  0  0  2
+ 3:  4  0  0  0  6  1 !
+ 4:  2  0  0  8  0  1 
+ 5:  0  0  6  4  0  1
+ 6:  3  0  0  2  6  0 !
+ 7:  2  0  3  0  6  0 !
+ 8:  2  0  0  6  3  0 !
+ 9:  1  0  3  4  3  0 
+10:  0  0  6  2  3  0 
+11:  1  0  0 10  0  0
+12:  0  0  3  8  0  0
+K = 7
+K = 8
+    4  5  6  8
+1:  8  0  0  3
+2:  6  0  4  1
+3:  2  8  0  1
+K = 9
+    6  7  9
+1:  9  0  2
+
+v = 14
+K = 3
+    0  1
+1:  7  6
+K = 4
+    0  1  2  4
+1:  8  0  4  1
+2:  4  8  0  1
+3:  7  0  6  0
+4:  5  4  4  0
+5:  3  8  2  0
+6:  1 12  0  0
+K = 5
+    0  1  2  3
+1:  3  0 10  0
+K = 6
+     0  1  2  3  4  6
+ 1:  6  0  0  0  6  1
+ 2:  4  0  0  8  0  1 !
+ 3:  0  6  0  6  0  1
+ 4:  2  0  6  4  0  1 
+ 5:  0  0 12  0  0  1
+ 6:  5  0  0  2  6  0
+ 7:  4  0  3  0  6  0
+ 8:  1  6  0  0  6  0
+ 9:  4  0  0  6  3  0
+10:  3  0  3  4  3  0
+11:  0  6  0  4  3  0
+12:  2  0  6  2  3  0
+13:  1  0  9  0  3  0
+14:  3  0  0 10  0  0 !
+15:  2  0  3  8  0  0 !
+16:  1  0  6  6  0  0
+17:  0  0  9  4  0  0
+K = 7
+K = 8
+    2  3  4  5  6  8
+1:  4  0  4  0  4  1
+2:  0  8  0  0  4  1
+3:  4  0  0  8  0  1
+4:  0  0 12  0  0  1
+K = 9
+K = 10
+K = 11
+
+*/
