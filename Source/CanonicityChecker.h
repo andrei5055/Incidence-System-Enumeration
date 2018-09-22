@@ -38,6 +38,7 @@ public:
 	void InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem);
 	CC bool TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo = 0, T *pRowOut = NULL, CRowSolution<T> *pRowSolution = NULL);
     void outputAutomorphismInfo(FILE *file, const CMatrixData<T> *pMatrix = NULL) const;
+	CC uint enumFlags() const						{ return m_enumFlags; }
 	CC inline uint groupOrder() const				{ return m_nGroupOrder; }
 	CC inline T numColOrb() const					{ return m_nNumColOrb; }
 	CC inline void setGroupOrder(uint val)			{ m_nGroupOrder = val; }
@@ -60,7 +61,7 @@ protected:
 	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage = NULL, CCanonicityChecker *pCanonChecker = NULL) const	{}
 	CC inline T *getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
 	CC inline T *getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
-	inline bool checkProperty(uint flag) const		{ return m_enumFlags & flag; }
+	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 private:
     CC void init(T nRow, bool savePerm);
 	CC T next_permutation(T idx = MATRIX_ELEMENT_MAX);

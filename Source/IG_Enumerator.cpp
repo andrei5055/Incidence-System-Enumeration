@@ -114,9 +114,8 @@ bool CIG_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char 
 
 template<class T>
 bool CIG_Enumerator<T>::prepareToFindRowSolution() {
-//	return true;
 	// In that function we
-	// (a) calculate the intersection of last constructed row with all previusly constructed rows
+	// (a) calculate the intersection of last constructed row with all previously constructed rows
 	auto pIntersection = rowIntersections();
 	if (!pIntersection)
 		return true;
@@ -151,7 +150,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	pIntersection += nRow - step;
 
 	for (int i = 0; i < nRow; ++i) {
-		// Define the intersection of the current and last rows of the matrix;
+		// Define the intersection of the current and last rows of the matrix
 		size_t lambda = 0;
 		for (auto j = r; j--;) {
 			if (*(pCurrRow + *(pIdx + j)))
@@ -179,15 +178,24 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 template<class T>
 bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 {
-	// The structure of intersection of constructed block with the other (even not yet completely
-	// constructed) blocks will be checked. It should be exactly the same as for block #0
-	// We will also check the parameters b(i) for all elements, which belong to the constructed block
-	// They chould be as defined in designRaram::lambdaB
+	// We will check the parameters b(i) for all elements, which belong to the constructed block
+	// They should be as defined in designRaram::lambdaB
 
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
-	CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
-	T elementNumb[64];
-	assert(k <= countof(elementNumb));
+	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
+
+	const auto nBlocks = colNumb();	
+	const auto &labdaSetB = designParams()->lambdaB;
+	const auto lambdaBSrc = labdaSetB.data();
+
+	const auto nLambd = labdaSetB.size();
+	const auto len = k + nLambd + 2 * nLambdas();
+	T elementNumb[64] ;
+	auto pElementNumb = len > countof(elementNumb) ? new T[len] : elementNumb;
+	auto lambdaBCurrRow = pElementNumb + k;
+	auto lambdaACurrCol = lambdaBCurrRow + nLambd;
+	auto lambdaBCurrCol = lambdaACurrCol + nLambdas();
+
 	while (pColOrbit) {
 		if (pColOrbit->columnWeight() == k) {
 			// Define the current column number
@@ -196,12 +204,12 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 			// Making the array of indices of all elements which belong to current block
 			T i, j = k;
 			// NOTE: the i-th element alwais belong to the block # nColCurr
-			elementNumb[--j] = i = nRow - 1;
+			pElementNumb[--j] = i = nRow - 1;
 			// Looking for remaining elements which also belong to the same block
 			while (true) {
 				const auto *pRow = matrix()->GetRow(--i) + nColCurr;
 				if (*pRow) {
-					elementNumb[--j] = i;
+					*(pElementNumb + --j) = i;
 					if (!j)
 						break;
 				}
@@ -211,31 +219,98 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 			T sIdx, bIdx;
 			for (T i = 0; i < k; ++i) {
 				T *pIndex = &sIdx;
-				bIdx = elementNumb[i];
-				auto lambdaB = designParams()->lambdaB;
+				bIdx = *(pElementNumb + i);
+
+				memcpy(lambdaBCurrRow, lambdaBSrc, nLambd * sizeof(*lambdaBCurrRow));
 				for (T j = 0; j < k; ++j) {
 					if (j == i) {
-						sIdx = elementNumb[i];
+						sIdx = *(pElementNumb+i);
 						pIndex = &bIdx;
 						continue;
 					}
 
-					*pIndex = elementNumb[j];
+					*pIndex = *(pElementNumb + j);
 
-					// Both bIdx-th and sIdx-th elements belong to the current block
+					// Both bIdx-th and sIdx-th elements belong to the current block and sIdx
 					// The index of number of thier common blocks is the n-th element of rowIntersections()
 					//        n = v*(v-1)/2 - (k-sIdx)*(k-sIdx-1) / 2 + bIdx - sIdx - 1
 					// After simplification   
 					const int n = rowNumb() * sIdx - sIdx * (sIdx + 3) / 2 + bIdx - 1;
 					const auto idx = *(rowIntersections() + n);
-					if (!lambdaB[idx]--)
+					if (!lambdaBCurrRow[idx]--)
 						return false;  // We have exceeded the number of possible intersections for the current idx
+				}
+				continue;
+
+				// The structure of intersection of constructed block with the other (even not yet completely
+				// constructed) blocks will be checked. It should be exactly the same as for block #0
+				bIdx = *(pElementNumb + i);
+				const auto *pRow = matrix()->GetRow(0);
+				int idx = -1;
+				if (nColCurr || bIdx) {	
+					T n = -1;
+					while (++n < nBlocks) {
+						if (n == nColCurr)
+							continue;  //skip current block
+
+						memset(lambdaACurrCol, 0, lenLambdas());
+						bool flag = false;
+						const auto *pBlock = pRow + n;
+						int lambdaCurr = 0;
+						for (T j = 0; j < k; ++j) {
+							if (*(pBlock + *(pElementNumb + j) * nBlocks)) {
+								++lambdaCurr;
+								if (i == j)
+									flag = true;
+							}
+						}
+
+						if (flag)
+							++*(lambdaACurrCol + lambdaCurr);
+
+						++*(lambdaACurrCol + lambdaCurr);
+						if (memcmp(lambdaACurrCol, lambdaA(), lenLambdas()))
+							return false;
+					}
+				}
+				else {
+					// The block #0 was just constructed. Define the structure of intersections
+					// of this block with the other blocks, containing element #0
+					// In canonical matrix these blocks have #'s from 1 <= j < k
+
+					memset(lambdaA(), 0, lenLambdas());
+					T n = 0;
+					while (++n < nBlocks) {
+						const auto *pBlock = pRow + n;
+						// We know everything about first row of matrix. Let's start with the second one
+						int lambdaCurr = 0;
+						for (T j = 1; j < k; ++j) {
+							if (*(pBlock += nBlocks))
+								++lambdaCurr;
+						}
+
+						if (n < k)
+							++*(lambdaB() + lambdaCurr + 1);
+						else
+							++*(lambdaA() + lambdaCurr);
+					}
+
+					// Real value lambdaA(i) should be defined AND all values 
+					// lambdaA and lambdaB should correspond each other
+					for (T j = 1; j <= k; ++j) {
+						if (!(*(lambdaA() + j) += *(lambdaB() + j)))
+							continue;  // for zeros the following relation always holds
+
+						if (*(lambdaA() + j) * j != k * *(lambdaB() + j))
+							return false;
+					}
 				}
 			}
 		}
 
 		pColOrbit = pColOrbit->next();
 	}
+
 
 	return true;
 }

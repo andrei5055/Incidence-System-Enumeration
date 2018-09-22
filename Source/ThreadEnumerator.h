@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IG_Enumerator.h"
+
 template<class T> class CEnumerator;
 template<class T> class CEnumInfo;
 
@@ -57,23 +59,25 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 		auto *pInsSysEnum = (const C_InSysEnumerator<T> *)(pMaster);
 		auto *pInSys = static_cast<const C_InSys<T> *>(pInsSysEnum->matrix());
 		C_InSys<T> *pSlaveDesign;
+		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
 		case t_BIBD:
 			    pSlaveDesign = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
-				m_pEnum = new CBIBD_Enumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				m_pEnum = new CBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_tDesign: {
 				auto pSlaveTDesign = new C_tDesign<T>((const C_tDesign<T> *)(pInSys), nRow);
-				m_pEnum = new C_tDesignEnumerator<T>(pSlaveTDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				m_pEnum = new C_tDesignEnumerator<T>(pSlaveTDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 			}
 		case t_PBIBD:
 				pSlaveDesign = new C_PBIBD<T>((const C_PBIBD<T> *)(pInSys), nRow);
-				m_pEnum = new CPBIBD_Enumerator<T>(pSlaveDesign, true, pMaster->noReplicatedBlocks(), threadIdx, NUM_GPU_WORKERS);
+				m_pEnum = new CPBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_InconsistentGraph:
 			    pSlaveDesign = new CInconsistentGraph<T>((const CInconsistentGraph<T> *)(pInSys), nRow);
-				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, true, false, threadIdx, NUM_GPU_WORKERS);
+				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
+				m_pEnum->CloneMasterInfo(pMaster, nRow);
 				break;
 		}
 

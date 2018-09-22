@@ -437,10 +437,9 @@ void C_InSysEnumerator<T>::setVariableLimit(size_t nVar, T len, size_t nRowToBui
 	this->SetAt(nVar, static_cast<T>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
-	// Maximal value of any Xi cannot be bigger then X0_3, when i-th group of column
+	// Maximal value of any Xi cannot be bigger than X0_3, when i-th group of columns
 	// already have at least 2 inits in each column. Otherwise, these two rows with the row
-	// which would use the soution we eliminating by using X0_3 as a maximum,
-	// would be bigger than current 3 rows
+	// which would use the solution, would be bigger than current 3 rows
 	if (len > getX0_3() && colWeight >= 2)
 		len = getX0_3();
 

@@ -14,7 +14,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					0
+#define USE_THREADS					3
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0

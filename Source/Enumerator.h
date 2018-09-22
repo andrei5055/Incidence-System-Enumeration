@@ -421,6 +421,7 @@ public:
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)  {}
 	CK virtual size_t *forcibleLambdaPntr() const           { return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
+	CK virtual void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {}
 #if CANON_ON_GPU
 	CK inline auto GPU_CanonChecker() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(T nRow) const;
