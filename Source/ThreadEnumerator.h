@@ -11,7 +11,7 @@ public:
 	CK CThreadEnumerator()							{ reset(); }
 	CK ~CThreadEnumerator()							{ release(); }
 	CK void setupThreadForBIBD(const CEnumerator<T> *pMaster, size_t nRow, int threadIdx);
-	void EnumerateBIBD(designRaram *pParam, const CEnumerator<T> *pMaster);
+	void EnumerateBIBD(designParam *pParam, const CEnumerator<T> *pMaster);
 	CK inline t_threadCode code() const				{ return m_code; }
 	CK inline CEnumerator<T> *enumerator() const	{ return m_pEnum; }
 	CK inline CEnumInfo<T> *enumInfo() const		{ return enumerator()? enumerator()->enumInfo() : NULL; }
@@ -76,7 +76,7 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 				break;
 		case t_InconsistentGraph:
 			    pSlaveDesign = new CInconsistentGraph<T>((const CInconsistentGraph<T> *)(pInSys), nRow);
-				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
+				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, pMaster->designParams(), enumFlags, threadIdx, NUM_GPU_WORKERS);
 				m_pEnum->CloneMasterInfo(pMaster, nRow);
 				break;
 		}

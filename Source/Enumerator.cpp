@@ -152,7 +152,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 #endif
 
 template<class T>
-ulonglong CEnumerator<T>::Enumerate(designRaram *pParam, bool writeFile, CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pMaster, t_threadCode *pTreadCode)
+ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pMaster, t_threadCode *pTreadCode)
 {
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU

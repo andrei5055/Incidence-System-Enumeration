@@ -447,7 +447,7 @@ bool CCanonicityChecker<T>::groupIsTransitive() const
 }
 
 template<class T>
-bool CCanonicityChecker<T>::printMatrix(const designRaram *pParam) const
+bool CCanonicityChecker<T>::printMatrix(const designParam *pParam) const
 {
 	const uint outType = pParam->outType;
 	return	outType & t_AllObject ||

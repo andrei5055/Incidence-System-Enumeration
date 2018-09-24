@@ -412,7 +412,7 @@ public:
 	CK CEnumerator(const CMatrix<T> *pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline CRowSolution<T> *rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
-	CK ulonglong Enumerate(designRaram *pParam, bool writeFile = false, CEnumInfo<T> *pEnumInfo = NULL, const CEnumerator<T> *pMaster = NULL, t_threadCode *pTreadCode = NULL);
+	CK ulonglong Enumerate(designParam *pParam, bool writeFile = false, CEnumInfo<T> *pEnumInfo = NULL, const CEnumerator<T> *pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(char *buffer, int len, const char *comment = "") const	
 															{ return false; }
 	CK virtual VECTOR_ELEMENT_TYPE getX0_3() const          { return 0; }
@@ -422,6 +422,8 @@ public:
 	CK virtual size_t *forcibleLambdaPntr() const           { return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {}
+	CK inline designParam *designParams() const				{ return m_pParam; }
+
 #if CANON_ON_GPU
 	CK inline auto GPU_CanonChecker() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(T nRow) const;
@@ -445,7 +447,6 @@ protected:
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const;
 	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
-	CK inline designRaram *designParams() const				{ return m_pParam; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
@@ -464,7 +465,7 @@ private:
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
     CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
 	virtual size_t forcibleLambda(size_t i) const			{ return -1; }
-	inline void setDesignParams(designRaram *pntr)          { m_pParam = pntr; }
+	inline void setDesignParams(designParam *pntr)          { m_pParam = pntr; }
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else
@@ -489,7 +490,7 @@ private:
 	CRowSolution<T> **m_pRow;
 	CSimpleArray<T> *m_pRowEquation;
 	bool m_bUseCanogGroup;
-	designRaram *m_pParam;
+	designParam *m_pParam;
 #if CANON_ON_GPU
 	CGPU_CanonChecker<T> *m_pGPU_CanonChecker;
 #endif

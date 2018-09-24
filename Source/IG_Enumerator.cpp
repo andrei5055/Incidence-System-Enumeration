@@ -52,9 +52,9 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	const auto nRows = pMatrix->rowNumb();
 	const auto mult = nCols / nRows;
 
-	const designRaram *pDesignParam = designParams();
-	if (pDesignParam->lambda.size() > 2) {
-		auto degrees(pDesignParam->lambdaA);
+	const designParam *pDesignParam = designParams();
+	if (pDesignParam->lambda().size() > 2) {
+		auto degrees(pDesignParam->lambdaA());
 		int r = pDesignParam->r;
 		for (int i = 1; i < nRows; ++i) {
 			const auto pRow = pMatrix->GetRow(i);
@@ -144,7 +144,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 			break;
 	}
 
-	const auto &lambdaSet = designParams()->lambda;
+	const auto &lambdaSet = designParams()->lambda();
 	const auto *pCurrRow = matrix()->GetDataPntr();
 	auto step = v;
 	pIntersection += nRow - step;
@@ -159,11 +159,9 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 
 		// Define and save the index of the lambda we just found
 		int j = 0;
-		while (lambdaSet[j] != lambda)
-			j++;
+		while (lambdaSet[j++] != lambda);
 
-		*(pIntersection += --step) = j;
-
+		*(pIntersection += --step) = j - 1;
 		pCurrRow += nCol;
 	}
 
@@ -185,11 +183,9 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
 
 	const auto nBlocks = colNumb();	
-	const auto &labdaSetB = designParams()->lambdaB;
-	const auto lambdaBSrc = labdaSetB.data();
-
-	const auto nLambd = labdaSetB.size();
+	const auto nLambd = designParams()->lambdaB().size();
 	const auto len = k + nLambd + 2 * nLambdas();
+
 	T elementNumb[64] ;
 	auto pElementNumb = len > countof(elementNumb) ? new T[len] : elementNumb;
 	auto lambdaBCurrRow = pElementNumb + k;
@@ -221,7 +217,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 				T *pIndex = &sIdx;
 				bIdx = *(pElementNumb + i);
 
-				memcpy(lambdaBCurrRow, lambdaBSrc, nLambd * sizeof(*lambdaBCurrRow));
+				memcpy(lambdaBCurrRow, lambdaBSrc(), nLambd * sizeof(*lambdaBCurrRow));
 				for (T j = 0; j < k; ++j) {
 					if (j == i) {
 						sIdx = *(pElementNumb+i);
@@ -240,20 +236,19 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 					if (!lambdaBCurrRow[idx]--)
 						return false;  // We have exceeded the number of possible intersections for the current idx
 				}
-				continue;
+//				continue;
 
 				// The structure of intersection of constructed block with the other (even not yet completely
 				// constructed) blocks will be checked. It should be exactly the same as for block #0
-				bIdx = *(pElementNumb + i);
 				const auto *pRow = matrix()->GetRow(0);
-				int idx = -1;
-				if (nColCurr || bIdx) {	
+				if (nColCurr || *(pElementNumb + i)) {
+					memset(lambdaACurrCol, 0, lenLambdas());
 					T n = -1;
 					while (++n < nBlocks) {
 						if (n == nColCurr)
 							continue;  //skip current block
 
-						memset(lambdaACurrCol, 0, lenLambdas());
+
 						bool flag = false;
 						const auto *pBlock = pRow + n;
 						int lambdaCurr = 0;
@@ -266,12 +261,13 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 						}
 
 						if (flag)
-							++*(lambdaACurrCol + lambdaCurr);
+							++*(lambdaBCurrCol + lambdaCurr);
 
 						++*(lambdaACurrCol + lambdaCurr);
-						if (memcmp(lambdaACurrCol, lambdaA(), lenLambdas()))
-							return false;
 					}
+
+					if (memcmp(lambdaACurrCol, lambdaA(), lenLambdas()))
+						return false;
 				}
 				else {
 					// The block #0 was just constructed. Define the structure of intersections
@@ -279,6 +275,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 					// In canonical matrix these blocks have #'s from 1 <= j < k
 
 					memset(lambdaA(), 0, lenLambdas());
+					const auto r = this->getInSys()->GetR();
 					T n = 0;
 					while (++n < nBlocks) {
 						const auto *pBlock = pRow + n;
@@ -289,7 +286,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 								++lambdaCurr;
 						}
 
-						if (n < k)
+						if (n < r)
 							++*(lambdaB() + lambdaCurr + 1);
 						else
 							++*(lambdaA() + lambdaCurr);

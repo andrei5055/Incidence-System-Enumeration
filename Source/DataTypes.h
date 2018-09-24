@@ -14,7 +14,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					3
+#define USE_THREADS					0
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -447,14 +447,30 @@ typedef enum {
 	t_allFlags				= -1
 } t_EnumeratorFlags;
 
-typedef struct {
+class CInterStruct {
+public:
+	CInterStruct() {}
+	const std::vector<int> &lambda() const		{ return iParam[0]; }
+	const std::vector<int> &lambdaA() const		{ return iParam[1]; }
+	const std::vector<int> &lambdaB() const		{ return iParam[2]; }
+	std::vector<int> *lambdaPtr()				{ return iParam; }
+	std::vector<int> *lambdaAPtr()				{ return iParam + 1; }
+	std::vector<int> *lambdaBPtr()				{ return iParam + 2; }
+private:
+	std::vector<int> iParam[3];
+	CInterStruct *pNext = NULL;
+};
+
+
+class designParam {
+public:
+	designParam()				{ m_pInterStruct = new CInterStruct(); }
+	~designParam()				{ delete m_pInterStruct; }
+	CInterStruct *InterStruct()	{ return m_pInterStruct; }
 	t_objectType objType;
 	int v;
 	int k;
 	int r;
-	std::vector<int> lambda;
-	std::vector<int> lambdaA;
-	std::vector<int> lambdaB;
 	int t;
 	int mt_level;			// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task
@@ -465,6 +481,11 @@ typedef struct {
 	std::string workingDir; // Current working directory name
 	std::string logFile = "";    // 
 	size_t rewindLen = 0;   // Length of the portion of log file, which probably will be rewinded
-} designRaram;
+	const std::vector<int> &lambda() const	{ return m_pInterStruct->lambda(); }
+	const std::vector<int> &lambdaA() const { return m_pInterStruct->lambdaA(); }
+	const std::vector<int> &lambdaB() const { return m_pInterStruct->lambdaB(); }
+private:
+	CInterStruct *m_pInterStruct = NULL;
+};
 
 #define VAR_1		1

@@ -62,7 +62,7 @@ typedef enum {
 	t_Canonicity
 } t_operationType;
 
-static bool getBIBDParam(const string &paramText, designRaram *param, bool BIBD_flag = true)
+static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_flag = true)
 {
 	int i = 0;
 	int j = 0;
@@ -98,8 +98,9 @@ static bool getBIBDParam(const string &paramText, designRaram *param, bool BIBD_
 			num = 10 * num + symb;
 		}
 
+		auto iStruct = param->InterStruct();
 		if (j == 3) {
-			param->lambda.push_back(num);
+			iStruct->lambdaPtr()->push_back(num);
 			if (symb == '}')
 				return true;
 
@@ -108,7 +109,7 @@ static bool getBIBDParam(const string &paramText, designRaram *param, bool BIBD_
 
 		if (j++ == 2) {
 			if (BIBD_flag) {
-				param->lambda.push_back(num);
+				iStruct->lambdaPtr()->push_back(num);
 				return true;
 			}
 
@@ -125,7 +126,7 @@ static bool getBIBDParam(const string &paramText, designRaram *param, bool BIBD_
 	return true;
 }
 
-static bool getTParam(const string &paramText, designRaram *param)
+static bool getTParam(const string &paramText, designParam *param)
 {
 	param->t = 2;
 	size_t len = paramText.length();
@@ -151,7 +152,7 @@ static bool getTParam(const string &paramText, designRaram *param)
 }
 
 template <class T>
-bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath)
+bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath)
 {
 	if (pParam->v <= 0)
 		return false;
@@ -163,29 +164,30 @@ bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstP
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
 	t_objectType objType = pParam->objType;
 	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
+	auto lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
-		if (pParam->lambda.size() > 1 || objType == t_InconsistentGraph) {
+		if (lambda.size() > 1 || objType == t_InconsistentGraph) {
 			switch (objType) {
 			case t_PBIBD:
-				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
+				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
 			case t_InconsistentGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed;
-				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, pParam->lambda);
-				pInSysEnum = new CIG_Enumerator<T>(pInSys, enumFlags, FirstPath);
+				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, lambda);
+				pInSysEnum = new CIG_Enumerator<T>(pInSys, pParam, enumFlags, FirstPath);
 				break;
 			default: return false;
 			}
 		}
 		else {
-			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, pParam->lambda[0]);
+			pInSys = new C_BIBD<T>(pParam->v, pParam->k, 2, lambda[0]);
 			pInSysEnum = new CBIBD_Enumerator<T>(pInSys, enumFlags);
 			objType = t_BIBD;
 		}
 	}
 	else {
-		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, pParam->lambda[0]);
+		pInSys = new C_tDesign<T>(pParam->t, pParam->v, pParam->k, lambda[0]);
 		pInSysEnum = new C_tDesignEnumerator<T>(static_cast<C_tDesign<T> *>(pInSys), enumFlags);
 		objType = t_tDesign;
 	}
@@ -300,7 +302,7 @@ int main(int argc, char * argv[])
 	}
 
 	bool firstRun = true;
-	designRaram param;
+	designParam param;
 	memset(&param, 0, sizeof(param));
 	param.threadNumb = USE_THREADS;
 	param.noReplicatedBlocks = false;
@@ -459,7 +461,7 @@ int main(int argc, char * argv[])
 
 		param.outType = outType;
 		param.t = 2;
-		param.lambda.resize(0);
+		param.InterStruct()->lambdaPtr()->resize(0);
 		size_t from = -1;
 		switch (objType) {
 		case t_tDesign:	if (!getTParam(line.substr(0, beg), &param)) {
@@ -488,7 +490,7 @@ int main(int argc, char * argv[])
 			param.workingDir = string(newWorkDir);
 
 		if ((param.objType = objType) == t_InconsistentGraph) {
-			int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool firstPath);
+			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
 			InconsistentGraphs(&param, pSummaryFile, firstRun);
 		}
 		else

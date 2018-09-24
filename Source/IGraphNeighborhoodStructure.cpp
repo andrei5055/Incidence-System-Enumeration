@@ -37,7 +37,7 @@ static bool isPrime(int k) {
 }
 
 template <class T>
-bool RunOperation(designRaram *pParam, const char *pSummaryFileName, bool FirstPath);
+bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath);
 
 bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax, int *pUsedFlags) {
 	const bool doubleFlag = pMult[iMax] == k && pVal[iMax];
@@ -106,7 +106,6 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 		// There are two elements (e1, e2) which do not belong to common block
 		// Rewrite possible intersections into compressed array
 		int idxMax = iMax - (doubleFlag ? 1 : 0);
-		int buff[256]; pUsedFlags = buff;
 		int *pTmp = pUsedFlags + idxMax + 1;
 
 		// Maximal number of elements which have no common blocks with e2 
@@ -181,7 +180,7 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 	return true;
 }
 
-int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool firstPath)
+int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath)
 {
     int nVertex = pParam->v;
 	if (nVertex < 10) {
@@ -250,9 +249,10 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 
 					cout << buffer << endl;
 
-					pParam->lambda.resize(0);
-					pParam->lambdaA.resize(0);
-					pParam->lambdaB.resize(0);
+					const auto iStruct = pParam->InterStruct();
+					iStruct->lambdaPtr()->resize(0);
+					iStruct->lambdaAPtr()->resize(0);
+					iStruct->lambdaBPtr()->resize(0);
 					pParam->r = k;
 					int jMax = iMax;
 					int n = val[jMax];
@@ -274,15 +274,17 @@ int InconsistentGraphs(designRaram *pParam, const char *pSummaryFileName, bool f
 						if (!val[j])
 							continue;
 
-						pParam->lambda.push_back(mult[j]);
-						pParam->lambdaA.push_back(val[j] / n);
-						pParam->lambdaB.push_back(val[j] * mult[j] / k / n);
+						iStruct->lambdaPtr()->push_back(mult[j]);
+						iStruct->lambdaAPtr()->push_back(val[j] / n);
+						iStruct->lambdaBPtr()->push_back(val[j] * mult[j] / k / n);
 					}
 
-					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
-						return 0;
+					if (true/*k >= 4  && val[0] == 8 && val[2] == 4*/) {
+						if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
+							return 0;
 
-					firstPath = false;
+						firstPath = false;
+					}
 				}
 
 				if (i && sum0) {

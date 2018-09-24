@@ -15,7 +15,7 @@ public:
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }
-	CK int define_MT_level(const designRaram *pParam) const		{ return pParam->lambda[0] == 1? 
+	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 protected:
 	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }

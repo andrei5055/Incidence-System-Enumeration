@@ -117,7 +117,7 @@ public:
 	CC void resetEnumInfo()									{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
 	void outEnumInformation(FILE **pOutFile, bool printMTlevel = true) const;
-	inline void setDesignInfo(designRaram *pParam)			{ m_pParam = pParam; }
+	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 protected:
 	t_resType getResType() const							{ return m_nResType; }
 private:
@@ -131,7 +131,7 @@ private:
 	inline ulonglong reportBound() const					{ return m_nReportBound; }
 	CC inline char *reportFileName() const					{ return m_pReportFileName; }
 	inline int multiThreadLevel() const 					{ return m_pParam->mt_level; }
-	inline designRaram *designInfo() const					{ return m_pParam; }
+	inline designParam *designInfo() const					{ return m_pParam; }
 
 	ulonglong m_nCounter;
 	const char *m_pStrToScreen;
@@ -139,7 +139,7 @@ private:
 	char *m_pReportFileName;
 	t_resType m_nResType;
 	int m_mtlevel;
-	designRaram *m_pParam;
+	designParam *m_pParam;
 }; 
 
 template<class T>
