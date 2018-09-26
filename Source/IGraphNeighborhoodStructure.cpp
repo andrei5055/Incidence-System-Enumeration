@@ -222,6 +222,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 		int num = kIsPrime ? sum0 - sum0%step[i] : k / minDivider(k) - 1;
 		cout << "K = " << k << endl;
 
+		CInterStruct *iStruct = NULL;
 		bool printMult = true;
 		int paramIdx = 0;
 		while (true) {
@@ -249,11 +250,6 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 					cout << buffer << endl;
 
-					const auto iStruct = pParam->InterStruct();
-					iStruct->lambdaPtr()->resize(0);
-					iStruct->lambdaAPtr()->resize(0);
-					iStruct->lambdaBPtr()->resize(0);
-					pParam->r = k;
 					int jMax = iMax;
 					int n = val[jMax];
 					if (mult[iMax] == k && n) {
@@ -263,8 +259,13 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					else
 						n = 1;
 
-					pParam->k = k / n;
-					pParam->v = nVertex / n;
+					auto iStructTmp = new CInterStruct(n);
+					if (iStruct)
+						iStruct->setNext(iStructTmp);
+					else
+						pParam->InterStruct()->setNext(iStructTmp);
+
+					iStruct = iStructTmp;
 
 					// Define possible values for 
 					//   (a) mutual intersection of any two matrix rows;
@@ -275,15 +276,8 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 							continue;
 
 						iStruct->lambdaPtr()->push_back(mult[j]);
-						iStruct->lambdaAPtr()->push_back(val[j] / n);
-						iStruct->lambdaBPtr()->push_back(val[j] * mult[j] / k / n);
-					}
-
-					if (true/*k >= 4  && val[0] == 8 && val[2] == 4*/) {
-						if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
-							return 0;
-
-						firstPath = false;
+						iStruct->lambdaAPtr()->push_back(val[j]);
+						iStruct->lambdaBPtr()->push_back(val[j] * mult[j] / k);
 					}
 				}
 
@@ -316,6 +310,49 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				break;
 
 			num = sum0 - sum0 % step[--i];
+		}
+
+		iStruct = pParam->InterStruct();
+
+		// To do the formated output, define maximal sizeof lambda sets
+		int maxSize = 0;
+		CInterStruct *iStructCurr = iStruct->getNext();
+		while (iStructCurr) {
+			if (maxSize < iStructCurr->lambda().size())
+				maxSize = static_cast<int>(iStructCurr->lambda().size());
+
+			iStructCurr = iStructCurr->getNext();
+		}
+
+		pParam->setLambdaSizeMax(maxSize);
+
+		pParam->r = k;
+		iStructCurr = iStruct->getNext();
+		while (iStructCurr) {
+			const auto n = iStructCurr->mult();
+			pParam->k = k / n;
+			pParam->v = nVertex / n;
+
+			const auto jMax = iStructCurr->lambda().size();
+			iStruct->lambdaPtr()->resize(jMax);
+			iStruct->lambdaAPtr()->resize(jMax);
+			iStruct->lambdaBPtr()->resize(jMax);
+			for (int j = 0; j < jMax; ++j) {
+				(*iStruct->lambdaPtr())[j] = iStructCurr->lambda()[j];
+				(*iStruct->lambdaAPtr())[j] = iStructCurr->lambdaA()[j] / n;
+				(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
+			}
+
+			if (true /*k >= 4 && val[0] == 8 && val[2] == 4*/) {
+				if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
+					return 0;
+
+				firstPath = false;
+			}
+
+			CInterStruct *iStructNext = iStructCurr->getNext();
+			delete iStructCurr;
+			iStruct->setNext(iStructCurr = iStructNext);
 		}
 	}
 

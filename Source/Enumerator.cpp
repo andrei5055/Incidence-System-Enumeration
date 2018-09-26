@@ -85,7 +85,7 @@ void thread_message(int threadIdx, const char *pComment, t_threadCode code, void
 #endif
 
 template<typename T>
-void threadEnumerate(CThreadEnumerator<T> *threadEnum, designRaram *param, const CEnumerator<T> *pMaster)
+void threadEnumerate(CThreadEnumerator<T> *threadEnum, designParam *param, const CEnumerator<T> *pMaster)
 {
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
@@ -166,7 +166,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 	if (writeFile) {
 		// We will be here only for the master
 		pParam->firstMatr = true;
-		if (!makeJobTitle(jobTitle, countof(jobTitle), "\n"))
+		if (!makeJobTitle(pParam, jobTitle, countof(jobTitle), "\n"))
 			return (size_t)-1;
 
 		// Construct the file name of the file with the enumeration results

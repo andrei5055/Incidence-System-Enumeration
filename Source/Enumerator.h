@@ -413,7 +413,7 @@ public:
 	CC virtual ~CEnumerator();
 	CK inline CRowSolution<T> *rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
 	CK ulonglong Enumerate(designParam *pParam, bool writeFile = false, CEnumInfo<T> *pEnumInfo = NULL, const CEnumerator<T> *pMaster = NULL, t_threadCode *pTreadCode = NULL);
-	virtual bool makeJobTitle(char *buffer, int len, const char *comment = "") const	
+	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
 	CK virtual VECTOR_ELEMENT_TYPE getX0_3() const          { return 0; }
 	CK inline CRowSolution<T> **rowStuffPntr() const						{ return m_pRow;  }

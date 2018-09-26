@@ -42,7 +42,7 @@ bool C_tDesignEnumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const 
 }
 
 template<class T>
-bool C_tDesignEnumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const char *comment) const
+bool C_tDesignEnumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();

@@ -195,7 +195,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	pInSys->setObjectType(objType);
 
 	char buff[256], buffer[256];
-	MAKE_JOB_TITLE(pInSysEnum, buff, countof(buff));
+	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
 	cout << buff;
 	CInsSysEnumInfo<T> enumInfo(buff);
 	enumInfo.setDesignInfo(pParam);
@@ -303,7 +303,6 @@ int main(int argc, char * argv[])
 
 	bool firstRun = true;
 	designParam param;
-	memset(&param, 0, sizeof(param));
 	param.threadNumb = USE_THREADS;
 	param.noReplicatedBlocks = false;
 	std::string newWorkDir = "./";

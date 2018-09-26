@@ -14,7 +14,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					0
+#define USE_THREADS					3
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -124,7 +124,7 @@
 #define WRITE_MULTITHREAD_LOG		0
 
 #if TEST
-#define PRINT_TO_FILE				1
+#define PRINT_TO_FILE				0
 #define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
 #else
@@ -449,24 +449,35 @@ typedef enum {
 
 class CInterStruct {
 public:
-	CInterStruct() {}
+	CInterStruct(int mult = 1) : m_mult(mult)   {}
 	const std::vector<int> &lambda() const		{ return iParam[0]; }
 	const std::vector<int> &lambdaA() const		{ return iParam[1]; }
 	const std::vector<int> &lambdaB() const		{ return iParam[2]; }
 	std::vector<int> *lambdaPtr()				{ return iParam; }
 	std::vector<int> *lambdaAPtr()				{ return iParam + 1; }
 	std::vector<int> *lambdaBPtr()				{ return iParam + 2; }
+	inline void setNext(CInterStruct *pntr)		{ m_pNext = pntr; }
+	inline CInterStruct *getNext() const		{ return m_pNext; }
+	inline int mult() const						{ return m_mult; }
 private:
 	std::vector<int> iParam[3];
-	CInterStruct *pNext = NULL;
+	const int m_mult;
+	CInterStruct *m_pNext = NULL;
 };
 
 
 class designParam {
 public:
-	designParam()				{ m_pInterStruct = new CInterStruct(); }
-	~designParam()				{ delete m_pInterStruct; }
-	CInterStruct *InterStruct()	{ return m_pInterStruct; }
+	designParam()									{ m_pInterStruct = new CInterStruct(); }
+	~designParam() {
+		CInterStruct *pntr, *pTmp = InterStruct();
+		while (pntr = pTmp) {
+			pTmp = pTmp->getNext();
+			delete pntr;
+		}
+	}
+	CInterStruct *InterStruct()	const				{ return m_pInterStruct; }
+	inline void SetInterStruct(CInterStruct *pntr)	{ m_pInterStruct = pntr; }
 	t_objectType objType;
 	int v;
 	int k;
@@ -484,8 +495,12 @@ public:
 	const std::vector<int> &lambda() const	{ return m_pInterStruct->lambda(); }
 	const std::vector<int> &lambdaA() const { return m_pInterStruct->lambdaA(); }
 	const std::vector<int> &lambdaB() const { return m_pInterStruct->lambdaB(); }
+	inline int lambdaSizeMax() const		{ return m_lambdaSizeMax; }
+	inline void setLambdaSizeMax(int val)	{ m_lambdaSizeMax = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
+	int m_lambdaSizeMax = 0;// Maximal number of elements in lambda()
+	                        // (will be used for formated output)
 };
 
 #define VAR_1		1

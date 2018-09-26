@@ -88,7 +88,7 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 }
 
 template<class T>
-void CThreadEnumerator<T>::EnumerateBIBD(designRaram *pParam, const CEnumerator<T> *pMaster)
+void CThreadEnumerator<T>::EnumerateBIBD(designParam *pParam, const CEnumerator<T> *pMaster)
 {
 	thread_message(threadID(), "threadEnumerate START", code(), m_pEnum);
 	m_pEnum->Enumerate(pParam, false, m_pEnum->enumInfo(), pMaster, &m_code);

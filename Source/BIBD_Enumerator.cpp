@@ -24,14 +24,25 @@ bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const cha
 }
 
 template<class T>
-bool CBIBD_Enumerator<T>::makeJobTitle(char *buffer, int lenBuffer, const char *comment) const
+bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	const auto v = this->rowNumb();
 	const auto b = this->matrix()->colNumb();
 	const auto k = this->getInSys()->GetK();
 	auto len = SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
-	len += addLambdaInfo(buffer + len, lenBuffer - len);
-	SNPRINTF(buffer + len, lenBuffer - len, ")%s", comment);
+	int lambdaSetSize = 0;
+	len += addLambdaInfo(buffer + len, lenBuffer - len, &lambdaSetSize);
+
+	int maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
+	if (maxSize > 0) {
+		auto pBuf = buffer + len;
+		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buffer), ")");
+		while (maxSize-- > 0)
+			pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buffer), "   ");
+	}
+	else
+		SNPRINTF(buffer + len, lenBuffer - len, ")%s", comment);
+
 	return true;
 }
 #endif

@@ -14,7 +14,7 @@ public:
 	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
 		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
 #if !CONSTR_ON_GPU
-	virtual bool makeJobTitle(char *buffer, int lenBuffer, const char *comment = "") const;
+	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 protected:
 	CK virtual bool sortSolutions(CRowSolution<T> *ptr, PERMUT_ELEMENT_TYPE idx);
@@ -30,7 +30,8 @@ protected:
 			i, j, lambda, this->getInSys()->lambda());
 	}
   CK virtual const char *getObjName() const                          { return "BIBD"; }
-  CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer) const { return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, this->getInSys()->lambda()); }
+  CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const 
+		{ return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, this->getInSys()->lambda()); }
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
