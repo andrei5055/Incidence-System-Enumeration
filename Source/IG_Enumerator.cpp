@@ -173,11 +173,50 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	return retBal;
 }
 
+size_t calcSum(const std::vector<int> &lambdaA, const std::vector<int> &lambda) {
+	size_t sum = 0;
+	for (auto i = lambdaA.size(); i--;)
+		sum += lambdaA[i] * lambda[i] * lambda[i];
+
+	return sum;
+}
+
+template<class T>
+size_t calcSum(const T *lambdaA, int len, int mult) {
+	size_t sum = 0;
+	for (auto i = mult; i <= len; i += mult)
+		sum += lambdaA[i/mult] * i * i;
+
+	return sum;
+}
+
+template<class T>
+static int lexCompare(const std::vector<int> &lamA, const std::vector<int> &lam, const T *lambdaA, int idx, int mult)
+{
+	idx /= mult;
+	for (auto j = lam.size(); j--;) {
+		const auto val = lam[j];
+		while (idx * mult > val && !lambdaA[idx])
+			idx--;
+
+		if (idx * mult > val)
+			return -1;  //second is greater
+
+		if (idx * mult < val || lambdaA[idx] < lamA[j])
+			return 1;	// first is greater
+
+		if (lambdaA[idx] > lamA[j])
+			return -1;  //second is greater
+	}
+
+	return 0;			// both are the same
+}
+
 template<class T>
 bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 {
 	// We will check the parameters b(i) for all elements, which belong to the constructed block
-	// They should be as defined in designRaram::lambdaB
+	// They should be as defined in designParam::lambdaB
 
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
 	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
@@ -236,7 +275,6 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 					if (!lambdaBCurrRow[idx]--)
 						return false;  // We have exceeded the number of possible intersections for the current idx
 				}
-//				continue;
 
 				// The structure of intersection of constructed block with the other (even not yet completely
 				// constructed) blocks will be checked. It should be exactly the same as for block #0
@@ -247,7 +285,6 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 					while (++n < nBlocks) {
 						if (n == nColCurr)
 							continue;  //skip current block
-
 
 						bool flag = false;
 						const auto *pBlock = pRow + n;
@@ -273,7 +310,6 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 					// The block #0 was just constructed. Define the structure of intersections
 					// of this block with the other blocks, containing element #0
 					// In canonical matrix these blocks have #'s from 1 <= j < k
-
 					memset(lambdaA(), 0, lenLambdas());
 					const auto r = this->getInSys()->GetR();
 					T n = 0;
@@ -301,6 +337,31 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k)
 						if (*(lambdaA() + j) * j != k * *(lambdaB() + j))
 							return false;
 					}
+
+					// According to Theorem 5.4 from Andrei Ivanov's thesis S(i^2 * a(i)) 
+					// is a constant which is the same for transposed matrix. Let's check if  
+					// it is true for just constructed lambdaA() and designParams()->lambdaA()
+					// NOTE: In fact, since we simplified the design of IG with vertex replicas, 
+					// we have to use NOT designParams()->lambdaA(), but corresponding initial  
+					// array of these parameters which is still kept in
+					auto pRowInterStruct = designParams()->InterStruct();
+					const auto mult = pRowInterStruct->mult();
+					const auto sumForCols = calcSum(lambdaA(), r, mult);
+					while (pRowInterStruct = pRowInterStruct->getNext()) {
+						const auto &lam = pRowInterStruct->lambda();
+						const auto &lamA = pRowInterStruct->lambdaA();
+						if (sumForCols != calcSum(lamA, lam))
+							continue;
+
+						// if (lamA, lam) lexicografically greater than lambdaA() 
+						if (lexCompare(lamA, lam, lambdaA(), r, mult) < 0)
+							return false;
+
+						break;
+					}
+
+					if (!pRowInterStruct)
+						return false;
 				}
 			}
 		}

@@ -88,7 +88,7 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 			if ((pVal[i] * pMult[i]) % 2)
 				return false;
 	}
-//	return true;
+
 	// We also could try to use following
 	// Theorem 3: If iMin == 0 && val[0] > 1, then nVertex >= 3 * k - 2 * z,
 	//            where i - max index of a(i) != 0.
@@ -138,7 +138,8 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 			const auto e1_e3 = pMult[pTmp[i]];
 			const auto remK = k - e1_e3;  // remaining number of units which are not in e1   
 			for (int j = 0; j <= i; ++j) {
-				const auto def = remK - pMult[pTmp[j]];
+				const auto e2_e3 = pMult[pTmp[j]];
+				const auto def = remK - e2_e3;
 				if (def < 0)	// Current and all following intersections 
 					break;		// cannot be used
 
@@ -146,25 +147,27 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 				if (def > m)
 					continue;  // it couldn't
 
-				// The deficit of units row e3 could be replenished 
-				// in blocks which do not contain e1 or e2
-				if (def && def == m) {
-					// e2 and e3 have no common blocks
-					// It is NOT possible to use this replenishment if we don't have
-					// enough elements which do not have common blocks with e2 
-					// To define that we should compare nUsed0 with a
-					if (nUsed0 < a)
-						continue;   // no luck
+				if (!e2_e3) {
+					// The deficit of units row e3 could be replenished 
+					// in blocks which do not contain e1 or e2
+					if (def && def == m) {
+						// e2 and e3 have no common blocks
+						// It is NOT possible to use this replenishment if we don't have
+						// enough elements which do not have common blocks with e2 
+						// To define that we should compare nUsed0 with a
+						if (nUsed0 < a)
+							continue;   // no luck
 
-					if (!pUsedFlags[i] && (j == i || remK < pMult[pTmp[j]])) {
-						// The i-th intersection was not yet used AND we do have last 
-						// chance to do it here. In that case we should not only compare 
-						// nUsed0 with the	# of elements, which have the same intersection
-						// e1_e3 (similar to e3, none of them can have common blocks with e2),
-						// but also modify nUsed0: 
-						nUsed0 -= pVal[pTmp[i]];
-						if (nUsed0 < 0)
-							return false;  // i-th intersection could not be used
+						if (!pUsedFlags[i] && (j == i || remK < pMult[pTmp[j+1]])) {
+							// The i-th intersection was not yet used AND we do have last 
+							// chance to do it here. In that case we should not only compare 
+							// nUsed0 with the	# of elements, which have the same intersection
+							// e1_e3 (similar to e3, none of them can have common blocks with e2),
+							// but also modify nUsed0: 
+							nUsed0 -= pVal[pTmp[i]];
+							if (nUsed0 < 0)
+								return false;  // i-th intersection could not be used
+						}
 					}
 				}
 
@@ -193,7 +196,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 	int *mult = new int[len * 5];
 	int *step = mult + len;
 	int *val = step + len;
-	int *buffer = val + len;
+	int *bufferTmp = val + len;
 	for (int k = 3; k < kMax; ++k) {
 		// Theorem 1: k % (a(k) + 1) == 0
 		//    Consequence 1: max(a(k)) == k / min(divider(k)) - 1;
@@ -230,7 +233,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				sum0 -= num;
 				sum1 -= num * mult[i];
 				val[i] = num;
-				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax, buffer)) {
+				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax, bufferTmp)) {
 					// Set of parameters is constructed
 					char buffer[256], *pBuf;
 					if (printMult) {
@@ -240,14 +243,19 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 						for (int j = 0; j <= iMax; ++j)
 							pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", mult[j]);
 
+						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), " Sum(a(i)*i^2):");
 						cout << buffer << endl;
 					}
 
 					pBuf = buffer;
 					pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%3d: ", ++paramIdx);
-					for (int j = 0; j <= iMax; ++j)
+					int sumX = 0;
+					for (int j = 0; j <= iMax; ++j) {
+						sumX += mult[j] * mult[j] * val[j];
 						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", val[j]);
+					}
 
+					pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "  %5d", sumX);
 					cout << buffer << endl;
 
 					int jMax = iMax;
@@ -334,6 +342,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 			pParam->v = nVertex / n;
 
 			const auto jMax = iStructCurr->lambda().size();
+			iStruct->setMult(n);
 			iStruct->lambdaPtr()->resize(jMax);
 			iStruct->lambdaAPtr()->resize(jMax);
 			iStruct->lambdaBPtr()->resize(jMax);
@@ -343,7 +352,14 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
 			}
 
-			if (true /*k >= 4 && val[0] == 8 && val[2] == 4*/) {
+			if (n > 1) {
+				iStructCurr->lambdaPtr()->push_back(k);
+				iStructCurr->lambdaAPtr()->push_back(n - 1);
+				iStructCurr->lambdaBPtr()->push_back(n - 1);
+				iStructCurr->setMult(1);
+			}
+
+			if (k >= 4 /*&& val[0] == 8 && val[2] == 4*/) {
 				if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
 					return 0;
 
@@ -360,107 +376,94 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 }
 /*
 
-Main lists: valid parameters accordint to Teorem 4 and 5
-  ! eliminated by Theorem 3
-v = 10
-K = 3
-    0  1
-1:  3  6
-K = 4
-    0  1  2  4
-1:  4  0  4  1
-2:  0  8  0  1
-3:  3  0  6  0
-4:  1  4  4  0
-K = 5
-K = 6
-    2  3  4  6
-1:  0  8  0  1
-2:  3  0  6  0
-3:  0  6  3  0
-K = 7
-
-v = 12
-K = 3
-    0  1
-1:  5  6
-K = 4
-    0  1  2  4
-1:  6  0  4  1
-2:  2  8  0  1
-3:  5  0  6  0
-4:  3  4  4  0
-5:  1  8  2  0
-K = 5
-    0  1  2  3
-1:  1  0 10  0
-K = 6
-     0  1  2  3  4  6
- 1:  3  0  0  6  0  2
- 2:  0  0  9  0  0  2
- 3:  4  0  0  0  6  1 !
- 4:  2  0  0  8  0  1 
- 5:  0  0  6  4  0  1
- 6:  3  0  0  2  6  0 !
- 7:  2  0  3  0  6  0 !
- 8:  2  0  0  6  3  0 !
- 9:  1  0  3  4  3  0 
-10:  0  0  6  2  3  0 
-11:  1  0  0 10  0  0
-12:  0  0  3  8  0  0
-K = 7
-K = 8
-    4  5  6  8
-1:  8  0  0  3
-2:  6  0  4  1
-3:  2  8  0  1
-K = 9
-    6  7  9
-1:  9  0  2
-
-v = 14
-K = 3
-    0  1
-1:  7  6
-K = 4
-    0  1  2  4
-1:  8  0  4  1
-2:  4  8  0  1
-3:  7  0  6  0
-4:  5  4  4  0
-5:  3  8  2  0
-6:  1 12  0  0
-K = 5
-    0  1  2  3
-1:  3  0 10  0
-K = 6
-     0  1  2  3  4  6
- 1:  6  0  0  0  6  1
- 2:  4  0  0  8  0  1 !
- 3:  0  6  0  6  0  1
- 4:  2  0  6  4  0  1 
- 5:  0  0 12  0  0  1
- 6:  5  0  0  2  6  0
- 7:  4  0  3  0  6  0
- 8:  1  6  0  0  6  0
- 9:  4  0  0  6  3  0
-10:  3  0  3  4  3  0
-11:  0  6  0  4  3  0
-12:  2  0  6  2  3  0
-13:  1  0  9  0  3  0
-14:  3  0  0 10  0  0 !
-15:  2  0  3  8  0  0 !
-16:  1  0  6  6  0  0
-17:  0  0  9  4  0  0
-K = 7
-K = 8
-    2  3  4  5  6  8
-1:  4  0  4  0  4  1
-2:  0  8  0  0  4  1
-3:  4  0  0  8  0  1
-4:  0  0 12  0  0  1
-K = 9
-K = 10
-K = 11
+Main lists: 
+  K = 3
+  0  1  Sum(a(i)*i^2):
+  1:  3  6       6
+  K = 4
+  0  1  2  4  Sum(a(i)*i^2):
+  1:  4  0  4  1      32
+  2:  0  8  0  1      24
+  3:  3  0  6  0      24
+  4:  1  4  4  0      20
+  K = 5
+  K = 6
+  2  3  4  6  Sum(a(i)*i^2):
+  1:  0  8  0  1     108
+  2:  3  0  6  0     108
+  3:  0  6  3  0     102
+  K = 7
+  =====================
+  K = 3
+  0  1  Sum(a(i)*i^2):
+  1:  5  6       6
+  K = 4
+  0  1  2  4  Sum(a(i)*i^2):
+  1:  6  0  4  1      32
+  2:  2  8  0  1      24
+  3:  5  0  6  0      24
+  4:  3  4  4  0      20
+  5:  1  8  2  0      16
+  K = 5
+  0  1  2  3  Sum(a(i)*i^2):
+  1:  1  0 10  0      40
+  K = 6
+  0  1  2  3  4  6  Sum(a(i)*i^2):
+  1:  3  0  0  6  0  2     126
+  2:  0  0  9  0  0  2     108
+  3:  2  0  0  8  0  1     108
+  4:  0  0  6  4  0  1      96
+  5:  1  0  3  4  3  0      96
+  6:  0  0  6  2  3  0      90
+  7:  1  0  0 10  0  0      90
+  8:  0  0  3  8  0  0      84
+  K = 7
+  K = 8
+  4  5  6  8  Sum(a(i)*i^2):
+  1:  8  0  0  3     320
+  2:  6  0  4  1     304
+  3:  2  8  0  1     296
+  K = 9
+  6  7  9  Sum(a(i)*i^2):
+  1:  9  0  2     486
+  ==============================
+  K = 3
+  0  1  Sum(a(i)*i^2):
+  1:  7  6       6
+  K = 4
+  0  1  2  4  Sum(a(i)*i^2):
+  1:  8  0  4  1      32
+  2:  4  8  0  1      24
+  3:  7  0  6  0      24
+  4:  5  4  4  0      20
+  5:  3  8  2  0      16
+  6:  1 12  0  0      12
+  K = 5
+  0  1  2  3  Sum(a(i)*i^2):
+  1:  3  0 10  0      40
+  K = 6
+  0  1  2  3  4  6  Sum(a(i)*i^2):
+  1:  0  6  0  6  0  1      96
+  2:  2  0  6  4  0  1      96
+  3:  0  0 12  0  0  1      84
+  4:  4  0  3  0  6  0     108
+  5:  1  6  0  0  6  0     102
+  6:  4  0  0  6  3  0     102
+  7:  3  0  3  4  3  0      96
+  8:  0  6  0  4  3  0      90
+  9:  2  0  6  2  3  0      90
+  10:  1  0  9  0  3  0      84
+  11:  1  0  6  6  0  0      78
+  12:  0  0  9  4  0  0      72
+  K = 7
+  K = 8
+  2  3  4  5  6  8  Sum(a(i)*i^2):
+  1:  4  0  4  0  4  1     288
+  2:  0  8  0  0  4  1     280
+  3:  4  0  0  8  0  1     280
+  4:  0  0 12  0  0  1     256
+  K = 9
+  K = 10
+  K = 11
 
 */

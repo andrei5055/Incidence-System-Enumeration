@@ -449,7 +449,7 @@ typedef enum {
 
 class CInterStruct {
 public:
-	CInterStruct(int mult = 1) : m_mult(mult)   {}
+	CInterStruct(int mult = 1)					{ setMult(mult); }
 	const std::vector<int> &lambda() const		{ return iParam[0]; }
 	const std::vector<int> &lambdaA() const		{ return iParam[1]; }
 	const std::vector<int> &lambdaB() const		{ return iParam[2]; }
@@ -458,10 +458,11 @@ public:
 	std::vector<int> *lambdaBPtr()				{ return iParam + 2; }
 	inline void setNext(CInterStruct *pntr)		{ m_pNext = pntr; }
 	inline CInterStruct *getNext() const		{ return m_pNext; }
+	inline void setMult(int val)				{ m_mult = val; }
 	inline int mult() const						{ return m_mult; }
 private:
 	std::vector<int> iParam[3];
-	const int m_mult;
+	int m_mult;
 	CInterStruct *m_pNext = NULL;
 };
 
