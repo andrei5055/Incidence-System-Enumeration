@@ -449,19 +449,24 @@ typedef enum {
 
 class CInterStruct {
 public:
-	CInterStruct(int mult = 1)					{ setMult(mult); }
-	const std::vector<int> &lambda() const		{ return iParam[0]; }
-	const std::vector<int> &lambdaA() const		{ return iParam[1]; }
-	const std::vector<int> &lambdaB() const		{ return iParam[2]; }
-	std::vector<int> *lambdaPtr()				{ return iParam; }
-	std::vector<int> *lambdaAPtr()				{ return iParam + 1; }
-	std::vector<int> *lambdaBPtr()				{ return iParam + 2; }
-	inline void setNext(CInterStruct *pntr)		{ m_pNext = pntr; }
-	inline CInterStruct *getNext() const		{ return m_pNext; }
-	inline void setMult(int val)				{ m_mult = val; }
-	inline int mult() const						{ return m_mult; }
+	inline CInterStruct(int mult = 1)							{ setMult(mult); }
+	inline ~CInterStruct()										{ delete Counterparts(); }
+	inline const std::vector<int> &lambda() const				{ return iParam[0]; }
+	inline const std::vector<int> &lambdaA() const				{ return iParam[1]; }
+	inline const std::vector<int> &lambdaB() const				{ return iParam[2]; }
+	inline std::vector<int> *lambdaPtr()						{ return iParam; }
+	inline std::vector<int> *lambdaAPtr()						{ return iParam + 1; }
+	inline std::vector<int> *lambdaBPtr()						{ return iParam + 2; }
+	inline std::vector<CInterStruct *> *Counterparts() const	{ return m_pCounterparts; }
+	inline bool isValid() const									{ return Counterparts(); }
+	inline void InitCounterparts()								{ m_pCounterparts = new std::vector<CInterStruct *>(); }
+	inline void setNext(CInterStruct *pntr)						{ m_pNext = pntr; }
+	inline CInterStruct *getNext() const						{ return m_pNext; }
+	inline void setMult(int val)								{ m_mult = val; }
+	inline int mult() const										{ return m_mult; }
 private:
 	std::vector<int> iParam[3];
+	std::vector<CInterStruct *> *m_pCounterparts = NULL;
 	int m_mult;
 	CInterStruct *m_pNext = NULL;
 };
@@ -484,7 +489,7 @@ public:
 	int k;
 	int r;
 	int t;
-	int mt_level;			// Matrix row number, where the threads will be launched
+	int mt_level = 0;		// Matrix row number, where the threads will be launched
 	uint outType;			// Flags which define the output information of the task
 	uint grpOrder;			// Limits for order of the group of the matrices which will be printed
 	size_t threadNumb;		// Number of threads launched to perform task

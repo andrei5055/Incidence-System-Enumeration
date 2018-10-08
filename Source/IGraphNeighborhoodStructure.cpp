@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <numeric>
 
-using namespace std;
+#define COUT(buf)	cout << buf << endl;
 
+using namespace std;
+static int lll = 0;
 static unsigned GCD(unsigned u, unsigned v) {
 	while (v != 0) {
 		unsigned r = u % v;
@@ -15,7 +17,7 @@ static unsigned GCD(unsigned u, unsigned v) {
 	return u;
 }
 
-int primeNumb[] = { 2, 3, 5, 7, 11, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
+int primeNumb[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
 
 static int minDivider(int k) {
 	const int iMax = countof(primeNumb);
@@ -124,6 +126,7 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 				pTmp[i++] = j;
 		}
 
+		assert(pTmp - pUsedFlags + i <= lll);
 		// Number of elements in compressed array
 		idxMax = i;
 		// Number of blocks which contain none of (e1, e2) 
@@ -183,9 +186,233 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 	return true;
 }
 
+static size_t calcSum(const std::vector<int> &lambdaA, const std::vector<int> &lambda) {
+	size_t sum = 0;
+	for (auto i = lambdaA.size(); i--;)
+		sum += lambdaA[i] * lambda[i] * lambda[i];
+
+	return sum;
+}
+
+#define NEW_CondB	1
+#if NEW_CondB
+bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int *indices, int vMinus2K, int k)
+{
+	// Skip index which corresponds to the presence of duplicated elements
+	const auto &lambdaA = iStruct1->lambdaA();
+	const auto &lambdaB = iStruct1->lambdaB();
+	auto size = lambdaA.size();
+	int adj = lambdaB[size - 1];
+	if (lambdaA[size - 1] == adj++)
+		size--;
+	else
+		adj = 1;
+
+	// Calculate minimal value of the counterpart's lambda (intersection with the first block)
+	int idx = 0; 
+	int lambdaMin = adj;
+	for (auto i = size; i--;) {
+		const int n = (lambdaB[i] << 1) - lambdaA[i];
+		if (n <= 0)
+			continue;
+
+		indices[idx++] = static_cast<int>(i);
+		if (adj > 1)
+			lambdaMin += adj - n % adj;
+		else
+			lambdaMin += n;
+	}
+
+	const auto &lambda = iStruct2->lambda();
+	const auto jMax = lambda.size();
+	size_t j = lambda[0]? 0 : 1;
+	if (lambda[j] < lambdaMin) {
+//		cout << "CCC:  lambda[" << j << "] = " << lambda[j] << "  lambdaMin = " << lambdaMin << endl;
+		return false;
+	}
+/*
+	if (idx && lambda[j] == lambdaMin) {
+		cout << "BBB: lambdaMin = " << lambdaMin << " adj = " << adj << "  ";
+		if (iStruct1 == iStruct2)
+			cout << "+++";
+		else
+			cout << "---";
+
+		for (int i = idx; i--;) {
+			const auto j = indices[i];
+			cout << "  (" << iStruct1->lambda()[j] << ", " << iStruct1->lambdaA()[j] << ", " << iStruct1->lambdaB()[j] << ")";
+		}
+
+		cout << endl;
+	}
+*/
+	if (adj == 1)
+		return true;
+
+	while (j < jMax) {
+		const auto lambdaTmp = lambda[j++];
+		if (lambdaTmp % adj) 
+			return false;
+	}
+
+	return true;
+}
+#else
+bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int *indices, int vMinus2K, int k)
+{
+	// Skip index which corresponds to the presence of duplicated elements
+	const auto &lambdaA = iStruct1->lambdaA();
+	const auto &lambdaB = iStruct1->lambdaB();
+	auto size = lambdaA.size();
+	int adj = lambdaB[size - 1];
+	if (lambdaA[size - 1] == adj++)
+		size--;
+	else
+		adj = 1;
+
+	const auto &lambda = iStruct2->lambda();
+	for (auto j : lambda) {
+		if (!j)
+			continue;
+		
+		if (j % adj)
+			return false;
+
+		const auto jm = j - adj;
+		for (auto i = size; i--;) {
+			const int n = lambdaA[i] - (lambdaB[i] << 1) + jm;
+			if (n < 0) {
+				cout << "CCC:  lambda[x] = " << j << "  i = " << i << "  jm = " << jm << "(" << lambdaA[i] << ", " << lambdaB[i] << ")" << endl;
+				return false;
+			}
+
+			if (n > 0)
+				continue;
+
+			// When for some index i we are here, stronger condition 
+			// (without addition of jm) could be checked for remaining indices
+			for (auto l = size; l--;) {
+				if (l == i)
+					continue;
+
+				if (lambdaA[l] - (lambdaB[l] << 1) < 0) {
+					cout << "Hura!" << endl;
+					return false;
+				}
+			}
+		}
+	}
+
+	if (!lambdaB[0] && vMinus2K < 0) {
+		// In that case a(0) > 0
+		const auto j = lambda[0] ? lambda[0] : lambda[1];
+		if (vMinus2K + j < lambdaA[0])
+			return false;  // No place for a(0) elements 
+	}
+
+	return true;
+}
+#endif
+
+void CheckIntersections(CInterStruct *iStructA, int *pIndices, int k, int v)
+{
+	// Function which check the conditions from Theorem 5.4 from Andrei Ivanov thesis
+	// (a) S(i^2 * a(i)) is a constant which is the same for transposed matrix
+	// (b) a(i) - 2*b(i) + j >= 1    (for any i and any j which A(j) != 0
+
+	// Save pointer for possible deletion of the intersection parameters
+	const int vMinus2K = v - 2 * k;
+	CInterStruct *iStructBase = iStructA;
+	CInterStruct *iStructPrev = iStructBase;
+	while (iStructA = iStructPrev->getNext()) {
+		const auto sum1 = calcSum(iStructA->lambdaA(), iStructA->lambda());
+		bool flag = checkCondB(iStructA, iStructA, pIndices, vMinus2K, k);
+		CInterStruct *iStructB = iStructA;
+		do {
+			if (flag || iStructB != iStructA && 
+				        sum1 == calcSum(iStructB->lambdaA(), iStructB->lambda()) &&
+						checkCondB(iStructA, iStructB, pIndices, vMinus2K, k) &&
+						checkCondB(iStructB, iStructA, pIndices, vMinus2K, k)) {
+				if (!iStructA->Counterparts())
+					iStructA->InitCounterparts();
+
+				iStructA->Counterparts()->push_back(iStructB);
+			}
+
+			flag = false;
+		} while (iStructB = iStructB->getNext());
+
+		if (!iStructA->isValid()) {
+			// This structure is not a valid structure
+			// Check if it is in some other structure's list of counterparts
+			CInterStruct *iStructTmp = iStructBase;
+			while ((iStructTmp = iStructTmp->getNext()) != iStructA) {
+				const auto pntr = iStructTmp->Counterparts();
+				if (!pntr)
+					continue;
+
+				int idx = static_cast<int>(pntr->size());
+				while (idx-- && (*pntr)[idx] != iStructA);
+				if (idx >= 0)
+					break;
+			}
+
+			if (iStructTmp == iStructA) {
+				// It is not. We can delete it
+				iStructPrev->setNext(iStructA->getNext());
+				delete iStructA;
+				continue;
+			}
+		}
+
+		iStructPrev = iStructA;
+	}
+}
+
+void printSolution(bool &printMult, const CInterStruct *iStruct, const int *mult, int iMax, int paramIdx, int *val)
+{
+	char buffer[256], *pBuf;
+	if (printMult) {
+		printMult = false;
+		pBuf = buffer;
+		pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "     ");
+		for (int j = 0; j <= iMax; ++j)
+			pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", mult[j]);
+
+		pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), " Sum(a(i)*i^2):");
+		COUT(buffer);
+	}
+
+	// Restore full solution of the system of equations
+	const auto pMult = iStruct->lambda().data();
+	auto const pVal = iStruct->lambdaA().data();
+	memset(val, 0, sizeof(val[0]) * (iMax + 1));
+	int k = 0;
+	const auto kMax = iStruct->lambda().size();
+	for (int i = 0; i <= iMax; ++i) {
+		if (mult[i] != pMult[k])
+			continue;
+
+		val[i] = pVal[k];
+		if (++k == kMax)
+			break;
+	}
+
+	pBuf = buffer;
+	pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%3d: ", paramIdx);
+	int sumX = 0;
+	for (int i = 0; i <= iMax; ++i) {
+		sumX += mult[i] * mult[i] * val[i];
+		pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", val[i]);
+	}
+
+	pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "  %5d", sumX);
+	COUT(buffer);
+}
+
 int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath)
 {
-    int nVertex = pParam->v;
+    const int nVertex = pParam->v;
 	if (nVertex < 10) {
 		cout << "There are no inconsistent graphs for " << nVertex << " vertices";
 		return 0;
@@ -193,17 +420,19 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 	const auto kMax = nVertex - 2;
 	const int len = kMax + 1;
-	int *mult = new int[len * 5];
+	int *mult = new int[len * 6];
 	int *step = mult + len;
 	int *val = step + len;
 	int *bufferTmp = val + len;
+	int *pIndices = bufferTmp + 2 * len;
+	lll = len;
+	char buffer[256];
 	for (int k = 3; k < kMax; ++k) {
 		// Theorem 1: k % (a(k) + 1) == 0
 		//    Consequence 1: max(a(k)) == k / min(divider(k)) - 1;
 		//    Consequence 2: if is prime number, a(k) == 0;
 		// Theorem 2: a(k-1) == 0,  
 		//    If NOT, a(k-1) = k, and the bipartite will be vertex-transitive
-
 		int aMin = 2 * k - nVertex;
 		if (aMin < 0)
 			aMin = 0;
@@ -223,7 +452,8 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 		int sum1 = k * (k - 1);
 		int i = iMax;
 		int num = kIsPrime ? sum0 - sum0%step[i] : k / minDivider(k) - 1;
-		cout << "K = " << k << endl;
+		sprintf_s(buffer, "K = %d", k);
+		COUT(buffer);
 
 		CInterStruct *iStruct = NULL;
 		bool printMult = true;
@@ -233,37 +463,11 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				sum0 -= num;
 				sum1 -= num * mult[i];
 				val[i] = num;
+
 				if (!sum0 && !sum1 && IntersectionArrayIsValid(nVertex, k, val, mult, iMax, bufferTmp)) {
-					// Set of parameters is constructed
-					char buffer[256], *pBuf;
-					if (printMult) {
-						printMult = false;
-						pBuf = buffer;
-						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "     ");
-						for (int j = 0; j <= iMax; ++j)
-							pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", mult[j]);
-
-						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), " Sum(a(i)*i^2):");
-						cout << buffer << endl;
-					}
-
-					pBuf = buffer;
-					pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%3d: ", ++paramIdx);
-					int sumX = 0;
-					for (int j = 0; j <= iMax; ++j) {
-						sumX += mult[j] * mult[j] * val[j];
-						pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "%2d ", val[j]);
-					}
-
-					pBuf += sprintf_s(pBuf, countof(buffer) - (pBuf - buffer), "  %5d", sumX);
-					cout << buffer << endl;
-
-					int jMax = iMax;
-					int n = val[jMax];
-					if (mult[iMax] == k && n) {
+					int n = val[iMax];
+					if (mult[iMax] == k && n)
 						++n;
-						--jMax;
-					}
 					else
 						n = 1;
 
@@ -279,7 +483,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					//   (a) mutual intersection of any two matrix rows;
 					//   (b) number of elements, which belong exactly to i common blocks
 					//   (c) number of elements, which belong to some block AND exactly to i common blocks 
-					for (int j = 0; j <= jMax; ++j) {
+					for (int j = 0; j <= iMax; ++j) {
 						if (!val[j])
 							continue;
 
@@ -287,6 +491,8 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 						iStruct->lambdaAPtr()->push_back(val[j]);
 						iStruct->lambdaBPtr()->push_back(val[j] * mult[j] / k);
 					}
+
+					printSolution(printMult, iStruct, mult, iMax, ++paramIdx, val);
 				}
 
 				if (i && sum0) {
@@ -296,7 +502,12 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 			}
 			else {
 				if (num >= step[i]) {
-					num -= step[i];
+					const int diff = num * mult[i] - sum1;
+					if (diff > step[i] * mult[i])
+						num -= diff / (step[i] * mult[i]) * step[i];
+					else
+						num -= step[i];
+
 					continue;
 				}
 
@@ -320,12 +531,20 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 			num = sum0 - sum0 % step[--i];
 		}
 
-		iStruct = pParam->InterStruct();
 
-		// To do the formated output, define maximal sizeof lambda sets
+		// To do the formated output, define maximal size of lambda sets
 		int maxSize = 0;
+		iStruct = pParam->InterStruct();
+		CheckIntersections(iStruct, pIndices, k, nVertex);
+
 		CInterStruct *iStructCurr = iStruct->getNext();
+		if (!iStructCurr)
+			continue;	// There are no valid solutions for current k
+
+		printMult = true;
+		paramIdx = 0;
 		while (iStructCurr) {
+			printSolution(printMult, iStructCurr, mult, iMax, ++paramIdx, val);
 			if (maxSize < iStructCurr->lambda().size())
 				maxSize = static_cast<int>(iStructCurr->lambda().size());
 
@@ -334,38 +553,36 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 		pParam->setLambdaSizeMax(maxSize);
 
+		// Launching the enumeration for all constructed parameters
 		pParam->r = k;
 		iStructCurr = iStruct->getNext();
 		while (iStructCurr) {
-			const auto n = iStructCurr->mult();
-			pParam->k = k / n;
-			pParam->v = nVertex / n;
+			if (iStructCurr->isValid()) {
+				auto n = iStructCurr->mult();
+				pParam->k = k / n;
+				pParam->v = nVertex / n;
 
-			const auto jMax = iStructCurr->lambda().size();
-			iStruct->setMult(n);
-			iStruct->lambdaPtr()->resize(jMax);
-			iStruct->lambdaAPtr()->resize(jMax);
-			iStruct->lambdaBPtr()->resize(jMax);
-			for (int j = 0; j < jMax; ++j) {
-				(*iStruct->lambdaPtr())[j] = iStructCurr->lambda()[j];
-				(*iStruct->lambdaAPtr())[j] = iStructCurr->lambdaA()[j] / n;
-				(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
+				// Copy current set of parameters into place where from they will be used
+				const auto jMax = iStructCurr->lambda().size() - (n > 1 ? 1 : 0);
+				iStruct->setMult(n);
+				iStruct->lambdaPtr()->resize(jMax);
+				iStruct->lambdaAPtr()->resize(jMax);
+				iStruct->lambdaBPtr()->resize(jMax);
+				for (int j = 0; j < jMax; ++j) {
+					(*iStruct->lambdaPtr())[j] = iStructCurr->lambda()[j];
+					(*iStruct->lambdaAPtr())[j] = iStructCurr->lambdaA()[j] / n;
+					(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
+				}
+
+				if (true/*k >= 4*/ /*&& val[0] == 8 && val[2] == 4*/) {
+					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
+						return 0;
+
+					firstPath = false;
+				}
 			}
 
-			if (n > 1) {
-				iStructCurr->lambdaPtr()->push_back(k);
-				iStructCurr->lambdaAPtr()->push_back(n - 1);
-				iStructCurr->lambdaBPtr()->push_back(n - 1);
-				iStructCurr->setMult(1);
-			}
-
-			if (k >= 4 /*&& val[0] == 8 && val[2] == 4*/) {
-				if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
-					return 0;
-
-				firstPath = false;
-			}
-
+			// Remove just used intersection 
 			CInterStruct *iStructNext = iStructCurr->getNext();
 			delete iStructCurr;
 			iStruct->setNext(iStructCurr = iStructNext);
@@ -374,6 +591,8 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 	return 1;
 }
+
+
 /*
 
 Main lists: 
