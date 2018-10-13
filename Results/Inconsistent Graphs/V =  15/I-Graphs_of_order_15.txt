@@ -1,0 +1,92 @@
+I-Graph( 15,  15,  3,  3, { 0, 1})
+
+         0 matrices constructed in 59.30
+    454402 matrices were fully constructed
+
+I-Graph( 15,  15,  4,  4, { 0, 2})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph( 15,  15,  4,  4, { 0, 1, 2})
+
+         0 matrices constructed in  9.85
+         9 matrices were fully constructed
+
+I-Graph( 15,  15,  4,  4, { 0, 1, 2})
+
+         0 matrices constructed in  1:28.93
+      4073 matrices were fully constructed
+
+I-Graph( 15,  15,  4,  4, { 0, 1})   
+         0 matrices constructed in  0.08
+         4 matrices were fully constructed
+
+I-Graph( 15,  15,  5,  5, { 0, 2})
+
+         0 matrices constructed in  0.00
+         0 matrices were fully constructed
+
+I-Graph(  5,  15,  6,  2, { 0, 3})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph( 15,  15,  6,  6, { 0, 3, 4})
+
+         0 matrices constructed in  0.00
+         0 matrices were fully constructed
+
+I-Graph( 15,  15,  6,  6, { 0, 3})   
+         0 matrices constructed in  0.00
+         0 matrices were fully constructed
+
+I-Graph( 15,  15,  6,  6, { 1, 3})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph( 15,  15,  6,  6, { 0, 2, 3})
+
+         0 matrices constructed in  6.64
+         0 matrices were fully constructed
+
+I-Graph( 15,  15,  6,  6, { 2, 3})   
+         0 matrices constructed in  0.16
+         0 matrices were fully constructed
+
+I-Graph( 15,  15,  7,  7, { 3})
+
+         0 matrices constructed in  0.02
+         5 matrices were fully constructed
+
+I-Graph( 15,  15,  8,  8, { 3, 4, 6})
+
+         0 matrices constructed in 38.00
+         0 matrices were fully constructed
+
+I-Graph( 15,  15,  8,  8, { 4})      
+         0 matrices constructed in  0.09
+         5 matrices were fully constructed
+
+I-Graph(  3,  15, 10,  2, { 5})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph( 15,  15, 10, 10, { 5, 7})
+
+         0 matrices constructed in  0.03
+         0 matrices were fully constructed
+
+I-Graph(  5,  15, 12,  4, { 9})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph( 15,  15, 12, 12, { 9,10})
+
+         0 matrices constructed in  1:03.71
+         1 matrix was fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        15 threads launched on level 7 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
