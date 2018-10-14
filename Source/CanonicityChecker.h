@@ -51,6 +51,7 @@ public:
 	CC inline T * permCol() const					{ return m_pPermutCol->elementPntr(); }
 	CC inline CPermutStorage<T> *permStorage() const		{ return m_pPermutStorage[0]; }
 	CC inline CPermutStorage<T> *permColStorage() const		{ return m_pPermutStorage[1]; }
+	CC inline CPermutStorage<T> *permRowStorage() const		{ return m_pPermutStorage[2]; }
 	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const	{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
 	bool printMatrix(const designParam *pParam) const;
@@ -62,6 +63,7 @@ protected:
 	CC inline T *getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
 	CC inline T *getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
+	CC inline T numRow() const						{ return m_nNumRow; }
 private:
     CC void init(T nRow, bool savePerm);
 	CC T next_permutation(T idx = MATRIX_ELEMENT_MAX);
@@ -72,7 +74,6 @@ private:
     CC inline void setStabilizerLengthAut(T l)		{ m_nStabLengthAut = l; }
     CC inline T stabilizerLengthAut() const			{ return m_nStabLengthAut; }
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
-	CC inline T numRow() const						{ return m_nNumRow; }
     CC inline T numCol() const						{ return static_cast<T>(m_pPermutCol->numElement()); }
 #define orbits()	m_pObits[0][0] 
 	CC void updateGroupOrder();
@@ -105,7 +106,7 @@ private:
     CPermut *m_pPermutRow;
     CPermut *m_pPermutCol;
     CColNumbStorage **m_nColNumbStorage;
-	CPermutStorage<T> *m_pPermutStorage[2];
+	CPermutStorage<T> *m_pPermutStorage[3];
 	T *m_pObits[2][2];
     CCounter<int> *m_pCounter;
 	T *m_pColIndex;
@@ -134,9 +135,10 @@ CCanonicityChecker<T>::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFla
 	setPermStorage(new CPermutStorage<T>());
 
 	memset(m_pObits, 0, sizeof(m_pObits));
-	const auto len = nRow + (enumFlags & t_outColumnOrbits ? nCol : 0);
+	const auto outColumnOrbits = enumFlags & t_outColumnOrbits;
+	const auto len = nRow + (outColumnOrbits ? nCol : 0);
 	auto pntr = m_pObits[0][0] = new T[mult * len];	// memory to keep orbits of different types
-	if (enumFlags & t_outColumnOrbits) {
+	if (outColumnOrbits) {
 		setPermStorage(new CPermutStorage<T>(), 1);
 		m_pObits[1][0] = pntr + mult * nRow;
 		if (mult > 1)
@@ -144,6 +146,8 @@ CCanonicityChecker<T>::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFla
 	}
 	else
 		setPermStorage(NULL, 1);
+
+	setPermStorage(enumFlags & t_alwaisKeepRowPermute ? new CPermutStorage<T>() : NULL, 2);
 
 	if (mult > 1)
 		m_pObits[0][1] = pntr + nRow;
@@ -157,6 +161,7 @@ CCanonicityChecker<T>::~CCanonicityChecker()
 	delete counter();
 	delete permStorage();
 	delete permColStorage();
+	delete permRowStorage();
 	for (int i = rank(); i--;)
 		delete m_nColNumbStorage[i];
 
@@ -304,7 +309,7 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 			// We are here to define the canonicity of partially constructed 
 			// matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits 
-			// which cortesponds to just found automorfism
+			// which corresponds to just found automorphism
 			const auto *pColOrbitIni = colOrbitIni[nRow - (rowPermut? 2 : 0)];
 			const auto *pColOrbit = colOrbit[nRow - (rowPermut ? 2 : 0)];
 			if (!pColIndex) // Index for columns was not yet constructed
@@ -316,9 +321,14 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 				*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
 				pColOrbit = pColOrbit->next();
 			}
-		} else if (permColStorage()) {
-			ConstructColumnPermutation(pEnum->matrix());
 		}
+		
+		// We need the permutations on columns AND
+		//  (a) matrix is completely constructed OR
+		//  (b) we will need to analyse the group on partially constructed matrix
+		// (As of Oct.11, 2018 this is used only for IGraphs (inconsistent graphs)
+		if (permColStorage() && (rowPermut || permRowStorage()))
+			ConstructColumnPermutation(pEnum->matrix());
 
 		addAutomorphism(rowPermut);
 		nRow = MATRIX_ELEMENT_MAX - 1;

@@ -25,13 +25,16 @@ public:
 	CC T *allocateMemoryForPermut(T lenPermut);
 	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 	void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, T idx = 0) const;
-	T *CreateOrbits(const CPermutStorage<T> *pPermColumn, const CMatrixData<T> *pMatrix, T *pOrbits = NULL) const;
+	T *CreateOrbits(const CPermutStorage<T> *pPermColumn, const CMatrixData<T> *pMatrix, T *pRowOrbits = NULL, T *pColOrbits = NULL, int firstpermIdx = 1) const;
+	inline bool isEmpty() const						{ return !lenMemUsed(); }
 protected:
 private:
 	CK inline size_t lenPermByte() const			{ return m_nLenPermByte;  }
 	CC inline void setPermutMemory(T *pntr)			{ m_pPermutMem = pntr; }
 	CC inline T *permutMemory() const				{ return m_pPermutMem; }
+public:
 	CC inline size_t lenMemMax() const              { return m_nLenMax; }
+private:
 	CC inline size_t lenMemUsed() const             { return m_nLenUsed; }
 	CC inline void setLenMemMax(size_t val)         { m_nLenMax = val; }
 	CC inline void setLenMemUsed(size_t val)        { m_nLenUsed = val; }
@@ -66,7 +69,6 @@ T *CPermutStorage<T>::allocateMemoryForPermut(T lenPermut)
 {
 	const size_t lenUsed = lenMemUsed();
 	const size_t newLength = lenUsed + lenPermut;
-
 	if (lenMemMax() < newLength) {
 		const size_t len = 2 * newLength;
 		setLenMemMax(len);

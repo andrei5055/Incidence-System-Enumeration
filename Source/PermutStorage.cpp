@@ -83,12 +83,13 @@ void CPermutStorage<T>::outputAutomorphismInfo(FILE *file, const T *pRowOrbits,
 
 template<class T>
 T *CPermutStorage<T>::CreateOrbits(const CPermutStorage<T> *pPermColumn,
-									const CMatrixData<T> *pMatrix, T *pOrbits) const
+									const CMatrixData<T> *pMatrix, T *pOrbits, T *pColOrbits, int firstpermIdx) const
 {
 	const auto nRows = lenPerm();
 	const auto nCols = pPermColumn->lenPerm();
-	T *pRowOrbits = pOrbits ? pOrbits : new T[2 * (nCols + nRows)];
-	T *pColOrbits = pRowOrbits + 2 * nRows;
+	T *pRowOrbits = pOrbits ? pOrbits : new T[2 * (nRows + (pColOrbits? 0 : nCols))];
+	if (!pColOrbits)
+		pColOrbits = pRowOrbits + 2 * nRows;
 
 	// Orbits will be printed first and stabilizer will be second 
 	T *pColOrbitsTmp = pColOrbits;
@@ -108,12 +109,17 @@ T *CPermutStorage<T>::CreateOrbits(const CPermutStorage<T> *pPermColumn,
 		jPrev = j;
 	}
 
+//	fprintf(file, "pPermColumn->lenPerm() = %d pPermColumn->lenMemMax() = %zd\n", pPermColumn->lenPerm(), pPermColumn->lenMemMax());
+
 	for (int j = 0; j < nRows; ++j)
 		pRowOrbitsTmp[j] = j;
 
 	// Identical permutation will be skipped
 	const auto iMax = pPermColumn->numPerm();
-	for (int i = 1; i < iMax; ++i) {
+/*	fprintf(file, "pPermColumn->lenPerm() = %d  iMax = %zd\n", pPermColumn->lenPerm(), iMax);
+	FCLOSE(file); */
+
+	for (int i = firstpermIdx; i < iMax; ++i) {
 		const auto pRowPermut = getPermutByIndex(i);
 		if (pRowPermut[0] && pColOrbitsTmp == pColOrbits) {
 			// Copying the orbits of stabilizer of first elements

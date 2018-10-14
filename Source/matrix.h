@@ -39,12 +39,12 @@ public:
 			pMatrData += colNumb();
 		}
 	}
-	CK void InitWithPermutedRows(const CMatrixData<T> *pMatr, T *pPermRows) {
-		Init(pMatr->rowNumb(), pMatr->colNumb());
+	CK void InitWithPermutedRows(const CMatrixData<T> *pMatr, T *pPermRows, T rowNumb) {
+		Init(rowNumb, pMatr->colNumb());
 		const auto len = colNumb() * sizeof(T);
 		T *pMatrData = GetDataPntr() - len;
 		T *pMatrSrc = pMatr->GetDataPntr();
-		for (T i = 0; i < rowNumb(); ++i)
+		for (T i = 0; i < rowNumb; ++i)
 			memcpy(pMatrData += len, pMatrSrc + pPermRows[i] * len, len);
 	}
 

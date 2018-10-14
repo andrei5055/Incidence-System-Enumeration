@@ -34,7 +34,7 @@ public:
 	CK inline uchar *canonFlags() const					{ return canonFlgs()->GetData(); }
 private:
 	CK inline CArrayOfCanonFlags *canonFlgs() const		{ return m_CanonFlgs; }
-
+public:
 	CArrayOfCanonFlags *m_CanonFlgs;
 };
 

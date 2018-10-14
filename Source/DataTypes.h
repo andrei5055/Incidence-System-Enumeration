@@ -444,6 +444,7 @@ typedef enum {
 	t_outStabilizerOrbit	= 1 << 4,	// Keep the orbits of stabilizer of first elements
 	t_colOrbitsConstructed  = 1 << 5,
 	t_printTransposedMatrix = 1 << 6,
+	t_alwaisKeepRowPermute	= 1 << 7,   // Keep forming elements of the Aut(M) acting on the rows of partially constructed matrix M 
 	t_allFlags				= -1
 } t_EnumeratorFlags;
 

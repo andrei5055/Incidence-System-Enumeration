@@ -173,7 +173,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
 			case t_InconsistentGraph:
-				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed;
+				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaisKeepRowPermute;
 				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new CIG_Enumerator<T>(pInSys, pParam, enumFlags, FirstPath);
 				break;

@@ -486,7 +486,8 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			bool betterResults = true;
 			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
-			if (compareResults(buff, lenName, &betterResults)) {
+			// TO DO: For inconsistent grapgs more complicated comparison function should be implemented
+			if (pParam->objType != t_InconsistentGraph && compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
 				strcpy_s(jobTitle, countof(jobTitle), buff);
 				strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
@@ -497,9 +498,8 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 					resType = t_resBetter;
 				}
 				else {
-					if (pParam->firstMatr && pParam->objType != t_InconsistentGraph)
+					if (pParam->firstMatr)
 						remove(jobTitle);	// Deleting new file only when it does not contain matrices and 
-					                        // we are not constracting the inconsistent graph
 
 					resType = t_resWorse;
 				}

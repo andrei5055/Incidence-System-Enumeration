@@ -60,7 +60,9 @@ private:
 	inline size_t lenRowIntersection(T v) const			{ return v * (v - 1) / 2; }
 	inline size_t nLambdas() const						{ return lambdaB() - lambdaA(); }
 	inline size_t lenLambdas() const                    { return 2 * nLambdas() * sizeof(*lambdaA()); }
-	bool CheckConstructedBlocks(T nRow, T k) const;
+	bool CheckConstructedBlocks(T nRow, T k, T *pElementNumb);
+	bool CheckTransitivityOnConstructedBlocks(T nRow, T k);
+	bool CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits, int from = 1) const;
 	bool DefineInterstructForBlocks(size_t nColCurr, T k, const T *pElementNumb, T i, T *lambdaACurrCol) const;
 
 	const bool m_firstPath;

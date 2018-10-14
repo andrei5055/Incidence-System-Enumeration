@@ -492,7 +492,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 						iStruct->lambdaBPtr()->push_back(val[j] * mult[j] / k);
 					}
 
-					printSolution(printMult, iStruct, mult, iMax, ++paramIdx, val);
+//					printSolution(printMult, iStruct, mult, iMax, ++paramIdx, val);
 				}
 
 				if (i && sum0) {
@@ -574,7 +574,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
 				}
 
-				if (true/*k >= 4*/ /*&& val[0] == 8 && val[2] == 4*/) {
+				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
 					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
 						return 0;
 

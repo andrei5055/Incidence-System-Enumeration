@@ -38,13 +38,8 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 
 	// Check the transitivity of the stabilizer of the  
 	// first element on the blocks to which it belongs
-	permStorage()->CreateOrbits(permColStorage(), pMatrix, getRowOrbits(0));
-	const T *pColOrbit = getColOrbits(0);
-	const auto k = this->getInSys()->GetK();
-	for (auto j = k; j--;) {
-		if (*(pColOrbit + j))
-			return false;
-	}
+	if (!CheckOrbits(permStorage(), getRowOrbits(0)))
+		return false;
 
 	*pMatrFlags |= t_trahsitiveGroup;
 
@@ -116,20 +111,21 @@ template<class T>
 bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	// In that function we
 	// (a) calculate the intersection of last constructed row with all previously constructed rows
-	auto pIntersection = rowIntersections();
-	if (!pIntersection)
-		return true;
-
 	auto nRow = this->currentRowNumb() - 1;
 	if (!nRow)
 		return true;
 
-	const auto v = rowNumb();
+	const auto k = this->getInSys()->GetK();
+	auto pIntersection = rowIntersections();
+	if (!pIntersection)
+		return CheckTransitivityOnConstructedBlocks(nRow + 1, k);
+
 	const auto nCol = colNumb();
-	const auto len = v * (v - 1) / 2;
 	const auto r = this->getInSys()->GetR();
-	T bufIdx[32];
-	T *pIdx = r > countof(bufIdx) ? new T[r] : bufIdx;
+	const auto nLambd = designParams()->lambdaB().size();
+	const auto len = r + k + nLambd + 2 * nLambdas();
+	T bufIdx[64];
+	T *pIdx = len > countof(bufIdx) ? new T[len] : bufIdx;
 
 	// Define the set of indices of the blocks, containing last element
 	auto i = r;
@@ -146,7 +142,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 
 	const auto &lambdaSet = designParams()->lambda();
 	const auto *pCurrRow = matrix()->GetDataPntr();
-	auto step = v;
+	auto step = rowNumb();
 	pIntersection += nRow - step;
 
 	for (int i = 0; i < nRow; ++i) {
@@ -165,8 +161,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 		pCurrRow += nCol;
 	}
 
-	const auto k = this->getInSys()->GetK();
-	const bool retBal = (++nRow < k) || CheckConstructedBlocks(nRow, k);
+	const bool retBal = (++nRow < k) || CheckConstructedBlocks(nRow, k, pIdx + r);
 	if (pIdx != bufIdx)
 		delete[] pIdx;
 
@@ -215,18 +210,33 @@ static int lexCompare(const std::vector<int> &lamA, const std::vector<int> &lam,
 }
 
 template<class T>
-bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k) const
+bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits, int from) const
+{
+	// Last block containing first element was just constructed
+	// We can check the Aut(M) to see if it is transitive on first k blocks
+	if (permRowStorage->isEmpty())
+		return false;
+
+	T *pColOrbit = getColOrbits(0);
+	permRowStorage->CreateOrbits(permColStorage(), this->matrix(), pRowOrbits, pColOrbit, from);
+	for (auto j = this->getInSys()->GetR(); j--;) {
+		if (*(pColOrbit + j))
+			return false;
+	}
+
+	return true;
+}
+
+template<class T>
+bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 {
 	// We will check the parameters b(i) for all elements, which belong to the constructed block
 	// They should be as defined in designParam::lambdaB
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
 	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
 
+	const auto lastBlockIdx = this->getInSys()->GetR() - 1;
 	const auto nLambd = designParams()->lambdaB().size();
-	const auto len = k + nLambd + 2 * nLambdas();
-
-	T elementNumb[64] ;
-	auto pElementNumb = len > countof(elementNumb) ? new T[len] : elementNumb;
 	auto lambdaBCurrRow = pElementNumb + k;
 
 	while (pColOrbit) {
@@ -277,6 +287,37 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k) const
 				if (!DefineInterstructForBlocks(nColCurr, k, pElementNumb, i, lambdaBCurrRow + nLambd))
 					return false;
 			}
+
+			if (nColCurr == lastBlockIdx) {
+				if (permRowStorage() && !CheckOrbits(permRowStorage(), NULL, 0))
+					return false;
+			}
+		}
+
+		pColOrbit = pColOrbit->next();
+	}
+
+	return true;
+}
+
+template<class T>
+bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k)
+{
+	if (!permRowStorage())	
+		return true;
+
+	// We will check the parameters b(i) for all elements, which belong to the constructed block
+	// They should be as defined in designParam::lambdaB
+	const auto lastBlockIdx = this->getInSys()->GetR() - 1;
+	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
+	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
+
+	while (pColOrbit) {
+		if (pColOrbit->columnWeight() == k) {
+			// Define the current column number
+			const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
+			if (nColCurr == lastBlockIdx) 
+				return CheckOrbits(permRowStorage(), NULL, 0);
 		}
 
 		pColOrbit = pColOrbit->next();
@@ -359,8 +400,6 @@ bool CIG_Enumerator<T>::DefineInterstructForBlocks(size_t nColCurr, T k, const T
 	// array of these parameters which is still kept in
 	auto pRowInterStruct = designParams()->InterStruct();
 	const auto mult = pRowInterStruct->mult();
-#define NEW  1
-#if NEW
 	const auto pCounterparts = pRowInterStruct->getNext()->Counterparts();
 	for (const auto element : *pCounterparts) {
 		const auto &lam = element->lambda();
@@ -373,20 +412,4 @@ bool CIG_Enumerator<T>::DefineInterstructForBlocks(size_t nColCurr, T k, const T
 	}
 
 	return false;
-#else
-	const auto sumForCols = calcSum(lambdaA(), r, mult);
-	while (pRowInterStruct = pRowInterStruct->getNext()) {
-		const auto &lam = pRowInterStruct->lambda();
-		const auto &lamA = pRowInterStruct->lambdaA();
-		if (sumForCols != calcSum(lamA, lam))
-			continue;
-
-		// if (lamA, lam) lexicografically greater than lambdaA() 
-		if (lexCompare(lamA, lam, lambdaA(), r, mult) < 0)
-			return false;
-
-		break;
-	}
-	return pRowInterStruct != NULL;
-#endif
 }

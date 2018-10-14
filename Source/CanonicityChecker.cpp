@@ -54,13 +54,18 @@ void CCanonicityChecker<T>::init(T nRow, bool savePerm)
     memcpy(pCol, pRow, nRow * sizeof(*permCol()));
 	permStorage()->initPermutStorage();
 	setGroupOrder(1);
-	if (savePerm) {
+	if (savePerm)
 		permStorage()->savePermut(numRow(), permRow());
-		if (permColStorage()) {
-			permColStorage()->initPermutStorage();
+
+	if (permColStorage() && (savePerm || permRowStorage())) {
+		permColStorage()->initPermutStorage();
+		if (savePerm)
 			permColStorage()->savePermut(numCol(), pCol);
-		}
 	}
+
+
+	if (permRowStorage())
+		permRowStorage()->initPermutStorage();
 }
 
 template<class T>
@@ -206,7 +211,6 @@ template<class T>
 void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 {
 	UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
-
 	if (!rowPermut) {
 		// Saving only column's orbit permutation
 		T *permCol;
@@ -217,6 +221,8 @@ void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 		}
 
 		permStorage()->savePermut(lenPerm, permCol);
+		if (permRowStorage())
+			permRowStorage()->savePermut(numRow(), permRow());
 	}
 	else
 		permStorage()->savePermut(numRow(), permRow());
