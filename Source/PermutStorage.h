@@ -55,7 +55,6 @@ private:
 	size_t m_nLenPermByte;
 };
 
-
 template<class T>
 CPermutStorage<T>::CPermutStorage()
 {

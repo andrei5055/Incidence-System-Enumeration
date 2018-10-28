@@ -2,12 +2,25 @@
 #include "PBIBD_Enumerator.h"
 
 template<class T>
+class CIncidenceStorage
+{
+public:
+	CIncidenceStorage(T numb, T size) : m_Size(size)	{ m_pIncidence = new T[numb * size]; }
+	~CIncidenceStorage()								{ delete[] m_pIncidence; }
+	void addIncidence(T elem, T index, int numb)		{ m_pIncidence[m_Size * index + numb] = elem; }
+private:
+	T *m_pIncidence;
+	const T m_Size;
+};
+
+template<class T>
 class CIG_Enumerator : public CPBIBD_Enumerator<T>
 {
 public:
 	CK CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags = t_enumDefault, bool firstPath = false, int treadIdx = -1, uint nCanonChecker = 0) :
 		CPBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker), m_firstPath(firstPath) {
-		const auto lambdaSet = this->getInSys()->GetNumSet(t_lSet);
+		const auto inSys = this->getInSys();
+		const auto lambdaSet = inSys->GetNumSet(t_lSet);
 		const auto nLambd = lambdaSet->GetSize();
 
 		m_pRowIntersections = nLambd > 2 || lambdaSet->GetAt(0) || lambdaSet->GetAt(1) != 1?
@@ -15,7 +28,8 @@ public:
 
 		// Allocate memory to store current lambdaA, lambdaB for blocks
 		// This set of lambda's is not known, but it cannot have more than k + 1 elements
-		const auto len = this->getInSys()->GetK() + 1;
+
+		const auto len = inSys->GetK() + 1;
 		m_pLambda[0] = new T[2 * len + nLambd];
 		m_pLambda[2] = (m_pLambda[1] = m_pLambda[0] + nLambd) + len;
 
@@ -23,9 +37,13 @@ public:
 		const auto &coeffB = pParam->lambdaB();
 		for (auto i = nLambd; i--;)
 			*(m_pLambda[0] + i) = coeffB[i];
+
+		m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), inSys->GetR());
+		m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), inSys->GetK());
+		setElementFlags(NULL);
 	}
 
-	CK ~CIG_Enumerator()								{ delete[] rowIntersections(); delete[] lambdaBSrc(); }
+	CK ~CIG_Enumerator()								{ delete[] rowIntersections(); delete[] lambdaBSrc(); delete [] elementFlags();}
 	CK void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) override {
 		auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
 		copyRowIntersection(pMaster->rowIntersections());
@@ -51,7 +69,9 @@ protected:
 
 	CK bool prepareToFindRowSolution() override;
 private:
-	CK void copyRowIntersection(const T *pntr)			{
+	inline void setNumRows(T nRow)						{ m_nNumbRows  = nRow; }
+	inline T numRows() const							{ return m_nNumbRows; }
+	CK void copyRowIntersection(const T *pntr)			{ 
 		if (rowIntersections())
 			memcpy(rowIntersections(), pntr, lenRowIntersection(rowNumb()) * sizeof(*pntr)); 
 	}
@@ -61,11 +81,18 @@ private:
 	inline size_t nLambdas() const						{ return lambdaB() - lambdaA(); }
 	inline size_t lenLambdas() const                    { return 2 * nLambdas() * sizeof(*lambdaA()); }
 	bool CheckConstructedBlocks(T nRow, T k, T *pElementNumb);
-	bool CheckTransitivityOnConstructedBlocks(T nRow, T k);
-	bool CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits, int from = 1) const;
+	bool CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T *pElementNumb, uchar *pBlockFlags);
+	bool CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits = NULL) const;
 	bool DefineInterstructForBlocks(size_t nColCurr, T k, const T *pElementNumb, T i, T *lambdaACurrCol) const;
+	void FindAllElementsOfBlock(T nRow, size_t nColCurr, int j, T *pElementNumb) const;
+	inline void setElementFlags(uchar *pntr)			{ m_pElementFlags = pntr; }
+	inline uchar *elementFlags() const					{ return m_pElementFlags; }
 
 	const bool m_firstPath;
 	T *m_pRowIntersections;
 	T *m_pLambda[3];
+	T m_nNumbRows;							// Number of rows where all blocks associated with the first elements were constructed
+	uchar *m_pElementFlags;					// Flags to mark the elements, which are already chosen
+	CIncidenceStorage<T> *m_pElements;
+	CIncidenceStorage<T> *m_pBlocks;
 };

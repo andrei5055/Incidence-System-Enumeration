@@ -282,7 +282,7 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 	// (which are lexicographically not greater, than the vector, used for the current row)
 	auto pResult = pCurrRowSolution->newSolution();
 	auto buffer = new VECTOR_ELEMENT_TYPE[nVar];
-	// Solution used for last constracted matrix's row:
+	// Solution used for last constructed matrix's row:
 	const auto pCurrSolution = pPrevRowSolution->solution(lastRightPartIndex);
 	const auto forcibleLambdaValue = forcibleLambda(nRowPrev);
 	const size_t nLambdas = constructing_t_Design() ? 1 : pLambdaSet->GetSize();

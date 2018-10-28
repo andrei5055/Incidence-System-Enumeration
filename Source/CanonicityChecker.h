@@ -33,7 +33,7 @@ template<class T>
 class CCanonicityChecker
 {
 public:
-    CC CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags = t_enumDefault);
+    CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault);
     CC ~CCanonicityChecker();
 	void InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem);
 	CC bool TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum, int outInfo = 0, T *pRowOut = NULL, CRowSolution<T> *pRowSolution = NULL);

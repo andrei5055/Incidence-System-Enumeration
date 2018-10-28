@@ -109,16 +109,11 @@ T *CPermutStorage<T>::CreateOrbits(const CPermutStorage<T> *pPermColumn,
 		jPrev = j;
 	}
 
-//	fprintf(file, "pPermColumn->lenPerm() = %d pPermColumn->lenMemMax() = %zd\n", pPermColumn->lenPerm(), pPermColumn->lenMemMax());
-
 	for (int j = 0; j < nRows; ++j)
 		pRowOrbitsTmp[j] = j;
 
 	// Identical permutation will be skipped
 	const auto iMax = pPermColumn->numPerm();
-/*	fprintf(file, "pPermColumn->lenPerm() = %d  iMax = %zd\n", pPermColumn->lenPerm(), iMax);
-	FCLOSE(file); */
-
 	for (int i = firstpermIdx; i < iMax; ++i) {
 		const auto pRowPermut = getPermutByIndex(i);
 		if (pRowPermut[0] && pColOrbitsTmp == pColOrbits) {

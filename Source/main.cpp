@@ -67,9 +67,9 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 	int i = 0;
 	int j = 0;
 	int flag = 0;
-	while (true) {
+	char symb;
+	do {
 		int num = 0;
-		char symb;
 		while (true) {
 			symb = paramText[i++];
 			if (symb == ',' || symb == '\0' || j == 3 && flag && symb == '}')
@@ -121,7 +121,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 			param->k = num;
 		else
 			param->v = num;
-	}
+	} while (symb != '\0');
 
 	return true;
 }

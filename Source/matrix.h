@@ -48,8 +48,6 @@ public:
 			memcpy(pMatrData += len, pMatrSrc + pPermRows[i] * len, len);
 	}
 
-protected:
-
 	CC void Init(T nRows, T nCols, T maxElement = 1, T *data = NULL) {
 		if (!nCols)
 			nCols = nRows;
@@ -61,6 +59,8 @@ protected:
 		m_nLenData = m_nRows * m_nCols * sizeof(T);
 		m_pData = data? data : m_nLenData? new T[m_nRows * m_nCols] : NULL;
 	}
+
+	CK void AssignData(T *data)				{ memcpy(GetDataPntr(), data, m_nLenData); }
 private:
 	CK inline bool dataOwner()	const		{ return m_bDataOwner; }
 	T m_nRows;

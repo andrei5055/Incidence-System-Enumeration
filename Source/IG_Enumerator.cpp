@@ -66,10 +66,10 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	// Need to check that transposed matrix is not isomorphic to constructed one
 	C_InSys<T> transpMatr;
 	transpMatr.InitTransposed(pMatrix, mult);
-	CCanonicityChecker canonChecker(transpMatr.rowNumb(), nCols, 2);
+	CCanonicityChecker canonChecker(transpMatr.rowNumb(), nCols);
 	CanonizeByColumns(&transpMatr, NULL, &canonChecker);
 
-	// Transposed matrix also should be transitive the the rows
+	// Transposed matrix also should be transitive on the rows
 	if (!canonChecker.groupIsTransitive())
 		return false;
 
@@ -116,16 +116,23 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 		return true;
 
 	const auto k = this->getInSys()->GetK();
-	auto pIntersection = rowIntersections();
-	if (!pIntersection)
-		return CheckTransitivityOnConstructedBlocks(nRow + 1, k);
-
-	const auto nCol = colNumb();
 	const auto r = this->getInSys()->GetR();
 	const auto nLambd = designParams()->lambdaB().size();
 	const auto len = r + k + nLambd + 2 * nLambdas();
 	T bufIdx[64];
 	T *pIdx = len > countof(bufIdx) ? new T[len] : bufIdx;
+
+	uchar blockFlg[64];
+	uchar *pBlockFlags = matrix()->colNumb() > countof(blockFlg)? new uchar [matrix()->colNumb()] : blockFlg;
+
+	auto pIntersection = rowIntersections();
+	if (!pIntersection) {
+		const auto retVal = CheckTransitivityOnConstructedBlocks(nRow + 1, k, r, pIdx + r, pBlockFlags);
+		if (pIdx != bufIdx)
+			delete[] pIdx;
+
+		return retVal;
+	}
 
 	// Define the set of indices of the blocks, containing last element
 	auto i = r;
@@ -140,6 +147,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 			break;
 	}
 
+	const auto nCol = colNumb();
 	const auto &lambdaSet = designParams()->lambda();
 	const auto *pCurrRow = matrix()->GetDataPntr();
 	auto step = rowNumb();
@@ -210,13 +218,14 @@ static int lexCompare(const std::vector<int> &lamA, const std::vector<int> &lam,
 }
 
 template<class T>
-bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits, int from) const
+bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits) const
 {
 	// Last block containing first element was just constructed
 	// We can check the Aut(M) to see if it is transitive on first k blocks
 	if (permRowStorage->isEmpty())
 		return false;
 
+	const int from = pRowOrbits ? 1 : 0;
 	T *pColOrbit = getColOrbits(0);
 	permRowStorage->CreateOrbits(permColStorage(), this->matrix(), pRowOrbits, pColOrbit, from);
 	for (auto j = this->getInSys()->GetR(); j--;) {
@@ -225,6 +234,24 @@ bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *
 	}
 
 	return true;
+}
+
+template<class T>
+void CIG_Enumerator<T>::FindAllElementsOfBlock(T nRow, size_t nColCurr, int j, T *pElementNumb) const
+{
+	// Making the array of indices of all elements which belong to current block
+	// NOTE: the i-th element alwais belong to the block # nColCurr
+	T i;
+	pElementNumb[--j] = i = nRow - 1;
+	// Looking for remaining elements which also belong to the same block
+	while (true) {
+		const auto *pRow = matrix()->GetRow(--i) + nColCurr;
+		if (*pRow) {
+			*(pElementNumb + --j) = i;
+			if (!j)
+				break;
+		}
+	}
 }
 
 template<class T>
@@ -243,20 +270,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 		if (pColOrbit->columnWeight() == k) {
 			// Define the current column number
 			const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
-
-			// Making the array of indices of all elements which belong to current block
-			T i, j = k;
-			// NOTE: the i-th element alwais belong to the block # nColCurr
-			pElementNumb[--j] = i = nRow - 1;
-			// Looking for remaining elements which also belong to the same block
-			while (true) {
-				const auto *pRow = matrix()->GetRow(--i) + nColCurr;
-				if (*pRow) {
-					*(pElementNumb + --j) = i;
-					if (!j)
-						break;
-				}
-			}
+			FindAllElementsOfBlock(nRow, nColCurr, k, pElementNumb);
 
 			// Ordered pair of element numbers 
 			T sIdx, bIdx;
@@ -289,8 +303,12 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 			}
 
 			if (nColCurr == lastBlockIdx) {
-				if (permRowStorage() && !CheckOrbits(permRowStorage(), NULL, 0))
-					return false;
+				if (permRowStorage()) {
+					if (!CheckOrbits(permRowStorage()))
+						return false;
+
+					setNumRows(nRow);
+				}
 			}
 		}
 
@@ -301,29 +319,200 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 }
 
 template<class T>
-bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k)
+bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T *pElementNumb, uchar *pBlockFlags)
 {
-	if (!permRowStorage())	
+	// We cannot make this check only when
+	//   (a) we checked canonicity before
+	//   (b) two elements may not have common blocks
+	if (!permRowStorage() || designParams()->lambda()[0])
 		return true;
 
 	// We will check the parameters b(i) for all elements, which belong to the constructed block
 	// They should be as defined in designParam::lambdaB
-	const auto lastBlockIdx = this->getInSys()->GetR() - 1;
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
-	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
+	const auto *pColOrbit = this->colOrbit(nRow);
+	const auto colNumb = matrix()->colNumb();
 
+	C_InSys<T> matr;  // Incidence System, which will be canonize
+	T *pMatr = NULL;
+	uchar *pElemFlags;
+
+	bool exitFlag = false;
+	pBlockFlags[0] = 0;
 	while (pColOrbit) {
 		if (pColOrbit->columnWeight() == k) {
 			// Define the current column number
-			const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
-			if (nColCurr == lastBlockIdx) 
-				return CheckOrbits(permRowStorage(), NULL, 0);
+			const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
+			const auto lenOrb = pColOrbit->length();
+			const auto n = nColCurr + lenOrb;
+			if (n < r)
+				return true;	// Not all blocks containing first element are constructed yet
+
+			if (n == r) {
+				if (!CheckOrbits(permRowStorage()))
+					return false;
+
+				setNumRows(nRow);
+				return true;
+			}
+
+			// All blocks containing first element are constructed
+			// If the same is TRUE for some other element, 
+			// then corresponding submatrices should be identical.
+
+			if (!pBlockFlags[0]) { // The flags for the block were not initialized yet
+				// First r blocks are constructed, but we don't need these flags
+				memset(pBlockFlags + r, 0, r);			// the others were not checked yet
+				pBlockFlags[0] = 1;
+			}
+
+			if (!pBlockFlags[nColCurr]) {
+				for (auto i = lenOrb; i--;)
+					pBlockFlags[nColCurr + i] = 1;	// the blocks of current orbits are constructed
+			}
+
+			// Construct the array of all elements containing current block
+			FindAllElementsOfBlock(nRow, nColCurr, k, pElementNumb);
+
+			bool flag = true;
+
+			// Loop over all these elements
+			int i = 0;
+			for (; i < k; ++i) {
+				// Check if all blocks of current element are constructed
+				const auto currElem = pElementNumb[i];
+				const auto *pCurrElem = matrix()->GetRow(currElem);
+
+				// When we are here, all r blocks associated with the first elements 
+				// are constructed. Therefore, there is no need to test them.  
+				int j = colNumb;
+				while (--j >= r) {
+					if (!pCurrElem[j] || pBlockFlags[j] == 1)
+						continue;
+
+					if (pBlockFlags[j] > 1)
+						break;   // The block was previously checked and it is NOT yet constructed
+
+					// Check if block # j is constructed
+					int kTmp = k;
+					auto idx = nRow;
+					const auto *pRow = matrix()->GetRow(idx) + j + colNumb;
+					while (idx--) {
+						if (!*(pRow -= colNumb)) {
+							if (kTmp > idx) // Is it still possible to reach 0?
+								break;		// No - this block is not constructed yet
+
+							continue;
+						}
+
+						if (!--kTmp)
+							break;
+					}
+
+					if (kTmp) {
+						pBlockFlags[j] = 2;
+						break;
+					}
+
+					pBlockFlags[j] = 1;
+				}
+
+				if (j >= r)
+					continue;   
+
+				// All blocks associated with the current element are constructed
+				// Construct matrix with all elements associated with these blocks
+				if (!pMatr) {
+					matr.Init(colNumb, numRows());
+					pMatr = new T[colNumb * numRows()];
+					if (!elementFlags())
+						setElementFlags(new uchar[matrix()->rowNumb()]); // allocate maximal amount of flags
+
+					pElemFlags = elementFlags();
+				}
+
+				T *pCurrRow = pMatr - colNumb;
+				if (flag) {
+					// Copying the rows, corresponding to k elements associated with the current block (we could do it once)
+				    flag = false;   // in order not to do it next time
+					
+					// Mark all elements as 'unused'
+					memset(pElemFlags, 0, nRow * sizeof(*pElemFlags));
+					for (j = k; j--;) {
+						pElemFlags[pElementNumb[j]] = 1;	// element is used
+						memcpy(pCurrRow += colNumb, matrix()->GetRow(pElementNumb[j]), colNumb * sizeof(pMatr[0]));
+					}
+				}
+				else
+					pCurrRow += k * colNumb;
+
+				// Copying the all remaining rows
+				auto numCopyed = k;
+				for (int j = nRow; j--;) {
+					if (pElemFlags[j])
+						continue;   // corresponding row is already there
+
+					// To be chosen, the element should be in one of the r block, containing currElem
+					// Therefore when rowIntersections() is NOT defined
+					const auto *pRow = matrix()->GetRow(pElementNumb[j]);
+					if (!rowIntersections()) {
+						// Loop over the all columns
+						auto col = colNumb; 
+						while (col-- && (!pBlockFlags[col] || !pRow[col]));
+
+						if (col < 0)
+							continue;
+					}
+					else {
+						// Otherwise, corresponding value of rowIntersections() array should not be zero
+						int sIdx, bIdx;
+						if (j < currElem) {
+							sIdx = j;
+							bIdx = currElem;
+						}
+						else {
+							sIdx = currElem;
+							bIdx = j;
+						}
+
+						const int n = rowNumb() * sIdx - sIdx * (sIdx + 3) / 2 + bIdx - 1;
+						if (!*(rowIntersections() + n)) // On zero's index we do have intersection by 0 blocks
+							continue;                   // there is no common blocks with the currElem
+					}
+
+					if (numCopyed++ >= numRows())
+						break; // the matrix has more row than expected
+
+					memcpy(pCurrRow += colNumb, matrix()->GetRow(j), colNumb * sizeof(pMatr[0]));
+				}
+
+				// Check that constructed matrix has the expected number of rows
+				if (j >= 0 || numCopyed < numRows())
+					break;    
+
+				// Matrix constructed, let's find its canonical representation
+				matr.AssignData(pMatr);
+				CCanonicityChecker canonChecker(matr.rowNumb(), colNumb);
+				CanonizeByColumns(&matr, NULL, &canonChecker);
+
+				if (memcmp(matrix()->GetDataPntr(), matr.GetDataPntr(), matr.lenData()))
+					break;        // There is no isomorphism we expected to see 
+			}
+
+			if (i < k) {
+				exitFlag = true;
+				break;
+			}
 		}
+
+		if (exitFlag)
+			break;
 
 		pColOrbit = pColOrbit->next();
 	}
 
-	return true;
+	delete[] pMatr;
+	return !exitFlag;
 }
 
 template<class T>

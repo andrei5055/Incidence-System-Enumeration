@@ -410,14 +410,34 @@ void printSolution(bool &printMult, const CInterStruct *iStruct, const int *mult
 	COUT(buffer);
 }
 
+bool CheckFolkmanConditions(int v)
+{
+	/*
+	THEOREM 5. (Jon Folkman (1967)) Let v be a positive integer. There are no admissible graphs
+		with v points, if v satisfies one of the following conditions :
+	(3.1) v is odd;
+	(3, 2) v = 2p or 2p^2, where p is prime;
+	(3.3) v < 30 and 4 does not divide v;
+	(3.4) v < 20.
+	*/
+	if (v % 2 || v < 20 || v < 30 && v % 4)
+		return false;
+
+	v /= 2;
+	if (isPrime(v))
+		return false;
+
+	const int res = static_cast<int>(sqrt(static_cast<float>(v)) + 0.000000001);
+	return (res * res != v) || !isPrime(res);
+}
+
 int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath)
 {
-    const int nVertex = pParam->v;
-	if (nVertex < 10) {
-		cout << "There are no inconsistent graphs for " << nVertex << " vertices";
+	if (!CheckFolkmanConditions(pParam->v))
 		return 0;
-	}
 
+	const int nVertex = pParam->v /= 2;
+//	return 0;
 	const auto kMax = nVertex - 2;
 	const int len = kMax + 1;
 	int *mult = new int[len * 6];
@@ -574,7 +594,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
 				}
 
-				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
+				if (k == 3/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
 					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
 						return 0;
 
