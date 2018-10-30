@@ -360,10 +360,9 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 			// If the same is TRUE for some other element, 
 			// then corresponding submatrices should be identical.
 
-			if (!pBlockFlags[0]) { // The flags for the block were not initialized yet
-				// First r blocks are constructed, but we don't need these flags
-				memset(pBlockFlags + r, 0, r);			// the others were not checked yet
-				pBlockFlags[0] = 1;
+			if (!pBlockFlags[0]) { // The flags for the block were not initialized yet				
+				memset(pBlockFlags, 1, r);                  // First r blocks are constructed
+				memset(pBlockFlags + r, 0, colNumb - r);	// the others were not checked yet
 			}
 
 			if (!pBlockFlags[nColCurr]) {
@@ -396,7 +395,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 					// Check if block # j is constructed
 					int kTmp = k;
 					auto idx = nRow;
-					const auto *pRow = matrix()->GetRow(idx) + j + colNumb;
+					const auto *pRow = matrix()->GetRow(idx-1) + j + colNumb;
 					while (idx--) {
 						if (!*(pRow -= colNumb)) {
 							if (kTmp > idx) // Is it still possible to reach 0?
@@ -454,11 +453,11 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 
 					// To be chosen, the element should be in one of the r block, containing currElem
 					// Therefore when rowIntersections() is NOT defined
-					const auto *pRow = matrix()->GetRow(pElementNumb[j]);
+					const auto *pRow = matrix()->GetRow(j);
 					if (!rowIntersections()) {
 						// Loop over the all columns
 						auto col = colNumb; 
-						while (col-- && (!pBlockFlags[col] || !pRow[col]));
+						while (col-- && (!pCurrElem[col] || !pRow[col]));
 
 						if (col < 0)
 							continue;
@@ -483,7 +482,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 					if (numCopyed++ >= numRows())
 						break; // the matrix has more row than expected
 
-					memcpy(pCurrRow += colNumb, matrix()->GetRow(j), colNumb * sizeof(pMatr[0]));
+					memcpy(pCurrRow += colNumb, pRow, colNumb * sizeof(pMatr[0]));
 				}
 
 				// Check that constructed matrix has the expected number of rows

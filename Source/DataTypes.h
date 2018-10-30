@@ -14,7 +14,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					3
+#define USE_THREADS					0
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -106,7 +106,7 @@
 
 #define USE_EXRA_EQUATIONS			0   // Construct and use additional equations (for instance, for t-designs)
 
-#define TEST						0   // Test mode
+#define TEST						1   // Test mode
 #define PRINT_RESULTS				(1 && USE_EXRA_EQUATIONS)
 #define USE_CANON_GROUP				1	// Reshafle the solutions for (n+1)-th row of matrix M
 										// with respect to the Aut G(M(n)) of the first n rows of M
