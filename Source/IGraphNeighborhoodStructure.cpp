@@ -594,7 +594,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
 				}
 
-				if (k == 3/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
+				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
 					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
 						return 0;
 

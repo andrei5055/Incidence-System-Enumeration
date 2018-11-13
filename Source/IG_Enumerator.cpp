@@ -331,7 +331,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 	// They should be as defined in designParam::lambdaB
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
 	const auto *pColOrbit = this->colOrbit(nRow);
-	const auto colNumb = matrix()->colNumb();
+	const int colNumb = matrix()->colNumb();
 
 	C_InSys<T> matr;  // Incidence System, which will be canonize
 	T *pMatr = NULL;
@@ -340,14 +340,14 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 	bool exitFlag = false;
 	pBlockFlags[0] = 0;
 	while (pColOrbit) {
-		if (pColOrbit->columnWeight() == k) {
-			// Define the current column number
-			const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
-			const auto lenOrb = pColOrbit->length();
-			const auto n = nColCurr + lenOrb;
-			if (n < r)
-				return true;	// Not all blocks containing first element are constructed yet
+		// Define the current column number
+		const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbitLen();
+		const auto lenOrb = pColOrbit->length();
+		const auto n = nColCurr + lenOrb;
+		if (n < r)
+			return true;	// Not all blocks containing first element are constructed yet
 
+		if (pColOrbit->columnWeight() == k) {
 			if (n == r) {
 				if (!CheckOrbits(permRowStorage()))
 					return false;
@@ -372,7 +372,6 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 
 			// Construct the array of all elements containing current block
 			FindAllElementsOfBlock(nRow, nColCurr, k, pElementNumb);
-
 			bool flag = true;
 
 			// Loop over all these elements
@@ -422,32 +421,55 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 				// All blocks associated with the current element are constructed
 				// Construct matrix with all elements associated with these blocks
 				if (!pMatr) {
-					matr.Init(colNumb, numRows());
+					assert(k < numRows() && numRows() < matrix()->rowNumb());
+
+					matr.Init(numRows(), colNumb);
 					pMatr = new T[colNumb * numRows()];
-					if (!elementFlags())
+					if (!elementFlags()) {
 						setElementFlags(new uchar[matrix()->rowNumb()]); // allocate maximal amount of flags
+						setPermCols(new T[colNumb]);
+					}
 
 					pElemFlags = elementFlags();
 				}
 
 				T *pCurrRow = pMatr - colNumb;
 				if (flag) {
-					// Copying the rows, corresponding to k elements associated with the current block (we could do it once)
+					// Copying the rows, corresponding to k elements associated with the current block (we can do it once)
 				    flag = false;   // in order not to do it next time
 					
+					// Create permutation of columns which corresponds to the maximal representation of the row of currElem 
+					int idx1 = 0;
+					int idx0 = k;
+					T *pPermCols = permCols();
+					auto * const pntr = matrix()->GetRow(currElem);
+					for (j = 0; j < colNumb; ++j) {
+						if (*(pntr + j)) {
+							*(pPermCols + idx1++) = j;
+							if (idx1 == k) {
+								while (++j < colNumb)
+									*(pPermCols + idx0++) = j;
+
+								break;
+							}
+						}
+						else
+							*(pPermCols + idx0++) = j;
+					}
+
 					// Mark all elements as 'unused'
 					memset(pElemFlags, 0, nRow * sizeof(*pElemFlags));
-					for (j = k; j--;) {
+					for (j = 0; j < k; ++j) {
 						pElemFlags[pElementNumb[j]] = 1;	// element is used
-						memcpy(pCurrRow += colNumb, matrix()->GetRow(pElementNumb[j]), colNumb * sizeof(pMatr[0]));
+						memcpy(pCurrRow += colNumb, matrix()->GetRow(pElementNumb[j]), colNumb * sizeof(*pMatr));
 					}
 				}
 				else
 					pCurrRow += k * colNumb;
 
-				// Copying the all remaining rows
+				// Copying all remaining rows
 				auto numCopyed = k;
-				for (int j = nRow; j--;) {
+				for (j = nRow; j--;) {
 					if (pElemFlags[j])
 						continue;   // corresponding row is already there
 
@@ -492,7 +514,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 				// Matrix constructed, let's find its canonical representation
 				matr.AssignData(pMatr);
 				CCanonicityChecker canonChecker(matr.rowNumb(), colNumb);
-				CanonizeByColumns(&matr, NULL, &canonChecker);
+				CanonizeByColumns(&matr, NULL, &canonChecker, true);
 
 				if (memcmp(matrix()->GetDataPntr(), matr.GetDataPntr(), matr.lenData()))
 					break;        // There is no isomorphism we expected to see 
@@ -502,7 +524,10 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 				exitFlag = true;
 				break;
 			}
-		}
+		} else {
+			if (n == r)
+			   return true;
+        }
 
 		if (exitFlag)
 			break;

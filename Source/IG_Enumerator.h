@@ -41,11 +41,17 @@ public:
 		m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), inSys->GetR());
 		m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), inSys->GetK());
 		setElementFlags(NULL);
+		setPermCols(NULL);
 	}
 
-	CK ~CIG_Enumerator()								{ delete[] rowIntersections(); delete[] lambdaBSrc(); delete [] elementFlags();}
+	CK ~CIG_Enumerator() { 
+		delete[] rowIntersections(); 
+		delete[] lambdaBSrc(); 
+		delete[] elementFlags();
+		delete[] permCols();
+	}
 	CK void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) override {
-		auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
+		const auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
 		copyRowIntersection(pMaster->rowIntersections());
 
 		// No need to clone remaining information from master if it is not yet constructed
@@ -53,6 +59,7 @@ public:
 			return;
 
 		memcpy(lambdaA(), pMaster->lambdaA(), lenLambdas());
+		setNumRows(pMaster->numRows());
 	}
 
 	CK inline T *rowIntersections() const				{ return m_pRowIntersections; }
@@ -87,11 +94,14 @@ private:
 	void FindAllElementsOfBlock(T nRow, size_t nColCurr, int j, T *pElementNumb) const;
 	inline void setElementFlags(uchar *pntr)			{ m_pElementFlags = pntr; }
 	inline uchar *elementFlags() const					{ return m_pElementFlags; }
+	inline void setPermCols(T *pntr)					{ m_pPrmCols = pntr; }
+	inline T *permCols() const							{ return m_pPrmCols; }
 
 	const bool m_firstPath;
 	T *m_pRowIntersections;
 	T *m_pLambda[3];
 	T m_nNumbRows;							// Number of rows where all blocks associated with the first elements were constructed
+	T *m_pPrmCols;							// Memory to keep permitations of columns
 	uchar *m_pElementFlags;					// Flags to mark the elements, which are already chosen
 	CIncidenceStorage<T> *m_pElements;
 	CIncidenceStorage<T> *m_pBlocks;

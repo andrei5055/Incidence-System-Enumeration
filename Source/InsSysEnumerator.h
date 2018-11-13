@@ -30,7 +30,7 @@ protected:
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
 	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
-	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker = NULL) const;
+	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker = NULL, bool permCol = false) const;
 
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbit, CColOrbit<T> *pPrev, int idx);

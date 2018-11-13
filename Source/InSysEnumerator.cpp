@@ -9,7 +9,7 @@
 template class C_InSysEnumerator<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
-void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker) const
+void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();
@@ -29,6 +29,7 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 						// If needed, it will be allocated. 
 	T i = 0;
 	while (true) {
+		bool colPermFound = false;
 		for (auto j = nCols; j--;)
 			pColIdxMem[j] = j;
 
@@ -42,7 +43,7 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 			// Loop over the orbits of columns
 			while (pColOrbit) {
 				// Each column orbits could be splited into sub-orbits
-				// For binary incidence systems the algorythm is simple (and it is implemented here)
+				// For binary incidence systems the algorithm is simple (and it is implemented here)
 				// For general case we need to re-order columns of current orbits according to their
 				// incidence with current element (corresponding to the current row of the matrix)
 
@@ -66,6 +67,7 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 					const auto i1 = pColIdx[idx];
 					pColIdx[idx++] = pColIdx[idxLast];
 					pColIdx[idxLast] = i1;
+					colPermFound = true;
 				}
 
 				pColOrbit = pColOrbit->next();
@@ -82,13 +84,36 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 					}
 
 					pColOrbNext = pNext;
-					pColIdx += len;
 				}
+
+				pColIdx += len;
 			}
 		}
 
 		if (!pCanonChecker)
 			break;
+
+		if (permCol && colPermFound) {
+			// Permut of columns is needed
+			int jMin = 0;
+			while (jMin < nCols && pColIdxMem[jMin] == jMin)
+				jMin++;
+
+			if (jMin < nCols) {
+				if (!pTmp)
+					pTmp = new T[nCols * rowNumb];
+
+				const auto len = (nCols - jMin) * sizeof(T);
+				for (T i = 0; i < rowNumb; ++i) {
+					auto *pRow = matrCol.matrix()->GetRow(i);
+					memcpy(pTmp + jMin, pRow + jMin, len);
+					for (T j = jMin; j < nCols; ++j)
+						pRow[j] = pTmp[pColIdxMem[j]];
+				}
+			}
+
+//			permCol = false;
+		}
 
 		if (pCanonChecker->TestCanonicity(rowNumb, &matrCol, t_saveRowPermutations))
 			break;  // Matrix is canonized
