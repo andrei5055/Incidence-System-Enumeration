@@ -1,8 +1,6 @@
 #include "DataTypes.h"
-#include "matrix.h"
-#include <iostream> 
-#include <stdio.h>
 #include <numeric>
+#include <cmath>
 
 #define COUT(buf)	cout << buf << endl;
 
@@ -472,7 +470,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 		int sum1 = k * (k - 1);
 		int i = iMax;
 		int num = kIsPrime ? sum0 - sum0%step[i] : k / minDivider(k) - 1;
-		sprintf_s(buffer, "K = %d", k);
+		sprintf_s(buffer, sizeof(buffer), "K = %d", k);
 		COUT(buffer);
 
 		CInterStruct *iStruct = NULL;

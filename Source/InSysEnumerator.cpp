@@ -9,7 +9,7 @@
 template class C_InSysEnumerator<MATRIX_ELEMENT_TYPE>;
 
 template<class T>
-void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker, bool permCol) const
+void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker<T> *pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();
@@ -111,8 +111,6 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 						pRow[j] = pTmp[pColIdxMem[j]];
 				}
 			}
-
-//			permCol = false;
 		}
 
 		if (pCanonChecker->TestCanonicity(rowNumb, &matrCol, t_saveRowPermutations))
@@ -149,4 +147,12 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 	delete[] pTmp;
 }
 
-
+template<class T>
+void C_InSysEnumerator<T>::ConstructColumnPermutation(const CMatrixData<T> *pMatrix)
+{
+	C_InSys<T> transformedMatr;
+	transformedMatr.InitWithPermutedRows(pMatrix, this->permRow(), this->numRow());
+	const auto colNumb = pMatrix->colNumb();
+	CanonizeByColumns(&transformedMatr, this->permColStorage()->allocateMemoryForPermut(colNumb));
+	this->permColStorage()->setLenPerm(colNumb);
+}

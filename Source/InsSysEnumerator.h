@@ -30,7 +30,7 @@ protected:
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
 	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
-	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker *pCanonChecker = NULL, bool permCol = false) const;
+	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker<T> *pCanonChecker = NULL, bool permCol = false) const;
 
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbit, CColOrbit<T> *pPrev, int idx);
@@ -449,12 +449,3 @@ void C_InSysEnumerator<T>::setVariableLimit(size_t nVar, T len, size_t nRowToBui
 	inSysRowEquation()->setVariableMaxVal(nVar, len);
 }
 
-template<class T>
-void C_InSysEnumerator<T>::ConstructColumnPermutation(const CMatrixData<T> *pMatrix)
-{
-	C_InSys<T> transformedMatr;
-	transformedMatr.InitWithPermutedRows(pMatrix, permRow(), numRow());
-	const auto colNumb = pMatrix->colNumb();
-	CanonizeByColumns(&transformedMatr, permColStorage()->allocateMemoryForPermut(colNumb));
-	permColStorage()->setLenPerm(colNumb);
-}

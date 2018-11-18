@@ -17,32 +17,7 @@ template<class T>
 class CIG_Enumerator : public CPBIBD_Enumerator<T>
 {
 public:
-	CK CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags = t_enumDefault, bool firstPath = false, int treadIdx = -1, uint nCanonChecker = 0) :
-		CPBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker), m_firstPath(firstPath) {
-		const auto inSys = this->getInSys();
-		const auto lambdaSet = inSys->GetNumSet(t_lSet);
-		const auto nLambd = lambdaSet->GetSize();
-
-		m_pRowIntersections = nLambd > 2 || lambdaSet->GetAt(0) || lambdaSet->GetAt(1) != 1?
-							  new T[lenRowIntersection(rowNumb())] : NULL;
-
-		// Allocate memory to store current lambdaA, lambdaB for blocks
-		// This set of lambda's is not known, but it cannot have more than k + 1 elements
-
-		const auto len = inSys->GetK() + 1;
-		m_pLambda[0] = new T[2 * len + nLambd];
-		m_pLambda[2] = (m_pLambda[1] = m_pLambda[0] + nLambd) + len;
-
-		// Converting the values lamdaB into T format
-		const auto &coeffB = pParam->lambdaB();
-		for (auto i = nLambd; i--;)
-			*(m_pLambda[0] + i) = coeffB[i];
-
-		m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), inSys->GetR());
-		m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), inSys->GetK());
-		setElementFlags(NULL);
-		setPermCols(NULL);
-	}
+	CK CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags = t_enumDefault, bool firstPath = false, int treadIdx = -1, uint nCanonChecker = 0);
 
 	CK ~CIG_Enumerator() { 
 		delete[] rowIntersections(); 
@@ -78,10 +53,7 @@ protected:
 private:
 	inline void setNumRows(T nRow)						{ m_nNumbRows  = nRow; }
 	inline T numRows() const							{ return m_nNumbRows; }
-	CK void copyRowIntersection(const T *pntr)			{ 
-		if (rowIntersections())
-			memcpy(rowIntersections(), pntr, lenRowIntersection(rowNumb()) * sizeof(*pntr)); 
-	}
+	CK void copyRowIntersection(const T *pntr);
 	inline T *lambdaBSrc() const						{ return m_pLambda[0]; }
 	inline bool firstPath() const						{ return m_firstPath; }
 	inline size_t lenRowIntersection(T v) const			{ return v * (v - 1) / 2; }
