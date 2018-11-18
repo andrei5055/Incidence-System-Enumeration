@@ -486,7 +486,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			bool betterResults = true;
 			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
-			// TO DO: For inconsistent grapgs more complicated comparison function should be implemented
+			// TO DO: For inconsistent graphs more complicated comparison function should be implemented
 			if (pParam->objType != t_InconsistentGraph && compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
 				strcpy_s(jobTitle, countof(jobTitle), buff);

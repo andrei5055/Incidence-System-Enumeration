@@ -262,7 +262,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 	const auto *pColOrbitIni = *(colOrbitsIni() + nRow);
 	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
 
-	const auto lastBlockIdx = this->getInSys()->GetR() - 1;
+	auto lastBlockIdx = this->getInSys()->GetR() - 1;
 	const auto nLambd = designParams()->lambdaB().size();
 	auto lambdaBCurrRow = pElementNumb + k;
 
@@ -311,6 +311,8 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 				}
 			}
 		}
+		else
+			lastBlockIdx = 0;  // To do not call of CheckOrbits
 
 		pColOrbit = pColOrbit->next();
 	}
