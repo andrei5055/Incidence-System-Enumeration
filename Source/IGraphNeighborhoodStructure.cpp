@@ -192,9 +192,7 @@ static size_t calcSum(const std::vector<int> &lambdaA, const std::vector<int> &l
 	return sum;
 }
 
-#define NEW_CondB	1
-#if NEW_CondB
-bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int *indices, int vMinus2K, int k)
+static bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int *indices, int vMinus2K, int k)
 {
 	// Skip index which corresponds to the presence of duplicated elements
 	const auto &lambdaA = iStruct1->lambdaA();
@@ -224,26 +222,9 @@ bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int 
 	const auto &lambda = iStruct2->lambda();
 	const auto jMax = lambda.size();
 	size_t j = lambda[0]? 0 : 1;
-	if (lambda[j] < lambdaMin) {
-//		cout << "CCC:  lambda[" << j << "] = " << lambda[j] << "  lambdaMin = " << lambdaMin << endl;
+	if (lambda[j] < lambdaMin)
 		return false;
-	}
-/*
-	if (idx && lambda[j] == lambdaMin) {
-		cout << "BBB: lambdaMin = " << lambdaMin << " adj = " << adj << "  ";
-		if (iStruct1 == iStruct2)
-			cout << "+++";
-		else
-			cout << "---";
 
-		for (int i = idx; i--;) {
-			const auto j = indices[i];
-			cout << "  (" << iStruct1->lambda()[j] << ", " << iStruct1->lambdaA()[j] << ", " << iStruct1->lambdaB()[j] << ")";
-		}
-
-		cout << endl;
-	}
-*/
 	if (adj == 1)
 		return true;
 
@@ -255,62 +236,6 @@ bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int 
 
 	return true;
 }
-#else
-bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct2, int *indices, int vMinus2K, int k)
-{
-	// Skip index which corresponds to the presence of duplicated elements
-	const auto &lambdaA = iStruct1->lambdaA();
-	const auto &lambdaB = iStruct1->lambdaB();
-	auto size = lambdaA.size();
-	int adj = lambdaB[size - 1];
-	if (lambdaA[size - 1] == adj++)
-		size--;
-	else
-		adj = 1;
-
-	const auto &lambda = iStruct2->lambda();
-	for (auto j : lambda) {
-		if (!j)
-			continue;
-		
-		if (j % adj)
-			return false;
-
-		const auto jm = j - adj;
-		for (auto i = size; i--;) {
-			const int n = lambdaA[i] - (lambdaB[i] << 1) + jm;
-			if (n < 0) {
-				cout << "CCC:  lambda[x] = " << j << "  i = " << i << "  jm = " << jm << "(" << lambdaA[i] << ", " << lambdaB[i] << ")" << endl;
-				return false;
-			}
-
-			if (n > 0)
-				continue;
-
-			// When for some index i we are here, stronger condition 
-			// (without addition of jm) could be checked for remaining indices
-			for (auto l = size; l--;) {
-				if (l == i)
-					continue;
-
-				if (lambdaA[l] - (lambdaB[l] << 1) < 0) {
-					cout << "Hura!" << endl;
-					return false;
-				}
-			}
-		}
-	}
-
-	if (!lambdaB[0] && vMinus2K < 0) {
-		// In that case a(0) > 0
-		const auto j = lambda[0] ? lambda[0] : lambda[1];
-		if (vMinus2K + j < lambdaA[0])
-			return false;  // No place for a(0) elements 
-	}
-
-	return true;
-}
-#endif
 
 void CheckIntersections(CInterStruct *iStructA, int *pIndices, int k, int v)
 {
@@ -435,7 +360,6 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 		return 0;
 
 	const int nVertex = pParam->v /= 2;
-//	return 0;
 	const auto kMax = nVertex - 2;
 	const int len = kMax + 1;
 	int *mult = new int[len * 6];

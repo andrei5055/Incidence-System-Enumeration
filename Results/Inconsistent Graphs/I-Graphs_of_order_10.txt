@@ -1,0 +1,89 @@
+I-Graph( 10,  10,  3,  3, { 0, 1})
+
+         0 matrices constructed in  0.03
+         1 matrix was fully constructed
+
+I-Graph(  5,  10,  4,  2, { 0, 2})   
+         0 matrices constructed in  0.00
+         1 matrix was fully constructed
+
+I-Graph(  5,  10,  4,  2, { 1})       
+<<<< Constructed Matrices: >>>> 
+Matrix #   1    |Aut(M)| =    120:
+1111000000
+1000111000
+0100100110
+0010010101
+0001001011
+
+Orbits and generating permutations:
+  0  1  1  1  1  0  0  0  0  4  4  4  4  4  4
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  1  2  3  4  0  1  2  3  4  5  6  7  8  9
+  0  1  2  4  3  0  1  3  2  4  6  5  8  7  9
+  0  1  3  2  4  0  2  1  3  5  4  6  7  9  8
+  0  2  1  3  4  1  0  2  3  4  7  8  5  6  9
+  1  0  2  3  4  0  4  5  6  1  2  3  7  8  9
+
+>>>> Constructed Matrices <<<< 
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+           120               1               1               1               1
+    _______________________________________________________________________________
+        Total:               1               1               1               1
+
+         1 matrix constructed in  0.00
+         1 matrix has no replicated blocks
+         1 matrix was fully constructed
+
+I-Graph( 10,  10,  4,  4, { 0, 2})   
+         0 matrices constructed in  0.00
+         0 matrices were fully constructed
+
+I-Graph( 10,  10,  4,  4, { 0, 1, 2})
+
+         0 matrices constructed in  0.04
+         1 matrix was fully constructed
+
+I-Graph(  5,  10,  6,  3, { 3})    
+<<<< Constructed Matrices: >>>> 
+Matrix #   1    |Aut(M)| =    120:
+1111110000
+1110001110
+1001101101
+0101011011
+0010110111
+
+Orbits and generating permutations:
+  0  1  1  1  1  0  0  0  0  0  0  6  6  6  6
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  1  2  3  4  0  1  2  3  4  5  6  7  8  9
+  0  1  2  4  3  0  2  1  4  3  5  7  6  8  9
+  0  1  3  2  4  1  0  2  3  5  4  6  8  7  9
+  0  2  1  3  4  0  3  4  1  2  5  6  7  9  8
+  1  0  2  3  4  0  1  2  6  7  8  3  4  5  9
+
+>>>> Constructed Matrices <<<< 
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+           120               1               1               1               1
+    _______________________________________________________________________________
+        Total:               1               1               1               1
+
+         1 matrix constructed in  0.00
+         1 matrix has no replicated blocks
+         1 matrix was fully constructed
+
+I-Graph( 10,  10,  6,  6, { 3, 4})
+
+         0 matrices constructed in  0.39
+         1 matrix was fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        15 threads launched on level 5 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

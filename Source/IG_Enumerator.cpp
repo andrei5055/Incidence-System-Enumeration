@@ -43,8 +43,8 @@ bool CIG_Enumerator<T>::fileExists(const char *path, bool file) const {
 	if (!file || !retVal)
 		return retVal;
 
-	// The answer is fake. When following statement is false, the file exist,
-	// but we don't need the caller know that, becase for Inconsistent graphs
+	// The answer is fake. When following statement is false, the file exists,
+	// but we don't need the caller knows that, because for Inconsistent graphs
 	// all outputs for same order graphs will be in the same file
 	return this->designParams()->logFile != std::string(path);
 }
@@ -209,23 +209,6 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 		delete[] pIdx;
 
 	return retBal;
-}
-
-size_t calcSum(const std::vector<int> &lambdaA, const std::vector<int> &lambda) {
-	size_t sum = 0;
-	for (auto i = lambdaA.size(); i--;)
-		sum += lambdaA[i] * lambda[i] * lambda[i];
-
-	return sum;
-}
-
-template<class T>
-size_t calcSum(const T *lambdaA, int len, int mult) {
-	size_t sum = 0;
-	for (auto i = mult; i <= len; i += mult)
-		sum += lambdaA[i/mult] * i * i;
-
-	return sum;
 }
 
 template<class T>
