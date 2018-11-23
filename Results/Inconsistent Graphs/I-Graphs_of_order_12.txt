@@ -1,6 +1,6 @@
 I-Graph( 12,  12,  3,  3, { 0, 1})
 
-         0 matrices constructed in  0.11
+         0 matrices constructed in  0.10
          1 matrix was fully constructed
 
 I-Graph(  6,  12,  4,  2, { 0, 2})   
@@ -43,8 +43,8 @@ I-Graph( 12,  12,  4,  4, { 0, 2})
 
 I-Graph( 12,  12,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  0.73
-         5 matrices were fully constructed
+         0 matrices constructed in  0.72
+         4 matrices were fully constructed
 
 I-Graph( 12,  12,  4,  4, { 0, 1, 2})
 
@@ -90,11 +90,11 @@ Orbits and generating permutations:
 
 I-Graph( 12,  12,  6,  6, { 0, 2, 3, 4})
 
-         0 matrices constructed in  0.86
+         0 matrices constructed in  0.87
          0 matrices were fully constructed
 
 I-Graph( 12,  12,  6,  6, { 2, 3, 4})   
-         0 matrices constructed in  0.95
+         0 matrices constructed in  0.86
          8 matrices were fully constructed
 
 I-Graph( 12,  12,  6,  6, { 0, 3})      

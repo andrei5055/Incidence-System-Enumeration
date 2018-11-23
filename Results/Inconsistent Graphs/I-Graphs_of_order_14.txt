@@ -5,7 +5,7 @@ I-Graph( 14,  14,  3,  3, { 0, 1})
 
 I-Graph(  7,  14,  4,  2, { 0, 2})   
          0 matrices constructed in  0.00
-         3 matrices were fully constructed
+         1 matrix was fully constructed
 
 I-Graph(  7,  14,  4,  2, { 0, 1})   
          0 matrices constructed in  0.00
@@ -17,13 +17,13 @@ I-Graph( 14,  14,  4,  4, { 0, 2})
 
 I-Graph( 14,  14,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  9.15
+         0 matrices constructed in  8.94
          0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in 14.53
-         2 matrices were fully constructed
+         0 matrices constructed in 10.52
+         0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 1})   
          0 matrices constructed in  0.01
@@ -70,12 +70,12 @@ I-Graph( 14,  14,  6,  6, { 0, 3, 4})
 
 I-Graph( 14,  14,  6,  6, { 0, 2, 3, 4})
 
-         0 matrices constructed in  7.94
+         0 matrices constructed in  5.92
          0 matrices were fully constructed
 
 I-Graph( 14,  14,  6,  6, { 0, 2, 3, 4})
 
-         0 matrices constructed in  9.60
+         0 matrices constructed in  5.74
          0 matrices were fully constructed
 
 I-Graph( 14,  14,  6,  6, { 0, 2, 4})   
@@ -83,11 +83,11 @@ I-Graph( 14,  14,  6,  6, { 0, 2, 4})
          0 matrices were fully constructed
 
 I-Graph( 14,  14,  6,  6, { 0, 2, 3})   
-         0 matrices constructed in  3.66
+         0 matrices constructed in  3.49
          1 matrix was fully constructed
 
 I-Graph( 14,  14,  6,  6, { 2, 3})      
-         0 matrices constructed in  1.19
+         0 matrices constructed in  0.87
          2 matrices were fully constructed
 
 I-Graph(  7,  14,  8,  4, { 4})   

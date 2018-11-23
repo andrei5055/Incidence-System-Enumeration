@@ -17,7 +17,8 @@ void CPermutStorage<T>::orderPermutations(size_t *pPermPerm)
 		pPermPerm[i] = i;
 
 	for (size_t i = 0; i < nPerm; i++) {
-		size_t jBest = UINT64_MAX, idx = pPermPerm[i];
+		auto jBest = UINT64_MAX;
+        size_t idx = pPermPerm[i];
 		const auto *pFirst = permutMemory() + lenPerm() * idx;
 		for (auto j = i + 1; j < nPerm; j++) {
 			auto jdx = pPermPerm[j];

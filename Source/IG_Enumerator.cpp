@@ -29,6 +29,7 @@ CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pP
 	m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), inSys->GetK());
 	setElementFlags(NULL);
 	setPermCols(NULL);
+	setNumRows(0);
 }
 
 template<class T>
@@ -161,11 +162,19 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	uchar *pBlockFlags = pMatrix->colNumb() > countof(blockFlg)? new uchar [pMatrix->colNumb()] : blockFlg;
 
 	auto pIntersection = rowIntersections();
-	if (!pIntersection) {
-		const auto retVal = CheckTransitivityOnConstructedBlocks(nRow + 1, k, r, pIdx + r, pBlockFlags);
+	const auto retVal = CheckTransitivityOnConstructedBlocks(nRow + 1, k, r, pIdx + r, pBlockFlags);
+	if (!pIntersection || !retVal) {
 		if (pIdx != bufIdx)
 			delete[] pIdx;
-
+#if 0
+		if (!retVal) {
+			static int cntr = 0;
+			const auto pMatrix = static_cast<const CMatrix<T> *>(this->matrix());
+			OUT_MATRIX(pMatrix, outFile(), nRow + 1, cntr);
+			if (++cntr >= 5)
+				exit(0);
+		}
+#endif
 		return retVal;
 	}
 
@@ -381,6 +390,11 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 
 				setNumRows(nRow);
 				return true;
+			}
+			else {
+				// Some block with # n > r is constructed
+				if (!numRows())	  // Check if all r first blocks are constructed
+					return true;  // They are not
 			}
 
 			// All blocks containing first element are constructed

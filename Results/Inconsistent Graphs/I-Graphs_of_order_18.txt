@@ -1,11 +1,11 @@
 I-Graph( 18,  18,  3,  3, { 0, 1})
 
-         0 matrices constructed in  1.05
+         0 matrices constructed in  1.10
         28 matrices were fully constructed
 
 I-Graph(  9,  18,  4,  2, { 0, 2})   
          0 matrices constructed in  0.00
-         6 matrices were fully constructed
+         1 matrix was fully constructed
 
 I-Graph(  9,  18,  4,  2, { 0, 1})    
 <<<< Constructed Matrices: >>>> 
@@ -37,7 +37,7 @@ Orbits and generating permutations:
     _______________________________________________________________________________
         Total:               1               1               1               1
 
-         1 matrix constructed in  0.01
+         1 matrix constructed in  0.02
          1 matrix has no replicated blocks
          2 matrices were fully constructed
 
@@ -47,25 +47,25 @@ I-Graph( 18,  18,  4,  4, { 0, 2})
 
 I-Graph( 18,  18,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  7:39.58
-        12 matrices were fully constructed
+         0 matrices constructed in  7:33.95
+        10 matrices were fully constructed
 
 I-Graph( 18,  18,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  5:13:40.64
-      3290 matrices were fully constructed
+         0 matrices constructed in  1:15:43.61
+         0 matrices were fully constructed
 
 I-Graph( 18,  18,  4,  4, { 0, 1})   
-         0 matrices constructed in 20:32.75
+         0 matrices constructed in 20:21.22
          1 matrix was fully constructed
 
 I-Graph( 18,  18,  5,  5, { 0, 2})   
-         0 matrices constructed in  0.03
+         0 matrices constructed in  0.00
          0 matrices were fully constructed
 
 I-Graph( 18,  18,  5,  5, { 0, 1, 2})
 
-        15 threads launched on level 9 (not waiting to finish mode)
+        15 threads launched on level 9 (not waiting to finish mode)  RunTime: >= 1556.56 min.
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

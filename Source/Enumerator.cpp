@@ -443,9 +443,8 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 		}
 #endif
 		while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
-            rowStuff(nRow)->resetSolution();
-            this->resetColOrbitCurr();
-            this->resetUnforcedColOrb();
+			this->reset(nRow);
+
 			if (nRow-- > nRowEnd) {
 				this->setCurrentRowNumb(nRow);
 				pRowSolution = rowStuff(nRow);
@@ -529,6 +528,13 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 
 	return retVal;
 } 
+
+template<class T>
+void CEnumerator<T>::reset(T nRow) {
+	rowStuff(nRow)->resetSolution();
+	this->resetColOrbitCurr();
+	this->resetUnforcedColOrb();
+}
 
 template<class T>
 CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const

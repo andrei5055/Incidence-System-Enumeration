@@ -78,7 +78,7 @@ Orbits and generating permutations:
 
 I-Graph( 10,  10,  6,  6, { 3, 4})
 
-         0 matrices constructed in  0.39
+         0 matrices constructed in  0.37
          1 matrix was fully constructed
 
 Using 64-bit program, Assembly flag: 0

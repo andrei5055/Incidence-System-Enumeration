@@ -446,6 +446,7 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const;
+	virtual void reset(T nRow);
 	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }

@@ -124,8 +124,8 @@
 #define WRITE_MULTITHREAD_LOG		0
 
 #if TEST
-#define PRINT_TO_FILE				0
-#define PRINT_SOLUTIONS				1
+#define PRINT_TO_FILE				1
+#define PRINT_SOLUTIONS				0
 #define PRINT_CURRENT_MATRIX		1
 #else
 #define PRINT_TO_FILE				1	// Write files with the results for each set of parameters
@@ -346,9 +346,10 @@ extern int nnn;
     #define OUTPUT_SOLUTION(x,file, f)
 #endif
 
+#define OUT_MATRIX(x, y, z, w)				{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w);  MUTEX_UNLOCK(out_mutex); }
 #if PRINT_CURRENT_MATRIX
-#define OUTPUT_MATRIX(x, y, z)				if (PRINT_CURRENT_MATRIX && MAKE_OUTPUT()) \
-												{ MUTEX_LOCK(out_mutex); x->printOut(y, z, ccc);  MUTEX_UNLOCK(out_mutex); }
+#define OUTPUT_MATRIX(x, y, z)				if (MAKE_OUTPUT()) \
+												OUT_MATRIX(x, y, z, ccc)
 #else
     #define OUTPUT_MATRIX(x, y, z)
 #endif

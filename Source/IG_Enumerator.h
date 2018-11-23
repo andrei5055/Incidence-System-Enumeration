@@ -50,6 +50,7 @@ protected:
 	CK bool SeekLogFile() const override				{ return true; }
 
 	CK bool prepareToFindRowSolution() override;
+	virtual void reset(T nRow)							{ CEnumerator<T>::reset(nRow); if (nRow == numRows()) setNumRows(0); }
 private:
 	inline void setNumRows(T nRow)						{ m_nNumbRows  = nRow; }
 	inline T numRows() const							{ return m_nNumbRows; }
