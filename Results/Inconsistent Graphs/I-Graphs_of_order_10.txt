@@ -43,7 +43,7 @@ I-Graph( 10,  10,  4,  4, { 0, 2})
 
 I-Graph( 10,  10,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  0.04
+         0 matrices constructed in  0.03
          1 matrix was fully constructed
 
 I-Graph(  5,  10,  6,  3, { 3})    

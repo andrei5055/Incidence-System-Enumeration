@@ -48,26 +48,26 @@ I-Graph( 16,  16,  4,  4, { 0, 2})
 
 I-Graph( 16,  16,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in 48.61
+         0 matrices constructed in 12.63
          5 matrices were fully constructed
 
 I-Graph( 16,  16,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  6:24.54
+         0 matrices constructed in  6:20.37
          1 matrix was fully constructed
 
 I-Graph( 16,  16,  4,  4, { 0, 1})   
-         0 matrices constructed in  2.68
+         0 matrices constructed in  2.85
          1 matrix was fully constructed
 
 I-Graph( 16,  16,  5,  5, { 0, 2})
 
-         0 matrices constructed in  0.01
-         1 matrix was fully constructed
+         0 matrices constructed in  0.00
+         0 matrices were fully constructed
 
 I-Graph( 16,  16,  5,  5, { 1, 2})
 
-         0 matrices constructed in  0.03
+         0 matrices constructed in  0.02
          1 matrix was fully constructed
 
 I-Graph(  8,  16,  6,  3, { 0, 4})         
@@ -79,7 +79,7 @@ I-Graph(  8,  16,  6,  3, { 0, 3})
          0 matrices were fully constructed
 
 I-Graph(  8,  16,  6,  3, { 0, 2})         
-         0 matrices constructed in  0.02
+         0 matrices constructed in  0.03
          1 matrix was fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 3, 4})      
@@ -91,20 +91,20 @@ I-Graph( 16,  16,  6,  6, { 0, 3, 4})
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3, 4})   
-         0 matrices constructed in  1.16
+         0 matrices constructed in  1.17
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 1, 3, 4})   
-         0 matrices constructed in  0.18
+         0 matrices constructed in  0.17
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3, 4})   
-         0 matrices constructed in 22.63
+         0 matrices constructed in 22.33
          5 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 1, 2, 3, 4})
 
-         0 matrices constructed in  8.46
+         0 matrices constructed in  7.78
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 4})      
@@ -112,7 +112,7 @@ I-Graph( 16,  16,  6,  6, { 0, 2, 4})
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 1, 2, 4})      
-         0 matrices constructed in  0.16
+         0 matrices constructed in  0.15
          1 matrix was fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 3})         
@@ -120,7 +120,7 @@ I-Graph( 16,  16,  6,  6, { 0, 3})
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3})      
-         0 matrices constructed in 10.88
+         0 matrices constructed in 10.82
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 1, 3})      
@@ -128,15 +128,15 @@ I-Graph( 16,  16,  6,  6, { 0, 1, 3})
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3})      
-         0 matrices constructed in 27.57
+         0 matrices constructed in 27.24
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 1, 2, 3})      
-         0 matrices constructed in 39:49.14
+         0 matrices constructed in 38:09.64
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3})      
-         0 matrices constructed in 13.56
+         0 matrices constructed in 13.52
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  6,  6, { 0, 2, 3})      
@@ -149,7 +149,7 @@ I-Graph( 16,  16,  6,  6, { 2})
 
 I-Graph( 16,  16,  7,  7, { 0, 2, 4})
 
-         0 matrices constructed in  0.25
+         0 matrices constructed in  0.24
          0 matrices were fully constructed
 
 I-Graph( 16,  16,  7,  7, { 0, 3})   
@@ -203,7 +203,7 @@ I-Graph( 16,  16,  8,  8, { 0, 4})
 
 I-Graph( 16,  16,  9,  9, { 4, 6})
 
-         0 matrices constructed in 10:46.31
+         0 matrices constructed in 10:43.05
          2 matrices were fully constructed
 
 I-Graph( 16,  16, 10, 10, { 5, 8})
@@ -228,7 +228,7 @@ I-Graph( 16,  16, 12, 12, { 8,10})
          0 matrices were fully constructed
 
 I-Graph( 16,  16, 12, 12, { 8, 9})   
-         0 matrices constructed in 15.90
+         0 matrices constructed in 15.44
          1 matrix was fully constructed
 
 Using 64-bit program, Assembly flag: 0
