@@ -484,7 +484,7 @@ public:
 			delete pntr;
 		}
 	}
-	CInterStruct *InterStruct()	const				{ return m_pInterStruct; }
+	inline CInterStruct *InterStruct()	const		{ return m_pInterStruct; }
 	inline void SetInterStruct(CInterStruct *pntr)	{ m_pInterStruct = pntr; }
 	t_objectType objType;
 	int v;

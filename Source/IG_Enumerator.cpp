@@ -2,21 +2,23 @@
 #include "IG_Enumerator.h"
 
 template class CIG_Enumerator<MATRIX_ELEMENT_TYPE>;
+bool isPrime(int k);
 
 template<class T>
 CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags, bool firstPath, int treadIdx, uint nCanonChecker) :
 	CPBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker), m_firstPath(firstPath) {
 	const auto inSys = this->getInSys();
 	const auto lambdaSet = inSys->GetNumSet(t_lSet);
-	const auto nLambd = lambdaSet->GetSize();
+	auto nLambd = lambdaSet->GetSize();
 
 	m_pRowIntersections = nLambd > 2 || lambdaSet->GetAt(0) || lambdaSet->GetAt(1) != 1 ?
 		new T[lenRowIntersection(this->rowNumb())] : NULL;
 
 	// Allocate memory to store current lambdaA, lambdaB for blocks
 	// This set of lambda's is not known, but it cannot have more than k + 1 elements
-
-	const auto len = inSys->GetK() + 1;
+	const auto k = inSys->GetK();
+	const auto r = inSys->GetR();
+	const auto len = k + 1;
 	m_pLambda[0] = new T[2 * len + nLambd];
 	m_pLambda[2] = (m_pLambda[1] = m_pLambda[0] + nLambd) + len;
 
@@ -25,11 +27,47 @@ CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pP
 	for (auto i = nLambd; i--;)
 		*(m_pLambda[0] + i) = coeffB[i];
 
-	m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), inSys->GetR());
-	m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), inSys->GetK());
+	m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), r);
+	m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), k);
 	setElementFlags(NULL);
 	setPermCols(NULL);
 	setNumRows(0);
+
+
+	// Allocate memory to store the numbers of units in three areas, if needed
+	if (--nLambd <= 2 && pParam->lambda()[nLambd] == 2 && k == r) {
+		setAreaWeight(new int[3]);
+		memset(areaWeight(), 0, 3 * sizeof(*areaWeight()));
+		const bool flag = /*false;*/ !pParam->InterStruct()->Counterparts();
+		setStrongCheckUnitsInThreeAreas(flag && k % 3);
+	} else
+		setAreaWeight(NULL);
+}
+
+template<class T>
+CIG_Enumerator<T>::~CIG_Enumerator() {
+	delete[] rowIntersections();
+	delete[] lambdaBSrc();
+	delete[] elementFlags();
+	delete[] permCols();
+	delete[] areaWeight();
+}
+
+template<class T>
+void CIG_Enumerator<T>::CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {
+	const auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
+	copyRowIntersection(pMaster->rowIntersections());
+
+	// Copying the numbers of units which are in three areas, if we use this check
+	if (pMaster->areaWeight())
+		memcpy(areaWeight(), pMaster->areaWeight(), 3 * sizeof(*areaWeight()));
+
+	// No need to clone remaining information from master if it is not yet constructed
+	if (nRow < this->getInSys()->GetK())
+		return;
+
+	memcpy(lambdaA(), pMaster->lambdaA(), lenLambdas());
+	setNumRows(pMaster->numRows());
 }
 
 template<class T>
@@ -145,20 +183,26 @@ bool CIG_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char 
 template<class T>
 bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	// In that function we
-	// (a) calculate the intersection of last constructed row with all previously constructed rows
+	// (a) check the numbers of units in the areas
+	// (b) calculate the intersection of last constructed row with all previously constructed rows
 	auto nRow = this->currentRowNumb() - 1;
 	if (!nRow)
 		return true;
 
-	const auto k = this->getInSys()->GetK();
 	const auto r = this->getInSys()->GetR();
+	const auto k = this->getInSys()->GetK();
+	if (checkUnitsInThreeAreas() && nRow > 1 && nRow < 2 * (k - 1)) {
+		if (!checkThreeAreasUnits(r, k, nRow))
+			return false;
+	}
+
+	const auto pMatrix = this->matrix();
 	const auto nLambd = this->designParams()->lambdaB().size();
 	const auto len = r + k + nLambd + 2 * nLambdas();
 	T bufIdx[64];
 	T *pIdx = len > countof(bufIdx) ? new T[len] : bufIdx;
 
 	uchar blockFlg[64];
-	const auto pMatrix = this->matrix();
 	uchar *pBlockFlags = pMatrix->colNumb() > countof(blockFlg)? new uchar [pMatrix->colNumb()] : blockFlg;
 
 	auto pIntersection = rowIntersections();
@@ -218,6 +262,225 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 		delete[] pIdx;
 
 	return retBal;
+}
+
+template<class T>
+bool CIG_Enumerator<T>::checkThreeAreasUnits(int r, int k, T nRow) const
+{
+	const auto *pRow = this->matrix()->GetRow(nRow);
+	if (nRow == 2 && *(pRow + 1))
+		return false;
+
+	const auto lambdaB = this->designParams()->lambdaB();
+	const auto b2 = lambdaB[lambdaB.size() - 1];
+	const auto valMax = b2 - 1;
+	int fromIdx, nCol, nColLast, lim = 2 * (k - 1);
+	bool flag;
+	if (!strongCheckUnitsInThreeAreas()) {
+		// Theorem 1: When b(2) != 0, b(3) == ... == b(k) == 0, following three (k-2)x(k-2) areas contain exactly b(2)-1 units each, 
+		// no more than one unit in each row or column.
+		//
+		//    1 1 1 1 . . . . . 1| 0 0 . . . 0|0 0 ...
+		//    1 1 0 0 . . . . . 0| 1 1 . . . 1|0 0 ...
+		//    -------------------|------------|---------
+		//    1 0 1 0 . . . . . 0|            |
+		//    . 0 0 . . . . . . 0|            |
+		//    . 0 . . . . . . . 0|            |
+		//    1 0 . . . 1 . . . 0|   area 1   |
+		//    1 0 0 . . 0 0 . . 0|            |
+		//    . . . . . . . . . .|            |
+		//    1 0 0 . . 0 0 . . 0|            |
+		//    -------------------|------------|---------
+		//    0 1|               |            |
+		//    0 1|               |            |
+		//    . .|    area 2     |   area 3   |
+		//    . .|               |            |
+		//    0 1|               |            |
+		//    ---|---------------|------------|----------
+		//    0 0 1 . . . . . . . . . . . . . . 
+		//    
+		//    Prof: Trivial.
+		//
+		const int step = r - 2;
+		if (nRow < k) {
+			fromIdx = 0;
+			nColLast = r;
+			flag = nRow == k - 1;
+		}
+		else {
+			fromIdx = 1;
+			nColLast = 2;
+			flag = nRow == lim - 1;
+		}
+
+		bool retVal = true;
+		const auto toIdx = 2 * fromIdx + 1;
+		do {
+			nColLast = (nCol = nColLast) + step;
+			while (nCol < nColLast) {
+				if (*(pRow + nCol))
+					break;
+				else
+					nCol++;
+			}
+
+			if (nCol < nColLast && ++*(areaWeight() + fromIdx) > valMax ||
+				flag && *(areaWeight() + fromIdx) != valMax)
+				retVal = false;
+		} while (++fromIdx < toIdx);
+
+		return retVal;
+	} 
+
+	// Theorem 2: When 
+	//    (a) b(2) != 0, b(3) == ... == b(k) == 0,
+	//    (b) k % 3 != 0
+	// Then:
+	//    (a) following three (k-2)x(k-2) areas contain exactly b(2)-1 units each, 
+	// no more than one unit in each row or column.
+	//    (b) in area1 & area3 the units are in upper left part of diagonal.
+	//
+	//    1 1 1 1 . . . . . 1| 0 0 . . . 0|0 0 ...
+	//    1 1 0 0 . . . . . 0| 1 1 . . . 1|0 0 ...
+	//    -----------|-------|------------|---------
+	//    1 0 1 0 . .|. . . 0|0 . . . .  0|
+	//    . 0 0 . . .|. . . 0|            |
+	//    . 0 . . . .|. . . 0|   area A   |
+	//    1 0 . . . 1|. . . 0|0 . . . .  0|
+	//    -----------|-------|------------|---------
+	//    1 0 0 . . 0|0 . . 0|1 0         |
+	//    . . . . . .|. . . .|0 1 area 1  |
+	//    1 0 0 . . 0|0 . . 0|            |
+	//    ---|-------|-------|------------|---------
+	//    0 1|0 . . 0|1 0 . 0|            |
+	//    0 1|       |0 1    |            |
+	//    . .|area B |area 2 |   area 3   |
+	//    . .|       |       |            |
+	//    0 1|0 . . 0|       |            |
+	//    ---|-------|-------|------------|----------
+	//    0 0 1 . . . . . . . . . . . . . . 
+	//    
+	//    Prof: Trivial.
+	//
+
+	int step;
+	if (nRow < k) {
+		fromIdx = 0;
+		nColLast = b2 + 1;
+		flag = nRow == k - 1;
+		step = 2 * r - 2 - nColLast;
+	}
+	else {
+		fromIdx = 1;
+		nColLast = 2;
+		flag = nRow == lim - 1;
+		step = r - 2;
+	}
+
+	bool retVal = true;
+	const auto toIdx = 2 * fromIdx + 1;
+	const auto colNumber = this->matrix()->colNumb();
+	do {
+		nColLast = (nCol = nColLast) + step;
+		while (nCol < nColLast) {
+			if (*(pRow + nCol))
+				break;
+			else
+				nCol++;
+		}
+
+		if (nCol < nColLast) {
+			if (nRow <= b2 || nCol <= b2 || nRow < k && nCol < r)
+				return false;  // unit in area A or B
+
+			if (2 * b2 <= nRow && nRow < k || nRow >= k && 2 * b2 <= nCol && nCol < r)
+				return false;  // more units in area 1 or 2, than it's allowed
+
+			if (nRow >= k && nCol >= r) {
+				++*(areaWeight() + 2);
+				if (flag && *(areaWeight() + 2) != valMax)
+					return false;
+			}
+
+			if (*(pRow + nCol - colNumber))
+				return false;  // two units in two consecutive rows
+		}
+		else {
+			// all zeros in current row of the area
+			if (b2 < nRow && nRow < 2 * b2 ||
+				k <= nRow && nRow < k + b2 - 1 && nCol < r)
+				return false;
+		}
+
+	} while (++fromIdx < toIdx);
+
+	return retVal;
+}
+
+template<class T>
+void CIG_Enumerator<T>::reset(T nRow) {
+	CEnumerator<T>::reset(nRow);
+	if (nRow-- == numRows()) 
+		setNumRows(0);
+
+	const auto k = this->getInSys()->GetK();
+	if (!checkUnitsInThreeAreas() || nRow <= 1 || nRow >= 2 * (k - 1))
+		return;
+
+	int idxLast, idx;
+	const auto r = this->getInSys()->GetR();
+	const auto *pRow = this->matrix()->GetRow(nRow);
+	if (!strongCheckUnitsInThreeAreas()) {
+		int fromIdx, toIdx;
+		if (nRow < k) {
+			if (!*areaWeight())
+				return;  // nothing to subtract
+
+			fromIdx = 0;
+			toIdx = 1;
+			idxLast = r;
+		}
+		else {
+			if (*(areaWeight() + 1)) {
+				fromIdx = 1;
+				idxLast = 2;
+				toIdx = *(areaWeight() + 2) ? 3 : 2;
+			}
+			else if (*(areaWeight() + 2)) {
+				fromIdx = 2;
+				toIdx = 3;
+				idxLast = r;
+			}
+			else
+				return;  // nothing to subtract
+		}
+
+		do {
+			idxLast = (idx = idxLast) + r - 2;
+			while (idx < idxLast) {
+				if (*(pRow + idx++)) {
+					--*(areaWeight() + fromIdx);
+					break;
+				}
+			}
+
+		} while (++fromIdx < toIdx);
+	}
+	else {
+		// When we are here, only the units from area 3 should be extracted
+		auto *pArea3 = areaWeight() + 2;
+		if (!*pArea3)
+			return; // nothing to extract from area 3
+
+		idx = r;
+		idxLast = idx + r - 2;
+		while (idx < idxLast) {
+			if (*(pRow + idx++)) {
+				--*pArea3;
+				return;
+			}
+		}
+	}
 }
 
 template<class T>

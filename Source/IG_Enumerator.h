@@ -18,28 +18,12 @@ class CIG_Enumerator : public CPBIBD_Enumerator<T>
 {
 public:
 	CK CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags = t_enumDefault, bool firstPath = false, int treadIdx = -1, uint nCanonChecker = 0);
-
-	CK ~CIG_Enumerator() { 
-		delete[] rowIntersections(); 
-		delete[] lambdaBSrc(); 
-		delete[] elementFlags();
-		delete[] permCols();
-	}
-	CK void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) override {
-		const auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
-		copyRowIntersection(pMaster->rowIntersections());
-
-		// No need to clone remaining information from master if it is not yet constructed
-		if (nRow < this->getInSys()->GetK())
-			return;
-
-		memcpy(lambdaA(), pMaster->lambdaA(), lenLambdas());
-		setNumRows(pMaster->numRows());
-	}
-
+	CK ~CIG_Enumerator();
+	CK void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) override;
 	CK inline T *rowIntersections() const				{ return m_pRowIntersections; }
 	inline T *lambdaA() const							{ return m_pLambda[1]; }
 	inline T *lambdaB() const							{ return m_pLambda[2]; }
+	inline int *areaWeight() const						{ return m_pAreaWeight; }
 protected:
 	CK bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, 
 		       int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const override;
@@ -50,7 +34,7 @@ protected:
 	CK bool SeekLogFile() const override				{ return true; }
 
 	CK bool prepareToFindRowSolution() override;
-	virtual void reset(T nRow)							{ CEnumerator<T>::reset(nRow); if (nRow == numRows()) setNumRows(0); }
+	virtual void reset(T nRow);
 private:
 	inline void setNumRows(T nRow)						{ m_nNumbRows  = nRow; }
 	inline T numRows() const							{ return m_nNumbRows; }
@@ -69,6 +53,11 @@ private:
 	inline uchar *elementFlags() const					{ return m_pElementFlags; }
 	inline void setPermCols(T *pntr)					{ m_pPrmCols = pntr; }
 	inline T *permCols() const							{ return m_pPrmCols; }
+	inline void setAreaWeight(int *pntr)				{ m_pAreaWeight = pntr; }
+	inline bool checkUnitsInThreeAreas() const			{ return areaWeight() != NULL; }
+	inline bool strongCheckUnitsInThreeAreas() const	{ return m_bStrongCheck; }
+	inline void setStrongCheckUnitsInThreeAreas(bool v) { m_bStrongCheck = v; }
+	bool checkThreeAreasUnits(int r, int k, T nrow) const;
 
 	const bool m_firstPath;
 	T *m_pRowIntersections;
@@ -78,4 +67,6 @@ private:
 	uchar *m_pElementFlags;					// Flags to mark the elements, which are already chosen
 	CIncidenceStorage<T> *m_pElements;
 	CIncidenceStorage<T> *m_pBlocks;
+	int *m_pAreaWeight;
+	bool m_bStrongCheck;
 };
