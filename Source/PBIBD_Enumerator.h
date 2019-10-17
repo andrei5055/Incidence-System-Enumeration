@@ -9,17 +9,17 @@ public:
 		CBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
 	CK virtual bool isPBIB_enumerator() const					{ return true; }
 protected:
-	CK virtual bool checkLambda(size_t lambdaCur) const			{ return findLambda(lambdaCur) >= 0; }
-	CK int findLambda(size_t lambdaCur) const;
+	CK virtual bool checkLambda(size_t lambdaCur) const			{ return findLambda(lambdaCur) != -1; }
+	CK size_t findLambda(size_t lambdaCur) const;
 	CK virtual void ReportLamdaProblem(T i, T j, size_t lambda) const;
 	CK const char *getObjName() const override					{ return "PBIBD"; }
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const;
 };
 
 template<class T>
-int CPBIBD_Enumerator<T>::findLambda(size_t lambdaCur) const {
+size_t CPBIBD_Enumerator<T>::findLambda(size_t lambdaCur) const {
 	const auto lambdaSet = this->getInSys()->GetNumSet(t_lSet);
-	for (int i = 0; i < lambdaSet->GetSize(); i++) {
+	for (size_t i = 0; i < lambdaSet->GetSize(); i++) {
 		if (lambdaSet->GetAt(i) == lambdaCur)
 			return i;
 	}

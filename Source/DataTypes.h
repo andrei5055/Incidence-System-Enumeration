@@ -503,11 +503,11 @@ public:
 	const std::vector<int> &lambda() const	{ return m_pInterStruct->lambda(); }
 	const std::vector<int> &lambdaA() const { return m_pInterStruct->lambdaA(); }
 	const std::vector<int> &lambdaB() const { return m_pInterStruct->lambdaB(); }
-	inline int lambdaSizeMax() const		{ return m_lambdaSizeMax; }
-	inline void setLambdaSizeMax(int val)	{ m_lambdaSizeMax = val; }
+	inline size_t lambdaSizeMax() const		{ return m_lambdaSizeMax; }
+	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
-	int m_lambdaSizeMax = 0;// Maximal number of elements in lambda()
+	size_t m_lambdaSizeMax = 0;// Maximal number of elements in lambda()
 	                        // (will be used for formated output)
 };
 

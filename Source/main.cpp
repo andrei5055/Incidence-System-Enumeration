@@ -316,8 +316,8 @@ int main(int argc, char * argv[])
 	string &line = *pLine;
 	while (getline(infile, line)) {	// For all the lines of the file
 		trim(line);
-		if (line.size() <= 2 || line[0] == ';' || line[0] == '/' && line[1] == '/')
-			continue;				// Skip line if it is a comment OR too short
+		if (!line.size() || line[0] == ';' || line[0] == '/' && line[1] == '/')
+			continue;				// Skip line if it is a comment OR empty
 
 		transform(line.begin(), line.end(), line.begin(), ::toupper);
 
@@ -348,7 +348,26 @@ int main(int argc, char * argv[])
 			if (newWorkDir.c_str()[newWorkDir.length() - 1] != '/')
 				newWorkDir += '/';
 
-			continue;
+			struct stat sb;
+			const auto* pWorkDir = newWorkDir.c_str();
+			const char* pCause = NULL;
+			if (stat(pWorkDir, &sb))
+				pCause = "get information about";
+			else
+				if (!(S_IFDIR & sb.st_mode))
+					pCause = "find";
+				else
+					if (!(S_IREAD & sb.st_mode))
+						pCause = "read from";
+					else
+						if (!(S_IWRITE & sb.st_mode))
+							pCause = "write into";
+
+			if (!pCause)
+				continue;
+
+			printf("Cannot %s working directory: \'%s\'\n", pCause, pWorkDir);
+			break;
 		}
 
 		pos = find(line, "THREAD_NUMBER");

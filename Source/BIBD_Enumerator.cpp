@@ -33,8 +33,8 @@ bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, 
 	int lambdaSetSize = 0;
 	len += addLambdaInfo(buffer + len, lenBuffer - len, &lambdaSetSize);
 
-	int maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
-	if (maxSize > 0) {
+	if (pParam->lambdaSizeMax() > lambdaSetSize) {
+		auto maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
 		auto pBuf = buffer + len;
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buffer), ")");
 		while (maxSize-- > 0)

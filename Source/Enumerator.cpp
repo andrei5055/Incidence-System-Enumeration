@@ -94,6 +94,7 @@ template<class T>
 int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnumerator<T> *threadEnum, size_t nThread) const
 {
 	// Try to find the index of not-running thread
+	const auto flag = code == t_threadNotUsed;
 	size_t loopingTime = 0;
 	while (true) {
 		if (loopingTime > REPORT_INTERVAL) {
@@ -125,11 +126,15 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 				LAUNCH_CANONICITY_TESTING(pEnum, this);
 				this->enumInfo()->updateGroupInfo(pEnum->enumInfo());
 				thread_message(thrIdx, "finished", code);
-				this->enumInfo()->reportProgress(pEnum);
-				if (code == t_threadNotUsed) {
-					pEnum->setCode(t_threadNotUsed);
-					continue;
+				if (flag) {
+					// Changing code, otherwise we in next call CEnumInfo<T>::reportProgress(...)
+					// t_canonical/t_totalConstr matrices will be counted one more time
+					pEnum->setCode(t_threadNotUsed); 
 				}
+
+				this->enumInfo()->reportProgress(pEnum);
+				if (flag)
+					continue;
 
 			case t_threadLaunchFail:
 				pEnum->reInit();

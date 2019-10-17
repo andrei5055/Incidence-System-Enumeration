@@ -115,7 +115,7 @@ T *CPermutStorage<T>::CreateOrbits(const CPermutStorage<T> *pPermColumn,
 
 	// Identical permutation will be skipped
 	const auto iMax = pPermColumn->numPerm();
-	for (int i = firstpermIdx; i < iMax; ++i) {
+	for (size_t i = firstpermIdx; i < iMax; ++i) {
 		const auto pRowPermut = getPermutByIndex(i);
 		if (pRowPermut[0] && pColOrbitsTmp == pColOrbits) {
 			// Copying the orbits of stabilizer of first elements

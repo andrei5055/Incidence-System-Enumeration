@@ -164,8 +164,11 @@ void CEnumInfo<T>::reportProgress(const CThreadEnumerator<T> *pThreadEnum, size_
 		CGroupsInfo groupsInfo;
 		groupsInfo.updateGroupInfo(this);
 		for (size_t i = 0; i < nThread; i++, pThreadEnum++) {
-			if (pThreadEnum->code() != t_threadRunning)
-				continue;
+			switch (pThreadEnum->code()) {
+				case t_threadRunning:
+				case t_threadFinished: break;
+				default:	continue;
+			}
 
 			updateEnumInfo(pThreadEnum->enumInfo());
 			groupsInfo.updateGroupInfo(pThreadEnum->enumInfo());

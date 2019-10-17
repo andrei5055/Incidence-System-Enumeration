@@ -475,7 +475,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 
 		// To do the formated output, define maximal size of lambda sets
-		int maxSize = 0;
+		size_t maxSize = 0;
 		iStruct = pParam->InterStruct();
 		CheckIntersections(iStruct, pIndices, k, nVertex);
 
@@ -510,7 +510,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				iStruct->lambdaPtr()->resize(jMax);
 				iStruct->lambdaAPtr()->resize(jMax);
 				iStruct->lambdaBPtr()->resize(jMax);
-				for (int j = 0; j < jMax; ++j) {
+				for (size_t j = 0; j < jMax; ++j) {
 					(*iStruct->lambdaPtr())[j] = iStructCurr->lambda()[j];
 					(*iStruct->lambdaAPtr())[j] = iStructCurr->lambdaA()[j] / n;
 					(*iStruct->lambdaBPtr())[j] = iStructCurr->lambdaB()[j] / n;
