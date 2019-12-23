@@ -12,7 +12,7 @@ class CBIBD_Enumerator : public C_InSysEnumerator<T>
 {
 public:
 	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
+		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) { setR(getInSys()->GetR()); }
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
@@ -20,21 +20,27 @@ protected:
 	CK virtual bool sortSolutions(CRowSolution<T> *ptr, PERMUT_ELEMENT_TYPE idx);
 	virtual int unforcedElement(const CColOrbit<T> *p, int nRow) const;
 	CK virtual bool solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, size_t nRow) const;
+	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 #endif
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
-	CK virtual bool checkLambda(size_t lambda) const				{ return lambda == this->getInSys()->lambda(); }
+	CK virtual bool checkLambda(size_t val) const					{ return val == lambda(); }
 	CK virtual void ReportLamdaProblem(T i, T j, size_t lambda) const {
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu != " ME_FRMT "\n",
 			i, j, lambda, this->getInSys()->lambda());
 	}
-  CK virtual const char *getObjName() const                          { return "BIBD"; }
-  CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const 
-		{ return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, this->getInSys()->lambda()); }
+	CK virtual const char *getObjName() const                        { return "BIBD"; }
+	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const 
+		{ return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, lambda()); }
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
+	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
+	CK inline void setR(T val)										 { m_r = val; }
+	CK inline auto getR() const                                      { return m_r; }
+
+	T m_r;
 };
 
 template<class T>
@@ -150,7 +156,7 @@ template<class T>
 bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
-	// allow to skip testing of some solutions for some rows
+	// allows to skip testing of some solutions for some rows
 	if (nRow == 3) {
 		const CRowSolution<T> *pPrevSolution = this->rowStuff(nRow - 1);
 		const auto lambda = this->getInSys()->lambda();
@@ -174,9 +180,9 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 				// The difference represent minimal number of descendants of the solution used for 3-d row
 				if (lambda * (k - 2) > v) {
 					// lambda * (k - 2) - v + 2 > 2 should be use as: lambda * (k - 2) > v
-					// Othervise we do have problem when v,k,l are defined as unsigned
+					// Otherwise we do have problem when v,k,l are defined as unsigned
 					//
-					// This should work for BIBD(22, 8,4)
+					// This should work for BIBD(22, 8, 4)
 					// In this case at least 2 descendants of the solution used for 3-d row
 					// will be used for remaining rows
 					// It means that the current rows solution should be the descendant of the solution used for 3-d row
@@ -185,7 +191,7 @@ bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, s
 					//    0 0 1 1
 					//    0 0 1 1
 					// When we change 3-d and 4-th row with these two AND columns 1 -2 with 3-4 we will increase the code
-					// of the matrix. Because of that this matrix cannot be canonical.
+					// of the matrix. Therefore, this matrix cannot be canonical.
 					const bool useCanonGroup = USE_CANON_GROUP && this->groupOrder() > 1;
 					auto pSol = pCurrSolution;
 					while ((pSol = pSol->NextSolution(useCanonGroup)) != NULL) {

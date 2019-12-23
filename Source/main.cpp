@@ -136,7 +136,7 @@ static bool getTParam(const string &paramText, designParam *param)
 	int num = 0;
 	int mult = 1;
 	while (len--) {
-		char symb = paramText[len] - '0';
+		const char symb = paramText[len] - '0';
 		if (symb < 0 || symb > 9)
 			break;
 
@@ -166,13 +166,13 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
 	auto lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
-		if (lambda.size() > 1 || objType == t_InconsistentGraph) {
+		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
 			switch (objType) {
 			case t_PBIBD:
 				pInSys = new C_PBIBD<T>(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new CPBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
-			case t_InconsistentGraph:
+			case t_SemiSymmetricGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaisKeepRowPermute;
 				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new CIG_Enumerator<T>(pInSys, pParam, enumFlags, FirstPath);
@@ -415,10 +415,10 @@ int main(int argc, char * argv[])
 			objType = t_tDesign;
 		else
 		if (line.find("INCIDENCE") != string::npos)
-			objType = t_InsidenceSystem;
+			objType = t_IncidenceSystem;
 		else
-		if (line.find("INCONSISTENT_GRAPH") != string::npos)
-			objType = t_InconsistentGraph;
+		if (line.find("SEMI_SYMMETRIC_GRAPH") != string::npos)
+			objType = t_SemiSymmetricGraph;
 
 		// Define output type
 		pos = find(line, "OUTPUT");
@@ -481,20 +481,21 @@ int main(int argc, char * argv[])
 		param.t = 2;
 		param.InterStruct()->lambdaPtr()->resize(0);
 		size_t from = -1;
+		bool BIBD_flag = false;
 		switch (objType) {
 		case t_tDesign:	if (!getTParam(line.substr(0, beg), &param)) {
 							from = 0;
 							break;
 						}
 
-		case t_InconsistentGraph:
-		case t_BIBD:	
-		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, objType == t_BIBD))
+		case t_BIBD:	BIBD_flag = true;
+		case t_SemiSymmetricGraph:
+		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, BIBD_flag))
 							from = beg + 1;
 
 						break;
 
-		case t_InsidenceSystem: 
+		case t_IncidenceSystem: 
 						break;
 		}
 
@@ -507,7 +508,7 @@ int main(int argc, char * argv[])
 		if (param.workingDir != newWorkDir || firstRun)
 			param.workingDir = string(newWorkDir);
 
-		if ((param.objType = objType) == t_InconsistentGraph) {
+		if ((param.objType = objType) == t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
 			InconsistentGraphs(&param, pSummaryFile, firstRun);
 		}

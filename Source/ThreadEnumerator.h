@@ -74,7 +74,7 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 				pSlaveDesign = new C_PBIBD<T>((const C_PBIBD<T> *)(pInSys), nRow);
 				m_pEnum = new CPBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
-		case t_InconsistentGraph:
+		case t_SemiSymmetricGraph:
 			    pSlaveDesign = new CInconsistentGraph<T>((const CInconsistentGraph<T> *)(pInSys), nRow);
 				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, pMaster->designParams(), enumFlags, threadIdx, NUM_GPU_WORKERS);
 				m_pEnum->CloneMasterInfo(pMaster, nRow);

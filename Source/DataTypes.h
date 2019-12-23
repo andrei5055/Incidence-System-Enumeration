@@ -4,7 +4,7 @@
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
 #define USE_THREADS					1						// Should be at least 1
-#define CANON_ON_GPU                (1 && !CONSTR_ON_GPU)	// 1 - Start using GPU for canonicity testing
+#define CANON_ON_GPU                (1 && CONSTR_ON_GPU==0)	// 1 - Start using GPU for canonicity testing
 #define NUM_GPU_WORKERS             128
 #include "host_defines.h"
 #define CC __host__ __device__		// CUDA_CALLABLE
@@ -432,8 +432,8 @@ typedef enum {
 	t_BIBD,			// default
 	t_tDesign,
 	t_PBIBD,
-	t_InsidenceSystem,
-	t_InconsistentGraph
+	t_IncidenceSystem,
+	t_SemiSymmetricGraph
 } t_objectType;
 
 typedef enum {

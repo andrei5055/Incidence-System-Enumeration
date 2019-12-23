@@ -147,8 +147,8 @@ template<class T>
 class CMatrixCanonCheckerGPU : public CMatrixCanonChecker<T>
 {
 public:
-	CC CMatrixCanonCheckerGPU(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner = false) :
-		CMatrixCanonChecker<T>(pMatrix, IS_enum, matrOwner) {}
+	CC CMatrixCanonCheckerGPU(const CMatrixData<T> *pMatrix, uint enumFlags = 0) :
+		CMatrixCanonChecker<T>(pMatrix, enumFlags)			{}
 	CC ~CMatrixCanonCheckerGPU()							{ closeColOrbits(); }
 };
 

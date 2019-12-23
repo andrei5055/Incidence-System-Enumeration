@@ -504,7 +504,7 @@ size_t outString(const char *str, FILE *file)
         return fwrite(str, sizeof(*str), strlen(str), file) + 1;
 
 	std::cout << str;
-	return -1;
+	return std::numeric_limits<std::size_t>::max();
 }    
 
 size_t outString(const char *str, const char *fileName, const char *mode)

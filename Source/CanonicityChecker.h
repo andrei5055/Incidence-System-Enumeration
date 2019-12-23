@@ -58,7 +58,7 @@ public:
 
 protected:
 	CC inline int rank() const						{ return m_rank; }
-	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix)		{}
+	CC virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix)		{}
 	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage = NULL, CCanonicityChecker *pCanonChecker = NULL) const	{}
 	CC inline T *getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
 	CC inline T *getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
@@ -84,7 +84,7 @@ private:
 	CC inline void setNumColOrb(T v)				{ m_nNumColOrb = v; }
     CC void revert(T i);
 	CC T getLenPermutCol(T **permCol) const;
-	CC T * constructColIndex(const CColOrbit<T> *pColOrbit, const CColOrbit<T> *pColOrbitIni, size_t colOrbLen);
+	CC T *constructColIndex(const CColOrbit<T> *pColOrbit, const CColOrbit<T> *pColOrbitIni, size_t colOrbLen);
 	CC inline void setPermStorage(CPermutStorage<T> *p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const CColOrbit<T> *pColOrbitStart, const CColOrbit<T> *pColOrbit, 
@@ -322,13 +322,15 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 				pColOrbit = pColOrbit->next();
 			}
 		}
-		
+
+//#ifndef USE_CUDA
 		// We need the permutations on columns AND
 		//  (a) matrix is completely constructed OR
 		//  (b) we will need to analyse the group on partially constructed matrix
 		// (As of Oct.11, 2018 this is used only for IGraphs (inconsistent graphs)
 		if (permColStorage() && (rowPermut || permRowStorage()))
 			ConstructColumnPermutation(pEnum->matrix());
+//#endif
 
 		addAutomorphism(rowPermut);
 		nRow = MATRIX_ELEMENT_MAX - 1;

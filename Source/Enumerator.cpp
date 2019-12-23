@@ -491,7 +491,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
 			// TO DO: For inconsistent graphs more complicated comparison function should be implemented
-			if (pParam->objType != t_InconsistentGraph && compareResults(buff, lenName, &betterResults)) {
+			if (pParam->objType != t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
 				strcpy_s(jobTitle, countof(jobTitle), buff);
 				strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
@@ -648,7 +648,7 @@ size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
 {
 	const auto pParam = designParams();
 	auto rowNumb = getInSys()->rowNumb(); 
-	if (pParam->objType == t_InconsistentGraph)
+	if (pParam->objType == t_SemiSymmetricGraph)
 		rowNumb *= pParam->r / pParam->k;
 
 	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "%sV =%4d", pParam->workingDir.c_str(), rowNumb);

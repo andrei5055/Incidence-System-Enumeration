@@ -74,7 +74,7 @@ template<class T>class CColOrbitCS : public CColOrbit<T>
 {// Orbits for Colored Incidence Systems
  public:
 	CC ~CColOrbitCS()													 { delete [] getEntryCntrs(); }
-	virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx) {
+	CC virtual void InitEntryCntrs(const CColOrbit<T> *pParent, int idx) {
 		memcpy(getEntryCntrs(), pParent->getEntryCntrs(), maxElement() * sizeof(getEntryCntrs()[0]));
 		++*(getEntryCntrs() + idx);
 	}
@@ -85,11 +85,11 @@ template<class T>class CColOrbitCS : public CColOrbit<T>
 	}
 
 	inline static void setMaxElement(int maxElement)					{ m_maxElement = maxElement; }
-	inline CC unsigned int *getEntryCntrs() const						{ return m_pEntryCntrs; }
+	CC inline unsigned int *getEntryCntrs() const						{ return m_pEntryCntrs; }
  
  protected:
  private:
-	inline CC static int maxElement()									{ return m_maxElement; }
+	CC inline static int maxElement()									{ return m_maxElement; }
 	unsigned int *m_pEntryCntrs;
 	static int m_maxElement;
 };

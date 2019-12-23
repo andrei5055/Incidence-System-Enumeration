@@ -24,7 +24,7 @@ __global__ void AssignCheckerGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, uint
 		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonChecker<T>(pMatrix, nRows, nCols, maxElem, IS_enum);
 #else
 		pMatrix->InitWithData(nRows, nCols, maxElem);
-		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonCheckerGPU<T>(pMatrix, false, false);
+		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonCheckerGPU<T>(pMatrix);
 		pChecker->initiateColOrbits(nRows, IS_enum, NULL);
 		if (!checkerIdx)
 			pChecker->setEnumInfo(new CInsSysEnumInfo<T>());

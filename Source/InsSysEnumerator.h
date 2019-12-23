@@ -29,7 +29,7 @@ protected:
 	CK inline size_t forcibleLambda(size_t i) const             { return *(forcibleLambdaPntr() + i); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
-	virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
+	CK virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
 	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker<T> *pCanonChecker = NULL, bool permCol = false) const;
 
 private:
@@ -44,7 +44,7 @@ private:
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
     CK virtual bool constructing_t_Design()                     { return false; }
-	CK inline CRightPartFilter<T> *rightPartFilter()							{ return m_pRightPartFilter; }
+	CK inline CRightPartFilter<T> *rightPartFilter()			{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(size_t *p)             { m_pForsibleLambda = p; }
 	CK inline void setForcibleLambda(size_t i, size_t v)        { *(forcibleLambdaPntr() + i) = v; }
 
