@@ -1,0 +1,11 @@
+I-Graph( 27,  27,  3,  3, { 0, 1})
+
+         0 matrices constructed in  2:30.00
+         0 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        Single thread mode
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

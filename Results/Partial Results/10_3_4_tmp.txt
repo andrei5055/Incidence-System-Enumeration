@@ -1,0 +1,35 @@
+BIBD( 10,  60, 18,  3,  4)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1       225554603         6003160               0               0
+             2           55807            5773               0               0
+             3            3715             428               0               0
+             4             481             179               0               0
+             5              15              10               0               0
+             6             131              46               0               0
+             8              55              32               0               0
+             9               6               4               0               0
+            10              12               9              10               8
+            12               7               0               0               0
+            16              10               4               0               0
+            18               7               0               0               0
+            20               3               2               1               1
+            24               6               4               0               0
+            32               2               1               0               0
+            48               2               2               0               0
+           320               1               1               1               1
+           720               1               1               1               1
+    _______________________________________________________________________________
+        Total:       225614864         6009656              13              11
+
+ 225614864 matrices constructed in  6:23:13:33.87
+   6009656 matrices have no replicated blocks
+6069122935 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 5 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
