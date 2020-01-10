@@ -27,9 +27,9 @@ BIBD(  9,  36, 16,  4,  6)
     _______________________________________________________________________________
         Total:       271052925        20046152              12               7
 
- 271052925 matrices constructed in  3:17:50.59
+ 271052925 matrices constructed in  3:04:03.41
   20046152 matrices have no replicated blocks
- 516205731 matrices were fully constructed
+ 449260848 matrices were fully constructed
 
 Using 64-bit program, Assembly flag: 0
         20 threads launched on level 4 (not waiting to finish mode)
