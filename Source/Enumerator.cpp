@@ -592,7 +592,7 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
 				*pRowCurr[j] = i;
 #endif
             if (!(lenRemaining -= lenFragm))
-                break;    // remainin parts of the current solution are 0's
+                break;    // remaining parts of the current solution are 0's
 		}
         
 		pRowSolution += maxElement;

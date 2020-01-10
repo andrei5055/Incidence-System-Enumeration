@@ -16,20 +16,46 @@ int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) con
 template<class T>
 bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
-//	return true;
 	// Check if solution is valid (for elimination of invalid solutions)
 	auto rowNumb = this->currentRowNumb();
 	if (rowNumb <= 2)
 		return true;
 
+	// For canonical BIBD the number of blocks containing any of any three elements cannot be
+	// bigger than the number of blocks containing first, second and third element.
+	// Let's check it
 	const auto lambda = this->lambda();
 	const auto x0_3 = this->getX0_3();
-	if (lambda == x0_3)
+	if (lambda == x0_3)     // Intersection of first three rows is maximal
 		return true;		// Nothing to test
+
+	const auto k = this->getInSys()->GetK();
+	if (rowNumb >= this->rowNumb() - k - 1 && rowNumb < this->rowNumb() - 3) {
+		// Theorem: The number of columns of canonical matrix which are forcible constructed by units cannot be bigger than 
+		// number of blocks containing first, second and third element.
+		// We should start to check this condition on the first row which tested solutions could create
+		// first column forcible constructed by units: rowNumb >= this->rowNumb() - k - 1 AND
+		// at least three rows need to be constructed: rowNumb < this->rowNumb() - 3
+		const auto* pColOrbit = this->colOrbit(rowNumb);
+		const auto* pRowSolution = pSol;
+		auto limit = rowNumb + k - this->rowNumb() + 1;
+		auto nForcible = forcibleLambda(rowNumb);
+		while (pColOrbit) {
+			if (pColOrbit->columnWeight() == limit) {
+				// Define the number of new columns that will be enforceable completed by units
+				const auto newEnforsed = pColOrbit->length() - *pRowSolution;
+				if (newEnforsed && (nForcible += newEnforsed) > x0_3)
+					return false;
+			}
+
+			pRowSolution++;
+			pColOrbit = pColOrbit->next();
+		}
+	}
 
 	this->MakeRow(pSol);
 
-	// Define intersection of current row with previous one
+	// Define intersection of current row with previous one:
 	const auto* pMathix = this->matrix();
 	const auto* pCurrRow = pMathix->GetRow(rowNumb--);
 	const auto* pPrevRow = pMathix->GetRow(rowNumb--);
@@ -49,9 +75,12 @@ bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 		++j;
 	}
 
+	// Let's check the necessary and sufficient condition
+	//     for first matrix row:
 	if (columns[x0_3] < this->getR())
 		return false;
 
+	//     for remaining rows:
 	do {
 		pCurrRow = pMathix->GetRow(rowNumb);
 		auto j = x0_3;

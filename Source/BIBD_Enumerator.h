@@ -12,7 +12,10 @@ class CBIBD_Enumerator : public C_InSysEnumerator<T>
 {
 public:
 	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) { setR(getInSys()->GetR()); }
+		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+		setR(getInSys()->GetR());
+		m_firstUnforced = pBIBD->rowNumb() - pBIBD->GetK();
+	}
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
@@ -33,6 +36,9 @@ protected:
 	CK virtual const char *getObjName() const                        { return "BIBD"; }
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const 
 		{ return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, lambda()); }
+	CK virtual size_t firstUnforcedRow() const						{ return m_firstUnforced; }
+	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
+	CK virtual void resetFirstUnforcedRow()							{}
 private:
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
@@ -41,6 +47,7 @@ private:
 	CK inline auto getR() const                                      { return m_r; }
 
 	T m_r;
+	size_t m_firstUnforced;
 };
 
 template<class T>
