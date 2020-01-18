@@ -168,6 +168,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 	const size_t threadNumb = pParam->threadNumb;
 
 	size_t lenName = 0;
+	bool knownResults = false;
 	if (writeFile) {
 		// We will be here only for the master
 		pParam->firstMatr = true;
@@ -175,16 +176,11 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			return (size_t)-1;
 
 		// Construct the file name of the file with the enumeration results
-		if (!makeFileName(buff, lenBuffer, ""))
+		if (!getMasterFileName(buff, lenBuffer, &lenName))
 			return (size_t)-1;
 
-		lenName = strlen(buff);
-
-		// Create file name for the output of final enumeration results
-		strcpy_s(buff + lenName, lenBuffer - lenName, FILE_NAME(""));
-
 		// The results are known, if the file with the enumeration results exists
-		const bool knownResults = fileExists(buff);
+		knownResults = fileExists(buff);
 		if (knownResults)
 			strcpy_s(buff + lenName, lenBuffer - lenName, FILE_NAME(CURRENT_RESULTS));
 		else
@@ -490,7 +486,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			bool betterResults = true;
 			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
-			// TO DO: For inconsistent graphs more complicated comparison function should be implemented
+			// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
 			if (pParam->objType != t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
 				strcpy_s(jobTitle, countof(jobTitle), buff);
@@ -511,8 +507,13 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 			else
 				resType = t_resInconsistent; // results are not the same as before
 		}
-		else
+		else {
+			if (pParam->objType != t_SemiSymmetricGraph) {
+				if (getMasterFileName(buff, lenBuffer, &lenName))
+				    compareResults(buff, lenName);
+			}
 			resType = t_resNew;
+		}
 
 		pEnumInfo->setResType(resType);
 
@@ -644,24 +645,35 @@ void CEnumerator<T>::InitRowSolutions(const CEnumerator<T> *pMaster)
 }
 
 template<class T>
-size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer) const
+size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
 {
 	const auto pParam = designParams();
-	auto rowNumb = getInSys()->rowNumb(); 
-	if (pParam->objType == t_SemiSymmetricGraph)
-		rowNumb *= pParam->r / pParam->k;
 
-	const size_t lenDirName = SNPRINTF(dirName, lenBuffer, "%sV =%4d", pParam->workingDir.c_str(), rowNumb);
+	// Reserving 1 byte for last '/'
+	lenBuffer--;
 
-	int retVal = 0;
-	if (!fileExists(dirName, false))
-		retVal = MKDIR(dirName);
+	auto len = SNPRINTF(dirName, lenBuffer, "%s", pParam->workingDir.c_str());
+	if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
+		return 0;	// Directory could not be used
 
-	if (retVal)
-		return 0;	// directory could not be used
+	if (this->getTopLevelDirName()) {
+		len += SNPRINTF(dirName + len, lenBuffer - len, "//%s", this->getTopLevelDirName());
+		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
+			return 0;	// Directory could not be used
+	}
 
-	dirName[lenDirName] = '/';
-	return lenDirName + 1;
+	if (rowNeeded) {
+		auto rowNumb = getInSys()->rowNumb();
+		if (pParam->objType == t_SemiSymmetricGraph)
+			rowNumb *= pParam->r / pParam->k;
+
+		len += SNPRINTF(dirName + len, lenBuffer - len, "//V =%4d", rowNumb);
+		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
+			return 0;	// Directory could not be used
+	}
+
+	dirName[len] = '/';
+	return len + 1;
 }
 
 static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
@@ -686,51 +698,173 @@ static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
 }
 
 template<class T>
+bool CEnumerator<T>::getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const
+{
+	// Construct the file name of the file with the enumeration results
+	if (!makeFileName(buffer, lenBuffer, ""))
+		return false;
+
+	*pLenName = strlen(buffer);
+
+	// Create file name for the output of final enumeration results
+	strcpy_s(buffer + *pLenName, lenBuffer - *pLenName, FILE_NAME(""));
+	return true;
+}
+
+template<class T>
+bool CEnumerator<T>::cmpProcedure(FILE* file[2], bool *pBetterResults) const
+{
+	const size_t lenBuf = 256;
+	const size_t len = strlen(CONSTRUCTED_IN);
+	char buf[2][lenBuf], *pntr[2] = {NULL, NULL};
+	while (true) {
+		for (int i = 0; i < 2; i++) {
+			if (file[i]) {
+				if (!getNextLineForComparison(file[i], buf[i], lenBuf))
+					return false;
+
+				pntr[i] = strstr(buf[i], CONSTRUCTED_IN);
+			}
+		}
+
+		if (pntr[0]) {
+			if (!file[1] || pntr[1]) {
+				if (pBetterResults)
+					*pBetterResults = CEnumInfo<T>::compareTime(pntr[0] + len, pntr[1] + len);
+
+				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf)) {
+					char* pInfo[] = { pntr[0] + len, buf[0], buf[1] };
+					UpdateEnumerationDB(pInfo, 3);
+				}
+
+				return true;		// the results are the same
+			}
+
+			break;
+		}
+
+		if (file[1] && strcmp(buf[0], buf[1]))
+			break;
+	}
+
+	return false;
+}
+
+template<class T>
 bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
 {
 	FOPEN(file, fileName, "r");
 	if (!file)
 		return false;
 
-	// Create the name of the file with the previous results
-	static size_t lenSuffix = strlen(FILE_NAME("")) + 1;
-	strcpy_s(fileName + lenFileName, lenSuffix, FILE_NAME(""));
+	FILE* ppFile[] = { file, NULL };
 
-	FOPEN(filePrev, fileName, "r");
-	if (!filePrev) {
+	if (pBetterResults) {
+		// Create the name of the file with the previous results
+		static size_t lenSuffix = strlen(FILE_NAME("")) + 1;
+		strcpy_s(fileName + lenFileName, lenSuffix, FILE_NAME(""));
+		FOPEN(filePrev, fileName, "r");
+		ppFile[1] = filePrev;
+	}
+
+	if (!ppFile[1]) {
+		cmpProcedure(ppFile);
 		FCLOSE(file);
 		return false;
 	}
 
-	bool retVal = false;			// the results are not the same
-	const size_t lenBuf = 256;
-	char buf[2][lenBuf];
-	while (true) {
-		if (!getNextLineForComparison(filePrev, buf[0], lenBuf))
-			break;
+	const bool retVal = cmpProcedure(ppFile, pBetterResults);
+	FCLOSE(file);
+	FCLOSE(ppFile[1]);
 
-		if (!getNextLineForComparison(file, buf[1], lenBuf))
-			break;
+	return retVal;
+}
 
-		char *pntr0 = strstr(buf[0], CONSTRUCTED_IN);
-		if (pntr0) {
-			char *pntr1 = strstr(buf[1], CONSTRUCTED_IN);
-			if (pntr1) {
-				const size_t len = strlen(CONSTRUCTED_IN);
-				*pBetterResults = CEnumInfo<T>::compareTime(pntr0 + len, pntr1 + len);
-				retVal = true;		// the results are the same
-			}
+static void outKeyInfo(const char* key, char **pInfo, FILE* file)
+{
+	fprintf(file, "%s  %12s   %9s  %15s\n", key, pInfo[1], pInfo[2], pInfo[0]);
+}
 
-			break;
-		}
+template<class T>
+void CEnumerator<T>::UpdateEnumerationDB(char **pInfo, int len) const
+{
+	for (int i = 0; i < len; i++) {
+		// Eliminate all first spaces
+		auto* pntr = pInfo[i];
+		while (*pntr == ' ')
+			++pntr;
 
-		if (strcmp(buf[0], buf[1]))
-			break;
+		int j = 0;
+		auto* pEnd = strstr(pInfo[i] = pntr, "\n");
+		if (pEnd)
+			*pEnd = '\0';
+
+		while (*pntr && *pntr != ' ')
+			pntr++;
+
+		*pntr = '\0';
 	}
 
-	FCLOSE(file);
-	FCLOSE(filePrev);
-	return retVal;
+	char enumerationDB[256];
+	const auto length = getDirectory(enumerationDB, countof(enumerationDB), false);
+	sprintf_s(enumerationDB + length, countof(enumerationDB) - length, "EnumerationDB.txt");
+
+	FILE *dbFile = NULL;
+	int i = -1;
+	while (!dbFile && ++i < 2) {
+		FOPEN(file, enumerationDB, i? "w" : "r");
+		dbFile = file;
+	}
+
+	if (!dbFile)
+		return;
+
+	char key[32];
+	this->getEnumerationObjectKey(key, countof(key));
+
+	if (i) {
+		fprintf(dbFile, "%9s:        %9s:  %9s:       %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time");
+		outKeyInfo(key, pInfo, dbFile);
+		fclose(dbFile);
+		return;
+	}
+
+	int resCmp = -1;
+	char tmpFile[256], buffer[256];
+	// EnumerationDB file exists
+	// We need to find a record which corresponds to the key
+	sprintf_s(tmpFile, "%s_tmp", enumerationDB);
+	FOPEN(f, tmpFile, "w");
+	bool compareFlag = true;
+	const auto lenKey = strlen(key);
+	bool firstLine = true;   // We don't need to compare key with the first line
+	while (fgets(buffer, countof(buffer), dbFile)) {
+		if (compareFlag && !firstLine) {
+			resCmp = strncmp(buffer, key, lenKey);
+			if (resCmp >= 0) {
+				outKeyInfo(key, pInfo, f);
+				compareFlag = false;
+				if (!resCmp)
+					continue;
+			}
+		}
+
+		firstLine = false;
+		if (fputs(buffer, f) < 0)
+			return; // Something wrong
+	}
+
+	if (compareFlag)
+		outKeyInfo(key, pInfo, f);
+
+	FCLOSE(dbFile);
+	FCLOSE(f);
+
+	if (remove(enumerationDB) != 0)
+		printf("Cannot remove file %s", enumerationDB);
+	else
+	if (rename(tmpFile, enumerationDB) != 0)
+		printf("Cannot rename file '%s' to '%s'", tmpFile,  enumerationDB);
 }
 
 #if USE_STRONG_CANONICITY_A

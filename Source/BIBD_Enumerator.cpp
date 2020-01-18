@@ -95,6 +95,12 @@ bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 	return true;
 }
 
+template<class T>
+void CBIBD_Enumerator<T>::getEnumerationObjectKey(char *pInfo, int len) const {
+	SNPRINTF(pInfo, len, "(%3" _FRMT", %2" _FRMT", %2" _FRMT")",
+		this->rowNumb(), this->getInSys()->GetK(), this->getInSys()->lambda());
+}
+
 #if !CONSTR_ON_GPU
 template<class T>
 bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
@@ -104,6 +110,7 @@ bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const cha
 						this->getInSys()->GetK(), this->getInSys()->lambda(), ext ? ext : FILE_NAME(""));
 	return true;
 }
+
 
 template<class T>
 bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const

@@ -83,7 +83,7 @@ bool CIG_Enumerator<T>::fileExists(const char *path, bool file) const {
 		return retVal;
 
 	// The answer is fake. When following statement is false, the file exists,
-	// but we don't need the caller knows that, because for Inconsistent graphs
+	// but we don't need the caller knows that, because for semi-symmetric graphs
 	// all outputs for same order graphs will be in the same file
 	return this->designParams()->logFile != std::string(path);
 }

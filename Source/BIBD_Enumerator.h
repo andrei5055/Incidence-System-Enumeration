@@ -40,11 +40,13 @@ protected:
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
 	CK virtual void resetFirstUnforcedRow()							{}
 private:
+	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	CK inline void setR(T val)										 { m_r = val; }
 	CK inline auto getR() const                                      { return m_r; }
+	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
 	T m_r;
 	size_t m_firstUnforced;

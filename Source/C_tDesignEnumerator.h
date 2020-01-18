@@ -43,6 +43,8 @@ protected:
 private:
 	inline C_tDesign<T> *tDesign() const { return static_cast<C_tDesign<T> *>(this->getInSys()); }
 	inline CIntersectionStorage<T> *intersectionStorage() const { return m_pIntersectionStorage; }
+	virtual const char* getTopLevelDirName() const				{ return "t-designs"; }
+	virtual void getEnumerationObjectKey(char* pInfo, int len) const { makeJobTitle(NULL, pInfo, len); }
 
 #if USE_EXRA_EQUATIONS	
 	CVariableMapping *constructExtraEquations(size_t t, size_t nVar);

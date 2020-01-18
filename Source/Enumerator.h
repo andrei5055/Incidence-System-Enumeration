@@ -439,13 +439,13 @@ protected:
     CK inline T rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
+	bool getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const;
 #else
 	#define makeFileName(buffer, ...)						false
 #endif
-	size_t getDirectory(char *buffer, size_t len) const;
+	size_t getDirectory(char *buffer, size_t len, bool rowNeeded = true) const;
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
-	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const;
 	virtual void reset(T nRow);
 	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
 	CK virtual bool fileExists(const char *path, bool file = true) const;
@@ -453,6 +453,10 @@ protected:
 	CK virtual bool SeekLogFile() const						{ return false; }
 
 private:
+	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
+	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
+	void UpdateEnumerationDB(char **pInfo, int len) const;
+	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
 	CK virtual CRowSolution<T> *setFirstRowSolutions()		{ return NULL; }
 	CK CRowSolution<T> *FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
@@ -467,6 +471,7 @@ private:
     CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
 	virtual size_t forcibleLambda(size_t i) const			{ return -1; }
 	inline void setDesignParams(designParam *pntr)          { m_pParam = pntr; }
+	virtual const char* getTopLevelDirName() const          { return NULL; }
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else

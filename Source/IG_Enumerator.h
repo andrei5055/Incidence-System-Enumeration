@@ -58,6 +58,7 @@ private:
 	inline bool strongCheckUnitsInThreeAreas() const	{ return m_bStrongCheck; }
 	inline void setStrongCheckUnitsInThreeAreas(bool v) { m_bStrongCheck = v; }
 	bool checkThreeAreasUnits(int r, int k, T nrow) const;
+	virtual const char* getTopLevelDirName() const		{ return "Semi-symmetric_Graphs"; }
 
 	const bool m_firstPath;
 	T *m_pRowIntersections;

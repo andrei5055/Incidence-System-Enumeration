@@ -327,7 +327,7 @@ bool CCanonicityChecker<T>::TestCanonicity(T nRowMax, const CMatrixCol<T> *pEnum
 		// We need the permutations on columns AND
 		//  (a) matrix is completely constructed OR
 		//  (b) we will need to analyse the group on partially constructed matrix
-		// (As of Oct.11, 2018 this is used only for IGraphs (inconsistent graphs)
+		// (As of Oct.11, 2018 this is used only for IGraphs (semi-symmetric graphs)
 		if (permColStorage() && (rowPermut || permRowStorage()))
 			ConstructColumnPermutation(pEnum->matrix());
 //#endif

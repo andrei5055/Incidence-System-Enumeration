@@ -43,10 +43,11 @@ double CEnumInfo<T>::stringToTime(char *pTime)
 
 	double time = 0;
 	size_t i = countof(outDiv);
+	char *pDivPlace[countof(outDiv)];
 	char *pDiv = NULL;
 	while (i-- && (pDiv = strrchr(pTime, outDiv[i])) != NULL) {
 		time += atoi(pDiv + 1) * mult[i + 1];
-		*pDiv = '\0';
+		*(pDivPlace[i] = pDiv) = '\0';
 	}
 
 	pDiv = strrchr(pTime, ' ');
@@ -56,6 +57,11 @@ double CEnumInfo<T>::stringToTime(char *pTime)
 		pDiv++;
 
 	time += atoi(pDiv) * mult[i + 1];
+
+	// Recreating input value
+	while (++i < countof(pDivPlace))
+		*pDivPlace[i] = outDiv[i];
+
 	return time;
 }
 
@@ -64,7 +70,7 @@ bool CEnumInfo<T>::compareTime(char *pTime1, char *pTime2)
 {
 	const double time1 = stringToTime(pTime1);
 	const double time2 = stringToTime(pTime2);
-	return time1 > time2;
+	return time1 < time2;
 }
 
 template<class T>
