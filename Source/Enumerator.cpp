@@ -782,7 +782,17 @@ bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pB
 
 static void outKeyInfo(const char* key, char **pInfo, FILE* file)
 {
-	fprintf(file, "%s  %12s   %9s  %15s\n", key, pInfo[1], pInfo[2], pInfo[0]);
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	localtime_s(&tstruct, &now);
+	strftime(buf, sizeof(buf), "%b %d, %Y", &tstruct);
+	fprintf(file, "%s  %12s   %9s  %15s  %13s\n", key, pInfo[1], pInfo[2], pInfo[0], buf);
+}
+
+template<class T>
+void CEnumerator<T>::outputTitle(FILE *file) const {
+	fprintf(file, "%9s:        %9s:  %9s:       %9s: %9s:      %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
 template<class T>
@@ -823,7 +833,7 @@ void CEnumerator<T>::UpdateEnumerationDB(char **pInfo, int len) const
 	this->getEnumerationObjectKey(key, countof(key));
 
 	if (i) {
-		fprintf(dbFile, "%9s:        %9s:  %9s:       %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time");
+		this->outputTitle(dbFile);
 		outKeyInfo(key, pInfo, dbFile);
 		fclose(dbFile);
 		return;

@@ -53,6 +53,11 @@ bool C_tDesignEnumerator<T>::makeJobTitle(const designParam *pParam, char *buffe
 #endif
 
 template<class T>
+void C_tDesignEnumerator<T>::outputTitle(FILE* file) const {
+	fprintf(file, "%12s:        %9s:  %9s:       %9s: %9s:      %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
+}
+
+template<class T>
 void C_tDesignEnumerator<T>::prepareToTestExtraFeatures()
 {
 	m_pIntersectionStorage = new CIntersectionStorage<T>(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));

@@ -455,6 +455,7 @@ protected:
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
+	virtual void outputTitle(FILE* file) const;
 	void UpdateEnumerationDB(char **pInfo, int len) const;
 	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
