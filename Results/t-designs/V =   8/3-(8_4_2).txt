@@ -1,0 +1,16 @@
+3-(  8,   4,  2)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+           192               1               0               1               0
+           336               1               1               1               1
+           384               1               0               1               0
+          1344               1               0               1               0
+    _______________________________________________________________________________
+        Total:               4               1               4               1
+
+         4 matrices constructed in  0.00
+         1 matrix have no replicated blocks
+         4 matrices were fully constructed
+        10 threads launched on level 4 
+        Strong canonisity was used

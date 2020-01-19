@@ -1,0 +1,14 @@
+3-( 14,   4,  1)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             6               2               2
+            14               1               1
+            42               1               1
+    ________________________________________________
+         Total:              4               4
+
+         4 matrices constructed in  1:47.04
+         4 matrices have no replicated blocks
+         5 matrices were fully constructed
+         5 threads launched on level 4 

@@ -1,0 +1,33 @@
+BIBD(  7,  63, 27,  3,  9)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1           16043               0               0               0
+             2            1123               0               0               0
+             3             353               0               0               0
+             4             113               0               0               0
+             6              69               0               0               0
+             8              26               0               0               0
+            12              22               0               0               0
+            16               3               0               0               0
+            21               7               0               7               0
+            24              17               0               0               0
+            36               1               0               0               0
+            42               2               0               2               0
+            48               1               0               0               0
+            72               1               0               0               0
+           144               1               0               0               0
+           168               3               0               3               0
+    _______________________________________________________________________________
+        Total:           17785               0              12               0
+
+     17785 matrices constructed in  0.73
+         0 matrices have no replicated blocks
+     34970 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        15 threads launched on level 0 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

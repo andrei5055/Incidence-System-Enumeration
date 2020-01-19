@@ -1,0 +1,23 @@
+BIBD( 23,  23, 11, 11,  5)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             1             909             909
+             2             110             110
+             3              35              35
+             4              17              17
+             5              10              10
+             6              14              14
+            11               1               1
+            12               4               4
+            55               2               2
+            60               2               2
+           253               1               1
+           660               1               1
+    ________________________________________________
+         Total:           1106            1106
+
+      1106 matrices constructed in  2:19.34
+      1106 matrices have no replicated blocks
+      1409 matrices were fully constructed
+        15 threads launched on level 6 

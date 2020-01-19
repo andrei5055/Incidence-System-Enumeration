@@ -1,0 +1,17 @@
+BIBD( 19,  19,  9,  9,  4)
+
+        |Aut(D)|          Nd:             Ns: 
+    ________________________________________________
+             6               1               1
+             8               1               1
+             9               1               1
+            24               1               1
+            72               1               1
+           171               1               1
+    ________________________________________________
+         Total:              6               6
+
+         6 matrices constructed in  0.35
+         6 matrices have no replicated blocks
+         7 matrices were fully constructed
+        15 threads launched on level 6 
