@@ -47,10 +47,13 @@ private:
 #if USE_THREADS
 #include "C_tDesignEnumerator.h"
 #include "PBIBD_Enumerator.h"
+#include "CombBIBD_Enumerator.h"
 #include "EnumInfo.h"
+
 template<class T> class C_InSysEnumerator;
 template<class T> class C_tDesignEnumerator;
 template<class T> class CBIBD_Enumerator;
+template<class T> class CCombBIBD_Enumerator;
 
 template<class T>
 void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, size_t nRow, int threadIdx)
@@ -58,15 +61,19 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 	if (pMaster->IS_enumerator()) {
 		auto *pInsSysEnum = (const C_InSysEnumerator<T> *)(pMaster);
 		auto *pInSys = static_cast<const C_InSys<T> *>(pInsSysEnum->matrix());
-		C_InSys<T> *pSlaveDesign;
+		const C_InSys<T> *pSlaveDesign;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
 		case t_BIBD:
 			    pSlaveDesign = new C_BIBD<T>((const C_BIBD<T> *)(pInSys), nRow);
 				m_pEnum = new CBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
+		case t_CombinedBIBD:
+				pSlaveDesign = new CCombinedBIBD<T>((const CCombinedBIBD<T>*)(pInSys), nRow);
+				m_pEnum = new CCombBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
+				break;
 		case t_tDesign: {
-				auto pSlaveTDesign = new C_tDesign<T>((const C_tDesign<T> *)(pInSys), nRow);
+				const auto pSlaveTDesign = new C_tDesign<T>((const C_tDesign<T> *)(pInSys), nRow);
 				m_pEnum = new C_tDesignEnumerator<T>(pSlaveTDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 			}
@@ -75,7 +82,7 @@ void CThreadEnumerator<T>::setupThreadForBIBD(const CEnumerator<T> *pMaster, siz
 				m_pEnum = new CPBIBD_Enumerator<T>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_SemiSymmetricGraph:
-			    pSlaveDesign = new CInconsistentGraph<T>((const CInconsistentGraph<T> *)(pInSys), nRow);
+			    pSlaveDesign = new CSemiSymmetricGraph<T>((const CSemiSymmetricGraph<T> *)(pInSys), nRow);
 				m_pEnum = new CIG_Enumerator<T>(pSlaveDesign, pMaster->designParams(), enumFlags, threadIdx, NUM_GPU_WORKERS);
 				m_pEnum->CloneMasterInfo(pMaster, nRow);
 				break;

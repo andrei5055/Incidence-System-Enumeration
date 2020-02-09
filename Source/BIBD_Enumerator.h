@@ -26,6 +26,7 @@ protected:
 	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
+	virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
 #endif
 	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
 	CK virtual bool checkLambda(size_t val) const					{ return val == lambda(); }

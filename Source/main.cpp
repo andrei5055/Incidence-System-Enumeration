@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "C_tDesignEnumerator.h"
+#include "CombBIBD_Enumerator.h"
 #include "IG_Enumerator.h"
 
 #include <fstream>
@@ -72,7 +73,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 		int num = 0;
 		while (true) {
 			symb = paramText[i++];
-			if (symb == ',' || symb == '\0' || j == 3 && flag && symb == '}')
+			if (symb == ',' || symb == '\0' || j == 2 && flag && symb == '}')
 				break;
 
 			if (symb == ' ') {
@@ -82,7 +83,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 				break;
 			}
 			else
-			if (j == 3 && symb == '{') {
+			if (j == 2 && symb == '{') {
 				// Only lambda can be set with multiple values
 				if (flag || num)
 					return false;
@@ -99,7 +100,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 		}
 
 		auto iStruct = param->InterStruct();
-		if (j == 3) {
+		if (j == 2) {
 			iStruct->lambdaPtr()->push_back(num);
 			if (symb == '}')
 				return true;
@@ -164,7 +165,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	C_InSysEnumerator<T> *pInSysEnum = NULL;
 	t_objectType objType = pParam->objType;
 	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
-	auto lambda = pParam->InterStruct()->lambda();
+	const auto lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
 			switch (objType) {
@@ -174,8 +175,12 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 				break;
 			case t_SemiSymmetricGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaisKeepRowPermute;
-				pInSys = new CInconsistentGraph<T>(pParam->v, pParam->k, pParam->r, lambda);
+				pInSys = new CSemiSymmetricGraph<T>(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new CIG_Enumerator<T>(pInSys, pParam, enumFlags, FirstPath);
+				break;
+			case t_CombinedBIBD:
+				pInSys = new CCombinedBIBD<T>(pParam->v, pParam->k, lambda);
+				pInSysEnum = new CCombBIBD_Enumerator<T>(pInSys, enumFlags);
 				break;
 			default: return false;
 			}
@@ -408,6 +413,9 @@ int main(int argc, char * argv[])
 		if (line.find("PBIBD") != string::npos)
 			objType = t_PBIBD;
 		else
+		if (line.find("COMBINED_BIBD") != string::npos)
+			objType = t_CombinedBIBD;
+		else
 		if (line.find("BIBD") != string::npos)
 			objType = t_BIBD;
 		else
@@ -489,6 +497,7 @@ int main(int argc, char * argv[])
 						}
 
 		case t_BIBD:	BIBD_flag = true;
+		case t_CombinedBIBD:
 		case t_SemiSymmetricGraph:
 		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, BIBD_flag))
 							from = beg + 1;
