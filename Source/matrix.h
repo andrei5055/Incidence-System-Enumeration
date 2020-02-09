@@ -49,6 +49,9 @@ public:
 	}
 
 	CC void Init(T nRows, T nCols, T maxElement = 1, T *data = NULL) {
+		if (!nRows)
+			return;
+
 		if (!nCols)
 			nCols = nRows;
 
@@ -158,9 +161,9 @@ class CMatrix : public CMatrixData<T>
 };
 
 typedef enum {
-        t_rSet,
-        t_kSet,
-        t_lSet
+	t_lSet,  // Order is important and it used in used in CCombBIBD_Enumerator class
+	t_rSet,
+	t_kSet
 } t_numbSetType;
 
 template<class T> 
@@ -168,11 +171,8 @@ class C_InSys : public CMatrix<T>
 {
  public:
 	CK C_InSys(int nRows, int nCols, int t) : CMatrix<T>(nRows, nCols), m_t(t) {
-		setDataOwner(true);
-		// Create 3 sets of vector: R, K and Lambda
-		m_ppNumbSet = new CVector<T> *[3];
-		for (int i = 0; i < 3; i++)
-			m_ppNumbSet[i] = new CVector<T>();
+		setDataOwner(true);	 
+		m_ppNumbSet = createParamStorage(t_kSet); // Create 3 sets of vector: Lambda, R, and K 
 	}
 
 	CK C_InSys(const C_InSys *pMaster, size_t nRow) : CMatrix<T>(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
@@ -190,10 +190,7 @@ class C_InSys : public CMatrix<T>
 		if (!m_ppNumbSet || !isDataOwner())
 			return;
 
-		for (int i = 0; i < 3; i++)
-			delete m_ppNumbSet[i];
-
-		delete[] m_ppNumbSet;
+		this->deleteParamStorage(m_ppNumbSet, t_kSet);
 	}
 
 	CK inline void AddValueToNumSet(VECTOR_ELEMENT_TYPE value, t_numbSetType type)
@@ -206,9 +203,22 @@ class C_InSys : public CMatrix<T>
 	CK inline CVector<T> **numbSet() const					{ return m_ppNumbSet; }
 	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }
 	CK inline t_objectType objectType() const				{ return m_objectType; }
+protected:
+	CK inline bool isDataOwner() const						{ return m_bDataOwner; }
+	CK CVector<T>** createParamStorage(int n) const  {
+		const auto ppNumbSet = new CVector<T> * [n + 1];
+		for (int i = 0; i <= n; i++)
+			ppNumbSet[i] = new CVector<T>();
+		return ppNumbSet;
+	}
+	CK void deleteParamStorage(CVector<T>** ppParam, int n) {
+		for (int i = 0; i <= n; i++)
+			delete ppParam[i];
+
+		delete[] ppParam;
+	}
 private:
 	CK inline void setDataOwner(bool val)					{ m_bDataOwner = val; }
-	CK inline bool isDataOwner() const  					{ return m_bDataOwner; }
 
 	t_objectType m_objectType;
 	CVector<T> **m_ppNumbSet;
@@ -220,7 +230,7 @@ template<class T>
 class C_BIBD : public C_InSys<T>
 {
  public:
-	CK C_BIBD(int v, int k, int t, int lambda = 0) : C_InSys<T>(v, lambda * v * (v - 1) / (k * (k - 1)), t) 
+	CK C_BIBD(int v, int k, int t = 2, int lambda = 0) : C_InSys<T>(v, lambda * v * (v - 1) / (k * (k - 1)), t) 
 													{ InitParam(v, k, lambda); }
 	CK C_BIBD(const C_BIBD *pMaster, size_t nRow) : C_InSys<T>(pMaster, nRow) {}
 	CK ~C_BIBD() {}
@@ -254,13 +264,13 @@ protected:
 };
 
 template<class T>
-class CInconsistentGraph : public C_PBIBD<T>
+class CSemiSymmetricGraph : public C_PBIBD<T>
 {
 public:
-	CK CInconsistentGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
+	CK CSemiSymmetricGraph(int v, int k, int r, const std::vector<int> &lambdaSet) :
 		C_PBIBD<T>(v, k, r, lambdaSet) {}
-	CK CInconsistentGraph(const C_InSys<T> *pMaster, size_t nRow) : C_PBIBD<T>(pMaster, nRow) {}
-	CK ~CInconsistentGraph()		{}
+	CK CSemiSymmetricGraph(const C_InSys<T> *pMaster, size_t nRow) : C_PBIBD<T>(pMaster, nRow) {}
+	CK ~CSemiSymmetricGraph()		{}
 };
 
 template<class T>
@@ -274,4 +284,17 @@ public:
 	CK inline T lambda() const								{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
 private:
 	const T m_t;
+};
+
+template<class T>
+class CCombinedBIBD : public C_BIBD<T>
+{
+public:
+	CCombinedBIBD(int v, int k, const std::vector<int>& lambda);
+	CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : C_BIBD<T>(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {}
+	~CCombinedBIBD() { if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
+	CVector<T>** paramSets() const							{ return m_ppParamSet; }
+	CVector<T>* paramSet(int idx) const						{ return  paramSets()[idx]; }
+private:
+	CVector<T>** m_ppParamSet;
 };

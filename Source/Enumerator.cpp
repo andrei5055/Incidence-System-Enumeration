@@ -780,19 +780,25 @@ bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pB
 	return retVal;
 }
 
-static void outKeyInfo(const char* key, char **pInfo, FILE* file)
+static void outKeyInfo(const char* key, char **pInfo, FILE* file, const char *pComment = NULL)
 {
 	time_t     now = time(0);
 	struct tm  tstruct;
 	char       buf[80];
 	localtime_s(&tstruct, &now);
 	strftime(buf, sizeof(buf), "%b %d, %Y", &tstruct);
-	fprintf(file, "%s  %12s   %9s  %15s  %13s\n", key, pInfo[1], pInfo[2], pInfo[0], buf);
+	fprintf(file, "%s  %12s   %9s  %15s  %13s", key, pInfo[1], pInfo[2], pInfo[0], buf);
+	if (pComment)
+		fprintf(file, "%s", pComment);
+	else
+		fprintf(file, "\n");
 }
 
 template<class T>
 void CEnumerator<T>::outputTitle(FILE *file) const {
-	fprintf(file, "%9s:        %9s:  %9s:       %9s: %9s:      %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
+	char format[64];
+	SPRINTF(format, "%s%%9s:  %%9s:       %%9s: %%9s:      %%9s:\n", this->getObjNameFormat());
+	fprintf(file, format, this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
 template<class T>
@@ -852,7 +858,8 @@ void CEnumerator<T>::UpdateEnumerationDB(char **pInfo, int len) const
 		if (compareFlag && !firstLine) {
 			resCmp = strncmp(buffer, key, lenKey);
 			if (resCmp >= 0) {
-				outKeyInfo(key, pInfo, f);
+				const char *pComment = strstr(buffer, " >> ");
+				outKeyInfo(key, pInfo, f, pComment);
 				compareFlag = false;
 				if (!resCmp)
 					continue;

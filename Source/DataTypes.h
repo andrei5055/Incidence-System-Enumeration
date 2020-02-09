@@ -430,10 +430,11 @@ void setPrintResultNumVar(size_t numVar);
 
 typedef enum {
 	t_BIBD,			// default
+	t_CombinedBIBD,
 	t_tDesign,
 	t_PBIBD,
 	t_IncidenceSystem,
-	t_SemiSymmetricGraph
+	t_SemiSymmetricGraph,
 } t_objectType;
 
 typedef enum {
@@ -487,28 +488,28 @@ public:
 	inline CInterStruct *InterStruct()	const		{ return m_pInterStruct; }
 	inline void SetInterStruct(CInterStruct *pntr)	{ m_pInterStruct = pntr; }
 	t_objectType objType;
-	int v;
-	int k;
-	int r;
-	int t;
-	int mt_level = 0;		// Matrix row number, where the threads will be launched
-	uint outType;			// Flags which define the output information of the task
-	uint grpOrder;			// Limits for order of the group of the matrices which will be printed
-	size_t threadNumb;		// Number of threads launched to perform task
-	bool firstMatr;			// TRUE, when first matrix of the set was not yet outputted
-	bool noReplicatedBlocks;// TRUE, when only block designs with no replicated blocks should be constructed
-	std::string workingDir; // Current working directory name
-	std::string logFile = "";    // 
-	size_t rewindLen = 0;   // Length of the portion of log file, which probably will be rewinded
-	const std::vector<int> &lambda() const	{ return m_pInterStruct->lambda(); }
-	const std::vector<int> &lambdaA() const { return m_pInterStruct->lambdaA(); }
-	const std::vector<int> &lambdaB() const { return m_pInterStruct->lambdaB(); }
-	inline size_t lambdaSizeMax() const		{ return m_lambdaSizeMax; }
+	int v = 0;
+	int k = 0;
+	int r = 0;
+	int t = 0;
+	int mt_level = 0;				// Matrix row number, where the threads will be launched
+	uint outType = 0;				// Flags which define the output information of the task
+	uint grpOrder = 0;				// Limits for order of the group of the matrices which will be printed
+	size_t threadNumb = 0;			// Number of threads launched to perform task
+	bool firstMatr = true;			// TRUE, when first matrix of the set was not yet outputted
+	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed
+	std::string workingDir = "";	// Current working directory name
+	std::string logFile = "";		//
+	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
+	const std::vector<int> &lambda() const		{ return m_pInterStruct->lambda(); }
+	const std::vector<int> &lambdaA() const		{ return m_pInterStruct->lambdaA(); }
+	const std::vector<int> &lambdaB() const		{ return m_pInterStruct->lambdaB(); }
+	inline size_t lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
-	size_t m_lambdaSizeMax = 0;// Maximal number of elements in lambda()
-	                        // (will be used for formated output)
+	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
+									// (will be used for formated output)
 };
 
 #define VAR_1		1

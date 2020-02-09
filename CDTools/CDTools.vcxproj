@@ -164,6 +164,7 @@
     <ClInclude Include="..\Source\ClassArray.h" />
     <ClInclude Include="..\Source\ColOrbitManager.h" />
     <ClInclude Include="..\Source\ColOrbits.h" />
+    <ClInclude Include="..\Source\CombBIBD_Enumerator.h" />
     <ClInclude Include="..\Source\C_tDesignEnumerator.h" />
     <ClInclude Include="..\Source\DataTypes.h" />
     <ClInclude Include="..\Source\Enumerator.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="..\Source\CanonicityChecker.cpp" />
     <ClCompile Include="..\Source\ColOrbitManager.cpp" />
     <ClCompile Include="..\Source\ColOrbits.cpp" />
+    <ClCompile Include="..\Source\CombBIBD_Enumerator.cpp" />
     <ClCompile Include="..\Source\C_tDesignEnumerator.cpp" />
     <ClCompile Include="..\Source\Enumerator.cpp" />
     <ClCompile Include="..\Source\EnumInfo.cpp" />

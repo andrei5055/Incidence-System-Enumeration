@@ -115,11 +115,8 @@ bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const cha
 template<class T>
 bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
-	const auto v = this->rowNumb();
-	const auto b = this->matrix()->colNumb();
-	const auto k = this->getInSys()->GetK();
-	auto len = SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
 	int lambdaSetSize = 0;
+	auto len = getJobTitleInfo(buffer, lenBuffer);
 	len += addLambdaInfo(buffer + len, lenBuffer - len, &lambdaSetSize);
 
 	if (pParam->lambdaSizeMax() > lambdaSetSize) {
@@ -133,5 +130,14 @@ bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, 
 		SNPRINTF(buffer + len, lenBuffer - len, ")%s", comment);
 
 	return true;
+}
+
+template<class T>
+int CBIBD_Enumerator<T>::getJobTitleInfo(char *buffer, int lenBuffer) const
+{
+	const auto v = this->rowNumb();
+	const auto b = this->matrix()->colNumb();
+	const auto k = this->getInSys()->GetK();
+	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
 }
 #endif
