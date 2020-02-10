@@ -11,7 +11,7 @@ BIBD( 19,  19,  9,  9,  4)
     _______________________________________________________________________________
         Total:               6               6               1               1
 
-         6 matrices constructed in  0.15
+         6 matrices constructed in  0.14
          6 matrices have no replicated blocks
          7 matrices were fully constructed
 

@@ -1,0 +1,11 @@
+BIBD( 10,  60, 18,  3,  4)
+
+         0 matrices constructed in  1:20.11
+      3133 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 5 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

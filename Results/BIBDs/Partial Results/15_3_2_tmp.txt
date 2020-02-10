@@ -1,0 +1,11 @@
+BIBD( 15,  70, 14,  3,  2)
+
+         0 matrices constructed in 19:44.49
+         0 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 7 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
