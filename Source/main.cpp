@@ -390,6 +390,17 @@ int main(int argc, char * argv[])
 			continue;
 		}
 
+		pos = pos = find(line, "THREAD_LEVEL");
+		if (pos != string::npos) {
+			// Define the row number, where threads will be launched
+			const auto mt_level = getInteger(line, &pos);
+			if (mt_level == string::npos) {
+				printf("Cannot define thread level from: \"%s\"\n", line.c_str());
+				printf("Will use the default calculated from object's parameter: v / 2\n");
+			}
+			else
+				param.mt_level = static_cast<int>(mt_level);
+		}
 		pos = find(line, "NO_REPLICATED_BLOCKS");
 		if (pos != string::npos) {
 			param.noReplicatedBlocks = getInteger(line, &pos);
