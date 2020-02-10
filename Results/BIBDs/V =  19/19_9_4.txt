@@ -1,17 +1,23 @@
 BIBD( 19,  19,  9,  9,  4)
 
-        |Aut(D)|          Nd:             Ns: 
-    ________________________________________________
-             6               1               1
-             8               1               1
-             9               1               1
-            24               1               1
-            72               1               1
-           171               1               1
-    ________________________________________________
-         Total:              6               6
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             6               1               1               0               0
+             8               1               1               0               0
+             9               1               1               0               0
+            24               1               1               0               0
+            72               1               1               0               0
+           171               1               1               1               1
+    _______________________________________________________________________________
+        Total:               6               6               1               1
 
-         6 matrices constructed in  0.35
+         6 matrices constructed in  0.15
          6 matrices have no replicated blocks
          7 matrices were fully constructed
-        15 threads launched on level 6 
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 9 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

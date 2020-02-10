@@ -11,7 +11,7 @@ BIBD(  6,  30, 15,  3,  6)
 
          6 matrices constructed in  0.00
          0 matrices have no replicated blocks
-         7 matrices were fully constructed
+         6 matrices were fully constructed
 
 Using 64-bit program, Assembly flag: 0
         20 threads launched on level 3 (not waiting to finish mode)

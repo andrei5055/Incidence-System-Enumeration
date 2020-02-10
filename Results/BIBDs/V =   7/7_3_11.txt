@@ -20,12 +20,12 @@ BIBD(  7,  77, 33,  3, 11)
     _______________________________________________________________________________
         Total:          155118               0              16               0
 
-    155118 matrices constructed in  4.20
+    155118 matrices constructed in  4.50
          0 matrices have no replicated blocks
-    291855 matrices were fully constructed
+    230064 matrices were fully constructed
 
 Using 64-bit program, Assembly flag: 0
-        25 threads launched on level 3 (not waiting to finish mode)
+        20 threads launched on level 3 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

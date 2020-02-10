@@ -1,0 +1,84 @@
+    BIBDs:          Total #:   Simple #:        Run Time:      Date:       Comments:
+(  6,  3,  2)             1           1             0.00   Feb 09, 2020 >> Folklore
+(  6,  3,  4)             4           1             0.00   Feb 09, 2020
+(  6,  3,  6)             6           0             0.00   Feb 09, 2020
+(  6,  3,  8)            13           0             0.01   Feb 09, 2020
+(  6,  3, 10)            19           0             0.02   Feb 09, 2020
+(  6,  3, 12)            34           0             0.03   Feb 09, 2020
+(  6,  3, 14)            48           0             0.04   Feb 09, 2020
+(  6,  3, 16)            76           0             0.06   Feb 09, 2020
+(  6,  3, 18)           105           0             0.08   Feb 09, 2020
+(  7,  3,  1)             1           1             0.00   Jan 19, 2020
+(  7,  3,  2)             4           1             0.00   Jan 19, 2020
+(  7,  3,  3)            10           1             0.00   Jan 19, 2020
+(  7,  3,  4)            35           1             0.00   Jan 19, 2020
+(  7,  3,  5)           109           1             0.01   Feb 09, 2020
+(  7,  3,  6)           418           0             0.02   Feb 09, 2020
+(  7,  3,  7)          1508           0             0.07   Feb 09, 2020
+(  7,  3,  8)          5413           0             0.22   Feb 09, 2020
+(  7,  3,  9)         17785           0             0.60   Feb 09, 2020
+(  7,  3, 10)         54613           0             1.91   Feb 09, 2020
+(  7,  3, 11)        155118           0             4.50   Feb 09, 2020
+(  7,  3, 12)        412991           0            11.94   Feb 09, 2020
+(  7,  3, 13)       1033129           0            28.36   Feb 09, 2020
+(  7,  3, 14)       2449592           0          1:09.34   Feb 09, 2020
+(  7,  3, 15)       5528257           0          2:46.92   Feb 09, 2020
+(  7,  3, 16)      11944627           0          6:00.25   Feb 09, 2020
+(  7,  3, 17)      24801365           0         13:07.78   Feb 09, 2020
+(  7,  3, 18)      49693020           0         27:17.71   Feb 09, 2020
+(  7,  3, 19)      96369969           0       1:52:42.04   Feb 09, 2020
+(  7,  3, 20)     181440528           0       2:23:50.16   Feb 09, 2020
+(  8,  3,  6)       3077244           1          1:31.72   Jan 30, 2020   [14], [15]
+(  8,  4,  3)             4           4             0.00   Jan 19, 2020
+(  8,  4,  6)          2310         164             0.26   Jan 19, 2020
+(  8,  4,  9)       8360901         164          4:29.25   Jan 19, 2020
+(  8,  4, 12)    8801457694           4    3:19:12:32.93   Jan 23, 2020
+(  9,  3,  1)             1           1             0.00   Jan 24, 2020   Folklore
+(  9,  3,  2)            36          13             0.01   Jan 24, 2020
+(  9,  3,  3)         22521         332             1.40   Jan 24, 2020
+(  9,  3,  4)      16585031         332         11:50.72   Jan 24, 2020
+(  9,  3,  5)    5862121434          13    2:14:31:10.75   Dec 22, 2019  
+(  9,  4,  3)            11          11             0.00   Jan 24, 2020
+(  9,  4,  6)     271052925    20046152       3:04:03.41   Jan 10, 2020
+( 10,  3,  2)           960         394             0.15   Jan 11, 2020
+( 10,  4,  2)             3           3             0.00   Jan 11, 2020  
+( 10,  4,  4)      13769944    10081743         13:06.20   Feb 02, 2020
+( 11,  5,  2)             1           1             0.00   Jan 27, 2020
+( 11,  5,  4)          4393        3737             1.16   Jan 27, 2020
+( 12,  3,  2)     242995846    88616310       7:58:02.34   Jan 30, 2020	   [12], [15]
+( 12,  6,  5)         11603       11603            11.04   Feb 09, 2020
+( 13,  3,  1)             2           2             0.01   Feb 02, 2020
+( 13,  4,  1)             1           1             0.00   Feb 02, 2020
+( 13,  4,  2)          2461        1576             1.30   Feb 02, 2020    [16]
+( 13,  4,  3)       >=15145     >=15145             1.30   Feb 02, 2020    >=3702  ???
+( 15,  3,  1)            80          80             1.85   Dec 24, 2019
+( 15,  7,  3)             5           5             0.02   Feb 09, 2020
+( 16,  4,  1)             1           1             0.00   Feb 09, 2020
+( 16,  6,  2)             3           3             0.04   Feb 09, 2020
+( 16,  6,  3)         18920       18920            43.21   Feb 09, 2020
+( 19,  9,  4)             6           6             0.15   Feb 09, 2020
+--------------------------------------------------------------------------------
+
+[1] V. de Pasquale, Sui sistemi ternari di 13 elementi, Rend. Reale Ist. Lombardo Sci. Lett. Ser. 2, 30 (1899), pp. 213-221
+[2] F.N.Cole, The triad systems of thirteen letters, Trans. Amer. Math. Soc., 14 (1913), pp. 1-5
+[3] F.N. Cole, L.D. Cummings, H.S. White, The complete enumeration of triad systems in 15 elements,
+Proc. Natl. Acad. Sci. USA, 3 (1917), pp. 197-199.
+[4] H.S.White, F.N.Cole, L.D.Cummings, Complete classification of triad systems on fifteen elements, Mem. Natl. Acad. Sci. USA, 14 (1919), pp. 1-89
+[5] M.Hall Jr., J.D.Swift, Determination of Steiner triple systems of order 15, Math. Tables Aids Comput., 9 (1955), pp. 146-152
+[6] B.Ganter, A.Gulzow, R.Mathon, A.Rosa, A complete census of (v,k,?) block designs and of Mendelsohn triple systems of order ten, IV. 
+(10,3,2) block designs with repeated blocks, Math. Schriften Kassel (5/78) (1978).
+[7] R.Mathon, K.T.Phelps, A.Rosa, Small Steiner triple systems and their properties, Ars Combin., 15 (1983), pp. 3-110
+[8] C.J.Colbourn, M.J.Colbourn, J.J.Harms, A.Rosa, A complete census of (v,k,?) block designs and of Mendelsohn triple systems of order ten, III. 
+(10,3,2) block designs without repeated blocks, Congr. Numer., 37 (1983), pp. 211-234.
+[9] A.V.Ivanov, Constructive enumeration of incidence systems. Ann. Discrete Math., 26 (1985), pp. 227-246.
+[10] J.J. Harms, C.J. Colbourn, A.V. Ivanov, A census of (10,3,2) block designs without repeated blocks
+Sixteenth Manitoba Conference on Numerical Mathematics and Computing, Congr. Numer., vol. 57, Winnipeg, Man., 1986 (1987), pp. 147-170
+[11] R.Mathon, D.Lomas, A census of 2-(10,3,2) designs, Australas. J. Combin., 5 (1992), pp. 145-158
+[12] P.R.J.Ostergard, Enumeration of 2-(12,3,2) designs, Australas. J. Combin. 22 (2000), pp. 227–231.
+[13] P.Kaski, P.R.J. Ostergard, The Steiner triple systems of order 19, Math. Comp., 73 (2004), pp. 2075-2092
+[14] R.Mathon, A.Rosa, On 2-(v,k,?) designs of small order, C.J. Colbourn, J.H. Dinitz (Eds.), 
+Handbook of Combinatorial Designs (second ed.), Chapman & Hall/CRC Press, Boca Raton, FL (2007), pp. 25-58.
+[15] G.B.Khosrovshahiab, B.Tayfeh-Rezaiea, Classification of simple 2-(11,3,3) designs, Discrete Mathematics,
+Volume 309, Issue 3, 28 (2009), pp. 515-520.
+[16] C.Pietsch, Number of nonisomorphic block designs found with DESY (Unpublished manuscript)
+[17] M. Mohammad-Noori, B. Tayfeh-Rezaie, Backtracking algorithm for finding (14,7,4)-designs, J. Combin. Des., 11 (2003), pp. 240-248

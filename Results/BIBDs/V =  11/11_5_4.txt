@@ -1,26 +1,32 @@
 BIBD( 11,  22, 10,  5,  4)
 
-        |Aut(D)|          Nd:             Ns: 
-    ________________________________________________
-             1            3813            3401
-             2             430             280
-             3              27              10
-             4              67              36
-             5               5               2
-             6              20               1
-             8               9               0
-            10               5               3
-            11               1               1
-            12               5               0
-            20               2               2
-            24               4               0
-           110               1               1
-           120               3               0
-           660               1               0
-    ________________________________________________
-         Total:           4393            3737
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1            3813            3401               0               0
+             2             430             280               0               0
+             3              27              10               0               0
+             4              67              36               0               0
+             5               5               2               0               0
+             6              20               1               0               0
+             8               9               0               0               0
+            10               5               3               0               0
+            11               1               1               1               1
+            12               5               0               0               0
+            20               2               2               0               0
+            24               4               0               0               0
+           110               1               1               1               1
+           120               3               0               0               0
+           660               1               0               1               0
+    _______________________________________________________________________________
+        Total:            4393            3737               3               2
 
-      4393 matrices constructed in  2.52
+      4393 matrices constructed in  1.16
       3737 matrices have no replicated blocks
-      8036 matrices were fully constructed
-        15 threads launched on level 5 
+      7424 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 5 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

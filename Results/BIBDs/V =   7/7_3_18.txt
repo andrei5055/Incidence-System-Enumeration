@@ -1,0 +1,33 @@
+BIBD(  7, 126, 54,  3, 18)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1        49538671               0               0               0
+             2          136857               0               0               0
+             3           12756               0               0               0
+             4            3320               0               0               0
+             6             857               0               0               0
+             8             277               0               0               0
+            12             150               0               0               0
+            16              16               0               0               0
+            21              28               0              28               0
+            24              69               0               0               0
+            36               3               0               0               0
+            42               4               0               4               0
+            48               3               0               0               0
+            72               2               0               0               0
+           144               2               0               0               0
+           168               5               0               5               0
+    _______________________________________________________________________________
+        Total:        49693020               0              37               0
+
+  49693020 matrices constructed in 27:17.71
+         0 matrices have no replicated blocks
+  64235575 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 3 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

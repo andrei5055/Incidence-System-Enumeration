@@ -21,8 +21,13 @@ BIBD(  7,  98, 42,  3, 14)
     _______________________________________________________________________________
         Total:         2449592               0              24               0
 
-   2449592 matrices constructed in  5:56.27
+   2449592 matrices constructed in  1:09.34
          0 matrices have no replicated blocks
-   4320828 matrices were fully constructed
-         5 threads launched on level 4 
-        Strong canonisity was not used
+   3381667 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 3 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

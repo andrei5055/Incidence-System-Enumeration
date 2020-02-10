@@ -6,12 +6,12 @@ BIBD( 11,  11,  5,  5,  2)
     _______________________________________________________________________________
         Total:               1               1               1               1
 
-         1 matrix constructed in  0.01
+         1 matrix constructed in  0.00
          1 matrix has no replicated blocks
          1 matrix was fully constructed
 
 Using 64-bit program, Assembly flag: 0
-        15 threads launched on level 5 (not waiting to finish mode)
+        20 threads launched on level 5 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

@@ -1,15 +1,21 @@
 BIBD( 15,  15,  7,  7,  3)
 
-        |Aut(D)|          Nd:             Ns: 
-    ________________________________________________
-            96               1               1
-           168               2               2
-           576               1               1
-         20160               1               1
-    ________________________________________________
-         Total:              5               5
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+            96               1               1               0               0
+           168               2               2               0               0
+           576               1               1               0               0
+         20160               1               1               1               1
+    _______________________________________________________________________________
+        Total:               5               5               1               1
 
          5 matrices constructed in  0.02
          5 matrices have no replicated blocks
          5 matrices were fully constructed
-        15 threads launched on level 5 
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 7 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
