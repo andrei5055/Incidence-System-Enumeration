@@ -2,97 +2,89 @@
 #include "Enumerator.h"
 #include "RightPartFilter.h"
 
-template<class T>
-class C_InSysEnumerator : public CEnumerator<T>, public CInSysSolver<T>, public CVector<T>
+IClass2Def(_InSysEnumerator) : public IClass2(Enumerator), public IClass2(InSysSolver), public CVector<S>
 {
 public:
-	CK C_InSysEnumerator(const C_InSys<T> *pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_InSysEnumerator(const InSysPntr pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_InSysEnumerator();
-	CK virtual T getX0_3() const								{ return m_x0_3; }
+	CK virtual S getX0_3() const								{ return m_x0_3; }
 	CK virtual size_t firstUnforcedRow() const                  { return m_firstUnforcedRow; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)      { m_firstUnforcedRow = rowNum; }
-	CK virtual size_t *forcibleLambdaPntr() const               { return m_pForsibleLambda; }
+	CK virtual S *forcibleLambdaPntr() const					{ return m_pForsibleLambda; }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }
 	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 protected:
-	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }
-	CK virtual bool sortSolutions(CRowSolution<T> *ptr, size_t idx);
-	CK inline CInSysRowEquation<T> * inSysRowEquation() const	{ return (CInSysRowEquation<T> *)this->rowEquation(); }
-	CK virtual bool solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, size_t nRow) const
+	CK virtual void setX0_3(S value)							{ m_x0_3 = value; }
+	CK virtual bool sortSolutions(RowSolutionPntr ptr, size_t idx);
+	CK inline CInSysRowEquation<S> * inSysRowEquation() const	{ return (CInSysRowEquation<S> *)this->rowEquation(); }
+	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
-	CK CColOrbit<T> **unforcedOrbits(size_t nRow) const			{ return getUnforcedColOrbPntr() + this->rank() * nRow; }
-	CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const		{ return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr() : NULL; }
-	CK inline size_t forcibleLambda(size_t i) const             { return *(forcibleLambdaPntr() + i); }
-	CK virtual void setColOrbitForCurrentRow(CColOrbit<T> *pColOrb){}
-	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<T> *pColOrb)	{}
-	CK virtual void ConstructColumnPermutation(const CMatrixData<T> *pMatrix);
-	virtual void CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker<T> *pCanonChecker = NULL, bool permCol = false) const;
+	CK CColOrbit<S> **unforcedOrbits(size_t nRow) const			{ return getUnforcedColOrbPntr() + this->rank() * nRow; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const		{ return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr() : NULL; }
+	CK virtual S forcibleLambda(size_t i) const					{ return *(forcibleLambdaPntr() + i); }
+	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
+	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<S> *pColOrb)	{}
+	CK virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix);
+	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
 
 private:
-	CK void addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbit, CColOrbit<T> *pPrev, int idx);
-	CK virtual CRowSolution<T> *setFirstRowSolutions();
+	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx);
+	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual size_t MakeSystem();
-	CK virtual CRowSolution<T> *FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
-	CK void setVariableLimit(size_t nVar, T len, size_t nRowToBuild, size_t k, int colWeight);
+	CK virtual RowSolutionPntr FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
+	CK void setVariableLimit(size_t nVar, S len, size_t nRowToBuild, size_t k, int colWeight);
 	CK virtual bool checkForcibleLambda(size_t fLambda) const   { return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
     CK virtual bool constructing_t_Design()                     { return false; }
-	CK inline CRightPartFilter<T> *rightPartFilter()			{ return m_pRightPartFilter; }
-	CK inline void setForcibleLambdaPntr(size_t *p)             { m_pForsibleLambda = p; }
-	CK inline void setForcibleLambda(size_t i, size_t v)        { *(forcibleLambdaPntr() + i) = v; }
+	CK inline CRightPartFilter<S> *rightPartFilter()			{ return m_pRightPartFilter; }
+	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
+	CK inline void setForcibleLambda(S i, S val)				{ *(forcibleLambdaPntr() + i) = val; } // i < nCol, val <= nCol
 
-	T m_x0_3;
-	size_t *m_pForsibleLambda;
+	S m_x0_3;
+	S *m_pForsibleLambda;
 	size_t m_firstUnforcedRow;
-	CRightPartFilter<T> *m_pRightPartFilter;
+	CRightPartFilter<S> *m_pRightPartFilter;
 	const bool m_bNoReplBlock;
 };
 
-template<class T>
-C_InSysEnumerator<T>::C_InSysEnumerator(const C_InSys<T> *pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	m_bNoReplBlock(enumFlags & t_noReplicatedBlocks), CEnumerator<T>(pInSys, enumFlags | t_IS_enumerator, treadIdx, nCanonChecker),
-	CInSysSolver<T>(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<T>(pInSys->colNumb())
+TClass2(_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	m_bNoReplBlock(enumFlags & t_noReplicatedBlocks), IClass2(Enumerator)(pInSys, enumFlags | t_IS_enumerator, treadIdx, nCanonChecker),
+	IClass2(InSysSolver)(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<S>(pInSys->colNumb())
 {
 	const auto nCol = pInSys->colNumb();
-	this->setRowEquation(new CInSysRowEquation<T>(nCol, pInSys->GetT() > 2));
+	this->setRowEquation(new CInSysRowEquation<S>(nCol, pInSys->GetT() > 2));
 	setX0_3(nCol);
-	m_pRightPartFilter = new CRightPartFilter<T>(nCol);
+	m_pRightPartFilter = new CRightPartFilter<S>(nCol);
 	const auto nRow = pInSys->rowNumb();
-	setForcibleLambdaPntr(new size_t[nRow]);
+	setForcibleLambdaPntr(new S[nRow]);
 	memset(forcibleLambdaPntr(), 0, nRow * sizeof(*forcibleLambdaPntr()));
 	setFirstUnforcedRow();
 	setForcibleLambda(nRow - 1, this->getInSys()->lambda());
 }
 
-template<class T>
-C_InSysEnumerator<T>::~C_InSysEnumerator()
-{
+TClass2(_InSysEnumerator)::~C_InSysEnumerator() {
 	delete rightPartFilter();
 	delete[] forcibleLambdaPntr();
 }
 
-template<class T>
-bool C_InSysEnumerator<T>::sortSolutions(CRowSolution<T> *pSolution, size_t i)
-{
+TClass2(_InSysEnumerator, bool)::sortSolutions(RowSolutionPntr pSolution, size_t i) {
 	if (!pSolution->numSolutions())
 		return false;
 
 	return pSolution->findFirstValidSolution(inSysRowEquation()->variableMaxValPntr());
 }
 
-template<class T>
-CRowSolution<T> *C_InSysEnumerator<T>::setFirstRowSolutions()
-{
-	CRowSolution<T> *pSolutions = this->rowStuff(0);
+TClass2(_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
+	auto *pSolutions = this->rowStuff(0);
 	const auto *pISys = this->getInSys();
-	const CVector<T> *pR_set = pISys->GetNumSet(t_rSet);
+	const auto *pR_set = pISys->GetNumSet(t_rSet);
 	pSolutions->InitSolutions(pR_set->GetSize(), 1);
 	for (size_t i = 0; i < pR_set->GetSize(); i++)
 		pSolutions->AddElement(pR_set->GetAt(i));
@@ -100,12 +92,11 @@ CRowSolution<T> *C_InSysEnumerator<T>::setFirstRowSolutions()
 	return pSolutions;
 }
 
-template<class T>
-size_t C_InSysEnumerator<T>::MakeSystem()
+TClass2(_InSysEnumerator, size_t)::MakeSystem()
 {
 	VECTOR_ELEMENT_TYPE nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
-	VECTOR_ELEMENT_TYPE equationIdx = VECTOR_ELEMENT_TYPE_MAX;
+	VECTOR_ELEMENT_TYPE equationIdx = -1;// (1 << sizeof(S) - 1;
 	// Number of equations corresponding only to the colums which ARE NOT forcibly constructed
 	VECTOR_ELEMENT_TYPE eqIdx = 0;
 
@@ -134,13 +125,13 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 
 	int colGroupIdx = 0;
 	const auto *pColOrbPrev = this->colOrbit(nRow - 1);
-	CColOrbit<T> *pColOrbit, *pColOrbitNext = this->colOrbit(nRow);
+	CColOrbit<S> *pColOrbit, *pColOrbitNext = this->colOrbit(nRow);
 #if USE_EXRA_EQUATIONS
 	setColOrbitForCurrentRow(pColOrbitNext);
 	const size_t nextRowOrbShift = pIS->colNumb() * colOrbitLen();
 #endif
 
-	CColOrbit<T> *pPrev = NULL;
+	CColOrbit<S> *pPrev = NULL;
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
 		equationIdx++;
@@ -242,7 +233,7 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 		}
 	}
 	else
-		nVar = MATRIX_ELEMENT_MAX;
+		nVar = ELEMENT_MAX;
 
 	if (this->useCanonGroup()) {
 		if (nVar < lenPermut && nRowToBuild > 1) {
@@ -257,8 +248,7 @@ size_t C_InSysEnumerator<T>::MakeSystem()
 	return nVar;
 }
 
-template<class T>
-CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
+TClass2(_InSysEnumerator, RowSolutionPntr)::FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	const auto nRow = this->currentRowNumb();
 	const auto nRowPrev = nRow - 1;
@@ -281,19 +271,20 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 	// For all possible right parts of the systems
 	// (which are lexicographically not greater, than the vector, used for the current row)
 	auto pResult = pCurrRowSolution->newSolution();
-	auto buffer = new VECTOR_ELEMENT_TYPE[nVar];
+	VECTOR_ELEMENT_TYPE buffer[256];
+	auto pBuffer = nVar <= countof(buffer)? buffer : new VECTOR_ELEMENT_TYPE[nVar];
 	// Solution used for last constructed matrix's row:
 	const auto pCurrSolution = pPrevRowSolution->solution(lastRightPartIndex);
 	const auto forcibleLambdaValue = forcibleLambda(nRowPrev);
 	const size_t nLambdas = constructing_t_Design() ? 1 : pLambdaSet->GetSize();
-	const auto pMaxVal = inSysRowEquation()->variableMaxValPntr();
+	const auto *pMaxVal = inSysRowEquation()->variableMaxValPntr();
 	bool readyToCheckSolution = false;
 	for (PERMUT_ELEMENT_TYPE j = 0; j <= lastRightPartIndex; j++) {
 		if (!pPrevRowSolution->isValidSolution(j))
 			continue;
 
 		const auto idx = pPerm ? *(pPerm + j) : j;
-		const auto pRightSide = rightPartFilter()->getRightPart(pFirstSol + idx * len, pMaxVal, len, buffer);
+		const auto pRightSide = rightPartFilter()->getRightPart(pFirstSol + idx * len, pMaxVal, len, pBuffer);
 		if (!pRightSide)
 			continue;
 
@@ -406,12 +397,13 @@ CRowSolution<T> *C_InSysEnumerator<T>::FindSolution(size_t nVar, PERMUT_ELEMENT_
 #endif
 	}
 
-	delete[] buffer;
+	if (pBuffer != buffer)
+		delete[] pBuffer;
+
 	return  pCurrRowSolution->getSolution();
 }
 
-template<class T>
-void C_InSysEnumerator<T>::addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbit, CColOrbit<T> *pPrev, int idx)
+TClass2(_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx)
 {
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());
@@ -420,7 +412,7 @@ void C_InSysEnumerator<T>::addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbi
 
 	// All remaining elements of all columns
 	// of the current orbit should be equal to 0 or 1, respectively
-	CColOrbitManager<T>::addForciblyConstructedColOrbit(pColOrbit, idx);
+	CColOrbitManager<S>::addForciblyConstructedColOrbit(pColOrbit, idx);
 #if USE_EXRA_EQUATIONS
 	equSystem()->addForcibleOrb(pColOrbit);
 #endif
@@ -430,11 +422,10 @@ void C_InSysEnumerator<T>::addForciblyConstructedColOrbit(CColOrbit<T> *pColOrbi
 		setFirstUnforcedRow(this->currentRowNumb());
 }
 
-template<class T>
-void C_InSysEnumerator<T>::setVariableLimit(size_t nVar, T len, size_t nRowToBuild, size_t k, int colWeight)
+TClass2(_InSysEnumerator, void)::setVariableLimit(size_t nVar, S len, size_t nRowToBuild, size_t k, int colWeight)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
-	this->SetAt(nVar, static_cast<T>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
+	this->SetAt(nVar, static_cast<S>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
 	// Maximal value of any Xi cannot be bigger than X0_3, when i-th group of columns

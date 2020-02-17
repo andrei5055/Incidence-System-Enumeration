@@ -40,7 +40,7 @@ public:
 	
 	// Direct Access to the element data (may return NULL)
 	CK const TYPE* GetData() const					{ return (const TYPE*)m_pData; }
-	CK TYPE* GetData()								{ return (TYPE*)m_pData; }
+	CK TYPE* GetData()								{ return m_pData; }
 	
 	// Potentially growing the array
 	CC void SetAtGrow(size_t nIndex, ARG_TYPE newElement);

@@ -46,17 +46,15 @@ int ccc = 0;
 std::mutex out_mutex;
 #endif
 
-template class CEnumerator<MATRIX_ELEMENT_TYPE>;
+template class CEnumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
-template<class T>
-bool CEnumerator<T>::fileExists(const char *path, bool file) const
+TClass2(Enumerator, bool)::fileExists(const char *path, bool file) const
 {
 	struct stat info;
 	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
 }
 
-template<class T>
-CRowSolution<T> *CEnumerator<T>::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
+TClass2(Enumerator, RowSolutionPntr)::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	if (!prepareToFindRowSolution())
 		return NULL;
@@ -84,14 +82,13 @@ void thread_message(int threadIdx, const char *pComment, t_threadCode code, void
 }
 #endif
 
-template<typename T>
-void threadEnumerate(CThreadEnumerator<T> *threadEnum, designParam *param, const CEnumerator<T> *pMaster)
+template<typename T, typename S>
+void threadEnumerate(IClass2(ThreadEnumerator) *threadEnum, designParam *param, const EnumeratorPntr pMaster)
 {
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
 
-template<class T>
-int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnumerator<T> *threadEnum, size_t nThread) const
+TClass2(Enumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, IClass2(ThreadEnumerator) *threadEnum, size_t nThread) const
 {
 	// Try to find the index of not-running thread
 	const auto flag = code == t_threadNotUsed;
@@ -116,7 +113,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 				break;
 		}
 
-		CThreadEnumerator<T> *pEnum = threadEnum + thrIdx;
+		auto *pEnum = threadEnum + thrIdx;
 #if WRITE_MULTITHREAD_LOG 
 		fprintf(file, "==>thrIdx = %2d  CODE = %d  nThread= %d\n", thrIdx, pEnum->code(), nThread);
 		fclose(file);
@@ -156,8 +153,7 @@ int CEnumerator<T>::threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnum
 }
 #endif
 
-template<class T>
-ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pMaster, t_threadCode *pTreadCode)
+TClass2(Enumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
 {
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
@@ -209,18 +205,18 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 #endif
 
 #if USE_THREADS_ENUM
-	CThreadEnumerator<T> *pThreadEnum = NULL;
+	ThreadEnumeratorPntr pThreadEnum = NULL;
 	int thrIdx = 0;
 	#if USE_POOL
 		asio::io_service *pIoService = NULL;
 		thread_group *pThreadpool = NULL;
 	#endif
 #endif
-	auto pMatrix = static_cast<const CMatrix<T> *>(this->matrix());
+	auto pMatrix = static_cast<const MatrixPntr>(this->matrix());
 
 	// Allocate memory for the orbits of two consecutive rows
-	T nRow;
-	CRowSolution<T> *pRowSolution;
+	S nRow;
+	RowSolutionPntr pRowSolution;
 	InitRowSolutions(pMaster);
 	const bool threadFlag = pMaster != NULL;
 	if (threadFlag) {
@@ -240,7 +236,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 		pEnumInfo->startClock();
 
 #if USE_THREADS_ENUM 
-		pThreadEnum = new CThreadEnumerator<T>[pParam->threadNumb];
+		pThreadEnum = new IClass2(ThreadEnumerator)[pParam->threadNumb];
 	#if USE_POOL
 		// Create an asio::io_service and a thread_group (through pool in essence)
 		pIoService = new asio::io_service();
@@ -265,7 +261,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 	// For multi-threaded version we need to test only one top level solution
 	const size_t nRowEnd = nRow ? nRow + 1 : 0;
     this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
-	T level;
+	S level;
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 
@@ -283,7 +279,7 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 //						(pThreadEnum + thrIdx)->getThread()->detach();
 //						pThreadpool->join_all();
 #else
-						thread t1(threadEnumerate<T>, pThreadEnum + thrIdx, pParam, this);
+						thread t1(threadEnumerate<T, S>, pThreadEnum + thrIdx, pParam, this);
 						t1.detach();
 #endif
 						thread_message(thrIdx, "detached", (pThreadEnum + thrIdx)->code());
@@ -535,15 +531,13 @@ ulonglong CEnumerator<T>::Enumerate(designParam *pParam, bool writeFile, CEnumIn
 	return retVal;
 } 
 
-template<class T>
-void CEnumerator<T>::reset(T nRow) {
+TClass2(Enumerator, void)::reset(S nRow) {
 	rowStuff(nRow)->resetSolution();
 	this->resetColOrbitCurr();
 	this->resetUnforcedColOrb();
 }
 
-template<class T>
-CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
+TClass2(Enumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
 {
     const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
@@ -556,10 +550,10 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
 	const int maxElement = this->rank() - 1;
     const auto colOrbLen = this->colOrbitLen();
 	const auto *pColOrbitIni = this->colOrbitIni(nRow);
-    CColOrbit<T> *pNextRowColOrbitNew = NULL;
-    CColOrbit<T> *pColOrbitLast = NULL;
+    CColOrbit<S> *pNextRowColOrbitNew = NULL;
+    CColOrbit<S> *pColOrbitLast = NULL;
 	while (pColOrbit) {
-        CColOrbit<T> *pNewColOrbit = NULL;
+        CColOrbit<S> *pNewColOrbit = NULL;
 		// Define the number of column to start with
 		const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
         auto lenRemaining = pColOrbit->length();
@@ -571,7 +565,7 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
             
 			if (nextColOrbNeeded) {
 				if (!pNewColOrbit) {
-					pNewColOrbit = (CColOrbit<T> *)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
+					pNewColOrbit = (CColOrbit<S> *)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
 					if (pColOrbitLast)
 						pColOrbitLast->setNext(pNewColOrbit);
 					else
@@ -632,11 +626,10 @@ CColOrbit<T> *CEnumerator<T>::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) c
     return pNextRowColOrbitNew;
 }
 
-template<class T>
-void CEnumerator<T>::InitRowSolutions(const CEnumerator<T> *pMaster)
+TClass2(Enumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 {
 	const auto nRow = pMaster? pMaster->currentRowNumb() + 1 : 0;
-	auto pSolutions = new CRowSolution<T>[rowNumb() - nRow];
+	auto pSolutions = new IClass2(RowSolution)[rowNumb() - nRow];
 	for (auto i = rowNumb(); i-- > nRow;)
 		m_pRow[i] = pSolutions + i - nRow;
 
@@ -644,8 +637,7 @@ void CEnumerator<T>::InitRowSolutions(const CEnumerator<T> *pMaster)
 		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nRow * sizeof(*rowStuffPntr()));
 }
 
-template<class T>
-size_t CEnumerator<T>::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
+TClass2(Enumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
 {
 	const auto pParam = designParams();
 
@@ -697,8 +689,7 @@ static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
 	}
 }
 
-template<class T>
-bool CEnumerator<T>::getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const
+TClass2(Enumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const
 {
 	// Construct the file name of the file with the enumeration results
 	if (!makeFileName(buffer, lenBuffer, ""))
@@ -711,8 +702,7 @@ bool CEnumerator<T>::getMasterFileName(char *buffer, size_t lenBuffer, size_t *p
 	return true;
 }
 
-template<class T>
-bool CEnumerator<T>::cmpProcedure(FILE* file[2], bool *pBetterResults) const
+TClass2(Enumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) const
 {
 	const size_t lenBuf = 256;
 	const size_t len = strlen(CONSTRUCTED_IN);
@@ -730,7 +720,7 @@ bool CEnumerator<T>::cmpProcedure(FILE* file[2], bool *pBetterResults) const
 		if (pntr[0]) {
 			if (!file[1] || pntr[1]) {
 				if (pBetterResults)
-					*pBetterResults = CEnumInfo<T>::compareTime(pntr[0] + len, pntr[1] + len);
+					*pBetterResults = IClass2(EnumInfo)::compareTime(pntr[0] + len, pntr[1] + len);
 
 				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf)) {
 					char* pInfo[] = { pntr[0] + len, buf[0], buf[1] };
@@ -750,8 +740,7 @@ bool CEnumerator<T>::cmpProcedure(FILE* file[2], bool *pBetterResults) const
 	return false;
 }
 
-template<class T>
-bool CEnumerator<T>::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
+TClass2(Enumerator, bool)::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
 {
 	FOPEN(file, fileName, "r");
 	if (!file)
@@ -794,15 +783,13 @@ static void outKeyInfo(const char* key, char **pInfo, FILE* file, const char *pC
 		fprintf(file, "\n");
 }
 
-template<class T>
-void CEnumerator<T>::outputTitle(FILE *file) const {
+TClass2(Enumerator, void)::outputTitle(FILE *file) const {
 	char format[64];
 	SPRINTF(format, "%s%%9s:  %%9s:       %%9s: %%9s:      %%9s:\n", this->getObjNameFormat());
 	fprintf(file, format, this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
-template<class T>
-void CEnumerator<T>::UpdateEnumerationDB(char **pInfo, int len) const
+TClass2(Enumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 {
 	for (int i = 0; i < len; i++) {
 		// Eliminate all first spaces
@@ -885,7 +872,7 @@ void CEnumerator<T>::UpdateEnumerationDB(char **pInfo, int len) const
 }
 
 #if USE_STRONG_CANONICITY_A
-void CEnumerator<T>::checkUnusedSolutions(CRowSolution *pRowSolution)
+TClass2(Enumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 {
 	if (!pRowSolution)
 		return;
@@ -922,8 +909,7 @@ void CEnumerator<T>::checkUnusedSolutions(CRowSolution *pRowSolution)
 #endif
 
 #if CANON_ON_GPU
-template<class T>
-size_t CEnumerator<T>::copyColOrbitInfo(T nRow) const
+TClass2(Enumerator, size_t)::copyColOrbitInfo(S nRow) const
 {
 	// Function copy existing information about the orbits of columns  
 	// into new structures, which could be used on GPU

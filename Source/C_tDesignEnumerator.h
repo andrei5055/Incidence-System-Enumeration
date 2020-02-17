@@ -3,21 +3,19 @@
 
 typedef struct {
 	size_t nVar;
-	CColOrbit<MATRIX_ELEMENT_TYPE> *pColOrb;
+	CColOrbit<SIZE_TYPE> *pColOrb;
 } OrbToVarMapping;
 
 typedef CContainer<OrbToVarMapping *> COrbToVar;
 template<class T> class CIntersectionStorage;
-//template<class T> class CEnumerator;
 
-template<class T>
-class C_tDesignEnumerator : public CBIBD_Enumerator<T>
+IClass2Def(_tDesignEnumerator) : public  IClass2(BIBD_Enumerator)
 #if USE_EXRA_EQUATIONS
 	, public CEquSystem, private COrbToVar
 #endif
 {
 public:
-	CK C_tDesignEnumerator(const C_tDesign<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_tDesignEnumerator(const IClass2(_tDesign) *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_tDesignEnumerator();
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
@@ -30,9 +28,9 @@ protected:
 #endif
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t nVar);
 	CK virtual void prepareToTestExtraFeatures();
-	CK virtual void copyInfoFromMaster(const CEnumerator<T> *pMaster);
-	CK virtual bool constructing_t_Design() { return true; }
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
+	CK virtual void copyInfoFromMaster(const EnumeratorPntr pMaster);
+	CK virtual bool constructing_t_Design()						{ return true; }
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
 #if USE_EXRA_EQUATIONS
 	CK virtual CEquSystem *equSystem()							{ return this; }
 	CK virtual bool prepareToFindRowSolution()					{ equSystem()->resetArray(); return true; }
@@ -41,8 +39,8 @@ protected:
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb);
 #endif
 private:
-	inline C_tDesign<T> *tDesign() const { return static_cast<C_tDesign<T> *>(this->getInSys()); }
-	inline CIntersectionStorage<T> *intersectionStorage() const { return m_pIntersectionStorage; }
+	inline auto tDesign() const									{ return static_cast<TDesignPntr>(this->getInSys()); }
+	inline auto intersectionStorage() const						{ return m_pIntersectionStorage; }
 	virtual const char* getTopLevelDirName() const				{ return "t-designs"; }
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const { makeJobTitle(NULL, pInfo, len); }
 	virtual void outputTitle(FILE *file) const;
@@ -56,6 +54,6 @@ private:
 	//	size_t m_nColOrbIdx;
 	//	OrbToVarMapping *m_pOrbVarMapping;
 #endif
-	CIntersectionStorage<T> *m_pIntersectionStorage;
+	CIntersectionStorage<S> *m_pIntersectionStorage;
 };
 

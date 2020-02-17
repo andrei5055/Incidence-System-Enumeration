@@ -8,25 +8,24 @@
 
 #include "Enumerator.h"
 
-template class CCanonicityChecker<MATRIX_ELEMENT_TYPE>;
+template class CCanonicityChecker<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
-template<class T>
-void CCanonicityChecker<T>::InitCanonicityChecker(T nRow, T nCol, int rank, T *pMem)
+CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem)
 {
 	m_rank = rank;
 	m_pPermutRow = (CPermut *)(pMem += nRow);
-	m_pPermutRow->Init(nRow, pMem = (T *)((char *)pMem + sizeof(CPermut)));
+	m_pPermutRow->Init(nRow, pMem = (S *)((char *)pMem + sizeof(CPermut)));
 	m_pPermutCol = (CPermut *)(pMem += nRow);
-	m_pPermutCol->Init(nCol, pMem = (T *)((char *)pMem + sizeof(CPermut)));
+	m_pPermutCol->Init(nCol, pMem = (S *)((char *)pMem + sizeof(CPermut)));
 	setColIndex(pMem += nCol);
 	m_pCounter = (CCounter<int> *)(pMem += (nCol << 1));
-	m_pCounter->Init(rank, (int *)(pMem = (T *)((char *)pMem + sizeof(CCounter<int>))));
-	setPermStorage((CPermutStorage<T> *)(pMem = (T *)((char *)pMem + rank * sizeof(int))));
-	m_nColNumbStorage = (CColNumbStorage **)(pMem = (T *)((char *)pMem + sizeof(CPermutStorage<T>)));
-	pMem = (T *)((char *)pMem + rank * sizeof(CColNumbStorage *));
+	m_pCounter->Init(rank, (int *)(pMem = (S *)((char *)pMem + sizeof(CCounter<int>))));
+	setPermStorage((PermutStoragePntr)(pMem = (S *)((char *)pMem + rank * sizeof(int))));
+	m_nColNumbStorage = (CColNumbStorage **)(pMem = (S *)((char *)pMem + sizeof(IClass2(PermutStorage))));
+	pMem = (S *)((char *)pMem + rank * sizeof(CColNumbStorage *));
 	for (int i = rank; i--;) {
 		m_nColNumbStorage[i] = (CColNumbStorage *)(pMem);
-		pMem = (T *)((char *)pMem + sizeof(CColNumbStorage));
+		pMem = (S *)((char *)pMem + sizeof(CColNumbStorage));
 		m_nColNumbStorage[i]->Init(nCol, pMem);
 		pMem += nCol;
 	}
@@ -35,12 +34,11 @@ void CCanonicityChecker<T>::InitCanonicityChecker(T nRow, T nCol, int rank, T *p
 	setSolutionStorage(NULL);
 }
 
-template<class T>
-void CCanonicityChecker<T>::init(T nRow, bool savePerm)
+CanonicityChecker(void)::init(S nRow, bool savePerm)
 {
 	setNumRow(nRow);
     setStabilizerLength(nRow-1);
-	setStabilizerLengthAut(MATRIX_ELEMENT_MAX);
+	setStabilizerLengthAut(ELEMENT_MAX);
 
     auto *pRow = permRow();
     for (auto i = nRow; i--;)
@@ -68,8 +66,7 @@ void CCanonicityChecker<T>::init(T nRow, bool savePerm)
 		permRowStorage()->initPermutStorage();
 }
 
-template<class T>
-void CCanonicityChecker<T>::revert(T i)
+CanonicityChecker(void)::revert(S i)
 {
     // Reverse suffix (if needed)
     auto *array = permRow();
@@ -78,8 +75,7 @@ void CCanonicityChecker<T>::revert(T i)
         array[i] ^= (array[j] ^= (array[i] ^= array[j]));
 }
 
-template<class T>
-T CCanonicityChecker<T>::next_permutation(T idx) {
+CanonicityChecker(S)::next_permutation(S idx) {
 	// We are using the algorithm from http://nayuki.eigenstate.org/res/next-lexicographical-permutation-algorithm/nextperm.java
 	// taking into account that we don't need the the permutations which are equivalent with respect to already found orbits of the 
 	// automorphis group acting on the matrix's rows.
@@ -95,14 +91,15 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
 	// Find non-increasing suffix
     auto *array = permRow();
     const auto nRow = numRow();
-	T temp, i, j;
+	S temp, i, j;
 
 	// Check if the algorithm, used immediately after 
 	// some automorphism was found
-	if (idx == MATRIX_ELEMENT_MAX - 1 && array[stabilizerLength()] == nRow - 1)
-		idx = MATRIX_ELEMENT_MAX;		// no, we will use the standart one
+	const auto IDX_MAX = ELEMENT_MAX - 1;
+	if (idx == IDX_MAX && array[stabilizerLength()] == nRow - 1)
+		idx = ELEMENT_MAX;		// no, we will use the standart one
 
-    if (idx == MATRIX_ELEMENT_MAX - 1) {
+    if (idx == IDX_MAX) {
         // Firts call after some automorphism was found
         temp = array[idx = (int)(i = stabilizerLength())];
         for (j = nRow; --j > temp;)
@@ -111,12 +108,12 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
         for (auto k = j++; k-- > i;)
             array[k+1] = k;
     } else {
-        if (idx >= MATRIX_ELEMENT_MAX - 1) {
+        if (idx >= IDX_MAX) {
             j = i = nRow;
             while (--i > 0 && array[i - 1] >= array[i]);
         
             if (i-- == 0)
-                return MATRIX_ELEMENT_MAX;
+                return ELEMENT_MAX;
 
             // Find successor to pivot
             temp = array[i];
@@ -134,13 +131,13 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
     if (stabilizerLength() == i) {
         bool flag = false;
 		auto k = j, tmp = array[j];
-        if (idx >= MATRIX_ELEMENT_MAX - 1) {
+        if (idx >= IDX_MAX) {
             while (k > i && *(orbits() + array[k]) != array[k])
                 k--;
             
             if (k != j) {
                 if (!k)
-                    return MATRIX_ELEMENT_MAX;
+                    return ELEMENT_MAX;
             
                 flag = k == i;
                 tmp = array[k--];
@@ -155,7 +152,7 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
                 flag = k == nRow;
                 if (flag) {
                     if (!i)
-                        return MATRIX_ELEMENT_MAX;
+                        return ELEMENT_MAX;
                     
                     // Re-establish trivial permutation
                     k = idx - 1;
@@ -171,7 +168,7 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
         
         array[j] = tmp;
         if (flag) {
-            j = idx >= MATRIX_ELEMENT_MAX - 1? nRow - 1 : i;
+            j = idx >= ELEMENT_MAX - 1? nRow - 1 : i;
             temp = array[--i];
             setStabilizerLength(i);
         }
@@ -179,7 +176,7 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
     
     array[i] = array[j];
     array[j] = temp;
-    if (idx >= MATRIX_ELEMENT_MAX - 1) {
+    if (idx >= ELEMENT_MAX - 1) {
  		if (stabilizerLength() > i)
 			setStabilizerLength(i);
 
@@ -189,10 +186,9 @@ T CCanonicityChecker<T>::next_permutation(T idx) {
 	return i;
 }
 
-template<class T>
-void CCanonicityChecker<T>::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bool rowPermut, bool calcGroupOrder)
+CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool rowPermut, bool calcGroupOrder)
 {
-	T idx = 0;
+	S idx = 0;
 	while (idx == permut[idx])
 		idx++;
 
@@ -207,13 +203,12 @@ void CCanonicityChecker<T>::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bo
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 
-template<class T>
-void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
+CanonicityChecker(void)::addAutomorphism(bool rowPermut)
 {
 	UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
 	if (!rowPermut) {
 		// Saving only column's orbit permutation
-		T *permCol;
+		S *permCol;
 		const auto lenPerm = getLenPermutCol(&permCol);
 		if (groupOrder() == 1) {		// no permutations were saved yet
 			permStorage()->savePermut(lenPerm, NULL);	// save trivial permutation
@@ -228,13 +223,12 @@ void CCanonicityChecker<T>::addAutomorphism(bool rowPermut)
 		permStorage()->savePermut(numRow(), permRow());
 }
 
-template<class T>
-void CCanonicityChecker<T>::updateGroupOrder()
+CanonicityChecker(void)::updateGroupOrder()
 {
+	S len = 1;
+	const auto *pOrb = orbits();
 	const auto i = stabilizerLengthAut();
 	auto idx = i;
-	int len = 1;
-	const auto *pOrb = orbits();
 	while (++idx < numRow()) {
 		if (*(pOrb + idx) == i)
 			len++;
@@ -244,8 +238,7 @@ void CCanonicityChecker<T>::updateGroupOrder()
 }
 
 #if USE_ASM <= 1   // We are not using Assembly OR we are using inline Assembly
-template<class T>
-int CCanonicityChecker<T>::checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const
+CanonicityChecker(int)::checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const
 {
 #if USE_ASM == 1
 	_asm {	
@@ -375,9 +368,8 @@ int CCanonicityChecker<T>::checkColOrbit(size_t orbLen, size_t nColCurr, const T
 }
 #endif
 
-template<class T>
-void CCanonicityChecker<T>::reconstructSolution(const CColOrbit<T> *pColOrbitStart, const CColOrbit<T> *pColOrbit, 
-	size_t colOrbLen, const CColOrbit<T> *pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize)
+CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
+	size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize)
 {
 	// Skip all colOrbits which were equal to the tested solution
 	int nOrb = 0;
@@ -428,18 +420,16 @@ void CCanonicityChecker<T>::reconstructSolution(const CColOrbit<T> *pColOrbitSta
 	}
 }
 
-template<class T>
-void CCanonicityChecker<T>::outputAutomorphismInfo(FILE *file, const CMatrixData<T> *pMatrix) const
+CanonicityChecker(void)::outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix) const
 {
 	MUTEX_LOCK(out_mutex);
 	outString("\nOrbits and generating permutations:\n", file);
-	const T *pColOrbits = permColStorage() && (m_enumFlags & t_colOrbitsConstructed)? getColOrbits(0) : NULL;
+	const auto pColOrbits = permColStorage() && (m_enumFlags & t_colOrbitsConstructed)? getColOrbits(0) : NULL;
 	permStorage()->outputAutomorphismInfo(file, orbits(), permColStorage(), pColOrbits, pMatrix);
 	MUTEX_UNLOCK(out_mutex);
 }
 
-template<class T>
-bool CCanonicityChecker<T>::groupIsTransitive() const
+CanonicityChecker(bool)::groupIsTransitive() const
 { 
 	if (groupOrder() % numRow())
 		return false;
@@ -452,8 +442,7 @@ bool CCanonicityChecker<T>::groupIsTransitive() const
 	return true;
 }
 
-template<class T>
-bool CCanonicityChecker<T>::printMatrix(const designParam *pParam) const
+CanonicityChecker(bool)::printMatrix(const designParam *pParam) const
 {
 	const uint outType = pParam->outType;
 	return	outType & t_AllObject ||
@@ -463,8 +452,7 @@ bool CCanonicityChecker<T>::printMatrix(const designParam *pParam) const
 			  outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
 }
 
-template<class T>
-T CCanonicityChecker<T>::rowToChange(T nRow) const
+CanonicityChecker(S)::rowToChange(S nRow) const
 {
 	// Defines row of matrix which needs to be changed since it makes matrix non-canonical
 	auto i = nRow;
@@ -476,10 +464,9 @@ T CCanonicityChecker<T>::rowToChange(T nRow) const
 	return nRow;
 }
 
-template<class T>
-T * CCanonicityChecker<T>::constructColIndex(const CColOrbit<T> *pColOrbit, const CColOrbit<T> *pColOrbitIni, size_t colOrbLen)
+CanonicityChecker(S *)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen)
 {
-	T idx = 0;
+	S idx = 0;
 	while (pColOrbit) {
 		// Define the number of columns to start with
 		const size_t numCol = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
@@ -491,8 +478,7 @@ T * CCanonicityChecker<T>::constructColIndex(const CColOrbit<T> *pColOrbit, cons
 	return colIndex();
 }
 
-template<class T>
-T CCanonicityChecker<T>::getLenPermutCol(T **permCol) const
+CanonicityChecker(S)::getLenPermutCol(S **permCol) const
 {
 	*permCol = colIndex() + numCol();
 	return numColOrb();

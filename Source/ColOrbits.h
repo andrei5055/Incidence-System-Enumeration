@@ -1,11 +1,9 @@
 #pragma once
 #include "Vector.h"
 
-template<class T> class CRowSolution;
+//template<class T> class CRowSolution;
 
-template<class T> 
-class CColOrbit
-{
+IClass1Def(S, ColOrbit) {
  public:
 	CC CColOrbit() {
 #if !WAIT_THREADS
@@ -14,41 +12,39 @@ class CColOrbit
 		assignOrbID(myOrbID);
 	}
 
-	CC virtual ~CColOrbit()								{}   
- 	CC void Init(T length, CColOrbit *pNext = NULL)		{ setLength(length); setNext(pNext); }
-	CC inline T length() const							{ return m_nLength; }
-	CC inline CColOrbit *next() const					{ return m_pNext; }
-	CC inline void setNext(CColOrbit *pntr)             { m_pNext = pntr; }
+	CC virtual ~CColOrbit()							{}   
+ 	CC void Init(S length, CColOrbit *pNext = NULL)	{ setLength(length); setNext(pNext); }
+	CC inline S length() const						{ return m_nLength; }
+	CC inline CColOrbit *next() const				{ return m_pNext; }
+	CC inline void setNext(CColOrbit *pntr)			{ m_pNext = pntr; }
 	CC virtual void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
-	CC virtual unsigned int *getEntryCntrs() const		{ return NULL; }
-	CC virtual int columnWeight() const					{ return 0; }
+	CC virtual unsigned int *getEntryCntrs() const	{ return NULL; }
+	CC virtual int columnWeight() const				{ return 0; }
     CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
 	CC void clone(const CColOrbit *pColOrb);
-	CC inline void setLength(T len)						{ m_nLength = len; }
+	CC inline void setLength(S len)					{ m_nLength = len; }
 private:
-	T m_nLength;
-	CColOrbit<T> *m_pNext;
+	S m_nLength;
+	IClass1(S, ColOrbit) *m_pNext;
  protected:
 	 MY_ORB_ID
 };
 
-template<class T>
-CColOrbit<T> *CColOrbit<T>::InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit<T> *pColOrbit, int idx)
+TClass1(S, ColOrbit, ColOrbPntr)::InitOrbit(int lenFragm, size_t colOrbitLen, const ColOrbPntr pColOrbit, int idx)
 {
-	CColOrbit<T> *pColOrbitNext = (CColOrbit<T> *)((char *)this + lenFragm * colOrbitLen);
+	auto pColOrbitNext = (ColOrbPntr)((char *)this + lenFragm * colOrbitLen);
 	Init(lenFragm, pColOrbitNext);
 	InitEntryCntrs(pColOrbit, idx);
 	return pColOrbitNext;
 }
 
-template<class T>
-void CColOrbit<T>::clone(const CColOrbit<T> *pColOrb)
+TClass1(S, ColOrbit, void)::clone(const ColOrbPntr pColOrb)
 {
 	setLength(pColOrb->length());
 	InitEntryCntrs(pColOrb);
-	CColOrbit<T> *pNext = pColOrb->next();
+	auto pNext = pColOrb->next();
 	if (pNext) {
-		CColOrbit<T> *pNxt = (CColOrbit<T> *)((char *)this + ((const char *)pNext - (const char *)pColOrb));
+		auto pNxt = (ColOrbPntr)((char *)this + ((const char *)pNext - (const char *)pColOrb));
 		pNxt->clone(pNext);
 		setNext(pNxt);
 	}
@@ -56,12 +52,12 @@ void CColOrbit<T>::clone(const CColOrbit<T> *pColOrb)
 		setNext(NULL);
 }
 
-template<class T>class CColOrbitIS : public CColOrbit<T>
+IClass1Def(S, ColOrbitIS) : public IClass1(S, ColOrbit)
 {// Orbits for Incidence Systems
  public:
 	 CC CColOrbitIS()													{ setColumnWeight(0); } 
 	 CC ~CColOrbitIS()													{} 
-	 virtual CC void InitEntryCntrs(const CColOrbit<T> *pParent, int idx = 0)	{ setColumnWeight(pParent->columnWeight() + idx); }
+	 virtual CC void InitEntryCntrs(const ColOrbPntr pParent, int idx = 0)	{ setColumnWeight(pParent->columnWeight() + idx); }
 	 virtual CC int columnWeight() const								{ return m_nColumnWeight; }
  protected:
 
@@ -70,11 +66,11 @@ template<class T>class CColOrbitIS : public CColOrbit<T>
 	 int m_nColumnWeight;
 };
 
-template<class T>class CColOrbitCS : public CColOrbit<T>
+IClass1Def(S, ColOrbitCS) : public IClass1(S, ColOrbit)
 {// Orbits for Colored Incidence Systems
  public:
 	CC ~CColOrbitCS()													 { delete [] getEntryCntrs(); }
-	CC virtual void InitEntryCntrs(const CColOrbit<T> *pParent, int idx) {
+	CC virtual void InitEntryCntrs(const ColOrbPntr pParent, int idx) {
 		memcpy(getEntryCntrs(), pParent->getEntryCntrs(), maxElement() * sizeof(getEntryCntrs()[0]));
 		++*(getEntryCntrs() + idx);
 	}

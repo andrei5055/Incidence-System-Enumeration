@@ -6,20 +6,19 @@
 #include "EquSystem.h"
 #endif
 
-template class C_InSysEnumerator<MATRIX_ELEMENT_TYPE>;
+template class C_InSysEnumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
-template<class T>
-void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdxStorage, CCanonicityChecker<T> *pCanonChecker, bool permCol) const
+TClass2(_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();
-	CMatrixCol<T> matrCol(pMatrix);
+	IClass2(MatrixCol) matrCol(pMatrix);
 	// For now we will consider only binary incidence systems
 	// This part of the program will be a bit more complicated for general case
 	assert(matrCol.rankMatr() <= 2);
 
 	matrCol.initiateColOrbits(rowNumb, this->IS_enumerator());
-	auto pColIdxMem = pColIdxStorage? pColIdxStorage : new T[nCols];
+	auto pColIdxMem = pColIdxStorage? pColIdxStorage : new S[nCols];
 
 	const auto colOrbLen = matrCol.colOrbitLen();
 	bool flag = false;
@@ -33,10 +32,10 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 		for (auto j = nCols; j--;)
 			pColIdxMem[j] = j;
 
-		CColOrbit<T> *pColOrbitNext = matrCol.colOrbits()[i];
+		auto *pColOrbitNext = matrCol.colOrbits()[i];
 		while (i < rowNumb) {
 			T *pBeg = matrCol.matrix()->GetRow(i);
-			CColOrbit<T> *pColOrbit = pColOrbitNext;
+			auto *pColOrbit = pColOrbitNext;
 			auto pColOrbNext = pColOrbitNext = matrCol.colOrbits()[++i];
 			auto pColIdx = pColIdxMem;
 
@@ -48,7 +47,7 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 				// incidence with current element (corresponding to the current row of the matrix)
 
 				const auto len = pColOrbit->length();
-				auto idx = 0;
+				uint32_t idx = 0;
 				auto idxLast = len;
 				while (true) {
 					// Find first zero from left
@@ -72,13 +71,13 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 
 				pColOrbit = pColOrbit->next();
 				if (i < rowNumb) {
-					CColOrbit<T> *pNext = pColOrbit ? (CColOrbit<T> *)((char *)pColOrbNext + colOrbLen * len) : NULL;
+					CColOrbit<S> *pNext = pColOrbit ? (CColOrbit<S> *)((char *)pColOrbNext + colOrbLen * len) : NULL;
 
 					// Save the column's orbit information
 					if (idx == 0 || idx == len) // Orbit was not splitted
 						pColOrbNext->Init(len, pNext);
 					else {
-						CColOrbit<T> *pNxt = (CColOrbit<T> *)((char *)pColOrbNext + colOrbLen * idx);
+						CColOrbit<S> *pNxt = (CColOrbit<S> *)((char *)pColOrbNext + colOrbLen * idx);
 						pColOrbNext->Init(idx, pNxt);
 						pNxt->Init(len - idx, pNext);
 					}
@@ -95,7 +94,7 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 
 		if (permCol && colPermFound) {
 			// Permut of columns is needed
-			int jMin = 0;
+			uint32_t jMin = 0;
 			while (jMin < nCols && pColIdxMem[jMin] == jMin)
 				jMin++;
 
@@ -147,10 +146,9 @@ void C_InSysEnumerator<T>::CanonizeByColumns(CMatrixData<T> *pMatrix, T *pColIdx
 	delete[] pTmp;
 }
 
-template<class T>
-void C_InSysEnumerator<T>::ConstructColumnPermutation(const CMatrixData<T> *pMatrix)
+TClass2(_InSysEnumerator, void)::ConstructColumnPermutation(const MatrixDataPntr pMatrix)
 {
-	C_InSys<T> transformedMatr;
+	IClass2(_InSys) transformedMatr;
 	transformedMatr.InitWithPermutedRows(pMatrix, this->permRow(), this->numRow());
 	const auto colNumb = pMatrix->colNumb();
 	CanonizeByColumns(&transformedMatr, this->permColStorage()->allocateMemoryForPermut(colNumb));

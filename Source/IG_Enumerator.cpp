@@ -1,25 +1,24 @@
 
 #include "IG_Enumerator.h"
 
-template class CIG_Enumerator<MATRIX_ELEMENT_TYPE>;
+template class CIG_Enumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 bool isPrime(int k);
 
-template<class T>
-CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pParam, unsigned int enumFlags, bool firstPath, int treadIdx, uint nCanonChecker) :
-	CPBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker), m_firstPath(firstPath) {
+TClass2(IG_Enumerator)::CIG_Enumerator(const InSysPntr pBIBD, const designParam *pParam, unsigned int enumFlags, bool firstPath, int treadIdx, uint nCanonChecker) :
+	IClass2(PBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker), m_firstPath(firstPath) {
 	const auto inSys = this->getInSys();
 	const auto lambdaSet = inSys->GetNumSet(t_lSet);
 	auto nLambd = lambdaSet->GetSize();
 
 	m_pRowIntersections = nLambd > 2 || lambdaSet->GetAt(0) || lambdaSet->GetAt(1) != 1 ?
-		new T[lenRowIntersection(this->rowNumb())] : NULL;
+		new S[lenRowIntersection(this->rowNumb())] : NULL;
 
 	// Allocate memory to store current lambdaA, lambdaB for blocks
 	// This set of lambda's is not known, but it cannot have more than k + 1 elements
 	const auto k = inSys->GetK();
 	const auto r = inSys->GetR();
 	const auto len = k + 1;
-	m_pLambda[0] = new T[2 * len + nLambd];
+	m_pLambda[0] = new S[2 * len + nLambd];
 	m_pLambda[2] = (m_pLambda[1] = m_pLambda[0] + nLambd) + len;
 
 	// Converting the values lamdaB into T format
@@ -27,8 +26,8 @@ CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pP
 	for (auto i = nLambd; i--;)
 		*(m_pLambda[0] + i) = coeffB[i];
 
-	m_pElements = new CIncidenceStorage<T>(inSys->rowNumb(), r);
-	m_pBlocks = new CIncidenceStorage<T>(inSys->colNumb(), k);
+	m_pElements = new CIncidenceStorage<T, S>(inSys->rowNumb(), r);
+	m_pBlocks = new CIncidenceStorage<T, S>(inSys->colNumb(), k);
 	setElementFlags(NULL);
 	setPermCols(NULL);
 	setNumRows(0);
@@ -36,7 +35,7 @@ CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pP
 
 	// Allocate memory to store the numbers of units in three areas, if needed
 	if (--nLambd <= 2 && pParam->lambda()[nLambd] == 2 && k == r) {
-		setAreaWeight(new int[3]);
+		setAreaWeight(new uint[3]);
 		memset(areaWeight(), 0, 3 * sizeof(*areaWeight()));
 		const bool flag = /*false;*/ !pParam->InterStruct()->Counterparts();
 		setStrongCheckUnitsInThreeAreas(flag && k % 3);
@@ -44,8 +43,7 @@ CIG_Enumerator<T>::CIG_Enumerator(const C_InSys<T> *pBIBD, const designParam *pP
 		setAreaWeight(NULL);
 }
 
-template<class T>
-CIG_Enumerator<T>::~CIG_Enumerator() {
+TClass2(IG_Enumerator)::~CIG_Enumerator() {
 	delete[] rowIntersections();
 	delete[] lambdaBSrc();
 	delete[] elementFlags();
@@ -53,9 +51,8 @@ CIG_Enumerator<T>::~CIG_Enumerator() {
 	delete[] areaWeight();
 }
 
-template<class T>
-void CIG_Enumerator<T>::CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {
-	const auto pMaster = static_cast<const CIG_Enumerator<T> *>(p);
+TClass2(IG_Enumerator, void)::CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {
+	const auto pMaster = static_cast<const IClass2(IG_Enumerator) *>(p);
 	copyRowIntersection(pMaster->rowIntersections());
 
 	// Copying the numbers of units which are in three areas, if we use this check
@@ -70,15 +67,13 @@ void CIG_Enumerator<T>::CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {
 	setNumRows(pMaster->numRows());
 }
 
-template<class T>
-void CIG_Enumerator<T>::copyRowIntersection(const T *pntr) {
+TClass2(IG_Enumerator, void)::copyRowIntersection(const S *pntr) {
 	if (rowIntersections())
 		memcpy(rowIntersections(), pntr, lenRowIntersection(this->rowNumb()) * sizeof(*pntr));
 }
 
-template<class T>
-bool CIG_Enumerator<T>::fileExists(const char *path, bool file) const {
-	const bool retVal = CEnumerator<T>::fileExists(path, file);
+TClass2(IG_Enumerator, bool)::fileExists(const char *path, bool file) const {
+	const bool retVal = IClass2(Enumerator)::fileExists(path, file);
 	if (!file || !retVal)
 		return retVal;
 
@@ -88,8 +83,7 @@ bool CIG_Enumerator<T>::fileExists(const char *path, bool file) const {
 	return this->designParams()->logFile != std::string(path);
 }
 
-template<class T>
-bool CIG_Enumerator<T>::createNewFile(const char *fName) const {
+TClass2(IG_Enumerator, bool)::createNewFile(const char *fName) const {
 	if (!fName)
 		return firstPath();
 
@@ -100,10 +94,9 @@ bool CIG_Enumerator<T>::createNewFile(const char *fName) const {
 	return true;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags, CEnumerator<T> *pEnum) const
+TClass2(IG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
-	if (!CPBIBD_Enumerator<T>::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
+	if (!IClass2(PBIBD_Enumerator)::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
 
 	if (!this->groupIsTransitive())
@@ -123,8 +116,8 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	const designParam *pDesignParam = this->designParams();
 	if (pDesignParam->lambda().size() > 2) {
 		auto degrees(pDesignParam->lambdaA());
-		int r = pDesignParam->r;
-		for (int i = 1; i < nRows; ++i) {
+		const int r = pDesignParam->r;
+		for (auto i = nRows; --i;) {
 			const auto pRow = pMatrix->GetRow(i);
 			int lambdaCur = 0;
 			for (int j = 0; j < r; ++j)
@@ -137,9 +130,9 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	}
 
 	// Need to check that transposed matrix is not isomorphic to constructed one
-	C_InSys<T> transpMatr;
+	IClass2(_InSys) transpMatr;
 	transpMatr.InitTransposed(pMatrix, mult);
-	CCanonicityChecker<T> canonChecker(transpMatr.rowNumb(), nCols);
+	IClass2(CanonicityChecker) canonChecker(transpMatr.rowNumb(), nCols);
 	this->CanonizeByColumns(&transpMatr, NULL, &canonChecker);
 
 	// Transposed matrix also should be transitive on the rows
@@ -149,11 +142,12 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	auto pntr = pMatrix->GetDataPntr();
 	bool retVal = false;
 	if (mult > 1) {
-		auto pntrTr = transpMatr.GetDataPntr() - nCols;
-		for (int i = 0; !retVal && i < nRows; i++, pntr += nCols) {
-			for (int j = 0; j < mult; ++j) {
+		const auto *pntrTr = transpMatr.GetDataPntr() - nCols;
+		for (auto i = nRows; i--; pntr += nCols) {
+			for (auto j = mult; j--;) {
 				if (memcmp(pntr, pntrTr += nCols, nCols * sizeof(T))) {
 					retVal = true;
+					i = 0;
 					break;
 				}
 			}
@@ -170,8 +164,7 @@ bool CIG_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<
 	return retVal;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
+TClass2(IG_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer);
 	const auto pParam = this->designParams();
@@ -180,12 +173,11 @@ bool CIG_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char 
 	return true;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::prepareToFindRowSolution() {
+TClass2(IG_Enumerator, bool)::prepareToFindRowSolution() {
 	// In that function we
 	// (a) check the numbers of units in the areas
 	// (b) calculate the intersection of last constructed row with all previously constructed rows
-	auto nRow = this->currentRowNumb() - 1;
+	S nRow = this->currentRowNumb() - 1;
 	if (!nRow)
 		return true;
 
@@ -199,8 +191,8 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	const auto pMatrix = this->matrix();
 	const auto nLambd = this->designParams()->lambdaB().size();
 	const auto len = r + k + nLambd + 2 * nLambdas();
-	T bufIdx[64];
-	T *pIdx = len > countof(bufIdx) ? new T[len] : bufIdx;
+	S bufIdx[64];
+	S *pIdx = len > countof(bufIdx) ? new S[len] : bufIdx;
 
 	uchar blockFlg[64];
 	uchar *pBlockFlags = pMatrix->colNumb() > countof(blockFlg)? new uchar [pMatrix->colNumb()] : blockFlg;
@@ -241,7 +233,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	auto step = this->rowNumb();
 	pIntersection += nRow - step;
 
-	for (int i = 0; i < nRow; ++i) {
+	for (uint i = 0; i < nRow; ++i) {
 		// Define the intersection of the current and last rows of the matrix
 		size_t lambda = 0;
 		for (auto j = r; j--;) {
@@ -264,8 +256,7 @@ bool CIG_Enumerator<T>::prepareToFindRowSolution() {
 	return retBal;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::checkThreeAreasUnits(int r, int k, T nRow) const
+TClass2(IG_Enumerator, bool)::checkThreeAreasUnits(S r, S k, S nRow) const
 {
 	const auto *pRow = this->matrix()->GetRow(nRow);
 	if (nRow == 2 && *(pRow + 1))
@@ -273,8 +264,8 @@ bool CIG_Enumerator<T>::checkThreeAreasUnits(int r, int k, T nRow) const
 
 	const auto lambdaB = this->designParams()->lambdaB();
 	const auto b2 = lambdaB[lambdaB.size() - 1];
-	const auto valMax = b2 - 1;
-	int fromIdx, nCol, nColLast, lim = 2 * (k - 1);
+	const S valMax = b2 - 1;
+	S fromIdx, nCol, nColLast, lim = 2 * (k - 1);
 	bool flag;
 	if (!strongCheckUnitsInThreeAreas()) {
 		// Theorem 1: When b(2) != 0, b(3) == ... == b(k) == 0, following three (k-2)x(k-2) areas contain exactly b(2)-1 units each, 
@@ -417,9 +408,8 @@ bool CIG_Enumerator<T>::checkThreeAreasUnits(int r, int k, T nRow) const
 	return retVal;
 }
 
-template<class T>
-void CIG_Enumerator<T>::reset(T nRow) {
-	CEnumerator<T>::reset(nRow);
+TClass2(IG_Enumerator, void)::reset(S nRow) {
+	IClass2(Enumerator)::reset(nRow);
 	if (nRow-- == numRows()) 
 		setNumRows(0);
 
@@ -484,7 +474,7 @@ void CIG_Enumerator<T>::reset(T nRow) {
 }
 
 template<class T>
-static int lexCompare(const std::vector<int> &lamA, const std::vector<int> &lam, const T *lambdaA, int idx, int mult)
+static int lexCompare(const std::vector<uint> &lamA, const std::vector<uint> &lam, const T *lambdaA, int idx, uint mult)
 {
 	idx /= mult;
 	for (auto j = lam.size(); j--;) {
@@ -507,8 +497,7 @@ static int lexCompare(const std::vector<int> &lamA, const std::vector<int> &lam,
 	return 0;			// both are the same
 }
 
-template<class T>
-bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *pRowOrbits) const
+TClass2(IG_Enumerator, bool)::CheckOrbits(const PermutStoragePntr permRowStorage, S *pRowOrbits) const
 {
 	// Last block containing first element was just constructed
 	// We can check the Aut(M) to see if it is transitive on first k blocks
@@ -516,7 +505,7 @@ bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *
 		return false;
 
 	const int from = pRowOrbits ? 1 : 0;
-	T *pColOrbit = this->getColOrbits(0);
+	auto *pColOrbit = this->getColOrbits(0);
 	permRowStorage->CreateOrbits(this->permColStorage(), this->matrix(), pRowOrbits, pColOrbit, from);
 	for (auto j = this->getInSys()->GetR(); j--;) {
 		if (*(pColOrbit + j))
@@ -526,13 +515,11 @@ bool CIG_Enumerator<T>::CheckOrbits(const CPermutStorage<T> *permRowStorage, T *
 	return true;
 }
 
-template<class T>
-void CIG_Enumerator<T>::FindAllElementsOfBlock(T nRow, size_t nColCurr, int j, T *pElementNumb) const
+TClass2(IG_Enumerator, void)::FindAllElementsOfBlock(S nRow, size_t nColCurr, int j, S *pElementNumb) const
 {
 	// Making the array of indices of all elements which belong to current block
 	// NOTE: the i-th element alwais belong to the block # nColCurr
-	T i;
-	pElementNumb[--j] = i = nRow - 1;
+	auto i = pElementNumb[--j] = nRow - 1;
 	// Looking for remaining elements which also belong to the same block
 	const auto pMatrix = this->matrix();
 	while (true) {
@@ -545,13 +532,12 @@ void CIG_Enumerator<T>::FindAllElementsOfBlock(T nRow, size_t nColCurr, int j, T
 	}
 }
 
-template<class T>
-bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
+TClass2(IG_Enumerator, bool)::CheckConstructedBlocks(S nRow, S k, S *pElementNumb)
 {
 	// We will check the parameters b(i) for all elements, which belong to the constructed block
 	// They should be as defined in designParam::lambdaB
 	const auto *pColOrbitIni = *(this->colOrbitsIni() + nRow);
-	const CColOrbit<T> *pColOrbit = this->colOrbit(nRow);
+	const auto *pColOrbit = this->colOrbit(nRow);
 
 	auto lastBlockIdx = this->getInSys()->GetR() - 1;
 	const auto nLambd = this->designParams()->lambdaB().size();
@@ -567,13 +553,13 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 			FindAllElementsOfBlock(nRow, nColCurr, k, pElementNumb);
 
 			// Ordered pair of element numbers 
-			T sIdx, bIdx;
-			for (T i = 0; i < k; ++i) {
-				T *pIndex = &sIdx;
+			S sIdx, bIdx;
+			for (S i = 0; i < k; ++i) {
+				auto *pIndex = &sIdx;
 				bIdx = *(pElementNumb + i);
 
 				memcpy(lambdaBCurrRow, lambdaBSrc(), nLambd * sizeof(*lambdaBCurrRow));
-				for (T j = 0; j < k; ++j) {
+				for (S j = 0; j < k; ++j) {
 					if (j == i) {
 						sIdx = *(pElementNumb+i);
 						pIndex = &bIdx;
@@ -614,8 +600,7 @@ bool CIG_Enumerator<T>::CheckConstructedBlocks(T nRow, T k, T *pElementNumb)
 	return true;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T *pElementNumb, uchar *pBlockFlags)
+TClass2(IG_Enumerator, bool)::CheckTransitivityOnConstructedBlocks(S nRow, S k, S r, S *pElementNumb, uchar *pBlockFlags)
 {
 	// We cannot make this check only when
 	//   (a) we checked canonicity before
@@ -629,10 +614,10 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 	const auto *pColOrbitIni = *(this->colOrbitsIni() + nRow);
 	const auto *pColOrbit = this->colOrbit(nRow);
 	const auto pMatrix = this->matrix();
-	const int colNumb = pMatrix->colNumb();
-	const int rowNumb = pMatrix->rowNumb();
+	const auto colNumb = pMatrix->colNumb();
+	const auto rowNumb = pMatrix->rowNumb();
 
-	C_InSys<T> matr;  // Incidence System, which will be canonize
+	IClass2(_InSys) matr;  // Incidence System, which will be canonize
 	T *pMatr = NULL;
 	uchar *pElemFlags;
 
@@ -679,7 +664,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 			bool flag = true;
 
 			// Loop over all these elements
-			int i = 0;
+			S i = 0;
 			for (; i < k; ++i) {
 				// Check if all blocks of current element are constructed
 				const auto currElem = pElementNumb[i];
@@ -687,7 +672,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 
 				// When we are here, all r blocks associated with the first elements 
 				// are constructed. Therefore, there is no need to test them.  
-				int j = colNumb;
+				S j = colNumb;
 				while (--j >= r) {
 					if (!pCurrElem[j] || pBlockFlags[j] == 1)
 						continue;
@@ -696,7 +681,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 						break;   // The block was previously checked and it is NOT yet constructed
 
 					// Check if block # j is constructed
-					int kTmp = k;
+					auto kTmp = k;
 					auto idx = nRow;
 					const auto *pRow = pMatrix->GetRow(idx-1) + j + colNumb;
 					while (idx--) {
@@ -731,7 +716,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 					pMatr = new T[colNumb * numRows()];
 					if (!elementFlags()) {
 						setElementFlags(new uchar[rowNumb]); // allocate maximal amount of flags
-						setPermCols(new T[colNumb]);
+						setPermCols(new S[colNumb]);
 					}
 
 					pElemFlags = elementFlags();
@@ -745,7 +730,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 					// Create permutation of columns which corresponds to the maximal representation of the row of currElem 
 					int idx1 = 0;
 					int idx0 = k;
-					T *pPermCols = permCols();
+					auto *pPermCols = permCols();
 					auto * const pntr = pMatrix->GetRow(currElem);
 					for (j = 0; j < colNumb; ++j) {
 						if (*(pntr + j)) {
@@ -817,7 +802,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 
 				// Matrix constructed, let's find its canonical representation
 				matr.AssignData(pMatr);
-				CCanonicityChecker <T> canonChecker(matr.rowNumb(), colNumb);
+				IClass2(CanonicityChecker) canonChecker(matr.rowNumb(), colNumb);
 				this->CanonizeByColumns(&matr, NULL, &canonChecker, true);
 
 				if (memcmp(pMatrix->GetDataPntr(), matr.GetDataPntr(), matr.lenData()))
@@ -843,8 +828,7 @@ bool CIG_Enumerator<T>::CheckTransitivityOnConstructedBlocks(T nRow, T k, T r, T
 	return !exitFlag;
 }
 
-template<class T>
-bool CIG_Enumerator<T>::DefineInterstructForBlocks(size_t nColCurr, T k, const T *pElementNumb, T i, T *lambdaACurrCol) const
+TClass2(IG_Enumerator, bool)::DefineInterstructForBlocks(size_t nColCurr, S k, const S *pElementNumb, S i, S *lambdaACurrCol) const
 {
 	// The structure of intersection of constructed block with the other (even not yet completely
 	// constructed) blocks will be checked. It should be exactly the same as for block #0

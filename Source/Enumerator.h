@@ -78,43 +78,42 @@ typedef enum {
 	t_GPU
 } t_ProcType;
 
-template<class T>
-class CMatrixCol : public CColOrbitManager<T>
+IClass2Def(MatrixCol) : public CColOrbitManager<S>
 {
 public:
-	CC CMatrixCol(const CMatrixData<T> *pMatrix, uint enumFlags = t_enumDefault) :
-		CColOrbitManager<T>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
+	CC CMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_enumDefault) :
+		CColOrbitManager<S>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
 		initiateMatrixCol(pMatrix, enumFlags);
 	}
-	CC CMatrixCol(const CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, uint enumFlags) :
-		CColOrbitManager<T>(maxElem + 1, rowNumb, colNumb) {
+	CC CMatrixCol(const MatrixDataPntr pMatrix, S rowNumb, S colNumb, S maxElem, uint enumFlags) :
+		CColOrbitManager<S>(maxElem + 1, rowNumb, colNumb) {
 		initiateMatrixCol(pMatrix, enumFlags & (t_allFlags ^ t_matrixOwner));
 	}
 	CC ~CMatrixCol() {
 		if (isMatrOwner())
-			delete static_cast<const CMatrix<T> *>(matrix());
+			delete matrix();
 	}
-	CC inline void initiateMatrixCol(const CMatrixData<T> *pMatrix, uint enumFlags = t_IS_enumerator) {
+	CC inline void initiateMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_IS_enumerator) {
 		m_pMatrix = pMatrix;
 		setMatrOwner(enumFlags & t_matrixOwner);
 		setIS_Enumerator(enumFlags & t_IS_enumerator);
 		setOutFile(NULL);
 	}
-	CC inline const CMatrixData<T> *matrix() const	{ return m_pMatrix; }
-	CK inline bool IS_enumerator() const			{ return m_bIS_Emunerator; }
-	inline void closeFile()							{ if (outFile()) { fclose(outFile()); setOutFile(NULL); } }
+	CC inline const MatrixDataPntr matrix() const		{ return m_pMatrix; }
+	CK inline bool IS_enumerator() const				{ return m_bIS_Emunerator; }
+	inline void closeFile()								{ if (outFile()) { fclose(outFile()); setOutFile(NULL); } }
 #if !CONSTR_ON_GPU
-	CC inline void setOutFile(FILE *file)			{ m_pFile = file; }
+	CC inline void setOutFile(FILE *file)				{ m_pFile = file; }
 #endif
-	inline FILE *outFile() const					{ return m_pFile; }
-	inline FILE **outFilePntr()						{ return &m_pFile; }
+	inline FILE *outFile() const						{ return m_pFile; }
+	inline FILE **outFilePntr()							{ return &m_pFile; }
 protected:
-	CC inline void setIS_Enumerator(bool val)		{ m_bIS_Emunerator = val; }
+	CC inline void setIS_Enumerator(bool val)			{ m_bIS_Emunerator = val; }
 private:
-	CC inline void setMatrOwner(bool val)			{ m_bMatrOwner = val; }
-	CC inline bool isMatrOwner() const				{ return m_bMatrOwner; }
+	CC inline void setMatrOwner(bool val)				{ m_bMatrOwner = val; }
+	CC inline bool isMatrOwner() const					{ return m_bMatrOwner; }
 
-	const CMatrixData<T> *m_pMatrix;
+	const MatrixDataPntr m_pMatrix;
 	bool m_bMatrOwner;
 	bool m_bIS_Emunerator;
 	FILE *m_pFile;
@@ -122,24 +121,23 @@ private:
 
 #include "EnumInfo.h"
 
-template<class T>
-class CMatrixCanonChecker : public CMatrixCol<T>, public CCanonicityChecker<T>
+IClass2Def(MatrixCanonChecker) : public IClass2(MatrixCol), public IClass2(CanonicityChecker)
 {
 public:
-	CC CMatrixCanonChecker(const CMatrixData<T> *pMatrix, uint enumFlags) :
-		CMatrixCol<T>(pMatrix, enumFlags),
-		CCanonicityChecker<T>(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
+	CC CMatrixCanonChecker(const MatrixDataPntr pMatrix, uint enumFlags) :
+		IClass2(MatrixCol)(pMatrix, enumFlags),
+		IClass2(CanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
 															{ setEnumInfo(NULL); }
 
-	CC CMatrixCanonChecker(CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
-		CMatrixCol<T>(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
-		CCanonicityChecker<T>(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
+	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, S rowNumb, S colNumb, T maxElem, bool IS_enum) :
+		IClass2(MatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
+		IClass2(CanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
 	CC ~CMatrixCanonChecker()								{ delete enumInfo(); }
 
-	CC inline void setEnumInfo(CEnumInfo<T> *pEnumInfo)		{ m_pEnumInfo = pEnumInfo; }
-	CC inline CEnumInfo<T> *enumInfo() const				{ return m_pEnumInfo; }
+	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)		{ m_pEnumInfo = pEnumInfo; }
+	CC inline auto enumInfo() const							{ return m_pEnumInfo; }
 private:
-	CEnumInfo<T> *m_pEnumInfo;
+	EnumInfoPntr m_pEnumInfo;
 };
 
 #if CANON_ON_GPU
@@ -398,45 +396,45 @@ private:
 #define CloseCanonInfo()
 #endif
 
-template<class T> class CThreadEnumerator;
+IClass2Def(ThreadEnumerator);
+
 #if CONSTR_ON_GPU
 #define MAKE_JOB_TITLE(x, y,...)
 #else
 #define MAKE_JOB_TITLE(x, y,...) x->makeJobTitle(y, __VA_ARGS__)
 #endif
 
-template<class T>
-class CEnumerator : public CMatrixCanonChecker<T>
+IClass2Def(Enumerator) : public IClass2(MatrixCanonChecker)
 {
 public:
-	CK CEnumerator(const CMatrix<T> *pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
+	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
-	CK inline CRowSolution<T> *rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
-	CK ulonglong Enumerate(designParam *pParam, bool writeFile = false, CEnumInfo<T> *pEnumInfo = NULL, const CEnumerator<T> *pMaster = NULL, t_threadCode *pTreadCode = NULL);
+	CK inline RowSolutionPntr rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
+	CK ulonglong Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
-	CK virtual VECTOR_ELEMENT_TYPE getX0_3() const          { return 0; }
-	CK inline CRowSolution<T> **rowStuffPntr() const						{ return m_pRow;  }
+	CK virtual S getX0_3() const							{ return 0; }
+	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
     CK virtual size_t firstUnforcedRow() const              { return 0; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)  {}
-	CK virtual size_t *forcibleLambdaPntr() const           { return NULL; }
+	CK virtual S *forcibleLambdaPntr() const				{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
-	CK virtual void CloneMasterInfo(const CEnumerator<T> *p, size_t nRow) {}
+	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline designParam *designParams() const				{ return m_pParam; }
 
 #if CANON_ON_GPU
 	CK inline auto GPU_CanonChecker() const					{ return m_pGPU_CanonChecker; }
-	size_t copyColOrbitInfo(T nRow) const;
+	size_t copyColOrbitInfo(S nRow) const;
 #endif
 protected:
 	CK virtual bool prepareToFindRowSolution()				{ return true; }
-	CK inline C_InSys<T> *getInSys() const					{ return this->IS_enumerator()? (C_InSys<T> *)this->matrix() : NULL; }
+	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
     CK virtual void setX0_3(VECTOR_ELEMENT_TYPE value)      {}
-	CK inline CSimpleArray<T> *rowEquation() const			{ return m_pRowEquation; }
-	virtual int unforcedElement(const CColOrbit<T> *p, int nRow) const    { return -1; }
-    CK virtual bool sortSolutions(CRowSolution<T> *p, size_t idx) { return false;  /* not implemented */ }
-	CK inline void setRowEquation(CSimpleArray<T> *pntr)    { m_pRowEquation = pntr; }
-    CK inline T rowNumb() const								{ return this->matrix()->rowNumb(); }
+	CK inline CSimpleArray<S> *rowEquation() const			{ return m_pRowEquation; }
+	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const    { return -1; }
+    CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
+	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
+    CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
 	bool getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const;
@@ -446,8 +444,8 @@ protected:
 	size_t getDirectory(char *buffer, size_t len, bool rowNeeded = true) const;
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
-	virtual void reset(T nRow);
-	CK CColOrbit<T> *MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
+	virtual void reset(S nRow);
+	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
@@ -459,19 +457,19 @@ private:
 	virtual const char* getObjNameFormat() const			{ return "%9s:        "; }
 	void UpdateEnumerationDB(char **pInfo, int len) const;
 	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const { return true; }
-	CK virtual CRowSolution<T> *setFirstRowSolutions()		{ return NULL; }
-	CK CRowSolution<T> *FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
+	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
+	CK RowSolutionPntr FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK virtual size_t MakeSystem() = 0;
 #if USE_THREADS
-	int threadWaitingLoop(int thrIdx, t_threadCode code, CThreadEnumerator<T> *threadEnum, size_t nThread) const;
+	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
-	CK virtual CRowSolution<T> *FindSolution(size_t n, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
+	CK virtual RowSolutionPntr FindSolution(size_t n, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
     CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
-    CK virtual CColOrbit<T> **getUnforcedColOrbPntr() const	{ return NULL; }
-	virtual size_t forcibleLambda(size_t i) const			{ return -1; }
+    CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
+	virtual S forcibleLambda(size_t i) const				{ return -1; }
 	inline void setDesignParams(designParam *pntr)          { m_pParam = pntr; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 #if USE_STRONG_CANONICITY_A
@@ -495,8 +493,8 @@ private:
 	#define TestCanonicityOnGPU()		false
 #endif
 
-	CRowSolution<T> **m_pRow;
-	CSimpleArray<T> *m_pRowEquation;
+	RowSolutionPntr *m_pRow;
+	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
 #if CANON_ON_GPU
@@ -504,18 +502,15 @@ private:
 #endif
 };
 
-template<class T>
-CEnumerator<T>::CEnumerator(const CMatrix<T> *pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	CMatrixCanonChecker<T>(pMatrix, enumFlags)
+TClass2(Enumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	IClass2(MatrixCanonChecker)(pMatrix, enumFlags)
 {
-	m_pRow = new CRowSolution<T> *[pMatrix->rowNumb()];
+	m_pRow = new RowSolutionPntr[pMatrix->rowNumb()];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new CGPU_CanonChecker<T>(nCanonChecker, pMatrix, treadIdx) : NULL);
 }
 
-template<class T>
-CEnumerator<T>::~CEnumerator()
-{
+TClass2(Enumerator)::~CEnumerator() {
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
 	delete rowEquation();

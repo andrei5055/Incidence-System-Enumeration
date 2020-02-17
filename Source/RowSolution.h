@@ -11,10 +11,9 @@
 
 #include "InSysRowEquation.h"
 #include "ColOrbits.h"
-//class CMatrix;
-//class CColOrbit;
-template<class T> class CCanonicityChecker;
-template<class T> class CInSysSolver;
+
+IClass2Def(CanonicityChecker);
+IClass2Def(InSysSolver);
 
 typedef CArray<uchar, uchar> CArrayOfCanonFlags;
 
@@ -38,34 +37,33 @@ public:
 	CArrayOfCanonFlags *m_CanonFlgs;
 };
 
-template<class T>
-class CRowSolution : public CVector<T>
+IClass2Def(RowSolution) : public CVector<S>
 {
 public:
- 	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<T>(size * nVect, pCoord) {
+ 	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<S>(size * nVect, pCoord) {
 																	setSolutionPerm(NULL);
 																	InitSolutions(size, nVect, pCoord);
 																}
     CK ~CRowSolution()											{ delete solutionPerm(); }
-    CK inline const T *firstSolution() const					{ return this->GetData(); }
-	CK inline const T *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionSize(); }
-	CK inline const T *currSolution() const						{ return firstSolution() + variantIndex() * solutionSize(); }
+    CK inline const S *firstSolution() const					{ return this->GetData(); }
+	CK inline const S *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionSize(); }
+	CK inline const S *currSolution() const						{ return firstSolution() + variantIndex() * solutionSize(); }
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
     CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
-    CK T *newSolution();
-    CK T *copySolution(const CInSysSolver<T> *pSysSolver);
+    CK S *newSolution();
+    CK S *copySolution(const InSysSolverPntr pSysSolver);
 	CK CRowSolution *NextSolution(bool useCanonGroup = false);
 	void removeNoncanonicalSolutions(size_t startIndex) const;
-	size_t moveNoncanonicalSolutions(const T *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
+	size_t moveNoncanonicalSolutions(const S *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
 	CK inline bool isValidSolution(size_t idx) const			{ const uchar *pCanonFlags = solutionPerm()->canonFlags();
 																  return pCanonFlags ? *(pCanonFlags + idx) != 0xff : true; }
 	CK void InitSolutions(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL);
 	CK inline size_t solutionSize() const						{ return m_Size; }
 	CK inline void setSolutionSize(size_t size)					{ m_Size = size; }
     CK CRowSolution *getSolution();
-    CK bool findFirstValidSolution(const T *pMax, const T *pMin = NULL);
-	CK bool checkChoosenSolution(const CColOrbit<T> *pColOrbit, size_t nRowToBuild, size_t kMin);
-	CK void sortSolutions(CCanonicityChecker<T> *pCanonChecker = NULL);
+    CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
+	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin);
+	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
     void printSolutions(FILE *file, bool markNextUsed = false) const;
 	CK inline PERMUT_ELEMENT_TYPE solutionIndex() const			{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
@@ -75,17 +73,17 @@ public:
 	inline bool isLastSolution() const							{ return solutionIndex() + 1 == numSolutions(); }
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 private:
-	CK void sortSolutionByGroup(CCanonicityChecker<T> *pCanonChecker);
+	CK void sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex(PERMUT_ELEMENT_TYPE i) const	{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(i) : i; }
-    void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const T *pSol = NULL) const;
+    void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }
-	size_t findSolution(const T *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
+	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline size_t lenOrbitOfSolution() const                    { return m_nLenSolOrb; }
-    CK inline T *lastSolution() const							{ return (T *)currSolution() - solutionSize(); }
+    CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionSize(); }
 #if USE_THREADS || MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
 	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const;
@@ -100,8 +98,7 @@ private:
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
 
-template<class T>
-void CRowSolution<T>::InitSolutions(size_t size, unsigned int nVect, CArrayOfVectorElements *pCoord)
+TClass2(RowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArrayOfVectorElements *pCoord)
 {
 	setSolutionIndex(0);
 	setSolutionSize(size);					// vector length
@@ -110,21 +107,17 @@ void CRowSolution<T>::InitSolutions(size_t size, unsigned int nVect, CArrayOfVec
 	setNumSolutions(nVect);
 }
 
-template<class T>
-T *CRowSolution<T>::newSolution()
-{
+TClass2(RowSolution, S *)::newSolution() {
 	const auto numSolution = solutionIndex() + 1;
 	if (this->GetSize() < numSolution * solutionSize())
 		this->IncreaseVectorSize(solutionSize());
 
 	auto pntr = currSolution();
 	nextSolutionIndex();
-	return (T *)pntr;
+	return (S *)pntr;
 }
 
-template<class T>
-CRowSolution<T> *CRowSolution<T>::getSolution()
-{
+TClass2(RowSolution, RowSolutionPntr)::getSolution() {
 	if (!solutionIndex())
 		return NULL;
 
@@ -134,8 +127,7 @@ CRowSolution<T> *CRowSolution<T>::getSolution()
 	return this;
 }
 
-template<class T>
-T *CRowSolution<T>::copySolution(const CInSysSolver<T> *pSysSolver)
+TClass2(RowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
 {
 	auto pSolution = lastSolution();
 	if (!pSysSolver->isValidSolution(pSolution))
@@ -146,9 +138,7 @@ T *CRowSolution<T>::copySolution(const CInSysSolver<T> *pSysSolver)
 	return pSolution;
 }
 
-template<class T>
-CRowSolution<T> *CRowSolution<T>::NextSolution(bool useCanonGroup)
-{
+TClass2(RowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	uchar *pCanonFlags = useCanonGroup ? solutionPerm()->canonFlags() : NULL;
 	if (!pCanonFlags)
 		return nextSolutionIndex() < numSolutions() ? this : NULL;
@@ -162,9 +152,7 @@ CRowSolution<T> *CRowSolution<T>::NextSolution(bool useCanonGroup)
 	return NULL;
 }
 
-template<class T>
-bool CRowSolution<T>::findFirstValidSolution(const T *pMax, const T *pMin)
-{
+TClass2(RowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin) {
 #if USE_PERM
 	const auto pFirst = firstSolution();
 	const size_t nSolutions = numSolutions();
@@ -172,9 +160,9 @@ bool CRowSolution<T>::findFirstValidSolution(const T *pMax, const T *pMin)
 	size_t n, idx = 0;
 	for (auto i = solutionSize(); i--;) {
 		// Current min and max values we have to test
-		const T minVal = pMin ? *(pMin + i) : 1;
-		const T maxVal = *(pMax + i);
-		const T currentVal = *(pFirst + pPerm->GetAt(idx) * solutionSize() + i);
+		const S minVal = pMin ? *(pMin + i) : 1;
+		const S maxVal = *(pMax + i);
+		const S currentVal = *(pFirst + pPerm->GetAt(idx) * solutionSize() + i);
 		if (currentVal >= minVal) {
 			// No need to check minVal anymore
 			// We need to make sure that before pCurrentPoz there is at least one value, which is less than maxVal
@@ -216,16 +204,16 @@ bool CRowSolution<T>::findFirstValidSolution(const T *pMax, const T *pMin)
 
 	setSolutionIndex(idx - 1);
 #else
-	const T *pFirst = firstSolution();
-	const T *pLast = pFirst + solutionSize() * numSolutions();
-	const T *pCurrentPoz = pFirst + solutionSize();
+	const S *pFirst = firstSolution();
+	const S *pLast = pFirst + solutionSize() * numSolutions();
+	const S *pCurrentPoz = pFirst + solutionSize();
 	for (auto i = solutionSize(); i--;) {
 		pCurrentPoz--;
-		const T *pTmp;
+		const S *pTmp;
 
 		// Current min and max values we have to test
-		const T minVal = pMin ? *(pMin + i) : 1;
-		const T maxVal = *(pMax + i);
+		const S minVal = pMin ? *(pMin + i) : 1;
+		const S maxVal = *(pMax + i);
 		if (*pCurrentPoz >= minVal) {
 			// No need to check minVal anymore
 			// We need to make sure that before pCurrentPoz there is at least one value, which is less than maxVal
@@ -271,9 +259,7 @@ bool CRowSolution<T>::findFirstValidSolution(const T *pMax, const T *pMin)
 	return true;
 }
 
-template<class T>
-void CRowSolution<T>::sortSolutions(CCanonicityChecker<T> *pCanonChecker)
-{
+TClass2(RowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
 	if (!this || !numSolutions() || !solutionSize())
 		return;
 
@@ -289,7 +275,7 @@ void CRowSolution<T>::sortSolutions(CCanonicityChecker<T> *pCanonChecker)
 		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
 #else
 		extern size_t sizeSolution;
-		extern const T* pntrSolution;
+		extern const S* pntrSolution;
 		sizeSolution = solutionSize();
 		pntrSolution = firstSolution();
 		int compareSolutions(const void *p1, const void *p2);
@@ -304,8 +290,7 @@ void CRowSolution<T>::sortSolutions(CCanonicityChecker<T> *pCanonChecker)
 }
 
 #if USE_THREADS || MY_QUICK_SORT
-template<class T>
-int CRowSolution<T>::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
+TClass2(RowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
 {
 	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionSize();
 	for (size_t i = 0; i < solutionSize(); i++) {
@@ -319,9 +304,7 @@ int CRowSolution<T>::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_
 	return 0;
 }
 
-template<class T>
-void CRowSolution<T>::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const
-{
+TClass2(RowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
 	long i = left, j = right;
 	const auto pivotIdx = (left + right) >> 1;
 	const VECTOR_ELEMENT_TYPE *pivot = firstSolution() + arr[pivotIdx] * solutionSize();
@@ -351,9 +334,7 @@ void CRowSolution<T>::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right)
 #endif
 
 
-template<class T>
-void CRowSolution<T>::sortSolutionByGroup(CCanonicityChecker<T> *pCanonChecker)
-{
+TClass2(RowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker) {
 	pCanonChecker->constructGroup();
 	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
 	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
@@ -413,9 +394,7 @@ void CRowSolution<T>::sortSolutionByGroup(CCanonicityChecker<T> *pCanonChecker)
 		delete[] pCanonIdx;
 }
 
-template<class T>
-bool CRowSolution<T>::checkChoosenSolution(const CColOrbit<T> *pColOrbit, size_t nRowToBuild, size_t kMin)
-{
+TClass2(RowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin) {
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionSize(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();

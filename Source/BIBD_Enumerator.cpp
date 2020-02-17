@@ -1,9 +1,8 @@
 #include "BIBD_Enumerator.h"
 
-template class CBIBD_Enumerator<MATRIX_ELEMENT_TYPE>;
+template class CBIBD_Enumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
-template<class T>
-int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) const
+TClass2(BIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
 	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
 	if (diffWeight)
@@ -13,8 +12,7 @@ int CBIBD_Enumerator<T>::unforcedElement(const CColOrbit<T> *pOrb, int nRow) con
 	return 0;
 }
 
-template<class T>
-bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
+TClass2(BIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
 	auto rowNumb = this->currentRowNumb();
@@ -30,7 +28,8 @@ bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 		return true;		// Nothing to test
 
 	const auto k = this->getInSys()->GetK();
-	if (rowNumb >= this->rowNumb() - k - 1 && rowNumb < this->rowNumb() - 3) {
+	auto limit = rowNumb + k + 1;
+	if (limit >= this->rowNumb() && rowNumb + 3 < this->rowNumb()) {
 		// Theorem: The number of columns of canonical matrix which are forcible constructed by units cannot be bigger than 
 		// number of blocks containing first, second and third element.
 		// We should start to check this condition on the first row which tested solutions could create
@@ -38,7 +37,7 @@ bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 		// at least three rows need to be constructed: rowNumb < this->rowNumb() - 3
 		const auto* pColOrbit = this->colOrbit(rowNumb);
 		const auto* pRowSolution = pSol;
-		auto limit = rowNumb + k - this->rowNumb() + 1;
+		limit -= this->rowNumb();
 		auto nForcible = forcibleLambda(rowNumb);
 		while (pColOrbit) {
 			if (pColOrbit->columnWeight() == limit) {
@@ -95,15 +94,13 @@ bool CBIBD_Enumerator<T>::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 	return true;
 }
 
-template<class T>
-void CBIBD_Enumerator<T>::getEnumerationObjectKey(char *pInfo, int len) const {
+TClass2(BIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {
 	SNPRINTF(pInfo, len, "(%3" _FRMT", %2" _FRMT", %2" _FRMT")",
 		this->rowNumb(), this->getInSys()->GetK(), this->getInSys()->lambda());
 }
 
 #if !CONSTR_ON_GPU
-template<class T>
-bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
+TClass2(BIBD_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer) ;
 	SNPRINTF(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", this->rowNumb(),
@@ -111,9 +108,7 @@ bool CBIBD_Enumerator<T>::makeFileName(char *buffer, size_t lenBuffer, const cha
 	return true;
 }
 
-
-template<class T>
-bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
+TClass2(BIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	int lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
@@ -132,8 +127,7 @@ bool CBIBD_Enumerator<T>::makeJobTitle(const designParam *pParam, char *buffer, 
 	return true;
 }
 
-template<class T>
-int CBIBD_Enumerator<T>::getJobTitleInfo(char *buffer, int lenBuffer) const
+TClass2(BIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) const
 {
 	const auto v = this->rowNumb();
 	const auto b = this->matrix()->colNumb();

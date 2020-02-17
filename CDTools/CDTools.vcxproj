@@ -192,7 +192,6 @@
   <ItemGroup>
     <ClCompile Include="..\Source\BIBD_Enumerator.cpp" />
     <ClCompile Include="..\Source\CanonicityChecker.cpp" />
-    <ClCompile Include="..\Source\ColOrbitManager.cpp" />
     <ClCompile Include="..\Source\ColOrbits.cpp" />
     <ClCompile Include="..\Source\CombBIBD_Enumerator.cpp" />
     <ClCompile Include="..\Source\C_tDesignEnumerator.cpp" />

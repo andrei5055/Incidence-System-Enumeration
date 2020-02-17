@@ -1,11 +1,10 @@
 #include "CombBIBD_Enumerator.h"
 
-template class CCombBIBD_Enumerator<MATRIX_ELEMENT_TYPE>;
+template class CCombBIBD_Enumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
 #if !CONSTR_ON_GPU
-template<class T>
-int CCombBIBD_Enumerator<T>::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
-	const auto lambdaSet = (static_cast<CCombinedBIBD<T> *>(this->getInSys()))->paramSet(t_lSet);
+TClass2(CombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
+	const auto lambdaSet = (static_cast<IClass2(CombinedBIBD) *>(this->getInSys()))->paramSet(t_lSet);
 	const auto lambdaNumb = lambdaSet->GetSize();
 	if (pLambdaSetSize)
 		*pLambdaSetSize = static_cast<int>(lambdaNumb);
@@ -20,16 +19,14 @@ int CCombBIBD_Enumerator<T>::addLambdaInfo(char *buf, size_t lenBuffer, int *pLa
 	return len + SNPRINTF(buf + len, lenBuffer - len, "}");
 }
 
-template<class T>
-int CCombBIBD_Enumerator<T>::getJobTitleInfo(char* buffer, int lenBuffer) const {
+TClass2(CombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {
 	const auto v = this->rowNumb() - 1;
 	const auto k = this->getInSys()->GetK();
 	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), v, k);
 }
 #endif
 
-template<class T>
-void CCombBIBD_Enumerator<T>::getEnumerationObjectKey(char* pInfo, int len) const {
+TClass2(CombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pInfo, int len) const {
 	char buffer[64];
 	makeJobTitle(this->designParams(), buffer, countof(buffer));
 	SNPRINTF(pInfo, len, "%s", buffer + strlen(this->getObjName()));

@@ -80,7 +80,7 @@ private:
 	void setEquation(CEquation *pEqu, size_t idx);
 	void setEquation(CEquation *pEquFrom, const CEquation *pEquTo);
 	inline CEquArray *equArray() const						{ return m_pEquArray; }
-	inline int getT() const									{ return m_t; }
+	inline auto getT() const								{ return m_t; }
 
 	CVariable **m_ppVariable;
 	CEquation **m_pEquPntr;
@@ -91,7 +91,7 @@ private:
 	size_t m_nVar;
 	size_t m_nEquNumb;
 	size_t m_nEquNumbMax;
-	const int m_t;
+	const uint m_t;
 };
 
 #endif

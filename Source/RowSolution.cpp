@@ -11,7 +11,7 @@
 #include "InSysSolver.h"
 #include "ColOrbits.h"
 
-template class CRowSolution<MATRIX_ELEMENT_TYPE>;
+template class CRowSolution<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
 #if !USE_THREADS && !MY_QUICK_SORT
 #if USE_PERM
@@ -40,8 +40,7 @@ int compareSolutions (const void *p1, const void *p2)
 }
 #endif
 
-template<class T>
-void CRowSolution<T>::removeNoncanonicalSolutions(size_t startIndex) const
+TClass2(RowSolution, void)::removeNoncanonicalSolutions(size_t startIndex) const
 {
 	const CSolutionPerm *pSolPerm = solutionPerm();
 	uchar *pCanonFlags = pSolPerm->canonFlags();
@@ -61,8 +60,7 @@ void CRowSolution<T>::removeNoncanonicalSolutions(size_t startIndex) const
 	}
 }
 
-template<class T>
-size_t CRowSolution<T>::findSolution(const T *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const
+TClass2(RowSolution, size_t)::findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const
 {
 	const uchar *pCanonFlags = pSolPerm->canonFlags();
 	const size_t len = solutionSize() * sizeof(*pSolution);
@@ -90,8 +88,7 @@ size_t findCanonIndex(size_t idx, const uchar *pCanonFlags)
 	return idx;
 }
 
-template<class T>
-size_t CRowSolution<T>::moveNoncanonicalSolutions(const T *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage, size_t *pSolIdx)
+TClass2(RowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage, size_t *pSolIdx)
 {
 	// For improved solution find the canonical solution:
 	CSolutionPerm *pSolPerm = solutionPerm();
@@ -222,8 +219,7 @@ size_t CRowSolution<T>::moveNoncanonicalSolutions(const T *pSolution, size_t sta
 	return startIndex;
 }
 
-template<class T>
-void CRowSolution<T>::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, const T *pSol) const
+TClass2(RowSolution, void)::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, const S *pSol) const
 {
     char buffer[512], *pBuf = buffer;
     for (size_t j = 0; j < numSolutions(); j++) {
@@ -240,8 +236,7 @@ void CRowSolution<T>::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, const T *
 	outString(buffer, file);
 }
 
-template<class T>
-size_t CRowSolution<T>::setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const
+TClass2(RowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const
 {
 	memset(buffer, ' ', lenBuf);
 	const uchar *pCanonFlags = solutionPerm()->canonFlags();
@@ -259,8 +254,7 @@ size_t CRowSolution<T>::setSolutionFlags(char *buffer, size_t lenBuf, size_t sol
 	return solIdx;
 }
 
-template<class T>
-void CRowSolution<T>::printSolutions(FILE *file, bool markNextUsed) const
+TClass2(RowSolution, void)::printSolutions(FILE *file, bool markNextUsed) const
 {
 	if (!solutionSize() || !numSolutions())
         return;

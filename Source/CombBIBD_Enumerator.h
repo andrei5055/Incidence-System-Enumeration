@@ -1,12 +1,11 @@
 #pragma once
 #include "BIBD_Enumerator.h"
 
-template<class T>
-class CCombBIBD_Enumerator : public CBIBD_Enumerator<T>
+IClass2Def(CombBIBD_Enumerator) : public IClass2(BIBD_Enumerator)
 {
 public:
-	CCombBIBD_Enumerator(const C_InSys<T>* pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		CBIBD_Enumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
+	CCombBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
+		IClass2(BIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
 protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }

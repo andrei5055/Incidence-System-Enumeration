@@ -19,22 +19,21 @@ typedef struct {
                                                 { m_equIdx = eIdx; m_varIdx = vIdx; m_val = v; }
     CK inline int equIdx() const                { return m_equIdx; }
     CK inline size_t varIdx() const             { return m_varIdx; }
-    CK inline VECTOR_ELEMENT_TYPE val() const					{ return m_val; }
+    CK inline VECTOR_ELEMENT_TYPE val() const	{ return m_val; }
 } FilterData;
 
-template<class T>
-class CRightPartFilter
+IClass1Def(S, RightPartFilter)
 {
 public:
     CK CRightPartFilter(size_t len)             { m_pFilterData = new FilterData [len]; }
     CK ~CRightPartFilter()                      { delete [] getFilterData(); }
-    CK inline void addFilter(int equIdx, T val, size_t varIdx = (size_t)-1)
+    CK inline void addFilter(int equIdx, S val, size_t varIdx = (size_t)-1)
                                                 { getFilterData(m_nFilter++)->setFilterData(equIdx, varIdx, val); }
     CK inline void reset()                      { m_nFilter = 0; }
-    CK T *getRightPart(const T *pRightSide, const T *pVarMaxVal, 
-		size_t lenRightPart, T *pRighPartMem) const {
+    CK S *getRightPart(const S *pRightSide, const S *pVarMaxVal, 
+		size_t lenRightPart, S *pRighPartMem) const {
 		if (!numFilter())
-			return (T *)pRightSide;
+			return (S *)pRightSide;
 
 		int j, n;
 		const FilterData *pFilterData = getFilterData();

@@ -11,7 +11,7 @@
 
 #include "VariableMapping.h"
 
-template<class T> class CRowSolution;
+IClass2Def(RowSolution);
 class CEquSystem;
 
 #if USE_EXRA_EQUATIONS
@@ -20,17 +20,16 @@ class CEquSystem;
 #define CONST	const
 #endif
 
-template<class T>
-class CInSysSolver : public CVariableMapping<T>
+IClass2Def(InSysSolver) : public CVariableMapping<S>
 {
 public:
 	CK CInSysSolver(size_t len, int t);
 	CK ~CInSysSolver();
-	CK T *findAllSolutionsForLambda(T *pResult, int lambdaToSplit) CONST;
-    CK void initSolver(CRowSolution<T> *pntr, const T *pVarMinValPntr);
-    CK virtual bool isValidSolution(const T *pSol) const				{ return true; }
+	CK S *findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST;
+    CK void initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr);
+    CK virtual bool isValidSolution(const S *pSol) const				{ return true; }
 protected:
-    CK inline CRowSolution<T> *rowSolution() const						{ return m_pRowSolution; }
+    CK inline RowSolutionPntr rowSolution() const						{ return m_pRowSolution; }
 #if USE_EXRA_EQUATIONS
 	CK inline void setEquSystem(CEquSystem *pEquSystem)					{ m_pEquSystem = pEquSystem; }
 	inline void resetExtra()											{ getVarValues()->resetMapping(); resetAddedVarStack(); }
@@ -38,11 +37,11 @@ protected:
 	void addVarIdxToStack(size_t nAddedVarIdx, size_t varShift);
 #endif
 private:
-	CK bool findDiffIndex(int &lambdaToSplit, T *pResult, int *pMapIdx) CONST;
-    CK int splitLambda(int &lambdaToSplit, T *pResult, int mapIdx = 0) CONST;
-    CK inline void setRowSolution(CRowSolution<T> *pntr)				{ m_pRowSolution = pntr; }
-    CK inline void setVarMinValPntr(const T *pntr)						{ m_pVarMinVal = pntr; }
-    CK inline const T *varMinValPntr() const							{ return m_pVarMinVal; }
+	CK bool findDiffIndex(S &lambdaToSplit, S *pResult, int *pMapIdx) CONST;
+    CK int splitLambda(S &lambdaToSplit, S *pResult, int mapIdx = 0) CONST;
+    CK inline void setRowSolution(RowSolutionPntr pntr)					{ m_pRowSolution = pntr; }
+    CK inline void setVarMinValPntr(const S *pntr)						{ m_pVarMinVal = pntr; }
+    CK inline const S *varMinValPntr() const							{ return m_pVarMinVal; }
 	inline bool tDesignEnum() const										{ return m_t > 2; }
 #if USE_EXRA_EQUATIONS
 	inline CEquSystem *equSystem() const								{ return m_pEquSystem; }
@@ -64,13 +63,12 @@ private:
 	CVariableMapping *m_pAddedVarStack;
 #endif
 
-    const VECTOR_ELEMENT_TYPE *m_pVarMinVal;
-    CRowSolution<T> *m_pRowSolution;
+    const S *m_pVarMinVal;
+	RowSolutionPntr m_pRowSolution;
 	const int m_t;
 };
 
-template<class T>
-CInSysSolver<T>::CInSysSolver(size_t len, int t) : CVariableMapping<T>(len), m_t(t)
+TClass2(InSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len), m_t(t)
 {
 #if USE_EXRA_EQUATIONS
 	setVarValues(new CVariableMapping(len));
@@ -78,23 +76,20 @@ CInSysSolver<T>::CInSysSolver(size_t len, int t) : CVariableMapping<T>(len), m_t
 #endif
 }
 
-template<class T>
-CInSysSolver<T>::~CInSysSolver()
+TClass2(InSysSolver)::~CInSysSolver()
 {
 #if USE_EXRA_EQUATIONS
 	delete getVarValues();
 #endif
 }
 
-template<class T>
-void CInSysSolver<T>::initSolver(CRowSolution<T> *pntr, const T *pVarMinValPntr)
+TClass2(InSysSolver, void)::initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr)
 {
 	setRowSolution(pntr);
 	setVarMinValPntr(pVarMinValPntr);
 }
 
-template<class T>
-T *CInSysSolver<T>::findAllSolutionsForLambda(T *pResult, int lambdaToSplit) CONST
+TClass2(InSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST
 {
 	// lambdaToSplit - part of current lambda to be splited between lambda-variables
 	if (!lambdaToSplit) {
@@ -135,8 +130,7 @@ T *CInSysSolver<T>::findAllSolutionsForLambda(T *pResult, int lambdaToSplit) CON
 // and pass it to CInSysSolver::splitLambda
 #endif
 
-template<class T>
-int CInSysSolver<T>::splitLambda(int &lambdaToSplit, T *pResult, int mapIdx) CONST
+TClass2(InSysSolver,  int)::splitLambda(S &lambdaToSplit, S *pResult, int mapIdx) CONST
 {
 	const auto *pToLast = this->getLastMapping();
 #if USE_EXRA_EQUATIONS
@@ -212,8 +206,7 @@ int CInSysSolver<T>::splitLambda(int &lambdaToSplit, T *pResult, int mapIdx) CON
 	return -1;
 }
 
-template<class T>
-bool CInSysSolver<T>::findDiffIndex(int &lambdaToSplit, T *pResult, int *pMapIdx) CONST
+TClass2(InSysSolver, bool)::findDiffIndex(S &lambdaToSplit, S *pResult, int *pMapIdx) CONST
 {
 #if USE_EXRA_EQUATIONS
 	printResults(pResult, lambdaToSplit, *pMapIdx, -1);
@@ -260,7 +253,7 @@ bool CInSysSolver<T>::findDiffIndex(int &lambdaToSplit, T *pResult, int *pMapIdx
 
 	const auto *pFirst = this->getMappingPntr();
     const auto *pCurr  = this->getLastMapping();
-    T *pCurrVar;
+    S *pCurrVar;
     
     // Counts total amount of splitted units AFTER pTo and define if it's possible to split one more unit in the same area
 

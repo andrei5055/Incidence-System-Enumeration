@@ -7,12 +7,11 @@
 #define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, this->outFile()); }
 #endif
 
-template<class T>
-class CBIBD_Enumerator : public C_InSysEnumerator<T>
+IClass2Def(BIBD_Enumerator) : public IClass2(_InSysEnumerator)
 {
 public:
-	CK CBIBD_Enumerator(const C_InSys<T> *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		C_InSysEnumerator<T>(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+	CK CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
+		IClass2(_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
 		setR(getInSys()->GetR());
 		m_firstUnforced = pBIBD->rowNumb() - pBIBD->GetK();
 	}
@@ -20,17 +19,17 @@ public:
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 protected:
-	CK virtual bool sortSolutions(CRowSolution<T> *ptr, PERMUT_ELEMENT_TYPE idx);
-	virtual int unforcedElement(const CColOrbit<T> *p, int nRow) const;
-	CK virtual bool solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, size_t nRow) const;
+	CK virtual bool sortSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx);
+	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const;
+	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const;
 	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 	virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
 #endif
-	CK virtual bool TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags = NULL, CEnumerator<T> *pEnum = NULL) const;
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
 	CK virtual bool checkLambda(size_t val) const					{ return val == lambda(); }
-	CK virtual void ReportLamdaProblem(T i, T j, size_t lambda) const {
+	CK virtual void ReportLamdaProblem(S i, S j, size_t lambda) const {
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu != " ME_FRMT "\n",
 			i, j, lambda, this->getInSys()->lambda());
 	}
@@ -42,19 +41,18 @@ protected:
 	CK virtual void resetFirstUnforcedRow()							{}
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
-	CK bool checkChoosenSolution(CRowSolution<T> *pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
+	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
-	CK inline void setR(T val)										 { m_r = val; }
+	CK inline void setR(S val)										 { m_r = val; }
 	CK inline auto getR() const                                      { return m_r; }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
-	T m_r;
+	S m_r;
 	size_t m_firstUnforced;
 };
 
-template<class T>
-bool CBIBD_Enumerator<T>::sortSolutions(CRowSolution<T> *pSolution, PERMUT_ELEMENT_TYPE idx)
+TClass2(BIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE idx)
 {
 	if (this->currentRowNumb() + 1 == this->rowNumb())
 		return true;        // We will be here when lambda > 1 AND one of the colOrbits was splitted into 2 parts  
@@ -70,8 +68,7 @@ bool CBIBD_Enumerator<T>::sortSolutions(CRowSolution<T> *pSolution, PERMUT_ELEME
 	return checkChoosenSolution(pSolution, this->currentRowNumb(), idx);
 }
 
-template<class T>
-bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixData<T> *pMatrix, int *pMatrFlags, CEnumerator<T> *pEnum) const
+TClass2(BIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
 	const auto paramR = this->getInSys()->GetR();
 	const auto iMax = this->rowNumb();
@@ -83,7 +80,7 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 
 		if (r != paramR) {
 #if !CONSTR_ON_GPU
-			(static_cast<const CMatrix<T> *>(pMatrix))->printOut(this->outFile());
+			(static_cast<const MatrixPntr>(pMatrix))->printOut(this->outFile());
 #endif
 			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, this->getInSys()->GetR());
 			THROW();
@@ -121,7 +118,7 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 			const auto iPrev = i - 1;
 			auto j = this->rowNumb();
 			while (j-- && *(pMatrix->GetRow(j) + i) == *(pMatrix->GetRow(j) + iPrev));
-			noReplicatedBlockFound = j != MATRIX_ELEMENT_MAX;
+			noReplicatedBlockFound = j != ELEMENT_MAX;
 		}
 	}
 
@@ -143,8 +140,7 @@ bool CBIBD_Enumerator<T>::TestFeatures(CEnumInfo<T> *pEnumInfo, const CMatrixDat
 	return this->noReplicatedBlocks() ? noReplicatedBlockFound : true;
 }
 
-template<class T>
-bool CBIBD_Enumerator<T>::solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, size_t nRow) const
+TClass2(BIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allow to do not consider the solutions for some right parts
@@ -162,16 +158,15 @@ bool CBIBD_Enumerator<T>::solutionsForRightSideNeeded(const T *pRighPart, const 
 	return true;
 }
 
-template<class T>
-bool CBIBD_Enumerator<T>::checkChoosenSolution(CRowSolution<T> *pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
+TClass2(BIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to skip testing of some solutions for some rows
 	if (nRow == 3) {
-		const CRowSolution<T> *pPrevSolution = this->rowStuff(nRow - 1);
+		const auto pPrevSolution = this->rowStuff(nRow - 1);
 		const auto lambda = this->getInSys()->lambda();
 		// Number of units used for first fragments of the 3-d row
-		const int x0 = *pPrevSolution->solution(usedSolIndex);
+		const auto x0 = *pPrevSolution->solution(usedSolIndex);
 
 		if (lambda == 2 * x0) {
 			// We do have following system:

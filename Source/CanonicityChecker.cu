@@ -35,8 +35,8 @@ __global__ void AssignCheckerGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, uint
 	pChecker->restoreColOrbitInfo(nRows, pColOrbInfo);
 }
 
-bool AssignChecker(CMatrixCanonCheckerGPU<MATRIX_ELEMENT_TYPE> **ppCheckers, CMatrixData<MATRIX_ELEMENT_TYPE> **pAllMatrData, uint checkerIdx,
-					const CEnumerator<MATRIX_ELEMENT_TYPE> *pCanonChecker, cudaStream_t stream
+bool AssignChecker(CMatrixCanonCheckerGPU<T, S> **ppCheckers, CMatrixData<T, S> **pAllMatrData, uint checkerIdx,
+					const CEnumerator<T, S> *pCanonChecker, cudaStream_t stream
 #if TRACE_CUDA_FLAG
 					, int myID
 #endif

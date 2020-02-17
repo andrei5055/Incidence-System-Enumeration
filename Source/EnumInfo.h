@@ -58,11 +58,9 @@ typedef enum {
 	t_trahsitiveGroup   = 1 << 2,
 } t_MatrixFlags;
 
-template<class T> class CThreadEnumerator;
-template<class T> class CCanonicityChecker;
+IClass2Def(ThreadEnumerator);
 
-template<class T>
-class CEnumInfo : public CTimerInfo, public CGroupsInfo, public CNumbInfo
+IClass2Def(EnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
 	CC CEnumInfo(const char *pStrToScreen = NULL) : m_pStrToScreen(pStrToScreen) {
@@ -78,13 +76,13 @@ public:
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
 #if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL);
-	void reportProgress(const CThreadEnumerator<T> *pTreadEnum, size_t nThread = 0);
+	void reportProgress(const ThreadEnumeratorPntr pTreadEnum, size_t nThread = 0);
 #endif
 	virtual ulonglong numbSimpleDesign() const				{ return 0; }
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)	{}
 	virtual void reportResult(char *buffer, int lenBuffer) const {}
 	CC virtual void init()									{ resetCounters(); }
-	virtual void updateEnumInfo(const CEnumInfo *pInfo);
+	virtual void updateEnumInfo(const EnumInfoPntr pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)			{}
 	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
 	CC void updateConstrCounters(int matrFlag, size_t groupOrder, bool groupIsTransitive) {
@@ -142,19 +140,18 @@ private:
 	designParam *m_pParam;
 }; 
 
-template<class T>
-class CInsSysEnumInfo : public CEnumInfo<T>
+IClass2Def(InsSysEnumInfo) : public IClass2(EnumInfo)
 {
 public:
-	CC CInsSysEnumInfo(const char *pStrToScreen = NULL) : CEnumInfo<T>(pStrToScreen)	
+	CC CInsSysEnumInfo(const char *pStrToScreen = NULL) : IClass2(EnumInfo)(pStrToScreen)
 																	{ setNoReplBlockFlag(false); resetCounter(); }
 	CC ~CInsSysEnumInfo()											{}
 public:
 	virtual ulonglong numbSimpleDesign() const						{ return m_nSimpleDesign; }
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)			{ m_nSimpleDesign += v; }
 	virtual void reportResult(char *buffer, int lenBuffer) const;
-	CC virtual void init()											{ resetCounter();  CEnumInfo<T>::init(); }
-	virtual void updateEnumInfo(const CEnumInfo<T> *pInfo);
+	CC virtual void init()											{ resetCounter();  IClass2(EnumInfo)::init(); }
+	virtual void updateEnumInfo(const EnumInfoPntr pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)					{ m_bNoReplBlockFlag = val; }
 	CC virtual bool constructedAllNoReplBlockMatrix() const			{ return m_bNoReplBlockFlag; }
 private:

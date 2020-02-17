@@ -107,9 +107,6 @@
     <ClCompile Include="..\Source\CanonicityChecker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\ColOrbitManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\ColOrbits.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

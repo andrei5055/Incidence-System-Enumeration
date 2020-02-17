@@ -36,7 +36,7 @@ static bool isPrime(int k) {
 	return k == primeNumb[i];
 }
 
-template <class T>
+template <typename T, typename S>
 bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath);
 
 bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax, int *pUsedFlags) {
@@ -184,7 +184,7 @@ bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pM
 	return true;
 }
 
-static size_t calcSum(const std::vector<int> &lambdaA, const std::vector<int> &lambda) {
+static size_t calcSum(const std::vector<uint> &lambdaA, const std::vector<uint> &lambda) {
 	size_t sum = 0;
 	for (auto i = lambdaA.size(); i--;)
 		sum += lambdaA[i] * lambda[i] * lambda[i];
@@ -206,7 +206,7 @@ static bool checkCondB(const CInterStruct *iStruct1, const CInterStruct *iStruct
 
 	// Calculate minimal value of the counterpart's lambda (intersection with the first block)
 	int idx = 0; 
-	int lambdaMin = adj;
+	uint lambdaMin = adj;
 	for (auto i = size; i--;) {
 		const int n = (lambdaB[i] << 1) - lambdaA[i];
 		if (n <= 0)
@@ -517,7 +517,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				}
 
 				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
-					if (!RunOperation<MATRIX_ELEMENT_TYPE>(pParam, pSummaryFileName, firstPath))
+					if (!RunOperation<MATRIX_ELEMENT_TYPE, SIZE_TYPE>(pParam, pSummaryFileName, firstPath))
 						return 0;
 
 					firstPath = false;

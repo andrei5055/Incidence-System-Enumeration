@@ -3,11 +3,10 @@
 #include "stdafx.h"
 #include "matrix.h"
 
-template class C_tDesign<MATRIX_ELEMENT_TYPE>;
-template class CCombinedBIBD<MATRIX_ELEMENT_TYPE>;
+template class C_tDesign<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CCombinedBIBD<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
 
-template<class T>
-C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD<T>(v, k, t), m_t(t)
+TDesign()::C_tDesign(int t, int v, int k, int lambda) : IClass2(_BIBD)(v, k, t), m_t(t)
 {
 	// Define all lambdas: 
 	int i = t;
@@ -29,12 +28,10 @@ C_tDesign<T>::C_tDesign(int t, int v, int k, int lambda) : C_BIBD<T>(v, k, t), m
 	delete[] pLambda;
 }
 
-
-template<class T>
-CCombinedBIBD<T>::CCombinedBIBD(int v, int k, const std::vector<int>& lambdaInp) : C_BIBD<T>(0, k) {
-	std::vector<int> lambdaSet(lambdaInp);
+CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) : IClass2(_BIBD)(0, k) {
+	std::vector<uint> lambdaSet(lambdaInp);
 	std::sort(lambdaSet.begin(), lambdaSet.end(), std::greater<int>());
-	m_ppParamSet = createParamStorage(t_rSet); // Create 2 sets of vector (for Lambda and R of the component of combineed BIBD)
+	m_ppParamSet = this->createParamStorage(t_rSet); // Create 2 sets of vector (for Lambda and R of the component of combineed BIBD)
 
 	const auto nSubDesigns = lambdaSet.size();
 	const auto v1 = v - 1;
@@ -49,6 +46,6 @@ CCombinedBIBD<T>::CCombinedBIBD(int v, int k, const std::vector<int>& lambdaInp)
 		lambda += lambdaCurr;
 	}
 
-	Init(v + 1, lambda * v * v1 / (k * k1));
-	InitParam(v, k, lambda);
+	this->Init(v + 1, lambda * v * v1 / (k * k1));
+	this->InitParam(v, k, lambda);
 }

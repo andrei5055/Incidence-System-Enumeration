@@ -124,8 +124,8 @@
 #define WRITE_MULTITHREAD_LOG		0
 
 #if TEST
-#define PRINT_TO_FILE				1
-#define PRINT_SOLUTIONS				0
+#define PRINT_TO_FILE				0
+#define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
 #else
 #define PRINT_TO_FILE				1	// Write files with the results for each set of parameters
@@ -193,18 +193,54 @@ typedef unsigned short		ushort;
 typedef unsigned char		uchar;
 typedef unsigned long long	ulonglong;
 
+
 #define MATRIX_ELEMENT_TYPE  	uchar
+#define SIZE_TYPE				uint16_t
+#define ELEMENT_MAX				std::numeric_limits<SIZE_TYPE>::max()
+
+#define IClass1(S, x)			C##x<S>
+#define IClass1Def(S, x)		template<typename S> class C##x
+#define TClass1(S, x, ...)		template<typename S> __VA_ARGS__  IClass1(S, x)
+
+#define IClass2(x)				C##x<T,S>
+#define IClass2Def(x)			template<typename T, typename S> class C##x
+#define TClass2(x, ...)			template<typename T, typename S> __VA_ARGS__  IClass2(x)
+
+#define MatrixData(...)			TClass2(MatrixData, __VA_ARGS__)
+#define PermutStorage(...)		TClass2(PermutStorage, __VA_ARGS__)
+#define TDesign(...)			TClass2(_tDesign, __VA_ARGS__)
+#define CombinedBIBD(...)		TClass2(CombinedBIBD, __VA_ARGS__)
+#define CanonicityChecker(...)	TClass2(CanonicityChecker, __VA_ARGS__)
+
+//#define Enumerator				IClass2(Enumerator)
+
+#define MatrixDataPntr			IClass2(MatrixData) *
+#define MatrixPntr				IClass2(Matrix) *
+#define MatrixColPntr			IClass2(MatrixCol) *
+#define InSysPntr               IClass2(_InSys) *
+#define TDesignPntr				IClass2(_tDesign) *
+#define RowSolutionPntr			IClass2(RowSolution) *
+#define CanonicityCheckerPntr	IClass2(CanonicityChecker) *
+#define InSysSolverPntr         IClass2(InSysSolver) *
+#define EnumInfoPntr			IClass2(EnumInfo) *
+#define EnumeratorPntr			IClass2(Enumerator) *
+#define ThreadEnumeratorPntr    IClass2(ThreadEnumerator) *
+#define PermutStoragePntr		IClass2(PermutStorage) *
+
+#define ColOrbPntr				IClass1(S, ColOrbit) *
+#define SimpleArrayPntr			IClass1(S, SimpleArray) *
+#define VectorPntr				IClass1(S, Vector) *
+
 #define MATRIX_ELEMENT_IS_BYTE	(MATRIX_ELEMENT_TYPE == uchar)
 #if MATRIX_ELEMENT_IS_BYTE
 #define _FRMT				"u"
 #define ME_FRMT				"%" _FRMT
-#define MATRIX_ELEMENT_MAX	UINT8_MAX 
 #endif
 
-#define VECTOR_ELEMENT_TYPE  	uchar
+
+#define VECTOR_ELEMENT_TYPE  	SIZE_TYPE
 #define VECTOR_ACCESS_TYPE		VECTOR_ELEMENT_TYPE
 typedef CArray<VECTOR_ELEMENT_TYPE, VECTOR_ACCESS_TYPE> CArrayOfVectorElements;
-#define VECTOR_ELEMENT_TYPE_MAX	0xff
 
 #define PERMUT_ELEMENT_TYPE  	size_t
 #define PERMUT_ACCESS_TYPE		PERMUT_ELEMENT_TYPE
@@ -212,21 +248,21 @@ typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ACCESS_TYPE> CArraySolutionPerm;
 #define PERMUT_ELEMENT_MAX		UINT64_MAX
 
 
-template <class T>
+template <class S>
 class CSimpleArray {
 public:
-    CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new T[len]; }
+    CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new S[len]; }
 	CC virtual ~CSimpleArray()						{ delete [] elementPntr(); }
-	inline void Init(size_t len, T *pElem)			{ m_pElem = pElem; m_nLen = len; }
-    CC inline T element(size_t idx) const           { return *(elementPntr() + idx); }
-	inline void setElement(size_t idx, T val)		{ *GetElement(idx) = val; }
-    CC inline T *elementPntr() const				{ return m_pElem; }
+	inline void Init(size_t len, S *pElem)			{ m_pElem = pElem; m_nLen = len; }
+    CC inline S element(size_t idx) const           { return *(elementPntr() + idx); }
+	inline void setElement(size_t idx, S val)		{ *GetElement(idx) = val; }
+    CC inline S *elementPntr() const				{ return m_pElem; }
     CC inline size_t numElement() const				{ return m_nLen; }
-	inline T GetAt(size_t idx)  const				{ return element(idx); }
-	inline T *GetElement(size_t idx)  const			{ return elementPntr() + idx; }
+	inline S GetAt(size_t idx)  const				{ return element(idx); }
+	inline S *GetElement(size_t idx)  const			{ return elementPntr() + idx; }
 protected:
 private:
-    T *m_pElem;
+    S *m_pElem;
     size_t m_nLen;
 };
 
@@ -454,12 +490,12 @@ class CInterStruct {
 public:
 	inline CInterStruct(int mult = 1)							{ setMult(mult); }
 	inline ~CInterStruct()										{ delete Counterparts(); }
-	inline const std::vector<int> &lambda() const				{ return iParam[0]; }
-	inline const std::vector<int> &lambdaA() const				{ return iParam[1]; }
-	inline const std::vector<int> &lambdaB() const				{ return iParam[2]; }
-	inline std::vector<int> *lambdaPtr()						{ return iParam; }
-	inline std::vector<int> *lambdaAPtr()						{ return iParam + 1; }
-	inline std::vector<int> *lambdaBPtr()						{ return iParam + 2; }
+	inline const auto &lambda() const							{ return iParam[0]; }
+	inline const auto &lambdaA() const							{ return iParam[1]; }
+	inline const auto &lambdaB() const							{ return iParam[2]; }
+	inline auto *lambdaPtr()									{ return iParam; }
+	inline auto *lambdaAPtr()									{ return iParam + 1; }
+	inline auto *lambdaBPtr()									{ return iParam + 2; }
 	inline std::vector<CInterStruct *> *Counterparts() const	{ return m_pCounterparts; }
 	inline bool isValid() const									{ return Counterparts(); }
 	inline void InitCounterparts()								{ m_pCounterparts = new std::vector<CInterStruct *>(); }
@@ -468,7 +504,7 @@ public:
 	inline void setMult(int val)								{ m_mult = val; }
 	inline int mult() const										{ return m_mult; }
 private:
-	std::vector<int> iParam[3];
+	std::vector<uint> iParam[3];
 	std::vector<CInterStruct *> *m_pCounterparts = NULL;
 	int m_mult;
 	CInterStruct *m_pNext = NULL;
@@ -501,9 +537,9 @@ public:
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		//
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
-	const std::vector<int> &lambda() const		{ return m_pInterStruct->lambda(); }
-	const std::vector<int> &lambdaA() const		{ return m_pInterStruct->lambdaA(); }
-	const std::vector<int> &lambdaB() const		{ return m_pInterStruct->lambdaB(); }
+	const std::vector<uint> &lambda() const		{ return m_pInterStruct->lambda(); }
+	const std::vector<uint> &lambdaA() const	{ return m_pInterStruct->lambdaA(); }
+	const std::vector<uint> &lambdaB() const	{ return m_pInterStruct->lambdaB(); }
 	inline size_t lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 private:
