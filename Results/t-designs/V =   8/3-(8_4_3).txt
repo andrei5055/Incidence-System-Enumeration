@@ -19,7 +19,7 @@
         10 matrices were fully constructed
 
 Using 64-bit program, Assembly flag: 0
-        15 threads launched on level 4 (not waiting to finish mode)
+        20 threads launched on level 4 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

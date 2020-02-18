@@ -1,0 +1,37 @@
+3-(  8,   4, 16)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1         1296318               0               0               0
+             2          345205               0               0               0
+             4           65262               0               0               0
+             6            5678               0               0               0
+             8           16341               0           12506               0
+            12             356               0               0               0
+            16            2988               0            2747               0
+            24            1182               0            1137               0
+            32             458               0             443               0
+            48             204               0             198               0
+            64             128               0             128               0
+            96              62               0              62               0
+           128              15               0              15               0
+           144               1               0               0               0
+           168              22               0              22               0
+           192              50               0              50               0
+           336               3               0               3               0
+           384               3               0               3               0
+          1152               1               0               1               0
+          1344               5               0               5               0
+    _______________________________________________________________________________
+        Total:         1734282               0           17320               0
+
+   1734282 matrices constructed in 13:14.64
+         0 matrices have no replicated blocks
+   3779323 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 4 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

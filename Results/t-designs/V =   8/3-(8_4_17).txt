@@ -1,0 +1,38 @@
+3-(  8,   4, 17)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1         2762715               0               0               0
+             2          601662               0               0               0
+             4          101549               0               0               0
+             6            7956               0               0               0
+             8           23409               0           18085               0
+            12             423               0               0               0
+            16            3922               0            3619               0
+            24            1485               0            1435               0
+            32             562               0             551               0
+            48             236               0             232               0
+            64             145               0             145               0
+            72               1               0               0               0
+            96              74               0              74               0
+           128              12               0              12               0
+           144               1               0               0               0
+           168              25               0              25               0
+           192              52               0              52               0
+           336               3               0               3               0
+           384               2               0               2               0
+          1152               2               0               2               0
+          1344               5               0               5               0
+    _______________________________________________________________________________
+        Total:         3504241               0           24242               0
+
+   3504241 matrices constructed in 26:47.37
+         0 matrices have no replicated blocks
+   7661268 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 4 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

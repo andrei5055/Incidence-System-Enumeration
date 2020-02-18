@@ -22,8 +22,13 @@
     _______________________________________________________________________________
         Total:              82               1              60               1
 
-        82 matrices constructed in  0.03
-         1 matrix have no replicated blocks
+        82 matrices constructed in  0.02
+         1 matrix has no replicated blocks
         86 matrices were fully constructed
-         5 threads launched on level 4 
-        Strong canonisity was not used
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 4 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
