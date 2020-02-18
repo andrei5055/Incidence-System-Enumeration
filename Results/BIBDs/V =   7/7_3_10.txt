@@ -22,7 +22,7 @@ BIBD(  7,  70, 30,  3, 10)
     _______________________________________________________________________________
         Total:           54613               0              14               0
 
-     54613 matrices constructed in  1.91
+     54613 matrices constructed in  1.86
          0 matrices have no replicated blocks
      82835 matrices were fully constructed
 

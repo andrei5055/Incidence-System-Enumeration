@@ -1,0 +1,25 @@
+BIBD( 25,  25,  9,  9,  3)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1              38              38               0               0
+             2              10              10               0               0
+             3              16              16               0               0
+             4               4               4               0               0
+             6               2               2               0               0
+             8               2               2               0               0
+            12               4               4               0               0
+            24               2               2               0               0
+    _______________________________________________________________________________
+        Total:              78              78               0               0
+
+        78 matrices constructed in  8.20
+        78 matrices have no replicated blocks
+        98 matrices were fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 6 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

@@ -21,7 +21,7 @@ BIBD(  7,  84, 36,  3, 12)
     _______________________________________________________________________________
         Total:          412991               0              19               0
 
-    412991 matrices constructed in 11.94
+    412991 matrices constructed in 11.80
          0 matrices have no replicated blocks
     596725 matrices were fully constructed
 

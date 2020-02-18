@@ -1,0 +1,18 @@
+BIBD( 25,  30,  6,  5,  1)
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+         12000               1               1               1               1
+    _______________________________________________________________________________
+        Total:               1               1               1               1
+
+         1 matrix constructed in  0.19
+         1 matrix has no replicated blocks
+         1 matrix was fully constructed
+
+Using 64-bit program, Assembly flag: 0
+        20 threads launched on level 6 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
