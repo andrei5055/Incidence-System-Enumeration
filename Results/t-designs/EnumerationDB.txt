@@ -19,8 +19,13 @@
 3-(  8,   4, 18)       6873542           0         53:07.59   Feb 11, 2020
 3-(  8,   4, 19)      13104491           0       2:09:41.01   Feb 17, 2020
 3-(  8,   4, 20)      24339906           0       3:37:05.42   Feb 17, 2020
+3-( 10,   4,  1)             1           1             0.00   Feb 17, 2020 
+3-( 10,   4,  2)           132          27             0.12   Feb 17, 2020
+3-( 10,   4,  3)       6024525       10977       1:05:24.18   Feb 18, 2020
 --------------------------------------------------------------------------------
 
 [1] Paul C. Denny, Search and Enumeration Techniques for Incidence Structures
 https://www.cs.auckland.ac.nz/research/groups/CDMTCS/researchreports/085denny.pdf
+[2] Stanisl/aw P. Radziszowski, Enumeration of All Simple t (t+7,t+1,2) Designs.
+a) simple for 3-(10,4,2)
 
