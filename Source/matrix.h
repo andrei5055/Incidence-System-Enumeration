@@ -3,7 +3,7 @@
 #include "CanonicityChecker.h"
 
 
-IClass2Def(MatrixData) {
+Class2Def(CMatrixData) {
 public:
 	CK CMatrixData()						{ setDataOwner(false); }
 	CK virtual ~CMatrixData()				{ if (dataOwner()) delete [] m_pData; }
@@ -74,7 +74,7 @@ private:
 	T *m_pData;
 };
 
-IClass2Def(Matrix) : public IClass2(MatrixData)
+Class2Def(CMatrix) : public Class2(CMatrixData)
 {
  public:
  	CK CMatrix(S nRows = 0, S nCols = 0, T maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
@@ -165,15 +165,15 @@ typedef enum {
 	t_kSet
 } t_numbSetType;
 
-IClass2Def(_InSys) : public IClass2(Matrix)
+Class2Def(C_InSys) : public Class2(CMatrix)
 {
  public:
-	CK C_InSys(int nRows, int nCols, int t) : IClass2(Matrix)(nRows, nCols), m_t(t) {
+	CK C_InSys(int nRows, int nCols, int t) : Class2(CMatrix)(nRows, nCols), m_t(t) {
 		setDataOwner(true);	 
 		m_ppNumbSet = createParamStorage(t_kSet); // Create 3 sets of vector: Lambda, R, and K 
 	}
 
-	CK C_InSys(const C_InSys *pMaster, size_t nRow) : IClass2(Matrix)(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
+	CK C_InSys(const C_InSys *pMaster, size_t nRow) : Class2(CMatrix)(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
 		setDataOwner(nRow == 0);
 		m_ppNumbSet = pMaster->numbSet();
 
@@ -183,7 +183,7 @@ IClass2Def(_InSys) : public IClass2(Matrix)
 			memcpy(this->GetRow(i), pMaster->GetRow(i), len);
 	}
 
-	CK C_InSys(int t = 2) : IClass2(Matrix)(), m_t(t)		{ m_ppNumbSet = NULL; }
+	CK C_InSys(int t = 2) : Class2(CMatrix)(), m_t(t)		{ m_ppNumbSet = NULL; }
 	CK ~C_InSys() {
 		if (!m_ppNumbSet || !isDataOwner())
 			return;
@@ -193,8 +193,8 @@ IClass2Def(_InSys) : public IClass2(Matrix)
 
 	CK inline void AddValueToNumSet(VECTOR_ELEMENT_TYPE value, t_numbSetType type)
                                                     		{ GetNumSet(type)->AddElement(value); }
-	CK inline IClass1(S, Vector) *GetNumSet(t_numbSetType t) const	{ return *(m_ppNumbSet + t); }
-	CK inline uchar GetT() const							{ return m_t; }
+	CK inline Class1(CVector) *GetNumSet(t_numbSetType t) const	{ return *(m_ppNumbSet + t); }
+	CK inline auto GetT() const								{ return m_t; }
 	CK inline S GetK() const								{ return GetNumSet(t_kSet)->GetAt(0); }
 	CK inline S GetR() const								{ return this->colNumb() * GetK() / this->rowNumb(); }
 	CK inline S lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
@@ -206,7 +206,7 @@ protected:
 	CK VectorPntr *createParamStorage(int n) const  {
 		const auto ppNumbSet = new VectorPntr [n + 1];
 		for (int i = 0; i <= n; i++)
-			ppNumbSet[i] = new IClass1(S, Vector)();
+			ppNumbSet[i] = new Class1(CVector)();
 		return ppNumbSet;
 	}
 	CK void deleteParamStorage(VectorPntr *ppParam, int n) {
@@ -224,12 +224,12 @@ private:
 	const uchar m_t;
 };
 
-IClass2Def(_BIBD) : public IClass2(_InSys)
+Class2Def(C_BIBD) : public Class2(C_InSys)
 {
  public:
-	CK C_BIBD(int v, int k, int t = 2, int lambda = 0) : IClass2(_InSys)(v, lambda * v * (v - 1) / (k * (k - 1)), t)
+	CK C_BIBD(int v, int k, int t = 2, int lambda = 0) : Class2(C_InSys)(v, lambda * v * (v - 1) / (k * (k - 1)), t)
 													{ InitParam(v, k, lambda); }
-	CK C_BIBD(const C_BIBD *pMaster, size_t nRow) : IClass2(_InSys)(pMaster, nRow) {}
+	CK C_BIBD(const C_BIBD *pMaster, size_t nRow) : Class2(C_InSys)(pMaster, nRow) {}
 	CK ~C_BIBD() {}
 protected:
 	CK void InitParam(int v, int k, int lambda) {
@@ -242,13 +242,13 @@ protected:
 									}
 };
 
-IClass2Def(_PBIBD) : public IClass2(_InSys)
+Class2Def(C_PBIBD) : public Class2(C_InSys)
 {
 public:
-	CK C_PBIBD(int v, int k, int r, const std::vector<uint> &lambdaSet) : IClass2(_InSys)(v, v * r/k, 2) {
+	CK C_PBIBD(int v, int k, int r, const std::vector<uint> &lambdaSet) : Class2(C_InSys)(v, v * r/k, 2) {
 		InitParam(v, k, r, lambdaSet);
 	}
-	CK C_PBIBD(const IClass2(_InSys) *pMaster, size_t nRow) : IClass2(_InSys)(pMaster, nRow) {}
+	CK C_PBIBD(const Class2(C_InSys) *pMaster, size_t nRow) : Class2(C_InSys)(pMaster, nRow) {}
 	CK ~C_PBIBD() {}
 protected:
 	CK void InitParam(int v, int k, int r, const std::vector<uint> &lambdaSet) {
@@ -259,20 +259,20 @@ protected:
 	}
 };
 
-IClass2Def(SemiSymmetricGraph) : public IClass2(_PBIBD)
+Class2Def(CSemiSymmetricGraph) : public Class2(C_PBIBD)
 {
 public:
 	CK CSemiSymmetricGraph(int v, int k, int r, const std::vector<uint> &lambdaSet) :
-		IClass2(_PBIBD)(v, k, r, lambdaSet) {}
-	CK CSemiSymmetricGraph(const IClass2(_InSys) *pMaster, size_t nRow) : IClass2(_PBIBD)(pMaster, nRow) {}
+		Class2(C_PBIBD)(v, k, r, lambdaSet) {}
+	CK CSemiSymmetricGraph(const Class2(C_InSys) *pMaster, size_t nRow) : Class2(C_PBIBD)(pMaster, nRow) {}
 	CK ~CSemiSymmetricGraph()		{}
 };
 
-IClass2Def(_tDesign) : public IClass2(_BIBD)
+Class2Def(C_tDesign) : public Class2(C_BIBD)
 {
 public:
 	CK C_tDesign(int t, int v, int k, int lambda);
-	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), IClass2(_BIBD)(pMaster, nRow) {}
+	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), Class2(C_BIBD)(pMaster, nRow) {}
 	CK ~C_tDesign()											{}
 	CK inline S getT() const								{ return m_t; }
 	CK inline S lambda() const								{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
@@ -280,11 +280,11 @@ private:
 	const S m_t;
 };
 
-IClass2Def(CombinedBIBD) : public IClass2(_BIBD)
+Class2Def(CCombinedBIBD) : public Class2(C_BIBD)
 {
 public:
 	CK CCombinedBIBD(int v, int k, const std::vector<uint>& lambda);
-	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : IClass2(_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {}
+	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {}
 	CK ~CCombinedBIBD()										{ if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(int idx) const			{ return paramSets()[idx]; }

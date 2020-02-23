@@ -1,7 +1,7 @@
 #pragma once
 #include "PBIBD_Enumerator.h"
 
-IClass2Def(IncidenceStorage)
+Class2Def(CIncidenceStorage)
 {
 public:
 	CIncidenceStorage(S numb, S size) : m_Size(size)	{ m_pIncidence = new T[numb * size]; }
@@ -12,7 +12,7 @@ private:
 	const S m_Size;
 };
 
-IClass2Def(IG_Enumerator) : public IClass2(PBIBD_Enumerator)
+Class2Def(CIG_Enumerator) : public Class2(CPBIBD_Enumerator)
 {
 public:
 	CK CIG_Enumerator(const InSysPntr pBIBD, const designParam *pParam, unsigned int enumFlags = t_enumDefault, bool firstPath = false, int treadIdx = -1, uint nCanonChecker = 0);
@@ -64,8 +64,8 @@ private:
 	S m_nNumbRows;							// Number of rows where all blocks associated with the first elements were constructed
 	S *m_pPrmCols;							// Memory to keep permitations of columns
 	uchar *m_pElementFlags;					// Flags to mark the elements, which are already chosen
-	IClass2(IncidenceStorage) *m_pElements;
-	IClass2(IncidenceStorage) *m_pBlocks;
+	Class2(CIncidenceStorage) *m_pElements;
+	Class2(CIncidenceStorage) *m_pBlocks;
 	uint *m_pAreaWeight;
 	bool m_bStrongCheck;
 };

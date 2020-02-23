@@ -7,11 +7,11 @@
 #define OUT_STRING(buf, len, ...) { char buf[len]; SPRINTF(buf,  __VA_ARGS__); outString(buf, this->outFile()); }
 #endif
 
-IClass2Def(BIBD_Enumerator) : public IClass2(_InSysEnumerator)
+Class2Def(CBIBD_Enumerator) : public Class2(C_InSysEnumerator)
 {
 public:
 	CK CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		IClass2(_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+		Class2(C_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
 		setR(getInSys()->GetR());
 		m_firstUnforced = pBIBD->rowNumb() - pBIBD->GetK();
 	}
@@ -52,7 +52,7 @@ private:
 	size_t m_firstUnforced;
 };
 
-TClass2(BIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE idx)
+FClass2(CBIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE idx)
 {
 	if (this->currentRowNumb() + 1 == this->rowNumb())
 		return true;        // We will be here when lambda > 1 AND one of the colOrbits was splitted into 2 parts  
@@ -68,7 +68,7 @@ TClass2(BIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_
 	return checkChoosenSolution(pSolution, this->currentRowNumb(), idx);
 }
 
-TClass2(BIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
+FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
 	const auto paramR = this->getInSys()->GetR();
 	const auto iMax = this->rowNumb();
@@ -140,7 +140,7 @@ TClass2(BIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matri
 	return this->noReplicatedBlocks() ? noReplicatedBlockFound : true;
 }
 
-TClass2(BIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
+FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allow to do not consider the solutions for some right parts
@@ -158,7 +158,7 @@ TClass2(BIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, 
 	return true;
 }
 
-TClass2(BIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
+FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to skip testing of some solutions for some rows

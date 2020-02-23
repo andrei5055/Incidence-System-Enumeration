@@ -3,7 +3,7 @@
 
 //template<class T> class CRowSolution;
 
-IClass1Def(S, ColOrbit) {
+Class1Def(CColOrbit) {
  public:
 	CC CColOrbit() {
 #if !WAIT_THREADS
@@ -25,12 +25,12 @@ IClass1Def(S, ColOrbit) {
 	CC inline void setLength(S len)					{ m_nLength = len; }
 private:
 	S m_nLength;
-	IClass1(S, ColOrbit) *m_pNext;
+	Class1(CColOrbit) *m_pNext;
  protected:
 	 MY_ORB_ID
 };
 
-TClass1(S, ColOrbit, ColOrbPntr)::InitOrbit(int lenFragm, size_t colOrbitLen, const ColOrbPntr pColOrbit, int idx)
+FClass1(CColOrbit, ColOrbPntr)::InitOrbit(int lenFragm, size_t colOrbitLen, const ColOrbPntr pColOrbit, int idx)
 {
 	auto pColOrbitNext = (ColOrbPntr)((char *)this + lenFragm * colOrbitLen);
 	Init(lenFragm, pColOrbitNext);
@@ -38,7 +38,7 @@ TClass1(S, ColOrbit, ColOrbPntr)::InitOrbit(int lenFragm, size_t colOrbitLen, co
 	return pColOrbitNext;
 }
 
-TClass1(S, ColOrbit, void)::clone(const ColOrbPntr pColOrb)
+FClass1(CColOrbit, void)::clone(const ColOrbPntr pColOrb)
 {
 	setLength(pColOrb->length());
 	InitEntryCntrs(pColOrb);
@@ -52,7 +52,7 @@ TClass1(S, ColOrbit, void)::clone(const ColOrbPntr pColOrb)
 		setNext(NULL);
 }
 
-IClass1Def(S, ColOrbitIS) : public IClass1(S, ColOrbit)
+Class1Def(CColOrbitIS) : public Class1(CColOrbit)
 {// Orbits for Incidence Systems
  public:
 	 CC CColOrbitIS()													{ setColumnWeight(0); } 
@@ -66,7 +66,7 @@ IClass1Def(S, ColOrbitIS) : public IClass1(S, ColOrbit)
 	 int m_nColumnWeight;
 };
 
-IClass1Def(S, ColOrbitCS) : public IClass1(S, ColOrbit)
+Class1Def(CColOrbitCS) : public Class1(CColOrbit)
 {// Orbits for Colored Incidence Systems
  public:
 	CC ~CColOrbitCS()													 { delete [] getEntryCntrs(); }
@@ -76,16 +76,17 @@ IClass1Def(S, ColOrbitCS) : public IClass1(S, ColOrbit)
 	}
 
 	void InitOrbit(int maxElement) {
+		setMaxElement(maxElement);
 		m_pEntryCntrs = new unsigned int[maxElement];
 		memset(getEntryCntrs(), 0, maxElement * sizeof(getEntryCntrs()[0]));
 	}
 
-	inline static void setMaxElement(int maxElement)					{ m_maxElement = maxElement; }
 	CC inline unsigned int *getEntryCntrs() const						{ return m_pEntryCntrs; }
  
  protected:
  private:
-	CC inline static int maxElement()									{ return m_maxElement; }
+	inline void setMaxElement(int maxElement)							{ m_maxElement = maxElement; }
+	CC inline int maxElement()											{ return m_maxElement; }
 	unsigned int *m_pEntryCntrs;
-	static int m_maxElement;
+	int m_maxElement;
 };

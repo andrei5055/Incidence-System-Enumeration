@@ -58,9 +58,9 @@ typedef enum {
 	t_trahsitiveGroup   = 1 << 2,
 } t_MatrixFlags;
 
-IClass2Def(ThreadEnumerator);
+Class2Def(CThreadEnumerator);
 
-IClass2Def(EnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
+Class2Def(CEnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
 	CC CEnumInfo(const char *pStrToScreen = NULL) : m_pStrToScreen(pStrToScreen) {
@@ -82,7 +82,7 @@ public:
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)	{}
 	virtual void reportResult(char *buffer, int lenBuffer) const {}
 	CC virtual void init()									{ resetCounters(); }
-	virtual void updateEnumInfo(const EnumInfoPntr pInfo);
+	virtual void updateEnumInfo(const CEnumInfo * pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)			{}
 	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
 	CC void updateConstrCounters(int matrFlag, size_t groupOrder, bool groupIsTransitive) {
@@ -140,18 +140,18 @@ private:
 	designParam *m_pParam;
 }; 
 
-IClass2Def(InsSysEnumInfo) : public IClass2(EnumInfo)
+Class2Def(CInsSysEnumInfo) : public Class2(CEnumInfo)
 {
 public:
-	CC CInsSysEnumInfo(const char *pStrToScreen = NULL) : IClass2(EnumInfo)(pStrToScreen)
+	CC CInsSysEnumInfo(const char *pStrToScreen = NULL) : Class2(CEnumInfo)(pStrToScreen)
 																	{ setNoReplBlockFlag(false); resetCounter(); }
 	CC ~CInsSysEnumInfo()											{}
 public:
 	virtual ulonglong numbSimpleDesign() const						{ return m_nSimpleDesign; }
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)			{ m_nSimpleDesign += v; }
 	virtual void reportResult(char *buffer, int lenBuffer) const;
-	CC virtual void init()											{ resetCounter();  IClass2(EnumInfo)::init(); }
-	virtual void updateEnumInfo(const EnumInfoPntr pInfo);
+	CC virtual void init()											{ resetCounter();  Class2(CEnumInfo)::init(); }
+	virtual void updateEnumInfo(const CEnumInfo * pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)					{ m_bNoReplBlockFlag = val; }
 	CC virtual bool constructedAllNoReplBlockMatrix() const			{ return m_bNoReplBlockFlag; }
 private:

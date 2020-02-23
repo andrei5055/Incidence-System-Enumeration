@@ -12,7 +12,7 @@
 #include "EquSystem.h"
 #endif
 
-template class CInSysSolver<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CInSysSolver<TDATA_TYPES>;
 
 
 #if PRINT_RESULTS

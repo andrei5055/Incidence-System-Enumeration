@@ -1,12 +1,11 @@
 #include "stdafx.h"
-#include "Enumerator.h"
-#include "EnumInfo.h"
 #include "InsSysEnumerator.h"
+#include "EnumInfo.h"
 
 #if CONSTR_ON_GPU
 
-template<class T>
-__global__ void DummyFuncGPU(int v, int k, int lambda = 0) {
+template<typename T, typename S>
+__global__ void DummyFuncGPU(S v, S k, S lambda = 0) {
 }
 
 #include "InSysSolver.cpp"

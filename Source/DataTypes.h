@@ -6,7 +6,8 @@
 #define USE_THREADS					1						// Should be at least 1
 #define CANON_ON_GPU                (1 && CONSTR_ON_GPU==0)	// 1 - Start using GPU for canonicity testing
 #define NUM_GPU_WORKERS             128
-#include "host_defines.h"
+//#include "host_defines.h"
+#include "cuda_runtime_api.h"
 #define CC __host__ __device__		// CUDA_CALLABLE
 #if CONSTR_ON_GPU
 #define CK	CC __noinline__
@@ -195,41 +196,48 @@ typedef unsigned long long	ulonglong;
 
 
 #define MATRIX_ELEMENT_TYPE  	uchar
-#define SIZE_TYPE				uint16_t
-#define ELEMENT_MAX				std::numeric_limits<SIZE_TYPE>::max()
+#define SIZE_TYPE				uint16_t //uchar //uint16_t
+#define TDATA_TYPES				MATRIX_ELEMENT_TYPE, SIZE_TYPE
+#define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
 
-#define IClass1(S, x)			C##x<S>
-#define IClass1Def(S, x)		template<typename S> class C##x
-#define TClass1(S, x, ...)		template<typename S> __VA_ARGS__  IClass1(S, x)
+#define Class1(x)               x<S>
+#define Class1Def(x)            template<typename S> class x
+#define FClass1(x, ...)			template<typename S> __VA_ARGS__  Class1(x)
 
-#define IClass2(x)				C##x<T,S>
-#define IClass2Def(x)			template<typename T, typename S> class C##x
-#define TClass2(x, ...)			template<typename T, typename S> __VA_ARGS__  IClass2(x)
+#define Class2(x)               x<T,S>
+#define Class2Def(x)            template<typename T, typename S> class x
+#define FClass2(x, ...)			template<typename T, typename S> __VA_ARGS__  Class2(x)
 
-#define MatrixData(...)			TClass2(MatrixData, __VA_ARGS__)
-#define PermutStorage(...)		TClass2(PermutStorage, __VA_ARGS__)
-#define TDesign(...)			TClass2(_tDesign, __VA_ARGS__)
-#define CombinedBIBD(...)		TClass2(CombinedBIBD, __VA_ARGS__)
-#define CanonicityChecker(...)	TClass2(CanonicityChecker, __VA_ARGS__)
+#define MatrixData(...)			FClass2(CMatrixData, __VA_ARGS__)
+#define PermutStorage(...)		FClass2(CPermutStorage, __VA_ARGS__)
+#define TDesign(...)			FClass2(C_tDesign, __VA_ARGS__)
+#define CombinedBIBD(...)		FClass2(CCombinedBIBD, __VA_ARGS__)
+#define CanonicityChecker(...)	FClass2(CCanonicityChecker, __VA_ARGS__)
 
-//#define Enumerator				IClass2(Enumerator)
 
-#define MatrixDataPntr			IClass2(MatrixData) *
-#define MatrixPntr				IClass2(Matrix) *
-#define MatrixColPntr			IClass2(MatrixCol) *
-#define InSysPntr               IClass2(_InSys) *
-#define TDesignPntr				IClass2(_tDesign) *
-#define RowSolutionPntr			IClass2(RowSolution) *
-#define CanonicityCheckerPntr	IClass2(CanonicityChecker) *
-#define InSysSolverPntr         IClass2(InSysSolver) *
-#define EnumInfoPntr			IClass2(EnumInfo) *
-#define EnumeratorPntr			IClass2(Enumerator) *
-#define ThreadEnumeratorPntr    IClass2(ThreadEnumerator) *
-#define PermutStoragePntr		IClass2(PermutStorage) *
+#define EnumInfo				Class2(CEnumInfo)
+#define Enumerator				Class2(CEnumerator)
+#define GPU_CheckerInfo         Class2(CGPU_CheckerInfo)
+#define GPU_CanonChecker		Class2(CGPU_CanonChecker)
+#define MatrixCanonCheckerGPU	Class2(CMatrixCanonCheckerGPU)
 
-#define ColOrbPntr				IClass1(S, ColOrbit) *
-#define SimpleArrayPntr			IClass1(S, SimpleArray) *
-#define VectorPntr				IClass1(S, Vector) *
+
+#define MatrixDataPntr			Class2(CMatrixData) *
+#define MatrixPntr				Class2(CMatrix) *
+#define MatrixColPntr			Class2(CMatrixCol) *
+#define InSysPntr               Class2(C_InSys) *
+#define TDesignPntr				Class2(C_tDesign) *
+#define RowSolutionPntr			Class2(CRowSolution) *
+#define CanonicityCheckerPntr	Class2(CCanonicityChecker) *
+#define InSysSolverPntr         Class2(CInSysSolver) *
+#define EnumInfoPntr			Class2(CEnumInfo) *
+#define EnumeratorPntr			Class2(CEnumerator) *
+#define ThreadEnumeratorPntr    Class2(CThreadEnumerator) *
+#define PermutStoragePntr		Class2(CPermutStorage) *
+
+#define ColOrbPntr				Class1(CColOrbit) *
+#define SimpleArrayPntr			Class1(CSimpleArray) *
+#define VectorPntr				Class1(CVector) *
 
 #define MATRIX_ELEMENT_IS_BYTE	(MATRIX_ELEMENT_TYPE == uchar)
 #if MATRIX_ELEMENT_IS_BYTE
@@ -239,14 +247,11 @@ typedef unsigned long long	ulonglong;
 
 
 #define VECTOR_ELEMENT_TYPE  	SIZE_TYPE
-#define VECTOR_ACCESS_TYPE		VECTOR_ELEMENT_TYPE
-typedef CArray<VECTOR_ELEMENT_TYPE, VECTOR_ACCESS_TYPE> CArrayOfVectorElements;
+typedef CArray<VECTOR_ELEMENT_TYPE, VECTOR_ELEMENT_TYPE> CArrayOfVectorElements;
 
 #define PERMUT_ELEMENT_TYPE  	size_t
-#define PERMUT_ACCESS_TYPE		PERMUT_ELEMENT_TYPE
-typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ACCESS_TYPE> CArraySolutionPerm;
+typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ELEMENT_TYPE> CArraySolutionPerm;
 #define PERMUT_ELEMENT_MAX		UINT64_MAX
-
 
 template <class S>
 class CSimpleArray {
@@ -537,10 +542,10 @@ public:
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		//
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
-	const std::vector<uint> &lambda() const		{ return m_pInterStruct->lambda(); }
-	const std::vector<uint> &lambdaA() const	{ return m_pInterStruct->lambdaA(); }
-	const std::vector<uint> &lambdaB() const	{ return m_pInterStruct->lambdaB(); }
-	inline size_t lambdaSizeMax() const			{ return m_lambdaSizeMax; }
+	const auto &lambda() const					{ return m_pInterStruct->lambda(); }
+	const auto &lambdaA() const					{ return m_pInterStruct->lambdaA(); }
+	const auto &lambdaB() const					{ return m_pInterStruct->lambdaB(); }
+	inline auto lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;

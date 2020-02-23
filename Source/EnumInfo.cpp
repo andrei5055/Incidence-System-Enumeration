@@ -4,12 +4,12 @@
 #include "Enumerator.h"
 #include "ThreadEnumerator.h"
 
-template class CEnumInfo<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
-template class CInsSysEnumInfo<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CEnumInfo<TDATA_TYPES>;
+template class CInsSysEnumInfo<TDATA_TYPES>;
 
 static const int outDiv[] = { ':', ':', ':', '.' };
 
-TClass2(EnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf, bool alignment) const
+FClass2(CEnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf, bool alignment) const
 {
 	const int secTime = (int)time;
 	const int minTime = secTime / 60;
@@ -35,7 +35,7 @@ TClass2(EnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf, 
 	return pBuf - buffer;
 }
 
-TClass2(EnumInfo, double)::stringToTime(char *pTime)
+FClass2(CEnumInfo, double)::stringToTime(char *pTime)
 {
 	const double mult[] = { 3600 * 24, 3600, 60, 1, 0.01 };
 
@@ -63,31 +63,31 @@ TClass2(EnumInfo, double)::stringToTime(char *pTime)
 	return time;
 }
 
-TClass2(EnumInfo, bool)::compareTime(char *pTime1, char *pTime2)
+FClass2(CEnumInfo, bool)::compareTime(char *pTime1, char *pTime2)
 {
 	const double time1 = stringToTime(pTime1);
 	const double time2 = stringToTime(pTime2);
 	return time1 < time2;
 }
 
-TClass2(EnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
+FClass2(CEnumInfo, void)::updateEnumInfo(const CEnumInfo *pInfo)
 {
 	incrConstrCanonical(pInfo->constrCanonical());
 	incrConstrTotal(pInfo->constrTotal());
 }
 
-TClass2(EnumInfo, void)::setReportFileName(const char *pntr)
+FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
 { 
 	delete [] reportFileName();
 	if (pntr) {
-		const size_t len = strlen(pntr) + 1;
+		const auto len = strlen(pntr) + 1;
 		m_pReportFileName = new char[len];
 		memcpy_s(m_pReportFileName, len, pntr, len);
 	} else
 		m_pReportFileName = NULL;
 }
 
-TClass2(EnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo)
+FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo)
 {
 	// Only master will report the progress
 	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
@@ -153,7 +153,7 @@ TClass2(EnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGrou
 	setReportInt(repInt);
 }
 
-TClass2(EnumInfo, void)::reportProgress(const IClass2(ThreadEnumerator) *pThreadEnum, size_t nThread)
+FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThreadEnum, size_t nThread)
 {
 	if (nThread >= 1) {
 		// Save already collected information 
@@ -184,7 +184,7 @@ TClass2(EnumInfo, void)::reportProgress(const IClass2(ThreadEnumerator) *pThread
 	}
 }
 
-TClass2(EnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
+FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
 {
 	setRunTime();
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
@@ -216,7 +216,7 @@ TClass2(EnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, con
 		remove(reportFileName());
 }
 
-TClass2(EnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
+FClass2(CEnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
 {
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
 	if (!outFile)
@@ -229,7 +229,7 @@ TClass2(EnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
 	outEnumInformation(pOutFile);
 }
 
-TClass2(EnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
+FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
 {
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
 	if (!outFile)
@@ -269,13 +269,13 @@ TClass2(EnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel) 
 	designInfo()->rewindLen = outLen;
 }
 
-TClass2(InsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
+FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 {
-	IClass2(EnumInfo)::updateEnumInfo(pInfo);
+	Class2(CEnumInfo)::updateEnumInfo(pInfo);
 	incNumbSimpleDesign(pInfo->numbSimpleDesign());
 }
 
-TClass2(InsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
+FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 {
 	size_t len = SNPRINTF(buffer, lenBuffer, "%s       %9llu       %9llu",
 						   this->strToScreen(), this->constrCanonical(), numbSimpleDesign());

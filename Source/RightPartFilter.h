@@ -22,7 +22,7 @@ typedef struct {
     CK inline VECTOR_ELEMENT_TYPE val() const	{ return m_val; }
 } FilterData;
 
-IClass1Def(S, RightPartFilter)
+Class1Def(CRightPartFilter)
 {
 public:
     CK CRightPartFilter(size_t len)             { m_pFilterData = new FilterData [len]; }

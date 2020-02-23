@@ -2,10 +2,10 @@
 #include "DataTypes.h"
 #include <stdio.h>
 
-IClass2Def(MatrixData);
-#define PermutStoragePntr IClass2(PermutStorage) *
+Class2Def(CMatrixData);
+#define PermutStoragePntr Class2(CPermutStorage) *
 
-IClass2Def(PermutStorage)
+Class2Def(CPermutStorage)
 {
 public:
 	CC CPermutStorage();
@@ -24,7 +24,7 @@ public:
 	CK inline size_t numPerm() const				{ return lenMemUsed() / lenPerm(); }
 	CC S *allocateMemoryForPermut(S lenPermut);
 	CC inline void setLenPerm(S val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
-	void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, S idx = 0) const;
+	CC void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, S idx = 0) const;
 	S *CreateOrbits(const PermutStoragePntr pPermColumn, const  MatrixDataPntr pMatrix, S *pRowOrbits = NULL, S *pColOrbits = NULL, int firstpermIdx = 1) const;
 	inline bool isEmpty() const						{ return !lenMemUsed(); }
 protected:
@@ -44,7 +44,7 @@ private:
 	CK void multiplyPermutations(size_t currPermIdx, size_t fromIdx, size_t toIdx, size_t permOrder, size_t lastIdx, size_t *pPermPerm);
 	void outputOrbits(FILE *file, const S *pOrbits, S len, const PermutStoragePntr pPermColumn = NULL) const;
 	void outputOrbits(FILE *file, const PermutStoragePntr pPermColumn,
-		const IClass2(MatrixData)*pMatrix, const S *pRowOrbits, const S *pColOrbits) const;
+		const Class2(CMatrixData)*pMatrix, const S *pRowOrbits, const S *pColOrbits) const;
 	void outputPermutations(FILE *file, S len, const PermutStoragePntr pPermColumn = NULL,
 		const S *permutMemoryCol = NULL, const S *permutMemoryRow = NULL, int nOrbs = 0) const;
 
@@ -299,4 +299,147 @@ PermutStorage(size_t)::findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size
 	}
 
 	return pCanonIdx[i];
+}
+
+PermutStorage(void)::UpdateOrbits(const S* permut, S lenPerm, S* pOrb, S idx) const {
+	// Update orbits of elements
+	do {
+		auto i = *(pOrb + idx);
+		auto j = *(pOrb + permut[idx]);
+		if (j == i)
+			continue;
+
+		if (j < i) {
+			i ^= j;
+			i ^= j ^= i;
+		}
+
+		for (auto k = lenPerm; k--;) {
+			if (*(pOrb + k) == j)
+				*(pOrb + k) = i;
+		}
+	} while (++idx < lenPerm);
+}
+
+PermutStorage(void)::outputAutomorphismInfo(FILE* file, const S* pRowOrbits,
+	const  Class2(CPermutStorage)* pPermColumn, const S* pColOrbits, const Class2(CMatrixData)* pMatrix) const {
+	const auto nRows = lenPerm();
+	if (pPermColumn) {
+		outputOrbits(file, pPermColumn, pMatrix, pRowOrbits, pColOrbits);
+	}
+	else
+		outputOrbits(file, pRowOrbits, nRows);
+
+	outputPermutations(file, nRows, pPermColumn);
+}
+
+PermutStorage(void)::outputOrbits(FILE* file, const S* pOrbits, S lenPerm, const Class2(CPermutStorage)* pPermColumn) const {
+	outputPerm(file, pOrbits, lenPerm, pPermColumn ? pPermColumn->lenPerm() : 0);
+}
+
+PermutStorage(void)::outputOrbits(FILE* file, const Class2(CPermutStorage)* pPermColumn,
+	const Class2(CMatrixData)* pMatrix, const S* pRowOrbits, const S* pColOrbits) const {
+	const auto nRows = lenPerm();
+	const auto constructOrbits = !pColOrbits || !pRowOrbits;
+	if (constructOrbits) {
+		if (!pMatrix)
+			return;
+
+		pRowOrbits = CreateOrbits(pPermColumn, pMatrix);
+		pColOrbits = pRowOrbits + 2 * nRows;
+	}
+
+	outputPermutations(file, nRows, pPermColumn, pColOrbits, pRowOrbits, 2);
+	if (constructOrbits)
+		delete[] pRowOrbits;
+}
+
+PermutStorage(void)::outputPermutations(FILE* file, S lenPerm, const Class2(CPermutStorage)* pPermColumn,
+	const S* permutMemoryCol, const S* permutMemoryRow, int nOrbs) const
+{
+	char* pFormat;
+	char* pBuffer = NULL;
+	char* pBufferRows = NULL;
+	size_t lenBuffer, lenBufferCol;
+	size_t lenPermCol = 0;
+	if (pPermColumn) {
+		lenPermCol = pPermColumn->lenPerm();
+		if (!permutMemoryCol)
+			permutMemoryCol = pPermColumn->permutMemory();
+	}
+
+	size_t lenMax;
+	if (!permutMemoryRow) {
+		lenMax = lenMemUsed();
+		permutMemoryRow = permutMemory();
+	}
+	else
+		lenMax = nOrbs * lenPerm;
+
+
+	for (size_t len = 0; len < lenMax; len += lenPerm) {
+		if (permutMemoryCol) {
+			outputPerm(NULL, permutMemoryCol, lenPermCol, lenPerm, NULL, &pBuffer, &lenBufferCol, &pFormat);
+			permutMemoryCol += lenPermCol;
+			if (!len) {
+				lenBuffer = lenBufferCol;
+				lenBufferCol = (lenBufferCol - 4) / (lenPermCol + lenPerm) * lenPermCol + 2;
+				pBufferRows = pBuffer + lenBufferCol;
+				lenBuffer -= lenBufferCol;
+			}
+		}
+
+		outputPerm(file, permutMemoryRow + len, lenPerm, 0, pBuffer, &pBufferRows, &lenBuffer, &pFormat);
+	}
+
+	if (pBuffer)
+		delete[] pBuffer;
+	else
+		delete[] pBufferRows;
+}
+
+PermutStorage(S*)::CreateOrbits(const  Class2(CPermutStorage)* pPermColumn,
+	const Class2(CMatrixData)* pMatrix, S* pOrbits, S* pColOrbits, int firstpermIdx) const {
+	const auto nRows = lenPerm();
+	const auto nCols = pPermColumn->lenPerm();
+	auto* pRowOrbits = pOrbits ? pOrbits : new S[2 * (nRows + (pColOrbits ? 0 : nCols))];
+	if (!pColOrbits)
+		pColOrbits = pRowOrbits + 2 * nRows;
+
+	// Orbits will be printed first and stabilizer will be second 
+	auto* pColOrbitsTmp = pColOrbits;
+	auto* pRowOrbitsTmp = pRowOrbits;
+	pColOrbitsTmp[0] = 0;
+	auto jPrev = 0;
+	for (S j = 1; j < nCols; ++j) {
+		// Compare i-th column with the previous one
+		T* pElem = pMatrix->GetDataPntr() + jPrev;
+		S i = 0;
+		while (i < nRows && *pElem == *(pElem + 1)) {
+			pElem += nCols;
+			++i;
+		}
+
+		pColOrbitsTmp[j] = i == nRows ? pColOrbitsTmp[jPrev] : j;
+		jPrev = j;
+	}
+
+	for (S j = 0; j < nRows; ++j)
+		pRowOrbitsTmp[j] = j;
+
+	// Identical permutation will be skipped
+	const auto iMax = pPermColumn->numPerm();
+	for (size_t i = firstpermIdx; i < iMax; ++i) {
+		const auto pRowPermut = getPermutByIndex(i);
+		if (pRowPermut[0] && pColOrbitsTmp == pColOrbits) {
+			// Copying the orbits of stabilizer of first elements
+			memcpy(pRowOrbitsTmp += nRows, pRowOrbits, nRows * sizeof(S));
+			memcpy(pColOrbitsTmp += nCols, pColOrbits, nCols * sizeof(S));
+		}
+
+		UpdateOrbits(pRowPermut, nRows, pRowOrbitsTmp);
+		UpdateOrbits(pPermColumn->getPermutByIndex(i), nCols, pColOrbitsTmp);
+	}
+
+	return pRowOrbits;
 }

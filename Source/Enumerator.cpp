@@ -46,15 +46,15 @@ int ccc = 0;
 std::mutex out_mutex;
 #endif
 
-template class CEnumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CEnumerator<TDATA_TYPES>;
 
-TClass2(Enumerator, bool)::fileExists(const char *path, bool file) const
+FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 {
 	struct stat info;
 	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
 }
 
-TClass2(Enumerator, RowSolutionPntr)::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
+FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	if (!prepareToFindRowSolution())
 		return NULL;
@@ -83,12 +83,12 @@ void thread_message(int threadIdx, const char *pComment, t_threadCode code, void
 #endif
 
 template<typename T, typename S>
-void threadEnumerate(IClass2(ThreadEnumerator) *threadEnum, designParam *param, const EnumeratorPntr pMaster)
+void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, const EnumeratorPntr pMaster)
 {
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
 
-TClass2(Enumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, IClass2(ThreadEnumerator) *threadEnum, size_t nThread) const
+FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) *threadEnum, size_t nThread) const
 {
 	// Try to find the index of not-running thread
 	const auto flag = code == t_threadNotUsed;
@@ -153,7 +153,7 @@ TClass2(Enumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, IClas
 }
 #endif
 
-TClass2(Enumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
+FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
 {
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
@@ -236,7 +236,7 @@ TClass2(Enumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, E
 		pEnumInfo->startClock();
 
 #if USE_THREADS_ENUM 
-		pThreadEnum = new IClass2(ThreadEnumerator)[pParam->threadNumb];
+		pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
 	#if USE_POOL
 		// Create an asio::io_service and a thread_group (through pool in essence)
 		pIoService = new asio::io_service();
@@ -531,13 +531,13 @@ TClass2(Enumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, E
 	return retVal;
 } 
 
-TClass2(Enumerator, void)::reset(S nRow) {
+FClass2(CEnumerator, void)::reset(S nRow) {
 	rowStuff(nRow)->resetSolution();
 	this->resetColOrbitCurr();
 	this->resetUnforcedColOrb();
 }
 
-TClass2(Enumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
+FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
 {
     const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
@@ -626,10 +626,10 @@ TClass2(Enumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution
     return pNextRowColOrbitNew;
 }
 
-TClass2(Enumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
+FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 {
 	const auto nRow = pMaster? pMaster->currentRowNumb() + 1 : 0;
-	auto pSolutions = new IClass2(RowSolution)[rowNumb() - nRow];
+	auto pSolutions = new Class2(CRowSolution)[rowNumb() - nRow];
 	for (auto i = rowNumb(); i-- > nRow;)
 		m_pRow[i] = pSolutions + i - nRow;
 
@@ -637,7 +637,7 @@ TClass2(Enumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nRow * sizeof(*rowStuffPntr()));
 }
 
-TClass2(Enumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
+FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
 {
 	const auto pParam = designParams();
 
@@ -689,7 +689,7 @@ static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
 	}
 }
 
-TClass2(Enumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const
+FClass2(CEnumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const
 {
 	// Construct the file name of the file with the enumeration results
 	if (!makeFileName(buffer, lenBuffer, ""))
@@ -702,7 +702,7 @@ TClass2(Enumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, siz
 	return true;
 }
 
-TClass2(Enumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) const
+FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) const
 {
 	const size_t lenBuf = 256;
 	const size_t len = strlen(CONSTRUCTED_IN);
@@ -720,7 +720,7 @@ TClass2(Enumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) con
 		if (pntr[0]) {
 			if (!file[1] || pntr[1]) {
 				if (pBetterResults)
-					*pBetterResults = IClass2(EnumInfo)::compareTime(pntr[0] + len, pntr[1] + len);
+					*pBetterResults = Class2(CEnumInfo)::compareTime(pntr[0] + len, pntr[1] + len);
 
 				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf)) {
 					char* pInfo[] = { pntr[0] + len, buf[0], buf[1] };
@@ -740,7 +740,7 @@ TClass2(Enumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) con
 	return false;
 }
 
-TClass2(Enumerator, bool)::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
+FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
 {
 	FOPEN(file, fileName, "r");
 	if (!file)
@@ -783,13 +783,13 @@ static void outKeyInfo(const char* key, char **pInfo, FILE* file, const char *pC
 		fprintf(file, "\n");
 }
 
-TClass2(Enumerator, void)::outputTitle(FILE *file) const {
+FClass2(CEnumerator, void)::outputTitle(FILE *file) const {
 	char format[64];
 	SPRINTF(format, "%s%%9s:  %%9s:       %%9s: %%9s:      %%9s:\n", this->getObjNameFormat());
 	fprintf(file, format, this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
-TClass2(Enumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
+FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 {
 	for (int i = 0; i < len; i++) {
 		// Eliminate all first spaces
@@ -872,7 +872,7 @@ TClass2(Enumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 }
 
 #if USE_STRONG_CANONICITY_A
-TClass2(Enumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
+FClass2(CEnumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 {
 	if (!pRowSolution)
 		return;
@@ -909,11 +909,11 @@ TClass2(Enumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 #endif
 
 #if CANON_ON_GPU
-TClass2(Enumerator, size_t)::copyColOrbitInfo(S nRow) const
+FClass2(CEnumerator, size_t)::copyColOrbitInfo(S nRow) const
 {
 	// Function copy existing information about the orbits of columns  
 	// into new structures, which could be used on GPU
-	const auto pColOrbInfoBeg = GPU_CanonChecker()->ColOrbitData(t_CPU);
+	const auto pColOrbInfoBeg = CanonCheckerGPU()->ColOrbitData(t_CPU);
 	auto pColOrbInfo = pColOrbInfoBeg;
 	const auto colOrbit = colOrbits();
 	const auto colOrbitIni = colOrbitsIni();

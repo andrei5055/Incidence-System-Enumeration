@@ -12,8 +12,8 @@
 #include "InSysRowEquation.h"
 #include "ColOrbits.h"
 
-IClass2Def(CanonicityChecker);
-IClass2Def(InSysSolver);
+Class2Def(CCanonicityChecker);
+Class2Def(CInSysSolver);
 
 typedef CArray<uchar, uchar> CArrayOfCanonFlags;
 
@@ -37,7 +37,7 @@ public:
 	CArrayOfCanonFlags *m_CanonFlgs;
 };
 
-IClass2Def(RowSolution) : public CVector<S>
+Class2Def(CRowSolution) : public CVector<S>
 {
 public:
  	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<S>(size * nVect, pCoord) {
@@ -98,7 +98,7 @@ private:
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
 
-TClass2(RowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArrayOfVectorElements *pCoord)
+FClass2(CRowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArrayOfVectorElements *pCoord)
 {
 	setSolutionIndex(0);
 	setSolutionSize(size);					// vector length
@@ -107,7 +107,7 @@ TClass2(RowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArra
 	setNumSolutions(nVect);
 }
 
-TClass2(RowSolution, S *)::newSolution() {
+FClass2(CRowSolution, S *)::newSolution() {
 	const auto numSolution = solutionIndex() + 1;
 	if (this->GetSize() < numSolution * solutionSize())
 		this->IncreaseVectorSize(solutionSize());
@@ -117,7 +117,7 @@ TClass2(RowSolution, S *)::newSolution() {
 	return (S *)pntr;
 }
 
-TClass2(RowSolution, RowSolutionPntr)::getSolution() {
+FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 	if (!solutionIndex())
 		return NULL;
 
@@ -127,7 +127,7 @@ TClass2(RowSolution, RowSolutionPntr)::getSolution() {
 	return this;
 }
 
-TClass2(RowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
+FClass2(CRowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
 {
 	auto pSolution = lastSolution();
 	if (!pSysSolver->isValidSolution(pSolution))
@@ -138,7 +138,7 @@ TClass2(RowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
 	return pSolution;
 }
 
-TClass2(RowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
+FClass2(CRowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	uchar *pCanonFlags = useCanonGroup ? solutionPerm()->canonFlags() : NULL;
 	if (!pCanonFlags)
 		return nextSolutionIndex() < numSolutions() ? this : NULL;
@@ -152,7 +152,7 @@ TClass2(RowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	return NULL;
 }
 
-TClass2(RowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin) {
+FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin) {
 #if USE_PERM
 	const auto pFirst = firstSolution();
 	const size_t nSolutions = numSolutions();
@@ -259,7 +259,7 @@ TClass2(RowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin)
 	return true;
 }
 
-TClass2(RowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
+FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
 	if (!this || !numSolutions() || !solutionSize())
 		return;
 
@@ -290,7 +290,7 @@ TClass2(RowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
 }
 
 #if USE_THREADS || MY_QUICK_SORT
-TClass2(RowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
+FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
 {
 	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionSize();
 	for (size_t i = 0; i < solutionSize(); i++) {
@@ -304,7 +304,7 @@ TClass2(RowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const V
 	return 0;
 }
 
-TClass2(RowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
+FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
 	long i = left, j = right;
 	const auto pivotIdx = (left + right) >> 1;
 	const VECTOR_ELEMENT_TYPE *pivot = firstSolution() + arr[pivotIdx] * solutionSize();
@@ -334,7 +334,7 @@ TClass2(RowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long 
 #endif
 
 
-TClass2(RowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker) {
+FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker) {
 	pCanonChecker->constructGroup();
 	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
 	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
@@ -394,7 +394,7 @@ TClass2(RowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChec
 		delete[] pCanonIdx;
 }
 
-TClass2(RowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin) {
+FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin) {
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionSize(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();

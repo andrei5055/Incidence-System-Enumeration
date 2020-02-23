@@ -12,8 +12,8 @@
 #define TRACE_ALL_CUDA_CALLS	0
 
 #if !CONSTR_ON_GPU
-#define releaseGPU_CanonChecker() delete GPU_CanonChecker()
-#define LAUNCH_CANONICITY_TESTING(x, y) x->LaunchCanonicityTesting(y);
+#define releaseGPU_CanonChecker()			delete CanonCheckerGPU()
+#define LAUNCH_CANONICITY_TESTING(x, y)		x->LaunchCanonicityTesting(y);
 #else
 #define setGPU_CanonChecker(x)
 #define releaseGPU_CanonChecker()
@@ -78,7 +78,7 @@ typedef enum {
 	t_GPU
 } t_ProcType;
 
-IClass2Def(MatrixCol) : public CColOrbitManager<S>
+Class2Def(CMatrixCol) : public CColOrbitManager<S>
 {
 public:
 	CC CMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_enumDefault) :
@@ -121,32 +121,31 @@ private:
 
 #include "EnumInfo.h"
 
-IClass2Def(MatrixCanonChecker) : public IClass2(MatrixCol), public IClass2(CanonicityChecker)
+Class2Def(CMatrixCanonChecker) : public Class2(CMatrixCol), public Class2(CCanonicityChecker)
 {
 public:
 	CC CMatrixCanonChecker(const MatrixDataPntr pMatrix, uint enumFlags) :
-		IClass2(MatrixCol)(pMatrix, enumFlags),
-		IClass2(CanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
+		Class2(CMatrixCol)(pMatrix, enumFlags),
+		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
 															{ setEnumInfo(NULL); }
 
 	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, S rowNumb, S colNumb, T maxElem, bool IS_enum) :
-		IClass2(MatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
-		IClass2(CanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
+		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
+		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
 	CC ~CMatrixCanonChecker()								{ delete enumInfo(); }
 
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)		{ m_pEnumInfo = pEnumInfo; }
-	CC inline auto enumInfo() const							{ return m_pEnumInfo; }
+	CC inline EnumInfoPntr enumInfo() const					{ return m_pEnumInfo; }
 private:
 	EnumInfoPntr m_pEnumInfo;
 };
 
 #if CANON_ON_GPU
-template<class T>
-class CMatrixCanonCheckerGPU : public CMatrixCanonChecker<T>
+Class2Def(CMatrixCanonCheckerGPU) : public Class2(CMatrixCanonChecker)
 {
 public:
-	CC CMatrixCanonCheckerGPU(const CMatrixData<T> *pMatrix, uint enumFlags = 0) :
-		CMatrixCanonChecker<T>(pMatrix, enumFlags)			{}
+	CC CMatrixCanonCheckerGPU(const Class2(CMatrixData) *pMatrix, uint enumFlags = 0) :
+		Class2(CMatrixCanonChecker)(pMatrix, enumFlags)		{}
 	CC ~CMatrixCanonCheckerGPU()							{ closeColOrbits(); }
 };
 
@@ -162,13 +161,28 @@ public:
 
 
 typedef struct {
-	COrderInfo *pOrderInfo;
+	COrderInfo* pOrderInfo;
 	int nOrders;
 	int nOrdersMax;
 } GroupOrderInfo;
 
-template<class T>
-class CGPU_CheckerInfo
+template<typename T, typename S>
+void MakeCopyGroupInfo(MatrixCanonCheckerGPU** ppCheckers, GroupOrderInfo* orderInfo,
+	int CPU_threadIdx, cudaStream_t stream, COrderInfo* pOrderInfo);
+
+Class2Def(CEnumerator);
+
+template<typename T, typename S>
+bool AssignChecker(MatrixCanonCheckerGPU** ppCheckers, Class2(CMatrixData)** pAllMatrData, uint checkerIdx, const Enumerator* pCanonChecker, cudaStream_t stream
+#if TRACE_CUDA_FLAG
+	, int myID
+#endif
+);
+
+template<typename T, typename S>
+void ResetEnumInfoGlobal(MatrixCanonCheckerGPU** ppCheckers, cudaStream_t stream);
+
+Class2Def(CGPU_CheckerInfo)
 {
 public:
 	static void InitCanonInfo(size_t nCPUthreads) {
@@ -192,13 +206,11 @@ public:
 	}
 
 	static float GetCurrentTime() { m_timer.setRunTime();  return m_timer.runTime(); }
-	static COrderInfo *CopyCanonInfo(CMatrixCanonCheckerGPU<T> **ppCheckers, int threadID, int *nOrders, cudaStream_t stream
+	static COrderInfo *CopyCanonInfo(MatrixCanonCheckerGPU **ppCheckers, int threadID, int *nOrders, cudaStream_t stream
 #if TRACE_CUDA_FLAG
 		, int myID
 #endif
 	) {
-		void MakeCopyGroupInfo(CMatrixCanonCheckerGPU<T> **ppCheckers, GroupOrderInfo *orderInfo, 
-			int CPU_threadIdx, cudaStream_t stream, COrderInfo *pOrderInfo);
 		GroupOrderInfo groupInfo;
 		COrderInfo *pOrderInfo = NULL;
 		while (true) {
@@ -231,15 +243,13 @@ private:
 	static CTimerInfo m_timer;
 };
 
-#define InitCanonInfo(x)	CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::InitCanonInfo(x)
-#define CloseCanonInfo()	CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::CloseCanonInfo(); cudaDeviceReset();
-template<class T> class CEnumerator;
+#define InitCanonInfo(x)	CGPU_CheckerInfo<TDATA_TYPES>::InitCanonInfo(x)
+#define CloseCanonInfo()	CGPU_CheckerInfo<TDATA_TYPES>::CloseCanonInfo(); cudaDeviceReset();
 
-template<class T>
-class CGPU_CanonChecker : public CGPU_CheckerInfo<T>
+Class2Def(CGPU_CanonChecker) : public GPU_CheckerInfo
 {
 public:
-	CGPU_CanonChecker(uint total, const CMatrixData<T> *pMatrix, int treadIdx) : m_CPUtreadIdx(treadIdx), m_nCheckersTotal(total) {
+	CGPU_CanonChecker(uint total, const Class2(CMatrixData) *pMatrix, int treadIdx) : m_CPUtreadIdx(treadIdx), m_nCheckersTotal(total) {
 		m_nCheckersAssigned = 0;
 		m_pMatrix = pMatrix;
 		m_pCanonFlag = NULL;
@@ -259,7 +269,7 @@ public:
 		if (m_pMatrix)
 			return;
 
-		void ReleaseCheckers(CMatrixCanonCheckerGPU<T> **ppCheckers, uint numCheckers, cudaStream_t stream);
+		void ReleaseCheckers(MatrixCanonCheckerGPU **ppCheckers, uint numCheckers, cudaStream_t stream);
 		ReleaseCheckers(m_ppCanonChecker, numCheckers(), CUDA_stream());
 
 		for (uint i = 0; i < numCheckers(); ++i) {
@@ -280,7 +290,7 @@ public:
 		cudaStreamDestroy(CUDA_stream());
 	}
 
-	bool assignChecker(CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pEnum, int matrFlags) {
+	bool assignChecker(Class2(CEnumInfo) *pEnumInfo, const Enumerator *pEnum, int matrFlags) {
 		if (!assignChecker(pEnum, matrFlags))
 			return false;
 
@@ -290,10 +300,10 @@ public:
 		return true;
 	}
 
-	size_t *ColOrbitData(t_ProcType idx = t_CPU) const { return m_pColOrbitData[idx]; }
-	inline cudaStream_t CUDA_stream() const { return m_CUDA_stream; }
-	virtual bool noReplicatedBlocks() const { return false; }
-	bool assignChecker(const CEnumerator<T> *pCanonChecker, int matrFlag) {
+	size_t *ColOrbitData(t_ProcType idx = t_CPU) const	{ return m_pColOrbitData[idx]; }
+	inline cudaStream_t CUDA_stream() const				{ return m_CUDA_stream; }
+	virtual bool noReplicatedBlocks() const				{ return false; }
+	bool assignChecker(const Enumerator *pCanonChecker, int matrFlag) {
 		TRACE_CUDA("  assignChecker_0 === this = %p  m_pMatrix = %p\n", this, m_pMatrix)
 		if (m_pMatrix) {	// CUDA memory was not allocated yet
 			cudaStreamCreate(&m_CUDA_stream);
@@ -315,7 +325,7 @@ public:
 			// For each ColOrbit we will need to keep no more than 2 numbers:
 			m_pColOrbitData[t_CPU] = new size_t[2 * m_pMatrix->colNumb() * m_pMatrix->rowNumb()];
 
-			m_ppCanonChecker = (CMatrixCanonCheckerGPU<T> **)(m_pCanonFlag + sizeof(m_pCanonFlag[0]) * numCheckers());
+			m_ppCanonChecker = (MatrixCanonCheckerGPU **)(m_pCanonFlag + sizeof(m_pCanonFlag[0]) * numCheckers());
 			m_pGroupInfo = (uint *)((char *)m_ppCanonChecker + numCheckers() * sizeof(m_ppCanonChecker[0]));
 			CudaSafeCallRet(cudaMalloc(m_pColOrbitData + t_GPU, len * sizeof(m_pColOrbitData[0][0])), false);
 			m_pMatrix = NULL;
@@ -324,24 +334,18 @@ public:
 		// Allocate GPU memory for matrix, if needed
 		TRACE_CUDA("  assignChecker 2: this = %p  m_ppAllMatrData[m_nCheckersAssigned = %d] %p\n", this, m_nCheckersAssigned, m_ppAllMatrData[m_nCheckersAssigned])
 			if (!m_ppAllMatrData[m_nCheckersAssigned])
-				CudaSafeCall(cudaMalloc(m_ppAllMatrData + m_nCheckersAssigned, pCanonChecker->matrix()->lenData() + sizeof(CMatrixData<T>)));
+				CudaSafeCall(cudaMalloc(m_ppAllMatrData + m_nCheckersAssigned, pCanonChecker->matrix()->lenData() + sizeof(Class2(CMatrixData))));
 
 		m_pMatrFlags[m_nCheckersAssigned] = matrFlag;
 
-		bool AssignChecker(CMatrixCanonCheckerGPU<T> **ppCheckers, CMatrixData<T> **pAllMatrData, uint checkerIdx, const CEnumerator<T> *pCanonChecker, cudaStream_t stream
 #if TRACE_CUDA_FLAG
-			, int myID
-#endif
-		);
-
-#if TRACE_CUDA_FLAG
-		return AssignChecker(m_ppCanonChecker, (CMatrixData<T> **)m_ppAllMatrData, m_nCheckersAssigned++, pCanonChecker, CUDA_stream(), myID);
+		return AssignChecker(m_ppCanonChecker, (Class2(CMatrixData)**)m_ppAllMatrData, m_nCheckersAssigned++, pCanonChecker, CUDA_stream(), myID);
 #else
-		return AssignChecker(m_ppCanonChecker, (CMatrixData<T> **)m_ppAllMatrData, m_nCheckersAssigned++, pCanonChecker, CUDA_stream());
+		return AssignChecker(m_ppCanonChecker, (Class2(CMatrixData)**)m_ppAllMatrData, m_nCheckersAssigned++, pCanonChecker, CUDA_stream());
 #endif
 	}
 
-	void LaunchCanonicityTesting(CEnumInfo<T> *pEnumInfo, const CEnumerator<T> *pEnum) const
+	void LaunchCanonicityTesting(EnumInfo *pEnumInfo, const Enumerator *pEnum) const
 	{
 		TRACE_CUDA("  TestCanonicity: this = %p  m_nCheckersAssigned %d\n", this, m_nCheckersAssigned)
 			if (!m_nCheckersAssigned)
@@ -350,7 +354,7 @@ public:
 		CudaSafeCall(cudaMemcpyAsync(m_pMatrFlagsGPU, m_pMatrFlags, m_nCheckersAssigned * sizeof(m_pMatrFlags[0]), 
 					cudaMemcpyHostToDevice, CUDA_stream()));
 
-		void TestCanonicity(uint nMatr, CMatrixCanonCheckerGPU<T> **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, int * pMatrFlag, cudaStream_t stream);
+		void TestCanonicity(uint nMatr, MatrixCanonCheckerGPU **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, int * pMatrFlag, cudaStream_t stream);
 		TestCanonicity(m_nCheckersAssigned, m_ppCanonChecker, m_pCanonFlag, m_pGroupInfo, m_pMatrFlagsGPU, CUDA_stream());
 
 		int nOrders;
@@ -363,8 +367,6 @@ public:
 		if (pOrderInfoBase) {
 			pEnumInfo->RecalcCountersByGroupOrders(pOrderInfoBase, nOrders);
 			delete[] pOrderInfoBase;
-
-			void ResetEnumInfoGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, cudaStream_t stream);
 			ResetEnumInfoGlobal(m_ppCanonChecker, CUDA_stream());
 		}
 
@@ -376,8 +378,8 @@ private:
 	CK inline auto numCheckers() const			{ return m_nCheckersTotal; }
 
 	uint *m_pGroupInfo;
-	CMatrixCanonCheckerGPU<T> **m_ppCanonChecker;
-	const CMatrixData<T> *m_pMatrix;
+	MatrixCanonCheckerGPU **m_ppCanonChecker;
+	const Class2(CMatrixData) *m_pMatrix;
 	uchar *m_pCanonFlag;
 	int *m_pMatrFlags;
 	int *m_pMatrFlagsGPU;
@@ -396,7 +398,7 @@ private:
 #define CloseCanonInfo()
 #endif
 
-IClass2Def(ThreadEnumerator);
+Class2Def(CThreadEnumerator);
 
 #if CONSTR_ON_GPU
 #define MAKE_JOB_TITLE(x, y,...)
@@ -404,7 +406,7 @@ IClass2Def(ThreadEnumerator);
 #define MAKE_JOB_TITLE(x, y,...) x->makeJobTitle(y, __VA_ARGS__)
 #endif
 
-IClass2Def(Enumerator) : public IClass2(MatrixCanonChecker)
+Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 {
 public:
 	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
@@ -423,7 +425,7 @@ public:
 	CK inline designParam *designParams() const				{ return m_pParam; }
 
 #if CANON_ON_GPU
-	CK inline auto GPU_CanonChecker() const					{ return m_pGPU_CanonChecker; }
+	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(S nRow) const;
 #endif
 protected:
@@ -479,15 +481,15 @@ private:
 #endif
 	CK void InitRowSolutions(const CEnumerator *pMaster);
 #if CANON_ON_GPU
-	CK inline void setGPU_CanonChecker(CGPU_CanonChecker<T> *pntr) { m_pGPU_CanonChecker = pntr; }
+	CK inline void setGPU_CanonChecker(GPU_CanonChecker *pntr) { m_pGPU_CanonChecker = pntr; }
 	bool TestCanonicityOnGPU() {
 		int matrFlags = 0;
 		if (!TestFeatures(enumInfo(), matrix(), &matrFlags))
 			return true;
 
-		assert(GPU_CanonChecker());
+		assert(CanonCheckerGPU());
 
-		return GPU_CanonChecker()->assignChecker(enumInfo(), this, matrFlags);
+		return CanonCheckerGPU()->assignChecker(enumInfo(), this, matrFlags);
 	}
 #else
 	#define TestCanonicityOnGPU()		false
@@ -498,19 +500,19 @@ private:
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
 #if CANON_ON_GPU
-	CGPU_CanonChecker<T> *m_pGPU_CanonChecker;
+	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif
 };
 
-TClass2(Enumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	IClass2(MatrixCanonChecker)(pMatrix, enumFlags)
+FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	Class2(CMatrixCanonChecker)(pMatrix, enumFlags)
 {
 	m_pRow = new RowSolutionPntr[pMatrix->rowNumb()];
 	setRowEquation(NULL);
-	setGPU_CanonChecker(nCanonChecker ? new CGPU_CanonChecker<T>(nCanonChecker, pMatrix, treadIdx) : NULL);
+	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
 }
 
-TClass2(Enumerator)::~CEnumerator() {
+FClass2(CEnumerator)::~CEnumerator() {
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
 	delete rowEquation();

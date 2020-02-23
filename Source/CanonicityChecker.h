@@ -24,11 +24,11 @@ typedef enum {
 	t_saveRowToChange		= (1 << 2)
 } t_canonOutInfo;
 
-IClass2Def(Matrix);
-IClass2Def(MatrixCol);
-IClass2Def(RowSolution);
+Class2Def(CMatrix);
+Class2Def(CMatrixCol);
+Class2Def(CRowSolution);
 
-IClass2Def(CanonicityChecker) {
+Class2Def(CCanonicityChecker) {
 public:
     CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault);
     CC ~CCanonicityChecker();
@@ -86,7 +86,7 @@ private:
 	CC S rowToChange(S nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
 		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize);
-	void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, bool rowPermut, bool updateGroupOrder = false);
+	CC void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }

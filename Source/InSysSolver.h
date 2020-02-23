@@ -11,7 +11,7 @@
 
 #include "VariableMapping.h"
 
-IClass2Def(RowSolution);
+Class2Def(CRowSolution);
 class CEquSystem;
 
 #if USE_EXRA_EQUATIONS
@@ -20,7 +20,7 @@ class CEquSystem;
 #define CONST	const
 #endif
 
-IClass2Def(InSysSolver) : public CVariableMapping<S>
+Class2Def(CInSysSolver) : public CVariableMapping<S>
 {
 public:
 	CK CInSysSolver(size_t len, int t);
@@ -68,7 +68,7 @@ private:
 	const int m_t;
 };
 
-TClass2(InSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len), m_t(t)
+FClass2(CInSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len), m_t(t)
 {
 #if USE_EXRA_EQUATIONS
 	setVarValues(new CVariableMapping(len));
@@ -76,20 +76,20 @@ TClass2(InSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len)
 #endif
 }
 
-TClass2(InSysSolver)::~CInSysSolver()
+FClass2(CInSysSolver)::~CInSysSolver()
 {
 #if USE_EXRA_EQUATIONS
 	delete getVarValues();
 #endif
 }
 
-TClass2(InSysSolver, void)::initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr)
+FClass2(CInSysSolver, void)::initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr)
 {
 	setRowSolution(pntr);
 	setVarMinValPntr(pVarMinValPntr);
 }
 
-TClass2(InSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST
+FClass2(CInSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST
 {
 	// lambdaToSplit - part of current lambda to be splited between lambda-variables
 	if (!lambdaToSplit) {
@@ -130,7 +130,7 @@ TClass2(InSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSplit
 // and pass it to CInSysSolver::splitLambda
 #endif
 
-TClass2(InSysSolver,  int)::splitLambda(S &lambdaToSplit, S *pResult, int mapIdx) CONST
+FClass2(CInSysSolver,  int)::splitLambda(S &lambdaToSplit, S *pResult, int mapIdx) CONST
 {
 	const auto *pToLast = this->getLastMapping();
 #if USE_EXRA_EQUATIONS
@@ -206,7 +206,7 @@ TClass2(InSysSolver,  int)::splitLambda(S &lambdaToSplit, S *pResult, int mapIdx
 	return -1;
 }
 
-TClass2(InSysSolver, bool)::findDiffIndex(S &lambdaToSplit, S *pResult, int *pMapIdx) CONST
+FClass2(CInSysSolver, bool)::findDiffIndex(S &lambdaToSplit, S *pResult, int *pMapIdx) CONST
 {
 #if USE_EXRA_EQUATIONS
 	printResults(pResult, lambdaToSplit, *pMapIdx, -1);

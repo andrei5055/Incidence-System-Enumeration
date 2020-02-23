@@ -42,26 +42,24 @@ private:
 	FILE *m_pFile;
 };
 
-template<class T>
-class CMatrixCanonChecker : public CMatrixCol<T>, public CCanonicityChecker<T>
+Class2Def(CMatrixCanonChecker) : public Class2(CMatrixCol), public CCanonicityChecker<T>
 {
 public:
-	CC CMatrixCanonChecker(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner = false) :
-		CMatrixCol<T>(pMatrix, IS_enum, matrOwner),
-		CCanonicityChecker<T>(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1) {}
+	CC CMatrixCanonChecker(const Class2(CMatrixData) *pMatrix, bool IS_enum, bool matrOwner = false) :
+		Class2(CMatrixCol)(pMatrix, IS_enum, matrOwner),
+		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1) {}
 
-	CC CMatrixCanonChecker(CMatrixData<T> *pMatrix, T rowNumb, T colNumb, T maxElem, bool IS_enum) :
-		CMatrixCol<T>(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
-		CCanonicityChecker<T>(rowNumb, colNumb, maxElem) {}
+	CC CMatrixCanonChecker(Class2(CMatrixData) *pMatrix, S rowNumb, S colNumb, T maxElem, bool IS_enum) :
+		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
+		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem) {}
 	CC ~CMatrixCanonChecker() {}
 };
 
-template<class T>
-class CMatrixCanonCheckerGPU : public CMatrixCanonChecker<T>
+Class2Def(CMatrixCanonCheckerGPU) : public Class2(CMatrixCanonChecker)
 {
 public:
-	CC CMatrixCanonCheckerGPU(const CMatrixData<T> *pMatrix, bool IS_enum, bool matrOwner = false) :
-		CMatrixCanonChecker<T>(pMatrix, IS_enum, matrOwner) {}
+	CC CMatrixCanonCheckerGPU(const Class2(CMatrixData) *pMatrix, bool IS_enum, bool matrOwner = false) :
+		Class2(CMatrixCanonChecker)(pMatrix, IS_enum, matrOwner) {}
 	CC ~CMatrixCanonCheckerGPU() {}
 
 };

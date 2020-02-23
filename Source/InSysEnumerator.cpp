@@ -6,13 +6,13 @@
 #include "EquSystem.h"
 #endif
 
-template class C_InSysEnumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class C_InSysEnumerator<TDATA_TYPES>;
 
-TClass2(_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
+FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();
-	IClass2(MatrixCol) matrCol(pMatrix);
+	Class2(CMatrixCol) matrCol(pMatrix);
 	// For now we will consider only binary incidence systems
 	// This part of the program will be a bit more complicated for general case
 	assert(matrCol.rankMatr() <= 2);
@@ -146,9 +146,9 @@ TClass2(_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *pC
 	delete[] pTmp;
 }
 
-TClass2(_InSysEnumerator, void)::ConstructColumnPermutation(const MatrixDataPntr pMatrix)
+FClass2(C_InSysEnumerator, void)::ConstructColumnPermutation(const MatrixDataPntr pMatrix)
 {
-	IClass2(_InSys) transformedMatr;
+	Class2(C_InSys) transformedMatr;
 	transformedMatr.InitWithPermutedRows(pMatrix, this->permRow(), this->numRow());
 	const auto colNumb = pMatrix->colNumb();
 	CanonizeByColumns(&transformedMatr, this->permColStorage()->allocateMemoryForPermut(colNumb));

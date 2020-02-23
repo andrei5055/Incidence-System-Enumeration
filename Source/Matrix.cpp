@@ -3,10 +3,10 @@
 #include "stdafx.h"
 #include "matrix.h"
 
-template class C_tDesign<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
-template class CCombinedBIBD<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class C_tDesign<TDATA_TYPES>;
+template class CCombinedBIBD<TDATA_TYPES>;
 
-TDesign()::C_tDesign(int t, int v, int k, int lambda) : IClass2(_BIBD)(v, k, t), m_t(t)
+TDesign()::C_tDesign(int t, int v, int k, int lambda) : Class2(C_BIBD)(v, k, t), m_t(t)
 {
 	// Define all lambdas: 
 	int i = t;
@@ -28,7 +28,7 @@ TDesign()::C_tDesign(int t, int v, int k, int lambda) : IClass2(_BIBD)(v, k, t),
 	delete[] pLambda;
 }
 
-CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) : IClass2(_BIBD)(0, k) {
+CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) : Class2(C_BIBD)(0, k) {
 	std::vector<uint> lambdaSet(lambdaInp);
 	std::sort(lambdaSet.begin(), lambdaSet.end(), std::greater<int>());
 	m_ppParamSet = this->createParamStorage(t_rSet); // Create 2 sets of vector (for Lambda and R of the component of combineed BIBD)

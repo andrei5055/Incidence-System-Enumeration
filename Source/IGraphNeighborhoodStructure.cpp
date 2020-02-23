@@ -517,7 +517,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				}
 
 				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
-					if (!RunOperation<MATRIX_ELEMENT_TYPE, SIZE_TYPE>(pParam, pSummaryFileName, firstPath))
+					if (!RunOperation<TDATA_TYPES>(pParam, pSummaryFileName, firstPath))
 						return 0;
 
 					firstPath = false;

@@ -9,25 +9,24 @@
 #include "CanonicityChecker.cpp"
 
 #if !CONSTR_ON_GPU
-GroupOrderInfo *CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::m_pOrderInfo;
-size_t CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::m_nCPUthreads;
-COrderInfo **CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::m_ppOrderInfo;
-CTimerInfo CGPU_CheckerInfo<MATRIX_ELEMENT_TYPE>::m_timer;
+GroupOrderInfo *CGPU_CheckerInfo<TDATA_TYPES>::m_pOrderInfo;
+size_t CGPU_CheckerInfo<TDATA_TYPES>::m_nCPUthreads;
+COrderInfo **CGPU_CheckerInfo<TDATA_TYPES>::m_ppOrderInfo;
+CTimerInfo CGPU_CheckerInfo<TDATA_TYPES>::m_timer;
 
-template<class T>
-__global__ void AssignCheckerGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, uint checkerIdx, CMatrixData<T> *pMatrix, 
-	T nRows, T nCols, T maxElem, bool IS_enum, const size_t *pColOrbInfo)
+__global__ void AssignCheckerGlobal(CMatrixCanonCheckerGPU<TDATA_TYPES> **ppCheckers, uint checkerIdx, CMatrixData<TDATA_TYPES> *pMatrix,
+	SIZE_TYPE nRows, SIZE_TYPE nCols, MATRIX_ELEMENT_TYPE maxElem, bool IS_enum, const size_t *pColOrbInfo)
 {
 	auto pChecker = ppCheckers[checkerIdx];
 	if (!pChecker) {
 #if USE_OLD_CODE
-		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonChecker<T>(pMatrix, nRows, nCols, maxElem, IS_enum);
+		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonChecker<TDATA_TYPES>(pMatrix, nRows, nCols, maxElem, IS_enum);
 #else
 		pMatrix->InitWithData(nRows, nCols, maxElem);
-		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonCheckerGPU<T>(pMatrix);
+		pChecker = ppCheckers[checkerIdx] = new CMatrixCanonCheckerGPU <TDATA_TYPES>(pMatrix);
 		pChecker->initiateColOrbits(nRows, IS_enum, NULL);
 		if (!checkerIdx)
-			pChecker->setEnumInfo(new CInsSysEnumInfo<T>());
+			pChecker->setEnumInfo(new CInsSysEnumInfo<TDATA_TYPES>());
 #endif
 	}
 
@@ -35,26 +34,27 @@ __global__ void AssignCheckerGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, uint
 	pChecker->restoreColOrbitInfo(nRows, pColOrbInfo);
 }
 
-bool AssignChecker(CMatrixCanonCheckerGPU<T, S> **ppCheckers, CMatrixData<T, S> **pAllMatrData, uint checkerIdx,
-					const CEnumerator<T, S> *pCanonChecker, cudaStream_t stream
+template<>
+bool AssignChecker<TDATA_TYPES>(CMatrixCanonCheckerGPU <TDATA_TYPES> **ppCheckers, CMatrixData<TDATA_TYPES> **pAllMatrData, uint checkerIdx,
+	const CEnumerator<TDATA_TYPES> * pCanonChecker, cudaStream_t stream
 #if TRACE_CUDA_FLAG
 					, int myID
 #endif
 					)
 {
-	const CMatrixData<MATRIX_ELEMENT_TYPE> *pMatrix = pCanonChecker->matrix();
+	const auto *pMatrix = pCanonChecker->matrix();
 	auto nRows = pMatrix->rowNumb();
 
 	// Converting ColOrbit information to GPU
 	const size_t nColOrb = pCanonChecker->copyColOrbitInfo(nRows);
 
-	const auto pColOrbInfoBeg = pCanonChecker->GPU_CanonChecker()->ColOrbitData(t_CPU);
-	auto pColOrbitDataCPU = pCanonChecker->GPU_CanonChecker()->ColOrbitData(t_GPU);
+	const auto pColOrbInfoBeg = pCanonChecker->CanonCheckerGPU()->ColOrbitData(t_CPU);
+	auto pColOrbitDataCPU = pCanonChecker->CanonCheckerGPU()->ColOrbitData(t_GPU);
 	CudaSafeCall(cudaMemcpyAsync(pColOrbitDataCPU, pColOrbInfoBeg,
 		nColOrb * sizeof(pColOrbInfoBeg[0]), cudaMemcpyHostToDevice, stream));
 
 	// Copying the matrix
-	const cudaError_t err = cudaMemcpyAsync((char *)pAllMatrData[checkerIdx] + sizeof(CMatrixData<MATRIX_ELEMENT_TYPE>),
+	const cudaError_t err = cudaMemcpyAsync((char *)pAllMatrData[checkerIdx] + sizeof(CMatrixData<TDATA_TYPES>),
 								pMatrix->GetDataPntr(), pMatrix->lenData(), cudaMemcpyHostToDevice, stream);
 	TRACE_CUDA("  assignChecker 3: pAllMatrData[checkerIdx = %d] = %p  err = %d%s\n", checkerIdx, pAllMatrData[checkerIdx], err, err != cudaSuccess ? " - ERROR" : "")
 	CudaSafeCallRet(err, false);
@@ -67,8 +67,8 @@ bool AssignChecker(CMatrixCanonCheckerGPU<T, S> **ppCheckers, CMatrixData<T, S> 
 	return true;
 }
 
-template<class T>
-__global__ void MakeCopyGroupInfoGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, GroupOrderInfo *orderInfo, int CPU_threadIdx, COrderInfo *pOrderInfo) {
+template<typename T, typename S>
+__global__ void MakeCopyGroupInfoGlobal(MatrixCanonCheckerGPU **ppCheckers, GroupOrderInfo *orderInfo, int CPU_threadIdx, COrderInfo *pOrderInfo) {
 	auto *pEnumInfo = ppCheckers[0]->enumInfo();
 	const int iMax = pEnumInfo->GetSize();
 	orderInfo += CPU_threadIdx;
@@ -91,38 +91,40 @@ __global__ void MakeCopyGroupInfoGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers, 
 		memcpy(pOrderInfo + i, pEnumInfo->GetAt(i), sizeof(COrderInfo));
 }
 
-void MakeCopyGroupInfo(CMatrixCanonCheckerGPU<MATRIX_ELEMENT_TYPE> **ppCheckers, GroupOrderInfo *orderInfo, int CPU_threadIdx, cudaStream_t stream, COrderInfo *pOrderInfo) {
+template<>
+void MakeCopyGroupInfo<TDATA_TYPES>(CMatrixCanonCheckerGPU<TDATA_TYPES>**ppCheckers, GroupOrderInfo *orderInfo, int CPU_threadIdx, cudaStream_t stream, COrderInfo *pOrderInfo) {
 	MakeCopyGroupInfoGlobal <<<1, 1, 0, stream>>> (ppCheckers, orderInfo, CPU_threadIdx, pOrderInfo);
 	CudaCheckError();
 }
 
-template<class T>
-__global__ void ResetEnumInfoGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers) {
+template<typename T, typename S>
+__global__ void ResetEnumInfoGlobal(MatrixCanonCheckerGPU **ppCheckers) {
 	ppCheckers[0]->enumInfo()->resetEnumInfo();
 }
 
-void ResetEnumInfoGlobal(CMatrixCanonCheckerGPU<MATRIX_ELEMENT_TYPE> **ppCheckers, cudaStream_t stream) {
+template<>
+void ResetEnumInfoGlobal<TDATA_TYPES>(CMatrixCanonCheckerGPU<TDATA_TYPES>**ppCheckers, cudaStream_t stream) {
 	ResetEnumInfoGlobal <<<1, 1, 0, stream>>> (ppCheckers);
 	CudaCheckError();
 }
 
-template<class T>
-__global__ void ReleaseCheckersGlobal(CMatrixCanonCheckerGPU<T> **ppCheckers) {
+//template<typename T, typename S>
+__global__ void ReleaseCheckersGlobal(CMatrixCanonCheckerGPU<TDATA_TYPES> **ppCheckers) {
 	delete ppCheckers[blockIdx.x];
 }
 
-void ReleaseCheckers(CMatrixCanonCheckerGPU<MATRIX_ELEMENT_TYPE> **ppCheckers, uint numCheckers, cudaStream_t stream)
+void ReleaseCheckers(CMatrixCanonCheckerGPU<TDATA_TYPES> **ppCheckers, uint numCheckers, cudaStream_t stream)
 {
 	ReleaseCheckersGlobal <<<numCheckers, 1, 0, stream>>> (ppCheckers);
 	CudaCheckError();
 }
 
-template<class T>
-__global__ void TestCanonicity(CMatrixCanonCheckerGPU<T> **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, uint nObj, int *pMatrFlag, bool noReplicatedBlocks)
+template<class T, class S>
+__global__ void TestCanonicity(MatrixCanonCheckerGPU **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, uint nObj, int *pMatrFlag, bool noReplicatedBlocks)
 {
 	auto objIdx = threadIdx.x;
 	auto pChecker = ppCheckers[objIdx];
-	const CMatrixData<T> * pMatrix = pChecker->matrix();
+	const auto *pMatrix = pChecker->matrix();
 	pCanonFlag[objIdx] = pChecker->TestCanonicity(pMatrix->rowNumb(), pChecker, t_saveRowPermutations);
 	if (pCanonFlag[objIdx]) {
 		if (pChecker->groupIsTransitive())
@@ -133,7 +135,7 @@ __global__ void TestCanonicity(CMatrixCanonCheckerGPU<T> **ppCheckers, uchar *pC
 	
 	__syncthreads();
 	if (objIdx == 0) {
-		CEnumInfo<T> *pEnumInfo = pChecker->enumInfo();
+		auto *pEnumInfo = pChecker->enumInfo();
 		for (size_t i = 0; i < nObj; i++) {
 			if (!pCanonFlag[i])
 				continue;
@@ -147,7 +149,7 @@ __global__ void TestCanonicity(CMatrixCanonCheckerGPU<T> **ppCheckers, uchar *pC
 	}
 }
 
-void TestCanonicity(uint nMatr, CMatrixCanonCheckerGPU<MATRIX_ELEMENT_TYPE> **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, int *pMatrFlag, cudaStream_t stream)
+void TestCanonicity(uint nMatr, CMatrixCanonCheckerGPU<TDATA_TYPES> **ppCheckers, uchar *pCanonFlag, uint *pGroupInfo, int *pMatrFlag, cudaStream_t stream)
 {
 	TestCanonicity <<<1, nMatr, 0, stream>>> (ppCheckers, pCanonFlag, pGroupInfo, nMatr, pMatrFlag, false);
 	CudaCheckError();

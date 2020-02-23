@@ -2,10 +2,10 @@
 #include "IntersectionStorage.h"
 #include "VariableMapping.h"
 
-template class C_tDesignEnumerator < MATRIX_ELEMENT_TYPE, SIZE_TYPE> ;
+template class C_tDesignEnumerator<TDATA_TYPES> ;
 
-TClass2(_tDesignEnumerator)::C_tDesignEnumerator(const TDesignPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	IClass2(BIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker)
+FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const TDesignPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker)
 #if USE_EXRA_EQUATIONS
 		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
 #endif
@@ -20,7 +20,7 @@ TClass2(_tDesignEnumerator)::C_tDesignEnumerator(const TDesignPntr pBIBD, uint e
 #endif
 }
 
-TClass2(_tDesignEnumerator)::~C_tDesignEnumerator()
+FClass2(C_tDesignEnumerator)::~C_tDesignEnumerator()
 {
     delete intersectionStorage();
 #if USE_EXRA_EQUATIONS
@@ -29,7 +29,7 @@ TClass2(_tDesignEnumerator)::~C_tDesignEnumerator()
 }
 
 #if !CONSTR_ON_GPU
-TClass2(_tDesignEnumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
+FClass2(C_tDesignEnumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer);
 	const auto t = tDesign()->getT();
@@ -38,7 +38,7 @@ TClass2(_tDesignEnumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, 
 	return true;
 }
 
-TClass2(_tDesignEnumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
+FClass2(C_tDesignEnumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();
@@ -48,23 +48,23 @@ TClass2(_tDesignEnumerator, bool)::makeJobTitle(const designParam *pParam, char 
 }
 #endif
 
-TClass2(_tDesignEnumerator, void)::outputTitle(FILE* file) const {
+FClass2(C_tDesignEnumerator, void)::outputTitle(FILE* file) const {
 	fprintf(file, "%12s:        %9s:  %9s:       %9s: %9s:      %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
-TClass2(_tDesignEnumerator, void)::prepareToTestExtraFeatures()
+FClass2(C_tDesignEnumerator, void)::prepareToTestExtraFeatures()
 {
 	m_pIntersectionStorage = new CIntersectionStorage<S>(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
 }
 
-TClass2(_tDesignEnumerator, PERMUT_ELEMENT_TYPE *)::getIntersectionParam(const size_t **ppNumb) const
+FClass2(C_tDesignEnumerator, PERMUT_ELEMENT_TYPE *)::getIntersectionParam(const size_t **ppNumb) const
 {
 	const auto *pPrev = intersectionStorage()->rowsIntersection(this->currentRowNumb());
     *ppNumb = pPrev->numbIntersection();
 	return pPrev->rowIntersectionPntr();
 }
 
-TClass2(_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_t nVar)
+FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_t nVar)
 {
 	if (this->currentRowNumb() <= 1)
 		return NULL;			// Nothing to test
@@ -148,7 +148,7 @@ TClass2(_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_t
 #endif
 }
 
-TClass2(_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const
+FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const
 {
 #if USE_EXRA_EQUATIONS == 0
 	// Check if solution is valid (for elimination of invalid solutions)
@@ -187,7 +187,7 @@ TClass2(_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *pS
 }
 
 #if USE_EXRA_EQUATIONS
-TClass2(_tDesignEnumerator, CVariableMapping *)::constructExtraEquations(size_t t, size_t nVar)
+FClass2(C_tDesignEnumerator, CVariableMapping *)::constructExtraEquations(size_t t, size_t nVar)
 {
 	const CColOrbit *pColOrbit = colOrbit(currentRowNumb());
 	if (!pColOrbit)		// This could happend for last 1-2 rows
@@ -268,7 +268,7 @@ TClass2(_tDesignEnumerator, CVariableMapping *)::constructExtraEquations(size_t 
 	return solveExtraEquations();
 }
 
-TClass2(_tDesignEnumerator, void)::addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb)
+FClass2(C_tDesignEnumerator, void)::addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb)
 {
 	OrbToVarMapping *pOrbToVar = COrbToVar::GetAt(COrbToVar::numb());
 	pOrbToVar->nVar = nVar;
@@ -278,7 +278,7 @@ TClass2(_tDesignEnumerator, void)::addColOrbitForVariable(size_t nVar, CColOrbit
 
 #endif
 
-TClass2(_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMaster)
+FClass2(C_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMaster)
 {
 	prepareToTestExtraFeatures();
 	S t = tDesign()->getT() - 2;
@@ -295,7 +295,7 @@ TClass2(_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMast
 	//   b) call pMaster->getIntersectionParam() last
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	PERMUT_ELEMENT_TYPE *pIntersectionTo = getIntersectionParam(&pNumb);
-	const auto *pIntersectionFrom = dynamic_cast<const IClass2(_tDesignEnumerator) *>(pMaster)->getIntersectionParam(&pNumb);
+	const auto *pIntersectionFrom = dynamic_cast<const Class2(C_tDesignEnumerator) *>(pMaster)->getIntersectionParam(&pNumb);
 	for (uint i = 0; i < t; i++) {
 		const size_t len = pNumb[i] * pLambdaSet->GetAt(i);;
 		memcpy(pIntersectionTo, pIntersectionFrom, len * sizeof(*pIntersectionTo));
@@ -304,9 +304,9 @@ TClass2(_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMast
 	}
 }
 
-TClass2(_tDesignEnumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
+FClass2(C_tDesignEnumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
-	if (!IClass2(BIBD_Enumerator)::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
+	if (!Class2(CBIBD_Enumerator)::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;
 
 	const auto t = tDesign()->getT();

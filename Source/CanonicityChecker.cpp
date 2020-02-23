@@ -8,7 +8,7 @@
 
 #include "Enumerator.h"
 
-template class CCanonicityChecker<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CCanonicityChecker<TDATA_TYPES>;
 
 CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem)
 {
@@ -21,7 +21,7 @@ CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem
 	m_pCounter = (CCounter<int> *)(pMem += (nCol << 1));
 	m_pCounter->Init(rank, (int *)(pMem = (S *)((char *)pMem + sizeof(CCounter<int>))));
 	setPermStorage((PermutStoragePntr)(pMem = (S *)((char *)pMem + rank * sizeof(int))));
-	m_nColNumbStorage = (CColNumbStorage **)(pMem = (S *)((char *)pMem + sizeof(IClass2(PermutStorage))));
+	m_nColNumbStorage = (CColNumbStorage **)(pMem = (S *)((char *)pMem + sizeof(Class2(CPermutStorage))));
 	pMem = (S *)((char *)pMem + rank * sizeof(CColNumbStorage *));
 	for (int i = rank; i--;) {
 		m_nColNumbStorage[i] = (CColNumbStorage *)(pMem);

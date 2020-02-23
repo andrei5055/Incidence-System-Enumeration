@@ -1,8 +1,8 @@
 #include "BIBD_Enumerator.h"
 
-template class CBIBD_Enumerator<MATRIX_ELEMENT_TYPE, SIZE_TYPE>;
+template class CBIBD_Enumerator<TDATA_TYPES>;
 
-TClass2(BIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
+FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
 	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
 	if (diffWeight)
@@ -12,7 +12,7 @@ TClass2(BIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRo
 	return 0;
 }
 
-TClass2(BIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
+FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
 	auto rowNumb = this->currentRowNumb();
@@ -94,13 +94,13 @@ TClass2(BIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol)
 	return true;
 }
 
-TClass2(BIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {
+FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {
 	SNPRINTF(pInfo, len, "(%3" _FRMT", %2" _FRMT", %2" _FRMT")",
 		this->rowNumb(), this->getInSys()->GetK(), this->getInSys()->lambda());
 }
 
 #if !CONSTR_ON_GPU
-TClass2(BIBD_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
+FClass2(CBIBD_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
 {
 	const auto dirLength = this->getDirectory(buffer, lenBuffer) ;
 	SNPRINTF(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", this->rowNumb(),
@@ -108,7 +108,7 @@ TClass2(BIBD_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, con
 	return true;
 }
 
-TClass2(BIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
+FClass2(CBIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	int lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
@@ -127,7 +127,7 @@ TClass2(BIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *bu
 	return true;
 }
 
-TClass2(BIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) const
+FClass2(CBIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) const
 {
 	const auto v = this->rowNumb();
 	const auto b = this->matrix()->colNumb();

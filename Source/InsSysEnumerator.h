@@ -2,7 +2,7 @@
 #include "Enumerator.h"
 #include "RightPartFilter.h"
 
-IClass2Def(_InSysEnumerator) : public IClass2(Enumerator), public IClass2(InSysSolver), public CVector<S>
+Class2Def(C_InSysEnumerator) : public Class2(CEnumerator), public Class2(CInSysSolver), public CVector<S>
 {
 public:
 	CK C_InSysEnumerator(const InSysPntr pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
@@ -54,9 +54,9 @@ private:
 	const bool m_bNoReplBlock;
 };
 
-TClass2(_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	m_bNoReplBlock(enumFlags & t_noReplicatedBlocks), IClass2(Enumerator)(pInSys, enumFlags | t_IS_enumerator, treadIdx, nCanonChecker),
-	IClass2(InSysSolver)(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<S>(pInSys->colNumb())
+FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	m_bNoReplBlock(enumFlags & t_noReplicatedBlocks), Class2(CEnumerator)(pInSys, enumFlags | t_IS_enumerator, treadIdx, nCanonChecker),
+	Class2(CInSysSolver)(pInSys->colNumb() >> 1, pInSys->GetT()), CVector<S>(pInSys->colNumb())
 {
 	const auto nCol = pInSys->colNumb();
 	this->setRowEquation(new CInSysRowEquation<S>(nCol, pInSys->GetT() > 2));
@@ -69,19 +69,19 @@ TClass2(_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFl
 	setForcibleLambda(nRow - 1, this->getInSys()->lambda());
 }
 
-TClass2(_InSysEnumerator)::~C_InSysEnumerator() {
+FClass2(C_InSysEnumerator)::~C_InSysEnumerator() {
 	delete rightPartFilter();
 	delete[] forcibleLambdaPntr();
 }
 
-TClass2(_InSysEnumerator, bool)::sortSolutions(RowSolutionPntr pSolution, size_t i) {
+FClass2(C_InSysEnumerator, bool)::sortSolutions(RowSolutionPntr pSolution, size_t i) {
 	if (!pSolution->numSolutions())
 		return false;
 
 	return pSolution->findFirstValidSolution(inSysRowEquation()->variableMaxValPntr());
 }
 
-TClass2(_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
+FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 	auto *pSolutions = this->rowStuff(0);
 	const auto *pISys = this->getInSys();
 	const auto *pR_set = pISys->GetNumSet(t_rSet);
@@ -92,11 +92,11 @@ TClass2(_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 	return pSolutions;
 }
 
-TClass2(_InSysEnumerator, size_t)::MakeSystem()
+FClass2(C_InSysEnumerator, size_t)::MakeSystem()
 {
 	VECTOR_ELEMENT_TYPE nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
-	VECTOR_ELEMENT_TYPE equationIdx = -1;// (1 << sizeof(S) - 1;
+	VECTOR_ELEMENT_TYPE equationIdx = ELEMENT_MAX;// (1 << sizeof(S) - 1;
 	// Number of equations corresponding only to the colums which ARE NOT forcibly constructed
 	VECTOR_ELEMENT_TYPE eqIdx = 0;
 
@@ -248,7 +248,7 @@ TClass2(_InSysEnumerator, size_t)::MakeSystem()
 	return nVar;
 }
 
-TClass2(_InSysEnumerator, RowSolutionPntr)::FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
+FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	const auto nRow = this->currentRowNumb();
 	const auto nRowPrev = nRow - 1;
@@ -403,7 +403,7 @@ TClass2(_InSysEnumerator, RowSolutionPntr)::FindSolution(size_t nVar, PERMUT_ELE
 	return  pCurrRowSolution->getSolution();
 }
 
-TClass2(_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx)
+FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx)
 {
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());
@@ -422,7 +422,7 @@ TClass2(_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pC
 		setFirstUnforcedRow(this->currentRowNumb());
 }
 
-TClass2(_InSysEnumerator, void)::setVariableLimit(size_t nVar, S len, size_t nRowToBuild, size_t k, int colWeight)
+FClass2(C_InSysEnumerator, void)::setVariableLimit(size_t nVar, S len, size_t nRowToBuild, size_t k, int colWeight)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
 	this->SetAt(nVar, static_cast<S>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));

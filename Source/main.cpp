@@ -161,8 +161,8 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	const string workingDir = pParam->workingDir + pSummaryFileName;
 	const char *pSummFile = workingDir.c_str();
 	InitCanonInfo(pParam->threadNumb);
-	IClass2(_InSys) *pInSys = NULL;
-	IClass2(_InSysEnumerator) *pInSysEnum = NULL;
+	Class2(C_InSys) *pInSys = NULL;
+	Class2(C_InSysEnumerator) *pInSysEnum = NULL;
 	t_objectType objType = pParam->objType;
 	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
 	const auto lambda = pParam->InterStruct()->lambda();
@@ -170,30 +170,30 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
 			switch (objType) {
 			case t_PBIBD:
-				pInSys = new IClass2(_PBIBD)(pParam->v, pParam->k, pParam->r, lambda);
-				pInSysEnum = new IClass2(PBIBD_Enumerator)(pInSys, enumFlags);
+				pInSys = new Class2(C_PBIBD)(pParam->v, pParam->k, pParam->r, lambda);
+				pInSysEnum = new Class2(CPBIBD_Enumerator)(pInSys, enumFlags);
 				break;
 			case t_SemiSymmetricGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaisKeepRowPermute;
-				pInSys = new IClass2(SemiSymmetricGraph)(pParam->v, pParam->k, pParam->r, lambda);
-				pInSysEnum = new IClass2(IG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
+				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, pParam->k, pParam->r, lambda);
+				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
 				break;
 			case t_CombinedBIBD:
-				pInSys = new IClass2(CombinedBIBD)(pParam->v, pParam->k, lambda);
-				pInSysEnum = new IClass2(CombBIBD_Enumerator)(pInSys, enumFlags);
+				pInSys = new Class2(CCombinedBIBD)(pParam->v, pParam->k, lambda);
+				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags);
 				break;
 			default: return false;
 			}
 		}
 		else {
-			pInSys = new IClass2(_BIBD)(pParam->v, pParam->k, 2, lambda[0]);
-			pInSysEnum = new IClass2(BIBD_Enumerator)(pInSys, enumFlags);
+			pInSys = new Class2(C_BIBD)(pParam->v, pParam->k, 2, lambda[0]);
+			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
 			objType = t_BIBD;
 		}
 	}
 	else {
-		pInSys = new IClass2(_tDesign)(pParam->t, pParam->v, pParam->k, lambda[0]);
-		pInSysEnum = new IClass2(_tDesignEnumerator)(static_cast<TDesignPntr>(pInSys), enumFlags);
+		pInSys = new Class2(C_tDesign)(pParam->t, pParam->v, pParam->k, lambda[0]);
+		pInSysEnum = new Class2(C_tDesignEnumerator)(static_cast<TDesignPntr>(pInSys), enumFlags);
 		objType = t_tDesign;
 	}
 
@@ -202,7 +202,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	char buff[256], buffer[256];
 	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
 	cout << buff;
-	IClass2(InsSysEnumInfo) enumInfo(buff);
+	Class2(CInsSysEnumInfo) enumInfo(buff);
 	enumInfo.setDesignInfo(pParam);
 	if (FirstPath) {
 		FOPEN(outFile, pSummFile, "w");
@@ -533,7 +533,7 @@ int main(int argc, char * argv[])
 			InconsistentGraphs(&param, pSummaryFile, firstRun);
 		}
 		else
-			if (!RunOperation<MATRIX_ELEMENT_TYPE, SIZE_TYPE>(&param, pSummaryFile, firstRun))
+			if (!RunOperation<TDATA_TYPES>(&param, pSummaryFile, firstRun))
 				break;
 
 		firstRun = false;

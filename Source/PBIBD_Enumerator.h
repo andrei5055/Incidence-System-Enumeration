@@ -1,11 +1,11 @@
 #pragma once
 #include "BIBD_Enumerator.h"
 
-IClass2Def(PBIBD_Enumerator) : public IClass2(BIBD_Enumerator)
+Class2Def(CPBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 {
 public:
 	CK CPBIBD_Enumerator(const InSysPntr pBIBD, unsigned int enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		IClass2(BIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
+		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
 	CK virtual bool isPBIB_enumerator() const					{ return true; }
 protected:
 	CK virtual bool checkLambda(size_t lambdaCur) const			{ return findLambda(lambdaCur) != -1; }
@@ -15,7 +15,7 @@ protected:
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const;
 };
 
-TClass2(PBIBD_Enumerator, size_t)::findLambda(size_t lambdaCur) const {
+FClass2(CPBIBD_Enumerator, size_t)::findLambda(size_t lambdaCur) const {
 	const auto lambdaSet = this->getInSys()->GetNumSet(t_lSet);
 	for (size_t i = 0; i < lambdaSet->GetSize(); i++) {
 		if (lambdaSet->GetAt(i) == lambdaCur)
@@ -25,7 +25,7 @@ TClass2(PBIBD_Enumerator, size_t)::findLambda(size_t lambdaCur) const {
 	return -1;
 }
 
-TClass2(PBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
+FClass2(CPBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
 	const auto lambdaSet = this->getInSys()->GetNumSet(t_lSet);
 	if (pLambdaSetSize)
 		*pLambdaSetSize = static_cast<int>(lambdaSet->GetSize());
@@ -42,7 +42,7 @@ TClass2(PBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *
 	return (int)(pBuf - buf);
 }
 
-TClass2(PBIBD_Enumerator, void)::ReportLamdaProblem(S i, S j, size_t lambda) const {
+FClass2(CPBIBD_Enumerator, void)::ReportLamdaProblem(S i, S j, size_t lambda) const {
 	char buf[128];
 	addLambdaInfo(buf, sizeof(buf));
 	OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu is not in %s\n",

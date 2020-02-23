@@ -1,11 +1,9 @@
 #pragma once
 #include "Vector.h"
 
-//#define CRowEquation CSimpleArray
-
 class CEquSystem;
 
-IClass1Def(S, InSysRowEquation) : public CSimpleArray<S>
+Class1Def(CInSysRowEquation) : public CSimpleArray<S>
 {
 public:
 	CK CInSysRowEquation(size_t len, bool tDesignEnum);
@@ -39,7 +37,7 @@ private:
 	const bool m_bTDesignEnum;
 };
 
-TClass1(S, InSysRowEquation)::CInSysRowEquation(size_t len, bool tDesignEnum) : m_memShift(len), m_bTDesignEnum(tDesignEnum), CSimpleArray<S>(3 * len)
+FClass1(CInSysRowEquation)::CInSysRowEquation(size_t len, bool tDesignEnum) : m_memShift(len), m_bTDesignEnum(tDesignEnum), CSimpleArray<S>(3 * len)
 {
 	m_pVarMapping = new CVariableMapping<S> *[3];
 	m_pVarMapping[t_singleNoLambda] = new CVariableMapping<S>(len);
@@ -56,7 +54,7 @@ CInSysRowEquation<T>::~CInSysRowEquation()
 	delete[] m_pVarMapping;
 }
 
-TClass1(S, InSysRowEquation, int)::resolveTrivialEquations(const S *pRightPart, S *pResult, size_t nVar, CVariableMapping<S> *pVariation) const
+FClass1(CInSysRowEquation, int)::resolveTrivialEquations(const S *pRightPart, S *pResult, size_t nVar, CVariableMapping<S> *pVariation) const
 {
 	const auto pResultMax = variableMaxValPntr();
 	int lambda = varMapping(t_dual)->resolveMapping(pRightPart, pResultMax, pResult, pVariation);

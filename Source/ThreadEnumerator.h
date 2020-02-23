@@ -2,10 +2,10 @@
 
 #include "IG_Enumerator.h"
 
-IClass2Def(Enumerator);
-IClass2Def(EnumInfo);
+Class2Def(CEnumerator);
+Class2Def(CEnumInfo);
 
-IClass2Def(ThreadEnumerator)
+Class2Def(CThreadEnumerator)
 {
 public:
 	CK CThreadEnumerator()							{ reset(); }
@@ -28,7 +28,7 @@ public:
 
 #if !CONSTR_ON_GPU
 	void LaunchCanonicityTesting(const EnumeratorPntr pEnum)
-		{ enumerator()->GPU_CanonChecker()->LaunchCanonicityTesting(enumInfo(), pEnum); }
+		{ enumerator()->CanonCheckerGPU()->LaunchCanonicityTesting(enumInfo(), pEnum); }
 #endif
 private:
 	CK inline void release()						{ delete enumerator(); }
@@ -50,14 +50,14 @@ private:
 #include "CombBIBD_Enumerator.h"
 #include "EnumInfo.h"
 
-IClass2Def(_InSysEnumerator);
-IClass2Def(_tDesignEnumerator);
-IClass2Def(BIBD_Enumerator);
-IClass2Def(CombBIBD_Enumerator);
+Class2Def(C_InSysEnumerator);
+Class2Def(C_tDesignEnumerator);
+Class2Def(CBIBD_Enumerator);
+Class2Def(CCombBIBD_Enumerator);
 
-TClass2(ThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, size_t nRow, int threadIdx) {
+FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, size_t nRow, int threadIdx) {
 	if (pMaster->IS_enumerator()) {
-		auto *pInsSysEnum = (const IClass2(_InSysEnumerator) *)(pMaster);
+		auto *pInsSysEnum = (const Class2(C_InSysEnumerator) *)(pMaster);
 		auto *pInSys = static_cast<const InSysPntr>(pInsSysEnum->matrix());
 		const InSysPntr pSlaveDesign;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
@@ -67,32 +67,32 @@ TClass2(ThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster
 				m_pEnum = new CBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_CombinedBIBD:
-				pSlaveDesign = new CCombinedBIBD<T, S>((const IClass2(CombinedBIBD) *)(pInSys), nRow);
+				pSlaveDesign = new CCombinedBIBD<T, S>((const Class2(CCombinedBIBD) *)(pInSys), nRow);
 				m_pEnum = new CCombBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_tDesign: {
-				const auto pSlaveTDesign = new C_tDesign<T, S>((const IClass2(_tDesign) *)(pInSys), nRow);
+				const auto pSlaveTDesign = new C_tDesign<T, S>((const Class2(C_tDesign) *)(pInSys), nRow);
 				m_pEnum = new C_tDesignEnumerator<T, S>(pSlaveTDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 			}
 		case t_PBIBD:
-				pSlaveDesign = new C_PBIBD<T, S>((const IClass2(_PBIBD) *)(pInSys), nRow);
+				pSlaveDesign = new C_PBIBD<T, S>((const Class2(C_PBIBD) *)(pInSys), nRow);
 				m_pEnum = new CPBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_SemiSymmetricGraph:
-			    pSlaveDesign = new CSemiSymmetricGraph<T, S>((const IClass2(SemiSymmetricGraph) *)(pInSys), nRow);
+			    pSlaveDesign = new CSemiSymmetricGraph<T, S>((const Class2(CSemiSymmetricGraph) *)(pInSys), nRow);
 				m_pEnum = new CIG_Enumerator<T, S>(pSlaveDesign, pMaster->designParams(), enumFlags, threadIdx, NUM_GPU_WORKERS);
 				m_pEnum->CloneMasterInfo(pMaster, nRow);
 				break;
 		}
 
-		m_pEnum->setEnumInfo(new IClass2(InsSysEnumInfo)());
+		m_pEnum->setEnumInfo(new Class2(CInsSysEnumInfo)());
 	}
 
 	setCode(t_threadUndefined);
 }
 
-TClass2(ThreadEnumerator, void)::EnumerateBIBD(designParam *pParam, const EnumeratorPntr pMaster) {
+FClass2(CThreadEnumerator, void)::EnumerateBIBD(designParam *pParam, const EnumeratorPntr pMaster) {
 	thread_message(threadID(), "threadEnumerate START", code(), m_pEnum);
 	m_pEnum->Enumerate(pParam, false, m_pEnum->enumInfo(), pMaster, &m_code);
 	thread_message(threadID(), "threadEnumerate DONE", code());

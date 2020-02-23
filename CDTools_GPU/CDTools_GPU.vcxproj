@@ -93,27 +93,26 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\BIBD_Enumerator.cpp" />
-    <ClCompile Include="..\Source\ColOrbitManager.cpp" />
-    <ClCompile Include="..\Source\ColOrbits.cpp" />
+    <ClCompile Include="..\Source\CombBIBD_Enumerator.cpp" />
     <ClCompile Include="..\Source\C_tDesignEnumerator.cpp" />
     <ClCompile Include="..\Source\Enumerator.cpp" />
     <ClCompile Include="..\Source\EnumInfo.cpp" />
     <ClCompile Include="..\Source\Equation.cpp" />
     <ClCompile Include="..\Source\EquSystem.cpp" />
     <ClCompile Include="..\Source\GroupsInfo.cpp" />
+    <ClCompile Include="..\Source\IGraphNeighborhoodStructure.cpp" />
+    <ClCompile Include="..\Source\IG_Enumerator.cpp" />
     <ClCompile Include="..\Source\InSysEnumerator.cpp" />
     <ClCompile Include="..\Source\InSysRowEquation.cpp" />
     <ClCompile Include="..\Source\InSysSolver.cpp" />
-    <ClCompile Include="..\Source\IntersectionStorage.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\Matrix.cpp" />
-    <ClCompile Include="..\Source\RightPartFilter.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
-    <ClCompile Include="..\Source\stdafx.cpp" />
-    <ClCompile Include="..\Source\ThreadEnumerator.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />
-    <ClCompile Include="..\Source\Vector.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Source\CombBIBD_Enumerator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,13 +9,13 @@ typedef struct {
 typedef CContainer<OrbToVarMapping *> COrbToVar;
 template<class T> class CIntersectionStorage;
 
-IClass2Def(_tDesignEnumerator) : public  IClass2(BIBD_Enumerator)
+Class2Def(C_tDesignEnumerator) : public  Class2(CBIBD_Enumerator)
 #if USE_EXRA_EQUATIONS
 	, public CEquSystem, private COrbToVar
 #endif
 {
 public:
-	CK C_tDesignEnumerator(const IClass2(_tDesign) *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_tDesignEnumerator(const Class2(C_tDesign) *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_tDesignEnumerator();
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
