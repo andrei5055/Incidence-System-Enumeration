@@ -655,7 +655,7 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 	}
 
 	if (rowNeeded) {
-		auto rowNumb = getInSys()->rowNumb();
+		auto rowNumb = getInSys()->rowNumbExt();
 		if (pParam->objType == t_SemiSymmetricGraph)
 			rowNumb *= pParam->r / pParam->k;
 

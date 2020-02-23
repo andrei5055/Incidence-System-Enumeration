@@ -20,14 +20,13 @@ FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, i
 }
 
 FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {
-	const auto v = this->rowNumb() - 1;
-	const auto k = this->getInSys()->GetK();
-	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), v, k);
+	const auto inSys = this->getInSys();
+	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), inSys->rowNumbExt(), inSys->GetK());
 }
 #endif
 
 FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pInfo, int len) const {
 	char buffer[64];
-	makeJobTitle(this->designParams(), buffer, countof(buffer));
+	this->makeJobTitle(this->designParams(), buffer, countof(buffer));
 	SNPRINTF(pInfo, len, "%s", buffer + strlen(this->getObjName()));
 }

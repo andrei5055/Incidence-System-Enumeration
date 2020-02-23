@@ -236,23 +236,30 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 		return;
 
 	char buff[256];
-	SPRINTF(buff, "\nUsing %zd-bit program, Assembly flag: %d\n", sizeof(size_t) << 3, USE_ASM);
+	SPRINTF(buff, "\n        Using %zd-bit program with%s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
 	auto outLen = outString(buff, outFile);
+
+	const auto dLen = sizeof(SIZE_TYPE);
+	char* pDataType = dLen == 1 ? "char" : (dLen == 2 ? "int16" : "int32");
+	SPRINTF(buff, "        Main data storage format: \"unsigned %s\"\n", pDataType);
+	outLen += outString(buff, outFile);
 
 	const auto nThreads = designInfo()->threadNumb;
 	if (USE_THREADS >= 1) {
+		char buffer[32];
 		if (printMTlevel)
-			SPRINTF(buff, "%10zd threads launched on level %d (%swaiting to finish mode)\n", nThreads,
-					multiThreadLevel(), WAIT_THREADS ? "" : "not ");
+			SPRINTF(buffer, "row %d", multiThreadLevel());
 		else
-			SPRINTF(buff, "%10zd threads launched on difefrent levels (%swaiting to finish mode)\n", nThreads, WAIT_THREADS ? "" : "not ");
+			SPRINTF(buffer, "different rows");
+
+		SPRINTF(buff, "%10zd threads launched on %s (%swaiting to finish mode)\n", nThreads, buffer, WAIT_THREADS ? "" : "not ");
 	} else
 		SPRINTF(buff, "        Single thread mode\n");
 
 	outLen += outString(buff, outFile);
 
 	if (nThreads >= 1 && CANON_ON_GPU) {
-		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread) (\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
 		outLen += outString(buff, outFile);
 	}
 

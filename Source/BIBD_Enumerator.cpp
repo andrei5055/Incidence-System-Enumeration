@@ -100,11 +100,13 @@ FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) c
 }
 
 #if !CONSTR_ON_GPU
-FClass2(CBIBD_Enumerator, bool)::makeFileName(char *buffer, size_t lenBuffer, const char *ext) const
+FClass2(CBIBD_Enumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, const char* ext) const
 {
-	const auto dirLength = this->getDirectory(buffer, lenBuffer) ;
-	SNPRINTF(buffer + dirLength, lenBuffer - dirLength, ME_FRMT"_" ME_FRMT"_" ME_FRMT"%s", this->rowNumb(),
-						this->getInSys()->GetK(), this->getInSys()->lambda(), ext ? ext : FILE_NAME(""));
+	const auto inSys = this->getInSys();
+	auto len = this->getDirectory(buffer, lenBuffer);
+	len += SNPRINTF(buffer + len, lenBuffer - len, ME_FRMT"_" ME_FRMT"_", inSys->rowNumbExt(), inSys->GetK());
+	len += this->addLambdaInfo(buffer + len, lenBuffer - len);
+	SNPRINTF(buffer + len, lenBuffer - len, "%s", ext ? ext : FILE_NAME(""));
 	return true;
 }
 

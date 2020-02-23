@@ -201,6 +201,7 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	CK inline VectorPntr *numbSet() const					{ return m_ppNumbSet; }
 	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }
 	CK inline t_objectType objectType() const				{ return m_objectType; }
+	virtual S rowNumbExt() const							{ return this->rowNumb(); }
 protected:
 	CK inline bool isDataOwner() const						{ return m_bDataOwner; }
 	CK VectorPntr *createParamStorage(int n) const  {
@@ -288,6 +289,7 @@ public:
 	CK ~CCombinedBIBD()										{ if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(int idx) const			{ return paramSets()[idx]; }
+	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
 private:
 	VectorPntr *m_ppParamSet;
 };
