@@ -153,7 +153,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 }
 #endif
 
-FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
+FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
 {
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
@@ -169,11 +169,11 @@ FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, 
 		// We will be here only for the master
 		pParam->firstMatr = true;
 		if (!makeJobTitle(pParam, jobTitle, countof(jobTitle), "\n"))
-			return (size_t)-1;
+			return false;
 
 		// Construct the file name of the file with the enumeration results
 		if (!getMasterFileName(buff, lenBuffer, &lenName))
-			return (size_t)-1;
+			return false;
 
 		// The results are known, if the file with the enumeration results exists
 		knownResults = fileExists(buff);
@@ -212,7 +212,7 @@ FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, 
 		thread_group *pThreadpool = NULL;
 	#endif
 #endif
-	auto pMatrix = static_cast<const MatrixPntr>(this->matrix());
+	const auto pMatrix = this->matrix();
 
 	// Allocate memory for the orbits of two consecutive rows
 	S nRow;
@@ -457,7 +457,6 @@ FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, 
 
     this->closeColOrbits();
 
-	const ulonglong retVal = pEnumInfo->constrCanonical();
 	if (!threadFlag || !USE_THREADS_ENUM) {
 
 #if USE_THREADS_ENUM
@@ -528,7 +527,7 @@ FClass2(CEnumerator, ulonglong)::Enumerate(designParam *pParam, bool writeFile, 
 			*pTreadCode = pMaster ? t_threadLaunchFail : t_threadFinished;
 	}
 
-	return retVal;
+	return true;
 } 
 
 FClass2(CEnumerator, void)::reset(S nRow) {
@@ -629,12 +628,15 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
 FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 {
 	const auto nRow = pMaster? pMaster->currentRowNumb() + 1 : 0;
-	auto pSolutions = new Class2(CRowSolution)[rowNumb() - nRow];
-	for (auto i = rowNumb(); i-- > nRow;)
-		m_pRow[i] = pSolutions + i - nRow;
+	const auto pMatrix = pMaster? pMaster->matrix() : this->matrix();
+	const auto nParts = pMatrix->numParts();
+	auto i = rowNumb();
+	const auto pSolutions = new Class2(CRowSolution)[nParts * (i - nRow)];
+	while (i-- > nRow)
+		m_pRow[i] = pSolutions + nParts * (i - nRow);
 
 	if (nRow) 
-		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nRow * sizeof(*rowStuffPntr()));
+		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nParts * nRow * sizeof(*rowStuffPntr()));
 }
 
 FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const

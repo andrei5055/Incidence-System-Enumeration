@@ -105,7 +105,7 @@ FClass2(CBIBD_Enumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, co
 	const auto inSys = this->getInSys();
 	auto len = this->getDirectory(buffer, lenBuffer);
 	len += SNPRINTF(buffer + len, lenBuffer - len, ME_FRMT"_" ME_FRMT"_", inSys->rowNumbExt(), inSys->GetK());
-	len += this->addLambdaInfo(buffer + len, lenBuffer - len);
+	len += this->addLambdaInfo(buffer + len, lenBuffer - len, ME_FRMT);
 	SNPRINTF(buffer + len, lenBuffer - len, "%s", ext ? ext : FILE_NAME(""));
 	return true;
 }
@@ -114,7 +114,7 @@ FClass2(CBIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *b
 {
 	int lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
-	len += addLambdaInfo(buffer + len, lenBuffer - len, &lambdaSetSize);
+	len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
 
 	if (pParam->lambdaSizeMax() > lambdaSetSize) {
 		auto maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
@@ -135,5 +135,21 @@ FClass2(CBIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) con
 	const auto b = this->matrix()->colNumb();
 	const auto k = this->getInSys()->GetK();
 	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
+}
+
+FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet, char* buf, size_t lenBuffer, int* pLambdaSetSize) const
+{
+	const auto lambdaNumb = lambdaSet->GetSize();
+	if (pLambdaSetSize)
+		*pLambdaSetSize = static_cast<int>(lambdaNumb);
+
+	const auto* pFrmt = "{%2d";
+	int len = 0;
+	for (size_t i = 0; i < lambdaNumb; i++) {
+		len += SNPRINTF(buf + len, lenBuffer - len, pFrmt, lambdaSet->GetAt(i));
+		pFrmt = ",%2d";
+	}
+
+	return len + SNPRINTF(buf + len, lenBuffer - len, "}");
 }
 #endif

@@ -218,10 +218,15 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	}
 
 	try {
-		pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, &enumInfo);
-		enumInfo.reportResult(buffer, countof(buffer));
-		outString(buffer, pSummFile);
-		cout << '\r' << buffer;
+		if (pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, &enumInfo)) {
+			enumInfo.reportResult(buffer, countof(buffer));
+			outString(buffer, pSummFile);
+			cout << '\r' << buffer;
+		}
+		else {
+			cout << "Some problem durring the enumeration found\n";
+			pInSysEnum->closeFile();
+		}
 	}
 	catch (...) {
 		pInSysEnum->closeFile();

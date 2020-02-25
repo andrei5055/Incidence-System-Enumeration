@@ -3,20 +3,9 @@
 template class CCombBIBD_Enumerator<TDATA_TYPES>;
 
 #if !CONSTR_ON_GPU
-FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
+FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, int *pLambdaSetSize) const {
 	const auto lambdaSet = (static_cast<Class2(CCombinedBIBD) *>(this->getInSys()))->paramSet(t_lSet);
-	const auto lambdaNumb = lambdaSet->GetSize();
-	if (pLambdaSetSize)
-		*pLambdaSetSize = static_cast<int>(lambdaNumb);
-
-	const auto* pFrmt = "{%2d";
-	int len = 0;
-	for (size_t i = 0; i < lambdaNumb; i++) {
-		len += SNPRINTF(buf + len, lenBuffer - len, pFrmt, lambdaSet->GetAt(i));
-		pFrmt = ",%2d";
-	}
-
-	return len + SNPRINTF(buf + len, lenBuffer - len, "}");
+	return addLambdaInform(lambdaSet, buf, lenBuffer, pLambdaSetSize);
 }
 
 FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {

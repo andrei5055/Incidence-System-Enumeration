@@ -10,7 +10,7 @@ protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }
 #if !CONSTR_ON_GPU
-	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int* pLambdaSetSize = NULL) const;
+	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
 	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }

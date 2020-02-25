@@ -3,8 +3,76 @@
 #include "stdafx.h"
 #include "matrix.h"
 
+template class CMatrixData<TDATA_TYPES>;
 template class C_tDesign<TDATA_TYPES>;
 template class CCombinedBIBD<TDATA_TYPES>;
+
+FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck) const
+{
+	if (nRow == ELEMENT_MAX)
+		nRow = this->rowNumb();
+
+	auto nCol = this->colNumb();
+	char buffer[256], * pBuf = buffer;
+	size_t lenBuf = sizeof(buffer);
+	if (nCol >= lenBuf - 4)
+		pBuf = new char[lenBuf = nCol + 14];
+
+	if (matrNumber > 0) {
+		if (pCanonCheck)
+			SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
+		else
+			SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
+	}
+#if PRINT_CURRENT_MATRIX
+	else {
+		static int cntr;
+		char* pBufTmp = pBuf;
+		pBufTmp += sprintf_s(pBufTmp, lenBuf, "\n");
+		memset(pBufTmp, '=', nCol);
+		pBufTmp += nCol;
+		sprintf_s(pBufTmp, lenBuf - (pBufTmp - pBuf), " # %d\n", ++cntr);
+	}
+#endif
+
+	outString(pBuf, pFile);
+
+	// Let's make the symbol table
+	char symbols[32], * pSymb = symbols;
+	int nMax = this->maxElement() + 1;
+	if (nMax > sizeof(symbols))
+		pSymb = new char[nMax];
+
+	int i = -1;
+	int iMax = nMax <= 9 ? nMax : 9;
+	while (++i < iMax)
+		*(pSymb + i) = '0' + i;
+
+	i--;
+	while (++i < nMax)
+		*(pSymb + i) = 'A' + i - 10;
+
+	for (S i = 0; i < nRow; i++) {
+		auto pRow = this->GetRow(i);
+		for (auto j = nCol; j--;)
+			*(pBuf + j) = pSymb[*(pRow + j)];
+
+		SNPRINTF(pBuf + nCol, 2, "\n");
+		if (pFile)
+			fputs(pBuf, pFile);
+		else
+			std::cout << pBuf;
+	}
+
+	if (pBuf != buffer)
+		delete[] pBuf;
+
+	if (pSymb != symbols)
+		delete[] pSymb;
+
+	if (pCanonCheck && pCanonCheck->groupOrder() > 1)
+		pCanonCheck->outputAutomorphismInfo(pFile, this);
+}
 
 TDesign()::C_tDesign(int t, int v, int k, int lambda) : Class2(C_BIBD)(v, k, t), m_t(t)
 {

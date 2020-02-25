@@ -64,6 +64,8 @@ public:
 	}
 
 	CK void AssignData(T *data)				{ memcpy(GetDataPntr(), data, m_nLenData); }
+	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
+	virtual size_t numParts() const			{ return 1; }
 private:
 	CK inline bool dataOwner()	const		{ return m_bDataOwner; }
 	S m_nRows;
@@ -73,6 +75,7 @@ private:
 	size_t m_nLenData;
 	T *m_pData;
 };
+
 
 Class2Def(CMatrix) : public Class2(CMatrixData)
 {
@@ -89,73 +92,6 @@ Class2Def(CMatrix) : public Class2(CMatrixData)
 		}
 	}
 	CK virtual ~CMatrix()										{}
-	void printOut(FILE *pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const
-	{
-		if (nRow == (T)-1)
-			nRow = this->rowNumb();
-
-		auto nCol = this->colNumb();
-		char buffer[256], *pBuf = buffer;
-		size_t lenBuf = sizeof(buffer);
-		if (nCol >= lenBuf - 4)
-			pBuf = new char[lenBuf = nCol + 14];
-
-		if (matrNumber > 0) {
-			if (pCanonCheck)
-				SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu    |Aut(M)| = %6d:\n", matrNumber, pCanonCheck->groupOrder());
-			else
-				SNPRINTF(pBuf, lenBuf, "\nMatrix # %3llu\n", matrNumber);
-		}
-#if PRINT_CURRENT_MATRIX
-		else {
-			static int cntr;
-			char *pBufTmp = pBuf;
-			pBufTmp += sprintf_s(pBufTmp, lenBuf, "\n");
-			memset(pBufTmp, '=', nCol);
-			pBufTmp += nCol;
-			sprintf_s(pBufTmp, lenBuf - (pBufTmp - pBuf), " # %d\n", ++cntr);
-		}
-#endif
-
-		outString(pBuf, pFile);
-
-		// Let's make the symbol table
-		char symbols[32], *pSymb = symbols;
-		int nMax = this->maxElement() + 1;
-		if (nMax > sizeof(symbols))
-			pSymb = new char[nMax];
-
-		int i = -1;
-		int iMax = nMax <= 9 ? nMax : 9;
-		while (++i < iMax)
-			*(pSymb + i) = '0' + i;
-
-		i--;
-		while (++i < nMax)
-			*(pSymb + i) = 'A' + i - 10;
-
-		for (T i = 0; i < nRow; i++) {
-			auto pRow = this->GetRow(i);
-			for (size_t j = 0; j < nCol; j++)
-				*(pBuf + j) = pSymb[*(pRow + j)];
-
-			SNPRINTF(pBuf + nCol, 2, "\n");
-			if (pFile)
-				fputs(pBuf, pFile);
-			else
-				std::cout << pBuf;
-		}
-
-		if (pBuf != buffer)
-			delete[] pBuf;
-
-		if (pSymb != symbols)
-			delete[] pSymb;
-
-		if (pCanonCheck && pCanonCheck->groupOrder() > 1)
-			pCanonCheck->outputAutomorphismInfo(pFile, this);
-	}
-
  protected:
 };
 
@@ -290,6 +226,8 @@ public:
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(int idx) const			{ return paramSets()[idx]; }
 	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
+	virtual size_t numParts() const							{ return paramSet(t_lSet)->GetSize(); }
+protected:
 private:
 	VectorPntr *m_ppParamSet;
 };

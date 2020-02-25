@@ -34,8 +34,9 @@ protected:
 			i, j, lambda, this->getInSys()->lambda());
 	}
 	CK virtual const char *getObjName() const                        { return "BIBD"; }
-	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const 
-		{ return SNPRINTF(buffer, lenBuffer, "%2" _FRMT, lambda()); }
+	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char *pFrmt = NULL, int *pLambdaSetSize = NULL) const
+		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
+	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, int *pLambdaSetSize) const;
 	CK virtual size_t firstUnforcedRow() const						{ return m_firstUnforced; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
 	CK virtual void resetFirstUnforcedRow()							{}
@@ -72,23 +73,23 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 {
 	const auto paramR = this->getInSys()->GetR();
 	const auto iMax = this->rowNumb();
-	for (T i = 0; i < iMax; i++) {
+	for (S i = 0; i < iMax; i++) {
 		const auto pRow = pMatrix->GetRow(i);
-		T r = 0;
+		S r = 0;
 		for (auto j = this->colNumb(); j--;)
 			r += *(pRow + j);
 
 		if (r != paramR) {
 #if !CONSTR_ON_GPU
-			(static_cast<const MatrixPntr>(pMatrix))->printOut(this->outFile());
+			pMatrix->printOut(this->outFile());
 #endif
 			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, this->getInSys()->GetR());
 			THROW();
 			return false;
 		}
 
-		for (T j = 0; j < i; j++) {
-			size_t lambda = 0;
+		for (S j = 0; j < i; j++) {
+			S lambda = 0;
 			const auto pRowCurr = pMatrix->GetRow(j);
 			for (auto k = this->colNumb(); k--;)
 				lambda += *(pRowCurr + k) * *(pRow + k);
@@ -104,7 +105,7 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 	const auto paramK = this->getInSys()->GetK();
 	bool noReplicatedBlockFound = true;
 	for (auto i = this->colNumb(); i--;) {
-		T k = 0;
+		S k = 0;
 		for (auto j = this->rowNumb(); j--;)
 			k += *(pMatrix->GetRow(j) + i);
 
@@ -124,8 +125,6 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 
 	if (pMatrFlags && noReplicatedBlockFound)
 		*pMatrFlags = t_noReplicatedBlock;
-
-	//	pEnumInfo->setSimpleMatrFlag(noReplicatedBlockFound);
 
 #if USE_THREADS < 2
 	// For multithread case it's not so easy to define that we will not construct the BIBDs with no replacated blocks

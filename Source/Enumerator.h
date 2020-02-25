@@ -412,7 +412,7 @@ public:
 	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline RowSolutionPntr rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
-	CK ulonglong Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
+	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
 	CK virtual S getX0_3() const							{ return 0; }

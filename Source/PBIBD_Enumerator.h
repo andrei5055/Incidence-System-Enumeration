@@ -12,7 +12,9 @@ protected:
 	CK size_t findLambda(size_t lambdaCur) const;
 	CK virtual void ReportLamdaProblem(S i, S j, size_t lambda) const;
 	CK const char *getObjName() const override					{ return "PBIBD"; }
-	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, int *pLambdaSetSize = NULL) const;
+	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int *pLambdaSetSize = NULL) const {
+		return addLambdaInform(this->getInSys()->GetNumSet(t_lSet), buffer, lenBuffer, pLambdaSetSize);
+	}
 };
 
 FClass2(CPBIBD_Enumerator, size_t)::findLambda(size_t lambdaCur) const {
@@ -23,23 +25,6 @@ FClass2(CPBIBD_Enumerator, size_t)::findLambda(size_t lambdaCur) const {
 	}
 
 	return -1;
-}
-
-FClass2(CPBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, int *pLambdaSetSize) const {
-	const auto lambdaSet = this->getInSys()->GetNumSet(t_lSet);
-	if (pLambdaSetSize)
-		*pLambdaSetSize = static_cast<int>(lambdaSet->GetSize());
-
-	auto pBuf = buf;
-	for (size_t i = 0; i < lambdaSet->GetSize(); i++) {
-		if (pBuf == buf)
-			pBuf += SNPRINTF(buf, lenBuffer, "{%2d", lambdaSet->GetAt(i));
-		else
-			pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buf), ",%2d", lambdaSet->GetAt(i));
-	}
-
-	pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buf), "}");
-	return (int)(pBuf - buf);
 }
 
 FClass2(CPBIBD_Enumerator, void)::ReportLamdaProblem(S i, S j, size_t lambda) const {
