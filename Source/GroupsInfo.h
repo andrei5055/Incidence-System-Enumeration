@@ -63,7 +63,7 @@ public:
 	}
 
 	CC ~CGroupsInfo() { 
-		for (size_t i = GetSize(); i--;)
+		for (auto i = GetSize(); i--;)
 			delete GetAt(i);
 	}
 
@@ -102,6 +102,7 @@ public:
 	void printGroupInfo(FILE *file) const;
 	void calcCountersTotal(COrderInfo *pTotal);
 	CK void updateGroupInfo(const CGroupsInfo *pGroupInfo);
+	size_t GetStartIdx() const					{ return GetAt(0)->numMatrices() ? 0 : 1; }
 protected:
 	CK void updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem);
 };

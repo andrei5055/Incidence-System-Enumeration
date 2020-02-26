@@ -40,31 +40,31 @@ public:
 Class2Def(CRowSolution) : public CVector<S>
 {
 public:
- 	CK CRowSolution(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<S>(size * nVect, pCoord) {
+	CK CRowSolution(S length = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<S>(length * nVect, pCoord) {
 																	setSolutionPerm(NULL);
-																	InitSolutions(size, nVect, pCoord);
+																	InitSolutions(length, nVect, pCoord);
 																}
-    CK ~CRowSolution()											{ delete solutionPerm(); }
-    CK inline const S *firstSolution() const					{ return this->GetData(); }
-	CK inline const S *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionSize(); }
-	CK inline const S *currSolution() const						{ return firstSolution() + variantIndex() * solutionSize(); }
+	CK ~CRowSolution()											{ delete solutionPerm(); }
+	CK inline const S *firstSolution() const					{ return this->GetData(); }
+	CK inline const S *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionLength(); }
+	CK inline const S *currSolution() const						{ return firstSolution() + variantIndex() * solutionLength(); }
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
-    CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
-    CK S *newSolution();
-    CK S *copySolution(const InSysSolverPntr pSysSolver);
+	CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
+	CK S *newSolution();
+	CK S *copySolution(const InSysSolverPntr pSysSolver);
 	CK CRowSolution *NextSolution(bool useCanonGroup = false);
 	void removeNoncanonicalSolutions(size_t startIndex) const;
 	size_t moveNoncanonicalSolutions(const S *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
 	CK inline bool isValidSolution(size_t idx) const			{ const uchar *pCanonFlags = solutionPerm()->canonFlags();
 																  return pCanonFlags ? *(pCanonFlags + idx) != 0xff : true; }
-	CK void InitSolutions(size_t size = 0, uint nVect = 1, CArrayOfVectorElements *pCoord = NULL);
-	CK inline size_t solutionSize() const						{ return m_Size; }
-	CK inline void setSolutionSize(size_t size)					{ m_Size = size; }
-    CK CRowSolution *getSolution();
-    CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
+	CK void InitSolutions(S size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL);
+	CK inline auto solutionLength() const						{ return m_Length; }
+	CK inline void setSolutionLength(S length)					{ m_Length = length; }
+	CK CRowSolution *getSolution();
+	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin);
 	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
-    void printSolutions(FILE *file, bool markNextUsed = false) const;
+	void printSolutions(FILE *file, bool markNextUsed = false) const;
 	CK inline PERMUT_ELEMENT_TYPE solutionIndex() const			{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
 	CK inline CSolutionPerm *solutionPerm() const				{ return m_pSolutionPerm; }
@@ -78,18 +78,18 @@ private:
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex(PERMUT_ELEMENT_TYPE i) const	{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(i) : i; }
-    void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
+	void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }
 	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline size_t lenOrbitOfSolution() const                    { return m_nLenSolOrb; }
-    CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionSize(); }
+	CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionLength(); }
 #if USE_THREADS || MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
 	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const;
 #endif
 
-	size_t m_Size;
+	S m_Length;
 	size_t m_nNumSolutions;
 	PERMUT_ELEMENT_TYPE m_nSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;
@@ -98,10 +98,10 @@ private:
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
 
-FClass2(CRowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArrayOfVectorElements *pCoord)
+FClass2(CRowSolution, void)::InitSolutions(S length, size_t nVect, CArrayOfVectorElements *pCoord)
 {
 	setSolutionIndex(0);
-	setSolutionSize(size);					// vector length
+	setSolutionLength(length);					// vector length
 	delete solutionPerm();
 	setSolutionPerm(new CSolutionPerm());
 	setNumSolutions(nVect);
@@ -109,8 +109,8 @@ FClass2(CRowSolution, void)::InitSolutions(size_t size, unsigned int nVect, CArr
 
 FClass2(CRowSolution, S *)::newSolution() {
 	const auto numSolution = solutionIndex() + 1;
-	if (this->GetSize() < numSolution * solutionSize())
-		this->IncreaseVectorSize(solutionSize());
+	if (this->GetSize() < numSolution * solutionLength())
+		this->IncreaseVectorSize(solutionLength());
 
 	auto pntr = currSolution();
 	nextSolutionIndex();
@@ -134,7 +134,7 @@ FClass2(CRowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
 		return pSolution;
 
 	pSolution = newSolution();
-	memcpy(pSolution, pSolution - solutionSize(), solutionSize() * sizeof(pSolution[0]));
+	memcpy(pSolution, pSolution - solutionLength(), solutionLength() * sizeof(pSolution[0]));
 	return pSolution;
 }
 
@@ -158,11 +158,11 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 	const size_t nSolutions = numSolutions();
 	CSolutionPerm *pPerm = solutionPerm();
 	size_t n, idx = 0;
-	for (auto i = solutionSize(); i--;) {
+	for (auto i = solutionLength(); i--;) {
 		// Current min and max values we have to test
 		const S minVal = pMin ? *(pMin + i) : 1;
 		const S maxVal = *(pMax + i);
-		const S currentVal = *(pFirst + pPerm->GetAt(idx) * solutionSize() + i);
+		const S currentVal = *(pFirst + pPerm->GetAt(idx) * solutionLength() + i);
 		if (currentVal >= minVal) {
 			// No need to check minVal anymore
 			// We need to make sure that before pCurrentPoz there is at least one value, which is less than maxVal
@@ -171,19 +171,19 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 
 			// If we are here, then *pCurrentPoz == maxVal
 			n = idx;
-			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionSize() + i) == maxVal);
+			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) == maxVal);
 
 			if (n != SIZE_MAX)
 				continue;       // no need to change first valid solution
 
 								// Need to go to the "bigger" solutions and find first which would be < maxVal
 			n = idx;
-			while (++n < nSolutions && *(pFirst + pPerm->GetAt(n) * solutionSize() + i) == maxVal);
+			while (++n < nSolutions && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) == maxVal);
 		}
 		else {
 
 			n = idx;
-			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionSize() + i) < minVal);
+			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) < minVal);
 
 			if (n != SIZE_MAX)
 				continue;       // no need to change first valid solution
@@ -191,7 +191,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 								// If we are here, then *pCurrentPoz == maxVal
 								// Need to go to "bigger" solutions and find first which would be >= minVal
 			n = idx;
-			while (++n < nSolutions && *(pFirst + pPerm->GetAt(n) * solutionSize() + i) < minVal);
+			while (++n < nSolutions && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) < minVal);
 		}
 
 		if (n >= nSolutions) {
@@ -205,9 +205,9 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 	setSolutionIndex(idx - 1);
 #else
 	const S *pFirst = firstSolution();
-	const S *pLast = pFirst + solutionSize() * numSolutions();
-	const S *pCurrentPoz = pFirst + solutionSize();
-	for (auto i = solutionSize(); i--;) {
+	const S *pLast = pFirst + solutionLength() * numSolutions();
+	const S *pCurrentPoz = pFirst + solutionLength();
+	for (auto i = solutionLength(); i--;) {
 		pCurrentPoz--;
 		const S *pTmp;
 
@@ -222,19 +222,19 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 
 			// If we are here, then *pCurrentPoz == maxVal
 			pTmp = pCurrentPoz;
-			while ((pTmp -= solutionSize()) >= pFirst && *pTmp == maxVal);
+			while ((pTmp -= solutionLength()) >= pFirst && *pTmp == maxVal);
 
 			if (pTmp >= pFirst)
 				continue;       // no need to change first valid solution
 
 								// Need to go to the "bigger" solutions and find first which would be < maxVal
 			pTmp = pCurrentPoz;
-			while ((pTmp += solutionSize()) < pLast && *pTmp == maxVal);
+			while ((pTmp += solutionLength()) < pLast && *pTmp == maxVal);
 		}
 		else {
 
 			pTmp = pCurrentPoz;
-			while ((pTmp -= solutionSize()) >= pFirst && *pTmp < minVal);
+			while ((pTmp -= solutionLength()) >= pFirst && *pTmp < minVal);
 
 			if (pTmp >= pFirst)
 				continue;       // no need to change first valid solution
@@ -242,7 +242,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 								// If we are here, then *pCurrentPoz == maxVal
 								// Need to go to "bigger" solutions and find first which would be >= minVal
 			pTmp = pCurrentPoz;
-			while ((pTmp += solutionSize()) < pLast && *pTmp < minVal);
+			while ((pTmp += solutionLength()) < pLast && *pTmp < minVal);
 		}
 
 		if (pTmp >= pLast) {
@@ -253,14 +253,14 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 		pCurrentPoz = pTmp;
 	}
 
-	setSolutionIndex(uint(pCurrentPoz - pFirst + 1) / solutionSize() - 1);
+	setSolutionIndex(uint(pCurrentPoz - pFirst + 1) / solutionLength() - 1);
 #endif
 
 	return true;
 }
 
 FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
-	if (!this || !numSolutions() || !solutionSize())
+	if (!this || !numSolutions() || !solutionLength())
 		return;
 
 	uchar *pCanonFlags;
@@ -276,7 +276,7 @@ FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) 
 #else
 		extern size_t sizeSolution;
 		extern const S* pntrSolution;
-		sizeSolution = solutionSize();
+		sizeSolution = solutionLength();
 		pntrSolution = firstSolution();
 		int compareSolutions(const void *p1, const void *p2);
 		qsort(pPerm, numSolutions(), sizeof(pPerm[0]), compareSolutions);
@@ -292,8 +292,8 @@ FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) 
 #if USE_THREADS || MY_QUICK_SORT
 FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
 {
-	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionSize();
-	for (size_t i = 0; i < solutionSize(); i++) {
+	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionLength();
+	for (size_t i = 0; i < solutionLength(); i++) {
 		if (*(pFirst + i) > *(pSecnd + i))
 			return 1;
 
@@ -307,7 +307,7 @@ FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const 
 FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
 	long i = left, j = right;
 	const auto pivotIdx = (left + right) >> 1;
-	const VECTOR_ELEMENT_TYPE *pivot = firstSolution() + arr[pivotIdx] * solutionSize();
+	const VECTOR_ELEMENT_TYPE *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
 
 	/* partition */
 	while (i <= j) {
@@ -340,22 +340,22 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
 
 	uchar *pCanonFlags;
-	PERMUT_ELEMENT_TYPE *pPerm = initSorting(&pCanonFlags);
+	auto *pPerm = initSorting(&pCanonFlags);
 	// Suppose that all solutions are not canonical
 	memset(pCanonFlags, 0, numSolutions() * sizeof(pCanonFlags[0]));
 
 	VECTOR_ELEMENT_TYPE buffer[256];
-	const size_t lenMem = solutionSize() << 1;
-	VECTOR_ELEMENT_TYPE *pMem = lenMem <= countof(buffer) ? buffer : new VECTOR_ELEMENT_TYPE[lenMem];
+	const size_t lenMem = solutionLength() << 1;
+	auto *pMem = lenMem <= countof(buffer) ? buffer : new VECTOR_ELEMENT_TYPE[lenMem];
 	size_t canonIdx[256];
 	size_t *pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
 	int nCanon = 0;
 
 	// Loop for all solutions, starting from the biggest ones
-	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution();
-	for (PERMUT_ELEMENT_TYPE i = numSolutions(); i--;) {
+	const auto *pFirst = firstSolution();
+	for (auto i = numSolutions(); i--;) {
 		int nCanonPrev = nCanon;
-		const PERMUT_ELEMENT_TYPE idxPerm = *(pPerm + i);
+		const auto idxPerm = *(pPerm + i);
 		const size_t idx = pCanonChecker->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
 		if (idxPerm == idx) {
 			if (nCanonPrev != nCanon)
@@ -376,7 +376,7 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 		else
 			setNumSolutions(last = numSolutions() - 1);
 
-		for (PERMUT_ELEMENT_TYPE j = i; j < last; j++) {
+		for (auto j = i; j < last; j++) {
 			*(pPerm + j) = *(pPerm + j + 1);
 			*(pCanonFlags + j) = *(pCanonFlags + j + 1);
 		}
@@ -396,7 +396,7 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 
 FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin) {
 	size_t idx = solutionIndex() + 1;
-	for (uint i = 0; i < solutionSize(); i++, pColOrbit = pColOrbit->next()) {
+	for (uint i = 0; i < solutionLength(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();
 		const size_t limitWeight = minVal * (kMin - pColOrbit->columnWeight());
 		// To start, we need to set the solution index to -1

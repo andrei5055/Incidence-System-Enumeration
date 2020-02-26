@@ -34,8 +34,8 @@ protected:
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();
-	CK virtual size_t MakeSystem();
-	CK virtual RowSolutionPntr FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
+	CK virtual S MakeSystem();
+	CK virtual RowSolutionPntr FindSolution(S nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK void setVariableLimit(size_t nVar, S len, size_t nRowToBuild, size_t k, int colWeight);
 	CK virtual bool checkForcibleLambda(size_t fLambda) const   { return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
@@ -85,18 +85,19 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 	auto *pSolutions = this->rowStuff(0);
 	const auto *pISys = this->getInSys();
 	const auto *pR_set = pISys->GetNumSet(t_rSet);
-	pSolutions->InitSolutions(pR_set->GetSize(), 1);
-	for (size_t i = 0; i < pR_set->GetSize(); i++)
+	auto i = pR_set->GetSize();
+	pSolutions->InitSolutions(1, i);
+	while (i--)
 		pSolutions->AddElement(pR_set->GetAt(i));
 
 	return pSolutions;
 }
 
-FClass2(C_InSysEnumerator, size_t)::MakeSystem()
+FClass2(C_InSysEnumerator, S)::MakeSystem()
 {
 	VECTOR_ELEMENT_TYPE nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
-	VECTOR_ELEMENT_TYPE equationIdx = ELEMENT_MAX;// (1 << sizeof(S) - 1;
+	VECTOR_ELEMENT_TYPE equationIdx = ELEMENT_MAX;
 	// Number of equations corresponding only to the colums which ARE NOT forcibly constructed
 	VECTOR_ELEMENT_TYPE eqIdx = 0;
 
@@ -229,7 +230,7 @@ FClass2(C_InSysEnumerator, size_t)::MakeSystem()
 			if (nRowToBuild != 2 || checkForcibleLambda(fLambda))
 				setForcibleLambda(nRow, fLambda);
 			else
-				return (size_t)-1;
+				return ELEMENT_MAX;
 		}
 	}
 	else
@@ -248,18 +249,18 @@ FClass2(C_InSysEnumerator, size_t)::MakeSystem()
 	return nVar;
 }
 
-FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(size_t nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
+FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	const auto nRow = this->currentRowNumb();
 	const auto nRowPrev = nRow - 1;
 	const auto pPrevRowSolution = this->rowStuff(nRowPrev);
 	auto pCurrRowSolution = this->rowStuff(nRow);
-	pCurrRowSolution->setSolutionSize(nVar);
+	pCurrRowSolution->setSolutionLength(nVar);
 	pCurrRowSolution->resetSolution();
 	const auto pFirstSol = pPrevRowSolution->firstSolution();
 	const CSolutionPerm *pSolPerm = pPrevRowSolution->solutionPerm();
 	const PERMUT_ELEMENT_TYPE *pPerm = pSolPerm ? pSolPerm->GetData() : NULL;
-	const auto len = pPrevRowSolution->solutionSize();
+	const auto len = pPrevRowSolution->solutionLength();
 	auto pRowEquation = inSysRowEquation();
 	pRowEquation->setEquSystem(equSystem());
 

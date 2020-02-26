@@ -224,7 +224,7 @@ public:
 	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {}
 	CK ~CCombinedBIBD()										{ if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
-	CK inline VectorPntr paramSet(int idx) const			{ return paramSets()[idx]; }
+	CK inline VectorPntr paramSet(t_numbSetType idx) const	{ return paramSets()[idx]; }
 	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
 	virtual size_t numParts() const							{ return paramSet(t_lSet)->GetSize(); }
 protected:

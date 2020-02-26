@@ -59,8 +59,8 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(PERMUT_ELEMENT_TYPE lastR
 	if (!prepareToFindRowSolution())
 		return NULL;
 
-	const size_t nVar = MakeSystem();
-	if (nVar == (size_t )-1)
+	const auto nVar = MakeSystem();
+	if (nVar == ELEMENT_MAX)
         return NULL;
     
 	setPrintResultNumVar(nVar);

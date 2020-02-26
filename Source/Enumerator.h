@@ -462,15 +462,15 @@ private:
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
-	CK virtual size_t MakeSystem() = 0;
+	CK virtual S MakeSystem() = 0;
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
-	CK virtual RowSolutionPntr FindSolution(size_t n, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
+	CK virtual RowSolutionPntr FindSolution(S n, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
-    CK virtual void prepareToTestExtraFeatures()			{}
+	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
-    CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
 	virtual S forcibleLambda(size_t i) const				{ return -1; }
 	inline void setDesignParams(designParam *pntr)          { m_pParam = pntr; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
@@ -507,7 +507,7 @@ private:
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
 	Class2(CMatrixCanonChecker)(pMatrix, enumFlags)
 {
-	m_pRow = new RowSolutionPntr[pMatrix->rowNumb()];
+	m_pRow = new RowSolutionPntr[pMatrix->numParts() * pMatrix->rowNumb()];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
 }

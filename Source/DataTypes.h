@@ -196,7 +196,7 @@ typedef unsigned long long	ulonglong;
 
 
 #define MATRIX_ELEMENT_TYPE  	uchar
-#define SIZE_TYPE				uint16_t //uchar //uint16_t
+#define SIZE_TYPE				uchar //uint16_t //uchar //uint16_t
 #define TDATA_TYPES				MATRIX_ELEMENT_TYPE, SIZE_TYPE
 #define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
 
@@ -363,7 +363,6 @@ void CMapping<T>::removeMapping(T to)
 #define countof(x)  (sizeof(x)/sizeof(x[0]))
 
 extern int ccc;
-extern int nnn;
 #if CHECK_CCC
 	#define CHECK_VAL(ccc)		(ccc > CHECK_CCC)
 #else
@@ -493,21 +492,23 @@ typedef enum {
 
 class CInterStruct {
 public:
-	inline CInterStruct(int mult = 1)							{ setMult(mult); }
-	inline ~CInterStruct()										{ delete Counterparts(); }
-	inline const auto &lambda() const							{ return iParam[0]; }
-	inline const auto &lambdaA() const							{ return iParam[1]; }
-	inline const auto &lambdaB() const							{ return iParam[2]; }
-	inline auto *lambdaPtr()									{ return iParam; }
-	inline auto *lambdaAPtr()									{ return iParam + 1; }
-	inline auto *lambdaBPtr()									{ return iParam + 2; }
-	inline std::vector<CInterStruct *> *Counterparts() const	{ return m_pCounterparts; }
-	inline bool isValid() const									{ return Counterparts(); }
-	inline void InitCounterparts()								{ m_pCounterparts = new std::vector<CInterStruct *>(); }
-	inline void setNext(CInterStruct *pntr)						{ m_pNext = pntr; }
-	inline CInterStruct *getNext() const						{ return m_pNext; }
-	inline void setMult(int val)								{ m_mult = val; }
-	inline int mult() const										{ return m_mult; }
+	inline CInterStruct(int mult = 1)		{ setMult(mult); }
+	inline auto* Counterparts() const		{ return m_pCounterparts; }
+	inline ~CInterStruct()					{ delete Counterparts(); }
+	inline const auto &lambda() const		{ return iParam[0]; }
+	inline const auto &lambdaA() const		{ return iParam[1]; }
+	inline const auto &lambdaB() const		{ return iParam[2]; }
+	inline auto *lambdaPtr()				{ return iParam; }
+	inline auto *lambdaAPtr()				{ return iParam + 1; }
+	inline auto *lambdaBPtr()				{ return iParam + 2; }
+
+	inline bool isValid() const				{ return Counterparts(); }
+	inline void InitCounterparts()			{ m_pCounterparts = new std::vector<CInterStruct *>(); }
+	inline void setNext(CInterStruct *pntr)	{ m_pNext = pntr; }
+	inline auto *getNext() const			{ return m_pNext; }
+	inline void setMult(int val)			{ m_mult = val; }
+	inline int mult() const					{ return m_mult; }
+
 private:
 	std::vector<uint> iParam[3];
 	std::vector<CInterStruct *> *m_pCounterparts = NULL;

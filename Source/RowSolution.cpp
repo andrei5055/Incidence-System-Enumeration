@@ -63,8 +63,8 @@ FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex) cons
 FClass2(CRowSolution, size_t)::findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const
 {
 	const auto *pCanonFlags = pSolPerm->canonFlags();
-	const auto len = solutionSize() * sizeof(*pSolution);
-	while (++i < iMax && MEMCMP(pSolution, firstSolution() + pSolPerm->GetAt(i) * solutionSize(), len)) {
+	const auto len = solutionLength() * sizeof(*pSolution);
+	while (++i < iMax && MEMCMP(pSolution, firstSolution() + pSolPerm->GetAt(i) * solutionLength(), len)) {
 		if (*(pCanonFlags + i) == 1) {
 			if (lastCanonIdx == SIZE_MAX)
 				*pNextSolutionIdx = i;
@@ -133,7 +133,7 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 
 	if (i < numSolutions() && pCanonFlags[i] != 0xff) {
 		if (pSolutionStorage)
-			pSolutionStorage->push_back(firstSolution() + pSolPerm->GetAt(i) * solutionSize());
+			pSolutionStorage->push_back(firstSolution() + pSolPerm->GetAt(i) * solutionLength());
 
 		// We found solution and it was not marked as deleted
 		bool changeSolutionIndex = firstCall;
@@ -225,7 +225,7 @@ FClass2(CRowSolution, void)::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, co
     for (size_t j = 0; j < numSolutions(); j++) {
         size_t idx = pPerm? *(pPerm + j) : j;
         if (pSol)
-            idx = *(pSol + idx * solutionSize());
+            idx = *(pSol + idx * solutionLength());
         
         pBuf += sprintf_s(pBuf, sizeof(buffer) - (pBuf - buffer), "%2zd", idx % 100);
         if (pBuf >= buffer + sizeof(buffer) - 2)
@@ -256,7 +256,7 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 
 FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed) const
 {
-	if (!solutionSize() || !numSolutions())
+	if (!solutionLength() || !numSolutions())
         return;
     
 	MUTEX_LOCK(out_mutex);
@@ -293,7 +293,7 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed) const
 			printRow(file, pPerm);
 
 		const VECTOR_ELEMENT_TYPE *pSolution = firstSolution();
-		for (unsigned int i = 0; i < solutionSize(); i++)
+		for (unsigned int i = 0; i < solutionLength(); i++)
 			printRow(file, pPerm, pSolution + i);
 	}
 

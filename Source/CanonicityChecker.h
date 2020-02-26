@@ -187,7 +187,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, in
 		// could be changed, let's take pointer here
 		// Don't worry about that and similar compilation warnings: For now we don't plan to call this method with pRowSolution != NULL
 		pCurrSolution = pRowSolution->currSolution();
-		solutionSize = pRowSolution->solutionSize();
+		solutionSize = pRowSolution->solutionLength();
 #if USE_STRONG_CANONICITY
 		solutionStorage()->clear();
 		pRowSolution->setLenOrbitOfSolution(0);
