@@ -20,14 +20,17 @@ FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pInfo, int le
 }
 
 FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
-	const auto nParts = this->matrix()->numParts();
 	auto pSolutions = this->rowStuff(0);
 	const auto* pR_set = this->paramSet(t_rSet);
-	for (uint i = 0; i < nParts; i++) {
+	for (auto i = this->numParts(); i--;) {
 		auto pPartSolutions = pSolutions + i;
 		pPartSolutions->InitSolutions(1, 1);
 		pPartSolutions->AddElement(pR_set->GetAt(i));
 	}
 
 	return pSolutions;
+}
+
+FClass2(CCombBIBD_Enumerator, S)::CreateForcedRows() const {
+	return 0; 
 }

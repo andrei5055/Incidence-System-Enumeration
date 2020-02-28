@@ -65,11 +65,11 @@ public:
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin);
 	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
 	void printSolutions(FILE *file, bool markNextUsed = false) const;
-	CK inline PERMUT_ELEMENT_TYPE solutionIndex() const			{ return m_nSolutionIndex; }
+	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
-	CK inline CSolutionPerm *solutionPerm() const				{ return m_pSolutionPerm; }
-    CK void resetSolution()										{ setSolutionIndex(0); solutionPerm()->RemoveAll(); }
-	CK inline size_t numSolutions() const						{ return m_nNumSolutions; }
+	CK inline auto *solutionPerm() const						{ return m_pSolutionPerm; }
+	CK void resetSolution()										{ setSolutionIndex(0); solutionPerm()->RemoveAll(); }
+	CK inline auto numSolutions() const							{ return m_nNumSolutions; }
 	inline bool isLastSolution() const							{ return solutionIndex() + 1 == numSolutions(); }
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 private:
@@ -82,7 +82,7 @@ private:
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }
 	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
-	inline size_t lenOrbitOfSolution() const                    { return m_nLenSolOrb; }
+	inline auto lenOrbitOfSolution() const						{ return m_nLenSolOrb; }
 	CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionLength(); }
 #if USE_THREADS || MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;

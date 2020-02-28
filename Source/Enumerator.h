@@ -447,11 +447,12 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
-	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const;
+	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE* pRowSolution) const;
+	CK virtual S CreateForcedRows() const					{ return 0; }
+	inline auto numParts() const							{ return m_numParts; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
-
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
@@ -472,8 +473,8 @@ private:
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
 	virtual S forcibleLambda(size_t i) const				{ return -1; }
-	inline void setDesignParams(designParam *pntr)          { m_pParam = pntr; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
+	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else
@@ -499,15 +500,15 @@ private:
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
+	const size_t m_numParts;
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif
 };
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	Class2(CMatrixCanonChecker)(pMatrix, enumFlags)
-{
-	m_pRow = new RowSolutionPntr[pMatrix->numParts() * pMatrix->rowNumb()];
+	Class2(CMatrixCanonChecker)(pMatrix, enumFlags), m_numParts(pMatrix->numParts()) {
+	m_pRow = new RowSolutionPntr[this->numParts() * pMatrix->rowNumb()];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
 }

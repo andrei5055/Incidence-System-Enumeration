@@ -99,6 +99,9 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 	m_IS_enumerator = using_IS_enumerator;
 	// Number of CColOrbits taken from pMaster
 	setRowMaster(pMaster ? pMaster->currentRowNumb() + 1 : 0);
+
+	// In order not to re-create orbits on the way back, we will store them in different places.
+	// Therefore, we must have number of rows as a multiplier for fromMaster and nCol_2.
 	const size_t fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
 	const size_t nCol_2 = nRow * colNumb();
 #ifndef USE_CUDA		// NOT yet implemented for GPU
@@ -115,13 +118,12 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 		m_ppOrb = new ColOrbPntr[nCol_2];
 
 
+	const int maxElement = rankMatr();
 	if (!using_IS_enumerator) {
 #ifndef USE_CUDA		// NOT yet implemented for GPU
-		const int maxElement = rankMatr() - 1;
 		auto pColOrbitsCS = pMem ? (CColOrbitCS<S> *)pMem : new CColOrbitCS<S>[nCol_2 - fromMaster];
-//CColOrbitCS<S>::setMaxElement(maxElement);
 		for (auto i = nCol_2; i-- > fromMaster;) {
-			pColOrbitsCS[i].InitOrbit(maxElement);
+			pColOrbitsCS[i].InitOrbit(maxElement - 1);
 			m_ppOrb[i] = pColOrbitsCS + i - fromMaster;
 		}
 #endif
@@ -155,9 +157,8 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 				m_pColOrb[i] = (ColOrbPntr)((char *)m_pColOrb[i] + idx * lenColOrbitElement);
 
 			m_pColOrb[i]->clone(pMaster->colOrbits()[i]);
-
-			for (int j = 0; j < 2; j++) {
-				const size_t idx = (i << 1) + j;
+			for (int j = 0; j < maxElement; j++) {
+				const size_t idx = i * maxElement + j;
 				if (pMaster->unforcedColOrbPntr()[idx]) {
 					const size_t shift = (char *)pMaster->unforcedColOrbPntr()[idx] - (char *)pMaster->colOrbitsIni()[i];
 					unforcedColOrbPntr()[idx] = (ColOrbPntr)((char *)colOrbitsIni()[i] + shift);

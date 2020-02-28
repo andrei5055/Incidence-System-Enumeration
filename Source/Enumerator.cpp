@@ -230,7 +230,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (rowNumb() - firstUnforced) * sizeof(*forcibleLambdaPntr()));
 		}
 	} else {
-		nRow = 0;
+		nRow = CreateForcedRows();
 		pRowSolution = setFirstRowSolutions();
 		this->setEnumInfo(pEnumInfo);
 		pEnumInfo->startClock();
