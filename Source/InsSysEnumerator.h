@@ -82,9 +82,8 @@ FClass2(C_InSysEnumerator, bool)::sortSolutions(RowSolutionPntr pSolution, size_
 }
 
 FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
-	auto *pSolutions = this->rowStuff(0);
-	const auto *pISys = this->getInSys();
-	const auto *pR_set = pISys->GetNumSet(t_rSet);
+	auto pSolutions = this->rowStuff(0);
+	const auto* pR_set = this->getInSys()->GetNumSet(t_rSet);
 	auto i = pR_set->GetSize();
 	pSolutions->InitSolutions(1, i);
 	while (i--)

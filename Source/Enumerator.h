@@ -166,21 +166,18 @@ typedef struct {
 	int nOrdersMax;
 } GroupOrderInfo;
 
-template<typename T, typename S>
-void MakeCopyGroupInfo(MatrixCanonCheckerGPU** ppCheckers, GroupOrderInfo* orderInfo,
+TFunc2(MakeCopyGroupInfo, void) (MatrixCanonCheckerGPU** ppCheckers, GroupOrderInfo* orderInfo,
 	int CPU_threadIdx, cudaStream_t stream, COrderInfo* pOrderInfo);
 
 Class2Def(CEnumerator);
 
-template<typename T, typename S>
-bool AssignChecker(MatrixCanonCheckerGPU** ppCheckers, Class2(CMatrixData)** pAllMatrData, uint checkerIdx, const Enumerator* pCanonChecker, cudaStream_t stream
+TFunc2(AssignChecker, bool)(MatrixCanonCheckerGPU** ppCheckers, Class2(CMatrixData)** pAllMatrData, uint checkerIdx, const Enumerator* pCanonChecker, cudaStream_t stream
 #if TRACE_CUDA_FLAG
 	, int myID
 #endif
 );
 
-template<typename T, typename S>
-void ResetEnumInfoGlobal(MatrixCanonCheckerGPU** ppCheckers, cudaStream_t stream);
+TFunc2(ResetEnumInfoGlobal, void)(MatrixCanonCheckerGPU** ppCheckers, cudaStream_t stream);
 
 Class2Def(CGPU_CheckerInfo)
 {
@@ -447,12 +444,16 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
-	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE* pRowSolution) const;
-	CK virtual S CreateForcedRows() const					{ return 0; }
+	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE* pRowSolution) const ;
+	CK virtual S CreateForcedRows()							{ return 0; }
 	inline auto numParts() const							{ return m_numParts; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
+	void rowSetFragm(T *pRow, T val, size_t len) const {
+		for (auto j = len; j--;)
+			pRow[j] = val;
+	}
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
@@ -520,3 +521,6 @@ FClass2(CEnumerator)::~CEnumerator() {
 	releaseGPU_CanonChecker();
 }
 
+template<>void CEnumerator<uchar,uchar>::rowSetFragm(uchar* pRow, uchar val, size_t len) const {
+	memset(pRow, val, len);
+}

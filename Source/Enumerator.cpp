@@ -549,12 +549,12 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
 	const int maxElement = this->rank() - 1;
     const auto colOrbLen = this->colOrbitLen();
 	const auto *pColOrbitIni = this->colOrbitIni(nRow);
-    CColOrbit<S> *pNextRowColOrbitNew = NULL;
-    CColOrbit<S> *pColOrbitLast = NULL;
+	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
+	Class1(CColOrbit)*pColOrbitLast = NULL;
 	while (pColOrbit) {
-        CColOrbit<S> *pNewColOrbit = NULL;
+		Class1(CColOrbit) *pNewColOrbit = NULL;
 		// Define the number of column to start with
-		const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
+		const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
         auto lenRemaining = pColOrbit->length();
 		auto *pRowCurr = pRow + nColCurr;
 		for (int i = this->rank(); i--;) {
@@ -564,7 +564,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
             
 			if (nextColOrbNeeded) {
 				if (!pNewColOrbit) {
-					pNewColOrbit = (CColOrbit<S> *)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
+					pNewColOrbit = (Class1(CColOrbit) *)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
 					if (pColOrbitLast)
 						pColOrbitLast->setNext(pNewColOrbit);
 					else
@@ -578,13 +578,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
                 break;
             
             // Construct corresponding part of matrix's nRow's row
-#if MATRIX_ELEMENT_IS_BYTE
-			memset(pRowCurr, i, lenFragm);
-            pRowCurr += lenFragm;
-#else
-			for (int j = 0; j < lenFragm; j++)
-				*pRowCurr[j] = i;
-#endif
+			rowSetFragm(pRowCurr, i, lenFragm);
             if (!(lenRemaining -= lenFragm))
                 break;    // remaining parts of the current solution are 0's
 		}
@@ -601,16 +595,11 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
             for (int i = 1; i < this->rank(); i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
-                    const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
+                    const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
                     const auto lenFragm = pColOrbit->length();
-                    if (lenFragm > 1) {
-#if MATRIX_ELEMENT_IS_BYTE
-                        memset(pRow + nColCurr, i, lenFragm);
-#else
-                        for (int j = 0; j < lenFragm; j++)
-                            pRow[nColCurr + j] = i;
-#endif
-                    } else
+                    if (lenFragm > 1) 
+						rowSetFragm(pRow + nColCurr, i, lenFragm);
+                    else
                         pRow[nColCurr] = i;
                     
                     pColOrbit = pColOrbit->next();

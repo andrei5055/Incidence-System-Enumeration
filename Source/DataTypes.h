@@ -204,9 +204,10 @@ typedef unsigned long long	ulonglong;
 #define Class1Def(x)            template<typename S> class x
 #define FClass1(x, ...)			template<typename S> __VA_ARGS__  Class1(x)
 
+#define TFunc2(x, ...)          template<typename T, typename S> __VA_ARGS__ x
 #define Class2(x)               x<T,S>
-#define Class2Def(x)            template<typename T, typename S> class x
-#define FClass2(x, ...)			template<typename T, typename S> __VA_ARGS__  Class2(x)
+#define Class2Def(x)            TFunc2(x, class)
+#define FClass2(x, ...)			TFunc2(Class2(x), __VA_ARGS__)
 
 #define MatrixData(...)			FClass2(CMatrixData, __VA_ARGS__)
 #define PermutStorage(...)		FClass2(CPermutStorage, __VA_ARGS__)
@@ -239,11 +240,8 @@ typedef unsigned long long	ulonglong;
 #define SimpleArrayPntr			Class1(CSimpleArray) *
 #define VectorPntr				Class1(CVector) *
 
-#define MATRIX_ELEMENT_IS_BYTE	(MATRIX_ELEMENT_TYPE == uchar)
-#if MATRIX_ELEMENT_IS_BYTE
 #define _FRMT				"u"
 #define ME_FRMT				"%" _FRMT
-#endif
 
 
 #define VECTOR_ELEMENT_TYPE  	SIZE_TYPE
@@ -253,8 +251,7 @@ typedef CArray<VECTOR_ELEMENT_TYPE, VECTOR_ELEMENT_TYPE> CArrayOfVectorElements;
 typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ELEMENT_TYPE> CArraySolutionPerm;
 #define PERMUT_ELEMENT_MAX		UINT64_MAX
 
-template <class S>
-class CSimpleArray {
+Class1Def(CSimpleArray) {
 public:
     CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new S[len]; }
 	CC virtual ~CSimpleArray()						{ delete [] elementPntr(); }
@@ -271,23 +268,21 @@ private:
     size_t m_nLen;
 };
 
-template <class T>
-class CCounter : public CSimpleArray<T> {
+Class1Def(CCounter) : public Class1(CSimpleArray) {
 public:
-    CC CCounter(size_t len) : CSimpleArray<T>(len)  { resetArray(); }
+    CC CCounter(size_t len) : Class1(CSimpleArray)(len)  { resetArray(); }
 	CC ~CCounter()									{}
-	CC inline void resetArray()						{ memset(this->elementPntr(), 0, this->numElement() * sizeof(T)); }
+	CC inline void resetArray()						{ memset(this->elementPntr(), 0, this->numElement() * sizeof(S)); }
 	CC inline void incCounter(int idx)              { ++*(this->elementPntr() + idx); }
 private:
 };
 
-template <class T>
-class CContainer : public CSimpleArray<T> {
+Class1Def(CContainer) : public Class1(CSimpleArray) {
 public:
-	CC CContainer(size_t len) : CSimpleArray<T>(len){ resetArray(); }
+	CC CContainer(size_t len) : Class1(CSimpleArray)(len){ resetArray(); }
 	CC ~CContainer()								{}
     CC inline void resetArray()                     { m_nNumb = 0; }
-	CC inline void addElement(T val)                { *(this->elementPntr() + m_nNumb++) = val; }
+	CC inline void addElement(S val)                { *(this->elementPntr() + m_nNumb++) = val; }
     CC inline size_t numb() const                   { return m_nNumb; }
     inline void incNumb()                           { m_nNumb++; }
 	inline size_t GetSize() const					{ return numb(); }
@@ -295,42 +290,39 @@ private:
 	size_t m_nNumb;
 };
 
-template <class T>
-class CMapping : public CSimpleArray<T> {
+Class1Def(CMapping) : public Class1(CSimpleArray) {
 public:
-    CK CMapping(size_t len) : CSimpleArray<T>(len<<1)  {}
-	CK CMapping(T to, T from, size_t len = 1) : CSimpleArray<T>(len << 1)		
+    CK CMapping(size_t len) : Class1(CSimpleArray)(len<<1)  {}
+	CK CMapping(S to, S from, size_t len = 1) : Class1(CSimpleArray)(len << 1)
 													{ resetMapping(); addMapping(to, from); }
 	CC ~CMapping()									{}
-    CK void addMapping(T to, T from);
-	void removeMapping(T to);
+    CK void addMapping(S to, S from);
+	void removeMapping(S to);
 	void removeLastMapping(size_t n = 1)			{ m_nMapPos -= n << 1; }
 	void restoreLastMapping(size_t n = 1)			{ m_nMapPos += n << 1; }
     CK inline void resetMapping()                   { m_nMapPos = 0; }
 	inline uint nElement() const					{ return getMapPosition() >> 1; }
-	CK inline const T *getMappingPntr() const       { return this->elementPntr(); }
-    CK inline const T *getLastMapping() const		{ return getMappingPntr() + getMapPosition(); }
-	const T *findMapping(T to, const T *pTo = NULL, const T *pToLast = NULL) const;
+	CK inline const auto getMappingPntr() const		{ return this->elementPntr(); }
+    CK inline const auto getLastMapping() const		{ return getMappingPntr() + getMapPosition(); }
+	const S *findMapping(S to, const S *pTo = NULL, const S *pToLast = NULL) const;
     bool isEmpty() const                            { return !m_nMapPos; }
-	inline void adjustElement(int idx, T val = 1)   { *(this->elementPntr() + idx) -= val; }
+	inline void adjustElement(int idx, S val = 1)   { *(this->elementPntr() + idx) -= val; }
 protected:
-	CK inline uint getMapPosition() const           { return m_nMapPos; }
+	CK inline auto getMapPosition() const           { return m_nMapPos; }
     
     uint m_nMapPos;
 };
 
-template <class T>
-void CMapping<T>::addMapping(T to, T from)
+FClass1(CMapping, void)::addMapping(S to, S from)
 {
 	assert(m_nMapPos < (this->numElement() << 1));
-	T *pTo = (T *)getLastMapping();
+	auto *pTo = (S *)getLastMapping();
     *pTo = to;
     *(pTo+1) = from;
     m_nMapPos += 2;
 }
 
-template <class T>
-const T *CMapping<T>::findMapping(T to, const T *pTo, const T *pToLast) const
+FClass1(CMapping, const S*)::findMapping(S to, const S *pTo, const S *pToLast) const
 {
 	// Searching for element to be removed
 	if (!pTo)
@@ -344,11 +336,10 @@ const T *CMapping<T>::findMapping(T to, const T *pTo, const T *pToLast) const
 	return pTo >= pToLast ? pTo : NULL;
 }
 
-template <class T>
-void CMapping<T>::removeMapping(T to)
+FClass1(CMapping, void)::removeMapping(S to)
 {
 	// Searching for element to be removed
-	T *pTo = (T *)findMapping(to);
+	auto *pTo = (T *)findMapping(to);
 	if (!pTo)
 		return;
 

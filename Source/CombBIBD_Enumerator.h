@@ -10,7 +10,7 @@ protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }
 	CK virtual RowSolutionPntr setFirstRowSolutions();
-	CK virtual S CreateForcedRows() const;
+	CK virtual S CreateForcedRows();
 #if !CONSTR_ON_GPU
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
 	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
