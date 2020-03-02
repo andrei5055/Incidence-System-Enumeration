@@ -3,7 +3,7 @@
 
 class CEquSystem;
 
-Class1Def(CInSysRowEquation) : public CSimpleArray<S>
+Class1Def(CInSysRowEquation) : public Class1(CSimpleArray)
 {
 public:
 	CK CInSysRowEquation(size_t len, bool tDesignEnum);

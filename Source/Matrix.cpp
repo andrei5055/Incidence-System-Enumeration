@@ -99,19 +99,24 @@ TDesign()::C_tDesign(int t, int v, int k, int lambda) : Class2(C_BIBD)(v, k, t),
 CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) : Class2(C_BIBD)(0, k) {
 	std::vector<uint> lambdaSet(lambdaInp);
 	std::sort(lambdaSet.begin(), lambdaSet.end(), std::greater<int>());
-	m_ppParamSet = this->createParamStorage(t_rSet); // Create 2 sets of vector (for Lambda and R of the component of combineed BIBD)
+	m_ppParamSet = this->createParamStorage(t_rSet); // Create 2 sets of vector (for Lambda and R of the component of combined BIBD)
 
 	const auto nSubDesigns = lambdaSet.size();
 	const auto v1 = v - 1;
 	const auto k1 = k - 1;
+	this->InitPartInfo(nSubDesigns);
 	int lambda = 0;
+	S shift = 0;
 	for (size_t i = 0; i < nSubDesigns; ++i) {
 		const auto lambdaCurr = lambdaSet[i];
 		const auto r = lambdaCurr * v1 / k1;
+		const auto b = r * v / k;
 		assert(r * k1 == lambdaCurr * v1);
 		m_ppParamSet[t_lSet]->AddElement(lambdaCurr);
 		m_ppParamSet[t_rSet]->AddElement(r);
 		lambda += lambdaCurr;
+		this->SetPartInfo(i, shift, b);
+		shift += b;
 	}
 
 	this->Init(v + 1, lambda * v * v1 / (k * k1));

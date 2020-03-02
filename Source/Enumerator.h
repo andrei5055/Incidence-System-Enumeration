@@ -414,12 +414,12 @@ public:
 															{ return false; }
 	CK virtual S getX0_3() const							{ return 0; }
 	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
-    CK virtual size_t firstUnforcedRow() const              { return 0; }
-	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)  {}
+	CK virtual S firstUnforcedRow() const					{ return 0; }
+	CK virtual void setFirstUnforcedRow(S rowNum = 0)		{}
 	CK virtual S *forcibleLambdaPntr() const				{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
-	CK inline designParam *designParams() const				{ return m_pParam; }
+	CK inline auto designParams() const						{ return m_pParam; }
 
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
@@ -428,10 +428,10 @@ public:
 protected:
 	CK virtual bool prepareToFindRowSolution()				{ return true; }
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
-    CK virtual void setX0_3(VECTOR_ELEMENT_TYPE value)      {}
-	CK inline CSimpleArray<S> *rowEquation() const			{ return m_pRowEquation; }
+	CK virtual void setX0_3(S value)						{}
+	CK inline auto rowEquation() const						{ return m_pRowEquation; }
 	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const    { return -1; }
-    CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
+	CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
     CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
@@ -444,8 +444,10 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
-	CK ColOrbPntr MakeRow(const VECTOR_ELEMENT_TYPE* pRowSolution) const ;
-	CK virtual S CreateForcedRows()							{ return 0; }
+	CK ColOrbPntr MakeRow(const S *pRowSolution, S partIdx = 0) const;
+	CK ColOrbPntr MakeRow(const RowSolutionPntr pRowSolution, bool flag = false);
+	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
+	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
 	inline auto numParts() const							{ return m_numParts; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
@@ -501,7 +503,7 @@ private:
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
-	const size_t m_numParts;
+	const S m_numParts;
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif

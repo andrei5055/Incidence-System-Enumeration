@@ -6,7 +6,10 @@
 Class2Def(CMatrixData) {
 public:
 	CK CMatrixData()						{ setDataOwner(false); }
-	CK virtual ~CMatrixData()				{ if (dataOwner()) delete [] m_pData; }
+	CK virtual ~CMatrixData()				{ 
+		if (dataOwner()) delete [] m_pData; 
+		delete m_nPartInfo;
+	}
 	CC void InitWithData(S nRows, S nCols = 0, T maxElement = 1) {
 		Init(nRows, nCols, maxElement, (uchar *)this + sizeof(*this));
 	}
@@ -63,17 +66,24 @@ public:
 		m_pData = data? data : m_nLenData? new T[m_nRows * m_nCols] : NULL;
 	}
 
-	CK void AssignData(T *data)				{ memcpy(GetDataPntr(), data, m_nLenData); }
+	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
-	virtual size_t numParts() const			{ return 1; }
+	virtual S numParts() const					{ return 1; }
+protected:
+	inline void InitPartInfo(size_t nParts)		{ m_nPartInfo = new CSimpleArray<S>(nParts); }
+	inline void SetPartInfo(size_t idx, S shift, S len) {
+		m_nPartInfo[idx << 1] = shift;
+		m_nPartInfo[(idx << 1) + 1] = len;
+	}
 private:
-	CK inline bool dataOwner()	const		{ return m_bDataOwner; }
+	CK inline bool dataOwner()	const			{ return m_bDataOwner; }
 	S m_nRows;
 	S m_nCols;
 	T m_nMaxElement;
 	bool m_bDataOwner;
 	size_t m_nLenData;
 	T *m_pData;
+	CSimpleArray<S> *m_nPartInfo = NULL;
 };
 
 
@@ -226,7 +236,7 @@ public:
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(t_numbSetType idx) const	{ return paramSets()[idx]; }
 	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
-	virtual size_t numParts() const							{ return paramSet(t_lSet)->GetSize(); }
+	virtual S numParts() const								{ return static_cast<S>(paramSet(t_lSet)->GetSize()); }
 protected:
 private:
 	VectorPntr *m_ppParamSet;

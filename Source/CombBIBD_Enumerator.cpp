@@ -31,7 +31,11 @@ FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
 	return pSolutions;
 }
 
-FClass2(CCombBIBD_Enumerator, S)::CreateForcedRows() {
+FClass2(CCombBIBD_Enumerator, void)::CreateForcedRows() {
+	// Combined BIBDs having n parts will be constructed with first "atrtificial" row:
+	//  n, n, ...,n, n-1, ..., n-1, n-2,..., n-2,... 2,...2,1...,1
+	// It's why we need to start enumeration with the row number 1.
+	this->setCurrentRowNumb(1);
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
 	const auto v = pInSys->rowNumb() - 1;
@@ -48,5 +52,4 @@ FClass2(CCombBIBD_Enumerator, S)::CreateForcedRows() {
 
 		}
 	}
-	return 1; 
 }

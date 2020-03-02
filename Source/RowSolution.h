@@ -72,6 +72,8 @@ public:
 	CK inline auto numSolutions() const							{ return m_nNumSolutions; }
 	inline bool isLastSolution() const							{ return solutionIndex() + 1 == numSolutions(); }
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
+	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
+	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
 private:
 	CK void sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
@@ -94,6 +96,7 @@ private:
 	PERMUT_ELEMENT_TYPE m_nSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;
 	size_t m_nLenSolOrb;
+	const CRowSolution *m_pNextPortion = NULL;
 };
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug

@@ -214,6 +214,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #endif
 	const auto pMatrix = this->matrix();
 
+	const auto firstNonfixedRow = firtstNonfixedRowNumber();
 	// Allocate memory for the orbits of two consecutive rows
 	S nRow;
 	RowSolutionPntr pRowSolution;
@@ -230,7 +231,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (rowNumb() - firstUnforced) * sizeof(*forcibleLambdaPntr()));
 		}
 	} else {
-		nRow = CreateForcedRows();
+		nRow = firstNonfixedRow - 2;
+		CreateForcedRows();
 		pRowSolution = setFirstRowSolutions();
 		this->setEnumInfo(pEnumInfo);
 		pEnumInfo->startClock();
@@ -259,8 +261,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 		prepareToTestExtraFeatures();
 
 	// For multi-threaded version we need to test only one top level solution
-	const size_t nRowEnd = nRow ? nRow + 1 : 0;
-    this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
+	const S nRowEnd = nRow ? nRow + 1 : 0;
+	this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
 	S level;
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
@@ -326,10 +328,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			OUTPUT_SOLUTION(pRowSolution, outFile(), true);
 
-			const auto *pCurrSolution = pRowSolution->currSolution();
-			auto *pColOrb = MakeRow(pCurrSolution);
-			if (nRow == 2)
-				setX0_3(*pCurrSolution);
+			auto *pColOrb = MakeRow(pRowSolution, nRow == firstNonfixedRow);
 
 			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
 			if (++nRow == rowNumb()) {
@@ -536,9 +535,10 @@ FClass2(CEnumerator, void)::reset(S nRow) {
 	this->resetUnforcedColOrb();
 }
 
-FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolution) const
+FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) const
 {
-    const auto nRow = this->currentRowNumb();
+	pRowSolution += partIdx;
+	const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
 	auto *pRow = this->matrix()->GetRow(nRow);
 	memset(pRow, 0, sizeof(*pRow) * this->colNumb());
@@ -612,6 +612,28 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const VECTOR_ELEMENT_TYPE *pRowSolutio
         pColOrbitLast->setNext(NULL);
     
     return pNextRowColOrbitNew;
+}
+
+FClass2(CEnumerator, ColOrbPntr)::MakeRow(const RowSolutionPntr pRowSolution, bool flag) {
+	// Loop over all portions of the solution
+	ColOrbPntr pColOrbRet;
+	ColOrbPntr pColUrbLast = NULL;
+	for (S i = 0; i < numParts(); i++) {
+		const auto* pCurrSolution = (pRowSolution+i)->currSolution();
+		auto* pColOrb = MakeRow(pCurrSolution);
+		if (pColUrbLast)
+			pColUrbLast->setNext(pColOrb);
+		else
+			pColOrbRet = pColOrb;
+
+		pColUrbLast = pColOrb;
+		if (flag) {
+			flag = false;
+			setX0_3(*pCurrSolution);
+		}
+	}
+
+	return pColOrbRet;
 }
 
 FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)

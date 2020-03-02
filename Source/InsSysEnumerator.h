@@ -8,8 +8,8 @@ public:
 	CK C_InSysEnumerator(const InSysPntr pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_InSysEnumerator();
 	CK virtual S getX0_3() const								{ return m_x0_3; }
-	CK virtual size_t firstUnforcedRow() const                  { return m_firstUnforcedRow; }
-	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)      { m_firstUnforcedRow = rowNum; }
+	CK virtual S firstUnforcedRow() const						{ return m_firstUnforcedRow; }
+	CK virtual void setFirstUnforcedRow(S rowNum = 0)			{ m_firstUnforcedRow = rowNum; }
 	CK virtual S *forcibleLambdaPntr() const					{ return m_pForsibleLambda; }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
@@ -49,7 +49,7 @@ private:
 
 	S m_x0_3;
 	S *m_pForsibleLambda;
-	size_t m_firstUnforcedRow;
+	S m_firstUnforcedRow;
 	CRightPartFilter<S> *m_pRightPartFilter;
 	const bool m_bNoReplBlock;
 };

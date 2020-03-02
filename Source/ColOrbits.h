@@ -15,12 +15,12 @@ Class1Def(CColOrbit) {
 	CC virtual ~CColOrbit()							{}   
  	CC void Init(S length, CColOrbit *pNext = NULL)	{ setLength(length); setNext(pNext); }
 	CC inline S length() const						{ return m_nLength; }
-	CC inline CColOrbit *next() const				{ return m_pNext; }
+	CC inline auto next() const						{ return m_pNext; }
 	CC inline void setNext(CColOrbit *pntr)			{ m_pNext = pntr; }
 	CC virtual void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
 	CC virtual unsigned int *getEntryCntrs() const	{ return NULL; }
 	CC virtual int columnWeight() const				{ return 0; }
-    CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
+	CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
 	CC void clone(const CColOrbit *pColOrb);
 	CC inline void setLength(S len)					{ m_nLength = len; }
 private:

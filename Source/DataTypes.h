@@ -253,13 +253,13 @@ typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ELEMENT_TYPE> CArraySolutionPerm;
 
 Class1Def(CSimpleArray) {
 public:
-    CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new S[len]; }
+	CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new S[len]; }
 	CC virtual ~CSimpleArray()						{ delete [] elementPntr(); }
 	inline void Init(size_t len, S *pElem)			{ m_pElem = pElem; m_nLen = len; }
-    CC inline S element(size_t idx) const           { return *(elementPntr() + idx); }
-	inline void setElement(size_t idx, S val)		{ *GetElement(idx) = val; }
-    CC inline S *elementPntr() const				{ return m_pElem; }
-    CC inline size_t numElement() const				{ return m_nLen; }
+	CC inline S element(size_t idx) const           { return m_pElem[idx]; }
+	inline void setElement(size_t idx, S val)		{ m_pElem[idx] = val; }
+	CC inline S *elementPntr() const				{ return m_pElem; }
+	CC inline size_t numElement() const				{ return m_nLen; }
 	inline S GetAt(size_t idx)  const				{ return element(idx); }
 	inline S *GetElement(size_t idx)  const			{ return elementPntr() + idx; }
 protected:
