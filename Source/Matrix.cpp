@@ -104,7 +104,7 @@ CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) 
 	const auto nSubDesigns = lambdaSet.size();
 	const auto v1 = v - 1;
 	const auto k1 = k - 1;
-	this->InitPartInfo(nSubDesigns);
+	auto partsInfo = this->InitPartsInfo(nSubDesigns);
 	int lambda = 0;
 	S shift = 0;
 	for (size_t i = 0; i < nSubDesigns; ++i) {
@@ -115,7 +115,7 @@ CombinedBIBD()::CCombinedBIBD(int v, int k, const std::vector<uint>& lambdaInp) 
 		m_ppParamSet[t_lSet]->AddElement(lambdaCurr);
 		m_ppParamSet[t_rSet]->AddElement(r);
 		lambda += lambdaCurr;
-		this->SetPartInfo(i, shift, b);
+		partsInfo->SetPartInfo(i, shift, b);
 		shift += b;
 	}
 

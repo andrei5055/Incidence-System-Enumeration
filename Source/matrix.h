@@ -69,21 +69,31 @@ public:
 	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
 	virtual S numParts() const					{ return 1; }
-protected:
-	inline void InitPartInfo(size_t nParts)		{ m_nPartInfo = new CSimpleArray<S>(nParts); }
-	inline void SetPartInfo(size_t idx, S shift, S len) {
-		m_nPartInfo[idx << 1] = shift;
-		m_nPartInfo[(idx << 1) + 1] = len;
+	inline auto partsInfo() const				{ return m_nPartInfo;  }
+	CC inline T* ResetRowPart(S nRow, S idx) const {
+		S len;
+		T* pRow = m_pData + nRow * m_nCols;
+		if (m_nPartInfo)
+			pRow += m_nPartInfo->GetPartInfo(idx, &len);
+		else
+			len = m_nCols;
+		return static_cast<T *>(memset(pRow, 0, len * sizeof(T)));
 	}
+protected:
+	inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
+	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
+		return m_pData + nRow * m_nCols + m_nPartInfo->GetPartInfo(idx, pLen);
+	}
+
 private:
-	CK inline bool dataOwner()	const			{ return m_bDataOwner; }
+	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
 	S m_nRows;
 	S m_nCols;
 	T m_nMaxElement;
 	bool m_bDataOwner;
 	size_t m_nLenData;
 	T *m_pData;
-	CSimpleArray<S> *m_nPartInfo = NULL;
+	BlockGroupDescr<S> *m_nPartInfo = NULL;
 };
 
 

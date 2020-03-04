@@ -268,6 +268,20 @@ private:
     size_t m_nLen;
 };
 
+Class1Def(BlockGroupDescr) : public CSimpleArray<S> {
+public:
+	BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
+	inline size_t numParts() const						{ return numElement() >> 1; }
+	inline void SetPartInfo(size_t idx, S shift, S len) {
+		setElement(idx << 1, shift);
+		setElement((idx << 1) + 1, len);
+	}
+	inline S GetPartInfo(S idx, S *pLen) const {
+		*pLen = element((idx << 1) + 1);
+		return element(idx << 1);
+	}
+};
+
 Class1Def(CCounter) : public Class1(CSimpleArray) {
 public:
     CC CCounter(size_t len) : Class1(CSimpleArray)(len)  { resetArray(); }

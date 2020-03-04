@@ -42,7 +42,7 @@ protected:
 	CK virtual void resetFirstUnforcedRow()							{}
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
-	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
+	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	CK inline void setR(S val)										 { m_r = val; }
@@ -157,7 +157,7 @@ FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart,
 	return true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, size_t nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
+FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, S nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to skip testing of some solutions for some rows

@@ -262,7 +262,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 	// For multi-threaded version we need to test only one top level solution
 	const S nRowEnd = nRow ? nRow + 1 : 0;
-	this->initiateColOrbits(rowNumb(), this->IS_enumerator(), pMaster);
+	this->initiateColOrbits(rowNumb(), nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 	S level;
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
@@ -340,7 +340,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						//					Construct Aut(D)
 						//					int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
-						if (TestFeatures(pEnumInfo, this->matrix(), &matrFlags, this)) {
+						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, this)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
 								pEnumInfo->setNoReplBlockFlag(false);
 								level = getInSys()->GetK();
@@ -540,14 +540,13 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) cons
 	pRowSolution += partIdx;
 	const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
-	auto *pRow = this->matrix()->GetRow(nRow);
-	memset(pRow, 0, sizeof(*pRow) * this->colNumb());
+	auto *pRow = this->matrix()->ResetRowPart(nRow, partIdx);
 
 	const auto *pColOrbit = this->colOrbit(nRow);
-    auto *pNextRowColOrbit = this->colOrbit(nRow+1);
+	auto *pNextRowColOrbit = this->colOrbit(nRow+1);
     
 	const int maxElement = this->rank() - 1;
-    const auto colOrbLen = this->colOrbitLen();
+	const auto colOrbLen = this->colOrbitLen();
 	const auto *pColOrbitIni = this->colOrbitIni(nRow);
 	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
 	Class1(CColOrbit)*pColOrbitLast = NULL;

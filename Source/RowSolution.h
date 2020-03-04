@@ -62,7 +62,7 @@ public:
 	CK inline void setSolutionLength(S length)					{ m_Length = length; }
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
-	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin);
+	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
 	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
 	void printSolutions(FILE *file, bool markNextUsed = false) const;
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
@@ -397,7 +397,7 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 		delete[] pCanonIdx;
 }
 
-FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, size_t nRowToBuild, size_t kMin) {
+FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin) {
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionLength(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();

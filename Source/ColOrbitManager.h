@@ -29,10 +29,10 @@ public:
 	CC inline S colNumb() const							{ return m_nCol; }
 	CC inline auto colOrbits() const					{ return m_pColOrb; }
 	CC inline S currentRowNumb() const					{ return m_nCurrRow; }
-	CC inline ColOrbPntr *colOrbitsIni() const			{ return m_pColOrbIni; }
+	CC inline auto colOrbitsIni() const					{ return m_pColOrbIni; }
 	CC inline int rankMatr() const						{ return m_nRank; }
-	CC void initiateColOrbits(size_t nRow, bool using_IS_enumerator, const CColOrbitManager<S> *pMaster = NULL, void *pMem = NULL);
-	CK void copyColOrbitInfo(const CColOrbitManager<S> *pColOrb, S nRow);
+	CC void initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator, const Class1(CColOrbitManager) *pMaster = NULL, void *pMem = NULL);
+	CK void copyColOrbitInfo(const Class1(CColOrbitManager) *pColOrb, S nRow);
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;
 	CC void closeColOrbits() const;
 protected:
@@ -47,7 +47,7 @@ protected:
 	CK inline void setCurrUnforcedOrbPtr(size_t nRow)	{ m_ppUnforcedColOrbCurr = unforcedColOrbPntr() + unfColIdx(nRow); }
 	CC inline void setCurrentRowNumb(S n)				{ m_nCurrRow = n; }
 	CC inline auto unforcedColOrbPntr() const			{ return m_ppUnforcedColOrb; }
-	CK inline auto colOrbit(size_t idx) const			{ return m_pColOrb[idx]; }
+	CK inline auto colOrbit(S idx) const				{ return m_pColOrb[idx]; }
 	CC inline size_t rowMaster() const					{ return m_nRowMaster; }
 private:
 	CK inline size_t unfColIdx(size_t r, int idx = 0) const{ return r * rankMatr() + idx; }
@@ -93,7 +93,7 @@ FClass1(CColOrbitManager, void)::ReleaseColOrbitManager()
 		delete[] m_pColOrb;
 }
 
-FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_enumerator, const  Class1(CColOrbitManager) *pMaster, void *pMem)
+FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator, const  Class1(CColOrbitManager) *pMaster, void *pMem)
 {
 	m_IS_enumerator = using_IS_enumerator;
 	// Number of CColOrbits taken from pMaster
@@ -102,7 +102,8 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 	// In order not to re-create orbits on the way back, we will store them in different places.
 	// Therefore, we must have number of rows as a multiplier for fromMaster and nCol_2.
 	const size_t fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
-	const size_t nCol_2 = nRow * colNumb();
+	const size_t nCol_2 = nRows * colNumb();
+	const size_t numParts = pGroupDesct ? pGroupDesct->numParts() : 1;
 #ifndef USE_CUDA		// NOT yet implemented for GPU
 	const size_t lenColOrbitElement = using_IS_enumerator? sizeof(Class1(CColOrbitIS)) : sizeof(Class1(CColOrbitCS));
 #else
@@ -133,7 +134,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 			m_ppOrb[i] = pColOrbitsIS + i - fromMaster;
 	}
 
-	auto i = nRow;
+	auto i = nRows;
 	auto iMin = WAIT_THREADS ? rowMaster() : 0;
 	while (i-- > iMin)
 		m_pColOrbIni[i] = m_pColOrb[i] = m_ppOrb[i * colNumb()];
@@ -167,8 +168,14 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(size_t nRow, bool using_IS_en
 		}
 #endif
 	}
-	else
-		m_pColOrb[0]->Init(colNumb());
+	else {
+		if (numParts > 1) {
+			//			for (S i = 0; i < pMatrix->numParts(); i++)
+			//	m_pColOrb[firstRow + i]->Init(m_nPartInfo->element((i << 1) + 1));
+		}
+		else
+			m_pColOrb[firstRow]->Init(colNumb());
+	}
 }
 
 FClass1(CColOrbitManager, void)::copyColOrbitInfo(const  Class1(CColOrbitManager) *pColOrb, S nRow)
