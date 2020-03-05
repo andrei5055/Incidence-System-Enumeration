@@ -376,9 +376,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				if (!flag) {
 					while (--nRow > level) {
 						this->setCurrentRowNumb(nRow);
-						rowStuff(nRow)->resetSolution();
-						this->resetColOrbitCurr();
-						this->resetUnforcedColOrb();
+						this->reset(nRow);
 					}
 					pRowSolution = rowStuff(nRow);
 					this->setCurrentRowNumb(nRow);
@@ -533,6 +531,7 @@ FClass2(CEnumerator, void)::reset(S nRow) {
 	rowStuff(nRow)->resetSolution();
 	this->resetColOrbitCurr();
 	this->resetUnforcedColOrb();
+	this->resetFirstUnforcedRow();
 }
 
 FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) const
@@ -910,9 +909,7 @@ FClass2(CEnumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 		setCurrUnforcedOrbPtr(nRow);
 		setColOrbitCurr(pColOrb);
 		canonChecker()->TestCanonicity(nRow, this, 0, &level, pRowSol);
-		rowStuff(nRow)->resetSolution();
-		resetColOrbitCurr();
-		resetUnforcedColOrb();
+		reset(nRow);
 		setCurrentRowNumb(nRow - 1);
 	}
 

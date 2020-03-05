@@ -430,7 +430,6 @@ protected:
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
 	CK virtual void setX0_3(S value)						{}
 	CK inline CSimpleArray<S>* rowEquation() const			{ return m_pRowEquation; }
-	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const    { return -1; }
 	CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
 	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
@@ -475,6 +474,9 @@ private:
 	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
+	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const { return -1; }
+	CK virtual ColOrbPntr* unforcedOrbits(size_t n) const	{ return NULL; }
+	CK virtual void resetFirstUnforcedRow()					{}
 	virtual S forcibleLambda(size_t i) const				{ return -1; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }

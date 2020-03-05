@@ -37,11 +37,9 @@ public:
 	CC void closeColOrbits() const;
 protected:
 	CK inline auto colOrbitIni(size_t n) const			{ return *(colOrbitsIni() + n); }
-	CK virtual ColOrbPntr *unforcedOrbits(size_t n) const { return NULL; }
 	CK inline void setColOrbitCurr(ColOrbPntr pntr)		{ m_pColOrb[currentRowNumb()] = pntr; }
 	CK inline void resetColOrbitCurr()                  { setColOrbitCurr(*(colOrbitPntr() + colNumb() * currentRowNumb())); }
 	CK void resetUnforcedColOrb();
-	CK virtual void resetFirstUnforcedRow()				{}
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, int n);
 	CK inline ColOrbPntr* currUnforcedOrbPtr() const	{ return m_ppUnforcedColOrbCurr; }
 	CK inline void setCurrUnforcedOrbPtr(size_t nRow)	{ m_ppUnforcedColOrbCurr = unforcedColOrbPntr() + unfColIdx(nRow); }
@@ -252,7 +250,6 @@ FClass1(CColOrbitManager, void)::addForciblyConstructedColOrbit(ColOrbPntr pColO
 FClass1(CColOrbitManager, void)::resetUnforcedColOrb()
 {
 	memset(unforcedColOrbPntr() + unfColIdx(currentRowNumb()), 0, rankMatr() * sizeof(*unforcedColOrbPntr()));
-	resetFirstUnforcedRow();
 }
 
 #endif /* defined(__BIBD_Mac__OrbitManager__) */
