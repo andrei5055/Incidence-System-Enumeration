@@ -429,11 +429,11 @@ protected:
 	CK virtual bool prepareToFindRowSolution()				{ return true; }
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
 	CK virtual void setX0_3(S value)						{}
-	CK inline auto rowEquation() const						{ return m_pRowEquation; }
+	CK inline CSimpleArray<S>* rowEquation() const			{ return m_pRowEquation; }
 	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const    { return -1; }
 	CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
-    CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
+	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
 	bool getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const;

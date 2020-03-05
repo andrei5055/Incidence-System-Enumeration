@@ -16,7 +16,7 @@ public:
 		setOutFile(NULL);
 	}
 	CC ~CMatrixCol() {
-		if (isMatrOwner())
+		if (isMatrOwner())???
 			delete static_cast<const Class2(CMatrix) *>(matrix());
 	}
 	CC inline const auto matrix() const			{ return m_pMatrix; }

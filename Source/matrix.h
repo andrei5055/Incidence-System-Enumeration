@@ -69,7 +69,7 @@ public:
 	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
 	virtual S numParts() const					{ return 1; }
-	inline auto partsInfo() const				{ return m_nPartInfo;  }
+	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {
 		S len;
 		T* pRow = m_pData + nRow * m_nCols;

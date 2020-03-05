@@ -43,11 +43,11 @@ protected:
 	CK void resetUnforcedColOrb();
 	CK virtual void resetFirstUnforcedRow()				{}
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, int n);
-	CK inline auto currUnforcedOrbPtr() const			{ return m_ppUnforcedColOrbCurr; }
+	CK inline ColOrbPntr* currUnforcedOrbPtr() const	{ return m_ppUnforcedColOrbCurr; }
 	CK inline void setCurrUnforcedOrbPtr(size_t nRow)	{ m_ppUnforcedColOrbCurr = unforcedColOrbPntr() + unfColIdx(nRow); }
 	CC inline void setCurrentRowNumb(S n)				{ m_nCurrRow = n; }
-	CC inline auto unforcedColOrbPntr() const			{ return m_ppUnforcedColOrb; }
-	CK inline auto colOrbit(S idx) const				{ return m_pColOrb[idx]; }
+	CC inline ColOrbPntr *unforcedColOrbPntr() const	{ return m_ppUnforcedColOrb; }
+	CK inline ColOrbPntr colOrbit(S idx) const			{ return m_pColOrb[idx]; }
 	CC inline size_t rowMaster() const					{ return m_nRowMaster; }
 private:
 	CK inline size_t unfColIdx(size_t r, int idx = 0) const{ return r * rankMatr() + idx; }
@@ -73,6 +73,7 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(int matrRank, S nRows, 
 	m_nRank = matrRank;
 	m_nCol = nCol;
 	if (!pMem) {
+//		???
 		m_pColOrb = new ColOrbPntr[2 * nRows];
 		const auto len = nRows * rankMatr();
 		m_ppUnforcedColOrb = new ColOrbPntr[len];

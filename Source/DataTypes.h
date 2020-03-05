@@ -270,13 +270,13 @@ private:
 
 Class1Def(BlockGroupDescr) : public CSimpleArray<S> {
 public:
-	BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
-	inline size_t numParts() const						{ return numElement() >> 1; }
-	inline void SetPartInfo(size_t idx, S shift, S len) {
+	CC BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
+	CC inline size_t numParts() const						{ return numElement() >> 1; }
+	CC inline void SetPartInfo(size_t idx, S shift, S len)	{
 		setElement(idx << 1, shift);
 		setElement((idx << 1) + 1, len);
 	}
-	inline S GetPartInfo(S idx, S *pLen) const {
+	CC inline S GetPartInfo(S idx, S *pLen) const {
 		*pLen = element((idx << 1) + 1);
 		return element(idx << 1);
 	}
@@ -314,12 +314,12 @@ public:
 	void removeMapping(S to);
 	void removeLastMapping(size_t n = 1)			{ m_nMapPos -= n << 1; }
 	void restoreLastMapping(size_t n = 1)			{ m_nMapPos += n << 1; }
-    CK inline void resetMapping()                   { m_nMapPos = 0; }
+	CK inline void resetMapping()                   { m_nMapPos = 0; }
 	inline uint nElement() const					{ return getMapPosition() >> 1; }
-	CK inline const auto getMappingPntr() const		{ return this->elementPntr(); }
-    CK inline const auto getLastMapping() const		{ return getMappingPntr() + getMapPosition(); }
+	CK inline const S *getMappingPntr() const		{ return this->elementPntr(); }
+	CK inline const S *getLastMapping() const		{ return getMappingPntr() + getMapPosition(); }
 	const S *findMapping(S to, const S *pTo = NULL, const S *pToLast = NULL) const;
-    bool isEmpty() const                            { return !m_nMapPos; }
+	bool isEmpty() const                            { return !m_nMapPos; }
 	inline void adjustElement(int idx, S val = 1)   { *(this->elementPntr() + idx) -= val; }
 protected:
 	CK inline auto getMapPosition() const           { return m_nMapPos; }
@@ -353,14 +353,14 @@ FClass1(CMapping, const S*)::findMapping(S to, const S *pTo, const S *pToLast) c
 FClass1(CMapping, void)::removeMapping(S to)
 {
 	// Searching for element to be removed
-	auto *pTo = (T *)findMapping(to);
+	auto *pTo = findMapping(to);
 	if (!pTo)
 		return;
 
 	// Element found
 	const int len = getLastMapping() - pTo - 2;
 	if (len)
-		memcpy(pTo, pTo + 2, len * sizeof(T));
+		memcpy(pTo, pTo + 2, len * sizeof(*pTo));
 
 	removeLastMapping();
 }
