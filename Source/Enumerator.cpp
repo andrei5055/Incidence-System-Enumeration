@@ -543,9 +543,16 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) cons
 
 	const auto *pColOrbit = this->colOrbit(nRow);
 	auto *pNextRowColOrbit = this->colOrbit(nRow+1);
-    
-	const int maxElement = this->rank() - 1;
 	const auto colOrbLen = this->colOrbitLen();
+/*	if (partIdx) {
+		// Initiating the leading column orbits of all block
+		S len;
+		const auto shift = GetPartInfo(numParts, &len);
+		pColOrbit = (ColOrbPntr)((char*)pColOrb + shift * lenColOrb);
+		pNextRowColOrbit = (ColOrbPntr)((char*)pNextRowColOrbit + shift * lenColOrb);
+	} */
+
+	const int maxElement = this->rank() - 1;
 	const auto *pColOrbitIni = this->colOrbitIni(nRow);
 	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
 	Class1(CColOrbit)*pColOrbitLast = NULL;
@@ -618,7 +625,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const RowSolutionPntr pRowSolution, bo
 	ColOrbPntr pColUrbLast = NULL;
 	for (S i = 0; i < numParts(); i++) {
 		const auto* pCurrSolution = (pRowSolution+i)->currSolution();
-		auto* pColOrb = MakeRow(pCurrSolution);
+		auto* pColOrb = MakeRow(pCurrSolution, i);
 		if (pColUrbLast)
 			pColUrbLast->setNext(pColOrb);
 		else
@@ -930,7 +937,7 @@ FClass2(CEnumerator, size_t)::copyColOrbitInfo(S nRow) const
 		const auto pColOrbitIni = colOrbitIni[nRow];
 		auto pColOrbit = colOrbit[nRow];
 		if (!pColOrbit) {
-			*pColOrbInfo++ = UINT64_MAX;
+			*pColOrbInfo++ = ELEMENT_MAX;
 			continue;
 		}
 

@@ -23,8 +23,10 @@ protected:
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
-	CK CColOrbit<S> **unforcedOrbits(size_t nRow) const			{ return getUnforcedColOrbPntr() + this->rank() * nRow; }
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const		{ return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr() : NULL; }
+	CK CColOrbit<S> **unforcedOrbits(size_t nRow, S idxPart = 0) const	{ return getUnforcedColOrbPntr(idxPart) + this->rank() * nRow; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart = 0) const {
+			return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr(idxPart) : NULL;
+	}
 	CK virtual S forcibleLambda(size_t i) const					{ return *(forcibleLambdaPntr() + i); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
 	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit<S> *pColOrb)	{}

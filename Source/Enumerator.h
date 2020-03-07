@@ -82,11 +82,11 @@ Class2Def(CMatrixCol) : public CColOrbitManager<S>
 {
 public:
 	CC CMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_enumDefault) :
-		CColOrbitManager<S>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb()) {
+		CColOrbitManager<S>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags);
 	}
 	CC CMatrixCol(const MatrixDataPntr pMatrix, S rowNumb, S colNumb, S maxElem, uint enumFlags) :
-		CColOrbitManager<S>(maxElem + 1, rowNumb, colNumb) {
+		CColOrbitManager<S>(maxElem + 1, rowNumb, colNumb, pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags & (t_allFlags ^ t_matrixOwner));
 	}
 	CC ~CMatrixCol() {
@@ -473,9 +473,9 @@ private:
 															{ return NULL; }
 	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr() const	{ return NULL; }
-	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const { return -1; }
-	CK virtual ColOrbPntr* unforcedOrbits(size_t n) const	{ return NULL; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart = 0) const	{ return NULL; }
+	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const	{ return -1; }
+	CK virtual ColOrbPntr* unforcedOrbits(size_t n, S idxPart = 0) const	{ return NULL; }
 	CK virtual void resetFirstUnforcedRow()					{}
 	virtual S forcibleLambda(size_t i) const				{ return -1; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }

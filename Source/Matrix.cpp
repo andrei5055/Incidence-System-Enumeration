@@ -12,9 +12,9 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, 
 	if (nRow == ELEMENT_MAX)
 		nRow = this->rowNumb();
 
-	auto nCol = this->colNumb();
+	const auto nCol = this->colNumb();
 	char buffer[256], * pBuf = buffer;
-	size_t lenBuf = sizeof(buffer);
+	auto lenBuf = sizeof(buffer);
 	if (nCol >= lenBuf - 4)
 		pBuf = new char[lenBuf = nCol + 14];
 
@@ -39,7 +39,7 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, 
 
 	// Let's make the symbol table
 	char symbols[32], * pSymb = symbols;
-	int nMax = this->maxElement() + 1;
+	const auto nMax = (partsInfo()? partsInfo()->numParts()  : this->maxElement()) + 1;
 	if (nMax > sizeof(symbols))
 		pSymb = new char[nMax];
 

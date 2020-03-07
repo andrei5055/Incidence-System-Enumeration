@@ -312,9 +312,9 @@ int main(int argc, char * argv[])
 	}
 
 	bool firstRun = true;
-	designParam param;
-	param.threadNumb = USE_THREADS;
-	param.noReplicatedBlocks = false;
+	designParam *param = new designParam();
+	param->threadNumb = USE_THREADS;
+	param->noReplicatedBlocks = false;
 	std::string newWorkDir = "./";
 
 	// By default, we enumerating BIBDs 
@@ -387,10 +387,10 @@ int main(int argc, char * argv[])
 			if (threadNumb == string::npos) {
 				printf("Cannot define thread number from: \"%s\"\n", line.c_str());
 				printf("Will use the default value: %d\n", USE_THREADS);
-				param.threadNumb = USE_THREADS;
+				param->threadNumb = USE_THREADS;
 			}
 			else
-				param.threadNumb = threadNumb;
+				param->threadNumb = threadNumb;
 
 			continue;
 		}
@@ -404,11 +404,11 @@ int main(int argc, char * argv[])
 				printf("Will use the default calculated from object's parameter: v / 2\n");
 			}
 			else
-				param.mt_level = static_cast<int>(mt_level);
+				param->mt_level = static_cast<int>(mt_level);
 		}
 		pos = find(line, "NO_REPLICATED_BLOCKS");
 		if (pos != string::npos) {
-			param.noReplicatedBlocks = getInteger(line, &pos);
+			param->noReplicatedBlocks = getInteger(line, &pos);
 			if (pos == string::npos)
 				continue;
 			line = line.substr(pos);
@@ -484,7 +484,7 @@ int main(int argc, char * argv[])
 						if (!(outType & (t_GroupOrderEQ | t_GroupOrderGT)))
 							pos++;
 
-						param.grpOrder = (uint)getInteger(tmp, &pos);
+						param->grpOrder = (uint)getInteger(tmp, &pos);
 					}
 				}
 			}
@@ -501,13 +501,13 @@ int main(int argc, char * argv[])
 			break;
 		}
 
-		param.outType = outType;
-		param.t = 2;
-		param.InterStruct()->lambdaPtr()->resize(0);
+		param->outType = outType;
+		param->t = 2;
+		param->InterStruct()->lambdaPtr()->resize(0);
 		size_t from = -1;
 		bool BIBD_flag = false;
 		switch (objType) {
-		case t_tDesign:	if (!getTParam(line.substr(0, beg), &param)) {
+		case t_tDesign:	if (!getTParam(line.substr(0, beg), param)) {
 							from = 0;
 							break;
 						}
@@ -515,7 +515,7 @@ int main(int argc, char * argv[])
 		case t_BIBD:	BIBD_flag = true;
 		case t_CombinedBIBD:
 		case t_SemiSymmetricGraph:
-		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), &param, BIBD_flag))
+		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
 						break;
@@ -529,16 +529,16 @@ int main(int argc, char * argv[])
 			break;
 		}
 
-		param.outType = outType;
-		if (param.workingDir != newWorkDir || firstRun)
-			param.workingDir = string(newWorkDir);
+		param->outType = outType;
+		if (param->workingDir != newWorkDir || firstRun)
+			param->workingDir = string(newWorkDir);
 
-		if ((param.objType = objType) == t_SemiSymmetricGraph) {
+		if ((param->objType = objType) == t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
-			InconsistentGraphs(&param, pSummaryFile, firstRun);
+			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
 		else
-			if (!RunOperation<TDATA_TYPES>(&param, pSummaryFile, firstRun))
+			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
 				break;
 
 		firstRun = false;
@@ -547,6 +547,7 @@ int main(int argc, char * argv[])
 	delete pLine;
 	infile.close();
 
+	delete param;
 	_CrtDumpMemoryLeaks();
 	return 0;
 }
