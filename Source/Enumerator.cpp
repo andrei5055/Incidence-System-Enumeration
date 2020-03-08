@@ -536,21 +536,13 @@ FClass2(CEnumerator, void)::reset(S nRow) {
 
 FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) const
 {
-	pRowSolution += partIdx;
 	const auto nRow = this->currentRowNumb();
 	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
-	auto *pRow = this->matrix()->ResetRowPart(nRow, partIdx);
+	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
 
-	const auto *pColOrbit = this->colOrbit(nRow);
-	auto *pNextRowColOrbit = this->colOrbit(nRow+1);
+	const auto *pColOrbit = this->colOrbit(nRow, partIdx);
+	auto *pNextRowColOrbit = this->colOrbit(nRow+1, partIdx);
 	const auto colOrbLen = this->colOrbitLen();
-/*	if (partIdx) {
-		// Initiating the leading column orbits of all block
-		S len;
-		const auto shift = GetPartInfo(numParts, &len);
-		pColOrbit = (ColOrbPntr)((char*)pColOrb + shift * lenColOrb);
-		pNextRowColOrbit = (ColOrbPntr)((char*)pNextRowColOrbit + shift * lenColOrb);
-	} */
 
 	const int maxElement = this->rank() - 1;
 	const auto *pColOrbitIni = this->colOrbitIni(nRow);

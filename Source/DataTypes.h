@@ -272,13 +272,14 @@ Class1Def(BlockGroupDescr) : public CSimpleArray<S> {
 public:
 	CC BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
 	CC inline S numParts() const							{ return static_cast<S>(numElement() >> 1); }
+	CC inline S getShift(S idx) const						{ return element(idx << 1); }
 	CC inline void SetPartInfo(size_t idx, S shift, S len)	{
 		setElement(idx << 1, shift);
 		setElement((idx << 1) + 1, len);
 	}
 	CC inline S GetPartInfo(S idx, S *pLen) const {
 		*pLen = element((idx << 1) + 1);
-		return element(idx << 1);
+		return getShift(idx);
 	}
 };
 

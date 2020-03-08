@@ -75,7 +75,7 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 	m_nRank = matrRank;
 	m_nCol = nCol;
 	m_nShiftMult = (m_nRank = matrRank) * nRows;
-	m_ppColOrb = new ColOrbPntr *[2 * nParts];
+	m_ppColOrb = new ColOrbPntr *[3 * nParts];
 	m_ppUnforcedColOrb = (m_ppColOrbIni = m_ppColOrb + nParts) + nParts;
 	const auto nElem = nParts * nRows;
 	if (!pMem) {
@@ -91,9 +91,11 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 		memset(m_ppUnforcedColOrb, 0, nParts * sizeof(m_ppUnforcedColOrb[0]));
 	}
 	
-	//for (i = 0; i < nParts; i++)
-		int i = 0;
+	m_ppColOrbIni[0] = m_ppColOrb[0] + nRows;
+	for (S i = 1; i < nParts; i++) {
+		m_ppColOrb[i] = m_ppColOrbIni[i - 1] + nRows;
 		m_ppColOrbIni[i] = m_ppColOrb[i] + nRows;
+	}
 }
 
 FClass1(CColOrbitManager, void)::ReleaseColOrbitManager()
@@ -113,13 +115,13 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 
 	// In order not to re-create orbits on the way back, we will store them in different places.
 	// Therefore, we must have number of rows as a multiplier for fromMaster and nCol_2.
-	const size_t fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
-	const size_t nCol_2 = nRows * colNumb();
+	const auto fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
+	const auto nCol_2 = nRows * colNumb();
 	auto numParts = pGroupDescr ? pGroupDescr->numParts() : 1;
 #ifndef USE_CUDA		// NOT yet implemented for GPU
-	const size_t lenColOrbitElement = using_IS_enumerator? sizeof(Class1(CColOrbitIS)) : sizeof(Class1(CColOrbitCS));
+	const auto lenColOrbitElement = using_IS_enumerator? sizeof(Class1(CColOrbitIS)) : sizeof(Class1(CColOrbitCS));
 #else
-	const size_t lenColOrbitElement = sizeof(CColOrbitIS<S>);
+	const auto lenColOrbitElement = sizeof(CColOrbitIS<S>);
 #endif
 	setColOrbitLen(lenColOrbitElement);
 
@@ -146,10 +148,13 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 			m_ppOrb[i] = pColOrbitsIS + i - fromMaster;
 	}
 
-	auto i = nRows;
 	auto iMin = WAIT_THREADS ? rowMaster() : 0;
-	while (i-- > iMin)
-		m_ppColOrbIni[0][i] = m_ppColOrb[0][i] = m_ppOrb[i * colNumb()];
+	for (S j = 0; j < numParts; j++) {
+		const auto shift = pGroupDescr? pGroupDescr->getShift(j) : 0;
+		auto i = nRows;
+		while (i-- > iMin)
+			m_ppColOrbIni[j][i] = m_ppColOrb[j][i] = m_ppOrb[i * colNumb() + shift];
+	}
 
 	if (rowMaster() > 0) {
 #if WAIT_THREADS
@@ -181,19 +186,20 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 #endif
 	}
 	else {
-		auto pColOrb = m_ppColOrb[0][firstRow];
+//		auto pColOrb = m_ppColOrb[0][firstRow];
 		if (numParts > 1) {
 			// Initiating the leading column orbits of all block
 			S len;
 			const auto lenColOrb = colOrbitLen();
 			while (numParts--) {
 				const auto shift = pGroupDescr->GetPartInfo(numParts, &len);
-				auto pColOrbCurr = (ColOrbPntr)((char*)pColOrb + shift * lenColOrb);
-				pColOrbCurr->Init(len);
+				m_ppColOrb[numParts][firstRow]->Init(len);
+//				auto pColOrbCurr = (ColOrbPntr)((char*)pColOrb + shift * lenColOrb);
+//				pColOrbCurr->Init(len);
 			}
 		}
 		else
-			pColOrb->Init(colNumb());
+			m_ppColOrb[0][firstRow]->Init(colNumb());
 	}
 }
 

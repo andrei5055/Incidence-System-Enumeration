@@ -71,18 +71,21 @@ public:
 	virtual S numParts() const					{ return 1; }
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {
-		S len;
-		T* pRow = m_pData + nRow * m_nCols;
-		if (m_nPartInfo)
-			pRow += m_nPartInfo->GetPartInfo(idx, &len);
+		T* pRow = GetRow(nRow);
+		if (m_nPartInfo) {
+			S len, shift;
+			shift = m_nPartInfo->GetPartInfo(idx, &len);
+			memset(pRow + shift, 0, len * sizeof(T));
+		}
 		else
-			len = m_nCols;
-		return static_cast<T *>(memset(pRow, 0, len * sizeof(T)));
+			memset(pRow, 0, m_nCols * sizeof(T));
+
+		return pRow;
 	}
 protected:
 	inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
 	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
-		return m_pData + nRow * m_nCols + m_nPartInfo->GetPartInfo(idx, pLen);
+		return GetRow(nRow) + m_nPartInfo->GetPartInfo(idx, pLen);
 	}
 
 private:
