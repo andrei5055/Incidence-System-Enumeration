@@ -52,6 +52,6 @@ Class2Def(CMatrixCanonCheckerGPU) : public Class2(CMatrixCanonChecker)
 {
 public:
 	CC CMatrixCanonCheckerGPU(const Class2(CMatrixData) *pMatrix, bool IS_enum, bool matrOwner = false) :
-		Class2(CMatrixCanonChecker)(pMatrix, IS_enum, matrOwner) {}
+		Class2(CMatrixCanonChecker)(pMatrix, IS_enum, matrOwner) { setStabilizerLengthExt(pMatrix->stabLengthExt()); }
 	CC ~CMatrixCanonCheckerGPU() {}
 };

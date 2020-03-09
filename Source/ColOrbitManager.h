@@ -186,20 +186,15 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 #endif
 	}
 	else {
-//		auto pColOrb = m_ppColOrb[0][firstRow];
+		m_ppColOrb[0][0]->Init(colNumb());
 		if (numParts > 1) {
 			// Initiating the leading column orbits of all block
 			S len;
-			const auto lenColOrb = colOrbitLen();
 			while (numParts--) {
 				const auto shift = pGroupDescr->GetPartInfo(numParts, &len);
 				m_ppColOrb[numParts][firstRow]->Init(len);
-//				auto pColOrbCurr = (ColOrbPntr)((char*)pColOrb + shift * lenColOrb);
-//				pColOrbCurr->Init(len);
 			}
 		}
-		else
-			m_ppColOrb[0][firstRow]->Init(colNumb());
 	}
 }
 

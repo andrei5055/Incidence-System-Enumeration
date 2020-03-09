@@ -33,7 +33,7 @@ public:
     CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault);
     CC ~CCanonicityChecker();
 	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
-	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, int outInfo = 0, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
+	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo = 0, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
     void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC uint enumFlags() const						{ return m_enumFlags; }
 	CC inline uint groupOrder() const				{ return m_nGroupOrder; }
@@ -52,7 +52,7 @@ public:
 	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const	{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
 	bool printMatrix(const designParam *pParam) const;
-
+	CC S stabiliserLengthExt() const				{ return m_nStabExtern; }
 protected:
 	CC inline int rank() const						{ return m_rank; }
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -61,9 +61,10 @@ protected:
 	CC inline S *getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline S numRow() const						{ return m_nNumRow; }
+	CC void setStabiliserLengthExt(S len)			{ m_nStabExtern = len; }
 private:
     CC void init(S nRow, bool savePerm);
-	CC S next_permutation(S idx = ELEMENT_MAX);
+	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);
 	CC void addAutomorphism(bool rowPermut = true);
     CC int checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const;
     CC inline void setStabilizerLength(S len)		{ m_nStabLength = len; }
@@ -97,6 +98,7 @@ private:
 #define solutionStorage()		(CSolutionStorage *)NULL
 #endif
 
+	S m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	S m_nStabLength;
 	S m_nStabLengthAut;
     int m_rank;
@@ -168,7 +170,7 @@ CanonicityChecker()::~CCanonicityChecker()
 #endif
 }
 
-CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, int outInfo, S *pRowOut, RowSolutionPntr pRowSolution)
+CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pRowOut, RowSolutionPntr pRowSolution)
 {
 	// Construct trivial permutations for rows and columns
 	const bool rowPermut = outInfo & t_saveRowPermutations;
@@ -180,7 +182,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, in
 	auto **colOrbit = pEnum->colOrbits();
 	auto **colOrbitIni = pEnum->colOrbitsIni();
 #ifndef USE_CUDA
-	const VECTOR_ELEMENT_TYPE *pCurrSolution;
+	const S *pCurrSolution;
 	size_t solutionSize;
 	if (pRowSolution) {
 		// Because the position of current solution (pRowSolution->solutionIndex()) 
@@ -197,13 +199,14 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, in
 	size_t startIndex = 0;
 #endif
 
+	const auto lenStab = stabiliserLengthExt();
 	S *pColIndex = NULL;
 	S *pVarPerm = NULL;
 	bool retVal = true;
 	S nRow = ELEMENT_MAX;
 	while (true) {
 	next_permut:
-		nRow = next_permutation(nRow);
+		nRow = next_permutation(nRow, lenStab);
 		if (nRow == ELEMENT_MAX)
 			break;
 

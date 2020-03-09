@@ -68,7 +68,7 @@ public:
 
 	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
-	virtual S numParts() const					{ return 1; }
+	CC virtual S numParts() const				{ return 1; }
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {
 		T* pRow = GetRow(nRow);
@@ -82,6 +82,8 @@ public:
 
 		return pRow;
 	}
+
+	CC S stabLengthExt() const						{ return m_nStabExtern; }
 protected:
 	inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
 	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
@@ -92,11 +94,14 @@ private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
 	S m_nRows;
 	S m_nCols;
+
 	T m_nMaxElement;
 	bool m_bDataOwner;
 	size_t m_nLenData;
 	T *m_pData;
 	BlockGroupDescr<S> *m_nPartInfo = NULL;
+public:
+	mutable S m_nStabExtern;
 };
 
 
@@ -249,7 +254,7 @@ public:
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(t_numbSetType idx) const	{ return paramSets()[idx]; }
 	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
-	virtual S numParts() const								{ return static_cast<S>(paramSet(t_lSet)->GetSize()); }
+	CC virtual S numParts() const							{ return static_cast<S>(paramSet(t_lSet)->GetSize()); }
 protected:
 private:
 	VectorPntr *m_ppParamSet;

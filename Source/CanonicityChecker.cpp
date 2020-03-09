@@ -75,7 +75,8 @@ CanonicityChecker(void)::revert(S i)
         array[i] ^= (array[j] ^= (array[i] ^= array[j]));
 }
 
-CanonicityChecker(S)::next_permutation(S idx) {
+CanonicityChecker(S)::next_permutation(S idx, S lenStab) {
+	// Funstion generates next permutation amoungth those which stabilize first lenStab elements
 	// We are using the algorithm from http://nayuki.eigenstate.org/res/next-lexicographical-permutation-algorithm/nextperm.java
 	// taking into account that we don't need the the permutations which are equivalent with respect to already found orbits of the 
 	// automorphis group acting on the matrix's rows.
@@ -97,7 +98,7 @@ CanonicityChecker(S)::next_permutation(S idx) {
 	// some automorphism was found
 	const auto IDX_MAX = ELEMENT_MAX - 1;
 	if (idx == IDX_MAX && array[stabilizerLength()] == nRow - 1)
-		idx = ELEMENT_MAX;		// no, we will use the standart one
+		idx = ELEMENT_MAX;
 
     if (idx == IDX_MAX) {
         // Firts call after some automorphism was found
@@ -112,11 +113,11 @@ CanonicityChecker(S)::next_permutation(S idx) {
             j = i = nRow;
             while (--i > 0 && array[i - 1] >= array[i]);
         
-            if (i-- == 0)
+            if (i == lenStab)
                 return ELEMENT_MAX;
 
             // Find successor to pivot
-            temp = array[i];
+            temp = array[--i];
             while (array[--j] <= temp);
         } else {
             temp = array[j = i = idx];

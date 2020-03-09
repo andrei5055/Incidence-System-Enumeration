@@ -216,11 +216,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 	const auto firstNonfixedRow = firtstNonfixedRowNumber();
 	// Allocate memory for the orbits of two consecutive rows
-	S nRow;
+	S nRow, lenStab;
 	RowSolutionPntr pRowSolution;
 	InitRowSolutions(pMaster);
 	const bool threadFlag = pMaster != NULL;
 	if (threadFlag) {
+		lenStab = pMaster->stabiliserLengthExt();
 		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
 		pRowSolution = pMaster->rowStuff(nRow);
 		this->setOutFile(pMaster->outFile());
@@ -231,7 +232,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (rowNumb() - firstUnforced) * sizeof(*forcibleLambdaPntr()));
 		}
 	} else {
-		nRow = firstNonfixedRow - 2;
+		lenStab = nRow = firstNonfixedRow - 2;
 		CreateForcedRows();
 		pRowSolution = setFirstRowSolutions();
 		this->setEnumInfo(pEnumInfo);
@@ -257,6 +258,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #endif
 	}
     
+	this->setStabiliserLengthExt(lenStab);
+#if CANON_ON_GPU
+	this->matrix()->m_nStabExtern = lenStab;
+#endif
 	if (!threadFlag)
 		prepareToTestExtraFeatures();
 
