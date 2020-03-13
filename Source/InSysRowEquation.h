@@ -6,10 +6,14 @@ class CEquSystem;
 Class1Def(CInSysRowEquation) : public Class1(CSimpleArray)
 {
 public:
-	CK CInSysRowEquation(size_t len, bool tDesignEnum);
+	CK CInSysRowEquation(size_t len, bool tDesignEnum) : CSimpleArray<S>(3 * len) {
+		InitRowEquation(len, tDesignEnum, false);
+	}
+	CK CInSysRowEquation()                                      	{}
 	CK virtual ~CInSysRowEquation();
-	CK inline void setVariableMaxVal(size_t varIdx, S maxVal)		{ *(variableMaxValPntr() + varIdx) = maxVal; }
-	CK inline void setVariableMaxLimit(size_t varIdx, S maxVal)		{ *(variableMaxLimitPntr() + varIdx) = maxVal; }
+	void InitRowEquation(size_t len, bool tDesignEnum, bool initArray = true);
+	CK inline void setVariableMaxVal(S varIdx, S maxVal)			{ *(variableMaxValPntr() + varIdx) = maxVal; }
+	CK inline void setVariableMaxLimit(S varIdx, S maxVal)			{ *(variableMaxLimitPntr() + varIdx) = maxVal; }
 	inline S variableMaxVal(uint varIdx) const						{ return *(variableMaxValPntr() + varIdx); }
 	CK inline void resetMappings()                                  { for (int i = 0; i <= t_dual; i++) varMapping(i)->resetMapping(); }
 
@@ -26,33 +30,36 @@ public:
 	CVariableMapping<S> *AdjustExtraEquationRightParts(CVariableMapping<S> *pVarList = NULL, bool addVar = false);
 #endif
 private:
-	CK inline size_t memShift() const								{ return m_memShift; }
-	CK CVariableMapping<S> *varMapping(int idx = 0) const			{ return m_pVarMapping[idx]; }
-	inline CEquSystem *equSystem() const							{ return m_pEquSystem; }
+	CK inline auto memShift() const									{ return m_memShift; }
+	CK auto varMapping(int idx = 0) const							{ return m_pVarMapping[idx]; }
+	inline auto *equSystem() const									{ return m_pEquSystem; }
 	inline bool t_DesigneEnum() const								{ return m_bTDesignEnum; }
 
 	CVariableMapping<S> **m_pVarMapping;
 	CEquSystem *m_pEquSystem;
-	const size_t m_memShift;
-	const bool m_bTDesignEnum;
+	size_t m_memShift;
+	bool m_bTDesignEnum;
 };
 
-FClass1(CInSysRowEquation)::CInSysRowEquation(size_t len, bool tDesignEnum) : m_memShift(len), m_bTDesignEnum(tDesignEnum), CSimpleArray<S>(3 * len)
-{
+FClass1(CInSysRowEquation, void)::InitRowEquation(size_t len, bool tDesignEnum, bool initArray) {
+	m_memShift = len;
+	m_bTDesignEnum = tDesignEnum;
 	m_pVarMapping = new CVariableMapping<S> *[3];
 	m_pVarMapping[t_singleNoLambda] = new CVariableMapping<S>(len);
 	m_pVarMapping[t_singleLambda] = new CSingleLambda<S>(len);
 	m_pVarMapping[t_dual] = new CDualLambda<S>(len);
+	if (initArray)
+		Init(3 * len, new S[3 * len]);
 }
 
-template<class T>
-CInSysRowEquation<T>::~CInSysRowEquation()
+FClass1(CInSysRowEquation)::~CInSysRowEquation()
 {
 	for (int i = 0; i <= t_dual; i++)
 		delete varMapping(i);
 
 	delete[] m_pVarMapping;
 }
+
 
 FClass1(CInSysRowEquation, int)::resolveTrivialEquations(const S *pRightPart, S *pResult, size_t nVar, CVariableMapping<S> *pVariation) const
 {

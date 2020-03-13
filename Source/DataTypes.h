@@ -253,15 +253,15 @@ typedef CArray<PERMUT_ELEMENT_TYPE, PERMUT_ELEMENT_TYPE> CArraySolutionPerm;
 
 Class1Def(CSimpleArray) {
 public:
-	CC inline CSimpleArray(size_t len) : m_nLen(len){ m_pElem = new S[len]; }
-	CC virtual ~CSimpleArray()						{ delete [] elementPntr(); }
-	inline void Init(size_t len, S *pElem)			{ m_pElem = pElem; m_nLen = len; }
-	CC inline S element(size_t idx) const           { return m_pElem[idx]; }
-	inline void setElement(size_t idx, S val)		{ m_pElem[idx] = val; }
-	CC inline S *elementPntr() const				{ return m_pElem; }
-	CC inline size_t numElement() const				{ return m_nLen; }
-	inline S GetAt(size_t idx)  const				{ return element(idx); }
-	inline S *GetElement(size_t idx)  const			{ return elementPntr() + idx; }
+	CC inline CSimpleArray(size_t len = 0) : m_nLen(len)	{ m_pElem = len? new S[len] : NULL; }
+	CC virtual ~CSimpleArray()								{ delete [] elementPntr(); }
+	inline void Init(size_t len, S *pElem)					{ m_pElem = pElem; m_nLen = len; }
+	CC inline S element(size_t idx) const					{ return m_pElem[idx]; }
+	inline void setElement(size_t idx, S val)				{ m_pElem[idx] = val; }
+	CC inline S *elementPntr() const						{ return m_pElem; }
+	CC inline size_t numElement() const						{ return m_nLen; }
+	inline S GetAt(size_t idx)  const						{ return element(idx); }
+	inline S *GetElement(size_t idx)  const					{ return elementPntr() + idx; }
 protected:
 private:
     S *m_pElem;
@@ -387,7 +387,7 @@ extern int ccc;
 
 #if PRINT_SOLUTIONS
 	#define OUTPUT_SOLUTION(x,file,f)		if (MAKE_OUTPUT()) \
-												{ x->printSolutions(file, f); }
+												{ this->printSolutions(x, file, f); }
 #else
     #define OUTPUT_SOLUTION(x,file, f)
 #endif

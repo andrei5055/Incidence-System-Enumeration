@@ -13,7 +13,7 @@ public:
 	CK CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
 		Class2(C_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
 		setR(getInSys()->GetR());
-		m_firstUnforced = pBIBD->rowNumb() - pBIBD->GetK();
+		C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - pBIBD->GetK());
 	}
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
@@ -37,7 +37,6 @@ protected:
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char *pFrmt = NULL, int *pLambdaSetSize = NULL) const
 		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, int *pLambdaSetSize) const;
-	CK virtual S firstUnforcedRow() const							{ return m_firstUnforced; }
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
 	CK virtual void resetFirstUnforcedRow()							{}
 private:
@@ -50,7 +49,6 @@ private:
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
 	S m_r;
-	S m_firstUnforced;
 };
 
 FClass2(CBIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE idx)

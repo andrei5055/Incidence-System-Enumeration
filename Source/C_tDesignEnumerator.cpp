@@ -268,7 +268,7 @@ FClass2(C_tDesignEnumerator, CVariableMapping *)::constructExtraEquations(size_t
 	return solveExtraEquations();
 }
 
-FClass2(C_tDesignEnumerator, void)::addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb)
+FClass2(C_tDesignEnumerator, void)::addColOrbitForVariable(S nVar, CColOrbit *pColOrb)
 {
 	OrbToVarMapping *pOrbToVar = COrbToVar::GetAt(COrbToVar::numb());
 	pOrbToVar->nVar = nVar;

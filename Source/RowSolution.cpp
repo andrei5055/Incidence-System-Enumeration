@@ -219,6 +219,7 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 	return startIndex;
 }
 
+#if PRINT_SOLUTIONS
 FClass2(CRowSolution, void)::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, const S *pSol) const
 {
     char buffer[512], *pBuf = buffer;
@@ -254,24 +255,23 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 	return solIdx;
 }
 
-FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed) const
+FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nPortion) const
 {
 	if (!solutionLength() || !numSolutions())
         return;
     
-	MUTEX_LOCK(out_mutex);
 	char buffer[2048];
-	if (numSolutions() >= sizeof(buffer) / 2) {
-  	if (markNextUsed) {
-			SPRINTF(buffer, "Using solution # %zd out of %zd\n", solutionIndex(), numSolutions());
-			outString(buffer, file);
-		}
-	}
-	else {
+	if (markNextUsed)
+		SPRINTF(buffer, "\nFor portion %d the solution # %zd out of %zd will be used\n", nPortion, solutionIndex(), numSolutions());
+	else
+		SPRINTF(buffer, "\n%zd solutions were constructed for portion %d\n", numSolutions(), nPortion);
+	outString(buffer, file);
+
+	if (numSolutions() < sizeof(buffer) / 2) {
 		if (markNextUsed) {
-			const size_t len2 = sizeof(buffer) << 1;
-			const size_t len = solutionIndex() * 2;
-			const size_t nLoops = len / len2;
+			const auto len2 = sizeof(buffer) << 1;
+			const auto len = solutionIndex() * 2;
+			const auto nLoops = len / len2;
 			size_t idx = 0;
 			for (size_t j = 0; j < nLoops; j++) {
 				idx = setSolutionFlags(buffer, sizeof(buffer), idx);
@@ -296,7 +296,5 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed) const
 		for (unsigned int i = 0; i < solutionLength(); i++)
 			printRow(file, pPerm, pSolution + i);
 	}
-
-	MUTEX_UNLOCK(out_mutex);
 }
-
+#endif

@@ -75,7 +75,7 @@ public:
 		if (m_nPartInfo) {
 			S len, shift;
 			shift = m_nPartInfo->GetPartInfo(idx, &len);
-			memset(pRow + shift, 0, len * sizeof(T));
+			memset(pRow += shift, 0, len * sizeof(T));
 		}
 		else
 			memset(pRow, 0, m_nCols * sizeof(T));

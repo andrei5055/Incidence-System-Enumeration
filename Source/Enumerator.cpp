@@ -54,22 +54,28 @@ FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
 }
 
-FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex)
+FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution()
 {
 	if (!prepareToFindRowSolution())
 		return NULL;
 
-	const auto nVar = MakeSystem();
-	if (nVar == ELEMENT_MAX)
-        return NULL;
-    
-	setPrintResultNumVar(nVar);
-	auto pNextRowSolution = FindSolution(nVar, lastRightPartIndex);
-    if (!pNextRowSolution)
-        return NULL;
+	// Find row solution for all design parts
+	RowSolutionPntr pNextRowSolution;
+	for (auto i = this->numParts(); i--;) {
+		const auto nVar = MakeSystem(i);
+		if (nVar == ELEMENT_MAX)
+			return NULL;
 
-    OUTPUT_SOLUTION(pNextRowSolution, outFile(), false);
-	return sortSolutions(pNextRowSolution, lastRightPartIndex) ? pNextRowSolution : NULL;
+		setPrintResultNumVar(nVar);
+		pNextRowSolution = FindSolution(nVar, m_lastRightPartIndex[i]);
+		if (!pNextRowSolution)
+			return NULL;
+
+	}
+
+	OUTPUT_SOLUTION(pNextRowSolution, outFile(), false);
+	// Sort solutions for the first part only
+	return sortSolutions(pNextRowSolution, m_lastRightPartIndex[0]) ? pNextRowSolution : NULL;
 }
 
 #if USE_THREADS_ENUM
@@ -396,9 +402,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				this->setColOrbitCurr(pColOrb);
 				this->setCurrUnforcedOrbPtr(nRow);
 				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &level, pRowSolution)) {
-					// We need to get lastRightPartIndex here and use later because 
-					// for multi-thread configuration it could be changed by master
-					const PERMUT_ELEMENT_TYPE lastRightPartIndex = pRowSolution->solutionIndex();
 					if (pMaster) {
 						copyInfoFromMaster(pMaster);
 #if WAIT_THREADS
@@ -411,7 +414,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						this->setGroupOrder(1);
 
 					setPrintResultRowNumber(nRow);
-					pRowSolution = FindRowSolution(lastRightPartIndex);
+					pRowSolution = FindRowSolution();
 #if USE_THREADS && !WAIT_THREADS
 					if (pMaster && pRowSolution) {
 						pMaster = NULL;
@@ -550,7 +553,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) cons
 	const auto colOrbLen = this->colOrbitLen();
 
 	const int maxElement = this->rank() - 1;
-	const auto *pColOrbitIni = this->colOrbitIni(nRow);
+	const auto *pColOrbitIni = this->colOrbitIni(nRow, partIdx);
 	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
 	Class1(CColOrbit)*pColOrbitLast = NULL;
 	while (pColOrbit) {
@@ -589,11 +592,11 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) cons
 		pColOrbit = pColOrbit->next();
 	}
 
-	if (getUnforcedColOrbPntr()) {
+	if (getUnforcedColOrbPntr(partIdx)) {
         // Set unforced elements:
         for (auto row = firstUnforcedRow(); row <= nRow; row++) {
-			const auto *pColOrbitIni = this->colOrbitIni(row);
-			auto **ppUnforced = this->unforcedOrbits(row);
+			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
+			auto **ppUnforced = this->unforcedOrbits(row, partIdx);
             for (int i = 1; i < this->rank(); i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
@@ -618,17 +621,16 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) cons
 
 FClass2(CEnumerator, ColOrbPntr)::MakeRow(const RowSolutionPntr pRowSolution, bool flag) {
 	// Loop over all portions of the solution
-	ColOrbPntr pColOrbRet;
-	ColOrbPntr pColUrbLast = NULL;
+	ColOrbPntr pColOrbRet = NULL;
 	for (S i = 0; i < numParts(); i++) {
+		// We need to get lastRightPartIndex here and use later because 
+		// for multi-thread configuration it could be changed by master
+		m_lastRightPartIndex[i] = (pRowSolution + i)->solutionIndex();
 		const auto* pCurrSolution = (pRowSolution+i)->currSolution();
 		auto* pColOrb = MakeRow(pCurrSolution, i);
-		if (pColUrbLast)
-			pColUrbLast->setNext(pColOrb);
-		else
+		if (!pColOrbRet)
 			pColOrbRet = pColOrb;
 
-		pColUrbLast = pColOrb;
 		if (flag) {
 			flag = false;
 			setX0_3(*pCurrSolution);
@@ -885,6 +887,17 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	if (rename(tmpFile, enumerationDB) != 0)
 		printf("Cannot rename file '%s' to '%s'", tmpFile,  enumerationDB);
 }
+
+#if PRINT_SOLUTIONS
+FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, bool markNextUsed) const
+{	
+	MUTEX_LOCK(out_mutex);
+	for (S i = 0; i < this->numParts(); i++)
+		(pSolution + i)->printSolutions(file, markNextUsed, i);
+
+	MUTEX_UNLOCK(out_mutex);
+}
+#endif
 
 #if USE_STRONG_CANONICITY_A
 FClass2(CEnumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)

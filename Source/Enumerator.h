@@ -415,7 +415,7 @@ public:
 	CK virtual S getX0_3() const							{ return 0; }
 	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
 	CK virtual S firstUnforcedRow() const					{ return 0; }
-	CK virtual void setFirstUnforcedRow(S rowNum = 0)		{}
+	CK virtual void setFirstUnforcedRow(S row)				{}
 	CK virtual S *forcibleLambdaPntr() const				{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
@@ -429,7 +429,7 @@ protected:
 	CK virtual bool prepareToFindRowSolution()				{ return true; }
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
 	CK virtual void setX0_3(S value)						{}
-	CK inline CSimpleArray<S>* rowEquation() const			{ return m_pRowEquation; }
+	CK inline CSimpleArray<S>* rowEquation(S idx = 0) const	{ return m_pRowEquation + idx; }
 	CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
 	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
@@ -464,8 +464,8 @@ private:
 	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
-	CK RowSolutionPntr FindRowSolution(PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
-	CK virtual S MakeSystem() = 0;
+	CK RowSolutionPntr FindRowSolution();
+	CK virtual S MakeSystem(S numPart) = 0;
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
@@ -480,6 +480,10 @@ private:
 	virtual S forcibleLambda(size_t i) const				{ return -1; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
+#if PRINT_SOLUTIONS
+	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, bool markNextUsed) const;
+#endif
+
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
 #else
@@ -506,6 +510,7 @@ private:
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
 	const S m_numParts;
+	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif
@@ -516,12 +521,18 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 	m_pRow = new RowSolutionPntr[this->numParts() * pMatrix->rowNumb()];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
+	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[this->numParts()];
 }
 
 FClass2(CEnumerator)::~CEnumerator() {
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
-	delete rowEquation();
+	if (numParts() > 1)
+		delete [] rowEquation();
+	else
+		delete rowEquation();
+
+	delete[] m_lastRightPartIndex;
 	releaseGPU_CanonChecker();
 }
 

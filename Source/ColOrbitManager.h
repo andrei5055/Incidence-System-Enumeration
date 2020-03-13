@@ -38,7 +38,7 @@ public:
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;
 	CC void closeColOrbits() const;
 protected:
-	CK inline auto colOrbitIni(size_t n) const			{ return *(colOrbitsIni() + n); }
+	CK inline auto colOrbitIni(S nRow, S idxPart) const	{ return *(colOrbitsIni(idxPart) + nRow); }
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart = 0)	{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetColOrbitCurr()                  { setColOrbitCurr(*(colOrbitPntr() + colNumb() * currentRowNumb())); }
 	CK inline void resetUnforcedColOrb(S idxPart = 0)	{ memset(unforcedColOrbPntr(idxPart) + unfColIdx(currentRowNumb()), 0, rankMatr() * sizeof(*unforcedColOrbPntr())); }

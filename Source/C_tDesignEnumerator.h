@@ -36,7 +36,7 @@ protected:
 	CK virtual bool prepareToFindRowSolution()					{ equSystem()->resetArray(); return true; }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit *pColOrb) { m_pColOrbForCurrentRow = pColOrb; COrbToVar::resetArray(); }
 	virtual CColOrbit *colOrbitForCurrentRow() const			{ return m_pColOrbForCurrentRow; }
-	CK virtual void addColOrbitForVariable(size_t nVar, CColOrbit *pColOrb);
+	CK virtual void addColOrbitForVariable(S nVar, CColOrbit *pColOrb);
 #endif
 private:
 	inline auto tDesign() const									{ return static_cast<TDesignPntr>(this->getInSys()); }

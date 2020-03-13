@@ -64,7 +64,9 @@ public:
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
 	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
-	void printSolutions(FILE *file, bool markNextUsed = false) const;
+#if PRINT_SOLUTIONS
+	void printSolutions(FILE *file, bool markNextUsed, S nPortion) const;
+#endif
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
 	CK inline auto *solutionPerm() const						{ return m_pSolutionPerm; }
@@ -80,8 +82,10 @@ private:
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex(PERMUT_ELEMENT_TYPE i) const	{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(i) : i; }
+#if PRINT_SOLUTIONS
 	void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
+#endif
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }
 	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline auto lenOrbitOfSolution() const						{ return m_nLenSolOrb; }
