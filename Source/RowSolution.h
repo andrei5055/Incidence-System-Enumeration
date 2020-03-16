@@ -92,7 +92,7 @@ private:
 	CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionLength(); }
 #if USE_THREADS || MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
-	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const;
+	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const;
 #endif
 
 	S m_Length;
@@ -297,10 +297,10 @@ FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) 
 }
 
 #if USE_THREADS || MY_QUICK_SORT
-FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const VECTOR_ELEMENT_TYPE *pSecnd) const
+FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const
 {
 	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionLength();
-	for (size_t i = 0; i < solutionLength(); i++) {
+	for (S i = 0; i < solutionLength(); i++) {
 		if (*(pFirst + i) > *(pSecnd + i))
 			return 1;
 
@@ -314,7 +314,7 @@ FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const 
 FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
 	long i = left, j = right;
 	const auto pivotIdx = (left + right) >> 1;
-	const VECTOR_ELEMENT_TYPE *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
+	const S *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
 
 	/* partition */
 	while (i <= j) {
@@ -351,9 +351,9 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 	// Suppose that all solutions are not canonical
 	memset(pCanonFlags, 0, numSolutions() * sizeof(pCanonFlags[0]));
 
-	VECTOR_ELEMENT_TYPE buffer[256];
+	S buffer[256];
 	const size_t lenMem = solutionLength() << 1;
-	auto *pMem = lenMem <= countof(buffer) ? buffer : new VECTOR_ELEMENT_TYPE[lenMem];
+	auto *pMem = lenMem <= countof(buffer) ? buffer : new S[lenMem];
 	size_t canonIdx[256];
 	size_t *pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
 	int nCanon = 0;

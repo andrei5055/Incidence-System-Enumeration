@@ -408,7 +408,7 @@ Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 public:
 	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
-	CK inline RowSolutionPntr rowStuff(size_t nRow = 0) const	{ return m_pRow[nRow]; }
+	CK inline RowSolutionPntr rowStuff(S nRow = 0, S iPart = 0) const	{ return m_pRow[nRow] + iPart; }
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
@@ -416,7 +416,7 @@ public:
 	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
 	CK virtual S firstUnforcedRow() const					{ return 0; }
 	CK virtual void setFirstUnforcedRow(S row)				{}
-	CK virtual S *forcibleLambdaPntr() const				{ return NULL; }
+	CK virtual S *forcibleLambdaPntr(S nRow = 0) const		{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline auto designParams() const						{ return m_pParam; }
@@ -464,12 +464,12 @@ private:
 	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
-	CK RowSolutionPntr FindRowSolution();
+	CK RowSolutionPntr FindRowSolution(S *pPartNumb);
 	CK virtual S MakeSystem(S numPart) = 0;
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
-	CK virtual RowSolutionPntr FindSolution(S n, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
+	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
 	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
@@ -477,7 +477,7 @@ private:
 	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const	{ return -1; }
 	CK virtual ColOrbPntr* unforcedOrbits(size_t n, S idxPart = 0) const	{ return NULL; }
 	CK virtual void resetFirstUnforcedRow()					{}
-	virtual S forcibleLambda(size_t i) const				{ return -1; }
+	virtual S forcibleLambda(S nRow, S nPart) const			{ return ELEMENT_MAX; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 #if PRINT_SOLUTIONS

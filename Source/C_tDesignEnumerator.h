@@ -29,7 +29,7 @@ protected:
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t nVar);
 	CK virtual void prepareToTestExtraFeatures();
 	CK virtual void copyInfoFromMaster(const EnumeratorPntr pMaster);
-	CK virtual bool constructing_t_Design()						{ return true; }
+	CK virtual size_t numLambdas(const VectorPntr *pParamSet = NULL)	{ return 1; }
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
 #if USE_EXRA_EQUATIONS
 	CK virtual CEquSystem *equSystem()							{ return this; }

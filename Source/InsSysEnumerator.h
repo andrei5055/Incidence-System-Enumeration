@@ -10,7 +10,7 @@ public:
 	CK virtual S getX0_3() const								{ return m_x0_3; }
 	CK virtual S firstUnforcedRow() const						{ return m_firstUnforcedRow; }
 	CK virtual void setFirstUnforcedRow(S rowNum = 0)			{ m_firstUnforcedRow = rowNum; }
-	CK virtual S *forcibleLambdaPntr() const					{ return m_pForsibleLambda; }
+	CK virtual S *forcibleLambdaPntr(S nRow = 0) const			{ return m_pForsibleLambda + nRow * numParts(); }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }
@@ -23,12 +23,13 @@ protected:
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
-	CK CColOrbit<S> **unforcedOrbits(size_t nRow, S idxPart = 0) const	{ return getUnforcedColOrbPntr(idxPart) + this->rank() * nRow; }
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart = 0) const {
-			return forcibleLambda(this->currentRowNumb()) != -1 ? this->unforcedColOrbPntr(idxPart) : NULL;
+	CK CColOrbit<S> **unforcedOrbits(size_t nRow, S iPart = 0) const	{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart = 0) const {
+			return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
 	}
-	CK virtual S forcibleLambda(size_t i) const					{ return *(forcibleLambdaPntr() + i); }
+	CK virtual S forcibleLambda(S nRow, S nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
+	CK virtual VectorPntr paramSet(t_numbSetType idx) const		{ return this->getInSys()->GetNumSet(idx); }
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -36,22 +37,22 @@ protected:
 #endif
 	CK virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix);
 	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
-
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual S MakeSystem(S numPart);
-	CK virtual RowSolutionPntr FindSolution(S nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
+	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK void setVariableLimit(S nVar, S len, S nRowToBuild, S k, S colWeight);
 	CK virtual bool checkForcibleLambda(size_t fLambda) const   { return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
-    CK virtual bool constructing_t_Design()                     { return false; }
+	CK virtual size_t numLambdas(const VectorPntr pParamSet = NULL)	{ return pParamSet->GetSize(); }
+	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx, S numPart = 0) { return pLambdaSet->GetAt(idx); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
-	CK inline void setForcibleLambda(S i, S val)				{ *(forcibleLambdaPntr() + i) = val; } // i < nCol, val <= nCol
+	CK inline void setForcibleLambda(S nRow, S val, S nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
 
 	S m_x0_3;
 	S *m_pForsibleLambda;
@@ -78,10 +79,10 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 	setX0_3(nCol);
 	m_pRightPartFilter = new CRightPartFilter<S>(nCol);
 	const auto nRow = pInSys->rowNumb();
-	setForcibleLambdaPntr(new S[nRow]);
-	memset(forcibleLambdaPntr(), 0, nRow * sizeof(*forcibleLambdaPntr()));
+	setForcibleLambdaPntr(new S[nRow * numParts]);
+	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(*forcibleLambdaPntr()));
 	setFirstUnforcedRow();
-	setForcibleLambda(nRow - 1, this->getInSys()->lambda());
+	//setForcibleLambda(nRow - 1, this->getInSys()->lambda(), 0); // It looks like we dont need this
 }
 
 FClass2(C_InSysEnumerator)::~C_InSysEnumerator() {
@@ -232,7 +233,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 
 	if (!pColOrbit) {
 		if (nRowToBuild > 1) {
-			auto fLambda = forcibleLambda(nRow - 1);
+			auto fLambda = forcibleLambda(nRow - 1, numPart);
 			auto *pTmp = *(this->currUnforcedOrbPtr() + 1);
 			while (pTmp) {
 				fLambda += pTmp->length();
@@ -240,7 +241,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 			}
 
 			if (nRowToBuild != 2 || checkForcibleLambda(fLambda))
-				setForcibleLambda(nRow, fLambda);
+				setForcibleLambda(nRow, fLambda, numPart);
 			else
 				return ELEMENT_MAX;
 		}
@@ -261,12 +262,12 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	return nVar;
 }
 
-FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, PERMUT_ELEMENT_TYPE lastRightPartIndex)
+FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex)
 {
 	const auto nRow = this->currentRowNumb();
 	const auto nRowPrev = nRow - 1;
-	const auto pPrevRowSolution = this->rowStuff(nRowPrev);
-	auto pCurrRowSolution = this->rowStuff(nRow);
+	const auto pPrevRowSolution = this->rowStuff(nRowPrev, nPart);
+	auto pCurrRowSolution = this->rowStuff(nRow, nPart);
 	pCurrRowSolution->setSolutionLength(nVar);
 	pCurrRowSolution->resetSolution();
 	const auto pFirstSol = pPrevRowSolution->firstSolution();
@@ -280,16 +281,16 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, PERMUT_ELEMENT
 	// Because there are no more than nVar/2 of them, we will use
 	this->initSolver(pCurrRowSolution, pRowEquation->variableMinValPntr());
 
-	const auto pLambdaSet = this->getInSys()->GetNumSet(t_lSet);
+	const auto pLambdaSet = this->paramSet(t_lSet);
 	// For all possible right parts of the systems
 	// (which are lexicographically not greater, than the vector, used for the current row)
 	auto pResult = pCurrRowSolution->newSolution();
-	VECTOR_ELEMENT_TYPE buffer[256];
-	auto pBuffer = nVar <= countof(buffer)? buffer : new VECTOR_ELEMENT_TYPE[nVar];
+	S buffer[256];
+	auto pBuffer = nVar <= countof(buffer)? buffer : new S[nVar];
 	// Solution used for last constructed matrix's row:
 	const auto pCurrSolution = pPrevRowSolution->solution(lastRightPartIndex);
-	const auto forcibleLambdaValue = forcibleLambda(nRowPrev);
-	const auto nLambdas = constructing_t_Design() ? 1 : pLambdaSet->GetSize();
+	const auto forcibleLambdaValue = forcibleLambda(nRowPrev, nPart);
+	const auto nLambdas = numLambdas();
 	const auto *pMaxVal = inSysRowEquation()->variableMaxValPntr();
 	bool readyToCheckSolution = false;
 	for (PERMUT_ELEMENT_TYPE j = 0; j <= lastRightPartIndex; j++) {
@@ -372,8 +373,8 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, PERMUT_ELEMENT
 #endif
 
 			// For all possible values of right part of "lambda" equation
-			for (size_t i = 0; i < nLambdas; i++) {
-				const int lambdaToSplit = pLambdaSet->GetAt(i) - lambdaMin;
+			for (S i = 0; i < nLambdas; i++) {
+				const int lambdaToSplit = this->getLambda(pLambdaSet, i, nPart) - lambdaMin;
 				if (lambdaToSplit < 0)
 					continue;
 
@@ -413,7 +414,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, PERMUT_ELEMENT
 	if (pBuffer != buffer)
 		delete[] pBuffer;
 
-	return  pCurrRowSolution->getSolution();
+	return pCurrRowSolution->getSolution();
 }
 
 FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx)

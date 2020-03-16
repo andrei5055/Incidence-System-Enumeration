@@ -38,7 +38,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		const auto* pColOrbit = this->colOrbit(rowNumb);
 		const auto* pRowSolution = pSol;
 		limit -= this->rowNumb();
-		auto nForcible = forcibleLambda(rowNumb);
+		auto nForcible = forcibleLambda(rowNumb, 0);
 		while (pColOrbit) {
 			if (pColOrbit->columnWeight() == limit) {
 				// Define the number of new columns that will be enforceable completed by units

@@ -20,7 +20,7 @@ FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pInfo, int le
 }
 
 FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
-	auto pSolutions = this->rowStuff(0);
+	auto pSolutions = this->rowStuff(1);
 	const auto* pR_set = this->paramSet(t_rSet);
 	for (auto i = this->numParts(); i--;) {
 		auto pPartSolutions = pSolutions + i;

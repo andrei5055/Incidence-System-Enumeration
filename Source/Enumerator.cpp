@@ -54,24 +54,33 @@ FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
 }
 
-FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution()
+FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 {
-	if (!prepareToFindRowSolution())
-		return NULL;
+	RowSolutionPntr pNextRowSolution = NULL;
+	S i = 0;
+	if (prepareToFindRowSolution()) {
+		// Find row solution for all design parts
 
-	// Find row solution for all design parts
-	RowSolutionPntr pNextRowSolution;
-	for (auto i = this->numParts(); i--;) {
-		const auto nVar = MakeSystem(i);
-		if (nVar == ELEMENT_MAX)
-			return NULL;
+		while (true) {
+			const auto nVar = MakeSystem(i);
+			if (nVar == ELEMENT_MAX)
+				break;
 
-		setPrintResultNumVar(nVar);
-		pNextRowSolution = FindSolution(nVar, m_lastRightPartIndex[i]);
-		if (!pNextRowSolution)
-			return NULL;
+			setPrintResultNumVar(nVar);
+			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
+			if (!pRowSolution)
+				break;
 
+			if (!pNextRowSolution)
+				pNextRowSolution = pRowSolution;
+
+			if (++i >= this->numParts())
+				break;
+		}
 	}
+
+	if ((*pPartNumb = i) < this->numParts())
+		return NULL;
 
 	OUTPUT_SOLUTION(pNextRowSolution, outFile(), false);
 	// Sort solutions for the first part only
@@ -414,7 +423,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						this->setGroupOrder(1);
 
 					setPrintResultRowNumber(nRow);
-					pRowSolution = FindRowSolution();
+					S partNumb;		// minimal index of parts which does NOT have solution for next row
+					pRowSolution = FindRowSolution(&partNumb);
 #if USE_THREADS && !WAIT_THREADS
 					if (pMaster && pRowSolution) {
 						pMaster = NULL;
