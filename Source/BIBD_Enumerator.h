@@ -19,7 +19,7 @@ public:
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 protected:
-	CK virtual bool sortSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx);
+	CK virtual bool checkSolutions(RowSolutionPntr ptr, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const;
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const;
 	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
@@ -41,7 +41,7 @@ protected:
 	CK virtual void resetFirstUnforcedRow()							{}
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
-	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const;
+	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	CK inline void setR(S val)										 { m_r = val; }
@@ -51,7 +51,7 @@ private:
 	S m_r;
 };
 
-FClass2(CBIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE idx)
+FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting)
 {
 	if (this->currentRowNumb() + 1 == this->rowNumb())
 		return true;        // We will be here when lambda > 1 AND one of the colOrbits was splitted into 2 parts  
@@ -60,11 +60,11 @@ FClass2(CBIBD_Enumerator, bool)::sortSolutions(RowSolutionPntr pSolution, PERMUT
 	if (!pSolution->numSolutions())
 		return false;
 
-	pSolution->sortSolutions(this->useCanonGroup() ? this : NULL);
+	pSolution->sortSolutions(doSorting, this->useCanonGroup() ? this : NULL);
 	if (!pSolution->findFirstValidSolution(this->inSysRowEquation()->variableMaxLimitPntr(), this->GetData()))
 		return false;
 
-	return checkChoosenSolution(pSolution, this->currentRowNumb(), idx);
+	return checkChoosenSolution(pSolution, this->currentRowNumb(), nPart, idx);
 }
 
 FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
@@ -155,7 +155,7 @@ FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart,
 	return true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, S nRow, PERMUT_ELEMENT_TYPE usedSolIndex) const
+FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to skip testing of some solutions for some rows
@@ -211,7 +211,7 @@ FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolut
 		}
 	}
 
-	return pCurrSolution->checkChoosenSolution(this->colOrbit(nRow), this->matrix()->rowNumb() - nRow, this->getInSys()->GetK());
+	return pCurrSolution->checkChoosenSolution(this->colOrbit(nRow, nPart), this->matrix()->rowNumb() - nRow, this->getInSys()->GetK());
 }
 
 

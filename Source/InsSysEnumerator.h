@@ -18,7 +18,7 @@ public:
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 protected:
 	CK virtual void setX0_3(S value)							{ m_x0_3 = value; }
-	CK virtual bool sortSolutions(RowSolutionPntr ptr, size_t idx);
+	CK virtual bool checkSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	CK inline auto inSysRowEquation() const						{ return (CInSysRowEquation<S> *)this->rowEquation(); }
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
 																{ return true; }
@@ -90,7 +90,7 @@ FClass2(C_InSysEnumerator)::~C_InSysEnumerator() {
 	delete[] forcibleLambdaPntr();
 }
 
-FClass2(C_InSysEnumerator, bool)::sortSolutions(RowSolutionPntr pSolution, size_t i) {
+FClass2(C_InSysEnumerator, bool)::checkSolutions(RowSolutionPntr pSolution, PERMUT_ELEMENT_TYPE i, bool doSorting) {
 	if (!pSolution->numSolutions())
 		return false;
 

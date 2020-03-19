@@ -63,7 +63,7 @@ public:
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
-	CK void sortSolutions(CanonicityCheckerPntr pCanonChecker = NULL);
+	CK void sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker = NULL);
 #if PRINT_SOLUTIONS
 	void printSolutions(FILE *file, bool markNextUsed, S nPortion) const;
 #endif
@@ -162,15 +162,15 @@ FClass2(CRowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin) {
 #if USE_PERM
 	const auto pFirst = firstSolution();
-	const size_t nSolutions = numSolutions();
+	const auto nSolutions = numSolutions();
 	CSolutionPerm *pPerm = solutionPerm();
-	size_t n, idx = 0;
+	PERMUT_ELEMENT_TYPE n, idx = 0;
 	for (auto i = solutionLength(); i--;) {
 		// Current min and max values we have to test
-		const S minVal = pMin ? *(pMin + i) : 1;
-		const S maxVal = *(pMax + i);
+		const auto minVal = pMin ? *(pMin + i) : 1;
 		const S currentVal = *(pFirst + pPerm->GetAt(idx) * solutionLength() + i);
 		if (currentVal >= minVal) {
+			const auto maxVal = *(pMax + i);
 			// No need to check minVal anymore
 			// We need to make sure that before pCurrentPoz there is at least one value, which is less than maxVal
 			if (currentVal < maxVal)
@@ -180,7 +180,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 			n = idx;
 			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) == maxVal);
 
-			if (n != SIZE_MAX)
+			if (n != PERMUT_ELEMENT_MAX)
 				continue;       // no need to change first valid solution
 
 								// Need to go to the "bigger" solutions and find first which would be < maxVal
@@ -192,7 +192,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 			n = idx;
 			while (n-- > 0 && *(pFirst + pPerm->GetAt(n) * solutionLength() + i) < minVal);
 
-			if (n != SIZE_MAX)
+			if (n != PERMUT_ELEMENT_MAX)
 				continue;       // no need to change first valid solution
 
 								// If we are here, then *pCurrentPoz == maxVal
@@ -219,9 +219,9 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 		const S *pTmp;
 
 		// Current min and max values we have to test
-		const S minVal = pMin ? *(pMin + i) : 1;
-		const S maxVal = *(pMax + i);
+		const auto minVal = pMin ? *(pMin + i) : 1;
 		if (*pCurrentPoz >= minVal) {
+			const auto maxVal = *(pMax + i);
 			// No need to check minVal anymore
 			// We need to make sure that before pCurrentPoz there is at least one value, which is less than maxVal
 			if (*pCurrentPoz < maxVal)
@@ -266,16 +266,18 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 	return true;
 }
 
-FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) {
+FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker) {
+	// Calling this function, we do not necessarily need a real sorting.
+	// In some cases, just the initiation would be enough.
 	if (!this || !numSolutions() || !solutionLength())
 		return;
 
 	uchar *pCanonFlags;
-	PERMUT_ELEMENT_TYPE *pPerm = initSorting(&pCanonFlags);
-	for (PERMUT_ELEMENT_TYPE i = 0; i < numSolutions(); i++)
+	auto pPerm = initSorting(&pCanonFlags);
+	for (auto i = numSolutions(); i--;)
 		*(pPerm + i) = i;
 
-	if (numSolutions() > 1) {
+	if (doSorting && numSolutions() > 1) {
 #if USE_THREADS || MY_QUICK_SORT
 		// When we use threads we cannot use qsort since in our implementation 
 		// qsort will use global variables - pntrSolution and sizeSolution
@@ -290,7 +292,7 @@ FClass2(CRowSolution, void)::sortSolutions(CanonicityCheckerPntr pCanonChecker) 
 #endif
 	}
 
-	if (pCanonChecker)
+	if (doSorting && pCanonChecker)
 		sortSolutionByGroup(pCanonChecker);
 	else
 		memset(pCanonFlags, 1, numSolutions());

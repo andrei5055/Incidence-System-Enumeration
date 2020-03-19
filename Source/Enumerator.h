@@ -430,7 +430,7 @@ protected:
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
 	CK virtual void setX0_3(S value)						{}
 	CK inline CSimpleArray<S>* rowEquation(S idx = 0) const	{ return m_pRowEquation + idx; }
-	CK virtual bool sortSolutions(RowSolutionPntr p, size_t idx) { return false;  /* not implemented */ }
+	CK virtual bool checkSolutions(RowSolutionPntr p, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
 	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
 #if !CONSTR_ON_GPU
@@ -444,7 +444,7 @@ protected:
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
 	CK ColOrbPntr MakeRow(const S *pRowSolution, S partIdx = 0) const;
-	CK ColOrbPntr MakeRow(const RowSolutionPntr pRowSolution, bool flag = false);
+	CK ColOrbPntr MakeRow(RowSolutionPntr pRowSolution, bool flag = false);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
 	inline auto numParts() const							{ return m_numParts; }
