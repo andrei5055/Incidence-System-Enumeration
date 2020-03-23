@@ -48,7 +48,7 @@ private:
 																	setFirstUnforcedRow(0);
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
-	CK virtual size_t numLambdas(const VectorPntr pParamSet = NULL)	{ return pParamSet->GetSize(); }
+	CK virtual size_t numLambdas()								{ return this->paramSet(t_lSet)->GetSize(); }
 	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx, S numPart = 0) { return pLambdaSet->GetAt(idx); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
@@ -68,7 +68,7 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 	const auto nCol = pInSys->colNumb();
 	const auto tDesign = pInSys->GetT() > 2;
 	const auto numParts = this->numParts();
-	if (false && numParts > 1) { // Will not use for now
+	if (false && numParts > 1) { // Will not use for now  (search for this comment)
 		auto pRowEquation = new CInSysRowEquation<S>[numParts];
 		this->setRowEquation(pRowEquation);
 		for (S i = 0; i < numParts; i++)

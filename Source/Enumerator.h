@@ -126,7 +126,7 @@ Class2Def(CMatrixCanonChecker) : public Class2(CMatrixCol), public Class2(CCanon
 public:
 	CC CMatrixCanonChecker(const MatrixDataPntr pMatrix, uint enumFlags) :
 		Class2(CMatrixCol)(pMatrix, enumFlags),
-		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags)
+		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags, pMatrix->numParts())
 															{ setEnumInfo(NULL); }
 
 	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, S rowNumb, S colNumb, T maxElem, bool IS_enum) :
@@ -447,7 +447,6 @@ protected:
 	CK ColOrbPntr MakeRow(RowSolutionPntr pRowSolution, bool flag = false);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
-	inline auto numParts() const							{ return m_numParts; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
@@ -509,7 +508,6 @@ private:
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
-	const S m_numParts;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
@@ -517,7 +515,7 @@ private:
 };
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
-	Class2(CMatrixCanonChecker)(pMatrix, enumFlags), m_numParts(pMatrix->numParts()) {
+	Class2(CMatrixCanonChecker)(pMatrix, enumFlags) {
 	m_pRow = new RowSolutionPntr[this->numParts() * pMatrix->rowNumb()];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
@@ -527,7 +525,7 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 FClass2(CEnumerator)::~CEnumerator() {
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
-	if (numParts() > 1)
+	if (false && numParts() > 1) // Will not use for now  (search for this comment)
 		delete [] rowEquation();
 	else
 		delete rowEquation();

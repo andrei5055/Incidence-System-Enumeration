@@ -30,11 +30,11 @@ Class2Def(CRowSolution);
 
 Class2Def(CCanonicityChecker) {
 public:
-    CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault);
-    CC ~CCanonicityChecker();
+	CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
+	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
 	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo = 0, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
-    void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
+	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC uint enumFlags() const						{ return m_enumFlags; }
 	CC inline uint groupOrder() const				{ return m_nGroupOrder; }
 	CC inline S numColOrb() const					{ return m_nNumColOrb; }
@@ -42,14 +42,14 @@ public:
 	CK inline S lenPerm() const						{ return permStorage()->lenPerm(); }
 	CK inline void adjustGenerators(int *idx, S len){ permStorage()->adjustGenerators(idx, len); }
 	CK inline size_t constructGroup()				{ return permStorage()->constructGroup(); }
-	CK inline size_t findSolutionIndex(const VECTOR_ELEMENT_TYPE *pFirst, size_t idx, VECTOR_ELEMENT_TYPE *pMem, size_t *pCanonIdx, int &nCanon)
+	CK inline size_t findSolutionIndex(const S *pFirst, size_t idx, S *pMem, size_t *pCanonIdx, int &nCanon)
 													{ return permStorage()->findSolutionIndex(pFirst, idx, pMem, pCanonIdx, nCanon); }
-    CC inline S * permRow() const					{ return m_pPermutRow->elementPntr(); }
+	CC inline S * permRow() const					{ return m_pPermutRow->elementPntr(); }
 	CC inline S * permCol() const					{ return m_pPermutCol->elementPntr(); }
-	CC inline PermutStoragePntr permStorage() const	{ return m_pPermutStorage[0]; }
-	CC inline PermutStoragePntr permColStorage() const	{ return m_pPermutStorage[1]; }
-	CC inline PermutStoragePntr permRowStorage() const	{ return m_pPermutStorage[2]; }
-	CC inline VECTOR_ELEMENT_TYPE *improvedSolution() const	{ return m_pImprovedSol; }
+	CC inline auto permStorage() const				{ return m_pPermutStorage[0]; }
+	CC inline auto permColStorage() const			{ return m_pPermutStorage[1]; }
+	CC inline auto permRowStorage() const			{ return m_pPermutStorage[2]; }
+	CC inline S *improvedSolution() const			{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
 	bool printMatrix(const designParam *pParam) const;
 	CC S stabiliserLengthExt() const				{ return m_nStabExtern; }
@@ -62,31 +62,32 @@ protected:
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline S numRow() const						{ return m_nNumRow; }
 	CC void setStabiliserLengthExt(S len)			{ m_nStabExtern = len; }
+	inline auto numParts() const					{ return m_numParts; }
 private:
-    CC void init(S nRow, bool savePerm);
+	CC void init(S nRow, bool savePerm);
 	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);
 	CC void addAutomorphism(bool rowPermut = true);
-    CC int checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const;
-    CC inline void setStabilizerLength(S len)		{ m_nStabLength = len; }
-    CC inline S stabilizerLength() const			{ return m_nStabLength; }
-    CC inline void setStabilizerLengthAut(S l)		{ m_nStabLengthAut = l; }
-    CC inline S stabilizerLengthAut() const			{ return m_nStabLengthAut; }
+	CC int checkColOrbit(S orbLen, S nColCurr, const T *pRow, const T *pRowPerm) const;
+	CC inline void setStabilizerLength(S len)		{ m_nStabLength = len; }
+	CC inline S stabilizerLength() const			{ return m_nStabLength; }
+	CC inline void setStabilizerLengthAut(S l)		{ m_nStabLengthAut = l; }
+	CC inline S stabilizerLengthAut() const			{ return m_nStabLengthAut; }
 	CC inline void setNumRow(S nRow)				{ m_nNumRow = nRow; }
-    CC inline S numCol() const						{ return static_cast<S>(m_pPermutCol->numElement()); }
+	CC inline S numCol() const						{ return static_cast<S>(m_pPermutCol->numElement()); }
 #define orbits()	m_pObits[0][0] 
 	CC void updateGroupOrder();
-    CC inline CColNumbStorage **colNumbStorage() const	{ return m_nColNumbStorage; }
-    CC inline CCounter<int> *counter() const			{ return m_pCounter; }
+	CC inline auto colNumbStorage() const			{ return m_nColNumbStorage; }
+	CC inline auto counter() const					{ return m_pCounter; }
 	CC inline void setColIndex(S *p)				{ m_pColIndex = p; }
 	CC inline S *colIndex() const					{ return m_pColIndex; }
 	CC inline void setNumColOrb(S v)				{ m_nNumColOrb = v; }
-    CC void revert(S i);
+	CC void revert(S i);
 	CC S getLenPermutCol(S **permCol) const;
 	CC S *constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen);
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC S rowToChange(S nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
-		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize);
+		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const S *pRowSolution, size_t solutionSize);
 	CC void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
@@ -107,16 +108,17 @@ private:
     CColNumbStorage **m_nColNumbStorage;
 	PermutStoragePntr m_pPermutStorage[3];
 	S *m_pObits[2][2];
-    CCounter<int> *m_pCounter;
+	CCounter<int> *m_pCounter;
 	S *m_pColIndex;
-	VECTOR_ELEMENT_TYPE *m_pImprovedSol;
+	S *m_pImprovedSol;
 	const uint m_enumFlags;
 	uint m_nGroupOrder;
 	S m_nNumRow;
 	S m_nNumColOrb;
+	const S m_numParts;
 };
 
-CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags) : m_rank(rank), m_enumFlags(enumFlags)
+CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags, S numParts) : m_rank(rank), m_enumFlags(enumFlags), m_numParts(numParts)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
@@ -126,7 +128,7 @@ CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags
 	for (int i = rank; i--;)
 		m_nColNumbStorage[i] = new CColNumbStorage(nCol);
 
-	m_pImprovedSol = new VECTOR_ELEMENT_TYPE[(rank - 1) * nCol];
+	m_pImprovedSol = new S[(rank - 1) * nCol];
 	setSolutionStorage(new CSolutionStorage());
 	const auto mult = enumFlags & t_outStabilizerOrbit ? 2 : 1;
 	setPermStorage(new CPermutStorage<T, S>());
@@ -199,6 +201,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 	size_t startIndex = 0;
 #endif
 
+	PREPARE_PERM_OUT(permColStorage());
 	const auto lenStab = stabiliserLengthExt();
 	S *pColIndex = NULL;
 	S *pVarPerm = NULL;
@@ -210,90 +213,95 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 		if (nRow == ELEMENT_MAX)
 			break;
 
-		OUTPUT_PERMUTATION(this, pEnum->outFile(), orbits(), numRow());
+		OUT_PERM(permRowStorage(), permRow(), nRowMax + 1);
+		OUTPUT_PERMUTATION(permColStorage(), pEnum->outFile(), orbits(), numRow());
 
 		// Loop for all remaining matrix's rows
 		for (; nRow <= nRowMax; nRow++) {
 			const auto *pRow = pMatr->GetRow(nRow);
 			const auto *pRowPerm = pMatr->GetRow(*(permRow() + nRow));
-			const auto *pColOrbitIni = colOrbitIni[nRow];
-			const auto *pColOrbit = colOrbit[nRow];
-			while (pColOrbit) {
-				// Define the number of column to start with
-				const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
-				const auto orbLen = pColOrbit->length();
-				int diff;
-				if (orbLen > 1)
-					diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
-				else
-					diff = (int)*(pRow + nColCurr) - *(pRowPerm + *(permCol() + nColCurr));
+			for (S nPart = 0; nPart < numParts(); nPart++) {
+				const auto* pColOrbitIni = colOrbitIni[nRow]; // pEnum->colOrbit(nRow, 0);	// colOrbitIni[nRow];
+				const auto* pColOrbit = colOrbit[nRow]; //  pEnum->colOrbitIni(nRow, nPart);   // colOrbit[nRow];
+				assert(pColOrbitIni == colOrbitIni[nRow]);
+				assert(pColOrbit == colOrbit[nRow]);
+				while (pColOrbit) {
+					// Define the number of column to start with
+					const auto nColCurr = static_cast<S>(((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen);
+					const auto orbLen = pColOrbit->length();
+					int diff;
+					if (orbLen > 1)
+						diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
+					else
+						diff = (int) * (pRow + nColCurr) - *(pRowPerm + *(permCol() + nColCurr));
 
-				if (diff > 0)
-					goto next_permut;
+					if (diff > 0)
+						goto next_permut;
 
-				if (!diff) {
-					pColOrbit = pColOrbit->next();
-					continue;
-				}
+					if (!diff) {
+						pColOrbit = pColOrbit->next();
+						continue;
+					}
 
 #if RECURSIVE_CANON
-				if (orbLen > 1)
-					return false;
+					if (orbLen > 1)
+						return false;
 
-				// Construct matrix, for just found permRow() and permCol()
-				CMatrix *pMatr = matrix();
-				CMatrix matr(pMatr, permRow(), permCol());
-				CCanonicityChecker canon(rowNumb(), colNumb(), rank());
-				setMatrix(&matr);
-				std::cout << "########";
-				matr.printOut();
-				setCanonChecker(&canon);
+					// Construct matrix, for just found permRow() and permCol()
+					CMatrix* pMatr = matrix();
+					CMatrix matr(pMatr, permRow(), permCol());
+					CCanonicityChecker canon(rowNumb(), colNumb(), rank());
+					setMatrix(&matr);
+					std::cout << "########";
+					matr.printOut();
+					setCanonChecker(&canon);
 
-				// Check, if this matrix is canonical
-				int level;
-				bool retVal = TestCanonicity(level);
-				setMatrix(pMatr);
+					// Check, if this matrix is canonical
+					int level;
+					bool retVal = TestCanonicity(level);
+					setMatrix(pMatr);
 #else
-				if (pRowOut) {
-					if (outInfo & t_saveRowToChange)
-						*pRowOut = rowToChange(nRow);
+					if (pRowOut) {
+						if (outInfo & t_saveRowToChange)
+							*pRowOut = rowToChange(nRow);
 #ifndef USE_CUDA
-					else {
-						if (pRowSolution && !pRowSolution->isLastSolution()) {
-							// NOTE: No need to remove last solution, we will leave this level anyway
-							if (nRow < nRowMax) {
-								// We can remove all solutions which are in the same group with the solution just tested.
-								// We don't need them even as the right parts of our equations, because the usage of everyone 
-								// will make the matrix non canonical
-								pRowSolution->removeNoncanonicalSolutions(startIndex);
-							}
-							else {
-								reconstructSolution(colOrbit[nRow], pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
+						else {
+							if (pRowSolution && !pRowSolution->isLastSolution()) {
+								// NOTE: No need to remove last solution, we will leave this level anyway
+								if (nRow < nRowMax) {
+									// We can remove all solutions which are in the same group with the solution just tested.
+									// We don't need them even as the right parts of our equations, because the usage of everyone 
+									// will make the matrix non canonical
+									pRowSolution->removeNoncanonicalSolutions(startIndex);
+								}
+								else {
+									reconstructSolution(colOrbit[nRow], pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
 #if USE_STRONG_CANONICITY
-								if (solutionStorage()) {
-									for (auto *pSolution : *solutionStorage()) {
-										if (!MEMCMP(pSolution, improvedSolution(), solutionSize * sizeof(*pSolution)))
-											goto next_permut; // We already saw this solution
+									if (solutionStorage()) {
+										for (auto* pSolution : *solutionStorage()) {
+											if (!MEMCMP(pSolution, improvedSolution(), solutionSize * sizeof(*pSolution)))
+												goto next_permut; // We already saw this solution
+										}
 									}
-								}
 
-								startIndex = pRowSolution->moveNoncanonicalSolutions(improvedSolution(), startIndex, solutionStorage(), pRowOut);
-								if (startIndex != SIZE_MAX) {
-									retVal = false;
-									// we will try to find better alternative
-									goto next_permut;
-								}
+									startIndex = pRowSolution->moveNoncanonicalSolutions(improvedSolution(), startIndex, solutionStorage(), pRowOut);
+									if (startIndex != SIZE_MAX) {
+										retVal = false;
+										// we will try to find better alternative
+										goto next_permut;
+									}
 #else
-								pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
+									pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
 #endif
+								}
 							}
 						}
-					}
 #endif				
-				}
+					}
 
-				return false;
+					return false;
 #endif
+				}
 			}
 		}
 
@@ -306,8 +314,8 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 			// matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits 
 			// which corresponds to just found automorphism
-			const auto *pColOrbitIni = colOrbitIni[nRow - (rowPermut? 2 : 0)];
-			const auto *pColOrbit = colOrbit[nRow - (rowPermut ? 2 : 0)];
+			const auto *pColOrbitIni = colOrbitIni[nRow];
+			const auto *pColOrbit = colOrbit[nRow];
 			if (!pColIndex) // Index for columns was not yet constructed
 				pVarPerm = (pColIndex = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen)) + colNumb;
 

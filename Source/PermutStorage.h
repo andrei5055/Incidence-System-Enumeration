@@ -53,6 +53,21 @@ private:
 	size_t m_nLenUsed;
 	S m_nLenPerm;
 	size_t m_nLenPermByte;
+
+#if OUT_PERMUTATION
+	mutable int m_cntr = 0;
+public:
+	void resetGroupCntr()								{ if (this) m_cntr = 0; }
+	void printPerm(const S* pPerm, int add = 1, S permLen = 0) const;
+
+#define PREPARE_PERM_OUT(x)		x->resetGroupCntr()
+#define OUT_PERM(x, y, len)		x->printPerm(y, 1, len)
+#else
+#define resetGroupCntr()
+#define printPerm(x,...)
+#define PREPARE_PERM_OUT(x)
+#define OUT_PERM(x,...)
+#endif
 };
 
 PermutStorage()::CPermutStorage()
@@ -64,14 +79,14 @@ PermutStorage()::CPermutStorage()
 
 PermutStorage(S *)::allocateMemoryForPermut(S lenPermut)
 {
-	const size_t lenUsed = lenMemUsed();
-	const size_t newLength = lenUsed + lenPermut;
+	const auto lenUsed = lenMemUsed();
+	const auto newLength = lenUsed + lenPermut;
 	if (lenMemMax() < newLength) {
-		const size_t len = 2 * newLength;
+		const auto len = 2 * newLength;
 		setLenMemMax(len);
 		auto *permutMem = new S[len];
 		if (permutMemory()) {
-			memcpy(permutMem, permutMemory(), lenUsed * sizeof(*permutMemory()));
+			memcpy(permutMem, permutMemory(), lenUsed * sizeof(S));
 			delete[] permutMemory();
 		}
 
@@ -89,6 +104,7 @@ PermutStorage(void)::savePermut(const S lenPermut, const S *perm)
 	if (lenPerm() == ELEMENT_MAX)
 		setLenPerm(lenPermut);
 
+	printPerm(perm);
 	if (!perm) {
 		for (S i = lenPermut; i--;)
 			*(pMem + i) = i;
@@ -98,8 +114,9 @@ PermutStorage(void)::savePermut(const S lenPermut, const S *perm)
 }
 
 PermutStorage(void)::outputPerm(FILE *file, const S *perm, size_t lenPerm, size_t lenRowPerm, const char *pColPerm,
-				char **ppBuffer, size_t *pLenBuffer, char **ppFormat) const
-{
+				char **ppBuffer, size_t *pLenBuffer, char **ppFormat) const {
+	// Output of the last element in permutation storage. It is not necessary a permutation. 
+	// Perhaps it's a result of some unsuccessful attempt to construct it.
 	size_t len;
 	char *pBuffer, *pFormat;
 	if (!ppBuffer || *ppBuffer == NULL) {
@@ -132,6 +149,8 @@ PermutStorage(void)::outputPerm(FILE *file, const S *perm, size_t lenPerm, size_
 
 		outString("\n", file);
 	}
+	else
+		printf("%s\n", pBuffer);
 
 	if (!ppBuffer)
 		delete[] pBuffer;
@@ -173,15 +192,17 @@ PermutStorage(size_t)::constructGroup()
 	if (!nPerm)
 		return 0;
 
-	size_t *nextStart = nPerm < countof(buffer) ? buffer : new size_t[nPerm + 1];
+	auto nextStart = nPerm < countof(buffer) ? buffer : new size_t[nPerm + 1];
 
 	// Loop for all permutations except the trivial one
+	resetGroupCntr();
 	auto lastIdx = nPerm;
 	S *pTmpPerm = NULL;
 	for (size_t i = 1; i < nPerm; i++) {
 		// Construct all degrees of current permutations
 		auto tmpPermIdx = i;
 		auto lastIdxTmp = lastIdx;
+		printPerm(getPermutByIndex(i));
 		while (!(pTmpPerm = multiplyPermutations(tmpPermIdx, i, pTmpPerm, &lastIdxTmp)))
 			tmpPermIdx = lastIdxTmp - 1;
 
@@ -190,7 +211,7 @@ PermutStorage(size_t)::constructGroup()
 		nextStart[i] = lastIdx = lastIdxTmp;
 
 		// Find left and right multiplication of current permutation and  all permultations from previous round
-		for (size_t j = i + 1; j < jMax; j++) {
+		for (auto j = i + 1; j < jMax; j++) {
 			pTmpPerm = multiplyPermutations(j, i, pTmpPerm, &lastIdx);
 			pTmpPerm = multiplyPermutations(i, j, pTmpPerm, &lastIdx);
 		}
@@ -242,7 +263,7 @@ PermutStorage(S *)::multiplyPermutations(size_t firstPermIdx, size_t secondPermI
 	// we need to access the permuts by their indices here
 	const auto *pFirst = getPermutByIndex(firstPermIdx);
 	const auto *pSecond = getPermutByIndex(secondPermIdx);
-
+	printPerm(pFirst, 0);
 	// Do multiplication of two permutations here:
 	for (auto k = lenPerm(); k--;)
 		*(pMultRes + k) = *(pFirst + *(pSecond + k));
@@ -253,6 +274,7 @@ PermutStorage(S *)::multiplyPermutations(size_t firstPermIdx, size_t secondPermI
 			return pMultRes;   // this memory will be reused
 	}
 
+	printPerm(getPermutByIndex(*pToIdx));
 	++*pToIdx;
 	return NULL;
 }

@@ -16,7 +16,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 {
 	// Check if solution is valid (for elimination of invalid solutions)
 	auto rowNumb = this->currentRowNumb();
-	if (rowNumb <= 2)
+	if (rowNumb <= firtstNonfixedRowNumber())
 		return true;
 
 	// For canonical BIBD the number of blocks containing any of any three elements cannot be

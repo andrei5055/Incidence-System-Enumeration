@@ -45,4 +45,30 @@ PermutStorage(void)::orderPermutations(size_t *pPermPerm)
 	}
 }
 
+#if OUT_PERMUTATION
+PermutStorage(void)::printPerm(const S* pPerm, int add, S permLen) const {
+	if (!pPerm)
+		return;
+
+	if (!permLen)
+		permLen = lenPerm();
+
+	char buf[256];
+	const auto lenBuffer = 3 * permLen + 7;
+	char* pBuffer = lenBuffer < sizeof(buf) ? buf : new char[lenBuffer];
+	char* pBuf = pBuffer;
+	if (this)
+		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "%4d: ", (m_cntr += add));
+	else
+		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "====> ");
+
+	for (S i = 0; i < permLen; i++)
+		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "%3d", pPerm[i]);
+
+	printf("%s\n", buf);
+	if (pBuffer != buf)
+		delete[] pBuf;
+}
+#endif
+
 

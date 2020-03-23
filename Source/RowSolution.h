@@ -279,7 +279,7 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr
 
 	if (doSorting && numSolutions() > 1) {
 #if USE_THREADS || MY_QUICK_SORT
-		// When we use threads we cannot use qsort since in our implementation 
+		// When we use threads, we cannot use qsort, since in our implementation
 		// qsort will use global variables - pntrSolution and sizeSolution
 		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
 #else
@@ -347,7 +347,7 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 	pCanonChecker->constructGroup();
 	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
 	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
-
+	static int cntr = 0; cntr++;
 	uchar *pCanonFlags;
 	auto *pPerm = initSorting(&pCanonFlags);
 	// Suppose that all solutions are not canonical

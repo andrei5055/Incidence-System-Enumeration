@@ -239,7 +239,7 @@ CanonicityChecker(void)::updateGroupOrder()
 }
 
 #if USE_ASM <= 1   // We are not using Assembly OR we are using inline Assembly
-CanonicityChecker(int)::checkColOrbit(size_t orbLen, size_t nColCurr, const T *pRow, const T *pRowPerm) const
+CanonicityChecker(int)::checkColOrbit(S orbLen, S nColCurr, const T *pRow, const T *pRowPerm) const
 {
 #if USE_ASM == 1
 	_asm {	
@@ -357,7 +357,7 @@ CanonicityChecker(int)::checkColOrbit(size_t orbLen, size_t nColCurr, const T *p
 	}
 
 	// Reorder columns
-	size_t i = nColCurr;
+	S i = nColCurr;
 	for (auto j = rank(); j--;) {
 		const auto pStorage = colNumbStorage()[j];
 		for (auto k = pStorage->numb(); k--;)
@@ -370,7 +370,7 @@ CanonicityChecker(int)::checkColOrbit(size_t orbLen, size_t nColCurr, const T *p
 #endif
 
 CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
-	size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const VECTOR_ELEMENT_TYPE *pRowSolution, size_t solutionSize)
+	size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const S *pRowSolution, size_t solutionSize)
 {
 	// Skip all colOrbits which were equal to the tested solution
 	int nOrb = 0;
@@ -391,7 +391,7 @@ CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, co
 		if (orbLenFlg) {
 			// The elements in the counter make next (rank()-1) coordinates of our vector solution
 			for (int i = rank(); --i;)
-				*(pImprovedSolution + rankM1 - i) = static_cast<VECTOR_ELEMENT_TYPE>(colNumbStorage()[i]->numb());
+				*(pImprovedSolution + rankM1 - i) = static_cast<S>(colNumbStorage()[i]->numb());
 		} else {
 			// All next (rank()-1) coordinates except one of our vector solution are 0's. One, which is not 0 
 			// is equal to 1 and is defined by corresponding element in the current row of the matrix

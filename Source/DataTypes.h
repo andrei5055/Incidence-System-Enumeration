@@ -15,7 +15,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					3
+#define USE_THREADS					1
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -134,7 +134,10 @@
 #define PRINT_CURRENT_MATRIX		0
 #endif
 
-#define PRINT_PERMUTATION			0   // Output of the current permutation during the canonicity check
+#define PRINT_PERMUTATION			0 // Output of the current permutation of column's orbit during the canonicity check
+#define OUT_PERMUTATION				0 // Output of permutations generated on
+                                      //   a) matrix rows: when canonicity is checked
+                                      //   b) orbits of columns, during the construction of the group for sorting of solutions
 #define PRINT_CANON_GROUP			0
 #define CHECK_CCC					0 // 151315
 #define CHECK_CONSTRUCTED			0
