@@ -255,7 +255,7 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 	return solIdx;
 }
 
-FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion) const
+FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb) const
 {
 	if (!solutionLength() || !numSolutions())
         return;
@@ -267,7 +267,7 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRo
 	else
 		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solutions were constructed", nRow, numSolutions());
 
-	if (nPortion)
+	if (addPortionNumb || nPortion)
 		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " for portion %d\n", nPortion);
 	else
 		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "\n");

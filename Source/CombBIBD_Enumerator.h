@@ -5,7 +5,7 @@ Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 {
 public:
 	CCombBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {}
+		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) { setR(getInSys()->GetR(lenStabilizer())); }
 protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }

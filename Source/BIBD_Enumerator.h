@@ -12,7 +12,7 @@ Class2Def(CBIBD_Enumerator) : public Class2(C_InSysEnumerator)
 public:
 	CK CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
 		Class2(C_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
-		setR(getInSys()->GetR(this->lenStabilizer()));
+		setR(getInSys()->GetR(0));
 		C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - pBIBD->GetK());
 	}
 #if !CONSTR_ON_GPU
@@ -40,13 +40,13 @@ protected:
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, int *pLambdaSetSize) const;
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
 	CK virtual void resetFirstUnforcedRow()							{}
+	CK inline void setR(S val)										{ m_r = val; }
 	CK inline auto getR() const										{ return m_r; }
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
-	CK inline void setR(S val)										 { m_r = val; }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
 	S m_r;
@@ -55,7 +55,7 @@ private:
 FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting)
 {
 	if (this->currentRowNumb() + 1 == this->rowNumb())
-		return true;        // We will be here when lambda > 1 AND one of the colOrbits was split into 2 parts  
+		return true;        // We will be here when lambda > 1 AND one of the colOrbits was split into 2 parts
 							// in previous row. (6,10,5,3,2) is one such example.
 
 	if (!pSolution->numSolutions())

@@ -15,8 +15,11 @@ FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nR
 FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
-	auto rowNumb = this->currentRowNumb();
-	if (currentNumPart() || rowNumb <= firtstNonfixedRowNumber())
+	if (currentNumPart())
+		return true;
+
+	auto currRowNumb = this->currentRowNumb();
+	if (currRowNumb <= firtstNonfixedRowNumber())
 		return true;
 
 	// For canonical BIBD the number of blocks containing any three elements cannot be
@@ -28,17 +31,18 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		return true;		// Nothing to test
 
 	const auto k = this->getInSys()->GetK();
-	auto limit = rowNumb + k + 1;
-	if (limit >= this->rowNumb() && rowNumb + 3 < this->rowNumb()) {
-		// Theorem: The number of columns of canonical matrix which are forcible constructed by units 
+	auto rowNumb = this->rowNumb();
+	auto limit = currRowNumb + k + 1;
+	if (limit >= rowNumb && currRowNumb + 3 < rowNumb) {
+		// Theorem: The number of columns of canonical matrix which are forcible constructed by units
 		// cannot be bigger than number of blocks containing first, second and third element.
 		// We should start to check this condition on the first row which tested solutions could create
 		// first column forcible constructed by units: rowNumb >= this->rowNumb() - k - 1 AND
 		// at least three rows need to be constructed: rowNumb < this->rowNumb() - 3
-		const auto* pColOrbit = this->colOrbit(rowNumb);
+		const auto* pColOrbit = this->colOrbit(currRowNumb);
 		const auto* pRowSolution = pSol;
-		limit -= this->rowNumb();
-		auto nForcible = forcibleLambda(rowNumb, 0);
+		limit -= rowNumb;
+		auto nForcible = forcibleLambda(currRowNumb, 0);
 		while (pColOrbit) {
 			if (pColOrbit->columnWeight() == limit) {
 				// Define the number of new columns that will be enforceable completed by units
@@ -55,18 +59,50 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	this->MakeRow(pSol, false);
 
 	// Define intersection of current row with previous one:
+	auto lastRowToCheck = lenStabilizer();
+	rowNumb -= lenStabilizer();
 	const auto pMathix = this->matrix();
-	const auto *pCurrRow = pMathix->GetRow(rowNumb--);
-	const auto pPrevRow = pMathix->GetRow(rowNumb--);
-	const auto colNumb = pMathix->partsInfo()? pMathix->partsInfo()->colNumb() : this->colNumb();
+	const auto *pCurrRow = pMathix->GetRow(currRowNumb--);
+	const auto pPrevRow = pMathix->GetRow(currRowNumb--);
+	const auto partsInfo = pMathix->partsInfo();
+	const auto colNumb = partsInfo? partsInfo->colNumb() : this->colNumb();
+	const auto r = partsInfo ? colNumb * k / rowNumb : this->getR();
 
-	int columns[32];
-	assert(lambda <= countof(columns));
-	int idx = 0;
-	T j = 0;
+	S columns[32], *pColumnIdx = columns;
+	if (lambda > countof(columns))
+		pColumnIdx = new S[lambda];
+
+	// Define "lambda" blocks, which contain both current and previous elements.
+	// When doing that, check the necessary and sufficient condition 
+	// for the intersection of the first (second), previous and current elements
+	S idx = 0;
+	S j = 0;
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
-			columns[idx++] = j;
+			if (idx == x0_3) {					// (x0_3+1)-th common block found
+				if (j < r) {					//      among the first r blocks of design
+					return false;				// Tested solution cannnot be used in canonical matrix   
+				}
+				else {
+					if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
+						S i = -1;				// Check necessary and sufficient condition for the 
+						while (++i < idx) {     // intersection of second, previous and current elements
+							if (pColumnIdx[i] >= lambda)
+								break;
+						}
+
+						if (i == idx || pColumnIdx[i] >= r) // All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
+							return false;       // Tested solution cannnot be used in canonical matrix
+					}
+					else {
+						// When we are here, the intersection of second, previous and current elements is OK
+						if (++lastRowToCheck == currRowNumb) // adjust the limit of the loop below
+							return true;					 // there are no untested elements
+					}
+				}
+			}
+
+			pColumnIdx[idx++] = j;
 			if (idx == lambda)
 				break;
 		}
@@ -74,22 +110,20 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		++j;
 	}
 
-	// Let's check the necessary and sufficient condition
-	//     for first matrix row:
-	if (columns[x0_3] < this->getR())
-		return false;
-
-	//     for remaining rows:
+	//     for remaining elements:
 	do {
-		pCurrRow = pMathix->GetRow(rowNumb);
+		pCurrRow = pMathix->GetRow(currRowNumb);
 		auto j = x0_3;
 		for (auto i = lambda; i--;) {
-			if (pCurrRow[columns[i]]) {
+			if (pCurrRow[pColumnIdx[i]]) {
 				if (!j--)
 					return false;
 			}
 		}
-	} while (--rowNumb);
+	} while (--currRowNumb > lastRowToCheck);
+
+	if (pColumnIdx != columns)
+		delete[] pColumnIdx;
 
 	return true;
 }

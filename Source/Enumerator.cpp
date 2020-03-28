@@ -913,8 +913,9 @@ FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE
 		return;
 
 	MUTEX_LOCK(out_mutex);
-	for (S i = 0; i < this->numParts(); i++)
-		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i);
+	const auto iMax = this->numParts();
+	for (S i = 0; i < iMax; i++)
+		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, iMax > 1);
 
 	MUTEX_UNLOCK(out_mutex);
 }

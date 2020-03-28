@@ -65,7 +65,7 @@ public:
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
 	CK void sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker = NULL);
 #if PRINT_SOLUTIONS
-	void printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion) const;
+	void printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb = false) const;
 #endif
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }

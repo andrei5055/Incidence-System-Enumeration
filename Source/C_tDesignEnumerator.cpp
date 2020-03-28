@@ -82,7 +82,6 @@ FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_
 	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T *[t];
 
 	// Create indices of block containing last element
-//	const auto r = tDesign()->GetR(0); // TO DO: 
 	const auto r = this->getR();		// TO DO: Need to be modified to support combined t-designs construction
 	auto ppBlockIdx = new S[r];
 	S idx = 0;
@@ -160,10 +159,10 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 	if (t >= this->currentRowNumb() + 2)
 		t = this->currentRowNumb() + 1;
 
-    this->MakeRow(pSol, false);
+	this->MakeRow(pSol, false);
 
-    const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
-    const auto *pCurrRow = this->matrix()->GetRow(this->currentRowNumb());
+	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
+	const auto *pCurrRow = this->matrix()->GetRow(this->currentRowNumb());
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);
