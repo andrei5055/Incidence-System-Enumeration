@@ -12,7 +12,7 @@ Class2Def(CBIBD_Enumerator) : public Class2(C_InSysEnumerator)
 public:
 	CK CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
 		Class2(C_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
-		setR(getInSys()->GetR());
+		setR(getInSys()->GetR(this->lenStabilizer()));
 		C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - pBIBD->GetK());
 	}
 #if !CONSTR_ON_GPU
@@ -21,7 +21,8 @@ public:
 protected:
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const;
-	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const;
+	CK virtual bool checkSolutionsForRight(S nRow, S nPart) const	{ return nRow == firtstNonfixedRowNumber() + 1 && !nPart; }
+	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const;
 	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
@@ -33,19 +34,19 @@ protected:
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu != " ME_FRMT "\n",
 			i, j, lambda, this->getInSys()->lambda());
 	}
-	CK virtual const char *getObjName() const                        { return "BIBD"; }
+	CK virtual const char *getObjName() const                       { return "BIBD"; }
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char *pFrmt = NULL, int *pLambdaSetSize = NULL) const
 		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, int *pLambdaSetSize) const;
 	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
 	CK virtual void resetFirstUnforcedRow()							{}
+	CK inline auto getR() const										{ return m_r; }
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	CK inline void setR(S val)										 { m_r = val; }
-	CK inline auto getR() const                                      { return m_r; }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
 	S m_r;
@@ -54,7 +55,7 @@ private:
 FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting)
 {
 	if (this->currentRowNumb() + 1 == this->rowNumb())
-		return true;        // We will be here when lambda > 1 AND one of the colOrbits was splitted into 2 parts  
+		return true;        // We will be here when lambda > 1 AND one of the colOrbits was split into 2 parts  
 							// in previous row. (6,10,5,3,2) is one such example.
 
 	if (!pSolution->numSolutions())
@@ -69,9 +70,10 @@ FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPa
 
 FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
-	const auto paramR = this->getInSys()->GetR();
+	const auto iMin = this->lenStabilizer();
+	const auto paramR = this->getInSys()->GetR(iMin);
 	const auto iMax = this->rowNumb();
-	for (S i = 0; i < iMax; i++) {
+	for (S i = iMin; i < iMax; i++) {
 		const auto pRow = pMatrix->GetRow(i);
 		S r = 0;
 		for (auto j = this->colNumb(); j--;)
@@ -81,7 +83,7 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 #if !CONSTR_ON_GPU
 			pMatrix->printOut(this->outFile());
 #endif
-			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, this->getInSys()->GetR());
+			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, paramR);
 			THROW();
 			return false;
 		}
@@ -102,22 +104,26 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 
 	const auto paramK = this->getInSys()->GetK();
 	bool noReplicatedBlockFound = true;
-	for (auto i = this->colNumb(); i--;) {
+	for (auto j = this->colNumb(); j--;) {
 		S k = 0;
-		for (auto j = this->rowNumb(); j--;)
-			k += *(pMatrix->GetRow(j) + i);
+		for (auto i = iMin; i < iMax; i++)
+			k += *(pMatrix->GetRow(i) + j);
 
 		if (k != paramK) {
-			OUT_STRING(buff, 256, "Wrong number of units in the column # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, k, paramK);
+			OUT_STRING(buff, 256, "Wrong number of units in the column # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", j, k, paramK);
 			THROW();
 			return false;
 		}
 
-		if (noReplicatedBlockFound && i) {
-			const auto iPrev = i - 1;
-			auto j = this->rowNumb();
-			while (j-- && *(pMatrix->GetRow(j) + i) == *(pMatrix->GetRow(j) + iPrev));
-			noReplicatedBlockFound = j != ELEMENT_MAX;
+		if (noReplicatedBlockFound && j) {
+			S i = iMin - 1;
+			while (++i < iMax) {
+				const auto pRow = pMatrix->GetRow(i) + j;
+				if (*pRow != *(pRow - 1))
+					break;
+			}
+
+			noReplicatedBlockFound = i < iMax;
 		}
 	}
 
@@ -137,19 +143,21 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 	return this->noReplicatedBlocks() ? noReplicatedBlockFound : true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
+FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
-	// allow to do not consider the solutions for some right parts
-	if (nRow == 3) {
-		// Condition should eliminate right part with x1 = 0 for some BIBD, and (8, 4, 3) is one of them
-		if (!*pRighPart && *pCurrSolution == 1) {
-			const auto k = this->getInSys()->GetK();
-			const auto lambda = this->getInSys()->lambda();
-			const auto v = this->rowNumb();
-			if ((k - 2) * lambda == v - 2)
-				return false;
-		}
+	// allows to do not consider the solutions for some right parts
+	// NOTE: this method should be consistent with CBIBD_Enumerator::checkSolutionsForRight(S nRow, S nPart)
+
+	// Condition should eliminate right part with x1 = 0 for some BIBD, and (8, 4, 3) is one of them.
+	// Becase only solutions (and their descendants) with first coordinate equal to 1 could be used for next v - 2 rows.
+	// Otherwise, the condition for k will not be satisfied.
+	if (!*pRighPart && *pCurrSolution == 1) {
+		const auto k = this->getInSys()->GetK();
+		const auto lambda = getLambda(pLambdaSet);
+		const auto v = this->rowNumb();
+		if ((k - 2) * lambda == v - 2)
+			return false;
 	}
 
 	return true;

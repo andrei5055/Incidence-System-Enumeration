@@ -465,18 +465,17 @@ CanonicityChecker(S)::rowToChange(S nRow) const
 	return nRow;
 }
 
-CanonicityChecker(S *)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen)
+CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen/*, S shift*/)
 {
 	S idx = 0;
 	while (pColOrbit) {
 		// Define the number of columns to start with
-		const size_t numCol = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
+		const size_t numCol = /*shift + */((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
 		*(colIndex() + numCol) = idx++;
 		pColOrbit = pColOrbit->next();
 	}
 
 	setNumColOrb(idx);
-	return colIndex();
 }
 
 CanonicityChecker(S)::getLenPermutCol(S **permCol) const

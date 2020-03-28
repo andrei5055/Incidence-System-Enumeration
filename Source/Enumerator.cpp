@@ -82,7 +82,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 		}
 	}
 
-	OUTPUT_SOLUTION(pNextRowSolution, outFile(), false);
+	OUTPUT_SOLUTION(pNextRowSolution, outFile(), currentRowNumb(), false);
 	if ((*pPartNumb = i) < this->numParts())
 		return NULL;
 
@@ -350,7 +350,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			auto *pColOrb = MakeRow(pRowSolution, nRow == firstNonfixedRow);
 
-			OUTPUT_SOLUTION(pRowSolution, outFile(), true);
+			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true);
 			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
 			if (++nRow == rowNumb()) {
 				pEnumInfo->incrConstrTotal();
@@ -553,11 +553,12 @@ FClass2(CEnumerator, void)::reset(S nRow) {
 	this->resetFirstUnforcedRow();
 }
 
-FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, S partIdx) const
+FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx) const
 {
 	const auto nRow = this->currentRowNumb();
-	const bool nextColOrbNeeded = nRow + 1 < rowNumb();
 	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
+	if (nextColOrbNeeded)
+		nextColOrbNeeded &= nRow + 1 < rowNumb();
 
 	const auto *pColOrbit = this->colOrbit(nRow, partIdx);
 	auto *pNextRowColOrbit = this->colOrbit(nRow+1, partIdx);
@@ -644,7 +645,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool fla
 			m_lastRightPartIndex[i] = (pRowSolution + i)->solutionIndex();
 
 		const auto* pCurrSolution = (pRowSolution+i)->currSolution();
-		auto* pColOrb = MakeRow(pCurrSolution, i);
+		auto* pColOrb = MakeRow(pCurrSolution, true, i);
 		if (!pColOrbRet)
 			pColOrbRet = pColOrb;
 
@@ -906,14 +907,14 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 }
 
 #if PRINT_SOLUTIONS
-FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, bool markNextUsed) const
+FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, S nRow, bool markNextUsed) const
 {	
 	if (!pSolution)
 		return;
 
 	MUTEX_LOCK(out_mutex);
 	for (S i = 0; i < this->numParts(); i++)
-		(pSolution + i)->printSolutions(file, markNextUsed, i);
+		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i);
 
 	MUTEX_UNLOCK(out_mutex);
 }
@@ -940,7 +941,7 @@ FClass2(CEnumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 	size_t level = solIdx + 1;
 	while (pRowSol->NextSolution(true) && pRowSol->solutionIndex() <= solIdx) {
 		const auto *pCurrSol = pRowSol->currSolution();
-		CColOrbit *pColOrb = MakeRow(pCurrSol);
+		CColOrbit *pColOrb = MakeRow(pCurrSol, false);
 
 		setCurrentRowNumb(nRow);
 		setCurrUnforcedOrbPtr(nRow);

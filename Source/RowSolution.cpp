@@ -255,16 +255,23 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 	return solIdx;
 }
 
-FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nPortion) const
+FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion) const
 {
 	if (!solutionLength() || !numSolutions())
         return;
     
-	char buffer[2048];
+	char buffer[2048], *pBuf = buffer;
+	const auto lenBuf = countof(buffer);
 	if (markNextUsed)
-		SPRINTF(buffer, "\nFor portion %d the solution # %zd out of %zd will be used\n", nPortion, solutionIndex(), numSolutions());
+		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex(), numSolutions());
 	else
-		SPRINTF(buffer, "\n%zd solutions were constructed for portion %d\n", numSolutions(), nPortion);
+		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solutions were constructed", nRow, numSolutions());
+
+	if (nPortion)
+		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " for portion %d\n", nPortion);
+	else
+		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "\n");
+
 	outString(buffer, file);
 
 	if (numSolutions() < sizeof(buffer) / 2) {

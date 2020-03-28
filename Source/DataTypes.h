@@ -128,16 +128,16 @@
 #define PRINT_TO_FILE				0
 #define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
+#define PRINT_PERMUTATION			1 // Output of the current permutation of column's orbit during the canonicity check
+#define OUT_PERMUTATION				1 // Output of permutations generated on
+									  //   a) matrix rows: when canonicity is checked
+									  //   b) orbits of columns, during the construction of the group for sorting of solutions
 #else
 #define PRINT_TO_FILE				1	// Write files with the results for each set of parameters
 #define PRINT_SOLUTIONS				0
 #define PRINT_CURRENT_MATRIX		0
 #endif
 
-#define PRINT_PERMUTATION			0 // Output of the current permutation of column's orbit during the canonicity check
-#define OUT_PERMUTATION				0 // Output of permutations generated on
-                                      //   a) matrix rows: when canonicity is checked
-                                      //   b) orbits of columns, during the construction of the group for sorting of solutions
 #define PRINT_CANON_GROUP			0
 #define CHECK_CCC					0 // 151315
 #define CHECK_CONSTRUCTED			0
@@ -276,12 +276,13 @@ public:
 	CC BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
 	CC inline S numParts() const							{ return static_cast<S>(numElement() >> 1); }
 	CC inline S getShift(S idx) const						{ return element(idx << 1); }
+	CC inline S colNumb(S idx = 0) const					{ return element((idx << 1) + 1); }
 	CC inline void SetPartInfo(size_t idx, S shift, S len)	{
 		setElement(idx << 1, shift);
 		setElement((idx << 1) + 1, len);
 	}
 	CC inline S GetPartInfo(S idx, S *pLen) const {
-		*pLen = element((idx << 1) + 1);
+		*pLen = colNumb(idx);
 		return getShift(idx);
 	}
 };
@@ -389,10 +390,10 @@ extern int ccc;
 #define MAKE_OUTPUT()			CHECK_VAL(ccc) && CHECK_CONSTR(START_NUMBER, END_NUMBER)
 
 #if PRINT_SOLUTIONS
-	#define OUTPUT_SOLUTION(x,file,f)		if (MAKE_OUTPUT()) \
-												{ this->printSolutions(x, file, f); }
+	#define OUTPUT_SOLUTION(x, file, nRow, f)		if (MAKE_OUTPUT()) \
+														{ this->printSolutions(x, file, nRow, f); }
 #else
-    #define OUTPUT_SOLUTION(x,file, f)
+    #define OUTPUT_SOLUTION(x,...)
 #endif
 
 #define OUT_MATRIX(x, y, z, w)				{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w);  MUTEX_UNLOCK(out_mutex); }

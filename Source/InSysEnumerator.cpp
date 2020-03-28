@@ -74,7 +74,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 					CColOrbit<S> *pNext = pColOrbit ? (CColOrbit<S> *)((char *)pColOrbNext + colOrbLen * len) : NULL;
 
 					// Save the column's orbit information
-					if (idx == 0 || idx == len) // Orbit was not splitted
+					if (idx == 0 || idx == len) // Orbit was not split
 						pColOrbNext->Init(len, pNext);
 					else {
 						CColOrbit<S> *pNxt = (CColOrbit<S> *)((char *)pColOrbNext + colOrbLen * idx);

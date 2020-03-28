@@ -257,7 +257,7 @@ int CInSysSolver<T>::assignVariableValues(VECTOR_ELEMENT_TYPE *pResult, size_t n
 			break;		//  New value of first variable would be less than its minimum
 
 		if (variation > lambdaToSplit - diffLambda)
-			break;		// Negative amount of units to be splitted for remaining variables
+			break;		// Negative amount of units to be split for remaining variables
 
 		const auto idxVar = *(pMapping + j);
 		if (variation > *(pResult + idxVar + 1))

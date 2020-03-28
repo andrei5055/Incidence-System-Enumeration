@@ -65,7 +65,7 @@ public:
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
 	CK void sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker = NULL);
 #if PRINT_SOLUTIONS
-	void printSolutions(FILE *file, bool markNextUsed, S nPortion) const;
+	void printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion) const;
 #endif
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
@@ -278,7 +278,7 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr
 		*(pPerm + i) = i;
 
 	if (doSorting && numSolutions() > 1) {
-#if USE_THREADS || MY_QUICK_SORT
+#if USE_THREADS || USE_MY_QUICK_SORT
 		// When we use threads, we cannot use qsort, since in our implementation
 		// qsort will use global variables - pntrSolution and sizeSolution
 		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
@@ -298,7 +298,7 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr
 		memset(pCanonFlags, 1, numSolutions());
 }
 
-#if USE_THREADS || MY_QUICK_SORT
+#if USE_THREADS || USE_MY_QUICK_SORT
 FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const
 {
 	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionLength();

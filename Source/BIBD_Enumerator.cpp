@@ -16,13 +16,13 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 {
 	// Check if solution is valid (for elimination of invalid solutions)
 	auto rowNumb = this->currentRowNumb();
-	if (rowNumb <= firtstNonfixedRowNumber())
+	if (currentNumPart() || rowNumb <= firtstNonfixedRowNumber())
 		return true;
 
-	// For canonical BIBD the number of blocks containing any of any three elements cannot be
-	// bigger than the number of blocks containing first, second and third element.
+	// For canonical BIBD the number of blocks containing any three elements cannot be
+	// bigger than the number of blocks containing first, second and third elements.
 	// Let's check it
-	const auto lambda = this->lambda();
+	const auto lambda = getLambda(paramSet(t_lSet));
 	const auto x0_3 = this->getX0_3();
 	if (lambda == x0_3)     // Intersection of first three rows is maximal
 		return true;		// Nothing to test
@@ -30,8 +30,8 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	const auto k = this->getInSys()->GetK();
 	auto limit = rowNumb + k + 1;
 	if (limit >= this->rowNumb() && rowNumb + 3 < this->rowNumb()) {
-		// Theorem: The number of columns of canonical matrix which are forcible constructed by units cannot be bigger than 
-		// number of blocks containing first, second and third element.
+		// Theorem: The number of columns of canonical matrix which are forcible constructed by units 
+		// cannot be bigger than number of blocks containing first, second and third element.
 		// We should start to check this condition on the first row which tested solutions could create
 		// first column forcible constructed by units: rowNumb >= this->rowNumb() - k - 1 AND
 		// at least three rows need to be constructed: rowNumb < this->rowNumb() - 3
@@ -52,13 +52,13 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		}
 	}
 
-	this->MakeRow(pSol);
+	this->MakeRow(pSol, false);
 
 	// Define intersection of current row with previous one:
-	const auto* pMathix = this->matrix();
-	const auto* pCurrRow = pMathix->GetRow(rowNumb--);
-	const auto* pPrevRow = pMathix->GetRow(rowNumb--);
-	const auto colNumb = this->colNumb();
+	const auto pMathix = this->matrix();
+	const auto *pCurrRow = pMathix->GetRow(rowNumb--);
+	const auto pPrevRow = pMathix->GetRow(rowNumb--);
+	const auto colNumb = pMathix->partsInfo()? pMathix->partsInfo()->colNumb() : this->colNumb();
 
 	int columns[32];
 	assert(lambda <= countof(columns));

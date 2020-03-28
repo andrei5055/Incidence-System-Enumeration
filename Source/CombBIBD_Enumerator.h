@@ -12,9 +12,10 @@ protected:
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual void CreateForcedRows();
 	CK virtual S firtstNonfixedRowNumber() const	{ return 3; }
+	CK virtual S lenStabilizer() const              { return 1; }
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const	{ return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); }
 	CK virtual size_t numLambdas()					{ return 1; }
-	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx, S numPart = 0) { return pLambdaSet->GetAt(numPart); }
+	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx = 0, S numPart = 0) const { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
 	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;

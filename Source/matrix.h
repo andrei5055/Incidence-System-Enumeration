@@ -8,7 +8,7 @@ public:
 	CK CMatrixData()						{ setDataOwner(false); }
 	CK virtual ~CMatrixData()				{ 
 		if (dataOwner()) delete [] m_pData; 
-		delete m_nPartInfo;
+		delete partsInfo();
 	}
 	CC void InitWithData(S nRows, S nCols = 0, T maxElement = 1) {
 		Init(nRows, nCols, maxElement, (uchar *)this + sizeof(*this));
@@ -72,9 +72,9 @@ public:
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {
 		T* pRow = GetRow(nRow);
-		if (m_nPartInfo) {
+		if (partsInfo()) {
 			S len, shift;
-			shift = m_nPartInfo->GetPartInfo(idx, &len);
+			shift = partsInfo()->GetPartInfo(idx, &len);
 			memset(pRow += shift, 0, len * sizeof(T));
 		}
 		else
@@ -87,7 +87,9 @@ public:
 protected:
 	inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
 	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
-		return GetRow(nRow) + m_nPartInfo->GetPartInfo(idx, pLen);
+		if (!idx)
+			return GetRow(nRow);
+		return GetRow(nRow) + partsInfo()->GetPartInfo(idx, pLen);
 	}
 
 private:
@@ -160,7 +162,7 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	CK inline Class1(CVector) *GetNumSet(t_numbSetType t) const	{ return *(m_ppNumbSet + t); }
 	CK inline auto GetT() const								{ return m_t; }
 	CK inline S GetK() const								{ return GetNumSet(t_kSet)->GetAt(0); }
-	CK inline S GetR() const								{ return this->colNumb() * GetK() / this->rowNumb(); }
+	CK inline S GetR(S nSuplemRows) const					{ return this->colNumb() * GetK() / (this->rowNumb() - nSuplemRows); }
 	CK inline S lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
 	CK inline VectorPntr *numbSet() const					{ return m_ppNumbSet; }
 	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }

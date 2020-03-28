@@ -433,6 +433,8 @@ protected:
 	CK virtual bool checkSolutions(RowSolutionPntr p, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
 	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
+	CK inline void setCurrentNumPart(S val)					{ m_nCurrentNumPart = val; }
+	CK inline S currentNumPart() const						{ return m_nCurrentNumPart; }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
 	bool getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const;
@@ -443,7 +445,7 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
-	CK ColOrbPntr MakeRow(const S *pRowSolution, S partIdx = 0) const;
+	CK ColOrbPntr MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx = 0) const;
 	CK ColOrbPntr MakeRow(RowSolutionPntr pRowSolution, bool flag = false);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
@@ -480,7 +482,7 @@ private:
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 #if PRINT_SOLUTIONS
-	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, bool markNextUsed) const;
+	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed) const;
 #endif
 
 #if USE_STRONG_CANONICITY_A
@@ -508,6 +510,7 @@ private:
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
+	S m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;

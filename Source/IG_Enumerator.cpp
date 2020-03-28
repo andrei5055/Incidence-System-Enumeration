@@ -16,7 +16,7 @@ FClass2(CIG_Enumerator)::CIG_Enumerator(const InSysPntr pBIBD, const designParam
 	// Allocate memory to store current lambdaA, lambdaB for blocks
 	// This set of lambda's is not known, but it cannot have more than k + 1 elements
 	const auto k = inSys->GetK();
-	const auto r = inSys->GetR();
+	const auto r = getR();
 	const auto len = k + 1;
 	m_pLambda[0] = new S[2 * len + nLambd];
 	m_pLambda[2] = (m_pLambda[1] = m_pLambda[0] + nLambd) + len;
@@ -181,7 +181,7 @@ FClass2(CIG_Enumerator, bool)::prepareToFindRowSolution() {
 	if (!nRow)
 		return true;
 
-	const auto r = this->getInSys()->GetR();
+	const auto r = this->getR();
 	const auto k = this->getInSys()->GetK();
 	if (checkUnitsInThreeAreas() && nRow > 1 && nRow < 2 * (k - 1)) {
 		if (!checkThreeAreasUnits(r, k, nRow))
@@ -418,7 +418,7 @@ FClass2(CIG_Enumerator, void)::reset(S nRow) {
 		return;
 
 	int idxLast, idx;
-	const auto r = this->getInSys()->GetR();
+	const auto r = this->getR();
 	const auto *pRow = this->matrix()->GetRow(nRow);
 	if (!strongCheckUnitsInThreeAreas()) {
 		int fromIdx, toIdx;
@@ -507,7 +507,7 @@ FClass2(CIG_Enumerator, bool)::CheckOrbits(const PermutStoragePntr permRowStorag
 	const int from = pRowOrbits ? 1 : 0;
 	auto *pColOrbit = this->getColOrbits(0);
 	permRowStorage->CreateOrbits(this->permColStorage(), this->matrix(), pRowOrbits, pColOrbit, from);
-	for (auto j = this->getInSys()->GetR(); j--;) {
+	for (auto j = this->getR(); j--;) {
 		if (*(pColOrbit + j))
 			return false;
 	}
@@ -539,7 +539,7 @@ FClass2(CIG_Enumerator, bool)::CheckConstructedBlocks(S nRow, S k, S *pElementNu
 	const auto *pColOrbitIni = *(this->colOrbitsIni() + nRow);
 	const auto *pColOrbit = this->colOrbit(nRow);
 
-	auto lastBlockIdx = this->getInSys()->GetR() - 1;
+	auto lastBlockIdx = this->getR() - 1;
 	const auto nLambd = this->designParams()->lambdaB().size();
 	auto lambdaBCurrRow = pElementNumb + k;
 
@@ -866,7 +866,7 @@ FClass2(CIG_Enumerator, bool)::DefineInterstructForBlocks(size_t nColCurr, S k, 
 	// of this block with the other blocks, containing element #0
 	// In canonical matrix these blocks have #'s from 1 <= j < k
 	memset(lambdaA(), 0, lenLambdas());
-	const auto r = this->getInSys()->GetR();
+	const auto r = this->getR();
 	T n = 0;
 	while (++n < nBlocks) {
 		const auto *pBlock = pRow + n;

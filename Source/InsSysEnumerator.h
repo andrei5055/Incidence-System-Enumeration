@@ -20,7 +20,9 @@ protected:
 	CK virtual void setX0_3(S value)							{ m_x0_3 = value; }
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	CK inline auto inSysRowEquation() const						{ return (CInSysRowEquation<S> *)this->rowEquation(); }
-	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, size_t nRow) const
+	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx = 0, S numPart = 0) const { return pLambdaSet->GetAt(idx); }
+	CK virtual bool checkSolutionsForRight(S row, S part) const	{ return false; }
+	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
 	CK CColOrbit<S> **unforcedOrbits(size_t nRow, S iPart = 0) const	{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
@@ -49,7 +51,6 @@ private:
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
 	CK virtual size_t numLambdas()								{ return this->paramSet(t_lSet)->GetSize(); }
-	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx, S numPart = 0) { return pLambdaSet->GetAt(idx); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
 	CK inline void setForcibleLambda(S nRow, S val, S nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
@@ -138,6 +139,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	rightPartFilter()->reset();
 
 	int colGroupIdx = 0;
+	setCurrentNumPart(numPart);
 	const auto *pColOrbPrev = this->colOrbit(nRow - 1, numPart);
 	CColOrbit<S> *pColOrbit, *pColOrbitNext = this->colOrbit(nRow, numPart);
 #if USE_EXRA_EQUATIONS
@@ -184,7 +186,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 			// Column weight was changed. It means that x[i] > 0
 			if (len) {
 				// The length of the current orbit is NOT the same.
-				// It means that current x[i] < xMax[i] (the orbit was splitted in two sub-orbits)
+				// It means that current x[i] < xMax[i] (the orbit was split in two sub-orbits)
 				// Check if second sub-orbit should contain all units
 				if (diffWeight + 1 == nRowToBuild) {
 					if (noReplicatedBlocks() && len > 1)
@@ -231,23 +233,22 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 		pPrev = pColOrbit;
 	}
 
-	if (!pColOrbit) {
-		if (nRowToBuild > 1) {
-			auto fLambda = forcibleLambda(nRow - 1, numPart);
-			auto *pTmp = *(this->currUnforcedOrbPtr() + 1);
-			while (pTmp) {
-				fLambda += pTmp->length();
-				pTmp = pTmp->next();
-			}
+	if (pColOrbit)
+		return ELEMENT_MAX;
 
-			if (nRowToBuild != 2 || checkForcibleLambda(fLambda))
-				setForcibleLambda(nRow, fLambda, numPart);
-			else
-				return ELEMENT_MAX;
+	if (nRowToBuild > 1) {
+		auto fLambda = forcibleLambda(nRow - 1, numPart);
+		auto *pTmp = *(this->currUnforcedOrbPtr() + 1);
+		while (pTmp) {
+			fLambda += pTmp->length();
+			pTmp = pTmp->next();
 		}
+
+		if (nRowToBuild != 2 || checkForcibleLambda(fLambda))
+			setForcibleLambda(nRow, fLambda, numPart);
+		else
+			return ELEMENT_MAX;
 	}
-	else
-		nVar = ELEMENT_MAX;
 
 	if (this->useCanonGroup()) {
 		if (nVar < lenPermut && nRowToBuild > 1) {
@@ -302,11 +303,13 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMU
 		if (!pRightSide)
 			continue;
 
-		if (!solutionsForRightSideNeeded(pRightSide, pCurrSolution, nRow))
-			continue;
+		if (checkSolutionsForRight(nRow, nPart)) {
+			if (!solutionsForRightSideNeeded(pRightSide, pCurrSolution, pLambdaSet))
+				continue;
+		}
 
 		// Resolve trivial equations and define lambdaMin (part of any current lambda
-		// which is already splited among the lambda-variables)
+		// which is already splitted among the lambda-variables)
 		this->resetMapping();
 		int lambdaMin = pRowEquation->resolveTrivialEquations(pRightSide, pResult, nVar, this);
 		if (lambdaMin < 0)
@@ -381,7 +384,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMU
 #if USE_EXRA_EQUATIONS
 				equSystem()->resetVariables(nVar);
 #endif
-				VECTOR_ELEMENT_TYPE *pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
+				auto pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
 				if (!pResultTmp) {
 					// There are no solution for current lambda from pLambdaSet
 					// Since lambda set is ordered, we will not find solutions for

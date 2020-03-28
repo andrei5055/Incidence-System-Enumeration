@@ -72,7 +72,7 @@ FClass1(CInSysRowEquation, int)::resolveTrivialEquations(const S *pRightPart, S 
 		lambda += varMapping(i)->resolveMapping(pRightPart, pResultMax, pResult, NULL);
 
 	// Save minimal values
-	memcpy(variableMinValPntr(), pResult, sizeof(*variableMinValPntr()) * nVar);
+	memcpy(variableMinValPntr(), pResult, sizeof(S) * nVar);
 	return lambda;
 }
 
