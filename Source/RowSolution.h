@@ -77,7 +77,7 @@ public:
 	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
 	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
 private:
-	CK void sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker);
+	CK void sortSolutionsByGroup(CanonicityCheckerPntr pCanonChecker);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
@@ -90,7 +90,7 @@ private:
 	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline auto lenOrbitOfSolution() const						{ return m_nLenSolOrb; }
 	CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionLength(); }
-#if USE_THREADS || MY_QUICK_SORT
+#if USE_THREADS || USE_MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
 	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const;
 #endif
@@ -293,7 +293,7 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr
 	}
 
 	if (doSorting && pCanonChecker)
-		sortSolutionByGroup(pCanonChecker);
+		sortSolutionsByGroup(pCanonChecker);
 	else
 		memset(pCanonFlags, 1, numSolutions());
 }
@@ -343,11 +343,10 @@ FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long
 #endif
 
 
-FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChecker) {
+FClass2(CRowSolution, void)::sortSolutionsByGroup(CanonicityCheckerPntr pCanonChecker) {
 	pCanonChecker->constructGroup();
 	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
-	// from the generators of the group, the order of just constructe group could be less than |Aut(D)|
-	static int cntr = 0; cntr++;
+	// from the generators of the group, the order of just constructed group could be less than |Aut(D)|
 	uchar *pCanonFlags;
 	auto *pPerm = initSorting(&pCanonFlags);
 	// Suppose that all solutions are not canonical
@@ -357,13 +356,13 @@ FClass2(CRowSolution, void)::sortSolutionByGroup(CanonicityCheckerPntr pCanonChe
 	const size_t lenMem = solutionLength() << 1;
 	auto *pMem = lenMem <= countof(buffer) ? buffer : new S[lenMem];
 	size_t canonIdx[256];
-	size_t *pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
+	auto pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
 	int nCanon = 0;
 
 	// Loop for all solutions, starting from the biggest ones
 	const auto *pFirst = firstSolution();
 	for (auto i = numSolutions(); i--;) {
-		int nCanonPrev = nCanon;
+		const auto nCanonPrev = nCanon;
 		const auto idxPerm = *(pPerm + i);
 		const size_t idx = pCanonChecker->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
 		if (idxPerm == idx) {

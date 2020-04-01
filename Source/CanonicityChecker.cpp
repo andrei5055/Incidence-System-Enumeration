@@ -445,7 +445,7 @@ CanonicityChecker(bool)::groupIsTransitive() const
 
 CanonicityChecker(bool)::printMatrix(const designParam *pParam) const
 {
-	const uint outType = pParam->outType;
+	const auto outType = pParam->outType;
 	return	outType & t_AllObject ||
 			  outType & t_Transitive && groupIsTransitive() ||
 			  outType & t_GroupOrderGT && groupOrder() > pParam->grpOrder ||
@@ -465,17 +465,15 @@ CanonicityChecker(S)::rowToChange(S nRow) const
 	return nRow;
 }
 
-CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen/*, S shift*/)
+CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift) const
 {
 	S idx = 0;
 	while (pColOrbit) {
 		// Define the number of columns to start with
-		const size_t numCol = /*shift + */((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
+		const auto numCol = shift + ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
 		*(colIndex() + numCol) = idx++;
 		pColOrbit = pColOrbit->next();
 	}
-
-	setNumColOrb(idx);
 }
 
 CanonicityChecker(S)::getLenPermutCol(S **permCol) const

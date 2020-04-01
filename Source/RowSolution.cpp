@@ -13,7 +13,7 @@
 
 template class CRowSolution<TDATA_TYPES>;
 
-#if !USE_THREADS && !MY_QUICK_SORT
+#if !USE_THREADS && !USE_MY_QUICK_SORT
 #if USE_PERM
 const VECTOR_ELEMENT_TYPE *pntrSolution;
 #endif

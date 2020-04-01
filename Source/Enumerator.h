@@ -476,7 +476,7 @@ private:
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart = 0) const	{ return NULL; }
 	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const	{ return -1; }
-	CK virtual ColOrbPntr* unforcedOrbits(size_t n, S idxPart = 0) const	{ return NULL; }
+	CK virtual ColOrbPntr* unforcedOrbits(S n, S idxPart = 0) const	{ return NULL; }
 	CK virtual void resetFirstUnforcedRow()					{}
 	virtual S forcibleLambda(S nRow, S nPart) const			{ return ELEMENT_MAX; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }

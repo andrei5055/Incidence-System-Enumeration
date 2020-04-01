@@ -95,6 +95,7 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 	for (S i = 1; i < nParts; i++) {
 		m_ppColOrb[i] = m_ppColOrbIni[i - 1] + nRows;
 		m_ppColOrbIni[i] = m_ppColOrb[i] + nRows;
+		m_ppUnforcedColOrb[i] = m_ppUnforcedColOrb[i - 1] + nRows * rankMatr();
 	}
 }
 

@@ -71,7 +71,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 				break;
 
 			// Sort solutions for the first part only
-			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i], i == 0))
+			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i], true/*i == 0*/))
 				break;
 
 			if (!pNextRowSolution)
@@ -285,7 +285,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	// For multi-threaded version we need to test only one top level solution
 	const S nRowEnd = nRow ? nRow + 1 : 0;
 	this->initiateColOrbits(rowNumb(), nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
-	S level;
+	S level, nPart;
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 
@@ -357,7 +357,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				bool flag = true;
 				if (!TestCanonicityOnGPU()) {
 					EXIT(-1);
-					if (this->TestCanonicity(nRow, this, t_saveRowToChange + t_saveRowPermutations, &level)) {
+					if (this->TestCanonicity(nRow, this, t_saveRowToChange + t_saveRowPermutations, &nPart, &level)) {
 						//					Construct Aut(D)
 						//					int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
@@ -368,7 +368,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 								flag = false;
 							}
 							else {
-								const bool groupIsTransitive = matrFlags & t_trahsitiveGroup || this->groupIsTransitive();
+								const bool groupIsTransitive = matrFlags & t_transitiveGroup || this->groupIsTransitive();
 								pEnumInfo->updateConstrCounters(matrFlags, this->groupOrder(), groupIsTransitive);
 #if !CONSTR_ON_GPU
 								if (this->printMatrix(pParam)) {
@@ -411,7 +411,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				this->setCurrentRowNumb(nRow);
 				this->setColOrbitCurr(pColOrb);
 				this->setCurrUnforcedOrbPtr(nRow);
-				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &level, pRowSolution)) {
+				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, &level, pRowSolution)) {
 					if (pMaster) {
 						copyInfoFromMaster(pMaster);
 #if WAIT_THREADS
@@ -604,11 +604,14 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 		pColOrbit = pColOrbit->next();
 	}
 
-	if (getUnforcedColOrbPntr(partIdx)) {
+	const auto ppUnforcedColOrb = getUnforcedColOrbPntr(partIdx);
+	if (ppUnforcedColOrb) {
         // Set unforced elements:
+		auto pp = this->unforcedColOrbPntr(partIdx);
         for (auto row = firstUnforcedRow(); row <= nRow; row++) {
 			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
-			auto **ppUnforced = this->unforcedOrbits(row, partIdx);
+//			auto **ppUnforced = this->unforcedOrbits(row, partIdx);
+			const auto ppUnforced = ppUnforcedColOrb + this->rank() * row;
             for (int i = 1; i < this->rank(); i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
@@ -639,8 +642,9 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool fla
 		// for multi-thread configuration it could be changed by master
 		if (i) {
 			// When we are in that function, the solutions for the first part was just changed
-			// It means that we need to chack all combinations of solutions for remaining parts
-			(pRowSolution + i)->setSolutionIndex(m_lastRightPartIndex[i] = 0);
+			// It means that we need to check all combinations of solutions for remaining parts
+			(pRowSolution + i)->setSolutionIndex(0);
+			m_lastRightPartIndex[i] = (pRowSolution + i)->numSolutions() - 1;
 		} else
 			m_lastRightPartIndex[i] = (pRowSolution + i)->solutionIndex();
 
@@ -947,7 +951,7 @@ FClass2(CEnumerator, void)::checkUnusedSolutions(CRowSolution *pRowSolution)
 		setCurrentRowNumb(nRow);
 		setCurrUnforcedOrbPtr(nRow);
 		setColOrbitCurr(pColOrb);
-		canonChecker()->TestCanonicity(nRow, this, 0, &level, pRowSol);
+		canonChecker()->TestCanonicity(nRow, this, 0, &level, NULL, pRowSol);
 		reset(nRow);
 		setCurrentRowNumb(nRow - 1);
 	}

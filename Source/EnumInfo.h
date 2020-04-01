@@ -55,7 +55,7 @@ typedef enum {
 
 typedef enum {
 	t_noReplicatedBlock = 1 << 1,
-	t_trahsitiveGroup   = 1 << 2,
+	t_transitiveGroup   = 1 << 2,
 } t_MatrixFlags;
 
 Class2Def(CThreadEnumerator);

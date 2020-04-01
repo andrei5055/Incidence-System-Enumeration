@@ -25,7 +25,7 @@ protected:
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
-	CK CColOrbit<S> **unforcedOrbits(size_t nRow, S iPart = 0) const	{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
+	CK CColOrbit<S> **unforcedOrbits(S nRow, S iPart = 0) const	{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart = 0) const {
 			return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
 	}
@@ -81,9 +81,9 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 	m_pRightPartFilter = new CRightPartFilter<S>(nCol);
 	const auto nRow = pInSys->rowNumb();
 	setForcibleLambdaPntr(new S[nRow * numParts]);
-	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(*forcibleLambdaPntr()));
+	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(S));
 	setFirstUnforcedRow();
-	//setForcibleLambda(nRow - 1, this->getInSys()->lambda(), 0); // It looks like we dont need this
+	setForcibleLambda(nRow - 1, this->getInSys()->lambda(), 0); // It looks like we dont need this
 }
 
 FClass2(C_InSysEnumerator)::~C_InSysEnumerator() {

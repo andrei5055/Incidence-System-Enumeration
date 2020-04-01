@@ -33,7 +33,7 @@ public:
 	CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
-	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo = 0, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
+	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb = NULL, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC uint enumFlags() const						{ return m_enumFlags; }
 	CC inline uint groupOrder() const				{ return m_nGroupOrder; }
@@ -84,7 +84,7 @@ private:
 	CC inline void setNumColOrb(S v)				{ m_nNumColOrb = v; }
 	CC void revert(S i);
 	CC S getLenPermutCol(S **permCol) const;
-	CC void constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen);
+	CC void constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift = 0) const;
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC S rowToChange(S nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
@@ -173,7 +173,7 @@ CanonicityChecker()::~CCanonicityChecker()
 #endif
 }
 
-CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pRowOut, RowSolutionPntr pRowSolution)
+CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb, S *pRowOut, RowSolutionPntr pRowSolution)
 {
 	// Construct trivial permutations for rows and columns
 	const bool rowPermut = outInfo & t_saveRowPermutations;
@@ -244,7 +244,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 						continue;
 					}
 
-					if (pRowOut) {
+					if (!nPart && pRowOut) {
 						if (outInfo & t_saveRowToChange)
 							*pRowOut = rowToChange(nRow);
 #ifndef USE_CUDA
@@ -282,6 +282,9 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 #endif				
 					}
 
+					if (pPartNumb)
+						*pPartNumb = nPart;
+
 					return false;
 				}
 			}
@@ -294,7 +297,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 		if (!rowPermut) {
 			// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
-			// NOTE: Because for now we do sorting with the group ONLY for first block, we don't need the loop over numParts() here
+/*			// NOTE: Because for now we do sorting with the group ONLY for first block, we don't need the loop over numParts() here
 			const auto flg = pColIndex == NULL;
 			pColIndex = colIndex();
 			const auto *pColOrbitIni = colOrbitIni[nRow];
@@ -307,24 +310,26 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 				const size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
 				*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
 				pColOrbit = pColOrbit->next();
-			}
-			/*
+			} */
+
 			const auto flg = pColIndex == NULL;
-			pColIndex = colIndex();
+			pColIndex = colIndex();  
+			S varIdx = 0;
 			for (S nPart = 0; nPart < numParts(); nPart++) {
-				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart); // colOrbitIni[nRow]
-				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);    // colOrbit[nRow]
+				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
+				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
 				const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
 				if (flg)		// Index for columns was not yet constructed
 					constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
 
-				auto varIdx = shift;
 				while (pColOrbit) {
-					const size_t nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
+					const auto nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
 					*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
 					pColOrbit = pColOrbit->next();
 				}
-			}*/
+			}
+
+			setNumColOrb(varIdx);  // Sum of column orbits of all parts of design
 		}
 
 //#ifndef USE_CUDA

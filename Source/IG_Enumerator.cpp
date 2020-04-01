@@ -107,7 +107,7 @@ FClass2(CIG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matrix
 	if (!CheckOrbits(this->permStorage(), this->getRowOrbits(0)))
 		return false;
 
-	*pMatrFlags |= t_trahsitiveGroup;
+	*pMatrFlags |= t_transitiveGroup;
 
 	const auto nCols = pMatrix->colNumb();
 	const auto nRows = pMatrix->rowNumb();

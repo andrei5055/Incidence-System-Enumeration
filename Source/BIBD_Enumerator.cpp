@@ -73,7 +73,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		pColumnIdx = new S[lambda];
 
 	// Define "lambda" blocks, which contain both current and previous elements.
-	// When doing that, check the necessary and sufficient condition 
+	// When doing that, check the necessary and sufficient conditions
 	// for the intersection of the first (second), previous and current elements
 	S idx = 0;
 	S j = 0;
@@ -81,18 +81,18 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		if (pCurrRow[j] && pPrevRow[j]) {
 			if (idx == x0_3) {					// (x0_3+1)-th common block found
 				if (j < r) {					//      among the first r blocks of design
-					return false;				// Tested solution cannnot be used in canonical matrix   
+					return false;				// The tested solution can not be used in the canonical matrix
 				}
 				else {
 					if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
-						S i = -1;				// Check necessary and sufficient condition for the 
+						S i = -1;				// Check necessary and sufficient conditions for the
 						while (++i < idx) {     // intersection of second, previous and current elements
 							if (pColumnIdx[i] >= lambda)
 								break;
 						}
 
 						if (i == idx || pColumnIdx[i] >= r) // All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
-							return false;       // Tested solution cannnot be used in canonical matrix
+							return false;       // The tested solution can not be used in the canonical matrix
 					}
 					else {
 						// When we are here, the intersection of second, previous and current elements is OK

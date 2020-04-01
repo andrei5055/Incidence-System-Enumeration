@@ -26,7 +26,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 	auto pMatr = matrCol.matrix()->GetDataPntr();
 	T *pTmp = NULL;		// Memory for reordering the rows and columns of the matrix
 						// If needed, it will be allocated. 
-	T i = 0;
+	S i = 0;
 	while (true) {
 		bool colPermFound = false;
 		for (auto j = nCols; j--;)
@@ -94,7 +94,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 
 		if (permCol && colPermFound) {
 			// Permut of columns is needed
-			uint32_t jMin = 0;
+			S jMin = 0;
 			while (jMin < nCols && pColIdxMem[jMin] == jMin)
 				jMin++;
 
@@ -103,10 +103,10 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 					pTmp = new T[nCols * rowNumb];
 
 				const auto len = (nCols - jMin) * sizeof(T);
-				for (T i = 0; i < rowNumb; ++i) {
+				for (S i = 0; i < rowNumb; ++i) {
 					auto *pRow = matrCol.matrix()->GetRow(i);
 					memcpy(pTmp + jMin, pRow + jMin, len);
-					for (T j = jMin; j < nCols; ++j)
+					for (S j = jMin; j < nCols; ++j)
 						pRow[j] = pTmp[pColIdxMem[j]];
 				}
 			}
@@ -132,10 +132,10 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 
 		// Reorder the row and the columns:
 		const auto pPermCol = pCanonChecker->permCol();
-		for (T row = i; row < rowNumb; ++row) {
+		for (S row = i; row < rowNumb; ++row) {
 			auto pMatrTo = pMatr + row * nCols;
 			const auto pMatrFrom = pTmp + (pPermRow[row] - i) * nCols;
-			for (T j = 0; j < nCols; ++j)
+			for (S j = 0; j < nCols; ++j)
 				pMatrTo[j] = pMatrFrom[pPermCol[j]];
 		}
 	}
