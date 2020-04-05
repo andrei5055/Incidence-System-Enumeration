@@ -124,14 +124,14 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 
 	// When we are using the group of canonical matrix, we need to adjust previously constructed
 	// generators of the automorphism group on columns (because some of them could be forcibly constructed
-	this->setUseCanonGroup(USE_CANON_GROUP && this->groupOrder() > 1);
-
-	int buffer[256], *pColGroupIdx = NULL;
+	int buffer[256], *pColGroupIdx;
 	S lenPermut = 0;
 	if (this->useCanonGroup()) {
 		lenPermut = this->lenPerm();
 		pColGroupIdx = lenPermut <= countof(buffer) ? buffer : new int[lenPermut];
 	}
+	else
+		pColGroupIdx = NULL;
 
 	const auto *pIS = this->getInSys();
 	const auto nRowToBuild = pIS->rowNumb() - nRow;
@@ -253,7 +253,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	if (this->useCanonGroup()) {
 		if (nVar < lenPermut && nRowToBuild > 1) {
 			// We realy need to adjust the generators of the automorphism group on columns
-			this->adjustGenerators(pColGroupIdx, nVar);
+			this->adjustGenerators(pColGroupIdx, nVar, numPart);
 		}
 
 		if (pColGroupIdx != buffer)

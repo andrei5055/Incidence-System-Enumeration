@@ -202,9 +202,8 @@ FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolut
 					//    0 0 1 1
 					// When we change 3-d and 4-th row with these two AND columns 1 -2 with 3-4 we will increase the code
 					// of the matrix. Therefore, this matrix cannot be canonical.
-					const bool useCanonGroup = USE_CANON_GROUP && this->groupOrder() > 1;
 					auto pSol = pCurrSolution;
-					while ((pSol = pSol->NextSolution(useCanonGroup)) != NULL) {
+					while ((pSol = pSol->NextSolution(useCanonGroup())) != NULL) {
 						const auto *pSolValue = pSol->currSolution();
 						if (*pSolValue + *(pSolValue + 1) >= x0)  // Why x0 here ???
 							break;

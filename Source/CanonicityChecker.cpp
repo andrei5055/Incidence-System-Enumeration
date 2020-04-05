@@ -34,27 +34,28 @@ CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem
 	setSolutionStorage(NULL);
 }
 
-CanonicityChecker(void)::init(S nRow, bool savePerm)
-{
+CanonicityChecker(void)::init(S nRow, bool savePerm) {
 	setNumRow(nRow);
-    setStabilizerLength(nRow-1);
+	setStabilizerLength(nRow - 1);
 	setStabilizerLengthAut(ELEMENT_MAX);
 
-    auto *pRow = permRow();
-    for (auto i = nRow; i--;)
-        *(pRow + i) = *(orbits() + i) = i;
+	auto* pRow = permRow();
+	for (auto i = nRow; i--;)
+		*(pRow + i) = *(orbits() + i) = i;
 
-    auto *pCol = permCol();
-    auto nCol = numCol();
-    while (--nCol >= nRow)
-        *(pCol + nCol) = nCol;
+	auto* pCol = permCol();
+	for (auto nCol = numCol(); nCol-- > nRow;)
+		*(pCol + nCol) = nCol;
 
-    memcpy(pCol, pRow, nRow * sizeof(*permCol()));
-	permStorage()->initPermutStorage();
+	memcpy(pCol, pRow, nRow * sizeof(*permCol()));
+	for (auto iPart = numParts(); iPart--;) {
+		auto pColPermStorage = permStorage() + iPart;
+		pColPermStorage->initPermutStorage();
+		if (savePerm)
+			pColPermStorage->savePermut(numRow(), permRow());
+	}
+
 	setGroupOrder(1);
-	if (savePerm)
-		permStorage()->savePermut(numRow(), permRow());
-
 	if (permColStorage() && (savePerm || permRowStorage())) {
 		permColStorage()->initPermutStorage();
 		if (savePerm)
@@ -208,15 +209,6 @@ CanonicityChecker(void)::addAutomorphism(bool rowPermut)
 {
 	UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
 	if (!rowPermut) {
-		// Saving only column's orbit permutation
-		S *permCol;
-		const auto lenPerm = getLenPermutCol(&permCol);
-		if (groupOrder() == 1) {		// no permutations were saved yet
-			permStorage()->savePermut(lenPerm, NULL);	// save trivial permutation
-			setGroupOrder(2);			// 2 is a fake number, we use it just not be here again
-		}
-
-		permStorage()->savePermut(lenPerm, permCol);
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow(), permRow());
 	}
@@ -474,12 +466,6 @@ CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const Col
 		*(colIndex() + numCol) = idx++;
 		pColOrbit = pColOrbit->next();
 	}
-}
-
-CanonicityChecker(S)::getLenPermutCol(S **permCol) const
-{
-	*permCol = colIndex() + numCol();
-	return numColOrb();
 }
 
 size_t outString(const char *str, FILE *file)

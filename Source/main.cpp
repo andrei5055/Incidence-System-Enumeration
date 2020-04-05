@@ -174,7 +174,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 				pInSysEnum = new Class2(CPBIBD_Enumerator)(pInSys, enumFlags);
 				break;
 			case t_SemiSymmetricGraph:
-				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaisKeepRowPermute;
+				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaysKeepRowPermute;
 				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
 				break;

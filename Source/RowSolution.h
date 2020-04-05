@@ -353,7 +353,7 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(CanonicityCheckerPntr pCanonCh
 	memset(pCanonFlags, 0, numSolutions() * sizeof(pCanonFlags[0]));
 
 	S buffer[256];
-	const size_t lenMem = solutionLength() << 1;
+	const auto lenMem = solutionLength() << 1;
 	auto *pMem = lenMem <= countof(buffer) ? buffer : new S[lenMem];
 	size_t canonIdx[256];
 	auto pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
@@ -364,7 +364,7 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(CanonicityCheckerPntr pCanonCh
 	for (auto i = numSolutions(); i--;) {
 		const auto nCanonPrev = nCanon;
 		const auto idxPerm = *(pPerm + i);
-		const size_t idx = pCanonChecker->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
+		const auto idx = pCanonChecker->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
 		if (idxPerm == idx) {
 			if (nCanonPrev != nCanon)
 				*(pCanonFlags + i) = 1; // The solution we just processed is the canonical one

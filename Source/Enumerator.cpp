@@ -58,6 +58,8 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 {
 	RowSolutionPntr pNextRowSolution = NULL;
 	S i = 0;
+
+	this->setUseCanonGroup(USE_CANON_GROUP && !this->permStorage()->isEmpty());
 	if (prepareToFindRowSolution()) {
 		// Find row solution for all parts of the design
 		while (true) {
@@ -286,6 +288,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	const S nRowEnd = nRow ? nRow + 1 : 0;
 	this->initiateColOrbits(rowNumb(), nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 	S level, nPart;
+	S partNumb;			// minimal index of parts which does NOT have solution for next row
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 
@@ -424,7 +427,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						this->setGroupOrder(1);
 
 					setPrintResultRowNumber(nRow);
-					S partNumb;		// minimal index of parts which does NOT have solution for next row
 					pRowSolution = FindRowSolution(&partNumb);
 #if USE_THREADS && !WAIT_THREADS
 					if (pMaster && pRowSolution) {
