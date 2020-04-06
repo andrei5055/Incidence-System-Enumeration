@@ -57,8 +57,8 @@ protected:
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline auto numRow() const					{ return m_nNumRow; }
 	CC void setStabiliserLengthExt(S len)			{ m_nStabExtern = len; }
-	inline auto numParts() const					{ return m_numParts; }
-	CK virtual S lenStabilizer() const				{ return 0; }
+	CC inline S numParts() const					{ return m_numParts; }
+	CC virtual S lenStabilizer() const				{ return 0; }
 private:
 	CC void init(S nRow, bool savePerm);
 	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);

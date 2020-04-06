@@ -26,7 +26,7 @@ public:
 	CC inline void setLenPerm(S val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 	CC void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, S idx = 0) const;
 	S *CreateOrbits(const PermutStoragePntr pPermColumn, const  MatrixDataPntr pMatrix, S *pRowOrbits = NULL, S *pColOrbits = NULL, int firstpermIdx = 1) const;
-	inline bool isEmpty() const						{ return !lenMemUsed(); }
+	CC inline bool isEmpty() const					{ return !lenMemUsed(); }
 protected:
 private:
 	CK inline auto lenPermByte() const				{ return m_nLenPermByte;  }
