@@ -12,8 +12,8 @@
 #include "InSysRowEquation.h"
 #include "ColOrbits.h"
 
-Class2Def(CCanonicityChecker);
 Class2Def(CInSysSolver);
+Class2Def(CPermutStorage);
 
 typedef CArray<uchar, uchar> CArrayOfCanonFlags;
 
@@ -63,7 +63,7 @@ public:
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
-	CK void sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker = NULL);
+	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
 #if PRINT_SOLUTIONS
 	void printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb = false) const;
 #endif
@@ -77,7 +77,7 @@ public:
 	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
 	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
 private:
-	CK void sortSolutionsByGroup(CanonicityCheckerPntr pCanonChecker);
+	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
@@ -266,7 +266,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 	return true;
 }
 
-FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr pCanonChecker) {
+FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPermStorage) {
 	// Calling this function, we do not necessarily need a real sorting.
 	// In some cases, just the initiation would be enough.
 	if (!this || !numSolutions() || !solutionLength())
@@ -292,8 +292,8 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, CanonicityCheckerPntr
 #endif
 	}
 
-	if (doSorting && pCanonChecker)
-		sortSolutionsByGroup(pCanonChecker);
+	if (doSorting && pPermStorage)
+		sortSolutionsByGroup(pPermStorage);
 	else
 		memset(pCanonFlags, 1, numSolutions());
 }
@@ -343,8 +343,9 @@ FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long
 #endif
 
 
-FClass2(CRowSolution, void)::sortSolutionsByGroup(CanonicityCheckerPntr pCanonChecker) {
-	pCanonChecker->constructGroup();
+FClass2(CRowSolution, void)::sortSolutionsByGroup(PermutStoragePntr pPermStorage)
+{
+	pPermStorage->constructGroup();
 	// Since we removed the indices corresponding to the forcibly constructed colOrbits 
 	// from the generators of the group, the order of just constructed group could be less than |Aut(D)|
 	uchar *pCanonFlags;
@@ -364,7 +365,7 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(CanonicityCheckerPntr pCanonCh
 	for (auto i = numSolutions(); i--;) {
 		const auto nCanonPrev = nCanon;
 		const auto idxPerm = *(pPerm + i);
-		const auto idx = pCanonChecker->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
+		const auto idx = pPermStorage->findSolutionIndex(pFirst, idxPerm, pMem, pCanonIdx, nCanon);
 		if (idxPerm == idx) {
 			if (nCanonPrev != nCanon)
 				*(pCanonFlags + i) = 1; // The solution we just processed is the canonical one

@@ -56,10 +56,12 @@ FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 
 FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 {
-	RowSolutionPntr pNextRowSolution = NULL;
-	S i = 0;
+	// It's OK to use permStorage() and not permStorage(nPart) here,
+	// because the values permStorage(nPart) are the same for all nPart
+	this->setUseCanonGroup(USE_CANON_GROUP && !permStorage()->isEmpty());
 
-	this->setUseCanonGroup(USE_CANON_GROUP && !this->permStorage()->isEmpty());
+	S i = 0;
+	RowSolutionPntr pNextRowSolution = NULL;
 	if (prepareToFindRowSolution()) {
 		// Find row solution for all parts of the design
 		while (true) {
@@ -73,7 +75,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 				break;
 
 			// Sort solutions for the first part only
-			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i], true/*i == 0*/))
+			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
 				break;
 
 			if (!pNextRowSolution)

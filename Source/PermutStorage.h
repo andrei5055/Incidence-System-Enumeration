@@ -14,7 +14,7 @@ public:
 		const S *pColOrbits = NULL, const MatrixDataPntr pMatrix = NULL) const;
 	void outputPerm(FILE *file, const S *perm, S lenPerm, S lenPerm2 = 0, const char *pColPerm = NULL, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
 			char **ppFormat = NULL) const;
-	CK void adjustGenerators(int *pIdx, S lenIdx, S numPart);
+	CK void adjustGenerators(int *pIdx, S lenIdx);
 	CK size_t constructGroup();
 	CK size_t findSolutionIndex(const S *pFirst, size_t idx, S *pMem, size_t *pCanonIdx, int &nCanon);
 	CC inline auto lenPerm() const					{ return m_nLenPerm; }
@@ -149,7 +149,7 @@ PermutStorage(void)::outputPerm(FILE *file, const S *perm, S lenPerm, S lenRowPe
 		delete[] pBuffer;
 }
 
-PermutStorage(void)::adjustGenerators(int *pIdx, S lenIdx, S numPart)
+PermutStorage(void)::adjustGenerators(int *pIdx, S lenIdx)
 {
 	// Adjustment of the generators of the automorphism group on columns according to 
 	// non-unforcible group of columns defined by indices in pIdx 

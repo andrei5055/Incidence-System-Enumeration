@@ -38,13 +38,9 @@ public:
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
 	CC inline void setGroupOrder(uint val)			{ m_nGroupOrder = val; }
-	CK inline S lenPerm() const						{ return permStorage()->lenPerm(); }
-	CK inline void adjustGenerators(int *idx, S len, S nPart){ permStorage()->adjustGenerators(idx, len, nPart); }
-	CK inline auto constructGroup()					{ return permStorage()->constructGroup(); }
-	CK inline auto findSolutionIndex(const S *pFirst, size_t idx, S *pMem, size_t *pCanonIdx, int &nCanon)
-													{ return permStorage()->findSolutionIndex(pFirst, idx, pMem, pCanonIdx, nCanon); }
 	CC inline auto permRow() const					{ return m_pPermutRow->elementPntr(); }
 	CC inline auto permCol() const					{ return m_pPermutCol->elementPntr(); }
+	CC inline auto permStorage(S nPart) const		{ return permStorage() + nPart; }
 	CC inline auto permStorage() const				{ return m_pPermutStorage[0]; }
 	CC inline auto permColStorage() const			{ return m_pPermutStorage[1]; }
 	CC inline auto permRowStorage() const			{ return m_pPermutStorage[2]; }
@@ -132,14 +128,15 @@ CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags
 	const auto outColumnOrbits = enumFlags & t_outColumnOrbits;
 	const auto keepRowPermute = enumFlags & t_alwaysKeepRowPermute;
 	const auto nPermutStorages = numParts + (outColumnOrbits ? 1 : 0) + (keepRowPermute ? 1 : 0);
-	setPermStorage(new CPermutStorage<T, S>[nPermutStorages]());
+	auto pPermStorage = new CPermutStorage<T, S>[nPermutStorages]();
+	setPermStorage(pPermStorage);
 
 	memset(m_pObits, 0, sizeof(m_pObits));
 	const auto len = nRow + (outColumnOrbits ? nCol : 0);
 	auto pntr = m_pObits[0][0] = new S[mult * len];	// memory to keep orbits of different types
 	int permStorageIdx = numParts;
 	if (outColumnOrbits) {
-		setPermStorage(permStorage() + permStorageIdx++, 1);
+		setPermStorage(pPermStorage + permStorageIdx++, 1);
 		m_pObits[1][0] = pntr + mult * nRow;
 		if (mult > 1)
 			m_pObits[1][1] = m_pObits[1][0] + nCol;
@@ -147,7 +144,7 @@ CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags
 	else
 		setPermStorage(NULL, 1);
 
-	setPermStorage(keepRowPermute ? permStorage() + permStorageIdx : NULL, 2);
+	setPermStorage(keepRowPermute ? pPermStorage + permStorageIdx : NULL, 2);
 
 	if (mult > 1)
 		m_pObits[0][1] = pntr + nRow;
@@ -295,7 +292,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 			// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
 			for (S nPart = 0; nPart < numParts(); nPart++) {
-				auto pPermStorage = permStorage() + nPart;
+				auto pPermStorage = permStorage(nPart);
 				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
 				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
 				const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
@@ -309,10 +306,9 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 					lenPermut = pPermStorage->lenPerm();
 
 				auto pVarPerm = pPermStorage->allocateMemoryForPermut(lenPermut);
-				S varIdx = 0;
 				while (pColOrbit) {
 					const auto nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
-					*(pVarPerm + varIdx++) = *(colIndex() + *(permCol() + nColCurr));
+					*pVarPerm++ = *(colIndex() + *(permCol() + nColCurr));
 					pColOrbit = pColOrbit->next();
 				}
 			}

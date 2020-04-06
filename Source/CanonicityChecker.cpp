@@ -49,7 +49,7 @@ CanonicityChecker(void)::init(S nRow, bool savePerm) {
 
 	memcpy(pCol, pRow, nRow * sizeof(*permCol()));
 	for (auto iPart = numParts(); iPart--;) {
-		auto pColPermStorage = permStorage() + iPart;
+		auto pColPermStorage = permStorage(iPart);
 		pColPermStorage->initPermutStorage();
 		if (savePerm)
 			pColPermStorage->savePermut(numRow(), permRow());
@@ -207,13 +207,14 @@ CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool 
 
 CanonicityChecker(void)::addAutomorphism(bool rowPermut)
 {
-	UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
 	if (!rowPermut) {
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow(), permRow());
 	}
-	else
+	else {
+		UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
 		permStorage()->savePermut(numRow(), permRow());
+	}
 }
 
 CanonicityChecker(void)::updateGroupOrder()

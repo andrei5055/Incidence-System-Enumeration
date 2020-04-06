@@ -61,7 +61,7 @@ FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPa
 	if (!pSolution->numSolutions())
 		return false;
 
-	pSolution->sortSolutions(doSorting, this->useCanonGroup() ? this : NULL);
+	pSolution->sortSolutions(doSorting, this->useCanonGroup() ? permStorage(nPart) : NULL);
 	if (!pSolution->findFirstValidSolution(this->inSysRowEquation()->variableMaxLimitPntr(), this->GetData()))
 		return false;
 
