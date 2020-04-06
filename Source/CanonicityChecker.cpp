@@ -457,7 +457,7 @@ CanonicityChecker(S)::rowToChange(S nRow) const
 	return nRow;
 }
 
-CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift) const
+CanonicityChecker(S)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift) const
 {
 	S idx = 0;
 	while (pColOrbit) {
@@ -466,6 +466,7 @@ CanonicityChecker(void)::constructColIndex(const ColOrbPntr pColOrbit, const Col
 		*(colIndex() + numCol) = idx++;
 		pColOrbit = pColOrbit->next();
 	}
+	return idx;
 }
 
 size_t outString(const char *str, FILE *file)

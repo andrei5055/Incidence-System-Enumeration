@@ -17,11 +17,11 @@ public:
 	CK void adjustGenerators(int *pIdx, S lenIdx, S numPart);
 	CK size_t constructGroup();
 	CK size_t findSolutionIndex(const S *pFirst, size_t idx, S *pMem, size_t *pCanonIdx, int &nCanon);
-	CC inline S lenPerm() const						{ return m_nLenPerm; }
-	CC inline void initPermutStorage()				{ setLenMemUsed(0); setLenPerm(ELEMENT_MAX); }
+	CC inline auto lenPerm() const					{ return m_nLenPerm; }
+	CC inline void initPermutStorage()				{ setLenMemUsed(0); }
 	CC void savePermut(const S lenPermut, const S *perm = NULL);
 	CK inline auto getPermutByIndex(size_t i) const	{ return permutMemory() + i * lenPerm(); }
-	CK inline size_t numPerm() const				{ return lenMemUsed() / lenPerm(); }
+	CK inline auto numPerm() const					{ return lenMemUsed() / lenPerm(); }
 	CC S *allocateMemoryForPermut(S lenPermut);
 	CC inline void setLenPerm(S val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 	CC void UpdateOrbits(const S *permut, S lenPerm, S *pOrbits, S idx = 0) const;
@@ -78,6 +78,9 @@ PermutStorage()::CPermutStorage()
 PermutStorage(S *)::allocateMemoryForPermut(S lenPermut)
 {
 	const auto lenUsed = lenMemUsed();
+	if (!lenUsed)
+		setLenPerm(lenPermut);
+
 	const auto newLength = lenUsed + lenPermut;
 	if (lenMemMax() < newLength) {
 		const auto len = 2 * newLength;
@@ -98,16 +101,8 @@ PermutStorage(S *)::allocateMemoryForPermut(S lenPermut)
 PermutStorage(void)::savePermut(const S lenPermut, const S *perm)
 {
 	auto *pMem = allocateMemoryForPermut(lenPermut);
-
-	if (lenPerm() == ELEMENT_MAX)
-		setLenPerm(lenPermut);
-
 	printPerm(perm);
-	if (!perm) { /*
-		for (S i = lenPermut; i--;)
-			*(pMem + i) = i; */
-	}
-	else
+	if (!perm)
 		memcpy(pMem, perm, lenPermut * sizeof(S));
 }
 

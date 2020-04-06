@@ -81,7 +81,7 @@ private:
 	CC inline void setColIndex(S *p)				{ m_pColIndex = p; }
 	CC inline auto colIndex() const					{ return m_pColIndex; }
 	CC void revert(S i);
-	CC void constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift = 0) const;
+	CC S constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift = 0) const;
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC S rowToChange(S nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
@@ -203,8 +203,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 	const auto pPartInfo = pMatr->partsInfo();
 	PREPARE_PERM_OUT(permColStorage());
 	const auto lenStab = stabiliserLengthExt();
-	S *pColIndex = NULL;
-	S *pVarPerm = colIndex() + colNumb;
+
 	bool retVal = true;
 	S nRow = ELEMENT_MAX;
 	while (true) {
@@ -295,29 +294,27 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 		if (!rowPermut) {
 			// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
 			// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
-			const auto flg = pColIndex == NULL;
-			pColIndex = colIndex();  
-
-			auto pPermStorage = permStorage();
 			for (S nPart = 0; nPart < numParts(); nPart++) {
+				auto pPermStorage = permStorage() + nPart;
 				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
 				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
 				const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
-				if (flg)		// Index for columns was not yet constructed
-					constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
+				// Saving permutations, acting on the orbits of columns
+				S lenPermut;
+				if (pPermStorage->isEmpty()) {		// Index for columns was not yet constructed
+					lenPermut = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
+					pPermStorage->allocateMemoryForPermut(lenPermut);	// Memory for identity permutation just in case we will need it
+						                                                // NOTE: as of 04/05/2020, we do not use it
+				} else
+					lenPermut = pPermStorage->lenPerm();
 
+				auto pVarPerm = pPermStorage->allocateMemoryForPermut(lenPermut);
 				S varIdx = 0;
 				while (pColOrbit) {
 					const auto nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
-					*(pVarPerm + varIdx++) = *(pColIndex + *(permCol() + nColCurr));
+					*(pVarPerm + varIdx++) = *(colIndex() + *(permCol() + nColCurr));
 					pColOrbit = pColOrbit->next();
 				}
-
-				// Saving permutations, acting on the orbits of columns
-				if (flg)			  // none of the permutations are saved yet
-					(pPermStorage + nPart)->savePermut(varIdx, NULL);	// save trivial permutation
-
-				(pPermStorage + nPart)->savePermut(varIdx, pVarPerm);
 			}
 		}
 
