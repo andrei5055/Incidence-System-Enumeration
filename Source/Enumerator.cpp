@@ -74,7 +74,6 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 			if (!pRowSolution)
 				break;
 
-			// Sort solutions for the first part only
 			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
 				break;
 
@@ -415,7 +414,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			else {
 				this->setCurrentRowNumb(nRow);
 				this->setColOrbitCurr(pColOrb);
-				this->setCurrUnforcedOrbPtr(nRow);
+				for (auto i = numParts(); i--;)
+					this->setCurrUnforcedOrbPtr(nRow, i);
+
 				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, &level, pRowSolution)) {
 					if (pMaster) {
 						copyInfoFromMaster(pMaster);
@@ -611,7 +612,6 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 	const auto ppUnforcedColOrb = getUnforcedColOrbPntr(partIdx);
 	if (ppUnforcedColOrb) {
         // Set unforced elements:
-		auto pp = this->unforcedColOrbPntr(partIdx);
         for (auto row = firstUnforcedRow(); row <= nRow; row++) {
 			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
 //			auto **ppUnforced = this->unforcedOrbits(row, partIdx);
@@ -638,22 +638,23 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
     return pNextRowColOrbitNew;
 }
 
-FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool flag) {
+FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
 	// Loop over all portions of the solution
 	ColOrbPntr pColOrbRet = NULL;
-	for (S i = 0; i < numParts(); i++) {
+	for (auto i = iFirstPartIdx; i < numParts(); i++) {
+		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
 		// for multi-thread configuration it could be changed by master
-		if (i) {
+		if (i > iFirstPartIdx) {
 			// When we are in that function, the solutions for the first part was just changed
 			// It means that we need to check all combinations of solutions for remaining parts
-			(pRowSolution + i)->setSolutionIndex(0);
-			m_lastRightPartIndex[i] = (pRowSolution + i)->numSolutions() - 1;
+			pPartRowSolution->setSolutionIndex(0);
+			m_lastRightPartIndex[i] = pPartRowSolution->numSolutions() - 1;
 		} else
-			m_lastRightPartIndex[i] = (pRowSolution + i)->solutionIndex();
+			m_lastRightPartIndex[i] = pPartRowSolution->solutionIndex();
 
-		const auto* pCurrSolution = (pRowSolution+i)->currSolution();
-		auto* pColOrb = MakeRow(pCurrSolution, true, i);
+		const auto pCurrSolution = pPartRowSolution->currSolution();
+		auto pColOrb = MakeRow(pCurrSolution, true, i);
 		if (!pColOrbRet)
 			pColOrbRet = pColOrb;
 
@@ -683,13 +684,11 @@ FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const
 {
 	const auto pParam = designParams();
-
-	// Reserving 1 byte for last '/'
-	lenBuffer--;
+	lenBuffer--;		// Reserving 1 byte for last '/'
 
 	auto len = SNPRINTF(dirName, lenBuffer, "%s", pParam->workingDir.c_str());
 	if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
-		return 0;	// Directory could not be used
+		return 0;		// Directory could not be used
 
 	if (this->getTopLevelDirName()) {
 		len += SNPRINTF(dirName + len, lenBuffer - len, "//%s", this->getTopLevelDirName());

@@ -25,8 +25,8 @@ protected:
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
-	CK CColOrbit<S> **unforcedOrbits(S nRow, S iPart = 0) const	{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart = 0) const {
+	CK CColOrbit<S> **unforcedOrbits(S nRow, S iPart) const		{ return getUnforcedColOrbPntr(iPart) + this->rank() * nRow; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart) const {
 			return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
 	}
 	CK virtual S forcibleLambda(S nRow, S nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
@@ -40,7 +40,7 @@ protected:
 	CK virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix);
 	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
 private:
-	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx);
+	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, int idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual S MakeSystem(S numPart);
 	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
@@ -161,7 +161,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 			if (noReplicatedBlocks() && currLen > 1)
 				break;
 
-			addForciblyConstructedColOrbit(pColOrbit, pPrev, diffWeight ? 1 : 0);
+			addForciblyConstructedColOrbit(pColOrbit, pPrev, numPart, diffWeight ? 1 : 0);
 			if (currLen == pColOrbPrev->length()) {
 				rightPartFilter()->addFilter(equationIdx, diffWeight ? currLen : 0);
 				pColOrbPrev = pColOrbPrev->next();
@@ -197,7 +197,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 					pColOrbitNext = pTmp->next();
 					pTmp->Init(len, pColOrbitNext);
 
-					addForciblyConstructedColOrbit(pTmp, pColOrbit, 1);
+					addForciblyConstructedColOrbit(pTmp, pColOrbit, numPart, 1);
 					rightPartFilter()->addFilter(equationIdx, len, nVar);
 					colGroupIdx++;    // This group of columns will be skipped
 					mapSetIdx = 1;
@@ -239,7 +239,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 
 	if (nRowToBuild > 1) {
 		auto fLambda = forcibleLambda(nRow - 1, numPart);
-		auto *pTmp = *(this->currUnforcedOrbPtr() + 1);
+		auto *pTmp = *(this->currUnforcedOrbPtr(numPart) + 1);
 		while (pTmp) {
 			fLambda += pTmp->length();
 			pTmp = pTmp->next();
@@ -327,8 +327,8 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMU
 			pVarMapping = prepareCheckSolutions(nVar);
 #if USE_EXRA_EQUATIONS
 			// we need to revert the list of the forcibly constructed orbits
-			//	addForciblyConstructedColOrbit(pColOrbit, pPrev, diffWeight ? 1 : 0);
-			//			CColOrbitManager::addForciblyConstructedColOrbit(pColOrbit, idx);
+			//	addForciblyConstructedColOrbit(pColOrbit, pPrev, nPart, diffWeight ? 1 : 0);
+			//			CColOrbitManager::addForciblyConstructedColOrbit(pColOrbit, nPart, idx);
 #endif
 		}
 
@@ -421,7 +421,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMU
 	return pCurrRowSolution->getSolution();
 }
 
-FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, int idx)
+FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, int idx)
 {
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());
@@ -430,7 +430,7 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 
 	// All remaining elements of all columns
 	// of the current orbit should be equal to 0 or 1, respectively
-	CColOrbitManager<S>::addForciblyConstructedColOrbit(pColOrbit, idx);
+	CColOrbitManager<S>::addForciblyConstructedColOrbit(pColOrbit, nPart, idx);
 #if USE_EXRA_EQUATIONS
 	equSystem()->addForcibleOrb(pColOrbit);
 #endif

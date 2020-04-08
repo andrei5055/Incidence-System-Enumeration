@@ -499,7 +499,7 @@ CForcibleCol::~CForcibleCol()
 	delete[] forcibleColNumb();
 }
 
-void CForcibleCol::addForciblyConstructedColOrbit(CColOrbit *pColOrbit, size_t rowNumb)
+void CForcibleCol::addForciblyConstructedColOrbit(CColOrbit *pColOrbit, S nPart, size_t rowNumb)
 {
 	CColOrbInfo *pCurr, *pPrev = NULL;
 	// Prepare the loop over the previously defined instances of CColOrbInfo

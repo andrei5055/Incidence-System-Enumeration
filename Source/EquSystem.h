@@ -25,7 +25,7 @@ typedef CContainer<CColOrbInfo> CColOrbInfoArray;
 class CForcibleCol_A : public CColOrbInfoArray
 {
 public:
-	void addForciblyConstructedColOrbit(CColOrbit *pColOrbit, size_t rowNumb);
+	void addForciblyConstructedColOrbit(CColOrbit *pColOrbit, S nPart, size_t rowNumb);
 protected:
 	CForcibleCol_A(size_t nVar, size_t nRow);
 	~CForcibleCol_A();

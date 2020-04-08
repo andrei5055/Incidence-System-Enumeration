@@ -22,7 +22,7 @@ public:
 	CC inline CColOrbitManager(uint rank, S nRows, S nCol, S nParts = 1)	{ 
 		InitiateColOrbitManager(rank, nRows, nCol, nParts);
 	}
-	CK CColOrbitManager()								{}
+	CK CColOrbitManager()								{ m_ppColOrb = NULL; }
 	CC ~CColOrbitManager()								{ ReleaseColOrbitManager(); }
 	CC void InitiateColOrbitManager(uint matrRank, S nRows, S nCol, S numParts = 1, void *pMem = NULL);
 	CC void ReleaseColOrbitManager();
@@ -43,9 +43,9 @@ protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart = 0)	{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetColOrbitCurr()                  { setColOrbitCurr(*(colOrbitPntr() + colNumb() * currentRowNumb())); }
 	CK inline void resetUnforcedColOrb(S idxPart = 0)	{ memset(unforcedColOrbPntr(idxPart) + unfColIdx(currentRowNumb()), 0, rankMatr() * sizeof(*unforcedColOrbPntr())); }
-	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, int n);
-	CK inline ColOrbPntr *currUnforcedOrbPtr() const	{ return m_ppUnforcedColOrbCurr; }
-	CK inline void setCurrUnforcedOrbPtr(size_t nRow, S idxPart = 0)	{ m_ppUnforcedColOrbCurr = unforcedColOrbPntr(idxPart) + unfColIdx(nRow); }
+	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, int n);
+	CK inline ColOrbPntr *currUnforcedOrbPtr(S nPart) const		{ return m_ppUnforcedColOrbCurr[nPart]; }
+	CK inline void setCurrUnforcedOrbPtr(size_t nRow, S nPart)	{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + unfColIdx(nRow); }
 	CC inline void setCurrentRowNumb(S n)				{ m_nCurrRow = n; }
 	CC inline ColOrbPntr *unforcedColOrbPntr(S idxPart = 0) const { return m_ppUnforcedColOrb[idxPart]; }
 	CC inline S rowMaster() const						{ return m_nRowMaster; }
@@ -61,7 +61,7 @@ private:
     S m_nCol;
 	ColOrbPntr **m_ppColOrb;
 	ColOrbPntr **m_ppUnforcedColOrb;
-	ColOrbPntr *m_ppUnforcedColOrbCurr;
+	ColOrbPntr **m_ppUnforcedColOrbCurr;
 	ColOrbPntr *m_ppOrb;
 	ColOrbPntr **m_ppColOrbIni;
 	size_t m_nColOrbLen;
@@ -75,8 +75,8 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 	m_nRank = matrRank;
 	m_nCol = nCol;
 	m_nShiftMult = (m_nRank = matrRank) * nRows;
-	m_ppColOrb = new ColOrbPntr *[3 * nParts];
-	m_ppUnforcedColOrb = (m_ppColOrbIni = m_ppColOrb + nParts) + nParts;
+	m_ppColOrb = new ColOrbPntr *[4 * nParts];
+	m_ppUnforcedColOrbCurr = (m_ppUnforcedColOrb = (m_ppColOrbIni = m_ppColOrb + nParts) + nParts) + nParts;
 	const auto nElem = nParts * nRows;
 	if (!pMem) {
 		// We need two sets of pointers for each part of Block Design 
@@ -262,9 +262,9 @@ FClass1(CColOrbitManager, void)::closeColOrbits() const
 	delete[] colOrbitPntr();
 }
 
-FClass1(CColOrbitManager, void)::addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, int n)
+FClass1(CColOrbitManager, void)::addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nPart, int n)
 {
-	auto ppTmp = currUnforcedOrbPtr() + n;
+	auto ppTmp = currUnforcedOrbPtr(nPart) + n;
 	pColOrbit->setNext(*ppTmp);
 	*ppTmp = pColOrbit;
 }
