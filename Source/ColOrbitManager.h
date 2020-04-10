@@ -101,9 +101,10 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 
 FClass1(CColOrbitManager, void)::ReleaseColOrbitManager()
 {
-	delete[] unforcedColOrbPntr();
-	if (unforcedColOrbPntr())
+	if (unforcedColOrbPntr()) {
+		delete[] unforcedColOrbPntr();
 		delete[] m_ppColOrb[0];
+	}
 
 	delete[] m_ppColOrb;
 }

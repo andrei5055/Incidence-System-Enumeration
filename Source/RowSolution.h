@@ -50,6 +50,7 @@ public:
 	CK inline const S *currSolution() const						{ return firstSolution() + variantIndex() * solutionLength(); }
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
 	CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
+	CK inline auto allSolutionChecked()                         { return nextSolutionIndex() >= numSolutions(); }
 	CK S *newSolution();
 	CK S *copySolution(const InSysSolverPntr pSysSolver);
 	CK CRowSolution *NextSolution(bool useCanonGroup = false);
@@ -80,7 +81,9 @@ private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
+public:
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
+private:
 	CK inline PERMUT_ELEMENT_TYPE variantIndex(PERMUT_ELEMENT_TYPE i) const	{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(i) : i; }
 #if PRINT_SOLUTIONS
 	void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
@@ -148,11 +151,10 @@ FClass2(CRowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
 FClass2(CRowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	uchar *pCanonFlags = useCanonGroup ? solutionPerm()->canonFlags() : NULL;
 	if (!pCanonFlags)
-		return nextSolutionIndex() < numSolutions() ? this : NULL;
+		return allSolutionChecked() ? NULL : this;
 
-	size_t solIndex;
-	while ((solIndex = nextSolutionIndex()) < numSolutions()) {
-		if (*(pCanonFlags + solIndex) == 1)
+	while (!allSolutionChecked()) {
+		if (*(pCanonFlags + solutionIndex()) == 1)
 			return this;
 	}
 
