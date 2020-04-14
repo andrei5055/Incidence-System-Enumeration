@@ -446,7 +446,7 @@ protected:
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(S nRow);
 	CK ColOrbPntr MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx = 0) const;
-	CK ColOrbPntr MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
+	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
@@ -510,6 +510,7 @@ private:
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
+	ColOrbPntr* m_pFirstColOrb;
 	S m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 #if CANON_ON_GPU
@@ -519,10 +520,12 @@ private:
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
 	Class2(CMatrixCanonChecker)(pMatrix, enumFlags) {
-	m_pRow = new RowSolutionPntr[this->numParts() * pMatrix->rowNumb()];
+	const auto numParts = this->numParts();
+	m_pRow = new RowSolutionPntr[numParts * pMatrix->rowNumb()];
+	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[numParts];
+	m_pFirstColOrb = new ColOrbPntr[numParts];
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
-	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[this->numParts()];
 }
 
 FClass2(CEnumerator)::~CEnumerator() {
@@ -534,6 +537,7 @@ FClass2(CEnumerator)::~CEnumerator() {
 		delete rowEquation();
 
 	delete[] m_lastRightPartIndex;
+	delete[] m_pFirstColOrb;
 	releaseGPU_CanonChecker();
 }
 

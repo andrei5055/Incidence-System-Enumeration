@@ -426,7 +426,7 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());
 	else
-		this->setColOrbitCurr(pColOrbit->next());
+		this->setColOrbitCurr(pColOrbit->next(), nPart);
 
 	// All remaining elements of all columns
 	// of the current orbit should be equal to 0 or 1, respectively

@@ -129,9 +129,9 @@
 #define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
 #define PRINT_PERMUTATION			0 // Output of the current permutation of column's orbit during the canonicity check
-#define OUT_PERMUTATION				1 // Output of permutations generated on
-									  //   a) matrix rows: when canonicity is checked
-									  //   b) orbits of columns, during the construction of the group for sorting of solutions
+#define OUT_PERMUTATION				0 // Output of permutations generated on
+									  //   a) orbits of columns, during the construction of the group for sorting of solutions
+									  //   b) matrix rows: when canonicity is checked on the totally constructed matrix
 #else
 #define PRINT_TO_FILE				1	// Write files with the results for each set of parameters
 #define PRINT_SOLUTIONS				0

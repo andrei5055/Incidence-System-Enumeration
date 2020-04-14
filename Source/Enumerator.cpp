@@ -286,6 +286,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 		prepareToTestExtraFeatures();
 
 	// For multi-threaded version we need to test only one top level solution
+	const bool multyPartDesign = numParts() > 1;
 	const S nRowEnd = nRow ? nRow + 1 : 0;
 	this->initiateColOrbits(rowNumb(), nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 	S level, nPart;
@@ -354,7 +355,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			ccc++;
 #endif		
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
-			auto *pColOrb = MakeRow(pRowSolution, nRow == firstNonfixedRow, iFirstPartIdx);
+			MakeRow(pRowSolution, nRow == firstNonfixedRow, iFirstPartIdx);
 
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true);
 			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
@@ -415,9 +416,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			}
 			else {
 				this->setCurrentRowNumb(nRow);
-				this->setColOrbitCurr(pColOrb);
-				for (auto i = numParts(); i--;)
+				for (auto i = numParts(); i-- > iFirstPartIdx;) {
+					this->setColOrbitCurr(m_pFirstColOrb[i], i);
 					this->setCurrUnforcedOrbPtr(nRow, i);
+				}
 
 				if (!USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, &level, pRowSolution)) {
 					if (pMaster) {
@@ -483,6 +485,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				(pRowSolution + i)->setSolutionIndex(0);
 		}
 
+		bool checkNextPart = false;
 		while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
 			this->reset(nRow);
 			if (nRow-- <= nRowEnd)
@@ -490,6 +493,24 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 			this->setCurrentRowNumb(nRow);
 			pRowSolution = rowStuff(nRow);
+			if (!checkNextPart) {
+				checkNextPart = multyPartDesign;
+				continue;
+			}
+
+			// We enumerate the multy-part designs AND
+			// we need to go to previous row
+			auto idx = numParts();
+			while (--idx) {
+				auto pPartRowSolution = pRowSolution + idx;
+				if (!pPartRowSolution->allSolutionChecked())
+					break;
+
+				pPartRowSolution->setSolutionIndex(0);
+			}
+
+			if (idx)
+				break;
 		}
 	} 
 
@@ -575,8 +596,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 FClass2(CEnumerator, void)::reset(S nRow) {
 	rowStuff(nRow)->resetSolution();
-	this->resetColOrbitCurr();
-	this->resetUnforcedColOrb();
+	for (auto nPart = numParts(); nPart--;) {
+		this->resetColOrbitCurr(nPart);
+		this->resetUnforcedColOrb(nPart);
+	}
 	this->resetFirstUnforcedRow();
 }
 
@@ -660,9 +683,8 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
     return pNextRowColOrbitNew;
 }
 
-FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
+FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
 	// Loop over all portions of the solution
-	ColOrbPntr pColOrbRet = NULL;
 	for (auto i = iFirstPartIdx; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
@@ -675,17 +697,13 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(RowSolutionPntr pRowSolution, bool fla
 			m_lastRightPartIndex[i] = pPartRowSolution->solutionIndex();
 
 		const auto pCurrSolution = pPartRowSolution->currSolution();
-		auto pColOrb = MakeRow(pCurrSolution, true, i);
-		if (!pColOrbRet)
-			pColOrbRet = pColOrb;
+		m_pFirstColOrb[i] = MakeRow(pCurrSolution, true, i);
 
 		if (flag) {
 			flag = false;
 			setX0_3(*pCurrSolution);
 		}
 	}
-
-	return pColOrbRet;
 }
 
 FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
