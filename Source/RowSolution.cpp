@@ -263,7 +263,7 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRo
 	char buffer[2048], *pBuf = buffer;
 	const auto lenBuf = countof(buffer);
 	if (markNextUsed)
-		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex(), numSolutions());
+		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex() + 1, numSolutions());
 	else
 		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solutions were constructed", nRow, numSolutions());
 

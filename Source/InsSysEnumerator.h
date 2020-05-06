@@ -44,7 +44,7 @@ private:
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual S MakeSystem(S numPart);
 	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
-	CK void setVariableLimit(S nVar, S len, S nRowToBuild, S k, S colWeight);
+	CK void setVariableLimit(S nVar, S len, S nRowToBuild, S colWeight, S weightDeficit);
 	CK virtual bool checkForcibleLambda(size_t fLambda) const   { return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
@@ -152,8 +152,9 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
 		equationIdx++;
-		const auto diffWeight = k - pColOrbit->columnWeight();
-		if (!diffWeight || diffWeight == nRowToBuild) {
+		const auto columnWeight = pColOrbit->columnWeight();
+		auto weightDeficit = k - columnWeight;
+		if (!weightDeficit || weightDeficit == nRowToBuild) {
 			colGroupIdx++;			// We need to skip this column's orbit
 									// All remaining elements of all columns
 									// of the current orbit should be equal to 0 or 1, respectively
@@ -161,9 +162,9 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 			if (noReplicatedBlocks() && currLen > 1)
 				break;
 
-			addForciblyConstructedColOrbit(pColOrbit, pPrev, numPart, diffWeight ? 1 : 0);
+			addForciblyConstructedColOrbit(pColOrbit, pPrev, numPart, weightDeficit ? 1 : 0);
 			if (currLen == pColOrbPrev->length()) {
-				rightPartFilter()->addFilter(equationIdx, diffWeight ? currLen : 0);
+				rightPartFilter()->addFilter(equationIdx, weightDeficit ? currLen : 0);
 				pColOrbPrev = pColOrbPrev->next();
 				continue;
 			}
@@ -178,18 +179,24 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 		if (pColGroupIdx)
 			pColGroupIdx[nVar] = colGroupIdx++;
 
-		int mapSetIdx;
+		int mapSetIdx = 0;
 		const auto currLen = pColOrbit->length();
-		setVariableLimit(nVar, currLen, nRowToBuild, k, pColOrbit->columnWeight());
-		if (pColOrbit->columnWeight() != pColOrbPrev->columnWeight()) {
+		setVariableLimit(nVar, currLen, nRowToBuild, columnWeight, weightDeficit);
+		const auto columnWeightPrev = pColOrbPrev->columnWeight();
+		if (pColOrbit->columnWeight() != columnWeightPrev) {
+			// Column weight was changed. It means that x[i] > 0
 			addColOrbitForVariable(nVar, pColOrbit);
 			const auto len = pColOrbPrev->length() - currLen;
-			// Column weight was changed. It means that x[i] > 0
+
+			// The length of the current orbit is the same.
+			// We could have two options here:
+			//    (a) orbit was not splited in two sub-orbits (current x[i] = xMax[i]), in that lase len is equal to 0
+			//    (b) orbit was splited in two sub-orbits, but second sub-orbit is forcibly constructed by 1's
+			mapSetIdx = 1;
 			if (len) {
 				// The length of the current orbit is NOT the same.
-				// It means that current x[i] < xMax[i] (the orbit was split in two sub-orbits)
 				// Check if second sub-orbit should contain all units
-				if (diffWeight + 1 == nRowToBuild) {
+				if (++weightDeficit == nRowToBuild) {
 					if (noReplicatedBlocks() && len > 1)
 						break;
 
@@ -200,7 +207,6 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 					addForciblyConstructedColOrbit(pTmp, pColOrbit, numPart, 1);
 					rightPartFilter()->addFilter(equationIdx, len, nVar);
 					colGroupIdx++;    // This group of columns will be skipped
-					mapSetIdx = 1;
 #if USE_EXRA_EQUATIONS
 					// Assign the length of current orbits to all its descendant
 					const size_t lenOrb = pTmp->length();
@@ -212,7 +218,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 #endif
 				}
 				else {
-					setVariableLimit(++nVar, len, nRowToBuild, k, pColOrbPrev->columnWeight());
+					setVariableLimit(++nVar, len, nRowToBuild, columnWeightPrev, weightDeficit);
 					pColOrbitNext = (pColOrbit = pColOrbitNext)->next();
 					if (pColGroupIdx)
 						pColGroupIdx[nVar] = colGroupIdx++;
@@ -220,14 +226,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 					mapSetIdx = 2;
 				}
 			}
-			else {
-				// The length of the current orbit is the same.
-				// It means that current x[i] = xMax[i] (orbit was not splited in two sub-orbits)
-				mapSetIdx = 1;
-			}
 		}
-		else
-			mapSetIdx = 0;
 
 		pRowEquation->addVarMapping(mapSetIdx, nVar++, eqIdx++);
 		pColOrbPrev = pColOrbPrev->next();
@@ -440,10 +439,10 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 		setFirstUnforcedRow(this->currentRowNumb());
 }
 
-FClass2(C_InSysEnumerator, void)::setVariableLimit(S nVar, S len, S nRowToBuild, S k, S colWeight)
+FClass2(C_InSysEnumerator, void)::setVariableLimit(S nVar, S len, S nRowToBuild, S colWeight, S weightDeficit)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
-	this->SetAt(nVar, static_cast<S>(((k - colWeight) * len + nRowToBuild - 1) / nRowToBuild));
+	this->SetAt(nVar, static_cast<S>((weightDeficit * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
 	// Maximal value of any Xi cannot be bigger than X0_3, when i-th group of columns
@@ -452,7 +451,7 @@ FClass2(C_InSysEnumerator, void)::setVariableLimit(S nVar, S len, S nRowToBuild,
 	if (colWeight >= 2 && len > getX0_3())
 		len = getX0_3();
 
-	if (noReplicatedBlocks() && k - colWeight == 1)
+	if (noReplicatedBlocks() && weightDeficit == 1)
 		len = 1;
 
 	inSysRowEquation()->setVariableMaxVal(nVar, len);

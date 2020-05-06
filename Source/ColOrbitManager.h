@@ -41,7 +41,6 @@ public:
 	CC inline auto colOrbitIni(S nRow, S idxPart) const { return *(colOrbitsIni(idxPart) + nRow); }
 protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)	{ setColOrbit(pntr, currentRowNumb(), idxPart); }
-	CK inline void resetColOrbitCurr(S idxPart)         { setColOrbitCurr(*(colOrbitPntr() + colNumb() * currentRowNumb()), idxPart); } // ??? First argument is wrong
 	CK inline void resetUnforcedColOrb(S idxPart)		{ memset(unforcedColOrbPntr(idxPart) + unfColIdx(currentRowNumb()), 0, rankMatr() * sizeof(*unforcedColOrbPntr())); }
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, int n);
 	CK inline ColOrbPntr *currUnforcedOrbPtr(S nPart) const		{ return m_ppUnforcedColOrbCurr[nPart]; }
