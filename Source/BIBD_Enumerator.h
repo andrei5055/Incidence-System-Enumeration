@@ -29,7 +29,7 @@ protected:
 	virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
 #endif
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
-	CK virtual bool checkLambda(size_t val) const					{ return val == lambda(); }
+	CK virtual bool checkLambda(S val) const						{ return val == lambda(); }
 	CK virtual void ReportLamdaProblem(S i, S j, size_t lambda) const {
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu != " ME_FRMT "\n",
 			i, j, lambda, this->getInSys()->lambda());
@@ -45,7 +45,7 @@ protected:
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
-	CK virtual bool checkForcibleLambda(size_t fLambda) const		 { return checkLambda(fLambda); }
+	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const	 { return checkLambda(fLambda); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 

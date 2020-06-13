@@ -482,7 +482,7 @@ private:
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 #if PRINT_SOLUTIONS
-	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed) const;
+	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPart) const;
 #endif
 
 #if USE_STRONG_CANONICITY_A

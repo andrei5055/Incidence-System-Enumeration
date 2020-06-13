@@ -11,7 +11,7 @@
 
 #include "VariableMapping.h"
 
-typedef struct {
+typedef struct FilterData {
     int m_equIdx;
     size_t m_varIdx;
     VECTOR_ELEMENT_TYPE m_val;

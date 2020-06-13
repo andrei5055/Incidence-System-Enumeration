@@ -45,7 +45,7 @@ private:
 	CK virtual S MakeSystem(S numPart);
 	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK void setVariableLimit(S nVar, S len, S nRowToBuild, S colWeight, S weightDeficit);
-	CK virtual bool checkForcibleLambda(size_t fLambda) const   { return true; }
+	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const		{ return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
 																}
@@ -244,7 +244,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 			pTmp = pTmp->next();
 		}
 
-		if (nRowToBuild != 2 || checkForcibleLambda(fLambda))
+		if (nRowToBuild != 2 || checkForcibleLambda(fLambda, numPart))
 			setForcibleLambda(nRow, fLambda, numPart);
 		else
 			return ELEMENT_MAX;

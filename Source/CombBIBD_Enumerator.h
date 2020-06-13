@@ -22,6 +22,7 @@ protected:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }
 #endif
+	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const { return  fLambda == paramSet(t_lSet)->GetAt(numPart); }
 private:
 
 };

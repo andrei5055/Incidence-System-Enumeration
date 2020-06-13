@@ -61,7 +61,6 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 	this->setUseCanonGroup(USE_CANON_GROUP && !permStorage()->isEmpty());
 
 	S i = *pPartNumb;
-	RowSolutionPntr pNextRowSolution = NULL;
 	if (prepareToFindRowSolution()) {
 		// Find row solution for all parts of the design
 		while (true) {
@@ -77,21 +76,19 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
 				break;
 
-			if (!pNextRowSolution)
-				pNextRowSolution = pRowSolution;
-
 			if (++i >= this->numParts())
 				break;
 		}
 	}
 
-	OUTPUT_SOLUTION(pNextRowSolution, outFile(), currentRowNumb(), false);
+	OUTPUT_SOLUTION(rowStuff(currentRowNumb(), *pPartNumb), outFile(), currentRowNumb(), false, *pPartNumb);
 	if (i < this->numParts()) {
 		*pPartNumb = i;
 		return NULL;
 	}
 
-	return pNextRowSolution;
+	// Always return the pointer to the solutions of part #0
+	return this->rowStuff(currentRowNumb(), 0);
 }
 
 #if USE_THREADS_ENUM
@@ -358,7 +355,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			MakeRow(pRowSolution, nRow == firstNonfixedRow, iFirstPartIdx);
 
-			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true);
+			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0);
 			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
 			if (++nRow == rowNumb()) {
 				pEnumInfo->incrConstrTotal();
@@ -470,7 +467,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					}
 
 					if (iFirstPartIdx) {
-						// Enimeration of combined designs AND not all solutions for i-th part were tested
+						// Enumeration of combined designs AND not all solutions for i-th part were tested
 						this->setCurrentRowNumb(--nRow);
 						continue;
 					}
@@ -617,6 +614,7 @@ FClass2(CEnumerator, void)::reset(S nRow) {
 
 	this->resetFirstUnforcedRow();
 }
+
 
 FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx) const
 {
@@ -968,14 +966,14 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 }
 
 #if PRINT_SOLUTIONS
-FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, S nRow, bool markNextUsed) const
+FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, S nRow, bool markNextUsed, S nPart) const
 {	
 	if (!pSolution)
 		return;
 
 	MUTEX_LOCK(out_mutex);
 	const auto iMax = this->numParts();
-	for (S i = 0; i < iMax; i++)
+	for (auto i = nPart; i < iMax; i++)
 		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, iMax > 1);
 
 	MUTEX_UNLOCK(out_mutex);

@@ -390,8 +390,8 @@ extern int ccc;
 #define MAKE_OUTPUT()			CHECK_VAL(ccc) && CHECK_CONSTR(START_NUMBER, END_NUMBER)
 
 #if PRINT_SOLUTIONS
-	#define OUTPUT_SOLUTION(x, file, nRow, f)		if (MAKE_OUTPUT()) \
-														{ this->printSolutions(x, file, nRow, f); }
+	#define OUTPUT_SOLUTION(x, file, nRow, f, numPart)		if (MAKE_OUTPUT()) \
+																{ this->printSolutions(x, file, nRow, f, numPart); }
 #else
     #define OUTPUT_SOLUTION(x,...)
 #endif

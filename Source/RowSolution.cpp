@@ -274,34 +274,35 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRo
 
 	outString(buffer, file);
 
-	if (numSolutions() < sizeof(buffer) / 2) {
-		if (markNextUsed) {
-			const auto len2 = sizeof(buffer) << 1;
-			const auto len = solutionIndex() * 2;
-			const auto nLoops = len / len2;
-			size_t idx = 0;
-			for (size_t j = 0; j < nLoops; j++) {
-				idx = setSolutionFlags(buffer, sizeof(buffer), idx);
-				buffer[sizeof(buffer)-1] = '\0';
-				outString(buffer, file);
-			}
+	if (numSolutions() >= sizeof(buffer) / 2)
+		return;   // The buffer is not large enough for output
 
-			const size_t lastLen = 2 * (numSolutions() - idx);
-			setSolutionFlags(buffer, lastLen, idx);
-			buffer[len % len2 + 1] = '*';
-			strcpy_s(buffer + lastLen, sizeof(buffer)-lastLen, "\n");
+	if (markNextUsed) {
+		const auto len2 = sizeof(buffer) << 1;
+		const auto len = solutionIndex() * 2;
+		const auto nLoops = len / len2;
+		size_t idx = 0;
+		for (size_t j = 0; j < nLoops; j++) {
+			idx = setSolutionFlags(buffer, sizeof(buffer), idx);
+			buffer[sizeof(buffer)-1] = '\0';
 			outString(buffer, file);
 		}
 
-		printRow(file);
-
-		PERMUT_ELEMENT_TYPE *pPerm = solutionPerm() ? solutionPerm()->GetData() : NULL;
-		if (pPerm)
-			printRow(file, pPerm);
-
-		const VECTOR_ELEMENT_TYPE *pSolution = firstSolution();
-		for (unsigned int i = 0; i < solutionLength(); i++)
-			printRow(file, pPerm, pSolution + i);
+		const size_t lastLen = 2 * (numSolutions() - idx);
+		setSolutionFlags(buffer, lastLen, idx);
+		buffer[len % len2 + 1] = '*';
+		strcpy_s(buffer + lastLen, sizeof(buffer)-lastLen, "\n");
+		outString(buffer, file);
 	}
+
+	printRow(file);
+
+	PERMUT_ELEMENT_TYPE *pPerm = solutionPerm() ? solutionPerm()->GetData() : NULL;
+	if (pPerm)
+		printRow(file, pPerm);
+
+	const VECTOR_ELEMENT_TYPE *pSolution = firstSolution();
+	for (unsigned int i = 0; i < solutionLength(); i++)
+		printRow(file, pPerm, pSolution + i);
 }
 #endif
