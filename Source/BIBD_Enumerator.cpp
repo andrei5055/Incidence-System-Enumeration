@@ -61,10 +61,10 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	// Define intersection of current row with previous one:
 	auto lastRowToCheck = lenStabilizer();
 	rowNumb -= lenStabilizer();
-	const auto pMathix = this->matrix();
-	const auto *pCurrRow = pMathix->GetRow(currRowNumb--);
-	const auto pPrevRow = pMathix->GetRow(currRowNumb--);
-	const auto partsInfo = pMathix->partsInfo();
+	const auto pMatrix = this->matrix();
+	const auto *pCurrRow = pMatrix->GetRow(currRowNumb--);
+	const auto pPrevRow = pMatrix->GetRow(currRowNumb--);
+	const auto partsInfo = pMatrix->partsInfo();
 	const auto colNumb = partsInfo? partsInfo->colNumb() : this->colNumb();
 	const auto r = partsInfo ? colNumb * k / rowNumb : this->getR();
 
@@ -112,7 +112,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 
 	//     for remaining elements:
 	do {
-		pCurrRow = pMathix->GetRow(currRowNumb);
+		pCurrRow = pMatrix->GetRow(currRowNumb);
 		auto j = x0_3;
 		for (auto i = lambda; i--;) {
 			if (pCurrRow[pColumnIdx[i]]) {

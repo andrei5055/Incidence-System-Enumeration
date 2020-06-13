@@ -83,13 +83,10 @@ public:
 		return pRow;
 	}
 
-	CC S stabLengthExt() const						{ return m_nStabExtern; }
-protected:
-	inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
+	CC inline auto stabLengthExt() const			{ return m_nStabExtern; }
+	CC inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
 	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
-		if (!idx)
-			return GetRow(nRow);
-		return GetRow(nRow) + partsInfo()->GetPartInfo(idx, pLen);
+		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
 
 private:

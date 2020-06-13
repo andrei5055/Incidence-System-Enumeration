@@ -30,8 +30,8 @@ protected:
 #endif
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
 	CK virtual bool checkLambda(S val) const						{ return val == lambda(); }
-	CK virtual void ReportLamdaProblem(S i, S j, size_t lambda) const {
-		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): %zu != " ME_FRMT "\n",
+	CK virtual void ReportLamdaProblem(S i, S j, S lambda) const {
+		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
 			i, j, lambda, this->getInSys()->lambda());
 	}
 	CK virtual const char *getObjName() const                       { return "BIBD"; }
@@ -70,39 +70,62 @@ FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPa
 
 FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
 {
+	const auto partsInfo = pMatrix->partsInfo();
 	const auto iMin = this->lenStabilizer();
-	const auto paramR = this->getInSys()->GetR(iMin);
+	const auto paramK = this->getInSys()->GetK();
 	const auto iMax = this->rowNumb();
-	for (S i = iMin; i < iMax; i++) {
-		const auto pRow = pMatrix->GetRow(i);
-		S r = 0;
-		for (auto j = this->colNumb(); j--;)
-			r += *(pRow + j);
+	const auto pLambdaSet = this->paramSet(t_lSet);
+	char buf[32];
+	char* pBuf = NULL;
+	for (S n = 0; n < pMatrix->numParts(); n++) {
+		const auto colNumb = partsInfo ? partsInfo->colNumb(n) : this->colNumb();
+		const auto paramR = partsInfo ? colNumb * paramK / (iMax - iMin) : this->getR();
+		for (S i = iMin; i < iMax; i++) {
+			S len;
+			const auto pRow = pMatrix->GetRow(i, n, &len);
+			S r = 0;
+			for (auto j = colNumb; j--;)
+				r += *(pRow + j);
 
-		if (r != paramR) {
+			if (r != paramR) {
 #if !CONSTR_ON_GPU
-			pMatrix->printOut(this->outFile());
+				pMatrix->printOut(this->outFile());
 #endif
-			OUT_STRING(buff, 256, "Wrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", i, r, paramR);
-			THROW();
-			return false;
-		}
+				if (partsInfo)
+					snprintf(pBuf = buf, sizeof(buf), "Matrix Part # " ME_FRMT ": ", n);
 
-		for (S j = 0; j < i; j++) {
-			S lambda = 0;
-			const auto pRowCurr = pMatrix->GetRow(j);
-			for (auto k = this->colNumb(); k--;)
-				lambda += *(pRowCurr + k) * *(pRow + k);
+				OUT_STRING(buff, 256, "%sWrong number of units in the row # " ME_FRMT ": " ME_FRMT " != " ME_FRMT "\n", pBuf? pBuf : "", i, r, paramR);
 
-			if (!checkLambda(lambda)) {
-				ReportLamdaProblem(i, j, lambda);
+				THROW();
+				return false;
+			}
+
+			for (S j = iMin; j < i; j++) {
+				S lambda = 0;
+				const auto pRowCurr = pMatrix->GetRow(j, n, &len);
+				for (auto k = colNumb; k--;)
+					lambda += *(pRowCurr + k) * *(pRow + k);
+
+				if (partsInfo) {
+					const auto lambdaCmp = this->getLambda(pLambdaSet, 0, n);
+					if (lambda == lambdaCmp)
+						continue;
+
+					snprintf(buf, sizeof(buf), "Matrix Part # " ME_FRMT ": ", n);
+					OUT_STRING(buff, 256, "%sWrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
+						buf, i, j, lambda, lambdaCmp);
+
+				} else {
+					if (checkLambda(lambda))
+						continue;
+					ReportLamdaProblem(i, j, lambda);
+				}
 				THROW();
 				return false;
 			}
 		}
 	}
 
-	const auto paramK = this->getInSys()->GetK();
 	bool noReplicatedBlockFound = true;
 	for (auto j = this->colNumb(); j--;) {
 		S k = 0;
