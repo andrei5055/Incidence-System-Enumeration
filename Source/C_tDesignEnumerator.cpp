@@ -297,7 +297,7 @@ FClass2(C_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMas
 	PERMUT_ELEMENT_TYPE *pIntersectionTo = getIntersectionParam(&pNumb);
 	const auto *pIntersectionFrom = dynamic_cast<const Class2(C_tDesignEnumerator) *>(pMaster)->getIntersectionParam(&pNumb);
 	for (uint i = 0; i < t; i++) {
-		const size_t len = pNumb[i] * pLambdaSet->GetAt(i);;
+		const size_t len = pNumb[i] * pLambdaSet->GetAt(i);
 		memcpy(pIntersectionTo, pIntersectionFrom, len * sizeof(*pIntersectionTo));
 		pIntersectionTo += len;
 		pIntersectionFrom += len;

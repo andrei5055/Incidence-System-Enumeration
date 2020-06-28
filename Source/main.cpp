@@ -355,6 +355,7 @@ int main(int argc, char * argv[])
 		size_t pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
 			newWorkDir = line.substr(pos + 1);
+			std::replace(newWorkDir.begin(), newWorkDir.end(), '\\', '/');
 			if (newWorkDir.c_str()[newWorkDir.length() - 1] != '/')
 				newWorkDir += '/';
 

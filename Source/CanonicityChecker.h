@@ -185,7 +185,6 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 	if (pRowSolution) {
 		// Because the position of current solution (pRowSolution->solutionIndex()) 
 		// could be changed, let's take pointer here
-		// Don't worry about that and similar compilation warnings: For now we don't plan to call this method with pRowSolution != NULL
 		pCurrSolution = pRowSolution->currSolution();
 		solutionSize = pRowSolution->solutionLength();
 #if USE_STRONG_CANONICITY
@@ -203,6 +202,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 
 	bool retVal = true;
 	S nRow = ELEMENT_MAX;
+	const auto* permColumn = permCol();
 	while (true) {
 	next_permut:
 		nRow = next_permutation(nRow, lenStab);
@@ -228,7 +228,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 					if (orbLen > 1)
 						diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
 					else
-						diff = (int) * (pRow + nColCurr) - *(pRowPerm + *(permCol() + nColCurr));
+						diff = (int) * (pRow + nColCurr) - *(pRowPerm + *(permColumn + nColCurr));
 
 					if (diff > 0)
 						goto next_permut;

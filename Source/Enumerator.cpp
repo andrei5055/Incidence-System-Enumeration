@@ -293,7 +293,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	S iFirstPartIdx = 0;    //      will be changed on current row
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
-
+		bool checkNextPart = false;
 #if USE_THREADS_ENUM
 		if (!nRowEnd && nRow == mt_level) {
 			// We are in master enumerator
@@ -353,9 +353,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			ccc++;
 #endif		
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
+			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0);
 			MakeRow(pRowSolution, nRow == firstNonfixedRow, iFirstPartIdx);
 
-			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0);
 			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
 			if (++nRow == rowNumb()) {
 				pEnumInfo->incrConstrTotal();
@@ -408,6 +408,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				}
 				else {
 					nRow--;
+					checkNextPart = multyPartDesign;
 					pRowSolution = NULL;
 				}
 			}
@@ -484,7 +485,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				(pRowSolution + i)->setSolutionIndex(0);
 		}
 
-		bool checkNextPart = false;
 		while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
 			this->reset(nRow);
 			if (nRow-- <= nRowEnd)
@@ -624,11 +624,12 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 		nextColOrbNeeded &= nRow + 1 < rowNumb();
 
 	const auto *pColOrbit = this->colOrbit(nRow, partIdx);
-	auto *pNextRowColOrbit = this->colOrbit(nRow+1, partIdx);
+	const auto *pNextRowColOrbit = this->colOrbitIni(nRow+1, partIdx);
 	const auto colOrbLen = this->colOrbitLen();
 
 	const int maxElement = this->rank() - 1;
 	const auto *pColOrbitIni = this->colOrbitIni(nRow, partIdx);
+
 	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
 	Class1(CColOrbit) *pColOrbitLast = NULL;
 	while (pColOrbit) {
@@ -743,7 +744,7 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 		return 0;		// Directory could not be used
 
 	if (this->getTopLevelDirName()) {
-		len += SNPRINTF(dirName + len, lenBuffer - len, "//%s", this->getTopLevelDirName());
+		len += SNPRINTF(dirName + len, lenBuffer - len, "%s/", this->getTopLevelDirName());
 		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
 			return 0;	// Directory could not be used
 	}
@@ -753,13 +754,12 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 		if (pParam->objType == t_SemiSymmetricGraph)
 			rowNumb *= pParam->r / pParam->k;
 
-		len += SNPRINTF(dirName + len, lenBuffer - len, "//V =%4d", rowNumb);
+		len += SNPRINTF(dirName + len, lenBuffer - len, "V =%4d/", rowNumb);
 		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
 			return 0;	// Directory could not be used
 	}
 
-	dirName[len] = '/';
-	return len + 1;
+	return len;
 }
 
 static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
@@ -958,11 +958,22 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	FCLOSE(dbFile);
 	FCLOSE(f);
 
-	if (remove(enumerationDB) != 0)
-		printf("Cannot remove file %s", enumerationDB);
+	string error;
+	if (remove(enumerationDB) != 0) {
+		error = " Cannot remove file '";
+	}
 	else
-	if (rename(tmpFile, enumerationDB) != 0)
-		printf("Cannot rename file '%s' to '%s'", tmpFile,  enumerationDB);
+	if (rename(tmpFile, enumerationDB) != 0) {
+		error = " Cannot rename file '";
+		error += tmpFile;
+		error += "' to '";
+	}
+	else
+		return;
+
+	error += enumerationDB;
+	error += "'";
+	perror(error.c_str());
 }
 
 #if PRINT_SOLUTIONS
