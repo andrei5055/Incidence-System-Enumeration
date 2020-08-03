@@ -129,9 +129,11 @@
 #define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
 #define PRINT_PERMUTATION			0 // Output of the current permutation of column's orbit during the canonicity check
-#define OUT_PERMUTATION				0 // Output of permutations generated on
-									  //   a) orbits of columns, during the construction of the group for sorting of solutions
-									  //   b) matrix rows: when canonicity is checked on the totally constructed matrix
+#define OUT_PERMUTATION             1 // Output of permutations generated on
+									  //   a) matrix rows: when canonicity is checked on the totally constructed matrix:        1
+									  //   b) orbits of columns, during the construction of the group for sorting of solutions: 2
+									  //   c) (a)  + (b):                                                                       3
+
 #else
 #define PRINT_TO_FILE				1	// Write files with the results for each set of parameters
 #define PRINT_SOLUTIONS				0
@@ -496,7 +498,9 @@ typedef enum {
 	t_outStabilizerOrbit	= 1 << 4,	// Keep the orbits of stabilizer of first elements
 	t_colOrbitsConstructed  = 1 << 5,
 	t_printTransposedMatrix = 1 << 6,
-	t_alwaysKeepRowPermute	= 1 << 7,   // Keep forming elements of the Aut(M) acting on the rows of partially constructed matrix M
+	t_alwaysKeepRowPermute	= 1 << 7,   // Keep generating set of the Aut(M) acting on the rows of partially constructed matrix M
+	t_outRowPermute			= 1 << 8,   // Keep generating set of the Aut(M) acting on the rows of fully constructed matrix M
+	t_outRowOrbits			= 1 << 9,
 	t_allFlags				= -1
 } t_EnumeratorFlags;
 

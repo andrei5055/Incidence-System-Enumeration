@@ -47,10 +47,12 @@ typedef enum {
 typedef enum {
 	t_Summary =		  1<<0,		// default
 	t_AllObject =	  1<<1,
-	t_Transitive =    1<<2,
-	t_GroupOrderEQ =  1<<3,
-	t_GroupOrderGT =  1<<4,
-	t_GroupOrderLT =  1<<5,
+	t_GroupOrbits =			1<<2,
+	t_GroupGeneratingSet = t_GroupOrbits + (1<<3),
+	t_Transitive =			1<<4,
+	t_GroupOrderEQ =		1<<5,
+	t_GroupOrderGT =		1<<6,
+	t_GroupOrderLT =		1<<7,
 } t_outputType;
 
 typedef enum {

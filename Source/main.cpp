@@ -165,6 +165,12 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	Class2(C_InSysEnumerator) *pInSysEnum = NULL;
 	t_objectType objType = pParam->objType;
 	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
+	if ((pParam->outType & t_GroupGeneratingSet) == t_GroupGeneratingSet)
+		enumFlags |= t_outRowOrbits + t_outRowPermute;
+	else
+	if (pParam->outType & t_GroupOrbits)
+		enumFlags |= t_outRowOrbits;
+
 	const auto lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
@@ -304,10 +310,9 @@ int main(int argc, char * argv[])
 	}
 
 	// Job is defined by external file
-	ifstream infile;
-	infile.open(argv[1]);
+	ifstream infile(argv[1], ifstream::in);
 	if (!infile.is_open()) {
-		printf("Cannot open file: \"%s\"\n", (const char *)argv[1]);
+		printf("Cannot open file: \"%s\"\n", argv[1]);
 		abort();
 	}
 
@@ -456,6 +461,12 @@ int main(int argc, char * argv[])
 			if (output.find("SUMMARY") != string::npos)
 				outType |= t_Summary;
 
+			if (output.find("ORBIT") != string::npos)
+				outType |= t_GroupOrbits;
+
+			if (output.find("GENERATING SET") != string::npos)
+				outType |= t_GroupGeneratingSet;
+
 			if (output.find("ALL OBJECTS") != string::npos)
 				outType |= t_AllObject;
 			else
@@ -526,11 +537,10 @@ int main(int argc, char * argv[])
 		}
 
 		if (from != -1) {
-			printf("Cannot read parameters: '%s'\n", line.substr(from, end - from + 1).c_str());
+			printf("Can't read parameters: '%s'\n", line.substr(from, end - from + 1).c_str());
 			break;
 		}
 
-		param->outType = outType;
 		if (param->workingDir != newWorkDir || firstRun)
 			param->workingDir = string(newWorkDir);
 

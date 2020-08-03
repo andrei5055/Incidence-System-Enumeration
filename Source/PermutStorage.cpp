@@ -46,10 +46,14 @@ PermutStorage(void)::orderPermutations(size_t *pPermPerm)
 }
 
 #if OUT_PERMUTATION
-PermutStorage(void)::printPerm(const S* pPerm, int add, S permLen) const {
+PermutStorage(void)::printPerm(const S* pPerm, bool savePerm, int add, S permLen) const {
 	if (!pPerm)
 		return;
 
+#if OUT_PERMUTATION == 1		// output of the permutations only for completely constructed matrix
+	if (!savePerm)
+		return;
+#endif
 	if (!permLen)
 		permLen = lenPerm();
 

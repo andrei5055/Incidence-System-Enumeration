@@ -11,7 +11,7 @@ public:
 	CC CPermutStorage();
 	CC ~CPermutStorage()							{ delete[] permutMemory(); }
 	void outputAutomorphismInfo(FILE *file, const S *pRowOrbits, const PermutStoragePntr pPermColumn = NULL,
-		const S *pColOrbits = NULL, const MatrixDataPntr pMatrix = NULL) const;
+		const S *pColOrbits = NULL, const MatrixDataPntr pMatrix = NULL, bool outPermut = true) const;
 	void outputPerm(FILE *file, const S *perm, S lenPerm, S lenPerm2 = 0, const char *pColPerm = NULL, char **pBuffer = NULL, size_t *pLenBuffer = NULL,
 			char **ppFormat = NULL) const;
 	CK void adjustGenerators(int *pIdx, S lenIdx);
@@ -56,10 +56,10 @@ private:
 	mutable int m_cntr = 0;
 public:
 	void resetGroupCntr()								{ if (this) m_cntr = 0; }
-	void printPerm(const S* pPerm, int add = 1, S permLen = 0) const;
+	void printPerm(const S* pPerm, bool savePerm = false, int add = 1, S permLen = 0) const;
 
 #define PREPARE_PERM_OUT(x)		x->resetGroupCntr()
-#define OUT_PERM(x, y, len)		x->printPerm(y, 1, len)
+#define OUT_PERM(x, y, len)		x->printPerm(y, false, 1, len)
 #else
 #define resetGroupCntr()
 #define printPerm(x,...)
@@ -101,8 +101,8 @@ PermutStorage(S *)::allocateMemoryForPermut(S lenPermut)
 PermutStorage(void)::savePermut(const S lenPermut, const S *perm)
 {
 	auto *pMem = allocateMemoryForPermut(lenPermut);
-	printPerm(perm);
-	if (!perm)
+	printPerm(perm, true);
+	if (perm)
 		memcpy(pMem, perm, lenPermut * sizeof(S));
 }
 
@@ -256,7 +256,7 @@ PermutStorage(S *)::multiplyPermutations(size_t firstPermIdx, size_t secondPermI
 	// we need to access the permuts by their indices here
 	const auto *pFirst = getPermutByIndex(firstPermIdx);
 	const auto *pSecond = getPermutByIndex(secondPermIdx);
-	printPerm(pFirst, 0);
+	printPerm(pFirst, false, 0);
 	// Do multiplication of two permutations here:
 	for (auto k = lenPerm(); k--;)
 		*(pMultRes + k) = *(pFirst + *(pSecond + k));
@@ -337,15 +337,15 @@ PermutStorage(void)::UpdateOrbits(const S* permut, S lenPerm, S* pOrb, S idx) co
 }
 
 PermutStorage(void)::outputAutomorphismInfo(FILE* file, const S* pRowOrbits,
-	const  Class2(CPermutStorage)* pPermColumn, const S* pColOrbits, const Class2(CMatrixData)* pMatrix) const {
+	const  Class2(CPermutStorage)* pPermColumn, const S* pColOrbits, const Class2(CMatrixData)* pMatrix, bool outPermut) const {
 	const auto nRows = lenPerm();
-	if (pPermColumn) {
+	if (pPermColumn)
 		outputOrbits(file, pPermColumn, pMatrix, pRowOrbits, pColOrbits);
-	}
 	else
 		outputOrbits(file, pRowOrbits, nRows);
 
-	outputPermutations(file, nRows, pPermColumn);
+	if (outPermut)
+	    outputPermutations(file, nRows, pPermColumn);
 }
 
 PermutStorage(void)::outputOrbits(FILE* file, const S* pOrbits, S lenPerm, const Class2(CPermutStorage)* pPermColumn) const {
