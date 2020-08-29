@@ -308,8 +308,8 @@ PermutStorage(size_t)::findSolutionIndex(const S *pFirst, size_t idx, S *pMem, s
 	while (i-- && MEMCMP(pFirst + lenPerm() * pCanonIdx[i], pCanonical, len));
 
 	if (i < 0) {
-		// It could happen when we are using reordering of solutions by the automorphism group
-		// BIBD(12, 44, 11, 3, 2) provides a lot's of such examples
+		// This could happen when we use reordering of solutions by the group of automorphisms
+		// BIBD(12, 44, 11, 3, 2) provides many such examples
 		return SIZE_MAX;
 	}
 

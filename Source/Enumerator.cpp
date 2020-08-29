@@ -178,9 +178,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
 	char buff[256], jobTitle[256];
-	const size_t lenBuffer = countof(buff);
-	const int mt_level = pParam->mt_level;
-	const size_t threadNumb = pParam->threadNumb;
+	const auto lenBuffer = countof(buff);
+	const auto threadNumb = pParam->threadNumb;
+	// We will not launch separate thread, when threadNumb is equal to 1
+	const int mt_level = threadNumb > 1? pParam->mt_level : INT_MAX;
 
 	size_t lenName = 0;
 	bool knownResults = false;
@@ -259,6 +260,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 #if USE_THREADS_ENUM 
 		pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
+		CMatrixData<TDATA_TYPES>::ResetCounter();
 	#if USE_POOL
 		// Create an asio::io_service and a thread_group (through pool in essence)
 		pIoService = new asio::io_service();
@@ -383,7 +385,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 										outString(" \n" BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, this->outFile());
 									}
 
+#if USE_THREADS
+									pMatrix->printOut(this->outFile(), nRow, 0, this);
+#else
 									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->constrCanonical(), this);
+#endif
 									mtx.unlock();
 								}
 #endif
@@ -958,7 +964,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	FCLOSE(dbFile);
 	FCLOSE(f);
 
-	string error;
+	std::string error;
 	if (remove(enumerationDB) != 0) {
 		error = " Cannot remove file '";
 	}

@@ -3,17 +3,33 @@
 #include "stdafx.h"
 #include "matrix.h"
 
+
 template class CMatrixData<TDATA_TYPES>;
 template class C_tDesign<TDATA_TYPES>;
 template class CCombinedBIBD<TDATA_TYPES>;
+
+#if USE_THREADS_ENUM
+ulonglong CMatrixData<TDATA_TYPES>::m_matrixCounter;
+std::mutex CMatrixData<TDATA_TYPES>::m_mutex;
+
+FClass2(CMatrixData, ulonglong)::GetNextCounter() {
+	MUTEX_LOCK(m_mutex);
+	const auto matrixNumber = ++m_matrixCounter;
+	MUTEX_UNLOCK(m_mutex);
+	return matrixNumber;
+}
+#endif
 
 FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck) const
 {
 	if (nRow == ELEMENT_MAX)
 		nRow = this->rowNumb();
-
+#if USE_THREADS_ENUM
+	if (!matrNumber)
+		matrNumber = GetNextCounter();
+#endif
 	const auto nCol = this->colNumb();
-	char buffer[256], * pBuf = buffer;
+	char buffer[256], *pBuf = buffer;
 	auto lenBuf = sizeof(buffer);
 	if (nCol >= lenBuf - 4)
 		pBuf = new char[lenBuf = nCol + 14];

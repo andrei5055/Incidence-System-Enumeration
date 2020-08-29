@@ -12,7 +12,6 @@ CVariable::CVariable(VECTOR_ELEMENT_TYPE equIdx, VECTOR_ELEMENT_TYPE varIdx, CVa
 
 void CVariable::linkVariable(CVariable *pVar)
 {
-	static int fff = 0; ++fff;
 	// NOTE: We use oposite direction for linked list of variable in the equation.
 	// For instance, for the equation
 	//

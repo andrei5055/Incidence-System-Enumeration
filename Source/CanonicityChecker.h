@@ -62,7 +62,7 @@ protected:
 private:
 	CC void init(S nRow, bool savePerm);
 	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);
-	CC void addAutomorphism(bool rowPermut = true);
+	CC void addAutomorphism(bool rowPermut = true, bool savePermut = false);
 	CC int checkColOrbit(S orbLen, S nColCurr, const T *pRow, const T *pRowPerm) const;
 	CC inline void setStabilizerLength(S len)		{ m_nStabLength = len; }
 	CC inline auto stabilizerLength() const			{ return m_nStabLength; }
@@ -126,7 +126,7 @@ CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags
 	const auto mult = enumFlags & t_outStabilizerOrbit ? 2 : 1;
 
 	const auto outColumnOrbits = enumFlags & t_outColumnOrbits;
-	const auto keepRowPermute = enumFlags & t_alwaysKeepRowPermute;
+	const auto keepRowPermute = enumFlags & (t_alwaysKeepRowPermute | t_outRowPermute);
 	const auto nPermutStorages = numParts + (outColumnOrbits ? 1 : 0) + (keepRowPermute ? 1 : 0);
 	auto pPermStorage = new CPermutStorage<T, S>[nPermutStorages]();
 	setPermStorage(pPermStorage);
@@ -171,12 +171,12 @@ CanonicityChecker()::~CCanonicityChecker()
 CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb, S *pRowOut, RowSolutionPntr pRowSolution)
 {
 	// Construct trivial permutations for rows and columns
-	const bool rowPermut = outInfo & t_saveRowPermutations;
+	const auto rowPermut = outInfo & t_saveRowPermutations;
+	const auto* pMatr = pEnum->matrix();
+	const auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
 	init(nRowMax--, rowPermut);
 
-	const auto *pMatr = pEnum->matrix();
 	const auto colOrbLen = pEnum->colOrbitLen();
-	const auto colNumb = pEnum->colNumb();
 	auto **colOrbit = pEnum->colOrbits();
 	auto **colOrbitIni = pEnum->colOrbitsIni();
 #ifndef USE_CUDA
@@ -301,7 +301,6 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 				if (pPermStorage->isEmpty()) {		// Index for columns was not yet constructed
 					lenPermut = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
 					pPermStorage->allocateMemoryForPermut(lenPermut);	// Memory for identity permutation just in case we will need it
-						                                                // NOTE: as of 04/05/2020, we do not use it
 				} else
 					lenPermut = pPermStorage->lenPerm();
 
@@ -323,7 +322,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 			ConstructColumnPermutation(pEnum->matrix());
 //#endif
 
-		addAutomorphism(rowPermut);
+		addAutomorphism(rowPermut, savePermut);
 		nRow = ELEMENT_MAX - 1;
 	}
 

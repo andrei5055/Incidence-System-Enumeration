@@ -205,7 +205,7 @@ CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool 
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 
-CanonicityChecker(void)::addAutomorphism(bool rowPermut)
+CanonicityChecker(void)::addAutomorphism(bool rowPermut, bool savePermut)
 {
 	if (!rowPermut) {
 		if (permRowStorage())
@@ -213,7 +213,8 @@ CanonicityChecker(void)::addAutomorphism(bool rowPermut)
 	}
 	else {
 		UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
-		permStorage()->savePermut(numRow(), permRow());
+		if (savePermut)
+			permStorage()->savePermut(numRow(), permRow());
 	}
 }
 
@@ -416,10 +417,14 @@ CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, co
 
 CanonicityChecker(void)::outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix) const
 {
+	if (!(enumFlags() & t_outRowOrbits))
+		return;         // We don't need the detailed group related information
+
 	MUTEX_LOCK(out_mutex);
-	outString("\nOrbits and generating permutations:\n", file);
+	const auto flag = enumFlags() & t_outRowPermute;
+	outString(flag? "\nOrbits and generating permutations:\n" : "\nOrbits:\n", file);
 	const auto pColOrbits = permColStorage() && (m_enumFlags & t_colOrbitsConstructed)? getColOrbits(0) : NULL;
-	permStorage()->outputAutomorphismInfo(file, orbits(), permColStorage(), pColOrbits, pMatrix);
+	permStorage()->outputAutomorphismInfo(file, orbits(), permColStorage(), pColOrbits, pMatrix, flag);
 	MUTEX_UNLOCK(out_mutex);
 }
 

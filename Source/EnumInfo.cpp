@@ -195,6 +195,9 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 		pGroupInfo = this;
 
 	pGroupInfo->printGroupInfo(outFile);
+	if (!(m_pParam->outType & t_Summary))
+		return;
+
 	const ulonglong nConstrMatr = constrCanonical();
 	char buff[256];
 	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");

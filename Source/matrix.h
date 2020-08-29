@@ -1,6 +1,9 @@
 #pragma once
 #include "ColOrbits.h"
 #include "CanonicityChecker.h"
+#if USE_THREADS
+#include <mutex>
+#endif
 
 
 Class2Def(CMatrixData) {
@@ -88,7 +91,6 @@ public:
 	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
 		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
-
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
 	S m_nRows;
@@ -99,8 +101,14 @@ private:
 	size_t m_nLenData;
 	T *m_pData;
 	BlockGroupDescr<S> *m_nPartInfo = NULL;
-public:
 	mutable S m_nStabExtern;
+#if USE_THREADS
+	static ulonglong m_matrixCounter;
+	static std::mutex m_mutex;
+	static ulonglong GetNextCounter();
+public:
+	static void ResetCounter() { m_matrixCounter = 0; }
+#endif
 };
 
 
