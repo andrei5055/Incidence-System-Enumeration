@@ -32,7 +32,7 @@ protected:
 	CK bool SeekLogFile() const override				{ return true; }
 
 	CK bool prepareToFindRowSolution() override;
-	virtual void reset(S nRow);
+	virtual void reset(S nRow, bool resetSolutions = true);
 private:
 	inline void setNumRows(S nRow)						{ m_nNumbRows  = nRow; }
 	inline auto numRows() const							{ return m_nNumbRows; }

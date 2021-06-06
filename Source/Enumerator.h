@@ -444,7 +444,7 @@ protected:
 	size_t getDirectory(char *buffer, size_t len, bool rowNeeded = true) const;
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
-	virtual void reset(S nRow);
+	virtual void reset(S nRow, bool resetSolutions = true);
 	CK ColOrbPntr MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx = 0) const;
 	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
@@ -480,6 +480,9 @@ private:
 	CK virtual void resetFirstUnforcedRow()					{}
 	virtual S forcibleLambda(S nRow, S nPart) const			{ return ELEMENT_MAX; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
+	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) {}
+	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const { return 0; }
+	CK virtual unsigned char* getSolutionsWereConstructed()			{ return NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPart) const;

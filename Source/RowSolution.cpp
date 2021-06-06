@@ -257,6 +257,10 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 
 FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb) const
 {
+	extern CSolutionPerm* ppp;
+	if (nRow == 5 && nPortion == 0)
+		ppp = solutionPerm();
+
 	if (!solutionLength() || !numSolutions())
         return;
     
@@ -265,7 +269,8 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRo
 	if (markNextUsed)
 		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex() + 1, numSolutions());
 	else
-		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solutions were constructed", nRow, numSolutions());
+		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solution%s constructed", nRow, numSolutions(), numSolutions() > 1? "s were" : " was");
+
 
 	if (addPortionNumb || nPortion)
 		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " for portion %d\n", nPortion);
@@ -279,7 +284,7 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRo
 
 	if (markNextUsed) {
 		const auto len2 = sizeof(buffer) << 1;
-		const auto len = solutionIndex() * 2;
+		const auto len = solutionIndex() << 1;
 		const auto nLoops = len / len2;
 		size_t idx = 0;
 		for (size_t j = 0; j < nLoops; j++) {

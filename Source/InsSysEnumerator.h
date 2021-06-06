@@ -142,17 +142,19 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	int colGroupIdx = 0;
 	setCurrentNumPart(numPart);
 	const auto *pColOrbPrev = this->colOrbit(nRow - 1, numPart);
+
 	CColOrbit<S> *pColOrbit, *pColOrbitNext = this->colOrbit(nRow, numPart);
 #if USE_EXRA_EQUATIONS
 	setColOrbitForCurrentRow(pColOrbitNext);
 	const size_t nextRowOrbShift = pIS->colNumb() * colOrbitLen();
 #endif
-
+	static int ttt = 0; ttt++;
 	CColOrbit<S> *pPrev = NULL;
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
 		equationIdx++;
 		const auto columnWeight = pColOrbit->columnWeight();
+		const auto nColll = ((char *)pColOrbit - (char *)this->colOrbitIni(nRow, numPart))/ colOrbitLen();
 		auto weightDeficit = k - columnWeight;
 		if (!weightDeficit || weightDeficit == nRowToBuild) {
 			colGroupIdx++;			// We need to skip this column's orbit

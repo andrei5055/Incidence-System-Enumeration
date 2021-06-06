@@ -60,13 +60,33 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 	// because the values permStorage(nPart) are the same for all nPart
 	this->setUseCanonGroup(USE_CANON_GROUP && !permStorage()->isEmpty());
 
-	S i = *pPartNumb;
+	const auto numParts = this->numParts();
+	unsigned char *pSolutionWereConstructed = numParts > 1 ? getSolutionsWereConstructed() + currentRowNumb() * numParts : NULL;
+	auto i = *pPartNumb;
+	if (i) {
+		// Only for combined designs
+		// Check if the solutions for current row were already constructed before for previous parts
+		auto aaa = currentRowNumb();
+		while (i-- && !pSolutionWereConstructed[i]);
+			i++;
+	}
+
+	const auto firstPart = i;
 	if (prepareToFindRowSolution()) {
 		// Find row solution for all parts of the design
+		i = 0;
 		while (true) {
+			if (pSolutionWereConstructed && i >= firstPart)
+				pSolutionWereConstructed[i] = 0;
+
 			const auto nVar = MakeSystem(i);
 			if (nVar == ELEMENT_MAX)
 				break;
+
+			if (i < firstPart) {
+				i++;
+				continue;
+			}
 
 			setPrintResultNumVar(nVar);
 			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
@@ -76,19 +96,27 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
 				break;
 
-			if (++i >= this->numParts())
+			if (pSolutionWereConstructed)
+				pSolutionWereConstructed[i] = 1;
+
+			if (++i >= numParts)
 				break;
+
+			if (i == 1) {
+				// Save index to the first solution to be tested for part 0 
+				setFirstPartSolutionIndex(pRowSolution->solutionIndex());
+			}
 		}
 	}
 
-	OUTPUT_SOLUTION(rowStuff(currentRowNumb(), *pPartNumb), outFile(), currentRowNumb(), false, *pPartNumb);
-	if (i < this->numParts()) {
+	OUTPUT_SOLUTION(this->rowStuff(currentRowNumb()), outFile(), currentRowNumb(), false, firstPart);
+	if (i < numParts) {
 		*pPartNumb = i;
 		return NULL;
 	}
 
 	// Always return the pointer to the solutions of part #0
-	return this->rowStuff(currentRowNumb(), 0);
+	return this->rowStuff(currentRowNumb());
 }
 
 #if USE_THREADS_ENUM
@@ -172,6 +200,8 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 }
 #endif
 
+CSolutionPerm* ppp = NULL;
+
 FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
 {
 	setDesignParams(pParam);
@@ -239,6 +269,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	S nRow, lenStab;
 	RowSolutionPntr pRowSolution;
 	InitRowSolutions(pMaster);
+	const auto nRows = rowNumb();
 	const bool threadFlag = pMaster != NULL;
 	if (threadFlag) {
 		lenStab = pMaster->stabiliserLengthExt();
@@ -249,7 +280,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 		const auto firstUnforced = pMaster->firstUnforcedRow();
 		if (firstUnforced > 0) {
 			setFirstUnforcedRow(firstUnforced);
-			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (rowNumb() - firstUnforced) * sizeof(*forcibleLambdaPntr()));
+			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr()));
 		}
 	} else {
 		lenStab = nRow = firstNonfixedRow - 2;
@@ -287,12 +318,16 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 		prepareToTestExtraFeatures();
 
 	// For multi-threaded version we need to test only one top level solution
-	const bool multyPartDesign = numParts() > 1;
+	const bool multiPartDesign = numParts() > 1;
 	const S nRowEnd = nRow ? nRow + 1 : 0;
-	this->initiateColOrbits(rowNumb(), nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
+
+	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 	S level, nPart;
-							// minimal index of the part, which
-	S iFirstPartIdx = 0;    //      will be changed on current row
+
+	// minimal index of the part, which will be changed on current row
+	S* firstPartIdx = new S[nRows];
+	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
+
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 		bool checkNextPart = false;
@@ -351,15 +386,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #endif
 		} else {
 #endif
-#if PRINT_SOLUTIONS
-			ccc++;
-#endif		
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0);
-			MakeRow(pRowSolution, nRow == firstNonfixedRow, iFirstPartIdx);
+			MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
 
-			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1);
-			if (++nRow == rowNumb()) {
+			OUTPUT_MATRIX(pMatrix, outFile(), nRow + 1, pEnumInfo);
+			if (++nRow == nRows) {
 				pEnumInfo->incrConstrTotal();
 				bool flag = true;
 				if (!TestCanonicityOnGPU()) {
@@ -414,13 +446,13 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				}
 				else {
 					nRow--;
-					checkNextPart = multyPartDesign;
+					checkNextPart = multiPartDesign;
 					pRowSolution = NULL;
 				}
 			}
 			else {
 				this->setCurrentRowNumb(nRow);
-				for (auto i = numParts(); i-- > iFirstPartIdx;) {
+				for (auto i = numParts(); i-- > firstPartIdx[nRow-1];) {
 					this->setColOrbitCurr(m_pFirstColOrb[i], i);
 					this->setCurrUnforcedOrbPtr(nRow, i);
 				}
@@ -438,7 +470,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						this->setGroupOrder(1);
 
 					setPrintResultRowNumber(nRow);
-					pRowSolution = FindRowSolution(&iFirstPartIdx);
+					pRowSolution = FindRowSolution(firstPartIdx + nRow - 1);
 #if USE_THREADS && !WAIT_THREADS
 					if (pMaster && pRowSolution) {
 						pMaster = NULL;
@@ -458,66 +490,124 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #endif
 
 					OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
-					if (!pRowSolution && iFirstPartIdx + 1 < numParts())
+					if (!pRowSolution && firstPartIdx[nRow] + 1 < numParts())
 						assert(true);
 				} else {
 					if (pMaster)
 						break;
 
-					iFirstPartIdx = numParts();
-					while (--iFirstPartIdx) {
-						auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-						if (!pPartRowSolution->allSolutionChecked())
-							break;
+					if (multiPartDesign) {
+						auto iFirstPartIdx = numParts();
+						while (--iFirstPartIdx) {
+							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
+							if (!pPartRowSolution->allSolutionChecked())
+								break;
 
-						pPartRowSolution->setSolutionIndex(0);
+							pPartRowSolution->setSolutionIndex(0);
+						}
+
+						if (iFirstPartIdx) {
+							// Enumeration of combined designs AND not all solutions for i-th part were tested
+							this->setCurrentRowNumb(--nRow);
+							const auto ppOrb = colOrbitPntr() + static_cast<size_t>(nRow) * pMatrix->colNumb();
+							auto i = firstPartIdx[nRow] = iFirstPartIdx;
+							const auto partsInfo = matrix()->partsInfo();
+							while (++i < numParts()) {
+								(pRowSolution + i)->setSolutionIndex(0);
+								setColOrbitCurr(*(ppOrb + partsInfo->getShift(i)), i);
+								this->resetUnforcedColOrb(i);
+							}
+
+							this->resetFirstUnforcedRow();
+							continue;
+						}
 					}
 
-					if (iFirstPartIdx) {
-						// Enumeration of combined designs AND not all solutions for i-th part were tested
-						this->setCurrentRowNumb(--nRow);
-						continue;
-					}
-
+					checkNextPart = multiPartDesign;
 					pRowSolution = NULL;
 				}
 			}
 #if USE_THREADS_ENUM
 		}
 #endif
-		if (pRowSolution) {
-			auto i = numParts();
-			while (--i)
-				(pRowSolution + i)->setSolutionIndex(0);
-		}
+		if (multiPartDesign) {
+			// We enumerate the multi-part designs
+			if (pRowSolution) {
+				auto i = numParts();
+				while (--i)
+					(pRowSolution + i)->setSolutionIndex(0);
+			}
+			else {
+				while (nRow-- > nRowEnd) {
+					this->setCurrentRowNumb(nRow);
+					auto iFirstPartIdx = numParts();
+					while (iFirstPartIdx--) {
+						pRowSolution = rowStuff(nRow, iFirstPartIdx);
+						auto pPartRowSolution = pRowSolution + (firstPartIdx[nRow] = iFirstPartIdx);
+						if (!pPartRowSolution->allSolutionChecked()) {
+							break;
+						} else
+							pPartRowSolution->setSolutionIndex(0);
+					}
 
-		while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
-			this->reset(nRow);
-			if (nRow-- <= nRowEnd)
-				break;
+					if (iFirstPartIdx != ELEMENT_MAX)
+						break;
 
-			this->setCurrentRowNumb(nRow);
-			pRowSolution = rowStuff(nRow);
-			if (!checkNextPart) {
-				checkNextPart = multyPartDesign;
-				continue;
+					// This is temporary !!!
+					pRowSolution = NULL;
+					break;
+				}
 			}
 
-			// We enumerate the multy-part designs AND
-			// we need to go to previous row
-			auto idx = numParts();
-			while (--idx) {
-				auto pPartRowSolution = pRowSolution + idx;
-				if (!pPartRowSolution->allSolutionChecked())
+			bool resetSolutions = true;
+			while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
+				this->reset(nRow, resetSolutions);
+				if (nRow-- <= nRowEnd)
 					break;
 
-				pPartRowSolution->setSolutionIndex(0);
-			}
+				resetSolutions = true;
+				this->setCurrentRowNumb(nRow);
+				pRowSolution = rowStuff(nRow);
+				if (!checkNextPart) {
+					checkNextPart = multiPartDesign;
+					if (!multiPartDesign)
+						continue;
+				}
 
-			if (idx)
-				break;
+				auto idx = numParts();
+				// we need to go to previous row
+				while (--idx) {
+					auto pPartRowSolution = pRowSolution + idx;
+					if (!pPartRowSolution->allSolutionChecked())
+						break;
+
+					pPartRowSolution->setSolutionIndex(0);
+				}
+
+				firstPartIdx[nRow] = idx;
+				if (idx)
+					break;
+
+				if (pRowSolution->numSolutions() == pRowSolution->solutionIndex() + 1) {
+					pRowSolution->setSolutionIndex(firstPartSolutionIndex(nRow));
+					pRowSolution = NULL;
+					resetSolutions = false;
+				}
+			}
+		}
+		else {
+			while (!pRowSolution || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
+				this->reset(nRow);
+				if (nRow-- <= nRowEnd)
+					break;
+
+				setCurrentRowNumb(nRow);
+				pRowSolution = rowStuff(nRow);
+			}
 		}
 	} 
+
+	delete[] firstPartIdx;
 
 #if USE_THREADS_ENUM && !WAIT_THREADS
 	if (!threadFlag)
@@ -599,13 +689,16 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	return true;
 } 
 
-FClass2(CEnumerator, void)::reset(S nRow) {
-	rowStuff(nRow)->resetSolution();
+FClass2(CEnumerator, void)::reset(S nRow, bool resetSolutions) {
 	const auto pMatrix = this->matrix();
 	const auto ppOrb = colOrbitPntr() + static_cast<size_t>(nRow) * pMatrix->colNumb();
 
 	// Reset first part of design
-	setColOrbitCurr(*ppOrb, 0);
+	if (resetSolutions) {
+		rowStuff(nRow)->resetSolution();
+		setColOrbitCurr(*ppOrb, 0);
+	}
+
 	this->resetUnforcedColOrb(0);
 
 	// ... and remaining parts, if needed
@@ -705,7 +798,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 
 FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
 	// Loop over all portions of the solution
-	for (auto i = iFirstPartIdx; i < numParts(); i++) {
+	for (auto i = 0; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
 		// for multi-thread configuration it could be changed by master
@@ -715,6 +808,9 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 			m_lastRightPartIndex[i] = pPartRowSolution->numSolutions() - 1;
 		} else
 			m_lastRightPartIndex[i] = pPartRowSolution->solutionIndex();
+
+		if (i < iFirstPartIdx)
+			continue;
 
 		const auto pCurrSolution = pPartRowSolution->currSolution();
 		m_pFirstColOrb[i] = MakeRow(pCurrSolution, true, i);

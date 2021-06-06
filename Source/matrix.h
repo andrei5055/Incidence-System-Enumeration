@@ -70,20 +70,18 @@ public:
 	}
 
 	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
-	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, const CanonicityCheckerPntr pCanonCheck = NULL) const;
+	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
+				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0) const;
 	CC virtual S numParts() const				{ return 1; }
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {
 		T* pRow = GetRow(nRow);
-		if (partsInfo()) {
-			S len, shift;
-			shift = partsInfo()->GetPartInfo(idx, &len);
-			memset(pRow += shift, 0, len * sizeof(T));
-		}
+		S len;
+		if (partsInfo())
+			pRow += partsInfo()->GetPartInfo(idx, &len);
 		else
-			memset(pRow, 0, m_nCols * sizeof(T));
-
-		return pRow;
+			len = m_nCols;
+		return static_cast<T *>(memset(pRow, 0, len * sizeof(*pRow)));
 	}
 
 	CC inline auto stabLengthExt() const			{ return m_nStabExtern; }

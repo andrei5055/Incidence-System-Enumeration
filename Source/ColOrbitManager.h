@@ -49,7 +49,11 @@ protected:
 	CC inline ColOrbPntr *unforcedColOrbPntr(S idxPart = 0) const { return m_ppUnforcedColOrb[idxPart]; }
 	CC inline S rowMaster() const						{ return m_nRowMaster; }
 private:
-	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart) { m_ppColOrb[idxPart][idx] = pntr; }
+	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart) { 
+		m_ppColOrb[idxPart][idx] = pntr;
+		if (colOrbitIni(idx, 0) == pntr)
+			pntr = NULL;
+	}
 	CK inline size_t unfColIdx(size_t r, int idx = 0) const{ return r * rankMatr() + idx; }
 	CC inline void setColOrbitLen(size_t len)			{ m_nColOrbLen = len; }
 	CC inline void setRowMaster(S val)					{ m_nRowMaster = val; }

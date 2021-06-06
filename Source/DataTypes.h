@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 
+
+#define TEST						false   // Test mode
+
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
 #define USE_THREADS					1						// Should be at least 1
@@ -15,7 +18,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					1
+#define USE_THREADS					(TEST? 0 : 15)
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -107,7 +110,6 @@
 
 #define USE_EXRA_EQUATIONS			0   // Construct and use additional equations (for instance, for t-designs)
 
-#define TEST						0   // Test mode
 #define PRINT_RESULTS				(1 && USE_EXRA_EQUATIONS)
 #define USE_CANON_GROUP				1	// Reshafle the solutions for (n+1)-th row of matrix M
 										// with respect to the Aut G(M(n)) of the first n rows of M
@@ -129,7 +131,7 @@
 #define PRINT_SOLUTIONS				1
 #define PRINT_CURRENT_MATRIX		1
 #define PRINT_PERMUTATION			0 // Output of the current permutation of column's orbit during the canonicity check
-#define OUT_PERMUTATION             1 // Output of permutations generated on
+#define OUT_PERMUTATION             0 // Output of permutations generated on
 									  //   a) matrix rows: when canonicity is checked on the totally constructed matrix:        1
 									  //   b) orbits of columns, during the construction of the group for sorting of solutions: 2
 									  //   c) (a)  + (b):                                                                       3
@@ -398,12 +400,12 @@ extern int ccc;
     #define OUTPUT_SOLUTION(x,...)
 #endif
 
-#define OUT_MATRIX(x, y, z, w)				{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w);  MUTEX_UNLOCK(out_mutex); }
+#define OUT_MATRIX(x, y, z, w, v)			{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->constrCanonical()+1);  MUTEX_UNLOCK(out_mutex); }
 #if PRINT_CURRENT_MATRIX
-#define OUTPUT_MATRIX(x, y, z)				if (MAKE_OUTPUT()) \
-												OUT_MATRIX(x, y, z, ccc)
+	#define OUTPUT_MATRIX(x, y, z, v)		if (MAKE_OUTPUT()) \
+												OUT_MATRIX(x, y, z, ++ccc, v)
 #else
-    #define OUTPUT_MATRIX(x, y, z)
+    #define OUTPUT_MATRIX(x, y, z, v)
 #endif
 
 #if PRINT_PERMUTATION						

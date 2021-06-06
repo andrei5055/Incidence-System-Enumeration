@@ -408,7 +408,7 @@ FClass2(CIG_Enumerator, bool)::checkThreeAreasUnits(S r, S k, S nRow) const
 	return retVal;
 }
 
-FClass2(CIG_Enumerator, void)::reset(S nRow) {
+FClass2(CIG_Enumerator, void)::reset(S nRow, bool resetSolutions) {
 	Class2(CEnumerator)::reset(nRow);
 	if (nRow-- == numRows()) 
 		setNumRows(0);

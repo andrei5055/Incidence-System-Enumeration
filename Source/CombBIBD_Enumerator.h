@@ -5,7 +5,17 @@ Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 {
 public:
 	CCombBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) { setR(getInSys()->GetR(lenStabilizer())); }
+		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+		setR(getInSys()->GetR(lenStabilizer()));
+		m_FirstPartSolutionIdx = new PERMUT_ELEMENT_TYPE[rowNumb()];
+		const auto len = rowNumb() * numParts();
+		m_bSolutionsWereConstructed = new unsigned char[len];
+		memset(m_bSolutionsWereConstructed, 0, len);
+	}
+	~CCombBIBD_Enumerator()	{
+		delete[] m_FirstPartSolutionIdx;
+		delete[] getSolutionsWereConstructed();
+	}
 protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }
@@ -24,6 +34,10 @@ protected:
 #endif
 	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const { return  fLambda == paramSet(t_lSet)->GetAt(numPart); }
 private:
-
+	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
+	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
+	CK virtual unsigned char *getSolutionsWereConstructed() { return m_bSolutionsWereConstructed; }
+	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
+	unsigned char *m_bSolutionsWereConstructed;
 };
 
