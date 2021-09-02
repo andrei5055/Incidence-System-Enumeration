@@ -70,6 +70,7 @@ public:
 #endif
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
+	CK inline void resetSolutionIndex()							{ setSolutionIndex(static_cast<PERMUT_ELEMENT_TYPE>(-1)); }
 	CK inline auto *solutionPerm() const						{ return m_pSolutionPerm; }
 	CK void resetSolution()										{ setSolutionIndex(0); solutionPerm()->RemoveAll(); }
 	CK inline auto numSolutions() const							{ return m_nNumSolutions; }
@@ -77,6 +78,8 @@ public:
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
 	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
+	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
+	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex);  }
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
@@ -101,6 +104,7 @@ private:
 	S m_Length;
 	size_t m_nNumSolutions;
 	PERMUT_ELEMENT_TYPE m_nSolutionIndex;
+	PERMUT_ELEMENT_TYPE m_nSavedSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;
 	size_t m_nLenSolOrb;
 	const CRowSolution *m_pNextPortion = NULL;
@@ -133,7 +137,7 @@ FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 
 	setNumSolutions(solutionIndex() - 1);
 	// Reset the index of current solution
-	setSolutionIndex((PERMUT_ELEMENT_TYPE)-1);
+	resetSolutionIndex();
 	return this;
 }
 
@@ -411,7 +415,7 @@ FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit,
 		auto minVal = pColOrbit->length();
 		const size_t limitWeight = minVal * (kMin - pColOrbit->columnWeight());
 		// To start, we need to set the solution index to -1
-		setSolutionIndex((PERMUT_ELEMENT_TYPE)-1);
+		resetSolutionIndex();
 		do {
 			while (minVal && nextSolutionIndex() <= idx) {
 				const auto curVal = *(currSolution() + i);

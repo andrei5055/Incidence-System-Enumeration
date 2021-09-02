@@ -482,10 +482,11 @@ private:
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) {}
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const { return 0; }
-	CK virtual unsigned char* getSolutionsWereConstructed()			{ return NULL; }
+	CK inline unsigned char* getSolutionsWereConstructed(S nParts, S rowNumb) const { return nParts > 1 ? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
+	CK virtual void setForcibleLambda(S nRow, S val, S nPart) {}
 #if PRINT_SOLUTIONS
-	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPart) const;
+	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPartStart, S nPartEnd) const;
 #endif
 
 #if USE_STRONG_CANONICITY_A
@@ -516,9 +517,12 @@ private:
 	ColOrbPntr* m_pFirstColOrb;
 	S m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
+
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif
+ protected:
+	unsigned char* m_bSolutionsWereConstructed;
 };
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
@@ -527,6 +531,7 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 	m_pRow = new RowSolutionPntr[numParts * pMatrix->rowNumb()];
 	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[numParts];
 	m_pFirstColOrb = new ColOrbPntr[numParts];
+	m_bSolutionsWereConstructed = NULL;
 	setRowEquation(NULL);
 	setGPU_CanonChecker(nCanonChecker ? new Class2(CGPU_CanonChecker)(nCanonChecker, pMatrix, treadIdx) : NULL);
 }

@@ -32,6 +32,7 @@ protected:
 	CK virtual S forcibleLambda(S nRow, S nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const		{ return this->getInSys()->GetNumSet(idx); }
+	CK virtual bool check_X0_3(S nPart) const					{ return false; }
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -53,7 +54,7 @@ private:
 	CK virtual size_t numLambdas()								{ return this->paramSet(t_lSet)->GetSize(); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
-	CK inline void setForcibleLambda(S nRow, S val, S nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
+	CK virtual void setForcibleLambda(S nRow, S val, S nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
 
 	S m_x0_3;
 	S *m_pForsibleLambda;
@@ -114,7 +115,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	S nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
 	S equationIdx = ELEMENT_MAX;
-	// Number of equations corresponding only to the colums which ARE NOT forcibly constructed
+	// Number of equations corresponding only to the columns which ARE NOT forcibly constructed
 	S eqIdx = 0;
 
 	auto pRowEquation = inSysRowEquation();
@@ -148,7 +149,6 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	setColOrbitForCurrentRow(pColOrbitNext);
 	const size_t nextRowOrbShift = pIS->colNumb() * colOrbitLen();
 #endif
-	static int ttt = 0; ttt++;
 	CColOrbit<S> *pPrev = NULL;
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
@@ -241,15 +241,24 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	if (nRowToBuild > 1) {
 		auto fLambda = forcibleLambda(nRow - 1, numPart);
 		auto *pTmp = *(this->currUnforcedOrbPtr(numPart) + 1);
+		const auto X0_3 = getX0_3();
+		const auto check_X0_3_flg = X0_3 && check_X0_3(numPart);
 		while (pTmp) {
-			fLambda += pTmp->length();
+			const auto len = pTmp->length();
+			if (check_X0_3_flg && len > X0_3 && (pTmp->columnWeight() || nRowToBuild > 2)) {
+				nVar = ELEMENT_MAX;
+				break;
+			}
+			fLambda += len;
 			pTmp = pTmp->next();
 		}
 
-		if (nRowToBuild != 2 || checkForcibleLambda(fLambda, numPart))
-			setForcibleLambda(nRow, fLambda, numPart);
-		else
-			return ELEMENT_MAX;
+		if (nVar != ELEMENT_MAX) {
+			if (nRowToBuild == 2 && !checkForcibleLambda(fLambda, numPart))
+				nVar = ELEMENT_MAX;
+			else
+				setForcibleLambda(nRow, fLambda, numPart);
+		}
 	}
 
 	if (this->useCanonGroup()) {
@@ -428,7 +437,6 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 		pPrev->setNext(pColOrbit->next());
 	else
 		this->setColOrbitCurr(pColOrbit->next(), nPart);
-
 	// All remaining elements of all columns
 	// of the current orbit should be equal to 0 or 1, respectively
 	CColOrbitManager<S>::addForciblyConstructedColOrbit(pColOrbit, nPart, idx);

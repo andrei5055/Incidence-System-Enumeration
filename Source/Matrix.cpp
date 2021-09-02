@@ -20,7 +20,7 @@ FClass2(CMatrixData, ulonglong)::GetNextCounter() {
 }
 #endif
 
-FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number) const
+FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, bool canon) const
 {
 	if (nRow == ELEMENT_MAX)
 		nRow = this->rowNumb();
@@ -39,6 +39,9 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, 
 		auto len = SNPRINTF(pTmp, lenBuf, "\nMatrix # %3llu", matrNumber);
 		if (number)
 			len = SNPRINTF(pTmp +=len, lenBuf-=len, ".%llu", number);
+
+		if (!canon)
+			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Non-canonical ***");
 
 		if (pCanonCheck)
 			len = SNPRINTF(pTmp +=len, lenBuf-=len, "    |Aut(M)| = %6d:", pCanonCheck->groupOrder());

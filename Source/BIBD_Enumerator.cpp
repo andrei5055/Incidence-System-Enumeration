@@ -15,6 +15,7 @@ FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nR
 FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
+	// As of today (08/31/2021) we do it only for regular BIBDs OR first part of Combined BIBDs
 	if (currentNumPart())
 		return true;
 
@@ -80,25 +81,23 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
 			if (idx == x0_3) {					// (x0_3+1)-th common block found
-				if (j < r) {					//      among the first r blocks of design
+				if (j < r)   					//      among the first r blocks of design
 					return false;				// The tested solution can not be used in the canonical matrix
+
+				if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
+					S i = -1;				// Check necessary and sufficient conditions for the
+					while (++i < idx) {     // intersection of second, previous and current elements
+						if (pColumnIdx[i] >= lambda)
+							break;
+					}
+
+					if (i == idx || pColumnIdx[i] >= r) // All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
+						return false;       // The tested solution can not be used in the canonical matrix
 				}
 				else {
-					if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
-						S i = -1;				// Check necessary and sufficient conditions for the
-						while (++i < idx) {     // intersection of second, previous and current elements
-							if (pColumnIdx[i] >= lambda)
-								break;
-						}
-
-						if (i == idx || pColumnIdx[i] >= r) // All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
-							return false;       // The tested solution can not be used in the canonical matrix
-					}
-					else {
-						// When we are here, the intersection of second, previous and current elements is OK
-						if (++lastRowToCheck == currRowNumb) // adjust the limit of the loop below
-							return true;					 // there are no untested elements
-					}
+					// When we are here, the intersection of second, previous and current elements is OK
+					if (++lastRowToCheck == currRowNumb) // adjust the limit of the loop below
+						return true;					 // there are no untested elements
 				}
 			}
 

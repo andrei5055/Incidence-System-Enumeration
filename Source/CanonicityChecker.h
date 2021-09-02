@@ -228,7 +228,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 					if (orbLen > 1)
 						diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
 					else
-						diff = (int) * (pRow + nColCurr) - *(pRowPerm + *(permColumn + nColCurr));
+						diff = static_cast<int>(*(pRow + nColCurr)) - *(pRowPerm + *(permColumn + nColCurr));
 
 					if (diff > 0)
 						goto next_permut;

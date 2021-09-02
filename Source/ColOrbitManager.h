@@ -41,22 +41,20 @@ public:
 	CC inline auto colOrbitIni(S nRow, S idxPart) const { return *(colOrbitsIni(idxPart) + nRow); }
 protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)	{ setColOrbit(pntr, currentRowNumb(), idxPart); }
-	CK inline void resetUnforcedColOrb(S idxPart)		{ memset(unforcedColOrbPntr(idxPart) + unfColIdx(currentRowNumb()), 0, rankMatr() * sizeof(*unforcedColOrbPntr())); }
-	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, int n);
-	CK inline ColOrbPntr *currUnforcedOrbPtr(S nPart) const		{ return m_ppUnforcedColOrbCurr[nPart]; }
-	CK inline void setCurrUnforcedOrbPtr(size_t nRow, S nPart)	{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + unfColIdx(nRow); }
-	CC inline void setCurrentRowNumb(S n)				{ m_nCurrRow = n; }
-	CC inline ColOrbPntr *unforcedColOrbPntr(S idxPart = 0) const { return m_ppUnforcedColOrb[idxPart]; }
-	CC inline S rowMaster() const						{ return m_nRowMaster; }
-private:
-	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart) { 
-		m_ppColOrb[idxPart][idx] = pntr;
-		if (colOrbitIni(idx, 0) == pntr)
-			pntr = NULL;
+	CK inline void resetUnforcedColOrb(S idxPart)		{ 
+		memset(unforcedColOrbPntr(idxPart) + unfColIdx(currentRowNumb(), idxPart), 0, rankMatr() * sizeof(*unforcedColOrbPntr())); 
 	}
+	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, int n);
+	CK inline ColOrbPntr *currUnforcedOrbPtr(S nPart) const			{ return m_ppUnforcedColOrbCurr[nPart]; }
+	CK inline void setCurrUnforcedOrbPtr(size_t nRow, S nPart)		{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + unfColIdx(nRow); }
+	CC inline void setCurrentRowNumb(S n)							{ m_nCurrRow = n; }
+	CC inline ColOrbPntr *unforcedColOrbPntr(S idxPart = 0) const	{ return m_ppUnforcedColOrb[idxPart]; }
+	CC inline S rowMaster() const									{ return m_nRowMaster; }
+private:
+	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart)	{ m_ppColOrb[idxPart][idx] = pntr; }
 	CK inline size_t unfColIdx(size_t r, int idx = 0) const{ return r * rankMatr() + idx; }
-	CC inline void setColOrbitLen(size_t len)			{ m_nColOrbLen = len; }
-	CC inline void setRowMaster(S val)					{ m_nRowMaster = val; }
+	CC inline void setColOrbitLen(size_t len)						{ m_nColOrbLen = len; }
+	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 
 	S m_nCurrRow;
     uint m_nRank;

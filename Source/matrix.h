@@ -71,7 +71,7 @@ public:
 
 	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
-				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0) const;
+				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, bool canonFlag = true) const;
 	CC virtual S numParts() const				{ return 1; }
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
 	CC inline T* ResetRowPart(S nRow, S idx) const {

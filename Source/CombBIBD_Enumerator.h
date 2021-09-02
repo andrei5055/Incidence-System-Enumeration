@@ -14,7 +14,7 @@ public:
 	}
 	~CCombBIBD_Enumerator()	{
 		delete[] m_FirstPartSolutionIdx;
-		delete[] getSolutionsWereConstructed();
+		delete[] m_bSolutionsWereConstructed;
 	}
 protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
@@ -36,8 +36,6 @@ protected:
 private:
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
-	CK virtual unsigned char *getSolutionsWereConstructed() { return m_bSolutionsWereConstructed; }
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
-	unsigned char *m_bSolutionsWereConstructed;
 };
 

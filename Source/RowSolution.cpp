@@ -257,10 +257,6 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 
 FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb) const
 {
-	extern CSolutionPerm* ppp;
-	if (nRow == 5 && nPortion == 0)
-		ppp = solutionPerm();
-
 	if (!solutionLength() || !numSolutions())
         return;
     

@@ -2,7 +2,7 @@
 #include <vector>
 
 
-#define TEST						false   // Test mode
+#define TEST						false  //true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -394,30 +394,30 @@ extern int ccc;
 #define MAKE_OUTPUT()			CHECK_VAL(ccc) && CHECK_CONSTR(START_NUMBER, END_NUMBER)
 
 #if PRINT_SOLUTIONS
-	#define OUTPUT_SOLUTION(x, file, nRow, f, numPart)		if (MAKE_OUTPUT()) \
-																{ this->printSolutions(x, file, nRow, f, numPart); }
+	#define OUTPUT_SOLUTION(x, file, nRow, f, nPartFrom, nPartTo)	if (MAKE_OUTPUT()) \
+																		{ this->printSolutions(x, file, nRow, f, nPartFrom, nPartTo); }
 #else
     #define OUTPUT_SOLUTION(x,...)
 #endif
 
-#define OUT_MATRIX(x, y, z, w, v)			{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->constrCanonical()+1);  MUTEX_UNLOCK(out_mutex); }
+#define OUT_MATRIX(x, y, z, w, v, canon)		{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->constrCanonical()+1, canon);  MUTEX_UNLOCK(out_mutex); }
 #if PRINT_CURRENT_MATRIX
-	#define OUTPUT_MATRIX(x, y, z, v)		if (MAKE_OUTPUT()) \
-												OUT_MATRIX(x, y, z, ++ccc, v)
+	#define OUTPUT_MATRIX(x, y, z, v, canon)	if (MAKE_OUTPUT()) \
+													OUT_MATRIX(x, y, z, ++ccc, v, canon)
 #else
-    #define OUTPUT_MATRIX(x, y, z, v)
+    #define OUTPUT_MATRIX(x,...)
 #endif
 
 #if PRINT_PERMUTATION						
 	#define OUTPUT_PERMUTATION(x, f, n, p)		MUTEX_LOCK(out_mutex); x->outputPerm(f, n, p);  MUTEX_LOCK(out_mutex); 
 #else
-    #define OUTPUT_PERMUTATION(x, f, n, p)
+    #define OUTPUT_PERMUTATION(x,...)
 #endif
 
 #if PRINT_CANON_GROUP
 	#define OUTPUT_CANON_GROUP(cond, x, f)		if (cond) x->outputPermutations(f, x->lenPerm()/*numColOrb()*/)
 #else
-	#define OUTPUT_CANON_GROUP(cond, x, f)
+	#define OUTPUT_CANON_GROUP(cond,...)
 #endif
 
 typedef enum {
