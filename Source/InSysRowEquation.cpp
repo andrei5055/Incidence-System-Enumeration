@@ -114,7 +114,6 @@ CVariableMapping<T> *CInSysRowEquation<T>::AdjustExtraEquationRightParts(CVariab
 		// Create list of variable which 
 		//    a) have minimal values > 0 AND 
 		//    b) are included in the extra equations
-		static int uuu = 0; uuu++;
 		pVarList = varMapping(t_dual)->addVariablMinValue(variableMinValPntr(), equSystem()->varPntr(), variableMaxValPntr(), &pResMaxList, pVarList);
 
 		if (pResMaxList)
