@@ -41,12 +41,12 @@ protected:
 	CK virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix);
 	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
 private:
-	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, int idx);
+	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, S idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual S MakeSystem(S numPart);
 	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK void setVariableLimit(S nVar, S len, S nRowToBuild, S colWeight, S weightDeficit);
-	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const		{ return true; }
+	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const		{ return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
 																}
@@ -149,12 +149,13 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	setColOrbitForCurrentRow(pColOrbitNext);
 	const size_t nextRowOrbShift = pIS->colNumb() * colOrbitLen();
 #endif
+	const char* const pRowFirstOrbit = (char *)(this->colOrbitIni(nRow, numPart));
 	CColOrbit<S> *pPrev = NULL;
 	while ((pColOrbit = pColOrbitNext) != NULL) {
 		pColOrbitNext = pColOrbit->next();
 		equationIdx++;
 		const auto columnWeight = pColOrbit->columnWeight();
-		const auto nColll = ((char *)pColOrbit - (char *)this->colOrbitIni(nRow, numPart))/ colOrbitLen();
+		const auto nColll = ((char *)pColOrbit - pRowFirstOrbit)/ colOrbitLen();
 		auto weightDeficit = k - columnWeight;
 		if (!weightDeficit || weightDeficit == nRowToBuild) {
 			colGroupIdx++;			// We need to skip this column's orbit
@@ -240,25 +241,23 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 
 	if (nRowToBuild > 1) {
 		auto fLambda = forcibleLambda(nRow - 1, numPart);
+		// Take a pointer to the first orbit, forcibly constructed with 1's 
 		auto *pTmp = *(this->currUnforcedOrbPtr(numPart) + 1);
 		const auto X0_3 = getX0_3();
 		const auto check_X0_3_flg = X0_3 && check_X0_3(numPart);
 		while (pTmp) {
 			const auto len = pTmp->length();
-			if (check_X0_3_flg && len > X0_3 && (pTmp->columnWeight() || nRowToBuild > 2)) {
-				nVar = ELEMENT_MAX;
-				break;
-			}
+			if (check_X0_3_flg && len > X0_3 && (pTmp->columnWeight() || nRowToBuild > 2))
+				 return ELEMENT_MAX;
+
 			fLambda += len;
 			pTmp = pTmp->next();
 		}
 
-		if (nVar != ELEMENT_MAX) {
-			if (nRowToBuild == 2 && !checkForcibleLambda(fLambda, numPart))
-				nVar = ELEMENT_MAX;
-			else
-				setForcibleLambda(nRow, fLambda, numPart);
-		}
+		if (!checkForcibleLambda(fLambda, nRowToBuild, numPart))
+			return ELEMENT_MAX;
+
+		setForcibleLambda(nRow, fLambda, numPart);
 	}
 
 	if (this->useCanonGroup()) {
@@ -431,7 +430,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(S nVar, S nPart, PERMU
 	return pCurrRowSolution->getSolution();
 }
 
-FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, int idx)
+FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, S idx)
 {
 	if (pPrev)
 		pPrev->setNext(pColOrbit->next());

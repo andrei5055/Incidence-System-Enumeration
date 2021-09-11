@@ -32,7 +32,10 @@ protected:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }
 #endif
-	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const { return  fLambda == paramSet(t_lSet)->GetAt(numPart); }
+	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const {
+		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
+		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
+	}
 private:
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }

@@ -46,7 +46,7 @@ protected:
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
-	CK virtual bool checkForcibleLambda(S fLambda, S numPart) const	 { return checkLambda(fLambda); }
+	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
