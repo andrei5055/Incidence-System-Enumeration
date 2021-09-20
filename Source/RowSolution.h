@@ -79,7 +79,7 @@ public:
 	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
 	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
-	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex);  }
+	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }

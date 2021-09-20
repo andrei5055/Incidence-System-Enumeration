@@ -84,10 +84,10 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 
 			if (i < firstPart) {
 				i++;
-				continue; // The solutions up to firstPart where already constructed  
+				continue; // The solutions up to firstPart where already constructed
 			}
 
-			// NOTE: For insidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts  
+			// NOTE: For insidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
 			setPrintResultNumVar(nVar);
 			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
 			if (!pRowSolution || !pRowSolution->numSolutions())
@@ -117,7 +117,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 		*pPartNumb = i;
 #if PRINT_SOLUTIONS
 		char buff[128];
-		SPRINTF(buff, "\nNo solutions for part %d of the row %d. System of equations %s\n", i, currentRowNumb(), 
+		SPRINTF(buff, "\nNo solutions for part %d of the row %d. System of equations %s\n", i, currentRowNumb(),
 			    nVar == ELEMENT_MAX? "cannot be constructed" : "has no valid solutions");
 		outString(buff, outFile());
 #endif
@@ -341,9 +341,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	auto aaa = getUnforcedColOrbPntr(1)+2*5+1;
 	setCurrentRowNumb(nn);
 	bool canonMatrix = false;
+
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
 		bool checkNextPart = false;
+		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
 		if (!nRowEnd && nRow == mt_level) {
 			// We are in master enumerator
@@ -405,6 +407,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 			canonMatrix = true;
 			if (++nRow == nRows) {
+				if (multiPartDesign)
+					pRowSolution->restoreSolutionIndex();  // Andrei: Perhaps for CombBIBD with nPart > 2 we need to do it a more sophisticated way
+
 				pEnumInfo->incrConstrTotal();
 				bool flag = true;
 
@@ -412,8 +417,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					EXIT(-1);
 					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, &level);
 					if (canonMatrix) {
-						//					Construct Aut(D)
-						//					int ddd = canonChecker()->constructGroup();
+						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
 						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, this)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
@@ -467,8 +471,28 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					this->setCurrentRowNumb(nRow);
 				}
 				else {
-					if (!(checkNextPart = multiPartDesign))
-						nRow--;
+					// if (!(checkNextPart = multiPartDesign))
+					checkNextPart = multiPartDesign;
+					nRow--;
+					if (canonMatrix && multiPartDesign) {
+						pRowSolution = rowStuff(nRow-1);
+						while (--iFirstPartIdx) {
+							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
+							this->resetUnforcedColOrb(iFirstPartIdx);
+							//							this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
+							if (pPartRowSolution->allSolutionChecked())
+								pPartRowSolution->resetSolutionIndex();
+							else
+								break;
+						}
+						if (iFirstPartIdx) {
+							this->setCurrentRowNumb(--nRow);
+							firstPartIdx[nRow] = iFirstPartIdx;
+							continue;
+						}
+						this->resetUnforcedColOrb(0);
+					}
+
 					pRowSolution = NULL;
 				}
 			}
@@ -515,17 +539,14 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 #endif
 
 					OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
-					if (!pRowSolution && firstPartIdx[nRow] + 1 < numParts())
-						assert(true);
 				} else {
 					if (pMaster)
 						break;
 
 					if (multiPartDesign) {
-						auto iFirstPartIdx = numParts();
 						while (--iFirstPartIdx) {
 							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-//							this->resetUnforcedColOrb(iFirstPartIdx);
+							this->resetUnforcedColOrb(iFirstPartIdx, nRow);
 //							this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
 							if (pPartRowSolution->allSolutionChecked())
 								pPartRowSolution->resetSolutionIndex();
@@ -548,9 +569,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 //							this->resetFirstUnforcedRow();
 							continue;
 						}
-						else {
-							firstPartIdx[nRow-1] = 0;
-						}
+
+						firstPartIdx[nRow-1] = 0;             // We will change the first portion of CombBIB. Therefore,
+						this->resetUnforcedColOrb(0, nRow);   // everything which was enforced by this portion should be reset.
 					}
 
 					checkNextPart = multiPartDesign;
@@ -571,92 +592,109 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					(pRowSolution + i)->setSolutionIndex(0);
 			} else {
 #if 1
-				// We can reach this point by two diferenct pathes:
-				// (a) matrix is NOT canonical OR
-				// (b) matrix was canonical, but solution for one of the parts was not found
-				// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
-				bool check_all_solution = !canonMatrix;
-				S lastPartIdx = firstPartIdx[nRow - 1];
-				S stepRow = canonMatrix && lastPartIdx? 0 : 1;
-				S iFirstPartIdx;
-				if (canonMatrix) {
-					for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
-						this->resetUnforcedColOrb(iFirstPartIdx);
-				}
-
-				// Andrei: it looks like we don't need the external loop here
-				while (nRow > nRowEnd) {
-					this->setCurrentRowNumb(nRow - (canonMatrix? stepRow : 0));
-					nRow -= stepRow;
-
-					iFirstPartIdx = numParts() - 1;
-					while (true) {
-						pRowSolution = rowStuff(nRow, iFirstPartIdx);
-
-						this->resetUnforcedColOrb(iFirstPartIdx);   // New code
-						//this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
-						if (check_all_solution && !pRowSolution->allSolutionChecked()) {
-							firstPartIdx[nRow] = iFirstPartIdx - 1;
-							break;
-						}
-
-						pRowSolution->setSolutionIndex(0);
-						if (!--iFirstPartIdx) {
-							this->resetUnforcedColOrb(0);
-							break;
-						}
-
-						if (iFirstPartIdx == lastPartIdx)
-							check_all_solution = true;
+				if (iFirstPartIdx) {
+					// We can reach this point by two diferenct pathes:
+					// (a) matrix is NOT canonical OR
+					// (b) matrix was canonical, but solution for one of the parts was not found
+					// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
+					bool check_all_solution = !canonMatrix;
+					S lastPartIdx = firstPartIdx[nRow - 1];
+					S stepRow = canonMatrix && lastPartIdx ? 0 : 1;
+					if (canonMatrix) {
+						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
+							this->resetUnforcedColOrb(iFirstPartIdx);
 					}
-					this->setCurrentRowNumb(nRow);
-					check_all_solution = true;
-					lastPartIdx = 0;
-					stepRow = 1;
+
+					// Andrei: it looks like we don't need the external loop here
+					while (nRow > nRowEnd) {
+						this->setCurrentRowNumb(nRow - (canonMatrix ? stepRow : 0));
+						nRow -= stepRow;
+
+						iFirstPartIdx = numParts() - 1;
+						while (true) {
+							pRowSolution = rowStuff(nRow, iFirstPartIdx);
+
+							//						this->resetUnforcedColOrb(iFirstPartIdx);   // New code
+													//this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
+							if (check_all_solution && !pRowSolution->allSolutionChecked()) {
+								firstPartIdx[nRow] = iFirstPartIdx;
+								break;
+							}
+
+							pRowSolution->setSolutionIndex(0);
+							if (!--iFirstPartIdx) {
+								//							this->resetUnforcedColOrb(0);
+								break;
+							}
+
+							if (iFirstPartIdx == lastPartIdx)
+								check_all_solution = true;
+						}
+						this->setCurrentRowNumb(nRow);
+						check_all_solution = true;
+						lastPartIdx = 0;
+						stepRow = 1;
 # else
-				while (nRow-- > nRowEnd) {
-					this->setCurrentRowNumb(nRow);
-					auto iFirstPartIdx = numParts();
-					while (--iFirstPartIdx > 0) {
-						pRowSolution = rowStuff(nRow, firstPartIdx[nRow] = iFirstPartIdx);
-						if (!pRowSolution->allSolutionChecked())
-							break;
+					while (nRow-- > nRowEnd) {
+						this->setCurrentRowNumb(nRow);
+						auto iFirstPartIdx = numParts();
+						while (--iFirstPartIdx > 0) {
+							pRowSolution = rowStuff(nRow, firstPartIdx[nRow] = iFirstPartIdx);
+							if (!pRowSolution->allSolutionChecked())
+								break;
 
-						pRowSolution->setSolutionIndex(0);
-					}
+							pRowSolution->setSolutionIndex(0);
+						}
 
 
 #endif
 #if 1
 					//pRowSolution = rowStuff(nRow); // iFirstPartIdx ? rowStuff(nRow) : NULL;
-					break;
+						break;
 #else
 					if (!iFirstPartIdx) {
 						break;
-					} else
-					if (iFirstPartIdx != ELEMENT_MAX) {
-						pRowSolution = rowStuff(nRow);
-						break;
-					} else {
-						if (!pRowSolution->isLastSolution())
+					}
+					else
+						if (iFirstPartIdx != ELEMENT_MAX) {
+							pRowSolution = rowStuff(nRow);
 							break;
-					}
+						}
+						else {
+							if (!pRowSolution->isLastSolution())
+								break;
+						}
 #endif
-					// This is temporary !!!
-//					pRowSolution = NULL;
-//					break;
-				}
-//				if (pRowSolution)
-//					continue;
-				pRowSolution = rowStuff(nRow);
-				if (iFirstPartIdx) {
-					if (iFirstPartIdx == 1) {
-						pRowSolution = (pNextRowSolution = pRowSolution)->NextSolution(useCanonGroup);
-						if (pRowSolution)
-							continue;
-
-						pNextRowSolution->restoreSolutionIndex();
+						// This is temporary !!!
+	//					pRowSolution = NULL;
+	//					break;
 					}
+					//				if (pRowSolution)
+					//					continue;
+					pRowSolution = rowStuff(nRow);
+
+					for (auto i = numParts(); i-- > iFirstPartIdx;)
+						this->resetUnforcedColOrb(i, nRow + 1);
+
+					if (iFirstPartIdx) {
+#if 1
+						continue;
+#else
+						if (iFirstPartIdx == 1) {
+							pRowSolution = (pNextRowSolution = pRowSolution)->NextSolution(useCanonGroup);
+							if (pRowSolution)
+								continue;
+
+							pNextRowSolution->restoreSolutionIndex();
+						}
+#endif
+					}
+				}
+				else {
+					pRowSolution = rowStuff(--nRow);
+					setCurrentRowNumb(nRow);
+					for (auto i = numParts(); --i;)
+						(pRowSolution+i)->setSolutionIndex(0);
 				}
 			}
 
@@ -668,7 +706,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				if (nRow-- <= nRowEnd)
 					break;
 
-//				this->setCurrentRowNumb(nRow);
 				if (pNextRowSolution)
 					pNextRowSolution->restoreSolutionIndex();
 
@@ -880,10 +917,10 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 	const int maxElement = this->rank() - 1;
 	const auto *pColOrbitIni = this->colOrbitIni(nRow, partIdx);
 
-	Class1(CColOrbit) *pNextRowColOrbitNew = NULL;
-	Class1(CColOrbit) *pColOrbitLast = NULL;
+	ColOrbPntr pNextRowColOrbitNew = NULL;
+	ColOrbPntr pColOrbitLast = NULL;
 	while (pColOrbit) {
-		Class1(CColOrbit) *pNewColOrbit = NULL;
+		ColOrbPntr pNewColOrbit = NULL;
 		// Define the number of column to start with
 		const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
         auto lenRemaining = pColOrbit->length();
@@ -895,7 +932,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
             
 			if (nextColOrbNeeded) {
 				if (!pNewColOrbit) {
-					pNewColOrbit = (Class1(CColOrbit) *)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
+					pNewColOrbit = (ColOrbPntr)((char *)pNextRowColOrbit + nColCurr * colOrbLen);
 					if (pColOrbitLast)
 						pColOrbitLast->setNext(pNewColOrbit);
 					else
@@ -918,13 +955,13 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 		pColOrbit = pColOrbit->next();
 	}
 
-	const auto ppUnforcedColOrb = getUnforcedColOrbPntr(partIdx);
-	if (ppUnforcedColOrb) {
+	auto * ppUnforced = getUnforcedColOrbPntr(partIdx);
+	if (ppUnforced) {
         // Set unforced (by non-zero values) elements:
-        for (auto row = firstUnforcedRow(); row <= nRow; row++) {
+		auto row = firstUnforcedRow();
+		ppUnforced += this->rank() * row;
+        for (; row <= nRow; row++) {
 			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
-//			auto **ppUnforced = this->unforcedOrbits(row, partIdx);
-			const auto ppUnforced = ppUnforcedColOrb + this->rank() * row;
             for (int i = 1; i < this->rank(); i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
@@ -938,6 +975,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
                     pColOrbit = pColOrbit->next();
                 }
             }
+			ppUnforced += this->rank();
         }
     }
     

@@ -25,7 +25,7 @@ Class1Def(CColOrbit) {
 	CC inline void setLength(S len)					{ m_nLength = len; }
 private:
 	S m_nLength;
-	Class1(CColOrbit) *m_pNext;
+	ColOrbPntr m_pNext;
  protected:
 	 MY_ORB_ID
 };
