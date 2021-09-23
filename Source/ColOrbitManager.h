@@ -40,19 +40,18 @@ public:
 	CC inline auto colOrbit(S idx, S idxPart = 0) const	{ return m_ppColOrb[idxPart][idx]; }
 	CC inline auto colOrbitIni(S nRow, S idxPart) const { return *(colOrbitsIni(idxPart) + nRow); }
 protected:
-	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)	{ setColOrbit(pntr, currentRowNumb(), idxPart); }
+	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)		{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetUnforcedColOrb(S idxPart, S nRow = 0)		{
-		memset(unforcedColOrbPntr(idxPart) + unfColIdx(nRow? nRow : currentRowNumb(), idxPart), 0, rankMatr() * sizeof(*unforcedColOrbPntr()));
+		memset(unforcedColOrbPntr(idxPart) + (nRow? nRow : currentRowNumb())*rankMatr(), 0, rankMatr() * sizeof(*unforcedColOrbPntr()));
 	}
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, S n);
 	CK inline auto *currUnforcedOrbPtr(S nPart) const				{ return m_ppUnforcedColOrbCurr[nPart]; }
-	CK inline void setCurrUnforcedOrbPtr(S nRow, S nPart)			{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + unfColIdx(nRow); }
+	CK inline void setCurrUnforcedOrbPtr(S nRow, S nPart)			{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + nRow * rankMatr(); }
 	CC inline void setCurrentRowNumb(S n)							{ m_nCurrRow = n; }
 	CC inline auto *unforcedColOrbPntr(S idxPart = 0) const			{ return m_ppUnforcedColOrb[idxPart]; }
 	CC inline auto rowMaster() const								{ return m_nRowMaster; }
 private:
 	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart)	{ m_ppColOrb[idxPart][idx] = pntr; }
-	CK inline size_t unfColIdx(S r, int idx = 0) const				{ return r * rankMatr() + idx; }
 	CC inline void setColOrbitLen(size_t len)						{ m_nColOrbLen = len; }
 	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 

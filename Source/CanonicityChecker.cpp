@@ -430,12 +430,13 @@ CanonicityChecker(void)::outputAutomorphismInfo(FILE *file, const MatrixDataPntr
 
 CanonicityChecker(bool)::groupIsTransitive() const
 { 
-	if (groupOrder() % numRow())
+	S nFixedRows = lenStabilizer();
+	if (groupOrder() % (numRow() - nFixedRows))
 		return false;
 
 	const auto *pOrb = orbits();
-	for (auto i = numRow(); i--;)
-		if (*(pOrb + i))
+	for (auto i = numRow(); i-- > nFixedRows;)
+		if (*(pOrb + i) != nFixedRows)
 			return false;
 
 	return true;

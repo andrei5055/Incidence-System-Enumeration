@@ -482,7 +482,8 @@ private:
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) {}
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const { return 0; }
-	CK inline unsigned char* getSolutionsWereConstructed(S nParts, S rowNumb) const { return nParts > 1 ? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
+	CK inline uchar *getSolutionsWereConstructed(S nParts, S rowNumb) const {
+		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(S nRow, S val, S nPart) {}
 #if PRINT_SOLUTIONS

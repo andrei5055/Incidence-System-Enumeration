@@ -87,7 +87,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 				continue; // The solutions up to firstPart where already constructed
 			}
 
-			// NOTE: For insidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
+			// NOTE: For incidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
 			setPrintResultNumVar(nVar);
 			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
 			if (!pRowSolution || !pRowSolution->numSolutions())
@@ -336,10 +336,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	// minimal index of the part, which will be changed on current row
 	S* firstPartIdx = new S[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
-	auto nn = currentRowNumb();
-	setCurrentRowNumb(5);
-	auto aaa = getUnforcedColOrbPntr(1)+2*5+1;
-	setCurrentRowNumb(nn);
 	bool canonMatrix = false;
 
 	while (pRowSolution) {
@@ -986,6 +982,8 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 }
 
 FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
+	flag &= !iFirstPartIdx;   // X0_3 condition should be checked only on first part
+	                          // of CombBIBD or on regular incidence system
 	// Loop over all portions of the solution
 	auto* const pSolutionWereConstructed = getSolutionsWereConstructed(numParts(), currentRowNumb()+1);
 	for (auto i = 0; i < numParts(); i++) {

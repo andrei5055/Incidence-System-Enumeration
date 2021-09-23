@@ -1,0 +1,2 @@
+  Combined_BIBDs:        Total #:   Simple #:        Run Time:      Date:       Comments:
+(  7,  3, { 2, 1})            16           3             0.00   Sep 22, 2021
