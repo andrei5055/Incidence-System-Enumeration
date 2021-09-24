@@ -43,7 +43,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 
 #define SHIFT "    "
 	char buffer[256], line[256];
-	size_t len = SPRINTF(buffer, "\n" SHIFT "    |Aut(M)|          Nd:             Ns:            Ndt:            Nst:\n");
+	size_t len = SPRINTF(buffer, "\n" SHIFT "    |Aut(D)|          Nd:             Ns:            Ndt:            Nst:\n");
 	outString(buffer, file);
 
 	strcpy_s(line, countof(line), SHIFT);

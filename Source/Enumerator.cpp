@@ -578,23 +578,24 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 		}
 #endif
 		if (multiPartDesign) {
+			S lastPartIdx = firstPartIdx[nRow - 1];
 			// We enumerate the multi-part designs
 			if (pRowSolution) {
+				if (!lastPartIdx)
+					lastPartIdx++;
 //				if (firstPartIdx[nRow])
 //					pRowSolution->restoreSolutionIndex();
 
 				auto i = numParts();
-				while (--i)
+				while (--i >= lastPartIdx)
 					(pRowSolution + i)->setSolutionIndex(0);
 			} else {
-#if 1
 				if (iFirstPartIdx) {
 					// We can reach this point by two diferenct pathes:
 					// (a) matrix is NOT canonical OR
 					// (b) matrix was canonical, but solution for one of the parts was not found
 					// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
 					bool check_all_solution = !canonMatrix;
-					S lastPartIdx = firstPartIdx[nRow - 1];
 					S stepRow = canonMatrix && lastPartIdx ? 0 : 1;
 					if (canonMatrix) {
 						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
@@ -630,61 +631,16 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 						check_all_solution = true;
 						lastPartIdx = 0;
 						stepRow = 1;
-# else
-					while (nRow-- > nRowEnd) {
-						this->setCurrentRowNumb(nRow);
-						auto iFirstPartIdx = numParts();
-						while (--iFirstPartIdx > 0) {
-							pRowSolution = rowStuff(nRow, firstPartIdx[nRow] = iFirstPartIdx);
-							if (!pRowSolution->allSolutionChecked())
-								break;
-
-							pRowSolution->setSolutionIndex(0);
-						}
-
-
-#endif
-#if 1
-					//pRowSolution = rowStuff(nRow); // iFirstPartIdx ? rowStuff(nRow) : NULL;
-						break;
-#else
-					if (!iFirstPartIdx) {
 						break;
 					}
-					else
-						if (iFirstPartIdx != ELEMENT_MAX) {
-							pRowSolution = rowStuff(nRow);
-							break;
-						}
-						else {
-							if (!pRowSolution->isLastSolution())
-								break;
-						}
-#endif
-						// This is temporary !!!
-	//					pRowSolution = NULL;
-	//					break;
-					}
-					//				if (pRowSolution)
-					//					continue;
+
 					pRowSolution = rowStuff(nRow);
 
 					for (auto i = numParts(); i-- > iFirstPartIdx;)
 						this->resetUnforcedColOrb(i, nRow + 1);
 
-					if (iFirstPartIdx) {
-#if 1
+					if (iFirstPartIdx)
 						continue;
-#else
-						if (iFirstPartIdx == 1) {
-							pRowSolution = (pNextRowSolution = pRowSolution)->NextSolution(useCanonGroup);
-							if (pRowSolution)
-								continue;
-
-							pNextRowSolution->restoreSolutionIndex();
-						}
-#endif
-					}
 				}
 				else {
 					pRowSolution = rowStuff(--nRow);
@@ -727,41 +683,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					break;
 				}
 
-#if 0
-				this->resetUnforcedColOrb(0);   // New code
-				this->setCurrUnforcedOrbPtr(nRow, 0);
-				setColOrbitCurr(*ppOrb, j);
-				setForcibleLambda(nRow, 0, j);
-#endif
-#if 1
 				rowStuff(nRow+1)->resetSolution();
 				ppOrb = colOrbitPntr() + (nRow+1) * pMatrix->colNumb();
 				setColOrbitCurr(*ppOrb, 0);
 				this->resetUnforcedColOrb(0);   // New code 
 				this->resetFirstUnforcedRow();
 				this->setCurrentRowNumb(nRow);
-#endif
-
-//				this->reset(nRow, resetSolutions);
-#if 0
-				if (nRow-- <= nRowEnd)
-					break;
-
-				resetSolutions = true;
-				this->setCurrentRowNumb(nRow);
-				pRowSolution = rowStuff(nRow);
-				if (!checkNextPart) {
-					checkNextPart = multiPartDesign;
-					if (!multiPartDesign)
-						continue;
-				}
-
-				if (pRowSolution->numSolutions() == pRowSolution->solutionIndex() + 1) {
-					pRowSolution->setSolutionIndex(firstPartSolutionIndex(nRow));
-					pRowSolution = NULL;
-					resetSolutions = false;
-				}
-#endif
 			}
 		}
 		else {
@@ -955,7 +882,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 	if (ppUnforced) {
         // Set unforced (by non-zero values) elements:
 		auto row = firstUnforcedRow();
-		ppUnforced += this->rank() * row;
+		ppUnforced += this->shiftToUnforcedOrbit(row);
         for (; row <= nRow; row++) {
 			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
             for (int i = 1; i < this->rank(); i++) {

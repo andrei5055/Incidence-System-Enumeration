@@ -49,7 +49,7 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC S stabiliserLengthExt() const				{ return m_nStabExtern; }
 protected:
-	CC inline int rank() const						{ return m_rank; }
+	CC inline auto rank() const						{ return m_rank; }
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
 	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage = NULL, CanonicityCheckerPntr pCanonChecker = NULL) const	{}
 	CC inline auto getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
@@ -59,6 +59,7 @@ protected:
 	CC void setStabiliserLengthExt(S len)			{ m_nStabExtern = len; }
 	CC inline S numParts() const					{ return m_numParts; }
 	CC virtual S lenStabilizer() const				{ return 0; }
+	CK inline auto shiftToUnforcedOrbit(S nRow) const { return m_pShiftToUnforcedOrbits[nRow]; }
 private:
 	CC void init(S nRow, bool savePerm);
 	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);
@@ -109,6 +110,7 @@ private:
 	uint m_nGroupOrder;
 	S m_nNumRow;
 	const S m_numParts;
+	size_t* m_pShiftToUnforcedOrbits;
 };
 
 CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags, S numParts) : m_rank(rank), m_enumFlags(enumFlags), m_numParts(numParts)
@@ -148,6 +150,11 @@ CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags
 
 	if (mult > 1)
 		m_pObits[0][1] = pntr + nRow;
+
+	m_pShiftToUnforcedOrbits = new size_t[nRow];
+	m_pShiftToUnforcedOrbits[0] = 0;
+	for (int i = 1; i < nRow; i++)
+		m_pShiftToUnforcedOrbits[i] = rank + m_pShiftToUnforcedOrbits[i - 1];
 }
 
 CanonicityChecker()::~CCanonicityChecker()
@@ -163,6 +170,7 @@ CanonicityChecker()::~CCanonicityChecker()
 	delete[] colIndex();
 	delete[] improvedSolution();
 	delete[] m_pObits[0][0];
+	delete[] m_pShiftToUnforcedOrbits;
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif
