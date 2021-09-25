@@ -16,10 +16,10 @@
 #include "cuda_runtime.h"
 #endif
 
-Class1Def(CColOrbitManager)
+Class1Def(CColOrbitManager) : public CRank
 {
 public:
-	CC inline CColOrbitManager(uint rank, S nRows, S nCol, S nParts = 1)	{ 
+	CC inline CColOrbitManager(uint rank, S nRows, S nCol, S nParts = 1) : CRank(nRows, rank) {
 		InitiateColOrbitManager(rank, nRows, nCol, nParts);
 	}
 	CK CColOrbitManager()								{ m_ppColOrb = NULL; }
@@ -32,7 +32,6 @@ public:
 	CC inline auto *colOrbits(S iPart = 0) const		{ return m_ppColOrb[iPart]; }
 	CC inline S currentRowNumb() const					{ return m_nCurrRow; }
 	CC inline auto colOrbitsIni(S iPart = 0) const		{ return m_ppColOrbIni[iPart]; }
-	CC inline int rankMatr() const						{ return m_nRank; }
 	CC void initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator, const Class1(CColOrbitManager) *pMaster = NULL, void *pMem = NULL);
 	CK void copyColOrbitInfo(const Class1(CColOrbitManager) *pColOrb, S nRow);
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;
@@ -42,11 +41,11 @@ public:
 protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)		{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetUnforcedColOrb(S idxPart, S nRow = 0)		{
-		memset(unforcedColOrbPntr(idxPart) + (nRow? nRow : currentRowNumb())*rankMatr(), 0, rankMatr() * sizeof(*unforcedColOrbPntr()));
+		memset(unforcedColOrbPntr(idxPart) + m_pShift[nRow? nRow : currentRowNumb()], 0, m_pShift[sizeof(*unforcedColOrbPntr())]);
 	}
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, S n);
 	CK inline auto *currUnforcedOrbPtr(S nPart) const				{ return m_ppUnforcedColOrbCurr[nPart]; }
-	CK inline void setCurrUnforcedOrbPtr(S nRow, S nPart)			{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + nRow * rankMatr(); }
+	CK inline void setCurrUnforcedOrbPtr(S nRow, S nPart)			{ m_ppUnforcedColOrbCurr[nPart] = unforcedColOrbPntr(nPart) + m_pShift[nRow]; }
 	CC inline void setCurrentRowNumb(S n)							{ m_nCurrRow = n; }
 	CC inline auto *unforcedColOrbPntr(S idxPart = 0) const			{ return m_ppUnforcedColOrb[idxPart]; }
 	CC inline auto rowMaster() const								{ return m_nRowMaster; }
@@ -56,7 +55,6 @@ private:
 	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 
 	S m_nCurrRow;
-    uint m_nRank;
 	uint m_nShiftMult;
     S m_nCol;
 	ColOrbPntr **m_ppColOrb;
@@ -72,9 +70,8 @@ private:
 FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows, S nCol, S nParts, void *pMem)
 {
 	m_ppOrb = NULL;
-	m_nRank = matrRank;
 	m_nCol = nCol;
-	m_nShiftMult = (m_nRank = matrRank) * nRows;
+	m_nShiftMult = matrRank * nRows;
 	m_ppColOrb = new ColOrbPntr *[4 * nParts];
 	m_ppUnforcedColOrbCurr = (m_ppUnforcedColOrb = (m_ppColOrbIni = m_ppColOrb + nParts) + nParts) + nParts;
 	const auto nElem = nParts * nRows;
@@ -82,7 +79,7 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 		// We need two sets of pointers for each part of Block Design 
 		// one sets is accessed by m_pColOrb, the other one by m_pColOrbIni
 		m_ppColOrb[0] = new ColOrbPntr[2 * nElem];
-		const auto len = nElem * rankMatr();
+		const auto len = nElem * rank();
 		m_ppUnforcedColOrb[0] = new ColOrbPntr[len];
 		memset(m_ppUnforcedColOrb[0], 0, len * sizeof(*m_ppUnforcedColOrb[0]));
 	} else {
@@ -95,7 +92,7 @@ FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows,
 	for (S i = 1; i < nParts; i++) {
 		m_ppColOrb[i] = m_ppColOrbIni[i - 1] + nRows;
 		m_ppColOrbIni[i] = m_ppColOrb[i] + nRows;
-		m_ppUnforcedColOrb[i] = m_ppUnforcedColOrb[i - 1] + nRows * rankMatr();
+		m_ppUnforcedColOrb[i] = m_ppUnforcedColOrb[i - 1] + nRows * rank();
 	}
 }
 
@@ -134,7 +131,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 		m_ppOrb = new ColOrbPntr[nCol_2];
 
 
-	const int maxElement = rankMatr();
+	const int maxElement = rank();
 	if (!using_IS_enumerator) {
 #ifndef USE_CUDA		// NOT yet implemented for GPU
 		auto pColOrbitsCS = pMem ? (Class1(CColOrbitCS) *)pMem : new  Class1(CColOrbitCS)[nCol_2 - fromMaster];

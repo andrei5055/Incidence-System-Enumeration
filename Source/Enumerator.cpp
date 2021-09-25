@@ -653,6 +653,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 			bool resetSolutions = true;
 			firstPartIdx[nRow] = 0;  // When we are here the first fragment of CombBIB will be changed
 			while (!(pNextRowSolution = pRowSolution) || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
+				const auto nRowNext = nRow;
 				this->reset(nRow, resetSolutions);
 				// we need to go to previous row
 				if (nRow-- <= nRowEnd)
@@ -667,7 +668,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				const auto partsInfo = pMatrix->partsInfo();
 				while (--j) {
 					auto pPartRowSolution = pRowSolution + j;
-					this->resetUnforcedColOrb(j);    // New code
+					this->resetUnforcedColOrb(j, nRowNext);    // New code
 					this->setCurrUnforcedOrbPtr(nRow, j);
 					if (!pPartRowSolution->allSolutionChecked())
 						break;
@@ -683,8 +684,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					break;
 				}
 
-				rowStuff(nRow+1)->resetSolution();
-				ppOrb = colOrbitPntr() + (nRow+1) * pMatrix->colNumb();
+				rowStuff(nRowNext)->resetSolution();
+				ppOrb = colOrbitPntr() + nRowNext * pMatrix->colNumb();
 				setColOrbitCurr(*ppOrb, 0);
 				this->resetUnforcedColOrb(0);   // New code 
 				this->resetFirstUnforcedRow();
@@ -837,7 +838,8 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 	const auto *pNextRowColOrbit = this->colOrbitIni(nRow+1, partIdx);
 	const auto colOrbLen = this->colOrbitLen();
 
-	const int maxElement = this->rank() - 1;
+	const auto rank = CCanonicityChecker<T, S>::rank();
+	const int maxElement = rank - 1;
 	const auto *pColOrbitIni = this->colOrbitIni(nRow, partIdx);
 
 	ColOrbPntr pNextRowColOrbitNew = NULL;
@@ -848,7 +850,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 		const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
         auto lenRemaining = pColOrbit->length();
 		auto *pRowCurr = pRow + nColCurr;
-		for (auto i = this->rank(); i--;) {
+		for (auto i = rank; i--;) {
 			const auto lenFragm = i? pRowSolution[maxElement - i] : lenRemaining;
 			if (!lenFragm)
 				continue;
@@ -885,7 +887,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
 		ppUnforced += this->shiftToUnforcedOrbit(row);
         for (; row <= nRow; row++) {
 			const auto *pColOrbitIni = this->colOrbitIni(row, partIdx);
-            for (int i = 1; i < this->rank(); i++) {
+            for (int i = 1; i < rank; i++) {
                 pColOrbit = *(ppUnforced + i);
                 while (pColOrbit) {
                     const auto nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
@@ -898,7 +900,7 @@ FClass2(CEnumerator, ColOrbPntr)::MakeRow(const S *pRowSolution, bool nextColOrb
                     pColOrbit = pColOrbit->next();
                 }
             }
-			ppUnforced += this->rank();
+			ppUnforced += rank;
         }
     }
     
@@ -1204,7 +1206,7 @@ FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE
 
 	MUTEX_LOCK(out_mutex);
 	for (auto i = nPartStart; i < nPartEnd; i++)
-		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, nPartEnd > 1);
+		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, this->numParts() > 1);
 
 	MUTEX_UNLOCK(out_mutex);
 }

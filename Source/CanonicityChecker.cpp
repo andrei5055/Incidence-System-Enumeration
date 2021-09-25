@@ -12,7 +12,6 @@ template class CCanonicityChecker<TDATA_TYPES>;
 
 CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem)
 {
-	m_rank = rank;
 	m_pPermutRow = (CPermut *)(pMem += nRow);
 	m_pPermutRow->Init(nRow, pMem = (S *)((char *)pMem + sizeof(CPermut)));
 	m_pPermutCol = (CPermut *)(pMem += nRow);

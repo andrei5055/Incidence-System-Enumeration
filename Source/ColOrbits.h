@@ -90,3 +90,23 @@ Class1Def(CColOrbitCS) : public Class1(CColOrbit)
 	unsigned int *m_pEntryCntrs;
 	int m_maxElement;
 };
+
+class CRank {
+public:
+	CRank(int nRows, int rank = 2) : m_rank(rank)	{
+		if (nRows <= 8)  // We could use sizeof(void *) as the index in m_pShift array 
+			nRows = 9;
+
+		m_pShift = new size_t[nRows];
+		m_pShift[0] = 0;
+		for (int i = 1; i < nRows; i++)
+			m_pShift[i] = rank + m_pShift[i - 1];
+	}
+	~CRank()                                                            { delete [] m_pShift; }
+	CC inline auto rank() const											{ return m_rank; }
+//	CK inline auto shiftToUnforcedOrbit(S nRow) const					{ return m_pShift[nRow]; }
+protected:
+	size_t* m_pShift;
+private:
+	int m_rank;
+};
