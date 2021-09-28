@@ -86,7 +86,6 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(S));
 
 	setFirstUnforcedRow();
-	setForcibleLambda(nRow - 1, this->getInSys()->lambda(), 0); // It looks like we dont need this
 }
 
 FClass2(C_InSysEnumerator)::~C_InSysEnumerator() {
@@ -446,7 +445,7 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 #endif
 
 	// if it's possible, define first unforced row number
-	if (idx > 0 && !firstUnforcedRow())
+	if (!idx && !firstUnforcedRow())
 		setFirstUnforcedRow(this->currentRowNumb());
 }
 

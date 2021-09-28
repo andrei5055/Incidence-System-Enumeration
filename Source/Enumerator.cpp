@@ -70,6 +70,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 		i++;
 	}
 
+	static int ggg = 0; ggg++;
 	S nVar = ELEMENT_MAX;
 	const auto firstPart = i;
 	if (prepareToFindRowSolution()) {
@@ -116,8 +117,11 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 	if (i < numParts) {
 		*pPartNumb = i;
 #if PRINT_SOLUTIONS
-		char buff[128];
-		SPRINTF(buff, "\nNo solutions for part %d of the row %d. System of equations %s\n", i, currentRowNumb(),
+		char buff[128], *pBuff = buff;
+		pBuff += SNPRINTF(buff, sizeof(buff), "\nNo solutions for ");
+		if (numParts > 1)
+			pBuff += SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the part %d of ", i);
+		SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the row %d. System of equations %s\n", currentRowNumb(),
 			    nVar == ELEMENT_MAX? "cannot be constructed" : "has no valid solutions");
 		outString(buff, outFile());
 #endif
@@ -248,7 +252,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 		this->setOutFile(file);
 		outString(jobTitle, this->outFile());
-	}
+	} else
+		this->setOutFile(NULL);
 
 	// Create file name for the output of intermediate results 
 	if ((writeFile || pEnumInfo && !pMaster) && makeFileName(buff, lenBuffer, FILE_NAME(INTERMEDIATE_RESULTS)))
@@ -666,6 +671,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 				auto j = numParts();
 				const auto* ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
 				const auto partsInfo = pMatrix->partsInfo();
+				static int jjj = 0; jjj++;
 				while (--j) {
 					auto pPartRowSolution = pRowSolution + j;
 					this->resetUnforcedColOrb(j, nRowNext);    // New code
@@ -675,7 +681,20 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 					setColOrbitCurr(*(ppOrb + partsInfo->getShift(j)), j);
 					pPartRowSolution->setSolutionIndex(0);
-					setForcibleLambda(nRow, 0, j);
+/*
+					const auto currForsibleLambda = forcibleLambda(nRow, 1);
+					if (currForsibleLambda) {
+						ColOrbPntr pOrbUnforsedBy1s = *(pntr2UnforcedColOrb(nRow, j) + 1);
+						S forsibleLambda = 0;
+						while (pOrbUnforsedBy1s) {
+							forsibleLambda += pOrbUnforsedBy1s->length();
+							pOrbUnforsedBy1s = pOrbUnforsedBy1s->next();
+						}
+
+						if (forsibleLambda)
+							setForcibleLambda(nRow, currForsibleLambda - forsibleLambda, j);
+					}
+					*/
 				}
 
 
@@ -731,6 +750,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0);
 
+		closeFile();
 		t_resType resType;
 		if (lenName) {
 			// Compare current results with previously obtained
@@ -790,7 +810,6 @@ FClass2(CEnumerator, void)::reset(S nRow, bool resetSolutions) {
 	const auto *pMatrix = this->matrix();
 	const auto *ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
 
-#if 1
 	auto j = numParts();
 	if (j > 1) {
 		const auto partsInfo = pMatrix->partsInfo();
@@ -804,25 +823,7 @@ FClass2(CEnumerator, void)::reset(S nRow, bool resetSolutions) {
 		setColOrbitCurr(*ppOrb, 0);
 		this->resetUnforcedColOrb(0);       // Regular code
 	}
-#else
-	// Reset first part of design
-	if (resetSolutions) {
-		rowStuff(nRow)->resetSolution();
-		setColOrbitCurr(*ppOrb, 0);
-	}
 
-	this->resetUnforcedColOrb(0);           // Unused code
-
-	// ... and remaining parts, if needed
-	auto j = numParts();
-	if (j > 1) {
-		const auto partsInfo = pMatrix->partsInfo();
-		while(--j) {
-			setColOrbitCurr(*(ppOrb + partsInfo->getShift(j)), j);
-			this->resetUnforcedColOrb(j);   // Unused code
-		}
-	}
-#endif
 	this->resetFirstUnforcedRow();
 }
 
@@ -1024,10 +1025,16 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 	const size_t len = strlen(CONSTRUCTED_IN);
 	char buf[2][lenBuf], *pntr[2] = {NULL, NULL};
 	while (true) {
+		bool eof = false;
 		for (int i = 0; i < 2; i++) {
 			if (file[i]) {
-				if (!getNextLineForComparison(file[i], buf[i], lenBuf))
-					return false;
+				if (!getNextLineForComparison(file[i], buf[i], lenBuf)) {
+					pntr[i] = 0;
+					if (i == 0)
+						continue;
+
+					return pntr[i] == pntr[i];   // check if both files ended
+				}
 
 				pntr[i] = strstr(buf[i], CONSTRUCTED_IN);
 			}
@@ -1066,7 +1073,7 @@ FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, b
 
 	if (pBetterResults) {
 		// Create the name of the file with the previous results
-		static size_t lenSuffix = strlen(FILE_NAME("")) + 1;
+		static auto lenSuffix = strlen(FILE_NAME("")) + 1;
 		strcpy_s(fileName + lenFileName, lenSuffix, FILE_NAME(""));
 		FOPEN(filePrev, fileName, "r");
 		ppFile[1] = filePrev;
