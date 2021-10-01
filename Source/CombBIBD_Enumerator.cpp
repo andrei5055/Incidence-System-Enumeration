@@ -42,14 +42,9 @@ FClass2(CCombBIBD_Enumerator, void)::CreateForcedRows() {
 	const auto pR_set = this->paramSet(t_rSet);
 	const auto iMax = static_cast<T>(this->numParts());
 	auto* pRow = pInSys->GetRow(0);
-	S bPrev = 0;
 	for (T i = 0; i < iMax; i++) {
 		const auto b = pR_set->GetAt(i) * v / k;
 		rowSetFragm(pRow, iMax - i, b);
 		pRow += b;
-
-		if (b == bPrev) {
-
-		}
 	}
 }

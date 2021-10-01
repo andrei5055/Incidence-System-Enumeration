@@ -27,13 +27,14 @@ typedef enum {
 Class2Def(CMatrix);
 Class2Def(CMatrixCol);
 Class2Def(CRowSolution);
+Class1Def(CGroupOnParts);
 
 Class2Def(CCanonicityChecker) : public CRank {
 public:
 	CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
-	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb = NULL, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
+	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb = NULL, CGroupOnParts<uint>* pGroupOnParts = NULL, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
@@ -167,19 +168,28 @@ CanonicityChecker()::~CCanonicityChecker()
 #endif
 }
 
-CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb, S *pRowOut, RowSolutionPntr pRowSolution)
+CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb, CGroupOnParts<uint>* pGroupOnParts, S *pRowOut, RowSolutionPntr pRowSolution)
 {
+	const auto lenStab = stabiliserLengthExt();
+	if (--nRowMax == lenStab)
+		return true;
+
 	// Construct trivial permutations for rows and columns
 	const auto rowPermut = outInfo & t_saveRowPermutations;
 	const auto* pMatr = pEnum->matrix();
 	const auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
-	init(nRowMax--, rowPermut);
 
 	const auto colOrbLen = pEnum->colOrbitLen();
-	auto **colOrbit = pEnum->colOrbits();
-	auto **colOrbitIni = pEnum->colOrbitsIni();
-#ifndef USE_CUDA
-	const S *pCurrSolution;
+	const auto* pPartInfo = pMatr->partsInfo();
+	PREPARE_PERM_OUT(permColStorage());
+
+	bool retVal = true;
+	bool usingGroupOnBlocks = false;
+	size_t numGroups = 0;
+	size_t idxPerm[16];
+	size_t* pIndxPerms = NULL;
+
+	const S* pCurrSolution;
 	size_t solutionSize;
 	if (pRowSolution) {
 		// Because the position of current solution (pRowSolution->solutionIndex()) 
@@ -195,138 +205,174 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, ui
 	size_t startIndex = 0;
 #endif
 
-	const auto pPartInfo = pMatr->partsInfo();
-	PREPARE_PERM_OUT(permColStorage());
-	const auto lenStab = stabiliserLengthExt();
-
-	bool retVal = true;
-	S nRow = ELEMENT_MAX;
-	const auto* permColumn = permCol();
 	while (true) {
-	next_permut:
-		nRow = next_permutation(nRow, lenStab);
-		if (nRow == ELEMENT_MAX || nRow < lenStabilizer())
-			break;
-
-		OUT_PERM(permRowStorage(), permRow(), nRowMax + 1);
-		OUTPUT_PERMUTATION(permColStorage(), pEnum->outFile(), orbits(), numRow());
-
-		// Loop for all remaining matrix's rows
-		for (; nRow <= nRowMax; nRow++) {
-			const auto* pRow = pMatr->GetRow(nRow);
-			const auto* pRowPerm = pMatr->GetRow(*(permRow() + nRow));
-			for (S nPart = 0; nPart < numParts(); nPart++) {
-				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
-				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
-				const auto shift = nPart? pPartInfo->getShift(nPart) : 0;
-				while (pColOrbit) {
-					// Define the number of column to start with
-					const auto nColCurr = shift + static_cast<S>(((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen);
-					const auto orbLen = pColOrbit->length();
-					int diff;
-					if (orbLen > 1)
-						diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
-					else
-						diff = static_cast<int>(*(pRow + nColCurr)) - *(pRowPerm + *(permColumn + nColCurr));
-
-					if (diff > 0)
-						goto next_permut;
-
-					if (!diff) {
-						pColOrbit = pColOrbit->next();
-						continue;
-					}
-
-					if (!nPart && pRowOut) {
-						if (outInfo & t_saveRowToChange)
-							*pRowOut = rowToChange(nRow);
 #ifndef USE_CUDA
-						else {
-							if (pRowSolution && !pRowSolution->isLastSolution()) {
-								// NOTE: No need to remove last solution, we will leave this level anyway
-								if (nRow < nRowMax) {
-									// We can remove all solutions which are in the same group with the solution just tested.
-									// We don't need them even as the right parts of our equations, because the usage of everyone 
-									// will make the matrix non canonical
-									pRowSolution->removeNoncanonicalSolutions(startIndex);
-								}
-								else {
-									reconstructSolution(pEnum->colOrbit(nRow, nPart), pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
-#if USE_STRONG_CANONICITY
-									if (solutionStorage()) {
-										for (auto* pSolution : *solutionStorage()) {
-											if (!MEMCMP(pSolution, improvedSolution(), solutionSize * sizeof(*pSolution)))
-												goto next_permut; // We already saw this solution
-										}
-									}
+		init(nRowMax + 1, rowPermut);
 
-									startIndex = pRowSolution->moveNoncanonicalSolutions(improvedSolution(), startIndex, solutionStorage(), pRowOut);
-									if (startIndex != SIZE_MAX) {
-										retVal = false;
-										// we will try to find better alternative
-										goto next_permut;
+		S nRow = ELEMENT_MAX;
+		const auto* permColumn = permCol();
+		while (true) {
+		next_permut:
+			nRow = next_permutation(nRow, lenStab);
+			if (nRow == ELEMENT_MAX || nRow < lenStabilizer())
+				break;
+
+			OUT_PERM(permRowStorage(), permRow(), nRowMax + 1);
+			OUTPUT_PERMUTATION(permColStorage(), pEnum->outFile(), orbits(), numRow());
+
+			// Loop for all remaining matrix's rows
+			for (; nRow <= nRowMax; nRow++) {
+				const auto* pRow = pMatr->GetRow(nRow);
+				const auto* pRowPerm = pMatr->GetRow(*(permRow() + nRow));
+				for (S nPart = 0; nPart < numParts(); nPart++) {
+					const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
+					const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
+					const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
+					while (pColOrbit) {
+						// Define the number of column to start with
+						const auto nColCurr = shift + static_cast<S>(((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen);
+						const auto orbLen = pColOrbit->length();
+						int diff;
+						if (orbLen > 1)
+							diff = checkColOrbit(orbLen, nColCurr, pRow, pRowPerm);
+						else
+							diff = static_cast<int>(*(pRow + nColCurr)) - *(pRowPerm + *(permColumn + nColCurr));
+
+						if (diff > 0)
+							goto next_permut;
+
+						if (!diff) {
+							pColOrbit = pColOrbit->next();
+							continue;
+						}
+
+						if (!nPart && pRowOut) {
+							if (outInfo & t_saveRowToChange)
+								*pRowOut = rowToChange(nRow);
+#ifndef USE_CUDA
+							else {
+								if (pRowSolution && !pRowSolution->isLastSolution()) {
+									// NOTE: No need to remove last solution, we will leave this level anyway
+									if (nRow < nRowMax) {
+										// We can remove all solutions which are in the same group with the solution just tested.
+										// We don't need them even as the right parts of our equations, because the usage of everyone 
+										// will make the matrix non canonical
+										pRowSolution->removeNoncanonicalSolutions(startIndex);
 									}
+									else {
+										reconstructSolution(pEnum->colOrbit(nRow, nPart), pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
+#if USE_STRONG_CANONICITY
+										if (solutionStorage()) {
+											for (auto* pSolution : *solutionStorage()) {
+												if (!MEMCMP(pSolution, improvedSolution(), solutionSize * sizeof(*pSolution)))
+													goto next_permut; // We already saw this solution
+											}
+										}
+
+										startIndex = pRowSolution->moveNoncanonicalSolutions(improvedSolution(), startIndex, solutionStorage(), pRowOut);
+										if (startIndex != SIZE_MAX) {
+											retVal = false;
+											// we will try to find better alternative
+											goto next_permut;
+										}
 #else
-									pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
+										pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
 #endif
+									}
 								}
 							}
-						}
 #endif				
+						}
+
+						if (pPartNumb)
+							*pPartNumb = nPart;
+
+						if (pIndxPerms && pIndxPerms != idxPerm)
+							delete[] pIndxPerms;
+
+						return false;
 					}
-
-					if (pPartNumb)
-						*pPartNumb = nPart;
-
-					return false;
 				}
 			}
-		}
 
-		// Automorphism found:
+			// Automorphism found:
+			if (!usingGroupOnBlocks) {
+				// We are not using group on blocks yet. If pGroupOnParts != NULL, we will use it on next path.
 #if (PRINT_CURRENT_MATRIX && PRINT_PERMUTATION)
-		outString("-----\n", pEnum->outFile());
+				outString("-----\n", pEnum->outFile());
 #endif
-		if (!rowPermut) {
-			// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
-			// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
-			for (S nPart = 0; nPart < numParts(); nPart++) {
-				auto pPermStorage = permStorage(nPart);
-				const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
-				const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
-				const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
-				// Saving permutations, acting on the orbits of columns
-				S lenPermut;
-				if (pPermStorage->isEmpty()) {		// Index for columns was not yet constructed
-					lenPermut = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
-					pPermStorage->allocateMemoryForPermut(lenPermut);	// Memory for identity permutation just in case we will need it
-				} else
-					lenPermut = pPermStorage->lenPerm();
+				if (!rowPermut) {
+					// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
+					// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
+					for (S nPart = 0; nPart < numParts(); nPart++) {
+						auto pPermStorage = permStorage(nPart);
+						const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
+						const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
+						const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
+						// Saving permutations, acting on the orbits of columns
+						S lenPermut;
+						if (pPermStorage->isEmpty()) {		// Index for columns was not yet constructed
+							lenPermut = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
+							pPermStorage->allocateMemoryForPermut(lenPermut);	// Memory for identity permutation just in case we will need it
+						}
+						else
+							lenPermut = pPermStorage->lenPerm();
 
-				auto pVarPerm = pPermStorage->allocateMemoryForPermut(lenPermut);
-				while (pColOrbit) {
-					const auto nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
-					*pVarPerm++ = *(colIndex() + *(permCol() + nColCurr));
-					pColOrbit = pColOrbit->next();
+						auto pVarPerm = pPermStorage->allocateMemoryForPermut(lenPermut);
+						while (pColOrbit) {
+							const auto nColCurr = shift + ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
+							*pVarPerm++ = *(colIndex() + *(permCol() + nColCurr));
+							pColOrbit = pColOrbit->next();
+						}
+					}
 				}
+
+				//#ifndef USE_CUDA
+						// We need the permutations on columns AND
+						//  (a) matrix is completely constructed OR
+						//  (b) we will need to analyse the group on partially constructed matrix
+						// (As of Oct.11, 2018 this is used only for IGraphs (semi-symmetric graphs)
+				if (permColStorage() && (rowPermut || permRowStorage()))
+					ConstructColumnPermutation(pEnum->matrix());
+				//#endif
+
+				addAutomorphism(rowPermut, savePermut);
 			}
+			nRow = ELEMENT_MAX - 1;
 		}
 
-//#ifndef USE_CUDA
-		// We need the permutations on columns AND
-		//  (a) matrix is completely constructed OR
-		//  (b) we will need to analyse the group on partially constructed matrix
-		// (As of Oct.11, 2018 this is used only for IGraphs (semi-symmetric graphs)
-		if (permColStorage() && (rowPermut || permRowStorage()))
-			ConstructColumnPermutation(pEnum->matrix());
-//#endif
+		if (rowPermut)
+			updateGroupOrder();
 
-		addAutomorphism(rowPermut, savePermut);
-		nRow = ELEMENT_MAX - 1;
+		if (!retVal || !pGroupOnParts )   // We don't have to test on groups of blocks
+			break;
+
+
+		if (!usingGroupOnBlocks) {
+			usingGroupOnBlocks = true;
+			numGroups = pGroupOnParts->numGroups();
+			// Initialization of variables to use the group acting on the parts of the matrix
+			pIndxPerms = numGroups < countof(idxPerm) ? idxPerm : new size_t[numGroups];
+			memset(pIndxPerms, 0, numGroups * sizeof(*pIndxPerms));
+		}
+
+		// Get next set of indices of permutations used from each group
+		size_t idx = 0;
+		while (idx < numGroups) {
+			if (++*(pIndxPerms + idx) >= pGroupOnParts->groupHandle(idx)->groupOrder())
+				*(pIndxPerms + idx++) = 0;
+			else break;
+		}
+		if (idx >= numGroups)
+			break;
+
+		break;
+		continue;
+		// Permuting the parts of the matrix in accordance with the current set of permutations
 	}
 
-	if (rowPermut)
-		updateGroupOrder();
+	if (pIndxPerms && pIndxPerms != idxPerm)
+		delete[] pIndxPerms;
 
 	return retVal;
 }

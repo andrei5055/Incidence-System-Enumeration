@@ -401,7 +401,7 @@ int main(int argc, char * argv[])
 			continue;
 		}
 
-		pos = pos = find(line, "THREAD_LEVEL");
+		pos = find(line, "THREAD_LEVEL");
 		if (pos != string::npos) {
 			// Define the row number, where threads will be launched
 			const auto mt_level = getInteger(line, &pos);

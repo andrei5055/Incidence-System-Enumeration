@@ -215,6 +215,11 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 
 FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
 {
+	// Construct nontrivial group, acting on parts (groups of blocks)
+	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
+	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
+	setGroupOnParts(pGroupOnParts);
+
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
@@ -416,7 +421,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 				if (!TestCanonicityOnGPU()) {
 					EXIT(-1);
-					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, &level);
+					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, pGroupOnParts, &level);
 					if (canonMatrix) {
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
@@ -504,7 +509,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					this->setCurrUnforcedOrbPtr(nRow, i);
 				}
 
-				canonMatrix = !USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, &level, pRowSolution);
+				canonMatrix = !USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, pGroupOnParts, &level, pRowSolution);
 				OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, canonMatrix);
 
 				if (canonMatrix) {
