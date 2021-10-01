@@ -213,13 +213,15 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 }
 #endif
 
-FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode *pTreadCode)
+FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	// Construct nontrivial group, acting on parts (groups of blocks)
 	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
 	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
 	setGroupOnParts(pGroupOnParts);
-
+	if (pGroupOnParts) {
+		;
+	}
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
@@ -341,7 +343,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 	const S nRowEnd = nRow ? nRow + 1 : 0;
 
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
+
 	S level, nPart;
+	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts};
 
 	// minimal index of the part, which will be changed on current row
 	S* firstPartIdx = new S[nRows];
@@ -421,7 +425,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 
 				if (!TestCanonicityOnGPU()) {
 					EXIT(-1);
-					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, pGroupOnParts, &level);
+//					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, pGroupOnParts, &level);
+					canonMatrix = this->TestCanonicity(nRow, &canonParam, outInfo);
 					if (canonMatrix) {
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
@@ -509,7 +514,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam *pParam, bool writeFile, EnumI
 					this->setCurrUnforcedOrbPtr(nRow, i);
 				}
 
-				canonMatrix = !USE_CANON_GROUP || this->TestCanonicity(nRow, this, t_saveNothing, &nPart, pGroupOnParts, &level, pRowSolution);
+				canonMatrix = !USE_CANON_GROUP || 
+					          this->TestCanonicity(nRow, &canonParam, t_saveNothing, pRowSolution);
 				OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, canonMatrix);
 
 				if (canonMatrix) {

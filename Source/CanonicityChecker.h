@@ -29,12 +29,20 @@ Class2Def(CMatrixCol);
 Class2Def(CRowSolution);
 Class1Def(CGroupOnParts);
 
+template <typename T, typename S>
+struct TestCanonParams {
+	const MatrixColPntr pEnum;
+	S* pPartNumb;
+	S* pRowOut;
+	CGroupOnParts<uint>* pGroupOnParts;
+};
+
 Class2Def(CCanonicityChecker) : public CRank {
 public:
 	CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
-	CC bool TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb = NULL, CGroupOnParts<uint>* pGroupOnParts = NULL, S *pRowOut = NULL, RowSolutionPntr pRowSolution = NULL);
+	CC bool TestCanonicity(S nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
@@ -168,12 +176,16 @@ CanonicityChecker()::~CCanonicityChecker()
 #endif
 }
 
-CanonicityChecker(bool)::TestCanonicity(S nRowMax, const MatrixColPntr pEnum, uint outInfo, S *pPartNumb, CGroupOnParts<uint>* pGroupOnParts, S *pRowOut, RowSolutionPntr pRowSolution)
+CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
 {
 	const auto lenStab = stabiliserLengthExt();
 	if (--nRowMax == lenStab)
 		return true;
 
+	const auto* pEnum = pCanonParam->pEnum;
+	auto *pPartNumb = pCanonParam->pPartNumb;
+	auto* pRowOut = pCanonParam->pRowOut;
+	const auto* pGroupOnParts = pCanonParam->pGroupOnParts;
 	// Construct trivial permutations for rows and columns
 	const auto rowPermut = outInfo & t_saveRowPermutations;
 	const auto* pMatr = pEnum->matrix();

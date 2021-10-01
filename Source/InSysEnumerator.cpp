@@ -23,6 +23,8 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 	const auto colOrbLen = matrCol.colOrbitLen();
 	bool flag = false;
 
+	TestCanonParams<T, S> canonParam = { &matrCol };
+
 	auto pMatr = matrCol.matrix()->GetDataPntr();
 	T *pTmp = NULL;		// Memory for reordering the rows and columns of the matrix
 						// If needed, it will be allocated. 
@@ -112,13 +114,12 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 			}
 		}
 
-		if (pCanonChecker->TestCanonicity(rowNumb, &matrCol, t_saveRowPermutations))
+		if (pCanonChecker->TestCanonicity(rowNumb, &canonParam, t_saveRowPermutations))
 			break;  // Matrix is canonized
 
-					// Reorder the rows and columns of the matrix according to  
-					// permutations which were found during canonicity testing
-
-					// Define the row number, where non-canonicity was noticed
+		// Reorder the rows and columns of the matrix according to
+		// permutations which were found during canonicity testing
+		// Define the row number, where non-canonicity was noticed
 		i = 0;
 		const auto pPermRow = pCanonChecker->permRow();
 		while (pPermRow[i] == i)
