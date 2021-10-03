@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 
-
-#define TEST						false  //true   // Test mode
+// Token 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
+#define TEST						false //true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -204,7 +204,7 @@ typedef unsigned long long	ulonglong;
 
 #define MATRIX_ELEMENT_TYPE  	uchar
 #define SIZE_TYPE				uchar //uint16_t //uchar //uint16_t
-#define TDATA_TYPES				MATRIX_ELEMENT_TYPE, SIZE_TYPE
+#define TDATA_TYPES				SIZE_TYPE, MATRIX_ELEMENT_TYPE 
 #define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
 
 #define Class1(x)               x<S>

@@ -8,7 +8,7 @@
 
 template class C_InSysEnumerator<TDATA_TYPES>;
 
-FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
+FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, T *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();
@@ -28,7 +28,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 	auto pMatr = matrCol.matrix()->GetDataPntr();
 	T *pTmp = NULL;		// Memory for reordering the rows and columns of the matrix
 						// If needed, it will be allocated. 
-	S i = 0;
+	T i = 0;
 	while (true) {
 		bool colPermFound = false;
 		for (auto j = nCols; j--;)
@@ -36,7 +36,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 
 		auto *pColOrbitNext = matrCol.colOrbits()[i];
 		while (i < rowNumb) {
-			T *pBeg = matrCol.matrix()->GetRow(i);
+			auto *pBeg = matrCol.matrix()->GetRow(i);
 			auto *pColOrbit = pColOrbitNext;
 			auto pColOrbNext = pColOrbitNext = matrCol.colOrbits()[++i];
 			auto pColIdx = pColIdxMem;
@@ -102,13 +102,13 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, S *p
 
 			if (jMin < nCols) {
 				if (!pTmp)
-					pTmp = new T[nCols * rowNumb];
+					pTmp = new S[nCols * rowNumb];
 
-				const auto len = (nCols - jMin) * sizeof(T);
-				for (S i = 0; i < rowNumb; ++i) {
+				const auto len = (nCols - jMin) * sizeof(S);
+				for (T i = 0; i < rowNumb; ++i) {
 					auto *pRow = matrCol.matrix()->GetRow(i);
 					memcpy(pTmp + jMin, pRow + jMin, len);
-					for (S j = jMin; j < nCols; ++j)
+					for (T j = jMin; j < nCols; ++j)
 						pRow[j] = pTmp[pColIdxMem[j]];
 				}
 			}

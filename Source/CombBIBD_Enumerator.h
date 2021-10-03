@@ -22,7 +22,7 @@ protected:
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual void CreateForcedRows();
 	CK virtual S firtstNonfixedRowNumber() const	{ return 3; }
-	CC virtual S lenStabilizer() const              { return 1; }
+	CC virtual T lenStabilizer() const              { return 1; }
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const	{ return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); }
 	CK virtual size_t numLambdas()					{ return 1; }
 	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx = 0, S numPart = 0) const { return pLambdaSet->GetAt(numPart); }

@@ -10,7 +10,7 @@
 
 template class CCanonicityChecker<TDATA_TYPES>;
 
-CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem)
+CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, S *pMem)
 {
 	m_pPermutRow = (CPermut *)(pMem += nRow);
 	m_pPermutRow->Init(nRow, pMem = (S *)((char *)pMem + sizeof(CPermut)));
@@ -33,7 +33,7 @@ CanonicityChecker(void)::InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem
 	setSolutionStorage(NULL);
 }
 
-CanonicityChecker(void)::init(S nRow, bool savePerm) {
+CanonicityChecker(void)::init(T nRow, bool savePerm) {
 	setNumRow(nRow);
 	setStabilizerLength(nRow - 1);
 	setStabilizerLengthAut(ELEMENT_MAX);
@@ -66,7 +66,7 @@ CanonicityChecker(void)::init(S nRow, bool savePerm) {
 		permRowStorage()->initPermutStorage();
 }
 
-CanonicityChecker(void)::revert(S i)
+CanonicityChecker(void)::revert(T i)
 {
     // Reverse suffix (if needed)
     auto *array = permRow();

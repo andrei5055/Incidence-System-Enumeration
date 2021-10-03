@@ -35,14 +35,15 @@ struct TestCanonParams {
 	S* pPartNumb;
 	S* pRowOut;
 	CGroupOnParts<uint>* pGroupOnParts;
+	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
 };
 
 Class2Def(CCanonicityChecker) : public CRank {
 public:
-	CC CCanonicityChecker(S nRow, S nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
+	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
-	void InitCanonicityChecker(S nRow, S nCol, int rank, S *pMem);
-	CC bool TestCanonicity(S nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo, RowSolutionPntr pRowSolution = NULL);
+	void InitCanonicityChecker(T nRow, T nCol, int rank, S *pMem);
+	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
@@ -59,23 +60,23 @@ public:
 	CC S stabiliserLengthExt() const				{ return m_nStabExtern; }
 protected:
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
-	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, S *pColIdxStorage = NULL, CanonicityCheckerPntr pCanonChecker = NULL) const	{}
+	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, T *pColIdxStorage = NULL, CanonicityCheckerPntr pCanonChecker = NULL) const	{}
 	CC inline auto getRowOrbits(int idx) const		{ return m_pObits[0][idx]; }
 	CC inline auto getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline auto numRow() const					{ return m_nNumRow; }
-	CC void setStabiliserLengthExt(S len)			{ m_nStabExtern = len; }
+	CC void setStabiliserLengthExt(T len)			{ m_nStabExtern = len; }
 	CC inline S numParts() const					{ return m_numParts; }
-	CC virtual S lenStabilizer() const				{ return 0; }
-	CK inline auto shiftToUnforcedOrbit(S nRow) const { return m_pShift[nRow]; }
+	CC virtual T lenStabilizer() const				{ return 0; }
+	CK inline auto shiftToUnforcedOrbit(T nRow) const { return m_pShift[nRow]; }
 private:
-	CC void init(S nRow, bool savePerm);
+	CC void init(T nRow, bool savePerm);
 	CC S next_permutation(S idx = ELEMENT_MAX, S lenStab = 0);
 	CC void addAutomorphism(bool rowPermut = true, bool savePermut = false);
 	CC int checkColOrbit(S orbLen, S nColCurr, const T *pRow, const T *pRowPerm) const;
 	CC inline void setStabilizerLength(S len)		{ m_nStabLength = len; }
 	CC inline auto stabilizerLength() const			{ return m_nStabLength; }
-	CC inline void setStabilizerLengthAut(S l)		{ m_nStabLengthAut = l; }
+	CC inline void setStabilizerLengthAut(T l)		{ m_nStabLengthAut = l; }
 	CC inline auto stabilizerLengthAut() const		{ return m_nStabLengthAut; }
 	CC inline void setNumRow(S nRow)				{ m_nNumRow = nRow; }
 	CC inline auto numCol() const					{ return static_cast<S>(m_pPermutCol->numElement()); }
@@ -85,7 +86,7 @@ private:
 	CC inline auto counter() const					{ return m_pCounter; }
 	CC inline void setColIndex(S *p)				{ m_pColIndex = p; }
 	CC inline auto colIndex() const					{ return m_pColIndex; }
-	CC void revert(S i);
+	CC void revert(T i);
 	CC S constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift = 0) const;
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC S rowToChange(S nRow) const;
@@ -102,9 +103,9 @@ private:
 #define solutionStorage()		(CSolutionStorage *)NULL
 #endif
 
-	S m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
-	S m_nStabLength;
-	S m_nStabLengthAut;
+	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
+	T m_nStabLength;
+	T m_nStabLengthAut;
 	CPermut *m_pPermutRow;
 	CPermut *m_pPermutCol;
 	CColNumbStorage **m_nColNumbStorage;
@@ -115,11 +116,11 @@ private:
 	S *m_pImprovedSol;
 	const uint m_enumFlags;
 	uint m_nGroupOrder;
-	S m_nNumRow;
+	T m_nNumRow;
 	const S m_numParts;
 };
 
-CanonicityChecker()::CCanonicityChecker(S nRow, S nCol, int rank, uint enumFlags, S numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
+CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, S numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
@@ -176,7 +177,7 @@ CanonicityChecker()::~CCanonicityChecker()
 #endif
 }
 
-CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
+CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
 {
 	const auto lenStab = stabiliserLengthExt();
 	if (--nRowMax == lenStab)
@@ -184,7 +185,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* 
 
 	const auto* pEnum = pCanonParam->pEnum;
 	auto *pPartNumb = pCanonParam->pPartNumb;
-	auto* pRowOut = pCanonParam->pRowOut;
+	auto *pRowOut = pCanonParam->pRowOut;
 	const auto* pGroupOnParts = pCanonParam->pGroupOnParts;
 	// Construct trivial permutations for rows and columns
 	const auto rowPermut = outInfo & t_saveRowPermutations;
@@ -205,7 +206,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* 
 	size_t solutionSize;
 	if (pRowSolution) {
 		// Because the position of current solution (pRowSolution->solutionIndex()) 
-		// could be changed, let's take pointer here
+		// can be changed, take pointer here
 		pCurrSolution = pRowSolution->currSolution();
 		solutionSize = pRowSolution->solutionLength();
 #if USE_STRONG_CANONICITY
@@ -356,7 +357,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* 
 		if (rowPermut)
 			updateGroupOrder();
 
-		if (!retVal || !pGroupOnParts )   // We don't have to test on groups of blocks
+		if (!retVal || !pGroupOnParts)   // We don't have to test on groups of blocks
 			break;
 
 
@@ -379,6 +380,7 @@ CanonicityChecker(bool)::TestCanonicity(S nRowMax, const TestCanonParams<T, S>* 
 			break;
 
 		break;
+		pMatr = pCanonParam->pSpareMatrix;
 		continue;
 		// Permuting the parts of the matrix in accordance with the current set of permutations
 	}

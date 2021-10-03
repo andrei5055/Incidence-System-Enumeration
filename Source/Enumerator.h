@@ -129,7 +129,7 @@ public:
 		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags, pMatrix->numParts())
 															{ setEnumInfo(NULL); }
 
-	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, S rowNumb, S colNumb, T maxElem, bool IS_enum) :
+	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, T rowNumb, T colNumb, S maxElem, bool IS_enum) :
 		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
 		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
 	CC ~CMatrixCanonChecker()								{ delete enumInfo(); }

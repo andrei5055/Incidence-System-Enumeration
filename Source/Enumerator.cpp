@@ -219,8 +219,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
 	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
 	setGroupOnParts(pGroupOnParts);
-	if (pGroupOnParts) {
-		;
+	MatrixDataPntr pSpareMatrix = pGroupOnParts ? new CMatrixData<T, S>() : NULL;
+	if (pSpareMatrix) {
+		;// pSpareMatrix->InitPartsInfo;
 	}
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
@@ -345,7 +346,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 
 	S level, nPart;
-	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts};
+	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
 
 	// minimal index of the part, which will be changed on current row
 	S* firstPartIdx = new S[nRows];
@@ -425,7 +426,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 				if (!TestCanonicityOnGPU()) {
 					EXIT(-1);
-//					canonMatrix = this->TestCanonicity(nRow, this, outInfo, &nPart, pGroupOnParts, &level);
 					canonMatrix = this->TestCanonicity(nRow, &canonParam, outInfo);
 					if (canonMatrix) {
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
@@ -814,6 +814,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			*pTreadCode = pMaster ? t_threadLaunchFail : t_threadFinished;
 	}
 
+	delete pSpareMatrix;
 	return true;
 } 
 

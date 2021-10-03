@@ -13,30 +13,30 @@ public:
 		if (dataOwner()) delete [] m_pData; 
 		delete partsInfo();
 	}
-	CC void InitWithData(S nRows, S nCols = 0, T maxElement = 1) {
+	CC void InitWithData(T nRows, T nCols = 0, S maxElement = 1) {
 		Init(nRows, nCols, maxElement, (uchar *)this + sizeof(*this));
 	}
 
-	CC inline S colNumb() const				{ return m_nCols; }
-	CC inline S rowNumb() const				{ return m_nRows; }
-	CC inline T maxElement() const			{ return m_nMaxElement; }
-	CC inline T *GetRow(S nRow) const		{ return m_pData + nRow * m_nCols; }
+	CC inline T colNumb() const				{ return m_nCols; }
+	CC inline T rowNumb() const				{ return m_nRows; }
+	CC inline S maxElement() const			{ return m_nMaxElement; }
+	CC inline S *GetRow(T nRow) const		{ return m_pData + nRow * m_nCols; }
 	CC inline void setDataOwner(bool val)	{ m_bDataOwner = val; }
-	CK inline T *GetDataPntr() const		{ return m_pData; }
-	CK inline size_t lenData() const		{ return m_nLenData; }
+	CK inline S *GetDataPntr() const		{ return m_pData; }
+	CK inline auto lenData() const			{ return m_nLenData; }
 	CK void InitTransposed(const CMatrixData *pMatr, uint mult = 1) {
 		Init(pMatr->colNumb(), pMatr->rowNumb() * mult);
 		auto *pMatrData = GetDataPntr();
 		auto *pMatrSrc = pMatr->GetDataPntr();
-		for (S i = 0; i < rowNumb(); ++i) {
+		for (T i = 0; i < rowNumb(); ++i) {
 			if (mult == 1) {
-				for (S j = 0; j < pMatr->rowNumb(); ++j)
+				for (T j = 0; j < pMatr->rowNumb(); ++j)
 					*(pMatrData + j) = *(pMatrSrc + j * colNumb());
 			}
 			else {
-				for (S j = 0; j < pMatr->rowNumb(); ++j) {
+				for (T j = 0; j < pMatr->rowNumb(); ++j) {
 					const auto val = *(pMatrSrc + j * colNumb());
-					for (S k = 0; k < mult; ++k)
+					for (uint k = 0; k < mult; ++k)
 						*(pMatrData + j * mult + k) = val;
 				}
 			}
@@ -45,16 +45,16 @@ public:
 			pMatrData += colNumb();
 		}
 	}
-	CK void InitWithPermutedRows(const CMatrixData *pMatr, S *pPermRows, S rowNumb) {
+	CK void InitWithPermutedRows(const CMatrixData *pMatr, T *pPermRows, T rowNumb) {
 		Init(rowNumb, pMatr->colNumb());
-		const auto len = colNumb() * sizeof(T);
-		T *pMatrData = GetDataPntr() - len;
-		T *pMatrSrc = pMatr->GetDataPntr();
-		for (S i = 0; i < rowNumb; ++i)
+		const auto len = colNumb() * sizeof(S);
+		S *pMatrData = GetDataPntr() - len;
+		S *pMatrSrc = pMatr->GetDataPntr();
+		for (T i = 0; i < rowNumb; ++i)
 			memcpy(pMatrData += len, pMatrSrc + pPermRows[i] * len, len);
 	}
 
-	CC void Init(S nRows, S nCols, T maxElement = 1, T *data = NULL) {
+	CC void Init(T nRows, T nCols, S maxElement = 1, S *data = NULL) {
 		if (!nRows)
 			return;
 
@@ -65,28 +65,28 @@ public:
 		m_nCols = nCols;
 		m_nMaxElement = maxElement;
 		setDataOwner(!data);
-		m_nLenData = m_nRows * m_nCols * sizeof(T);
-		m_pData = data? data : m_nLenData? new T[m_nRows * m_nCols] : NULL;
+		m_nLenData = m_nRows * m_nCols * sizeof(S);
+		m_pData = data? data : m_nLenData? new S[m_nRows * m_nCols] : NULL;
 	}
 
-	CK inline void AssignData(T *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
+	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, bool canonFlag = true) const;
 	CC virtual S numParts() const				{ return 1; }
 	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
-	CC inline T* ResetRowPart(S nRow, S idx) const {
-		T* pRow = GetRow(nRow);
-		S len;
+	CC inline S* ResetRowPart(T nRow, T idx) const {
+		auto *pRow = GetRow(nRow);
+		T len;
 		if (partsInfo())
 			pRow += partsInfo()->GetPartInfo(idx, &len);
 		else
 			len = m_nCols;
-		return static_cast<T *>(memset(pRow, 0, len * sizeof(*pRow)));
+		return static_cast<S *>(memset(pRow, 0, len * sizeof(*pRow)));
 	}
 
 	CC inline auto stabLengthExt() const			{ return m_nStabExtern; }
 	CC inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
-	CC inline T* GetRow(S nRow, S idx, S* pLen = nullptr) const {
+	CC inline S* GetRow(T nRow, T idx, S* pLen = nullptr) const {
 		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
 private:
@@ -94,10 +94,10 @@ private:
 	S m_nRows;
 	S m_nCols;
 
-	T m_nMaxElement;
+	S m_nMaxElement;
 	bool m_bDataOwner;
 	size_t m_nLenData;
-	T *m_pData;
+	S *m_pData;
 	BlockGroupDescr<S> *m_nPartInfo = NULL;
 	mutable S m_nStabExtern;
 #if USE_THREADS
@@ -113,13 +113,13 @@ public:
 Class2Def(CMatrix) : public Class2(CMatrixData)
 {
  public:
- 	CK CMatrix(S nRows = 0, S nCols = 0, T maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
+ 	CK CMatrix(T nRows = 0, T nCols = 0, S maxElement = 1)	{ this->Init(nRows, nCols, maxElement); }
     CK CMatrix(const CMatrix *pMatrix, const int *pPermRow, const int *pPermCol)
 	{
 		Init(pMatrix->rowNumb(), pMatrix->colNumb());
 		for (auto i = this->rowNumb(); i--;) {
-			T *pRow = GetRow(i);
-			const T *pRowFrom = pMatrix->GetRow(*(pPermRow + i));
+			auto *pRow = GetRow(i);
+			const auto *pRowFrom = pMatrix->GetRow(*(pPermRow + i));
 			for (auto j = this->colNumb(); j--;)
 				*(pRow + j) = *(pRowFrom + *(pPermCol + j));
 		}
@@ -137,7 +137,7 @@ typedef enum {
 Class2Def(C_InSys) : public Class2(CMatrix)
 {
  public:
-	CK C_InSys(int nRows, int nCols, int t) : Class2(CMatrix)(nRows, nCols), m_t(t) {
+	CK C_InSys(T nRows, T nCols, int t) : Class2(CMatrix)(nRows, nCols), m_t(t) {
 		setDataOwner(true);	 
 		m_ppNumbSet = createParamStorage(t_kSet); // Create 3 sets of vector: Lambda, R, and K 
 	}
