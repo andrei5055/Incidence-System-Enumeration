@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-// Token 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
+// Token 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
 #define TEST						false //true   // Test mode
 
 #ifdef USE_CUDA
@@ -279,8 +279,8 @@ Class1Def(BlockGroupDescr) : public CSimpleArray<S> {
 public:
 	CC BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
 	CC inline S numParts() const							{ return static_cast<S>(numElement() >> 1); }
-	CC inline S getShift(S idx) const						{ return element(idx << 1); }
-	CC inline S colNumb(S idx = 0) const					{ return element((idx << 1) + 1); }
+	CC inline S getShift(S idx) const						{ return static_cast<S>(element(idx << 1)); }
+	CC inline S colNumb(S idx = 0) const					{ return static_cast<S>(element((idx << 1) + 1)); }
 	CC inline void SetPartInfo(size_t idx, S shift, S len)	{
 		setElement(idx << 1, shift);
 		setElement((idx << 1) + 1, len);
@@ -288,6 +288,10 @@ public:
 	CC inline S GetPartInfo(S idx, S *pLen) const {
 		*pLen = colNumb(idx);
 		return getShift(idx);
+	}
+	CC inline void CopyPartInfo(const BlockGroupDescr<S> *pPartInfo) {
+		for (size_t idx = 0; idx < pPartInfo->numElement(); idx++)
+			setElement(idx, pPartInfo->GetAt(idx)); 
 	}
 };
 

@@ -70,7 +70,6 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 		i++;
 	}
 
-	static int ggg = 0; ggg++;
 	S nVar = ELEMENT_MAX;
 	const auto firstPart = i;
 	if (prepareToFindRowSolution()) {
@@ -215,14 +214,6 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
-	// Construct nontrivial group, acting on parts (groups of blocks)
-	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
-	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
-	setGroupOnParts(pGroupOnParts);
-	MatrixDataPntr pSpareMatrix = pGroupOnParts ? new CMatrixData<T, S>() : NULL;
-	if (pSpareMatrix) {
-		;// pSpareMatrix->InitPartsInfo;
-	}
 	setDesignParams(pParam);
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
@@ -344,6 +335,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const S nRowEnd = nRow ? nRow + 1 : 0;
 
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
+
+	// Construct nontrivial group, acting on parts (groups of blocks)
+	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
+	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
+	setGroupOnParts(pGroupOnParts);
+	MatrixDataPntr pSpareMatrix = CreateSpareMatrix(pGroupOnParts ? matrix() : NULL);
 
 	S level, nPart;
 	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
@@ -482,7 +479,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					this->setCurrentRowNumb(nRow);
 				}
 				else {
-					// if (!(checkNextPart = multiPartDesign))
 					checkNextPart = multiPartDesign;
 					nRow--;
 					if (canonMatrix && multiPartDesign) {
@@ -490,9 +486,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						while (--iFirstPartIdx) {
 							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
 							this->resetUnforcedColOrb(iFirstPartIdx);
-							//							this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
 							if (pPartRowSolution->allSolutionChecked())
-								pPartRowSolution->resetSolutionIndex();
+								pPartRowSolution->setSolutionIndex(0);
 							else
 								break;
 						}
@@ -559,31 +554,22 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						while (--iFirstPartIdx) {
 							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
 							this->resetUnforcedColOrb(iFirstPartIdx, nRow);
-//							this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
 							if (pPartRowSolution->allSolutionChecked())
-								pPartRowSolution->resetSolutionIndex();
+								pPartRowSolution->setSolutionIndex(0);
 							else
 								break;
 						}
 
+						firstPartIdx[nRow - 1] = iFirstPartIdx;
 						if (iFirstPartIdx) {
 							// Enumeration of combined designs AND not all solutions for i-th part were tested
 							this->setCurrentRowNumb(--nRow);
-							const auto ppOrb = colOrbitPntr() + static_cast<size_t>(nRow) * pMatrix->colNumb();
-							auto i = firstPartIdx[nRow] = iFirstPartIdx;
-							const auto partsInfo = matrix()->partsInfo();
-							while (++i < numParts()) {
-								(pRowSolution + i)->setSolutionIndex(0);
-								setColOrbitCurr(*(ppOrb + partsInfo->getShift(i)), i);
-//								this->resetUnforcedColOrb(i);
-							}
-
-//							this->resetFirstUnforcedRow();
 							continue;
 						}
 
-						firstPartIdx[nRow-1] = 0;             // We will change the first portion of CombBIB. Therefore,
-						this->resetUnforcedColOrb(0, nRow);   // everything which was enforced by this portion should be reset.
+						// We will change the first portion of CombBIB. Therefore,
+						// everything which was enforced by this portion should be reset.
+						this->resetUnforcedColOrb(0, nRow);   
 					}
 
 					checkNextPart = multiPartDesign;
@@ -599,8 +585,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			if (pRowSolution) {
 				if (!lastPartIdx)
 					lastPartIdx++;
-//				if (firstPartIdx[nRow])
-//					pRowSolution->restoreSolutionIndex();
 
 				auto i = numParts();
 				while (--i >= lastPartIdx)
@@ -626,19 +610,14 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						iFirstPartIdx = numParts() - 1;
 						while (true) {
 							pRowSolution = rowStuff(nRow, iFirstPartIdx);
-
-							//						this->resetUnforcedColOrb(iFirstPartIdx);   // New code
-													//this->setCurrUnforcedOrbPtr(nRow, iFirstPartIdx);
 							if (check_all_solution && !pRowSolution->allSolutionChecked()) {
 								firstPartIdx[nRow] = iFirstPartIdx;
 								break;
 							}
 
 							pRowSolution->setSolutionIndex(0);
-							if (!--iFirstPartIdx) {
-								//							this->resetUnforcedColOrb(0);
+							if (!--iFirstPartIdx)
 								break;
-							}
 
 							if (iFirstPartIdx == lastPartIdx)
 								check_all_solution = true;
@@ -682,7 +661,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				auto j = numParts();
 				const auto* ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
 				const auto partsInfo = pMatrix->partsInfo();
-				static int jjj = 0; jjj++;
 				while (--j) {
 					auto pPartRowSolution = pRowSolution + j;
 					this->resetUnforcedColOrb(j, nRowNext);    // New code
@@ -692,25 +670,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 					setColOrbitCurr(*(ppOrb + partsInfo->getShift(j)), j);
 					pPartRowSolution->setSolutionIndex(0);
-/*
-					const auto currForsibleLambda = forcibleLambda(nRow, 1);
-					if (currForsibleLambda) {
-						ColOrbPntr pOrbUnforsedBy1s = *(pntr2UnforcedColOrb(nRow, j) + 1);
-						S forsibleLambda = 0;
-						while (pOrbUnforsedBy1s) {
-							forsibleLambda += pOrbUnforsedBy1s->length();
-							pOrbUnforsedBy1s = pOrbUnforsedBy1s->next();
-						}
-
-						if (forsibleLambda)
-							setForcibleLambda(nRow, currForsibleLambda - forsibleLambda, j);
-					}
-					*/
 				}
 
 
 				if (firstPartIdx[nRow] = j) {
 					this->setCurrentRowNumb(nRow);
+					firstPartIdx[nRow] = 1;
 					break;
 				}
 

@@ -103,10 +103,8 @@ TDesign()::C_tDesign(int t, int v, int k, int lambda) : Class2(C_BIBD)(v, k, t),
 	// Define all lambdas: 
 	int i = t;
 	int *pLambda = new int[t - 2];
-	while (--i > 1) {
-		pLambda[i - 2] = lambda;
-		lambda = lambda * (v - i) / (k - i);
-	}
+	while (--i > 1)
+		lambda = (pLambda[i - 2] = lambda) * (v - i) / (k - i);
 
 	// Initiate BIBD's parameter
 	this->InitParam(v, k, lambda);

@@ -32,19 +32,39 @@ FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateForcedRows() {
-	// Combined BIBDs having n parts will be constructed with first "atrtificial" row:
+	// Combined BIBDs having n parts will be constructed with first "artificial" row:
 	//  n, n, ...,n, n-1, ..., n-1, n-2,..., n-2,... 2,...2,1...,1
 	// It's why we need to start enumeration with the row number 1.
 	this->setCurrentRowNumb(1);
+	CreateFirstRow();
+}
+
+FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
+{
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
 	const auto v = pInSys->rowNumb() - 1;
 	const auto pR_set = this->paramSet(t_rSet);
 	const auto iMax = static_cast<T>(this->numParts());
-	auto* pRow = pInSys->GetRow(0);
+	if (!pFirstRow)
+		pFirstRow = pInSys->GetRow(0);
+
 	for (T i = 0; i < iMax; i++) {
 		const auto b = pR_set->GetAt(i) * v / k;
-		rowSetFragm(pRow, iMax - i, b);
-		pRow += b;
+		rowSetFragm(pFirstRow, iMax - i, b);
+		pFirstRow += b;
 	}
+}
+
+FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const CMatrixData<T, S> *pMatr)
+{
+	if (!pMatr)
+		return NULL;
+
+	MatrixDataPntr pSpareMatrix = new CMatrixData<T, S>();
+	pSpareMatrix->Init(pMatr->rowNumb(), pMatr->colNumb());
+	CreateFirstRow(pSpareMatrix->GetRow(0));
+	auto *pPartsInformation = pSpareMatrix->InitPartsInfo(this->numParts());
+	pPartsInformation->CopyPartInfo(this->matrix()->partsInfo());
+	return pSpareMatrix;
 }

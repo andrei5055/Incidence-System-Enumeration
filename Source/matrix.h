@@ -73,7 +73,7 @@ public:
 	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, bool canonFlag = true) const;
 	CC virtual S numParts() const				{ return 1; }
-	CC inline auto partsInfo() const			{ return m_nPartInfo;  }
+	CC inline auto *partsInfo() const			{ return m_pPartInfo;  }
 	CC inline S* ResetRowPart(T nRow, T idx) const {
 		auto *pRow = GetRow(nRow);
 		T len;
@@ -85,20 +85,20 @@ public:
 	}
 
 	CC inline auto stabLengthExt() const			{ return m_nStabExtern; }
-	CC inline auto InitPartsInfo(size_t nParts)		{ return m_nPartInfo = new BlockGroupDescr<S>(nParts); }
+	CC inline auto InitPartsInfo(size_t nParts)		{ return m_pPartInfo = new BlockGroupDescr<T>(nParts); }
 	CC inline S* GetRow(T nRow, T idx, S* pLen = nullptr) const {
 		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
-	S m_nRows;
-	S m_nCols;
+	T m_nRows;
+	T m_nCols;
 
 	S m_nMaxElement;
 	bool m_bDataOwner;
 	size_t m_nLenData;
 	S *m_pData;
-	BlockGroupDescr<S> *m_nPartInfo = NULL;
+	BlockGroupDescr<T> *m_pPartInfo = NULL;
 	mutable S m_nStabExtern;
 #if USE_THREADS
 	static ulonglong m_matrixCounter;

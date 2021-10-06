@@ -34,7 +34,7 @@ struct TestCanonParams {
 	const MatrixColPntr pEnum;
 	S* pPartNumb;
 	S* pRowOut;
-	CGroupOnParts<uint>* pGroupOnParts;
+	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
 };
 
@@ -198,7 +198,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	bool retVal = true;
 	bool usingGroupOnBlocks = false;
-	size_t numGroups = 0;
+	size_t lenMatr, numGroups = 0;
+	S *pMatrTo, *pMatrFrom;
+	const MatrixDataPntr pBaseMatr;
 	size_t idxPerm[16];
 	size_t* pIndxPerms = NULL;
 
@@ -362,14 +364,21 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 
 		if (!usingGroupOnBlocks) {
+			// Corresponding data were not initialized yet
 			usingGroupOnBlocks = true;
 			numGroups = pGroupOnParts->numGroups();
 			// Initialization of variables to use the group acting on the parts of the matrix
 			pIndxPerms = numGroups < countof(idxPerm) ? idxPerm : new size_t[numGroups];
 			memset(pIndxPerms, 0, numGroups * sizeof(*pIndxPerms));
+			pBaseMatr = pMatr;
+			pMatr = pCanonParam->pSpareMatrix;
+			const auto colNumb = pMatr->colNumb();
+			pMatrTo = pMatr->GetDataPntr() + colNumb;
+			pMatrFrom = pBaseMatr->GetDataPntr() + colNumb;
+			lenMatr = (nRowMax - 1) * colNumb * sizeof(S);  // we will copy all rows, except the first one
 		}
 
-		// Get next set of indices of permutations used from each group
+		// Get next set of indices of permutations used for each group
 		size_t idx = 0;
 		while (idx < numGroups) {
 			if (++*(pIndxPerms + idx) >= pGroupOnParts->groupHandle(idx)->groupOrder())
@@ -380,9 +389,41 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			break;
 
 		break;
-		pMatr = pCanonParam->pSpareMatrix;
-		continue;
+
 		// Permuting the parts of the matrix in accordance with the current set of permutations
+		const auto* pPartsInfo = pBaseMatr->partsInfo();
+		memcpy(pMatrTo, pMatrFrom, lenMatr);
+		for (size_t idx = 0; idx < numGroups; idx++) {
+			const auto idxPerm = *(pIndxPerms + idx);
+			// For the current set of parts, check if all parts remain in place.
+			if (!idxPerm)
+				continue;
+
+			const auto pntr = pGroupOnParts->groupHandle(idx);
+			// Address of next permutation to try for current group
+			const auto* pPerm = pntr->getPermutation(idxPerm);
+			const auto nCol = 0;
+			const size_t lenPart = nCol * sizeof(S);
+			for (auto jFrom = pntr->permLength(); jFrom--;) {
+				// For the current set of parts, check if the j-th part remains in place.
+				auto jTo = *(pPerm + jFrom);
+				if (jFrom == jTo)
+					continue;
+
+				// Calculate absolute indices
+				const auto numCols = pPartsInfo->colNumb(jTo += pntr->partIdx());
+				auto *pPartTo = pMatrTo + pPartsInfo->getShift(jTo);
+				const auto *pPartFrom = pMatrFrom + pPartsInfo->getShift(jFrom + pntr->partIdx());
+
+				for (T j = 0; j < nRowMax; j++) {
+					memcpy(pPartTo, pPartFrom, lenPart);
+					pPartTo += nCol;
+					pPartFrom += nCol;
+				}
+			}
+		}
+
+		continue;
 	}
 
 	if (pIndxPerms && pIndxPerms != idxPerm)

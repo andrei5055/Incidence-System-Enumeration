@@ -36,39 +36,39 @@ protected:
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}
-	CK virtual CGroupOnParts<uint> * makeGroupOnParts(const EnumeratorPntr owner) const {
-		const auto aaa = this->getInSys()->GetNumSet(t_lSet);
-		auto b = paramSet(t_lSet);
-		auto jMax = b->GetSize() - 1;
-		CVector<uint> lengths;
-		S prev = 0;
+	CK virtual CGroupOnParts<T> * makeGroupOnParts(const EnumeratorPntr owner) const {
+		auto lanbdaSet = paramSet(t_lSet);
+		auto jMax = lanbdaSet->GetSize() - 1;
+		CVector<T> lengths;
+		T prevLambda = 0;
 		uint count;
 		uint factorial;
-		size_t numNontrivialGroups = 0;
 		for (int j = 0; j <= jMax; j++) {
-			const auto lambda = b->GetAt(j);
-			if (prev == lambda) {
+			const auto lambda = lanbdaSet->GetAt(j);
+			if (prevLambda == lambda) {
 				factorial *= (++count);
 				if (j < jMax)
 					continue;
 			}
 
-			if (prev) {
-				if (factorial > 1)
-					numNontrivialGroups++;
-
-				lengths.AddElement(count);
-				lengths.AddElement(factorial);
+			if (prevLambda) {
+				if (factorial > 1) {
+					lengths.AddElement(j-count+1); 	// index of the first BIBD with the same lambda
+					lengths.AddElement(count);		// number of BIBDs with the same lambda
+					lengths.AddElement(factorial);  // group order
+				}
 			}
-			prev = lambda;
+			prevLambda = lambda;
 			factorial = count = 1;
 		}
 
-		return numNontrivialGroups ? new CGroupOnParts<uint>(owner, lengths, numNontrivialGroups) : NULL;
+		return lengths.GetSize() ? new CGroupOnParts<T>(owner, lengths) : NULL;
 	}
+	CK MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr);
 private:
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
+	void CreateFirstRow(S* pFirstRow=NULL);
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 };
 

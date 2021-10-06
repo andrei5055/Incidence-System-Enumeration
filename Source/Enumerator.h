@@ -99,7 +99,7 @@ public:
 		setIS_Enumerator(enumFlags & t_IS_enumerator);
 		setOutFile(NULL);
 	}
-	CC inline const MatrixDataPntr matrix() const		{ return m_pMatrix; }
+	CC inline const auto matrix() const					{ return m_pMatrix; }
 	CK inline bool IS_enumerator() const				{ return m_bIS_Emunerator; }
 	inline void closeFile()								{ if (outFile()) { fclose(outFile()); setOutFile(NULL); } }
 #if !CONSTR_ON_GPU
@@ -408,8 +408,9 @@ Class1Def(CGroupHandle)
 public:
 	CGroupHandle()				{ m_pPermut = NULL; }
 	~CGroupHandle()				{ delete[] m_pPermut; }
-	void InitGroupHandle(size_t len, size_t groupOrder) {
+	void InitGroupHandle(S partIdx, S len, size_t groupOrder) {
 		// Construct symmetrical group on len elements
+		m_nPartIdx = partIdx;
 		m_pPermut = new S[(m_nPermLength = len) * (m_nGroupOrder = groupOrder)];
 		for (S i = 0; i < len; i++)
 			m_pPermut[i] = i;
@@ -454,10 +455,13 @@ public:
 		if (pIndex != buffer)
 			delete[] pIndex;
 	}
-	CK inline const auto groupOrder() const		{ return m_nGroupOrder; }
-	CK inline const auto permLength() const		{ return m_nPermLength; }
+	CK inline const auto partIdx() const                    { return m_nPartIdx; }
+	CK inline const auto groupOrder() const					{ return m_nGroupOrder; }
+	CK inline const auto permLength() const					{ return m_nPermLength; }
+	CK inline const auto* getPermutation(size_t idx) const	{ return m_pPermut + idx * permLength(); }
 private:
-	size_t m_nPermLength;
+	S m_nPartIdx;
+	S m_nPermLength;
 	size_t m_nGroupOrder;
 	S* m_pPermut;
 };
@@ -465,17 +469,12 @@ private:
 Class1Def(CGroupOnParts)
 {
 public:
-	CGroupOnParts(const void* pOwner, const CVector<S>& lenghts, size_t numNontrivialGroups) : 
-		m_pOwner(pOwner), m_nNumGroups(numNontrivialGroups) {
-		m_pGroupHandles = new CGroupHandle<size_t>[numGroups()];
-		size_t idx = 0;
+	CGroupOnParts(const void* pOwner, const CVector<S>& lenghts) : 
+		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize()/3) {
+		m_pGroupHandles = new CGroupHandle<S>[numGroups()];
 		const auto lenMax = lenghts.GetSize();
-		for (size_t i = 0; i < lenMax; i += 2) {
-			const auto len = lenghts.GetAt(i);
-			if (len > 1)
-				m_pGroupHandles[idx++].InitGroupHandle(len, lenghts.GetAt(i+1));
-
-		}
+		for (size_t i = 0; i < lenMax; i += 3)
+			m_pGroupHandles[i].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i+1), lenghts.GetAt(i+2));
 	}
 	~CGroupOnParts()										{ delete[] m_pGroupHandles; }
 	inline const void* owner() const						{ return m_pOwner; }
@@ -483,7 +482,7 @@ public:
 	CK inline const auto *groupHandle(size_t idx) const		{ return m_pGroupHandles + idx; }
 private:
 	const void* m_pOwner;
-	CGroupHandle<size_t> *m_pGroupHandles;
+	CGroupHandle<S> *m_pGroupHandles;
 	const size_t m_nNumGroups;
 };
 
@@ -540,6 +539,7 @@ protected:
 		for (auto j = len; j--;)
 			pRow[j] = val;
 	}
+	CK virtual MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr) { return NULL; }
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
@@ -570,9 +570,9 @@ private:
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(S nRow, S val, S nPart) {}
-	CK inline void setGroupOnParts(CGroupOnParts<uint>* pntr)  { m_pGroupOnParts = pntr; }
+	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr)  { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const				    { return m_pGroupOnParts; }
-	CK virtual CGroupOnParts<uint>* makeGroupOnParts(const EnumeratorPntr owner) const	{ return NULL; }
+	CK virtual CGroupOnParts<T>* makeGroupOnParts(const EnumeratorPntr owner) const	{ return NULL; }
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPartStart, S nPartEnd) const;
 #endif
@@ -605,7 +605,7 @@ private:
 	ColOrbPntr* m_pFirstColOrb;
 	S m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
-	CGroupOnParts<uint>* m_pGroupOnParts;
+	CGroupOnParts<T>* m_pGroupOnParts;
 
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
