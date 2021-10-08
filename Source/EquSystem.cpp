@@ -100,7 +100,6 @@ void CEquSystem::addEquation(CVariable *pFirstVar, size_t nVar, size_t lambda)
 
 CVariableMapping *CEquSystem::solveExtraEquations()
 {
-	static int hhh; ++hhh;
 	CVariableMapping *pVarValue = NULL;
 	// Loop over all constructed equations
 

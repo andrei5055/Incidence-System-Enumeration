@@ -10,73 +10,76 @@
 
 template class CCanonicityChecker<TDATA_TYPES>;
 
-CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, S *pMem)
+CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem)
 {
 	m_pPermutRow = (CPermut *)(pMem += nRow);
-	m_pPermutRow->Init(nRow, pMem = (S *)((char *)pMem + sizeof(CPermut)));
+	m_pPermutRow->Init(nRow, (T *)(pMem += sizeof(*m_pPermutRow)));
 	m_pPermutCol = (CPermut *)(pMem += nRow);
-	m_pPermutCol->Init(nCol, pMem = (S *)((char *)pMem + sizeof(CPermut)));
-	setColIndex(pMem += nCol);
-	m_pCounter = (CCounter<int> *)(pMem += (nCol << 1));
-	m_pCounter->Init(rank, (int *)(pMem = (S *)((char *)pMem + sizeof(CCounter<int>))));
-	setPermStorage((PermutStoragePntr)(pMem = (S *)((char *)pMem + rank * sizeof(int))));
-	m_nColNumbStorage = (CColNumbStorage **)(pMem = (S *)((char *)pMem + sizeof(Class2(CPermutStorage))));
-	pMem = (S *)((char *)pMem + rank * sizeof(CColNumbStorage *));
+	m_pPermutCol->Init(nCol, (T *)(pMem += sizeof(*m_pPermutCol)));
+	setColIndex((T *)(pMem += nCol * sizeof(T)));
+	m_pCounter = (CCounter<int> *)(pMem += (2 * nCol * sizeof(T)));
+	m_pCounter->Init(rank, (int *)(pMem += sizeof(*m_pCounter)));
+	setPermStorage((PermutStoragePntr)(pMem += rank * sizeof(int)));
+	m_nColNumbStorage = (CColNumbStorage **)(pMem += sizeof(Class2(CPermutStorage)));
+	pMem += rank * sizeof(*m_nColNumbStorage);
 	for (int i = rank; i--;) {
 		m_nColNumbStorage[i] = (CColNumbStorage *)(pMem);
-		pMem = (S *)((char *)pMem + sizeof(CColNumbStorage));
-		m_nColNumbStorage[i]->Init(nCol, pMem);
-		pMem += nCol;
+		m_nColNumbStorage[i]->Init(nCol, (T *)(pMem += sizeof(*m_nColNumbStorage[i])));
+		pMem += nCol * sizeof(T);
 	}
 
 	m_pImprovedSol = NULL;
 	setSolutionStorage(NULL);
 }
 
-CanonicityChecker(void)::init(T nRow, bool savePerm) {
-	setNumRow(nRow);
-	setStabilizerLength(nRow - 1);
-	setStabilizerLengthAut(ELEMENT_MAX);
+CanonicityChecker(T *)::init(T nRow, bool savePerm, T** pPermRows, bool groupOnParts) {
+	T *pRow, *pCol;
+	if (!groupOnParts) {
+		setNumRow(nRow);
+		setStabilizerLength(nRow - 1);
+		setStabilizerLengthAut(ELEMENT_MAX);
+		pRow = permRow();
+		pCol = permCol();
+	}
+	else {
+		pRow = m_pPermutSparse[0].elementPntr();
+		pCol = m_pPermutSparse[1].elementPntr();
+	}
 
-	auto* pRow = permRow();
+	*pPermRows = pRow;
 	for (auto i = nRow; i--;)
 		*(pRow + i) = *(orbits() + i) = i;
 
-	auto* pCol = permCol();
 	for (auto nCol = numCol(); nCol-- > nRow;)
 		*(pCol + nCol) = nCol;
 
-	memcpy(pCol, pRow, nRow * sizeof(*permCol()));
-	for (auto iPart = numParts(); iPart--;) {
-		auto pColPermStorage = permStorage(iPart);
-		pColPermStorage->initPermutStorage();
-		if (savePerm)
-			pColPermStorage->savePermut(numRow(), permRow());
+	memcpy(pCol, pRow, nRow * sizeof(*pCol));
+
+	if (!groupOnParts) {
+		for (auto iPart = numParts(); iPart--;) {
+			auto pColPermStorage = permStorage(iPart);
+			pColPermStorage->initPermutStorage();
+			if (savePerm)
+				pColPermStorage->savePermut(numRow(), permRow());
+		}
+
+		setGroupOrder(1);
+		if (permColStorage() && (savePerm || permRowStorage())) {
+			permColStorage()->initPermutStorage();
+			if (savePerm)
+				permColStorage()->savePermut(numCol(), pCol);
+		}
+
+
+		if (permRowStorage())
+			permRowStorage()->initPermutStorage();
 	}
 
-	setGroupOrder(1);
-	if (permColStorage() && (savePerm || permRowStorage())) {
-		permColStorage()->initPermutStorage();
-		if (savePerm)
-			permColStorage()->savePermut(numCol(), pCol);
-	}
-
-
-	if (permRowStorage())
-		permRowStorage()->initPermutStorage();
+	return pCol;
 }
 
-CanonicityChecker(void)::revert(T i)
-{
-    // Reverse suffix (if needed)
-    auto *array = permRow();
-    auto j = numRow();
-    while (++i < --j)
-        array[i] ^= (array[j] ^= (array[i] ^= array[j]));
-}
-
-CanonicityChecker(S)::next_permutation(S idx, S lenStab) {
-	// Funstion generates next permutation amoungth those which stabilize first lenStab elements
+CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
+	// Function generates next permutation among those which stabilize first lenStab elements
 	// We are using the algorithm from http://nayuki.eigenstate.org/res/next-lexicographical-permutation-algorithm/nextperm.java
 	// taking into account that we don't need the the permutations which are equivalent with respect to already found orbits of the 
 	// automorphis group acting on the matrix's rows.
@@ -90,50 +93,49 @@ CanonicityChecker(S)::next_permutation(S idx, S lenStab) {
 	//  (0, 1, 2, ... , j-1,  i, ...)
 
 	// Find non-increasing suffix
-    auto *array = permRow();
     const auto nRow = numRow();
-	S temp, i, j;
+	T temp, i, j;
 
 	// Check if the algorithm, used immediately after 
 	// some automorphism was found
 	const auto IDX_MAX = ELEMENT_MAX - 1;
-	if (idx == IDX_MAX && array[stabilizerLength()] == nRow - 1)
+	if (idx == IDX_MAX && perm[stabilizerLength()] == nRow - 1)
 		idx = ELEMENT_MAX;
 
     if (idx == IDX_MAX) {
         // Firts call after some automorphism was found
-        temp = array[idx = (int)(i = stabilizerLength())];
+        temp = perm[idx = (int)(i = stabilizerLength())];
         for (j = nRow; --j > temp;)
-            array[j] = j;
+            perm[j] = j;
         
         for (auto k = j++; k-- > i;)
-            array[k+1] = k;
+            perm[k+1] = k;
     } else {
         if (idx >= IDX_MAX) {
             j = i = nRow;
-            while (--i > 0 && array[i - 1] >= array[i]);
+            while (--i > 0 && perm[i - 1] >= perm[i]);
         
             if (i == lenStab)
                 return ELEMENT_MAX;
 
             // Find successor to pivot
-            temp = array[--i];
-            while (array[--j] <= temp);
+            temp = perm[--i];
+            while (perm[--j] <= temp);
         } else {
-            temp = array[j = i = idx];
-            while (++j < nRow && array[j] <= temp);
+            temp = perm[j = i = idx];
+            while (++j < nRow && perm[j] <= temp);
             if (j >= nRow) {
-                revert(i);
-                return next_permutation();
+                revert(perm, nRow, i);
+                return next_permutation(perm);
             }
         }
     }
 
     if (stabilizerLength() == i) {
         bool flag = false;
-		auto k = j, tmp = array[j];
+		auto k = j, tmp = perm[j];
         if (idx >= IDX_MAX) {
-            while (k > i && *(orbits() + array[k]) != array[k])
+            while (k > i && *(orbits() + perm[k]) != perm[k])
                 k--;
             
             if (k != j) {
@@ -141,12 +143,12 @@ CanonicityChecker(S)::next_permutation(S idx, S lenStab) {
                     return ELEMENT_MAX;
             
                 flag = k == i;
-                tmp = array[k--];
+                tmp = perm[k--];
                 while (++k < j)
-                    array[k] = array[k + 1];
+                    perm[k] = perm[k + 1];
             }
         } else {
-            while (k < nRow && *(orbits() + array[k]) != array[k])
+            while (k < nRow && *(orbits() + perm[k]) != perm[k])
                 k++;
             
             if (k != j) {
@@ -158,30 +160,30 @@ CanonicityChecker(S)::next_permutation(S idx, S lenStab) {
                     // Re-establish trivial permutation
                     k = idx - 1;
                     while (++k < j)
-                        array[k] = k;
+                        perm[k] = k;
                 } else {
-                    tmp = array[k++];
+                    tmp = perm[k++];
                     while (--k > j)
-                        array[k] = array[k - 1];
+                        perm[k] = perm[k - 1];
                 }
             }
         }
         
-        array[j] = tmp;
+        perm[j] = tmp;
         if (flag) {
             j = idx >= ELEMENT_MAX - 1? nRow - 1 : i;
-            temp = array[--i];
+            temp = perm[--i];
             setStabilizerLength(i);
         }
     }
     
-    array[i] = array[j];
-    array[j] = temp;
+    perm[i] = perm[j];
+    perm[j] = temp;
     if (idx >= ELEMENT_MAX - 1) {
  		if (stabilizerLength() > i)
 			setStabilizerLength(i);
 
-		revert(i);
+		revert(perm, nRow, i);
 	}
 
 	return i;
@@ -204,16 +206,16 @@ CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool 
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 
-CanonicityChecker(void)::addAutomorphism(bool rowPermut, bool savePermut)
+CanonicityChecker(void)::addAutomorphism(T *permRow, bool rowPermut, bool savePermut)
 {
 	if (!rowPermut) {
 		if (permRowStorage())
-			permRowStorage()->savePermut(numRow(), permRow());
+			permRowStorage()->savePermut(numRow(), permRow);
 	}
 	else {
-		UpdateOrbits(permRow(), numRow(), orbits(), rowPermut, true);
+		UpdateOrbits(permRow, numRow(), orbits(), rowPermut, true);
 		if (savePermut)
-			permStorage()->savePermut(numRow(), permRow());
+			permStorage()->savePermut(numRow(), permRow);
 	}
 }
 
@@ -232,7 +234,7 @@ CanonicityChecker(void)::updateGroupOrder()
 }
 
 #if USE_ASM <= 1   // We are not using Assembly OR we are using inline Assembly
-CanonicityChecker(int)::checkColOrbit(S orbLen, S nColCurr, const T *pRow, const T *pRowPerm) const
+CanonicityChecker(int)::checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *permColumns) const
 {
 #if USE_ASM == 1
 	_asm {	
@@ -331,7 +333,6 @@ CanonicityChecker(int)::checkColOrbit(S orbLen, S nColCurr, const T *pRow, const
 	for (auto i = rank(); i--;)
 		colNumbStorage()[i]->resetArray();
 
-	auto *permColumns = permCol();
 	const auto *permColumnCurr = permColumns + nColCurr;
 	pRow += nColCurr;
 	for (auto i = orbLen; i--;) {
@@ -451,7 +452,7 @@ CanonicityChecker(bool)::printMatrix(const designParam *pParam) const
 			  outType & t_GroupOrderEQ && groupOrder() == pParam->grpOrder;
 }
 
-CanonicityChecker(S)::rowToChange(S nRow) const
+CanonicityChecker(T)::rowToChange(T nRow) const
 {
 	// Defines row of matrix which needs to be changed since it makes matrix non-canonical
 	auto i = nRow;
@@ -463,9 +464,9 @@ CanonicityChecker(S)::rowToChange(S nRow) const
 	return nRow;
 }
 
-CanonicityChecker(S)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, S shift) const
+CanonicityChecker(T)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, T shift) const
 {
-	S idx = 0;
+	T idx = 0;
 	while (pColOrbit) {
 		// Define the number of columns to start with
 		const auto numCol = shift + ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;

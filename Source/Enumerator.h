@@ -572,7 +572,7 @@ private:
 	CK virtual void setForcibleLambda(S nRow, S val, S nPart) {}
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr)  { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const				    { return m_pGroupOnParts; }
-	CK virtual CGroupOnParts<T>* makeGroupOnParts(const EnumeratorPntr owner) const	{ return NULL; }
+	CK virtual CGroupOnParts<T>* makeGroupOnParts(const EnumeratorPntr owner) { return NULL; }
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPartStart, S nPartEnd) const;
 #endif

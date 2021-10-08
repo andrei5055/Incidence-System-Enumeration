@@ -36,7 +36,7 @@ protected:
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}
-	CK virtual CGroupOnParts<T> * makeGroupOnParts(const EnumeratorPntr owner) const {
+	CK virtual CGroupOnParts<T> * makeGroupOnParts(const EnumeratorPntr owner) {
 		auto lanbdaSet = paramSet(t_lSet);
 		auto jMax = lanbdaSet->GetSize() - 1;
 		CVector<T> lengths;
@@ -61,8 +61,11 @@ protected:
 			prevLambda = lambda;
 			factorial = count = 1;
 		}
+		if (!lengths.GetSize())
+			return NULL;
 
-		return lengths.GetSize() ? new CGroupOnParts<T>(owner, lengths) : NULL;
+		updateCanonicityChecker(rowNumb(), colNumb());
+		return  new CGroupOnParts<T>(owner, lengths);
 	}
 	CK MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr);
 private:
