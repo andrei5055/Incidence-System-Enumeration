@@ -197,7 +197,7 @@ CanonicityChecker(void)::updateCanonicityChecker(T rowNumb, T colNumb)
 CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
 {
 	const auto lenStab = stabiliserLengthExt();
-	if (--nRowMax == lenStab)
+	if (nRowMax == lenStab - 1)
 		return true;
 
 	const auto* pEnum = pCanonParam->pEnum;
@@ -207,7 +207,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	// Construct trivial permutations for rows and columns
 	const auto rowPermut = outInfo & t_saveRowPermutations;
 	const auto* pMatr = pEnum->matrix();
-	const auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
+	auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
 
 	const auto colOrbLen = pEnum->colOrbitLen();
 	const auto* pPartInfo = pMatr->partsInfo();
@@ -241,7 +241,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	while (true) {
 #ifndef USE_CUDA
 		T* permRows;
-		T *permColumn = init(nRowMax + 1, rowPermut, &permRows, usingGroupOnBlocks);
+		T *permColumn = init(nRowMax, rowPermut, &permRows, usingGroupOnBlocks);
 
 		T nRow = ELEMENT_MAX;
 		while (true) {
@@ -250,11 +250,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			if (nRow == ELEMENT_MAX || nRow < lenStabilizer())
 				break;
 
-			OUT_PERM(permRowStorage(), permRows, nRowMax + 1);
+			OUT_PERM(permRowStorage(), permRows, nRowMax);
 			OUTPUT_PERMUTATION(permColStorage(), pEnum->outFile(), orbits(), numRow());
 
 			// Loop for all remaining matrix's rows
-			for (; nRow <= nRowMax; nRow++) {
+			for (; nRow < nRowMax; nRow++) {
 				const auto* pRow = pMatr->GetRow(nRow);
 				const auto nRW = *(permRows + nRow);
 				const auto* pRowPerm = pMatr->GetRow(*(permRows + nRow));
@@ -287,7 +287,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 							else {
 								if (pRowSolution && !pRowSolution->isLastSolution()) {
 									// NOTE: No need to remove last solution, we will leave this level anyway
-									if (nRow < nRowMax) {
+									if (nRow + 1 < nRowMax) {
 										// We can remove all solutions which are in the same group with the solution just tested.
 										// We don't need them even as the right parts of our equations, because the usage of everyone 
 										// will make the matrix non canonical
@@ -344,7 +344,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 						const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
 						const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
 						// Saving permutations, acting on the orbits of columns
-						S lenPermut;
+						T lenPermut;
 						if (pPermStorage->isEmpty()) {		// Index for columns was not yet constructed
 							lenPermut = constructColIndex(pColOrbit, pColOrbitIni, colOrbLen, shift);
 							pPermStorage->allocateMemoryForPermut(lenPermut);	// Memory for identity permutation just in case we will need it
@@ -369,9 +369,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				if (permColStorage() && (rowPermut || permRowStorage()))
 					ConstructColumnPermutation(pEnum->matrix());
 				//#endif
-
-				addAutomorphism(permRows, rowPermut, savePermut);
 			}
+
+			addAutomorphism(permRows, rowPermut, savePermut);
 			nRow = ELEMENT_MAX - 1;
 		}
 
@@ -394,7 +394,8 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			colNumb = pMatr->colNumb();
 			pMatrTo = pMatr->GetDataPntr() + colNumb;
 			pMatrFrom = pBaseMatr->GetDataPntr() + colNumb;
-			lenMatr = nRowMax * colNumb * sizeof(S);  // we will copy all rows, except the first one
+			lenMatr = (nRowMax - 1) * colNumb * sizeof(S);  // we will copy all rows, except the first one
+			savePermut = false;								// Permutations should not be saved for Spare Matrix
 		}
 
 		// Get next set of indices of permutations used for each group
@@ -407,7 +408,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (idx >= numGroups)
 			break;
 
-//		break;
+		break;
 
 		// Permuting the parts of the matrix in accordance with the current set of permutations
 		const auto* pPartsInfo = pBaseMatr->partsInfo();
@@ -433,7 +434,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				auto *pPartTo = pMatrTo + pPartsInfo->getShift(jTo + pntr->partIdx());
 				const auto *pPartFrom = pMatrFrom + pPartsInfo->getShift(jFrom + pntr->partIdx());
 
-				for (T j = 1; j <= nRowMax; j++) {
+				for (T j = 1; j < nRowMax; j++) {
 					memcpy(pPartTo, pPartFrom, lenPart);
 					pPartTo += colNumb;
 					pPartFrom += colNumb;

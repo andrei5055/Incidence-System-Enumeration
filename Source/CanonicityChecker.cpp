@@ -104,7 +104,7 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
 
     if (idx == IDX_MAX) {
         // Firts call after some automorphism was found
-        temp = perm[idx = (int)(i = stabilizerLength())];
+        temp = perm[idx = i = stabilizerLength()];
         for (j = nRow; --j > temp;)
             perm[j] = j;
         
