@@ -65,7 +65,7 @@ protected:
 			return NULL;
 
 		updateCanonicityChecker(rowNumb(), colNumb());
-		return  new CGroupOnParts<T>(owner, lengths);
+		return  new CGroupOnParts<T>(owner, lengths, 3);
 	}
 	CK MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr);
 private:

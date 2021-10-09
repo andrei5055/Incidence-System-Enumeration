@@ -469,8 +469,8 @@ private:
 Class1Def(CGroupOnParts)
 {
 public:
-	CGroupOnParts(const void* pOwner, const CVector<S>& lenghts) : 
-		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize()/3) {
+	CGroupOnParts(const void* pOwner, const CVector<S>& lenghts, S minRow) :
+		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize()/3), m_nMinRowNumb(minRow) {
 		m_pGroupHandles = new CGroupHandle<S>[numGroups()];
 		const auto lenMax = lenghts.GetSize();
 		for (size_t i = 0; i < lenMax; i += 3)
@@ -480,10 +480,12 @@ public:
 	inline const void* owner() const						{ return m_pOwner; }
 	CK inline const auto numGroups() const					{ return m_nNumGroups; }
 	CK inline const auto *groupHandle(size_t idx) const		{ return m_pGroupHandles + idx; }
+	CK inline bool useGroupOnParts(S nRow) const			{ return nRow > m_nMinRowNumb; }
 private:
 	const void* m_pOwner;
 	CGroupHandle<S> *m_pGroupHandles;
 	const size_t m_nNumGroups;
+	const S m_nMinRowNumb;     // minimal number of rows on which group will be used
 };
 
 Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)

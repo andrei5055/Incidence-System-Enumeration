@@ -57,7 +57,7 @@ public:
 	CC inline auto improvedSolution() const			{ return m_pImprovedSol; }
 	CC bool groupIsTransitive() const;
 	bool printMatrix(const designParam *pParam) const;
-	CC S stabiliserLengthExt() const				{ return m_nStabExtern; }
+	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -67,7 +67,7 @@ protected:
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline auto numRow() const					{ return m_nNumRow; }
 	CC void setStabiliserLengthExt(T len)			{ m_nStabExtern = len; }
-	CC inline S numParts() const					{ return m_numParts; }
+	CC inline T numParts() const					{ return m_numParts; }
 	CC virtual T lenStabilizer() const				{ return 0; }
 	CK inline auto shiftToUnforcedOrbit(T nRow) const { return m_pShift[nRow]; }
 private:
@@ -219,8 +219,13 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	T colNumb;
 	S *pMatrTo, *pMatrFrom;
 	const MatrixDataPntr pBaseMatr;
-	size_t idxPerm[16];
-	size_t* pIndxPerms = NULL;
+	size_t idxPerm[16];			// to keep the indices of currently used permutation
+	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
+
+	T idxPartSrc[16];			// to keep the initial (source) indices of the parts
+	T* pPartSrc = numParts() <= countof(idxPartSrc) ? idxPartSrc : new T[numParts()];
+	for (auto i = numParts(); i--;)
+		pPartSrc[i] = i;
 
 	const S* pCurrSolution;
 	size_t solutionSize;
@@ -258,9 +263,10 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				const auto* pRow = pMatr->GetRow(nRow);
 				const auto nRW = *(permRows + nRow);
 				const auto* pRowPerm = pMatr->GetRow(*(permRows + nRow));
-				for (S nPart = 0; nPart < numParts(); nPart++) {
-					const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
-					const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
+				for (T nPart = 0; nPart < numParts(); nPart++) {
+					const auto nPartSrc = pPartSrc[nPart];
+					const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPartSrc);
+					const auto* pColOrbit = pEnum->colOrbit(nRow, nPartSrc);
 					const auto shift = nPart ? pPartInfo->getShift(nPart) : 0;
 					while (pColOrbit) {
 						// Define the number of column to start with
@@ -321,8 +327,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 						if (pPartNumb)
 							*pPartNumb = nPart;
 
-						if (pIndxPerms && pIndxPerms != idxPerm)
+						if (pIndxPerms != idxPerm)
 							delete[] pIndxPerms;
+
+						if (pPartSrc != idxPartSrc)
+							delete[] pPartSrc;
 
 						return false;
 					}
@@ -378,9 +387,10 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (rowPermut)
 			updateGroupOrder();
 
-		if (!retVal || !pGroupOnParts)   // We don't have to test on groups of blocks
-			break;
+		if (!retVal || !pGroupOnParts || !pGroupOnParts->useGroupOnParts(nRowMax))
+			break;    // We don't have to test on groups of blocks
 
+		break;
 
 		if (!usingGroupOnBlocks) {
 			// Corresponding data were not initialized yet
@@ -408,11 +418,14 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (idx >= numGroups)
 			break;
 
-		break;
+//		break;
 
 		// Permuting the parts of the matrix in accordance with the current set of permutations
 		const auto* pPartsInfo = pBaseMatr->partsInfo();
 		memcpy(pMatrTo, pMatrFrom, lenMatr);
+
+		for (auto i = numParts(); i--;)
+			pPartSrc[i] = i;
 		for (size_t idx = 0; idx < numGroups; idx++) {
 			const auto idxPerm = *(pIndxPerms + idx);
 			// For the current set of parts, check if all parts remain in place.
@@ -445,8 +458,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		continue;
 	}
 
-	if (pIndxPerms && pIndxPerms != idxPerm)
+	if (pIndxPerms != idxPerm)
 		delete[] pIndxPerms;
+
+	if (pPartSrc != idxPartSrc)
+		delete[] pPartSrc;
 
 	return retVal;
 }

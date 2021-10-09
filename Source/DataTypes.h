@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
 
-// Token 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
-#define TEST						false// true   // Test mode
+#define TEST						false // true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
