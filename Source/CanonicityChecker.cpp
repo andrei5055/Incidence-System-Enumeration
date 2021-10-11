@@ -32,12 +32,10 @@ CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *p
 	setSolutionStorage(NULL);
 }
 
-CanonicityChecker(T *)::init(T nRow, bool savePerm, T** pPermRows, bool groupOnParts) {
+CanonicityChecker(T *)::init(T nRow, bool savePerm, T *pOrbits, T** pPermRows, bool groupOnParts) {
 	T *pRow, *pCol;
 	if (!groupOnParts) {
 		setNumRow(nRow);
-		setStabilizerLength(nRow - 1);
-		setStabilizerLengthAut(ELEMENT_MAX);
 		pRow = permRow();
 		pCol = permCol();
 	}
@@ -46,9 +44,12 @@ CanonicityChecker(T *)::init(T nRow, bool savePerm, T** pPermRows, bool groupOnP
 		pCol = m_pPermutSparse[1].elementPntr();
 	}
 
+	setStabilizerLength(nRow - 1);
+	setStabilizerLengthAut(ELEMENT_MAX);
+
 	*pPermRows = pRow;
 	for (auto i = nRow; i--;)
-		*(pRow + i) = *(orbits() + i) = i;
+		*(pRow + i) = *(pOrbits + i) = i;
 
 	for (auto nCol = numCol(); nCol-- > nRow;)
 		*(pCol + nCol) = nCol;
@@ -78,7 +79,7 @@ CanonicityChecker(T *)::init(T nRow, bool savePerm, T** pPermRows, bool groupOnP
 	return pCol;
 }
 
-CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
+CanonicityChecker(T)::next_permutation(T *perm, const T *pOrbits, T idx, T lenStab) {
 	// Function generates next permutation among those which stabilize first lenStab elements
 	// We are using the algorithm from http://nayuki.eigenstate.org/res/next-lexicographical-permutation-algorithm/nextperm.java
 	// taking into account that we don't need the the permutations which are equivalent with respect to already found orbits of the 
@@ -97,7 +98,7 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
 	T temp, i, j;
 
 	// Check if the algorithm, used immediately after 
-	// some automorphism was found
+	// some non-trivial automorphism was found
 	const auto IDX_MAX = ELEMENT_MAX - 1;
 	if (idx == IDX_MAX && perm[stabilizerLength()] == nRow - 1)
 		idx = ELEMENT_MAX;
@@ -126,7 +127,7 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
             while (++j < nRow && perm[j] <= temp);
             if (j >= nRow) {
                 revert(perm, nRow, i);
-                return next_permutation(perm);
+                return next_permutation(perm, pOrbits);
             }
         }
     }
@@ -135,7 +136,7 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
         bool flag = false;
 		auto k = j, tmp = perm[j];
         if (idx >= IDX_MAX) {
-            while (k > i && *(orbits() + perm[k]) != perm[k])
+            while (k > i && *(pOrbits + perm[k]) != perm[k])
                 k--;
             
             if (k != j) {
@@ -148,7 +149,7 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
                     perm[k] = perm[k + 1];
             }
         } else {
-            while (k < nRow && *(orbits() + perm[k]) != perm[k])
+            while (k < nRow && *(pOrbits + perm[k]) != perm[k])
                 k++;
             
             if (k != j) {
@@ -189,9 +190,9 @@ CanonicityChecker(T)::next_permutation(T *perm, T idx, T lenStab) {
 	return i;
 }
 
-CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool rowPermut, bool calcGroupOrder)
+CanonicityChecker(void)::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bool rowPermut, bool calcGroupOrder)
 {
-	S idx = 0;
+	T idx = 0;
 	while (idx == permut[idx])
 		idx++;
 
@@ -206,14 +207,14 @@ CanonicityChecker(void)::UpdateOrbits(const S *permut, S lenPerm, S *pOrb, bool 
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 
-CanonicityChecker(void)::addAutomorphism(T *permRow, bool rowPermut, bool savePermut)
+CanonicityChecker(void)::addAutomorphism(const T *permRow, T *pOrbits, bool rowPermut, bool savePermut, bool calcGroupOrder)
 {
+	UpdateOrbits(permRow, numRow(), pOrbits, rowPermut, calcGroupOrder);
 	if (!rowPermut) {
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow(), permRow);
 	}
 	else {
-		UpdateOrbits(permRow, numRow(), orbits(), rowPermut, true);
 		if (savePermut)
 			permStorage()->savePermut(numRow(), permRow);
 	}
@@ -221,7 +222,7 @@ CanonicityChecker(void)::addAutomorphism(T *permRow, bool rowPermut, bool savePe
 
 CanonicityChecker(void)::updateGroupOrder()
 {
-	S len = 1;
+	T len = 1;
 	const auto *pOrb = orbits();
 	const auto i = stabilizerLengthAut();
 	auto idx = i;

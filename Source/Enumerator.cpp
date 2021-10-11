@@ -99,8 +99,12 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 			if (pSolutionWereConstructed)
 				pSolutionWereConstructed[i] = 1;
 
-			if (numParts > 1 && !i)
-				pRowSolution->saveSolutionIndex();
+			if (numParts > 1) {
+				if (i)
+					pRowSolution->setSolutionIndex(0);
+				else
+					pRowSolution->saveSolutionIndex();
+			}
 
 			if (++i >= numParts)
 				break;
@@ -580,17 +584,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		}
 #endif
 		if (multiPartDesign) {
-			S lastPartIdx = firstPartIdx[nRow - 1];
 			// We enumerate the multi-part designs
-			if (pRowSolution) {
-				if (!lastPartIdx)
-					lastPartIdx++;
-
-				auto i = numParts();
-				while (--i >= lastPartIdx)
-					(pRowSolution + i)->setSolutionIndex(0);
-			} else {
+			if (!pRowSolution) {
 				if (iFirstPartIdx) {
+					T lastPartIdx = firstPartIdx[nRow - 1];
 					// We can reach this point by two diferenct pathes:
 					// (a) matrix is NOT canonical OR
 					// (b) matrix was canonical, but solution for one of the parts was not found

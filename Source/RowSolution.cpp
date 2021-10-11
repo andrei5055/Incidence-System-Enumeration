@@ -255,7 +255,7 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 	return solIdx;
 }
 
-FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb) const
+FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, T nRow, T nPortion, bool addPortionNumb) const
 {
 	if (!solutionLength() || !numSolutions())
         return;

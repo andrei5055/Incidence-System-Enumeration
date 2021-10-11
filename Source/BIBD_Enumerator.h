@@ -38,7 +38,7 @@ protected:
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char *pFrmt = NULL, int *pLambdaSetSize = NULL) const
 		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, int *pLambdaSetSize) const;
-	CK virtual void setFirstUnforcedRow(size_t rowNum = 0)			{}
+	CK virtual void setFirstUnforcedRow(T rowNum = 0)				{}
 	CK virtual void resetFirstUnforcedRow()							{}
 	CK inline void setR(S val)										{ m_r = val; }
 	CK inline auto getR() const										{ return m_r; }

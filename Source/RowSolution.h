@@ -45,9 +45,9 @@ public:
 																	InitSolutions(length, nVect, pCoord);
 																}
 	CK ~CRowSolution()											{ delete solutionPerm(); }
-	CK inline const S *firstSolution() const					{ return this->GetData(); }
-	CK inline const S *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionLength(); }
-	CK inline const S *currSolution() const						{ return firstSolution() + variantIndex() * solutionLength(); }
+	CK inline const auto *firstSolution() const					{ return this->GetData(); }
+	CK inline const auto *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionLength(); }
+	CK inline const auto *currSolution() const					{ return firstSolution() + variantIndex() * solutionLength(); }
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
 	CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
 	CK inline auto allSolutionChecked()                         { return nextSolutionIndex() >= numSolutions(); }
@@ -60,13 +60,13 @@ public:
 																  return pCanonFlags ? *(pCanonFlags + idx) != 0xff : true; }
 	CK void InitSolutions(S size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL);
 	CK inline auto solutionLength() const						{ return m_Length; }
-	CK inline void setSolutionLength(S length)					{ m_Length = length; }
+	CK inline void setSolutionLength(T length)					{ m_Length = length; }
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
 	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
 #if PRINT_SOLUTIONS
-	void printSolutions(FILE *file, bool markNextUsed, S nRow, S nPortion, bool addPortionNumb = false) const;
+	void printSolutions(FILE *file, bool markNextUsed, T nRow, T nPortion, bool addPortionNumb = false) const;
 #endif
 	CK inline auto solutionIndex() const						{ return m_nSolutionIndex; }
 	CK inline void setSolutionIndex(PERMUT_ELEMENT_TYPE val)	{ m_nSolutionIndex = val; }
@@ -101,7 +101,7 @@ private:
 	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const;
 #endif
 
-	S m_Length;
+	T m_Length;
 	size_t m_nNumSolutions;
 	PERMUT_ELEMENT_TYPE m_nSolutionIndex;
 	PERMUT_ELEMENT_TYPE m_nSavedSolutionIndex;

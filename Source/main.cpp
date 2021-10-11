@@ -186,7 +186,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 				break;
 			case t_CombinedBIBD:
 				pInSys = new Class2(CCombinedBIBD)(pParam->v, pParam->k, lambda);
-				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags);
+				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
 				break;
 			default: return false;
 			}

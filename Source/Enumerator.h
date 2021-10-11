@@ -480,7 +480,8 @@ public:
 	inline const void* owner() const						{ return m_pOwner; }
 	CK inline const auto numGroups() const					{ return m_nNumGroups; }
 	CK inline const auto *groupHandle(size_t idx) const		{ return m_pGroupHandles + idx; }
-	CK inline bool useGroupOnParts(S nRow) const			{ return nRow > m_nMinRowNumb; }
+	CK inline auto useGroupOnParts(S nRow) const			{ return nRow > m_nMinRowNumb; }
+	CK inline auto getStartingRowNumb() const				{ return m_nMinRowNumb; }
 private:
 	const void* m_pOwner;
 	CGroupHandle<S> *m_pGroupHandles;
@@ -497,11 +498,11 @@ public:
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
-	CK virtual S getX0_3() const							{ return 0; }
+	CK virtual T getX0_3() const							{ return 0; }
 	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
-	CK virtual S firstUnforcedRow() const					{ return 0; }
-	CK virtual void setFirstUnforcedRow(S row)				{}
-	CK virtual S *forcibleLambdaPntr(S nRow = 0) const		{ return NULL; }
+	CK virtual T firstUnforcedRow() const					{ return 0; }
+	CK virtual void setFirstUnforcedRow(T row = 0)			{}
+	CK virtual T *forcibleLambdaPntr(T nRow = 0) const		{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline auto designParams() const						{ return m_pParam; }

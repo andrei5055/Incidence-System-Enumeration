@@ -506,6 +506,7 @@ typedef enum {
 	t_alwaysKeepRowPermute	= 1 << 7,   // Keep generating set of the Aut(M) acting on the rows of partially constructed matrix M
 	t_outRowPermute			= 1 << 8,   // Keep generating set of the Aut(M) acting on the rows of fully constructed matrix M
 	t_outRowOrbits			= 1 << 9,
+	t_useGroupOnParts       = 1 << 10,
 	t_allFlags				= -1
 } t_EnumeratorFlags;
 

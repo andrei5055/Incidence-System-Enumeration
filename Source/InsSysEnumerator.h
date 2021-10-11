@@ -7,20 +7,20 @@ Class2Def(C_InSysEnumerator) : public Class2(CEnumerator), public Class2(CInSysS
 public:
 	CK C_InSysEnumerator(const InSysPntr pInSysm, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_InSysEnumerator();
-	CK virtual S getX0_3() const								{ return m_x0_3; }
-	CK virtual S firstUnforcedRow() const						{ return m_firstUnforcedRow; }
-	CK virtual void setFirstUnforcedRow(S rowNum = 0)			{ m_firstUnforcedRow = rowNum; }
-	CK virtual S *forcibleLambdaPntr(S nRow = 0) const			{ return m_pForsibleLambda + nRow * numParts(); }
+	CK virtual T getX0_3() const								{ return m_x0_3; }
+	CK virtual T firstUnforcedRow() const						{ return m_firstUnforcedRow; }
+	CK virtual void setFirstUnforcedRow(T rowNum = 0)			{ m_firstUnforcedRow = rowNum; }
+	CK virtual T *forcibleLambdaPntr(T nRow = 0) const			{ return m_pForsibleLambda + nRow * numParts(); }
 	CK virtual bool noReplicatedBlocks() const					{ return m_bNoReplBlock; }
 	CK virtual bool isPBIB_enumerator() const					{ return false;  }
 	CK int define_MT_level(int v) const							{ return v / 2; }
 	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 protected:
-	CK virtual void setX0_3(S value)							{ m_x0_3 = value; }
+	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	CK inline auto inSysRowEquation() const						{ return (CInSysRowEquation<S> *)this->rowEquation(); }
-	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx = 0, S numPart = 0) const { return pLambdaSet->GetAt(idx); }
+	CK virtual T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const { return pLambdaSet->GetAt(idx); }
 	CK virtual bool checkSolutionsForRight(S row, S part) const	{ return false; }
 	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
 																{ return true; }
@@ -29,7 +29,7 @@ protected:
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart) const {
 			return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
 	}
-	CK virtual S forcibleLambda(S nRow, S nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
+	CK virtual T forcibleLambda(T nRow, T nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const		{ return this->getInSys()->GetNumSet(idx); }
 	CK virtual bool check_X0_3(S nPart) const					{ return false; }
@@ -53,12 +53,12 @@ private:
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
 	CK virtual size_t numLambdas()								{ return this->paramSet(t_lSet)->GetSize(); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
-	CK inline void setForcibleLambdaPntr(S *p)					{ m_pForsibleLambda = p; }
-	CK virtual void setForcibleLambda(S nRow, S val, S nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
+	CK inline void setForcibleLambdaPntr(T *p)					{ m_pForsibleLambda = p; }
+	CK virtual void setForcibleLambda(T nRow, T val, T nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
 
-	S m_x0_3;
-	S *m_pForsibleLambda;
-	S m_firstUnforcedRow;
+	T m_x0_3;
+	T *m_pForsibleLambda;
+	T m_firstUnforcedRow;
 	CRightPartFilter<S> *m_pRightPartFilter;
 	const bool m_bNoReplBlock;
 };
@@ -82,8 +82,8 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 
 	m_pRightPartFilter = new CRightPartFilter<S>(nCol);
 	const auto nRow = pInSys->rowNumb();
-	setForcibleLambdaPntr(new S[nRow * numParts]);
-	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(S));
+	setForcibleLambdaPntr(new T[nRow * numParts]);
+	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(T));
 
 	setFirstUnforcedRow();
 }
