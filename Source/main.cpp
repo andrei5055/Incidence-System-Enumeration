@@ -15,6 +15,18 @@
 #define SDL_MAIN_HANDLED
 using namespace std;
 
+const char *obj_name[] = {
+	"BIBD",					// t_BIBD,			// default
+	"COMBINED_BIBD",		// t_CombinedBIBD,
+	"T-DESIGN",				// t_tDesign,
+	"PBIBD",				// t_PBIBD,
+	"INCIDENCE",            // t_IncidenceSystem,
+	"SEMI_SYMMETRIC_GRAPH"  // t_SemiSymmetricGraph
+};
+
+// Order of checking object names during parsing of parameters
+t_objectType idx_obj_type[] = {t_PBIBD, t_CombinedBIBD, t_BIBD, t_tDesign, t_IncidenceSystem, t_SemiSymmetricGraph};
+
 int find_T_designParam(int v, int k, int lambda)
 {
 	int lam = lambda;
@@ -155,8 +167,10 @@ static bool getTParam(const string &paramText, designParam *param)
 template <typename T, typename S>
 bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath)
 {
-	if (pParam->v <= 0)
+	if (pParam->v <= 0) {
+		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
 		return false;
+	}
 
 	const string workingDir = pParam->workingDir + pSummaryFileName;
 	const char *pSummFile = workingDir.c_str();
@@ -174,6 +188,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	const auto lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
+			static t_objectType obj_types[] = { t_PBIBD, t_CombinedBIBD, t_SemiSymmetricGraph };
 			switch (objType) {
 			case t_PBIBD:
 				pInSys = new Class2(C_PBIBD)(pParam->v, pParam->k, pParam->r, lambda);
@@ -188,7 +203,13 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 				pInSys = new Class2(CCombinedBIBD)(pParam->v, pParam->k, lambda);
 				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
 				break;
-			default: return false;
+			default:
+				printf("LambdaSet has %zu elements, in that case the object type cannot be \'%s\'\n", lambda.size(), obj_name[objType]);
+				printf("Possible values are:");
+				for (int i = 0; i < countof(obj_types); i++)
+					printf("\n    %s", obj_name[obj_types[i]]);
+
+				return false;
 			}
 		}
 		else {
@@ -432,23 +453,12 @@ int main(int argc, char * argv[])
 		if (line.find("CANONICITY") != string::npos)
 			operType = t_Canonicity;
 
-		if (line.find("PBIBD") != string::npos)
-			objType = t_PBIBD;
-		else
-		if (line.find("COMBINED_BIBD") != string::npos)
-			objType = t_CombinedBIBD;
-		else
-		if (line.find("BIBD") != string::npos)
-			objType = t_BIBD;
-		else
-		if (line.find("T-DESIGN") != string::npos)
-			objType = t_tDesign;
-		else
-		if (line.find("INCIDENCE") != string::npos)
-			objType = t_IncidenceSystem;
-		else
-		if (line.find("SEMI_SYMMETRIC_GRAPH") != string::npos)
-			objType = t_SemiSymmetricGraph;
+		for (int i = 0; i < countof(idx_obj_type); i++) {
+			if (line.find(obj_name[idx_obj_type[i]]) != string::npos) {
+				objType = idx_obj_type[i];
+				break;
+			}
+		}
 
 		// Define output type
 		pos = find(line, "OUTPUT");

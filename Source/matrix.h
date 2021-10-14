@@ -70,7 +70,7 @@ public:
 	}
 
 	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
-	void printOut(FILE* pFile = NULL, S nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
+	void printOut(FILE* pFile = NULL, T nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, bool canonFlag = true) const;
 	CC virtual S numParts() const				{ return 1; }
 	CC inline auto *partsInfo() const			{ return m_pPartInfo;  }

@@ -559,15 +559,15 @@ private:
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
-	CK virtual RowSolutionPntr FindSolution(S nVar, S nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
+	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
 	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
 	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart) const	{ return NULL; }
 	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const	{ return -1; }
-	CK virtual ColOrbPntr* unforcedOrbits(S n, S idxPart) const	{ return NULL; }
+	CK virtual ColOrbPntr* unforcedOrbits(T n, T idxPart) const	{ return NULL; }
 	CK virtual void resetFirstUnforcedRow()					{}
-	virtual S forcibleLambda(S nRow, S nPart) const			{ return ELEMENT_MAX; }
+	virtual S forcibleLambda(T nRow, T nPart) const			{ return ELEMENT_MAX; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) {}
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const { return 0; }

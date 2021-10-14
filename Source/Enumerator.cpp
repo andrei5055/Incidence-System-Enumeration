@@ -120,13 +120,15 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 	if (i < numParts) {
 		*pPartNumb = i;
 #if PRINT_SOLUTIONS
-		char buff[128], *pBuff = buff;
-		pBuff += SNPRINTF(buff, sizeof(buff), "\nNo solutions for ");
-		if (numParts > 1)
-			pBuff += SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the part %d of ", i);
-		SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the row %d. System of equations %s\n", currentRowNumb(),
-			    nVar == ELEMENT_MAX? "cannot be constructed" : "has no valid solutions");
-		outString(buff, outFile());
+		if (MAKE_OUTPUT()) {
+			char buff[128], * pBuff = buff;
+			pBuff += SNPRINTF(buff, sizeof(buff), "\nNo solutions for ");
+			if (numParts > 1)
+				pBuff += SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the part %d of ", i);
+			SNPRINTF(pBuff, sizeof(buff) - (pBuff - buff), "the row %d. System of equations %s\n", currentRowNumb(),
+				nVar == ELEMENT_MAX ? "cannot be constructed" : "has no valid solutions");
+			outString(buff, outFile());
+		}
 #endif
 		return NULL;
 	}

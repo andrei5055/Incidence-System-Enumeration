@@ -21,8 +21,8 @@ public:
 protected:
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
 	virtual int unforcedElement(const CColOrbit<S> *p, int nRow) const;
-	CK virtual bool checkSolutionsForRight(S nRow, S nPart) const	{ return nRow == firtstNonfixedRowNumber() + 1 && !nPart; }
-	CK virtual bool solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const;
+	CK virtual bool checkSolutionsForRight(T nRow, T nPart) const	{ return nRow == firtstNonfixedRowNumber() + 1 && !nPart; }
+	CK virtual bool solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, const VectorPntr pLambdaSet) const;
 	bool isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const;
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
@@ -45,8 +45,8 @@ protected:
 	CK virtual bool check_X0_3(S nPart) const						{ return !nPart; }
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
-	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
-	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
+	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
+	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
 
@@ -78,13 +78,13 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 	const auto pLambdaSet = this->paramSet(t_lSet);
 	char buf[32];
 	char* pBuf = NULL;
-	for (S n = 0; n < pMatrix->numParts(); n++) {
+	for (T n = 0; n < pMatrix->numParts(); n++) {
 		const auto colNumb = partsInfo ? partsInfo->colNumb(n) : this->colNumb();
 		const auto paramR = partsInfo ? colNumb * paramK / (iMax - iMin) : this->getR();
-		for (S i = iMin; i < iMax; i++) {
-			S len;
+		for (T i = iMin; i < iMax; i++) {
+			T len;
 			const auto pRow = pMatrix->GetRow(i, n, &len);
-			S r = 0;
+			T r = 0;
 			for (auto j = colNumb; j--;)
 				r += *(pRow + j);
 
@@ -101,8 +101,8 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 				return false;
 			}
 
-			for (S j = iMin; j < i; j++) {
-				S lambda = 0;
+			for (T j = iMin; j < i; j++) {
+				T lambda = 0;
 				const auto pRowCurr = pMatrix->GetRow(j, n, &len);
 				for (auto k = colNumb; k--;)
 					lambda += *(pRowCurr + k) * *(pRow + k);
@@ -129,7 +129,7 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 
 	bool noReplicatedBlockFound = true;
 	for (auto j = this->colNumb(); j--;) {
-		S k = 0;
+		T k = 0;
 		for (auto i = iMin; i < iMax; i++)
 			k += *(pMatrix->GetRow(i) + j);
 
@@ -140,7 +140,7 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 		}
 
 		if (noReplicatedBlockFound && j) {
-			S i = iMin - 1;
+			T i = iMin - 1;
 			while (++i < iMax) {
 				const auto pRow = pMatrix->GetRow(i) + j;
 				if (*pRow != *(pRow - 1))
@@ -167,11 +167,11 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 	return this->noReplicatedBlocks() ? noReplicatedBlockFound : true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart, const S *pCurrSolution, const VectorPntr pLambdaSet) const
+FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const T *pRighPart, const T *pCurrSolution, const VectorPntr pLambdaSet) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to do not consider the solutions for some right parts
-	// NOTE: this method should be consistent with CBIBD_Enumerator::checkSolutionsForRight(S nRow, S nPart)
+	// NOTE: this method should be consistent with CBIBD_Enumerator::checkSolutionsForRight(T nRow, T nPart)
 
 	// Condition should eliminate right part with x1 = 0 for some BIBD, and (8, 4, 3) is one of them.
 	// Becase only solutions (and their descendants) with first coordinate equal to 1 could be used for next v - 2 rows.
@@ -187,7 +187,7 @@ FClass2(CBIBD_Enumerator, bool)::solutionsForRightSideNeeded(const S *pRighPart,
 	return true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, S nRow, S nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const
+FClass2(CBIBD_Enumerator, bool)::checkChoosenSolution(RowSolutionPntr pCurrSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const
 {
 	// Collection of conditions to be tested for specific BIBDs, which
 	// allows to skip testing of some solutions for some rows

@@ -63,7 +63,7 @@ public:
 	CK inline void setSolutionLength(T length)					{ m_Length = length; }
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
-	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin);
+	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin);
 	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
 #if PRINT_SOLUTIONS
 	void printSolutions(FILE *file, bool markNextUsed, T nRow, T nPortion, bool addPortionNumb = false) const;
@@ -409,7 +409,7 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(PermutStoragePntr pPermStorage
 		delete[] pCanonIdx;
 }
 
-FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, S nRowToBuild, S kMin) {
+FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin) {
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionLength(); i++, pColOrbit = pColOrbit->next()) {
 		auto minVal = pColOrbit->length();

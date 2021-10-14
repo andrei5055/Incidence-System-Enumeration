@@ -25,7 +25,7 @@ protected:
 	CC virtual T lenStabilizer() const              { return 1; }
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const	{ return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); }
 	CK virtual size_t numLambdas()					{ return 1; }
-	CK virtual S getLambda(const VectorPntr pLambdaSet, S idx = 0, S numPart = 0) const { return pLambdaSet->GetAt(numPart); }
+	CK virtual T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
 	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
@@ -33,7 +33,7 @@ protected:
 	virtual char* getEnumerationObjectKeyA(char* pKey, int len) const;
 	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }
 #endif
-	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const {
+	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const {
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}

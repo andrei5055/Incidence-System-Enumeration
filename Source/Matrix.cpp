@@ -20,7 +20,7 @@ FClass2(CMatrixData, ulonglong)::GetNextCounter() {
 }
 #endif
 
-FClass2(CMatrixData, void)::printOut(FILE* pFile, S nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, bool canon) const
+FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, bool canon) const
 {
 	if (nRow == ELEMENT_MAX)
 		nRow = this->rowNumb();
