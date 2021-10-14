@@ -365,7 +365,7 @@ CanonicityChecker(int)::checkColOrbit(T orbLen, T nColCurr, const S *pRow, const
 #endif
 
 CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
-	size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const S *pRowSolution, size_t solutionSize)
+	size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize)
 {
 	// Skip all colOrbits which were equal to the tested solution
 	int nOrb = 0;
@@ -381,12 +381,12 @@ CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, co
 	memset(pImprovedSolution, 0, rankM1 * (solutionSize - nOrb) * sizeof(*pImprovedSolution));
 
 	bool orbLenFlg = pColOrbit->length() > 1;
-	size_t nColCurr = ((char *)pColOrbit - (char *)pColOrbitIni) / colOrbLen;
+	size_t nColCurr = ((char *)pColOrbit - (char* )pColOrbitIni) / colOrbLen;
 	while (true) {
 		if (orbLenFlg) {
 			// The elements in the counter make next (rank()-1) coordinates of our vector solution
 			for (int i = rank(); --i;)
-				*(pImprovedSolution + rankM1 - i) = static_cast<S>(colNumbStorage()[i]->numb());
+				*(pImprovedSolution + rankM1 - i) = static_cast<T>(colNumbStorage()[i]->numb());
 		} else {
 			// All next (rank()-1) coordinates except one of our vector solution are 0's. One, which is not 0 
 			// is equal to 1 and is defined by corresponding element in the current row of the matrix

@@ -466,7 +466,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					}
 					else {
 						OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, false);
-						if (!nPart)  // NOTE: as of today (08/27/2021) "level" is set correctly only when when nPart = 0
+						if (!multiPartDesign)  // NOTE: as of today (08/27/2021) "level" is set correctly only when when nPart = 0
 							flag = false;
 					}
 				}
@@ -780,7 +780,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	return true;
 } 
 
-FClass2(CEnumerator, void)::reset(S nRow, bool resetSolutions) {
+FClass2(CEnumerator, void)::reset(T nRow, bool resetSolutions) {
 	const auto *pMatrix = this->matrix();
 	const auto *ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
 
@@ -959,23 +959,35 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 	return len;
 }
 
-static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer)
+static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer, char *tmpBuff)
 {
+	// characters to skip at the beginning of each line
+	static bool skipTable[256];
+	skipTable[' '] = skipTable['\n'] = skipTable['\t'] = true;
+
 	bool outBlock = false;
 	while (true) {
-		if (!fgets(buffer, lenBuffer, file))
+		if (!fgets(tmpBuff, lenBuffer, file))
 			return false;
 
 		if (outBlock) {
 			// Block was not open
-			if (strstr(buffer, END_OUT_BLOCK))
+			if (strstr(tmpBuff, END_OUT_BLOCK))
 				outBlock = false; // mark it as closed
 		}
 		else {
 			// Block was not open
-			outBlock = strstr(buffer, BEG_OUT_BLOCK) != NULL;
-			if (!outBlock)
+			outBlock = strstr(tmpBuff, BEG_OUT_BLOCK) != NULL;
+			if (!outBlock) {
+				// Remove leading spaces:
+				auto* pCurrentSymb = tmpBuff;
+				while (skipTable[*pCurrentSymb++]);
+				if (!*(--pCurrentSymb)) // Is it the end of line?
+					continue;			// Skip an "empty" line
+
+				strncpy_s(buffer, lenBuffer, pCurrentSymb, lenBuffer);
 				return true;
+			}
 		}
 	}
 }
@@ -997,17 +1009,17 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 {
 	const size_t lenBuf = 256;
 	const size_t len = strlen(CONSTRUCTED_IN);
-	char buf[2][lenBuf], *pntr[2] = {NULL, NULL};
+	char buf[3][lenBuf], *pntr[2] = {NULL, NULL};
 	while (true) {
 		bool eof = false;
 		for (int i = 0; i < 2; i++) {
 			if (file[i]) {
-				if (!getNextLineForComparison(file[i], buf[i], lenBuf)) {
+				if (!getNextLineForComparison(file[i], buf[i], lenBuf, buf[2])) {
 					pntr[i] = 0;
-					if (i == 0)
+					if (!i)
 						continue;
 
-					return pntr[i] == pntr[i];   // check if both files ended
+					return true;
 				}
 
 				pntr[i] = strstr(buf[i], CONSTRUCTED_IN);
@@ -1019,7 +1031,7 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 				if (pBetterResults)
 					*pBetterResults = Class2(CEnumInfo)::compareTime(pntr[0] + len, pntr[1] + len);
 
-				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf)) {
+				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf, buf[2])) {
 					char* pInfo[] = { pntr[0] + len, buf[0], buf[1] };
 					UpdateEnumerationDB(pInfo, 3);
 				}
@@ -1119,8 +1131,10 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	if (!dbFile)
 		return;
 
-	char key[32];
+	char key[32], adjustedKey[32];
 	this->getEnumerationObjectKey(key, countof(key));
+	// the lexicografical order of key's could be adjusted for some type of designs using:
+	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey));
 
 	if (i) {
 		this->outputTitle(dbFile);
@@ -1137,19 +1151,30 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	FOPEN(f, tmpFile, "w");
 	bool compareFlag = true;
 	const auto lenKey = strlen(key);
+	const auto lenKeyAdj = pAdjKey? strlen(pAdjKey) : 0;
 	bool firstLine = true;   // We don't need to compare key with the first line
 	while (fgets(buffer, countof(buffer), dbFile)) {
-		if (compareFlag && !firstLine) {
-			resCmp = strncmp(buffer, key, lenKey);
-			if (resCmp >= 0) {
-				const char *pComment = strstr(buffer, " >> ");
-				outKeyInfo(key, pInfo, f, pComment);
-				compareFlag = false;
-				if (!resCmp)
-					continue;
+		if (buffer[0] != ';') {
+			// Not a comment line
+			if (compareFlag && !firstLine) {
+				resCmp = strncmp(buffer, key, lenKey);
+				if (pAdjKey && resCmp) {
+					if (resCmp < 0 && !strncmp(buffer, pAdjKey, lenKeyAdj))
+						resCmp = 1;
+					else
+						if (resCmp > 0) {// && strncmp(buffer, pAdjKey, lenKeyAdj) < 0)
+							resCmp = strncmp(pAdjKey, buffer, lenKeyAdj);
+						}
+				}
+				if (resCmp >= 0) {
+					const char* pComment = !resCmp? strstr(buffer, " >> ") : NULL;
+					outKeyInfo(key, pInfo, f, pComment);
+					compareFlag = false;
+					if (!resCmp)
+						continue;
+				}
 			}
 		}
-
 		firstLine = false;
 		if (fputs(buffer, f) < 0)
 			return; // Something wrong

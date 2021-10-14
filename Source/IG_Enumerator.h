@@ -32,9 +32,9 @@ protected:
 	CK bool SeekLogFile() const override				{ return true; }
 
 	CK bool prepareToFindRowSolution() override;
-	virtual void reset(S nRow, bool resetSolutions = true);
+	virtual void reset(T nRow, bool resetSolutions = true);
 private:
-	inline void setNumRows(S nRow)						{ m_nNumbRows  = nRow; }
+	inline void setNumRows(T nRow)						{ m_nNumbRows  = nRow; }
 	inline auto numRows() const							{ return m_nNumbRows; }
 	CK void copyRowIntersection(const S *pntr);
 	inline S *lambdaBSrc() const						{ return m_pLambda[0]; }
@@ -61,7 +61,7 @@ private:
 	const bool m_firstPath;
 	S *m_pRowIntersections;
 	S *m_pLambda[3];
-	S m_nNumbRows;							// Number of rows where all blocks associated with the first elements were constructed
+	T m_nNumbRows;							// Number of rows where all blocks associated with the first elements were constructed
 	S *m_pPrmCols;							// Memory to keep permitations of columns
 	uchar *m_pElementFlags;					// Flags to mark the elements, which are already chosen
 	Class2(CIncidenceStorage) *m_pElements;

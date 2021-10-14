@@ -94,7 +94,7 @@ private:
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
-		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const S *pRowSolution, size_t solutionSize);
+		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize);
 	CC void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
@@ -300,7 +300,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 							continue;
 						}
 
-						if (!nPart && pRowOut) {
+						if (!usingGroupOnBlocks && !nPart && pRowOut) {
 							if (outInfo & t_saveRowToChange)
 								*pRowOut = rowToChange(nRow);
 #ifndef USE_CUDA
@@ -416,8 +416,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			// Initialization of variables to use the group acting on the parts of the matrix
 			pIndxPerms = numGroups < countof(idxPerm) ? idxPerm : new size_t[numGroups];
 			memset(pIndxPerms, 0, numGroups * sizeof(*pIndxPerms));
-			pMatrPerm = pCanonParam->pSpareMatrix;
-			colNumb = pMatr->colNumb();
+			colNumb = (pMatrPerm = pCanonParam->pSpareMatrix)->colNumb();
 			startingRowNumb = pGroupOnParts->getStartingRowNumb();
 			// copy first startingRowNumb rows
 			lenMatr = colNumb * startingRowNumb;
@@ -426,8 +425,8 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			memcpy(pMatrTo, pMatrFrom, lenMatr * sizeof(S));
 
 			// Calculate pointers and length for copying remaining part of the matrix
-			pMatrTo = pMatrPerm->GetDataPntr() + lenMatr;
-			pMatrFrom = pMatr->GetDataPntr() + lenMatr;
+			pMatrTo += lenMatr;
+			pMatrFrom += lenMatr;
 			lenMatr = (nRowMax - startingRowNumb) * colNumb * sizeof(S);
  
 			calcGroupOrder = savePermut = false;	// Permutations and group order should not be saved for Spare Matrix

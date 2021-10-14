@@ -21,7 +21,7 @@ protected:
 	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual void CreateForcedRows();
-	CK virtual S firtstNonfixedRowNumber() const	{ return 3; }
+	CK virtual T firtstNonfixedRowNumber() const	{ return 3; }
 	CC virtual T lenStabilizer() const              { return 1; }
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const	{ return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); }
 	CK virtual size_t numLambdas()					{ return 1; }
@@ -29,7 +29,8 @@ protected:
 #if !CONSTR_ON_GPU
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
 	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
-	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
+	virtual void getEnumerationObjectKey(char* pKey, int len) const;
+	virtual char* getEnumerationObjectKeyA(char* pKey, int len) const;
 	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }
 #endif
 	CK virtual bool checkForcibleLambda(S fLambda, S nRows, S numPart) const {
@@ -49,11 +50,12 @@ protected:
 				factorial *= (++count);
 				if (j < jMax)
 					continue;
+				j++;
 			}
 
 			if (prevLambda) {
 				if (factorial > 1) {
-					lengths.AddElement(j-count+1); 	// index of the first BIBD with the same lambda
+					lengths.AddElement(j-count); 	// index of the first BIBD with the same lambda
 					lengths.AddElement(count);		// number of BIBDs with the same lambda
 					lengths.AddElement(factorial);  // group order
 				}

@@ -473,8 +473,9 @@ public:
 		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize()/3), m_nMinRowNumb(minRow) {
 		m_pGroupHandles = new CGroupHandle<S>[numGroups()];
 		const auto lenMax = lenghts.GetSize();
+		size_t j = 0;
 		for (size_t i = 0; i < lenMax; i += 3)
-			m_pGroupHandles[i].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i+1), lenghts.GetAt(i+2));
+			m_pGroupHandles[j++].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i+1), lenghts.GetAt(i+2));
 	}
 	~CGroupOnParts()										{ delete[] m_pGroupHandles; }
 	inline const void* owner() const						{ return m_pOwner; }
@@ -530,11 +531,11 @@ protected:
 	size_t getDirectory(char *buffer, size_t len, bool rowNeeded = true) const;
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
-	virtual void reset(S nRow, bool resetSolutions = true);
+	virtual void reset(T nRow, bool resetSolutions = true);
 	CK ColOrbPntr MakeRow(const S *pRowSolution, bool nextColOrbNeeded, S partIdx = 0) const;
 	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
-	CK virtual S firtstNonfixedRowNumber() const			{ return 2; }
+	CK virtual T firtstNonfixedRowNumber() const			{ return 2; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
@@ -545,7 +546,8 @@ protected:
 	CK virtual MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr) { return NULL; }
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
-	virtual void getEnumerationObjectKey(char *pInfo, int len) const { strcpy_s(pInfo, len, "EMPTY_KEY"); }
+	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
+	virtual char *getEnumerationObjectKeyA(char* pKey, int len) const		{ return NULL; }
 	virtual void outputTitle(FILE* file) const;
 	virtual const char* getObjNameFormat() const			{ return "%9s:        "; }
 	void UpdateEnumerationDB(char **pInfo, int len) const;

@@ -13,10 +13,17 @@ FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer)
 }
 #endif
 
-FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pInfo, int len) const {
+FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pKey, int len) const {
 	char buffer[64];
 	this->makeJobTitle(this->designParams(), buffer, countof(buffer));
-	SNPRINTF(pInfo, len, "%s", buffer + strlen(this->getObjName()));
+	SNPRINTF(pKey, len, "%s", buffer + strlen(this->getObjName()));
+}
+
+FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int len) const {
+	getEnumerationObjectKey(pKey, len);
+	auto* pntr = strstr(pKey, "})");
+	*pntr = '\0';
+	return pKey;
 }
 
 FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
