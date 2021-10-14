@@ -590,44 +590,36 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			if (!pRowSolution) {
 				if (iFirstPartIdx) {
 					T lastPartIdx = firstPartIdx[nRow - 1];
-					// We can reach this point by two diferenct pathes:
+					// We can reach this point by two different paths:
 					// (a) matrix is NOT canonical OR
 					// (b) matrix was canonical, but solution for one of the parts was not found
 					// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
 					bool check_all_solution = !canonMatrix;
-					S stepRow = canonMatrix && lastPartIdx ? 0 : 1;
 					if (canonMatrix) {
 						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
 							this->resetUnforcedColOrb(iFirstPartIdx);
 					}
 
-					// Andrei: it looks like we don't need the external loop here
-					while (nRow > nRowEnd) {
-						this->setCurrentRowNumb(nRow - (canonMatrix ? stepRow : 0));
-						nRow -= stepRow;
+					if (!canonMatrix || !lastPartIdx)
+						nRow--;
 
-						iFirstPartIdx = numParts() - 1;
-						while (true) {
-							pRowSolution = rowStuff(nRow, iFirstPartIdx);
-							if (check_all_solution && !pRowSolution->allSolutionChecked()) {
-								firstPartIdx[nRow] = iFirstPartIdx;
-								break;
-							}
-
-							pRowSolution->setSolutionIndex(0);
-							if (!--iFirstPartIdx)
-								break;
-
-							if (iFirstPartIdx == lastPartIdx)
-								check_all_solution = true;
+					iFirstPartIdx = numParts() - 1;
+					while (true) {
+						pRowSolution = rowStuff(nRow, iFirstPartIdx);
+						if (check_all_solution && !pRowSolution->allSolutionChecked()) {
+							firstPartIdx[nRow] = iFirstPartIdx;
+							break;
 						}
-						this->setCurrentRowNumb(nRow);
-						check_all_solution = true;
-						lastPartIdx = 0;
-						stepRow = 1;
-						break;
+
+						pRowSolution->setSolutionIndex(0);
+						if (!--iFirstPartIdx)
+							break;
+
+						if (iFirstPartIdx == lastPartIdx)
+							check_all_solution = true;
 					}
 
+					this->setCurrentRowNumb(nRow);
 					pRowSolution = rowStuff(nRow);
 
 					for (auto i = numParts(); i-- > iFirstPartIdx;)

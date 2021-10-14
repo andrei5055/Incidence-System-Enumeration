@@ -1,0 +1,24 @@
+CBIBD(  6,  3, { 4, 4, 2})
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1              17               0               0               0
+             2              12               0               0               0
+             3              48               0               0               0
+             6               9               0               0               0
+            12              39               0              39               0
+            60               6               1               6               1
+    _______________________________________________________________________________
+        Total:             131               1              45               1
+
+       131 matrices constructed in  0.01
+         1 matrix has no replicated blocks
+       270 matrices were fully constructed
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 3 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

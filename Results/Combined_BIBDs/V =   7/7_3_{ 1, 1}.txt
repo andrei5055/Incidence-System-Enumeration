@@ -1,0 +1,20 @@
+CBIBD(  7,  3, { 1, 1})
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+            24               1               1               0               0
+           168               1               1               1               1
+    _______________________________________________________________________________
+        Total:               2               2               1               1
+
+         2 matrices constructed in  0.00
+         2 matrices have no replicated blocks
+         2 matrices were fully constructed
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 2 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
