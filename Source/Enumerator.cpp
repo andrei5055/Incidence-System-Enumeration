@@ -557,19 +557,22 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						break;
 
 					if (multiPartDesign) {
+						// When solution for the first part is not canonical, we don't have
+						// to check all combinations of solutions for remaining parts
+						const auto changeFirstPart = !*canonParam.pPartNumb;
 						while (--iFirstPartIdx) {
 							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
 							this->resetUnforcedColOrb(iFirstPartIdx, nRow);
-							if (pPartRowSolution->allSolutionChecked())
+							if (changeFirstPart || pPartRowSolution->allSolutionChecked())
 								pPartRowSolution->setSolutionIndex(0);
 							else
 								break;
 						}
 
-						firstPartIdx[nRow - 1] = iFirstPartIdx;
 						if (iFirstPartIdx) {
 							// Enumeration of combined designs AND not all solutions for i-th part were tested
 							this->setCurrentRowNumb(--nRow);
+							firstPartIdx[nRow] = iFirstPartIdx;
 							continue;
 						}
 
@@ -594,15 +597,33 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					// (a) matrix is NOT canonical OR
 					// (b) matrix was canonical, but solution for one of the parts was not found
 					// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
+#define NEW 1
+#if NEW
+					nRow--;
+#endif
 					bool check_all_solution = !canonMatrix;
 					if (canonMatrix) {
+#if NEW
+						// When there is no solution for some part, the indices
+						// for all remaining parts are equal to 0
+						pRowSolution = rowStuff(nRow);
+						while (lastPartIdx && (pRowSolution + lastPartIdx)->allSolutionChecked())
+							(pRowSolution+ lastPartIdx--)->setSolutionIndex(0);
+
+						if (lastPartIdx) {
+							firstPartIdx[nRow] = lastPartIdx;
+							this->setCurrentRowNumb(nRow);
+							continue;
+						}
+#endif
 						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
 							this->resetUnforcedColOrb(iFirstPartIdx);
 					}
 
+#if NEW == 0
 					if (!canonMatrix || !lastPartIdx)
 						nRow--;
-
+#endif
 					iFirstPartIdx = numParts() - 1;
 					while (true) {
 						pRowSolution = rowStuff(nRow, iFirstPartIdx);
@@ -1199,14 +1220,15 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 }
 
 #if PRINT_SOLUTIONS
-FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, S nRow, bool markNextUsed, S nPartStart, S nPartEnd) const
+FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const
 {	
 	if (!pSolution || nPartStart >= nPartEnd)
 		return;
 
+	const auto multiPortion = this->numParts() > 1;
 	MUTEX_LOCK(out_mutex);
 	for (auto i = nPartStart; i < nPartEnd; i++)
-		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, this->numParts() > 1);
+		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, multiPortion);
 
 	MUTEX_UNLOCK(out_mutex);
 }

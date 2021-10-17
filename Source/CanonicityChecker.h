@@ -314,6 +314,8 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 										pRowSolution->removeNoncanonicalSolutions(startIndex);
 									}
 									else {
+										// The current solution is not canonical.
+										// Let's define an equivalent solution that is lexicographically greater than the current one.
 										reconstructSolution(pEnum->colOrbit(nRow, nPart), pColOrbit, colOrbLen, pColOrbitIni, pRowPerm, pCurrSolution, solutionSize);
 #if USE_STRONG_CANONICITY
 										if (solutionStorage()) {
@@ -330,6 +332,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 											goto next_permut;
 										}
 #else
+										// Move the current solution and its orbit closer to just found canonical solution
 										pRowSolution->moveNoncanonicalSolutions(improvedSolution(), 0, solutionStorage());
 #endif
 									}
@@ -339,7 +342,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 						}
 
 						if (pPartNumb)
-							*pPartNumb = nPart;
+							*pPartNumb = usingGroupOnBlocks? -1 : nPart;
 
 						if (pIndxPerms != idxPerm)
 							delete[] pIndxPerms;

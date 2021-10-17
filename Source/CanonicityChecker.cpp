@@ -375,7 +375,7 @@ CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, co
 	}
 
 	// Copying corresponding part of the solution:
-	const int rankM1 = rank() - 1;
+	const auto rankM1 = rank() - 1;
 	memcpy(improvedSolution(), pRowSolution, nOrb * rankM1 * sizeof(*improvedSolution()));
 	auto *pImprovedSolution = improvedSolution() + nOrb * rankM1;
 	memset(pImprovedSolution, 0, rankM1 * (solutionSize - nOrb) * sizeof(*pImprovedSolution));
@@ -383,19 +383,19 @@ CanonicityChecker(void)::reconstructSolution(const ColOrbPntr pColOrbitStart, co
 	bool orbLenFlg = pColOrbit->length() > 1;
 	size_t nColCurr = ((char *)pColOrbit - (char* )pColOrbitIni) / colOrbLen;
 	while (true) {
+		pImprovedSolution += rankM1;
 		if (orbLenFlg) {
 			// The elements in the counter make next (rank()-1) coordinates of our vector solution
 			for (int i = rank(); --i;)
-				*(pImprovedSolution + rankM1 - i) = static_cast<T>(colNumbStorage()[i]->numb());
+				*(pImprovedSolution - i) = static_cast<T>(colNumbStorage()[i]->numb());
 		} else {
 			// All next (rank()-1) coordinates except one of our vector solution are 0's. One, which is not 0 
 			// is equal to 1 and is defined by corresponding element in the current row of the matrix
 			const auto val = *(pRowPerm + *(permCol() + nColCurr));
 			if (val > 0)
-				*(pImprovedSolution + rankM1 - val) = 1;
+				*(pImprovedSolution - val) = 1;
 		}
 
-		pImprovedSolution += rankM1;
 		pColOrbit = pColOrbit->next();
 		if (!pColOrbit)
 			return;

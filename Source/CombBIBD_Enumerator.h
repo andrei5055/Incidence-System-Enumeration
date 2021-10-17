@@ -72,7 +72,7 @@ protected:
 	CK MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr);
 private:
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
-	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
+	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
 	void CreateFirstRow(S* pFirstRow=NULL);
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 };

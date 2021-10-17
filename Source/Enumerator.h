@@ -555,7 +555,7 @@ private:
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(S *pPartNumb);
-	CK virtual S MakeSystem(S numPart) = 0;
+	CK virtual T MakeSystem(T numPart) = 0;
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
 #endif
@@ -563,23 +563,23 @@ private:
 															{ return NULL; }
 	CK virtual void prepareToTestExtraFeatures()			{}
 	CK virtual void copyInfoFromMaster(const CEnumerator *pMaster) {}
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S idxPart) const	{ return NULL; }
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(T idxPart) const	{ return NULL; }
 	CK virtual int unforcedElement(const CColOrbit<S>* p, int nRow) const	{ return -1; }
 	CK virtual ColOrbPntr* unforcedOrbits(T n, T idxPart) const	{ return NULL; }
 	CK virtual void resetFirstUnforcedRow()					{}
 	virtual S forcibleLambda(T nRow, T nPart) const			{ return ELEMENT_MAX; }
 	virtual const char* getTopLevelDirName() const          { return NULL; }
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) {}
-	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(S nRow) const { return 0; }
-	CK inline uchar *getSolutionsWereConstructed(S nParts, S rowNumb) const {
+	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const { return 0; }
+	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
-	CK virtual void setForcibleLambda(S nRow, S val, S nPart) {}
+	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr)  { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const				    { return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const EnumeratorPntr owner) { return NULL; }
 #if PRINT_SOLUTIONS
-	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, S nRow, bool markNextUsed, S nPartStart, S nPartEnd) const;
+	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
 #endif
 
 #if USE_STRONG_CANONICITY_A

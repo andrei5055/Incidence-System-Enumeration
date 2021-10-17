@@ -17,6 +17,25 @@ Class2Def(CPermutStorage);
 
 typedef CArray<uchar, uchar> CArrayOfCanonFlags;
 
+
+#define USING_FORMER_CANON_FLAG 0	// For now we are using t_formerCanon_solution as t_not_canon_solution
+#define HARD_REMOVE	1				// Remove solution instead of marking them as t_invalid_as_righ_part
+
+enum solutionType {
+	t_not_canon_solution   = 0,
+	t_canon_solution       = 1 << 0,
+#if USING_FORMER_CANON_FLAG
+	t_formerCanon_solution = 1 << 1,
+#endif
+#if !HARD_REMOVE
+	t_invalid_as_righ_part = 0xff,
+#endif
+};
+
+#if !USING_FORMER_CANON_FLAG
+#define t_formerCanon_solution   t_not_canon_solution
+#endif
+
 class CSolutionPerm : public CArraySolutionPerm
 {
 public:
@@ -51,13 +70,15 @@ public:
 	CK inline PERMUT_ELEMENT_TYPE nextSolutionIndex()			{ return ++m_nSolutionIndex; }
 	CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
 	CK inline auto allSolutionChecked()                         { return nextSolutionIndex() >= numSolutions(); }
-	CK S *newSolution();
-	CK S *copySolution(const InSysSolverPntr pSysSolver);
+	CK T *newSolution();
+	CK T *copySolution(const InSysSolverPntr pSysSolver);
 	CK CRowSolution *NextSolution(bool useCanonGroup = false);
-	void removeNoncanonicalSolutions(size_t startIndex) const;
-	size_t moveNoncanonicalSolutions(const S *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
-	CK inline bool isValidSolution(size_t idx) const			{ const uchar *pCanonFlags = solutionPerm()->canonFlags();
-																  return pCanonFlags ? *(pCanonFlags + idx) != 0xff : true; }
+	void removeNoncanonicalSolutions(size_t startIndex);
+	size_t moveNoncanonicalSolutions(const T *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
+#if !HARD_REMOVE
+	CK inline bool validSolution(size_t idx) const				{ const uchar *pCanonFlags = solutionPerm()->canonFlags();
+																  return pCanonFlags ? *(pCanonFlags + idx) != t_invalid_as_righ_part : true; }
+#endif
 	CK void InitSolutions(S size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL);
 	CK inline auto solutionLength() const						{ return m_Length; }
 	CK inline void setSolutionLength(T length)					{ m_Length = length; }
@@ -93,9 +114,9 @@ private:
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
 #endif
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }
-	size_t findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
+	size_t findSolution(const T *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline auto lenOrbitOfSolution() const						{ return m_nLenSolOrb; }
-	CK inline S *lastSolution() const							{ return (S *)currSolution() - solutionLength(); }
+	CK inline T *lastSolution() const							{ return (T *)currSolution() - solutionLength(); }
 #if USE_THREADS || USE_MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
 	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const;
@@ -121,7 +142,7 @@ FClass2(CRowSolution, void)::InitSolutions(S length, size_t nVect, CArrayOfVecto
 	setNumSolutions(nVect);
 }
 
-FClass2(CRowSolution, S *)::newSolution() {
+FClass2(CRowSolution, T *)::newSolution() {
 	const auto numSolution = solutionIndex() + 1;
 	if (this->GetSize() < numSolution * solutionLength())
 		this->IncreaseVectorSize(solutionLength());
@@ -141,7 +162,7 @@ FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 	return this;
 }
 
-FClass2(CRowSolution, S *)::copySolution(const InSysSolverPntr pSysSolver)
+FClass2(CRowSolution, T *)::copySolution(const InSysSolverPntr pSysSolver)
 {
 	auto pSolution = lastSolution();
 	if (!pSysSolver->isValidSolution(pSolution))

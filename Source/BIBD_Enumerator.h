@@ -42,7 +42,7 @@ protected:
 	CK virtual void resetFirstUnforcedRow()							{}
 	CK inline void setR(S val)										{ m_r = val; }
 	CK inline auto getR() const										{ return m_r; }
-	CK virtual bool check_X0_3(S nPart) const						{ return !nPart; }
+	CK virtual bool check_X0_3(T nPart) const						{ return !nPart; }
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;

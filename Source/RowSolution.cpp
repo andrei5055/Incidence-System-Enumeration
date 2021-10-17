@@ -40,32 +40,52 @@ int compareSolutions (const void *p1, const void *p2)
 }
 #endif
 
-FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex) const
+FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex)
 {
-	const auto *pSolPerm = solutionPerm();
-	auto *pCanonFlags = pSolPerm->canonFlags();
+#define HARD_REMOVE	1   // Remove solution instead of marking them as t_invalid_as_righ_part
+	auto *pCanonFlags = solutionPerm()->canonFlags();
 	// The forward or backward loop over all solutions isomorphic to the just tested solutions 
 	if (startIndex > 0) {
 		auto solIndex = startIndex;
+#if HARD_REMOVE
+		const auto iDst = startIndex;
+		while (*(pCanonFlags + ++solIndex) != t_canon_solution);
+		const size_t nElem = numSolutions() - solIndex;
+		moveOrbitSolution(solutionPerm()->GetData(), pCanonFlags, iDst, solIndex, nElem);
+		// Total number of sollutions and index of current should be adjusted
+		setNumSolutions(iDst + nElem);
+		setSolutionIndex(iDst - 1);
+#else
 		do {
-			*(pCanonFlags + solIndex) = 0xff;  // invalidate solution as a right part
+			*(pCanonFlags + solIndex) = t_invalid_as_righ_part;  // invalidate solution as a right part
 		} while (!*(pCanonFlags + ++solIndex));
-		*(pCanonFlags + solIndex) = 0xff;
+		*(pCanonFlags + solIndex) = t_invalid_as_righ_part;
+#endif
 	}
 	else {
 		auto solIndex = solutionIndex();
+#if HARD_REMOVE
+		const auto iSrc = solIndex + 1;
+		while (solIndex-- > 0 && *(pCanonFlags + solIndex) != t_canon_solution);
+		const size_t nElem = numSolutions() - iSrc;
+		moveOrbitSolution(solutionPerm()->GetData(), pCanonFlags, solIndex + 1, iSrc, nElem);
+		// Total number of sollutions and index of current should be adjusted
+		setNumSolutions(solIndex + nElem + 1);
+		setSolutionIndex(solIndex);
+#else
 		do {
-			*(pCanonFlags + solIndex) = 0xff;  // invalidate solution as a right part
+			*(pCanonFlags + solIndex) = t_invalid_as_righ_part;  // invalidate solution as a right part
 		} while (solIndex-- > 0 && !*(pCanonFlags + solIndex));
+#endif
 	}
 }
 
-FClass2(CRowSolution, size_t)::findSolution(const S *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const
+FClass2(CRowSolution, size_t)::findSolution(const T *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const
 {
 	const auto *pCanonFlags = pSolPerm->canonFlags();
 	const auto len = solutionLength() * sizeof(*pSolution);
 	while (++i < iMax && MEMCMP(pSolution, firstSolution() + pSolPerm->GetAt(i) * solutionLength(), len)) {
-		if (*(pCanonFlags + i) == 1) {
+		if (*(pCanonFlags + i) == t_canon_solution) {
 			if (lastCanonIdx == SIZE_MAX)
 				*pNextSolutionIdx = i;
 
@@ -76,19 +96,45 @@ FClass2(CRowSolution, size_t)::findSolution(const S *pSolution, size_t i, size_t
 	return i;
 }
 
-size_t findStartingIndex(size_t from, const uchar *pCanonFlags)
+static size_t findStartingIndex(size_t from, const uchar *pCanonFlags)
 {
 	while (from-- > 0 && !*(pCanonFlags + from));
 	return from;
 }
 
-size_t findCanonIndex(size_t idx, const uchar *pCanonFlags)
+static size_t findCanonIndex(size_t idx, const uchar *pCanonFlags)
 {
 	while (!*(pCanonFlags + idx)) idx++;
 	return idx;
 }
 
-FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage, size_t *pSolIdx)
+void moveOrbitSolution(PERMUT_ELEMENT_TYPE *pPerm, uchar *pCanonFlags, size_t iDst, size_t iSrc, size_t nElem, size_t len=0, size_t iDstNew=0)
+{
+	if (!len) {
+		// It is NOT necessary to store information addressed by the destination index.
+		memcpy(pPerm + iDst, pPerm + iSrc, nElem * sizeof(*pPerm));
+		memcpy(pCanonFlags + iDst, pCanonFlags + iSrc, nElem * sizeof(*pCanonFlags));
+		return;
+	}
+
+	// Allocate memory for temporay storage of information addressed by the destination index
+	PERMUT_ELEMENT_TYPE buffer[256], *pTmp = len <= countof(buffer) ? buffer : new PERMUT_ELEMENT_TYPE[len];
+
+	size_t length = len * sizeof(*pPerm);
+	memcpy(pTmp, pPerm + iDst, length);			// Moving the permutation part out of the way.
+	memcpy(pPerm + iDst, pPerm + iSrc, nElem * sizeof(*pPerm));
+	memcpy(pPerm + iDstNew, pTmp, length);       // Moving the permutation's part on its new plase
+
+	// Moving the canonical flags's parts
+	length = len * sizeof(pCanonFlags[0]);
+	memcpy(pTmp, pCanonFlags + iDst, length);
+	memcpy(pCanonFlags + iDst, pCanonFlags + iSrc, nElem * sizeof(*pCanonFlags));
+	memcpy(pCanonFlags + iDstNew, pTmp, length);
+	if (pTmp != buffer)
+		delete[] pTmp;
+}
+
+FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const T *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage, size_t *pSolIdx)
 {
 	// For improved solution find the canonical solution:
 	auto *pSolPerm = solutionPerm();
@@ -116,8 +162,8 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 				setLenOrbitOfSolution(curCanon - findStartingIndex(curCanon, pCanonFlags));
 				
 				// In that case startIndex is not define. At this point startIndex should be 0 and
-				//  solutionIndex() was not changed when we was here for thr first time
-				*(pCanonFlags + curCanon) = 0;
+				//  solutionIndex() was not changed when we was here for the first time
+				*(pCanonFlags + curCanon) = t_not_canon_solution;
 				startIndex = curCanon - lenOrbitOfSolution() + 1;
 			} else
 				curCanon = startIndex + lenOrbitOfSolution() - 1;
@@ -131,7 +177,11 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 		i = findSolution(pSolution, curCanon, numSolutions(), pSolPerm, lastCanonIdx, &nextSolutionIdx);
 	}
 
-	if (i < numSolutions() && pCanonFlags[i] != 0xff) {
+	if (i < numSolutions()
+#if !HARD_REMOVE
+		&& pCanonFlags[i] != t_invalid_as_righ_part
+#endif
+		) {
 		if (pSolutionStorage)
 			pSolutionStorage->push_back(firstSolution() + pSolPerm->GetAt(i) * solutionLength());
 
@@ -160,7 +210,7 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 				if (lastCanonIdx == curCanon) {
 					// Two consequitive orbits need to be merged
 #if PRINT_SOLUTIONS
-					*(pCanonFlags + curCanon) = 0;
+					*(pCanonFlags + curCanon) = t_formerCanon_solution;
 #endif
 					return startIndex;
 				}
@@ -173,23 +223,11 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
             from = findStartingIndex(curCanon, pCanonFlags);
 			len = curCanon - from++;
 
-			PERMUT_ELEMENT_TYPE buffer[256], *pTmp = buffer;
-			if (len > countof(buffer))
-				pTmp = new PERMUT_ELEMENT_TYPE[len];
-
+			*(pCanonFlags + curCanon) = t_formerCanon_solution;
 			startIndex = lastCanonIdx - len + 1;
-			lastCanonIdx -= curCanon++;
+			lastCanonIdx -= curCanon++;  // it's a number of elements to move
 
-			// Moving lastCanonIdx elements starting from curCanon
-			// Move the permutation's part
-			memcpy(pTmp, pPerm + from, len * sizeof(pPerm[0]));
-			memcpy(pPerm + from, pPerm + curCanon, lastCanonIdx * sizeof(pPerm[0]));
-			memcpy(pPerm + startIndex, pTmp, len * sizeof(pPerm[0]));
-			
-			// Move the canonical flags's part
-			memcpy(pCanonFlags + from, pCanonFlags + curCanon, lastCanonIdx * sizeof(pCanonFlags[0]));
-			memset(pCanonFlags + startIndex, 0, len * sizeof(pCanonFlags[0]));
-			
+			moveOrbitSolution(pPerm, pCanonFlags, from, curCanon, lastCanonIdx, len, startIndex);
 			if (firstCall)
 				setLenOrbitOfSolution(len);
 			else
@@ -200,12 +238,12 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 			if (pSolIdx && *pSolIdx >= curCanon  && *pSolIdx < curCanon + lastCanonIdx)
 				*pSolIdx -= len;  // adjust solution index
 
-			// Move current solution index to the solution which precedes next canonical one
+			// Move the index of the current solution to the solution that precedes the next canonical
 			if (changeSolutionIndex)
 				setSolutionIndex(nextSolutionIdx - len - 1);
-
-			if (pTmp != buffer)
-				delete[] pTmp;
+		}
+		else {
+			*(pCanonFlags + curCanon) = t_formerCanon_solution;
 		}
 	} else {
 		// New group for current solution and its group was not found OR
@@ -213,6 +251,8 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const S *pSolution, siz
 		// It means that it was removed (not costructed) on previous levels
 		// and we don't need to use this group
 		removeNoncanonicalSolutions(startIndex);
+//		void moveOrbitSolution(PERMUT_ELEMENT_TYPE* pPerm, uchar* pCanonFlags, size_t iDst, size_t iSrc, size_t nElem, size_t len, size_t iDstNew)
+
 		return (size_t)-1;
 	}
 
@@ -239,17 +279,23 @@ FClass2(CRowSolution, void)::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, co
 
 FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const
 {
-	memset(buffer, ' ', lenBuf);
+	uchar symb = ' ';
+	memset(buffer, symb, lenBuf);
 	const uchar *pCanonFlags = solutionPerm()->canonFlags();
 	if (!pCanonFlags)
 		return solIdx += lenBuf / 2;
 
 	for (size_t i = 0; i < lenBuf; i += 2, solIdx++) {
-		if (*(pCanonFlags + solIdx) == 1)
-			buffer[i + 1] = '!';
-		else
-		if (!isValidSolution(solIdx))
-			buffer[i + 1] = '-';
+		switch (*(pCanonFlags + solIdx)) {
+		case t_canon_solution:		 symb = '!'; break;
+#if USING_FORMER_CANON_FLAG
+		case t_formerCanon_solution: symb = '#'; break;
+#endif
+		default: if (isValidSolution(solIdx))
+					continue;
+				 symb = '-';
+		}
+		buffer[i + 1] = symb;
 	}
 
 	return solIdx;

@@ -26,13 +26,13 @@ protected:
 																{ return true; }
 	CK virtual CEquSystem *equSystem()							{ return NULL;  }
 	CK CColOrbit<S>** unforcedOrbits(T nRow, T iPart) const		{ return getUnforcedColOrbPntr(iPart) + shiftToUnforcedOrbit(nRow); }
-	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(S iPart) const {
-			return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
+	CK virtual CColOrbit<S> **getUnforcedColOrbPntr(T iPart) const {
+		return forcibleLambda(this->currentRowNumb(), iPart) != ELEMENT_MAX ? this->unforcedColOrbPntr(iPart) : NULL;
 	}
 	CK virtual T forcibleLambda(T nRow, T nPart) const			{ return *(forcibleLambdaPntr(nRow) + nPart); }
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const		{ return this->getInSys()->GetNumSet(idx); }
-	CK virtual bool check_X0_3(S nPart) const					{ return false; }
+	CK virtual bool check_X0_3(T nPart) const					{ return false; }
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -43,7 +43,7 @@ protected:
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, S idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();
-	CK virtual S MakeSystem(S numPart);
+	CK virtual T MakeSystem(T numPart);
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
 	CK void setVariableLimit(T nVar, T len, T nRowToBuild, bool checkX0_3, T weightDeficit);
 	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const		{ return true; }
@@ -111,13 +111,13 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 	return pSolutions;
 }
 
-FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
+FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 {
-	S nVar = 0;
+	T nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
-	S equationIdx = ELEMENT_MAX;
+	T equationIdx = ELEMENT_MAX;
 	// Number of equations corresponding only to the columns which ARE NOT forcibly constructed
-	S eqIdx = 0;
+	T eqIdx = 0;
 
 	auto pRowEquation = inSysRowEquation();
 
@@ -128,7 +128,7 @@ FClass2(C_InSysEnumerator, S)::MakeSystem(S numPart)
 	// When we are using the group of canonical matrix, we need to adjust previously constructed
 	// generators of the automorphism group on columns (because some of them could be forcibly constructed
 	int buffer[256], *pColGroupIdx;
-	S lenPermut = 0;
+	T lenPermut = 0;
 	if (this->useCanonGroup()) {
 		lenPermut = pPermStorage->lenPerm();
 		pColGroupIdx = lenPermut <= countof(buffer) ? buffer : new int[lenPermut];
@@ -306,9 +306,10 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 	const auto *pMaxVal = inSysRowEquation()->variableMaxValPntr();
 	bool readyToCheckSolution = false;
 	for (PERMUT_ELEMENT_TYPE j = 0; j <= lastRightPartIndex; j++) {
-		if (!pPrevRowSolution->isValidSolution(j))
+#if !HARD_REMOVE
+		if (!pPrevRowSolution->validSolution(j))
 			continue;
-
+#endif
 		const auto idx = pPerm ? *(pPerm + j) : j;
 		const auto pRightSide = rightPartFilter()->getRightPart(pFirstSol + idx * len, pMaxVal, len, pBuffer);
 		if (!pRightSide)
