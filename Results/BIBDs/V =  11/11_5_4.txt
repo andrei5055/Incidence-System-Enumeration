@@ -20,7 +20,7 @@ BIBD( 11,  22, 10,  5,  4)
     _______________________________________________________________________________
         Total:            4393            3737               3               2
 
-      4393 matrices constructed in  1.16
+      4393 matrices constructed in  1.11
       3737 matrices have no replicated blocks
       7424 matrices were fully constructed
 

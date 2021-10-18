@@ -1,0 +1,24 @@
+BIBD(  8,  14,  7,  4,  3)
+ 
+
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+            12               1               1               0               0
+            21               1               1               0               0
+            48               1               1               0               0
+          1344               1               1               1               1
+    _______________________________________________________________________________
+        Total:               4               4               1               1
+
+         4 matrices constructed in  9.50
+         4 matrices have no replicated blocks
+         4 matrices were fully constructed
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned int16"
+        20 threads launched on row 4 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
