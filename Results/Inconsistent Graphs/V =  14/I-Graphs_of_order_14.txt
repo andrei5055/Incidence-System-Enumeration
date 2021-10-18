@@ -1,29 +1,29 @@
 I-Graph( 14,  14,  3,  3, { 0, 1})
 
-         0 matrices constructed in  4.42
-     40743 matrices were fully constructed
+         0 matrices constructed in  0.03
+         2 matrices were fully constructed
 
 I-Graph(  7,  14,  4,  2, { 0, 2})   
          0 matrices constructed in  0.00
-         3 matrices were fully constructed
+         2 matrices were fully constructed
 
 I-Graph(  7,  14,  4,  2, { 0, 1})   
          0 matrices constructed in  0.00
-         2 matrices were fully constructed
+         0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 2})   
          0 matrices constructed in  0.00
-         1 matrix was fully constructed
+         0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  8.86
-         2 matrices were fully constructed
+         0 matrices constructed in  2.82
+         0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in 11.01
-       148 matrices were fully constructed
+         0 matrices constructed in  8.21
+         0 matrices were fully constructed
 
 I-Graph( 14,  14,  4,  4, { 0, 1})   
          0 matrices constructed in  0.01
@@ -32,7 +32,7 @@ I-Graph( 14,  14,  4,  4, { 0, 1})
 I-Graph( 14,  14,  5,  5, { 0, 2})
 
          0 matrices constructed in  0.00
-         1 matrix was fully constructed
+         0 matrices were fully constructed
 
 I-Graph(  7,  14,  6,  3, { 2})          
 <<<< Constructed Matrices: >>>> 
@@ -69,33 +69,7 @@ I-Graph( 14,  14,  6,  6, { 0, 3, 4})
          0 matrices were fully constructed
 
 I-Graph( 14,  14,  6,  6, { 0, 2, 3, 4})
-
-         0 matrices constructed in  5.50
-         0 matrices were fully constructed
-
-I-Graph( 14,  14,  6,  6, { 0, 2, 3, 4})
-
-         0 matrices constructed in  5.55
-         0 matrices were fully constructed
-
-I-Graph( 14,  14,  6,  6, { 0, 2, 4})   
-         0 matrices constructed in  0.00
-         0 matrices were fully constructed
-
-I-Graph( 14,  14,  6,  6, { 0, 2, 3})   
-         0 matrices constructed in  3.49
-         1 matrix was fully constructed
-
-I-Graph( 14,  14,  6,  6, { 2, 3})      
-         0 matrices constructed in  0.86
-         2 matrices were fully constructed
-
-I-Graph(  7,  14,  8,  4, { 4})   
-         0 matrices constructed in  0.00
-         1 matrix was fully constructed
-
-Using 64-bit program, Assembly flag: 0
-        15 threads launched on level 3 (not waiting to finish mode)
+      15 threads launched on level 7 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

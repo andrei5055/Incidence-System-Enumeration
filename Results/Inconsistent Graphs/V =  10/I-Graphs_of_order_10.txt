@@ -1,7 +1,7 @@
 I-Graph( 10,  10,  3,  3, { 0, 1})
 
-         0 matrices constructed in  0.02
-        17 matrices were fully constructed
+         0 matrices constructed in  0.01
+         1 matrix was fully constructed
 
 I-Graph(  5,  10,  4,  2, { 0, 2})   
          0 matrices constructed in  0.00
@@ -43,7 +43,7 @@ I-Graph( 10,  10,  4,  4, { 0, 2})
 
 I-Graph( 10,  10,  4,  4, { 0, 1, 2})
 
-         0 matrices constructed in  0.04
+         0 matrices constructed in  0.01
          1 matrix was fully constructed
 
 I-Graph(  5,  10,  6,  3, { 3})    
@@ -78,7 +78,7 @@ Orbits and generating permutations:
 
 I-Graph( 10,  10,  6,  6, { 3, 4})
 
-         0 matrices constructed in  0.32
+         0 matrices constructed in  0.14
          1 matrix was fully constructed
 
 Using 64-bit program, Assembly flag: 0
