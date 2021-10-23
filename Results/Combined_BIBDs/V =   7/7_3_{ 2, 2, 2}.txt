@@ -2,24 +2,24 @@ CBIBD(  7,  3, { 2, 2, 2})
 
         |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
     _______________________________________________________________________________
-             1            1865              25               0               0
-             2             124               4               0               0
-             3              99               2               0               0
-             4              38               0               0               0
+             1            1996              25               0               0
+             2             131               4               0               0
+             3             107               2               0               0
+             4              41               0               0               0
              6              10               1               0               0
-             8              12               0               0               0
+             8              13               0               0               0
             12               7               0               0               0
-            21               3               0               3               0
-            24               6               0               0               0
+            21               4               0               4               0
+            24               7               0               0               0
             42               1               1               1               1
             48               1               0               0               0
            168               1               0               1               0
     _______________________________________________________________________________
-        Total:            2167              33               5               1
+        Total:            2319              33               6               1
 
-      2167 matrices constructed in  1.36
+      2319 matrices constructed in  1.57
         33 matrices have no replicated blocks
-      8120 matrices were fully constructed
+      8711 matrices were fully constructed
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"

@@ -200,10 +200,10 @@ CanonicityChecker(void)::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bool 
 		if (rowPermut && stabilizerLengthAut() > idx)
 			updateGroupOrder();
 
-		setStabilizerLength(idx);
 		setStabilizerLengthAut(idx);
 	}
 
+	setStabilizerLength(idx);
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 

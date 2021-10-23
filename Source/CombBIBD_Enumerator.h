@@ -11,10 +11,12 @@ public:
 		const auto len = rowNumb() * numParts();
 		m_bSolutionsWereConstructed = new unsigned char[len];
 		memset(m_bSolutionsWereConstructed, 0, len);
+		m_pGroupOrders = NULL;
 	}
 	~CCombBIBD_Enumerator()	{
 		delete[] m_FirstPartSolutionIdx;
 		delete[] m_bSolutionsWereConstructed;
+		delete[] m_pGroupOrders;
 	}
 protected:
 	CK virtual const char* getObjName() const		{ return "CBIBD"; }
@@ -66,14 +68,23 @@ protected:
 		if (!lengths.GetSize())
 			return NULL;
 
+
 		updateCanonicityChecker(rowNumb(), colNumb());
-		return  new CGroupOnParts<T>(owner, lengths, 3);
+		auto pGroupOnParts = new CGroupOnParts<T>(owner, lengths, 3);
+		InitGroupOderStorage(pGroupOnParts);
+		return pGroupOnParts;
 	}
-	CK MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr);
+	CK virtual void InitGroupOderStorage(const CGroupOnParts<T> *pGroupOnParts) {
+		if (!m_pGroupOrders && pGroupOnParts)
+			m_pGroupOrders = new size_t [pGroupOnParts->numGroups()];
+	}
+	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster);
 private:
 	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
 	void CreateFirstRow(S* pFirstRow=NULL);
+
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
+	size_t *m_pGroupOrders;						// orders of group, acting on the parts with the same lambda
 };
 

@@ -47,7 +47,7 @@ public:
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
-	CC inline void setGroupOrder(uint val)			{ m_nGroupOrder = val; }
+	CC inline void setGroupOrder(size_t val)		{ m_nGroupOrder = val; }
 	CC inline T *permRow() const					{ return m_pPermutRow->elementPntr(); }
 	CC inline T *permCol() const					{ return m_pPermutCol->elementPntr(); }
 	CC inline auto permStorage(S nPart) const		{ return permStorage() + nPart; }
@@ -119,7 +119,7 @@ private:
 	T *m_pColIndex;
 	T *m_pImprovedSol;
 	const uint m_enumFlags;
-	uint m_nGroupOrder;
+	size_t m_nGroupOrder;
 	T m_nNumRow;
 	const S m_numParts;
 };
@@ -256,17 +256,16 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		T *permColumn = init(nRowMax, rowPermut, pOrbits, &permRows, usingGroupOnBlocks);
 
 		T nRow = ELEMENT_MAX;
+		if (check_trivial_row_perm) {
+			nRow = startingRowNumb;
+			goto try_permut;
+		}
 		while (true) {
-			if (check_trivial_row_perm) {
-				nRow = startingRowNumb;
-				goto try_permut;
-			}
+
 		next_permut:
 			nRow = next_permutation(permRows, pOrbits, nRow, lenStab);
 			if (nRow == ELEMENT_MAX || nRow < lenStabilizer())
 				break;
-
-			check_trivial_row_perm = false;
 
 		try_permut:
 			OUT_PERM(permRowStorage(), permRows, nRowMax);
@@ -397,13 +396,15 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				//#endif
 			}
 
-			addAutomorphism(permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
-			if (check_trivial_row_perm) {
-				check_trivial_row_perm = false;
-				nRow = ELEMENT_MAX;
+			if (!calcGroupOrder) {
+				// If we are here then it is possible to get the SAME matrix by some parmutation of parts and rows.
+				// So, we don't need to continue to do row permutatons, because it for some row permutation we would find 
+				// noncanonicity, we would find it earlier without doing permutation of parts.
+				break;
 			}
-			else
-				nRow = ELEMENT_MAX - 1;
+
+			addAutomorphism(permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
+			nRow = ELEMENT_MAX - 1;
 		}
 
 		if (rowPermut && calcGroupOrder)

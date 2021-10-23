@@ -3,21 +3,21 @@ CBIBD(  6,  3, { 4, 4, 4, 2})
         |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
     _______________________________________________________________________________
              1             917               0               0               0
-             2             111               0               0               0
-             3             496               0               0               0
+             2             119               0               0               0
+             3             497               0               0               0
              6              25               0               0               0
             12             154               0             154               0
             60              10               1              10               1
     _______________________________________________________________________________
-        Total:            1713               1             164               1
+        Total:            1722               1             164               1
 
-      1713 matrices constructed in  0.97
+      1722 matrices constructed in  1.03
          1 matrix has no replicated blocks
-      5574 matrices were fully constructed
+      5652 matrices were fully constructed
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 3 (not waiting to finish mode)
+        20 threads launched on row 3 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

@@ -63,15 +63,13 @@ FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
 	}
 }
 
-FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const CMatrixData<T, S> *pMatr)
+FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const EnumeratorPntr pMaster)
 {
-	if (!pMatr)
-		return NULL;
-
+	const auto pMatr = pMaster ? pMaster->matrix() : this->matrix();
 	MatrixDataPntr pSpareMatrix = new CMatrixData<T, S>();
 	pSpareMatrix->Init(pMatr->rowNumb(), pMatr->colNumb());
 	CreateFirstRow(pSpareMatrix->GetRow(0));
 	auto *pPartsInformation = pSpareMatrix->InitPartsInfo(this->numParts());
-	pPartsInformation->CopyPartInfo(this->matrix()->partsInfo());
+	pPartsInformation->CopyPartInfo(pMatr->partsInfo());
 	return pSpareMatrix;
 }

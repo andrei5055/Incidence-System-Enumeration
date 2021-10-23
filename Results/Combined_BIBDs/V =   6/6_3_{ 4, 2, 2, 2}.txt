@@ -15,7 +15,7 @@ CBIBD(  6,  3, { 4, 2, 2, 2})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 3 (not waiting to finish mode)
+        20 threads launched on row 3 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

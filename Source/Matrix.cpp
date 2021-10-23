@@ -44,7 +44,7 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Non-canonical ***");
 
 		if (pCanonCheck)
-			len = SNPRINTF(pTmp +=len, lenBuf-=len, "    |Aut(M)| = %6d:", pCanonCheck->groupOrder());
+			len = SNPRINTF(pTmp +=len, lenBuf-=len, "    |Aut(M)| = %6llu", pCanonCheck->groupOrder());
 
 		SNPRINTF(pTmp +=len, lenBuf-=len, "\n");
 	}

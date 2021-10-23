@@ -4,7 +4,7 @@ CBIBD(  7,  3, { 2, 2, 1})
     _______________________________________________________________________________
              1             413              24               0               0
              2              49               0               0               0
-             3              79               5               0               0
+             3              81               6               0               0
              4              29               0               0               0
              6               6               0               0               0
              8               7               0               0               0
@@ -13,15 +13,15 @@ CBIBD(  7,  3, { 2, 2, 1})
             24               7               0               0               0
            168               1               0               1               0
     _______________________________________________________________________________
-        Total:             605              30               6               1
+        Total:             607              31               6               1
 
-       605 matrices constructed in  0.12
-        30 matrices have no replicated blocks
-      1808 matrices were fully constructed
+       607 matrices constructed in  0.12
+        31 matrices have no replicated blocks
+      1809 matrices were fully constructed
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 2 (not waiting to finish mode)
+        20 threads launched on row 2 (not waiting to finish mode)
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

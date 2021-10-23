@@ -1,4 +1,4 @@
-CBIBD(  9,  3, { 2, 1})
+CBIBD(  9,  3, { 2, 1, 1, 1})
 
         |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
     _______________________________________________________________________________
@@ -18,7 +18,7 @@ CBIBD(  9,  3, { 2, 1})
     _______________________________________________________________________________
         Total:            7437            3005               8               1
 
-      7437 matrices constructed in  1.27
+      7437 matrices constructed in  9.12
       3005 matrices have no replicated blocks
      12630 matrices were fully constructed
 

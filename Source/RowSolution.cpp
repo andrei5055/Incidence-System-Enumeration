@@ -279,23 +279,22 @@ FClass2(CRowSolution, void)::printRow(FILE *file, PERMUT_ELEMENT_TYPE *pPerm, co
 
 FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const
 {
-	uchar symb = ' ';
-	memset(buffer, symb, lenBuf);
+	memset(buffer, ' ', lenBuf);
 	const uchar *pCanonFlags = solutionPerm()->canonFlags();
 	if (!pCanonFlags)
 		return solIdx += lenBuf / 2;
 
 	for (size_t i = 0; i < lenBuf; i += 2, solIdx++) {
 		switch (*(pCanonFlags + solIdx)) {
-		case t_canon_solution:		 symb = '!'; break;
+		case t_canon_solution:		 buffer[i + 1] = '!'; break;
 #if USING_FORMER_CANON_FLAG
-		case t_formerCanon_solution: symb = '#'; break;
+		case t_formerCanon_solution: buffer[i + 1] = '#'; break;
 #endif
-		default: if (isValidSolution(solIdx))
-					continue;
-				 symb = '-';
+#if !HARD_REMOVE
+		default: if (!isValidSolution(solIdx))
+					buffer[i + 1] = '-';
+#endif
 		}
-		buffer[i + 1] = symb;
 	}
 
 	return solIdx;

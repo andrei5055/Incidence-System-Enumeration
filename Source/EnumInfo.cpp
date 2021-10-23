@@ -136,7 +136,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 			  << "  Canon: " << nCanon 
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
 			  << "  Total: " << constrTotal()
-			  << "  RunTime: " << runTime << " min.                 ";
+			  << "  RunTime: " << runTime << " min.";
 	fflush(stdout);
 
 	// Adjust reportInt to report approx. 1 time per 60 seconds

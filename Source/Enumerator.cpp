@@ -283,7 +283,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	const auto firstNonfixedRow = firtstNonfixedRowNumber();
 	// Allocate memory for the orbits of two consecutive rows
-	S nRow, lenStab;
+	T nRow, lenStab;
 	RowSolutionPntr pRowSolution;
 	RowSolutionPntr pNextRowSolution;
 	InitRowSolutions(pMaster);
@@ -293,6 +293,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		lenStab = pMaster->stabiliserLengthExt();
 		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
 		pRowSolution = pMaster->rowStuff(nRow);
+		InitGroupOderStorage(pMaster->getGroupOnParts());
 		this->setOutFile(pMaster->outFile());
 		setX0_3(pMaster->getX0_3());
 		const auto firstUnforced = pMaster->firstUnforcedRow();
@@ -338,7 +339,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	// For multi-threaded version we need to test only one top level solution
 	const bool multiPartDesign = numParts() > 1;
 	const auto outInfo = t_saveRowToChange + t_saveRowPermutations;
-	const S nRowEnd = nRow ? nRow + 1 : 0;
+//	const T nRowEnd = 0;// nRow ? nRow + 1 : 0;
+	const T nRowEnd = nRow ? nRow + 1 : 0;
 
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 
@@ -346,13 +348,13 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
 	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
 	setGroupOnParts(pGroupOnParts);
-	MatrixDataPntr pSpareMatrix = CreateSpareMatrix(pGroupOnParts ? matrix() : NULL);
+	MatrixDataPntr pSpareMatrix = pGroupOnParts? CreateSpareMatrix(pMaster) : NULL;
 
-	S level, nPart;
+	T level, nPart;
 	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
 
 	// minimal index of the part, which will be changed on current row
-	S* firstPartIdx = new S[nRows];
+	T *firstPartIdx = new T[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
 	bool canonMatrix = false;
 

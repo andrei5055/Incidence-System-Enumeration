@@ -1,0 +1,29 @@
+CBIBD(  9,  3, { 1, 1, 1, 1})
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1           22610           22610               0               0
+             2              70              70               0               0
+             3              33              33               0               0
+             4               1               1               0               0
+             6               1               1               0               0
+             8               1               1               0               0
+             9               5               5               5               5
+            12               2               2               0               0
+            16               1               1               0               0
+            54               2               2               2               2
+           432               1               1               1               1
+    _______________________________________________________________________________
+        Total:           22727           22727               8               8
+
+     22727 matrices constructed in  1:53.27
+     22727 matrices have no replicated blocks
+     57475 matrices were fully constructed
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

@@ -473,9 +473,8 @@ public:
 		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize()/3), m_nMinRowNumb(minRow) {
 		m_pGroupHandles = new CGroupHandle<S>[numGroups()];
 		const auto lenMax = lenghts.GetSize();
-		size_t j = 0;
 		for (size_t i = 0; i < lenMax; i += 3)
-			m_pGroupHandles[j++].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i+1), lenghts.GetAt(i+2));
+			m_pGroupHandles[i/3].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i+1), lenghts.GetAt(i+2));
 	}
 	~CGroupOnParts()										{ delete[] m_pGroupHandles; }
 	inline const void* owner() const						{ return m_pOwner; }
@@ -495,7 +494,7 @@ Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 public:
 	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
-	CK inline RowSolutionPntr rowStuff(S nRow = 0, S iPart = 0) const	{ return m_pRow[nRow] + iPart; }
+	CK inline RowSolutionPntr rowStuff(T nRow = 0, T iPart = 0) const	{ return m_pRow[nRow] + iPart; }
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
@@ -515,13 +514,13 @@ public:
 protected:
 	CK virtual bool prepareToFindRowSolution()				{ return true; }
 	CK inline InSysPntr getInSys() const					{ return this->IS_enumerator()? (InSysPntr)(this->matrix()) : NULL; }
-	CK virtual void setX0_3(S value)						{}
-	CK inline CSimpleArray<S>* rowEquation(S idx = 0) const	{ return m_pRowEquation + idx; }
+	CK virtual void setX0_3(T value)						{}
+	CK inline CSimpleArray<S>* rowEquation(T idx = 0) const	{ return m_pRowEquation + idx; }
 	CK virtual bool checkSolutions(RowSolutionPntr p, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true) { return false;  /* not implemented */ }
 	CK inline void setRowEquation(CSimpleArray<S> *pntr)    { m_pRowEquation = pntr; }
-	CK inline S rowNumb() const								{ return this->matrix()->rowNumb(); }
-	CK inline void setCurrentNumPart(S val)					{ m_nCurrentNumPart = val; }
-	CK inline S currentNumPart() const						{ return m_nCurrentNumPart; }
+	CK inline auto rowNumb() const							{ return this->matrix()->rowNumb(); }
+	CK inline void setCurrentNumPart(T val)					{ m_nCurrentNumPart = val; }
+	CK inline auto currentNumPart() const					{ return m_nCurrentNumPart; }
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t len, const char *ext = NULL) const	{ return false; }
 	bool getMasterFileName(char *buffer, size_t lenBuffer, size_t *pLenName) const;
@@ -543,7 +542,8 @@ protected:
 		for (auto j = len; j--;)
 			pRow[j] = val;
 	}
-	CK virtual MatrixDataPntr CreateSpareMatrix(const MatrixDataPntr pMatr) { return NULL; }
+	CK virtual MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) { return NULL; }
+	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
@@ -608,7 +608,7 @@ private:
 	bool m_bUseCanogGroup;
 	designParam *m_pParam;
 	ColOrbPntr* m_pFirstColOrb;
-	S m_nCurrentNumPart;
+	T m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 	CGroupOnParts<T>* m_pGroupOnParts;
 
@@ -634,10 +634,7 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 FClass2(CEnumerator)::~CEnumerator() {
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
-	if (false && numParts() > 1) // Will not use for now  (search for this comment)
-		delete [] rowEquation();
-	else
-		delete rowEquation();
+	delete rowEquation();
 
 	auto* pGroupOnParts = getGroupOnParts();
 	if (pGroupOnParts && pGroupOnParts->owner() == this)

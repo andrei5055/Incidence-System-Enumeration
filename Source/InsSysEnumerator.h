@@ -59,7 +59,7 @@ private:
 	T m_x0_3;
 	T *m_pForsibleLambda;
 	T m_firstUnforcedRow;
-	CRightPartFilter<S> *m_pRightPartFilter;
+	CRightPartFilter<T> *m_pRightPartFilter;
 	const bool m_bNoReplBlock;
 };
 
@@ -70,20 +70,14 @@ FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumF
 	const auto nCol = pInSys->colNumb();
 	const auto tDesign = pInSys->GetT() > 2;
 	const auto numParts = this->numParts();
-	if (false && numParts > 1) { // Will not use for now  (search for this comment)
-		auto pRowEquation = new CInSysRowEquation<S>[numParts];
-		this->setRowEquation(pRowEquation);
-		for (S i = 0; i < numParts; i++)
-			pRowEquation[i].InitRowEquation(nCol, tDesign);
-	} else
-		this->setRowEquation(new CInSysRowEquation<S>(nCol, tDesign));
+	this->setRowEquation(new CInSysRowEquation<S>(nCol, tDesign));
 
 	setX0_3(nCol);
 
-	m_pRightPartFilter = new CRightPartFilter<S>(nCol);
+	m_pRightPartFilter = new CRightPartFilter<T>(nCol);
 	const auto nRow = pInSys->rowNumb();
 	setForcibleLambdaPntr(new T[nRow * numParts]);
-	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(T));
+	memset(forcibleLambdaPntr(), 0, nRow * numParts * sizeof(*forcibleLambdaPntr()));
 
 	setFirstUnforcedRow();
 }
