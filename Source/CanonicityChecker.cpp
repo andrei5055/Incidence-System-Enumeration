@@ -190,48 +190,23 @@ CanonicityChecker(T)::next_permutation(T *perm, const T *pOrbits, T idx, T lenSt
 	return i;
 }
 
-CanonicityChecker(void)::UpdateOrbits(const T *permut, T lenPerm, T *pOrb, bool rowPermut, bool calcGroupOrder)
+CanonicityChecker(void)::UpdateOrbits(const T *permut, const T lenPerm, T *pOrb, bool rowPermut, bool calcGroupOrder)
 {
-	T idx = 0;
-	while (idx == permut[idx])
-		idx++;
-
-	if (calcGroupOrder) {
-		if (rowPermut && stabilizerLengthAut() > idx)
-			updateGroupOrder();
-
-		setStabilizerLengthAut(idx);
-	}
-
-	setStabilizerLength(idx);
+	const T idx = udpdateStabLength(permut, lenPerm, pOrb, calcGroupOrder, rowPermut);
 	permStorage()->UpdateOrbits(permut, lenPerm, pOrb, idx);
 }
 
-CanonicityChecker(void)::addAutomorphism(const T *permRow, T *pOrbits, bool rowPermut, bool savePermut, bool calcGroupOrder)
+CanonicityChecker(void)::addAutomorphism(const T numRow, const T *permRow, T *pOrbits, bool rowPermut, bool savePermut, bool calcGroupOrder)
 {
-	UpdateOrbits(permRow, numRow(), pOrbits, rowPermut, calcGroupOrder);
+	UpdateOrbits(permRow, numRow, pOrbits, rowPermut, calcGroupOrder);
 	if (!rowPermut) {
 		if (permRowStorage())
-			permRowStorage()->savePermut(numRow(), permRow);
+			permRowStorage()->savePermut(numRow, permRow);
 	}
 	else {
 		if (savePermut)
-			permStorage()->savePermut(numRow(), permRow);
+			permStorage()->savePermut(numRow, permRow);
 	}
-}
-
-CanonicityChecker(void)::updateGroupOrder()
-{
-	T len = 1;
-	const auto *pOrb = orbits();
-	const auto i = stabilizerLengthAut();
-	auto idx = i;
-	while (++idx < numRow()) {
-		if (*(pOrb + idx) == i)
-			len++;
-	}
-
-	setGroupOrder(len * groupOrder());
 }
 
 #if USE_ASM <= 1   // We are not using Assembly OR we are using inline Assembly

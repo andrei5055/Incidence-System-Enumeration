@@ -38,7 +38,47 @@ struct TestCanonParams {
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
 };
 
-Class2Def(CCanonicityChecker) : public CRank {
+Class1Def(CGroupOrder) {
+public:
+	CC inline auto groupOrder() const { return m_nGroupOrder; }
+protected:
+	CC void updateGroupOrder(const S numRow, const S *pOrb) {
+		size_t len = 1;
+		auto idx = stabilizerLengthAut();
+		while (++idx < numRow) {
+			if (*(pOrb + idx) == stabilizerLengthAut())
+				len++;
+		}
+
+		setGroupOrder(len * groupOrder());
+	}
+	CC S udpdateStabLength(const S *permut, S lenPerm, const S *pOrb, bool calcOrder, bool rowPermut) {
+		S idx = 0;
+		while (idx == permut[idx])
+			idx++;
+
+		if (calcOrder) {
+			if (rowPermut && stabilizerLengthAut() > idx)
+				updateGroupOrder(lenPerm, pOrb);
+
+			setStabilizerLengthAut(idx);
+		}
+
+		setStabilizerLength(idx);
+		return idx;
+	}
+	CC inline void setStabilizerLength(S len)	{ m_nStabLength = len; }
+	CC inline auto stabilizerLength() const		{ return m_nStabLength; }
+	CC inline void setStabilizerLengthAut(S l)	{ m_nStabLengthAut = l; }
+	CC inline auto stabilizerLengthAut() const	{ return m_nStabLengthAut; }
+	CC inline void setGroupOrder(size_t val)	{ m_nGroupOrder = val; }
+private:
+	S m_nStabLength;
+	S m_nStabLengthAut;
+	size_t m_nGroupOrder;
+};
+
+Class2Def(CCanonicityChecker) : public CGroupOrder<T>, public CRank {
 public:
 	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
@@ -46,8 +86,6 @@ public:
 	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
-	CC inline auto groupOrder() const				{ return m_nGroupOrder; }
-	CC inline void setGroupOrder(size_t val)		{ m_nGroupOrder = val; }
 	CC inline T *permRow() const					{ return m_pPermutRow->elementPntr(); }
 	CC inline T *permCol() const					{ return m_pPermutCol->elementPntr(); }
 	CC inline auto permStorage(S nPart) const		{ return permStorage() + nPart; }
@@ -67,22 +105,17 @@ protected:
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline auto numRow() const					{ return m_nNumRow; }
 	CC void setStabiliserLengthExt(T len)			{ m_nStabExtern = len; }
-	CC inline T numParts() const					{ return m_numParts; }
+	CC inline auto numParts() const					{ return m_numParts; }
 	CC virtual T lenStabilizer() const				{ return 0; }
 	CK inline auto shiftToUnforcedOrbit(T nRow) const { return m_pShift[nRow]; }
 private:
 	CC T *init(T nRow, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
-	CC void addAutomorphism(const T *pRowPerm, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
+	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
-	CC inline void setStabilizerLength(T len)		{ m_nStabLength = len; }
-	CC inline auto stabilizerLength() const			{ return m_nStabLength; }
-	CC inline void setStabilizerLengthAut(T l)		{ m_nStabLengthAut = l; }
-	CC inline auto stabilizerLengthAut() const		{ return m_nStabLengthAut; }
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
 	CC inline auto numCol() const					{ return static_cast<T>(m_pPermutCol->numElement()); }
 #define orbits()	m_pObits[0][0] 
-	CC void updateGroupOrder();
 	CC inline auto colNumbStorage() const			{ return m_nColNumbStorage; }
 	CC inline auto counter() const					{ return m_pCounter; }
 	CC inline void setColIndex(T *p)				{ m_pColIndex = p; }
@@ -95,7 +128,7 @@ private:
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
 		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize);
-	CC void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
+	CC void UpdateOrbits(const T *permut, const T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -107,8 +140,6 @@ private:
 #endif
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
-	T m_nStabLength;
-	T m_nStabLengthAut;
 	CPermut *m_pPermutRow;
 	CPermut *m_pPermutCol;
 	CPermut* m_pPermutSparse;
@@ -119,9 +150,8 @@ private:
 	T *m_pColIndex;
 	T *m_pImprovedSol;
 	const uint m_enumFlags;
-	size_t m_nGroupOrder;
 	T m_nNumRow;
-	const S m_numParts;
+	const T m_numParts;
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, S numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
@@ -397,18 +427,18 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			}
 
 			if (!calcGroupOrder) {
-				// If we are here then it is possible to get the SAME matrix by some parmutation of parts and rows.
-				// So, we don't need to continue to do row permutatons, because it for some row permutation we would find 
-				// noncanonicity, we would find it earlier without doing permutation of parts.
+				// If we are here then it is possible to get the SAME matrix by some permutation of its parts and rows
+				// So we don't need to continue try different permutations of rows, because if for some permutation of
+				// the rows we would find non-canonicity, we would find it earlier without doing permutation of parts.
 				break;
 			}
 
-			addAutomorphism(permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
+			addAutomorphism(nRowMax, permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
 			nRow = ELEMENT_MAX - 1;
 		}
 
 		if (rowPermut && calcGroupOrder)
-			updateGroupOrder();
+			updateGroupOrder(nRowMax, pOrbits);
 
 		if (!retVal || !pGroupOnParts || !pGroupOnParts->useGroupOnParts(nRowMax))
 			break;    // We don't have to test on groups of blocks
