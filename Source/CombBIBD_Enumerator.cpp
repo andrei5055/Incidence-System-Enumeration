@@ -73,3 +73,39 @@ FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const Enum
 	pPartsInformation->CopyPartInfo(pMatr->partsInfo());
 	return pSpareMatrix;
 }
+
+FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const CanonicityCheckerPntr owner) {
+	auto lanbdaSet = paramSet(t_lSet);
+	auto jMax = lanbdaSet->GetSize() - 1;
+	CVector<T> lengths;
+	T prevLambda = 0;
+	uint count;
+	uint factorial;
+	for (int j = 0; j <= jMax; j++) {
+		const auto lambda = lanbdaSet->GetAt(j);
+		if (prevLambda == lambda) {
+			factorial *= (++count);
+			if (j < jMax)
+				continue;
+			j++;
+		}
+
+		if (prevLambda) {
+			if (factorial > 1) {
+				lengths.AddElement(j - count); 	// index of the first BIBD with the same lambda
+				lengths.AddElement(count);		// number of BIBDs with the same lambda
+				lengths.AddElement(factorial);  // group order
+			}
+		}
+		prevLambda = lambda;
+		factorial = count = 1;
+	}
+	if (!lengths.GetSize())
+		return NULL;
+
+
+	updateCanonicityChecker(rowNumb(), colNumb());
+	auto pGroupOnParts = new CGroupOnParts<T>(owner, lengths, 3);
+	InitGroupOderStorage(pGroupOnParts);
+	return pGroupOnParts;
+}

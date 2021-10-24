@@ -19,7 +19,7 @@ void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo)
 	const auto nElem = pGroupInfo->GetSize();
 	for (auto i = pGroupInfo->GetStartIdx(); i < nElem; i++) {
 		const auto *pOrderInfo = pGroupInfo->GetAt(i);
-		auto *pInfo = addGroupOrder(pOrderInfo->groupOrder(), pOrderInfo->numMatrices(), pOrderInfo->numSimpleMatrices());
+		auto *pInfo = addGroupOrder(pOrderInfo->groupOrder(), 1, pOrderInfo->numMatrices(), pOrderInfo->numSimpleMatrices());
 		pInfo->addMatrixTrans(pOrderInfo->numMatrOfType(t_transitive), pOrderInfo->numMatrOfType(t_simpleTrans));
 	}
 }
@@ -29,7 +29,7 @@ void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem
 	size_t i = pOrderInfoBase->numMatrices() ? 0 : 1;
 	for (; i < nElem; i++) {
 		const COrderInfo *pOrderInfo = pOrderInfoBase + i;
-		COrderInfo *pInfo = addGroupOrder(pOrderInfo->groupOrder(), pOrderInfo->numMatrices(), pOrderInfo->numSimpleMatrices());
+		COrderInfo *pInfo = addGroupOrder(pOrderInfo->groupOrder(), 1, pOrderInfo->numMatrices(), pOrderInfo->numSimpleMatrices());
 		pInfo->addMatrixTrans(pOrderInfo->numMatrOfType(t_transitive), pOrderInfo->numMatrOfType(t_simpleTrans));
 	}
 }
@@ -55,7 +55,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 
 	COrderInfo total(0, 0);
 	for (; i < iMax; i++) {
-		const COrderInfo *pInfo = GetAt(i);
+		const auto *pInfo = GetAt(i);
 		total.addMatrix(pInfo);
 		len = SPRINTF(buffer, SHIFT"%10zd", pInfo->groupOrder());
 		pInfo->outNumbInfo(buffer, countof(buffer) - len, len);

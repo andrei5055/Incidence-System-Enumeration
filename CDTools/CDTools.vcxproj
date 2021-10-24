@@ -171,6 +171,7 @@
     <ClInclude Include="..\Source\EnumInfo.h" />
     <ClInclude Include="..\Source\Equation.h" />
     <ClInclude Include="..\Source\EquSystem.h" />
+    <ClInclude Include="..\Source\GroupOnParts.h" />
     <ClInclude Include="..\Source\GroupsInfo.h" />
     <ClInclude Include="..\Source\IG_Enumerator.h" />
     <ClInclude Include="..\Source\InsSysEnumerator.h" />

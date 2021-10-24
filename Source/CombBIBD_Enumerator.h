@@ -11,80 +11,54 @@ public:
 		const auto len = rowNumb() * numParts();
 		m_bSolutionsWereConstructed = new unsigned char[len];
 		memset(m_bSolutionsWereConstructed, 0, len);
-		m_pGroupOrders = NULL;
 	}
 	~CCombBIBD_Enumerator()	{
 		delete[] m_FirstPartSolutionIdx;
 		delete[] m_bSolutionsWereConstructed;
 		delete[] m_pGroupOrders;
+		delete m_pGroupOrder;
 	}
 protected:
-	CK virtual const char* getObjName() const		{ return "CBIBD"; }
-	virtual const char* getTopLevelDirName() const	{ return "Combined_BIBDs"; }
-	CK virtual RowSolutionPntr setFirstRowSolutions();
-	CK virtual void CreateForcedRows();
-	CK virtual T firtstNonfixedRowNumber() const	{ return 3; }
-	CC virtual T lenStabilizer() const              { return 1; }
-	CK virtual VectorPntr paramSet(t_numbSetType idx) const	{ return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); }
-	CK virtual size_t numLambdas()					{ return 1; }
-	CK virtual T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const { return pLambdaSet->GetAt(numPart); }
+	CK const char*  getObjName() const override			{ return "CBIBD"; }
+	CK const char* getTopLevelDirName() const override 	{ return "Combined_BIBDs"; }
+	CK RowSolutionPntr setFirstRowSolutions() override;
+	CK void CreateForcedRows() override;
+	CK T firtstNonfixedRowNumber() const override		{ return 3; }
+	CC T lenStabilizer() const override					{ return 1; }
+	CK VectorPntr paramSet(t_numbSetType idx) const override { 
+		return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); 
+	}
+	CK size_t numLambdas() const override				{ return 1; }
+	CK T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const override { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
-	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const;
-	CK virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
-	virtual void getEnumerationObjectKey(char* pKey, int len) const;
-	virtual char* getEnumerationObjectKeyA(char* pKey, int len) const;
-	virtual const char* getObjNameFormat() const	{ return "  %14s:      "; }
+	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const override;
+	CK int getJobTitleInfo(char *buffer, int lenBuffer) const override;
+	void getEnumerationObjectKey(char* pKey, int len) const override;
+	char* getEnumerationObjectKeyA(char* pKey, int len) const override;
+	const char* getObjNameFormat() const override		{ return "  %14s:      "; }
 #endif
-	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const {
+	CK bool checkForcibleLambda(T fLambda, T nRows, T numPart) const override {
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}
-	CK virtual CGroupOnParts<T> * makeGroupOnParts(const EnumeratorPntr owner) {
-		auto lanbdaSet = paramSet(t_lSet);
-		auto jMax = lanbdaSet->GetSize() - 1;
-		CVector<T> lengths;
-		T prevLambda = 0;
-		uint count;
-		uint factorial;
-		for (int j = 0; j <= jMax; j++) {
-			const auto lambda = lanbdaSet->GetAt(j);
-			if (prevLambda == lambda) {
-				factorial *= (++count);
-				if (j < jMax)
-					continue;
-				j++;
-			}
-
-			if (prevLambda) {
-				if (factorial > 1) {
-					lengths.AddElement(j-count); 	// index of the first BIBD with the same lambda
-					lengths.AddElement(count);		// number of BIBDs with the same lambda
-					lengths.AddElement(factorial);  // group order
-				}
-			}
-			prevLambda = lambda;
-			factorial = count = 1;
-		}
-		if (!lengths.GetSize())
-			return NULL;
-
-
-		updateCanonicityChecker(rowNumb(), colNumb());
-		auto pGroupOnParts = new CGroupOnParts<T>(owner, lengths, 3);
-		InitGroupOderStorage(pGroupOnParts);
-		return pGroupOnParts;
-	}
-	CK virtual void InitGroupOderStorage(const CGroupOnParts<T> *pGroupOnParts) {
+	CK CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker* owner) override;
+	CK void InitGroupOderStorage(const CGroupOnParts<T> *pGroupOnParts)  override {
+		if (!m_pGroupOrder && pGroupOnParts)
+			m_pGroupOrder = new CGroupOrder<T>;
 		if (!m_pGroupOrders && pGroupOnParts)
 			m_pGroupOrders = new size_t [pGroupOnParts->numGroups()];
 	}
 	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster);
+	CK void resetGroupOrder() override					{ m_pGroupOrder->setGroupOrder(1); }
+	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }
+	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
 private:
-	CK virtual void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx)	{ *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
-	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const	{ return *(m_FirstPartSolutionIdx + nRow); }
-	void CreateFirstRow(S* pFirstRow=NULL);
+	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
+	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
+	CK void CreateFirstRow(S *pFirstRow=NULL);
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
-	size_t *m_pGroupOrders;						// orders of group, acting on the parts with the same lambda
+	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
+	CGroupOrder<T> *m_pGroupOrder = NULL;
 };
 

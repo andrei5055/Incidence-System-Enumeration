@@ -350,10 +350,14 @@ int main(int argc, char * argv[])
 	uint outType = t_Summary;
 	string *pLine = new string();
 	string &line = *pLine;
-	while (getline(infile, line)) {	// For all the lines of the file
+	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
-		if (!line.size() || line[0] == ';' || line[0] == '/' && line[1] == '/')
-			continue;				// Skip line if it is a comment OR empty
+		size_t pos = line.find("//");
+		if (pos != string::npos)
+			line = line.substr(0, pos);	// deleting a comment at the end of a line
+
+		if (!line.size() || line[0] == ';')
+			continue;					// Skip line if it is a comment OR empty
 
 		transform(line.begin(), line.end(), line.begin(), ::toupper);
 
@@ -378,7 +382,7 @@ int main(int argc, char * argv[])
 		if (line.find("END_JOB") != string::npos)
 			break;
 
-		size_t pos = find(line, "WORKING_DIR");
+		pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
 			newWorkDir = line.substr(pos + 1);
 			std::replace(newWorkDir.begin(), newWorkDir.end(), '\\', '/');

@@ -37,6 +37,10 @@ private:
 	ulonglong m_nCounter[t_design_type_total];
 };
 
+#define NUMB_INFO_TYPE	  			CNumbInfo *
+#define NUMB_INFO_ACCESS_TYPE		NUMB_INFO_TYPE
+typedef CArray<NUMB_INFO_TYPE, NUMB_INFO_ACCESS_TYPE> CArrayNumbInfo;
+
 class COrderInfo : public CNumbInfo
 {
 public:
@@ -67,7 +71,7 @@ public:
 			delete GetAt(i);
 	}
 
-	CC COrderInfo *addGroupOrder(size_t groupOrder, ulonglong numb = 1, ulonglong numSimple = 0) {
+	CC COrderInfo *addGroupOrder(size_t groupOrder, size_t extraGroupOrder=1, ulonglong numb=1, ulonglong numSimple=0) {
 		if (groupOrder == 1) {
 			GetAt(0)->addMatrix(numb, numSimple);
 			return GetAt(0);

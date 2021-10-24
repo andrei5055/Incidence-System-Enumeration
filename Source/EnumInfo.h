@@ -93,7 +93,7 @@ public:
 		if (simpleMatrFlag)
 			incNumbSimpleDesign();
 
-		COrderInfo *pOrderInfo = addGroupOrder(groupOrder, 1, simpleMatrFlag);
+		COrderInfo *pOrderInfo = addGroupOrder(groupOrder, 1, 1, simpleMatrFlag);
 		if (groupIsTransitive)
 			pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
 	}

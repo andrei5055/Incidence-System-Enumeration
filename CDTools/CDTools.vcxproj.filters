@@ -99,6 +99,9 @@
     <ClInclude Include="..\Source\CombBIBD_Enumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Source\GroupOnParts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\CanonicityChecker.cpp">

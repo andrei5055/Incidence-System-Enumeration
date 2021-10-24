@@ -51,7 +51,7 @@ private:
 																	setFirstUnforcedRow(0);
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
-	CK virtual size_t numLambdas()								{ return this->paramSet(t_lSet)->GetSize(); }
+	CK virtual size_t numLambdas() const						{ return this->paramSet(t_lSet)->GetSize(); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(T *p)					{ m_pForsibleLambda = p; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
