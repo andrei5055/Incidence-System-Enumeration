@@ -442,8 +442,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 								flag = false;
 							}
 							else {
-								const bool groupIsTransitive = matrFlags & t_transitiveGroup || this->groupIsTransitive();
-								pEnumInfo->updateConstrCounters(matrFlags, this->groupOrder(), groupIsTransitive);
+								pEnumInfo->updateConstrCounters(matrFlags, this);
 #if !CONSTR_ON_GPU
 								if (this->printMatrix(pParam)) {
 									mtx.lock();

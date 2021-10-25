@@ -279,6 +279,30 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 	designInfo()->rewindLen = outLen;
 }
 
+FClass2(CEnumInfo, void)::updateConstrCounters(int matrFlags, const EnumeratorPntr pEnum) {
+	incrConstrCanonical();
+	const ulonglong simpleMatrFlag = matrFlags & t_noReplicatedBlock ? 1 : 0;
+	if (simpleMatrFlag)
+		incNumbSimpleDesign();
+
+	auto *pOrderInfo = addGroupOrder(pEnum->groupOrder(), pEnum->extraGroupOrder()->groupOrder(), 1, simpleMatrFlag);
+	if (matrFlags & t_transitiveGroup || pEnum->groupIsTransitive())
+		pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
+}
+
+FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem) {
+	// Recalculating counters by the group order info
+	updateGroupInfo(pOrderInfo, nElem);
+
+	COrderInfo total;
+	calcCountersTotal(&total);
+	init();
+	resetNumbInfo(1);
+	const ulonglong nSimple = total.numMatrOfType(t_simple);
+	addMatrix(total.numMatrOfType(t_canonical), nSimple);
+	incNumbSimpleDesign(nSimple);
+}
+
 FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 {
 	Class2(CEnumInfo)::updateEnumInfo(pInfo);

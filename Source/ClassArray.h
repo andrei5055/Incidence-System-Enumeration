@@ -49,8 +49,8 @@ public:
 	CK void Copy(const CClassArray& src);
 	
 	// overloaded operator helpers
-	CK TYPE operator[](int nIndex) const			{ return GetAt(nIndex); }
-	CK TYPE& operator[](int nIndex)					{ return ElementAt(nIndex); }
+	CK TYPE operator[](size_t nIndex) const			{ return GetAt(nIndex); }
+	CK TYPE& operator[](size_t nIndex)				{ return ElementAt(nIndex); }
 	
 	// Operations that move elements around
 	CC void InsertAt(size_t nIndex, ARG_TYPE newElement, int nCount = 1);

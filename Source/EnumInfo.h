@@ -1,5 +1,6 @@
 #pragma once
 #include <time.h>
+//#include "DataTypes.h"
 #include "GroupsInfo.h"
 
 class CTimerInfo
@@ -61,6 +62,7 @@ typedef enum {
 } t_MatrixFlags;
 
 Class2Def(CThreadEnumerator);
+Class2Def(CEnumerator);
 
 Class2Def(CEnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
@@ -87,39 +89,19 @@ public:
 	virtual void updateEnumInfo(const CEnumInfo * pInfo);
 	CC virtual void setNoReplBlockFlag(bool val)			{}
 	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
-	CC void updateConstrCounters(int matrFlag, size_t groupOrder, bool groupIsTransitive) {
-		incrConstrCanonical();
-		const ulonglong simpleMatrFlag = matrFlag & t_noReplicatedBlock ? 1 : 0;
-		if (simpleMatrFlag)
-			incNumbSimpleDesign();
-
-		COrderInfo *pOrderInfo = addGroupOrder(groupOrder, 1, 1, simpleMatrFlag);
-		if (groupIsTransitive)
-			pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
-	}
-	void RecalcCountersByGroupOrders(const COrderInfo *pOrderInfo, size_t nElem) {
-		// Recalculating counters by the group order info
-		updateGroupInfo(pOrderInfo, nElem);
-
-		COrderInfo total;
-		calcCountersTotal(&total);
-		init();
-		resetNumbInfo(1);
-		const ulonglong nSimple = total.numMatrOfType(t_simple);
-		addMatrix(total.numMatrOfType(t_canonical), nSimple);
-		incNumbSimpleDesign(nSimple);
-	}
+	CC void updateConstrCounters(int matrFlag, const EnumeratorPntr pEnum);
+	void RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem);
 	void setReportFileName(const char *pntr);
 	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL);
 	void outEnumAdditionalInfo(FILE **pOutFile) const;
 	size_t convertTime(float time, char *buffer, size_t lenBuf, bool alignment = true) const;
-	CK void setResType(t_resType resType)					{ m_nResType = resType; }
-	CC void resetEnumInfo()									{ init(); resetGroupsInfo(); }
+	CK inline void setResType(t_resType resType)			{ m_nResType = resType; }
+	CC inline void resetEnumInfo()							{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
 	void outEnumInformation(FILE **pOutFile, bool printMTlevel = true) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 protected:
-	t_resType getResType() const							{ return m_nResType; }
+	inline t_resType getResType() const						{ return m_nResType; }
 private:
 	static double stringToTime(char *pTime);
 	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_canonical); }

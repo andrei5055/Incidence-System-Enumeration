@@ -40,7 +40,7 @@ struct TestCanonParams {
 
 Class1Def(CGroupOrder) {
 public:
-	CC inline auto groupOrder() const			{ return m_nGroupOrder; }
+	CC inline auto groupOrder() const			{ return this? m_nGroupOrder : 1; }
 	CC inline void setGroupOrder(size_t val)	{ m_nGroupOrder = val; }
 protected:
 	CC void updateGroupOrder(const S numRow, const S *pOrb) {
