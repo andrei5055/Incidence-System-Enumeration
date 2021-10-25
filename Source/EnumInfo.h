@@ -74,9 +74,8 @@ public:
 	}
 	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
-	#define constrCanonical()	numMatrices()
+	#define constrCanonical()	numMatrOfType(t_canonical)
 	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_totalConstr); }
-	#define constrTotal()		numMatrOfType(t_totalConstr)
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
 #if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL);
@@ -90,7 +89,9 @@ public:
 	CC virtual void setNoReplBlockFlag(bool val)			{}
 	CC virtual bool constructedAllNoReplBlockMatrix() const	{ return false; }
 	CC void updateConstrCounters(int matrFlag, const EnumeratorPntr pEnum);
+#if CANON_ON_GPU
 	void RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem);
+#endif
 	void setReportFileName(const char *pntr);
 	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL);
 	void outEnumAdditionalInfo(FILE **pOutFile) const;

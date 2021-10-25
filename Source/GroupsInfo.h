@@ -16,8 +16,6 @@ public:
 	CC CNumbInfo()												{ resetNumbInfo(); }
 	CC ~CNumbInfo()												{}
 	CK inline ulonglong numMatrOfType(t_design_type t)	const	{ return m_nCounter[t]; }
-#define numMatrices()		numMatrOfType(t_canonical)
-#define numSimpleMatrices() numMatrOfType(t_simple)
 	inline void setNumMatrOfType(ulonglong val, t_design_type t){ m_nCounter[t] = val; }
 	CC inline void addMatrix(ulonglong numb, ulonglong nSimple)	{
 		addMatrOfType(numb, t_canonical);
@@ -28,7 +26,7 @@ public:
 		addMatrOfType(nSimple, t_simpleTrans);
 	}
 
-	void addMatrix(const CNumbInfo *pNumbInfo);
+	void addMatrices(const CNumbInfo *pNumbInfo);
 	void outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const;
 	CC inline void resetNumbInfo(int idx = 0)					{ memset(m_nCounter + idx, 0, sizeof(m_nCounter) - idx * sizeof(m_nCounter[0])); }
 protected:
@@ -69,12 +67,20 @@ public:
 	CC inline void resetNumbInfo(int idx = 0)					{ m_cNumbInfo[0]->resetNumbInfo(idx); }
 	CK inline ulonglong numMatrOfType(t_design_type t)	const	{ return m_cNumbInfo[0]->numMatrOfType(t); }
 	CC inline void addMatrixTrans(ulonglong n, ulonglong nS)	{ m_cNumbInfo[0]->addMatrixTrans(n, nS); }
-	inline void addMatrix(const COrderInfo *pOrderInfo)			{ m_cNumbInfo[0]->addMatrix(pOrderInfo->getNumInfoPtr()); }
+#if CANON_ON_GPU
+	// Andrei (10/25/2021) Following function was NOT tested after COrderInfo refactoring
+	inline void addMatrix(const COrderInfo *pOrderInfo)			{
+		m_cNumbInfo[0]->addMatrices(pOrderInfo->getNumInfoPtr());
+	}
+#endif
 	inline CNumbInfo *getNumInfoPtr() const						{ return m_cNumbInfo[0]; }
 	inline void outNumbInfo(char* buffer, const size_t lenBuf, size_t poz) const {
 		m_cNumbInfo[0]->outNumbInfo(buffer, lenBuf, poz);
 	}
 	COrderNumb* GetByKey(size_t extraOrder) const				{ return m_cNumbInfo[0]; }
+	inline size_t numOrderNumbers() const						{ return m_cNumbInfo.GetSize(); }
+	COrderNumb* getOrderNumbers(size_t idx) const				{ return m_cNumbInfo[idx]; }
+	CNumbInfo *getCombinedNumbInfo() const						{ return m_cNumbInfo[0]; }
 private:
 	size_t m_groupOrder;
 	COrderNumbArray m_cNumbInfo;
@@ -99,21 +105,20 @@ public:
 			delete GetAt(i);
 	}
 
-	CC COrderInfo/*COrderNumb*/ * addGroupOrder(size_t groupOrder, size_t extraGroupOrder = 1, ulonglong numb = 1, ulonglong numSimple = 0) {
+	CC COrderNumb *addGroupOrder(size_t groupOrder, size_t extraGroupOrder = 1, ulonglong numb = 1, ulonglong numSimple = 0) {
 		if (groupOrder == 1) {
 			GetAt(0)->addMatrix(extraGroupOrder, numb, numSimple);
-			return GetAt(0); // ->GetByKey(extraGroupOrder);
+			return GetAt(0)->GetByKey(extraGroupOrder);
 		}
 
 		size_t left = 1;
 		size_t right = GetSize() - left;
 		while (left <= right) {
-			const size_t i = (right + left) >> 1;
-
-			const size_t grOrder = GetAt(i)->groupOrder();
+			const auto i = (right + left) >> 1;
+			const auto grOrder = GetAt(i)->groupOrder();
 			if (grOrder == groupOrder) {
 				GetAt(i)->addMatrix(extraGroupOrder, numb, numSimple);
-				return GetAt(i); // ->GetByKey(extraGroupOrder);
+				return GetAt(i)->GetByKey(extraGroupOrder);
 			}
 
 			if (grOrder < groupOrder)
@@ -122,9 +127,9 @@ public:
 				right = i - 1;
 		}
 
-		COrderInfo *pOrderInfo = new COrderInfo(groupOrder, extraGroupOrder, numb, numSimple);
+		auto *pOrderInfo = new COrderInfo(groupOrder, extraGroupOrder, numb, numSimple);
 		InsertAt(left, pOrderInfo);
-		return pOrderInfo; // pOrderInfo->GetByKey(extraGroupOrder);
+		return pOrderInfo->GetByKey(extraGroupOrder);
 	}
 	CC void resetGroupsInfo() {
 		for (size_t i = GetSize(); i--;)
@@ -134,7 +139,7 @@ public:
 	void printGroupInfo(FILE *file) const;
 	void calcCountersTotal(COrderInfo *pTotal);
 	CK void updateGroupInfo(const CGroupsInfo *pGroupInfo);
-	auto GetStartIdx() const				{ return GetAt(0)->numMatrices() ? 0 : 1; }
+	inline auto GetStartIdx() const				{ return GetAt(0)->numMatrOfType(t_canonical) ? 0 : 1; }
 protected:
 	CK void updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem);
 };

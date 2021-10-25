@@ -73,7 +73,7 @@ FClass2(CEnumInfo, bool)::compareTime(char *pTime1, char *pTime2)
 FClass2(CEnumInfo, void)::updateEnumInfo(const CEnumInfo *pInfo)
 {
 	incrConstrCanonical(pInfo->constrCanonical());
-	incrConstrTotal(pInfo->constrTotal());
+	incrConstrTotal(pInfo->numMatrOfType(t_totalConstr));
 }
 
 FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
@@ -135,7 +135,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	std::cout << '\r' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ")
 			  << "  Canon: " << nCanon 
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
-			  << "  Total: " << constrTotal()
+			  << "  Total: " << numMatrOfType(t_totalConstr)
 			  << "  RunTime: " << runTime << " min.";
 	fflush(stdout);
 
@@ -158,7 +158,7 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 	if (nThread >= 1) {
 		// Save already collected information 
 		const ulonglong nCanon = constrCanonical();
-		const ulonglong nTotal = constrTotal();
+		const ulonglong nTotal = numMatrOfType(t_totalConstr);
 		const ulonglong nrbTotal = numbSimpleDesign();
 		CGroupsInfo groupsInfo;
 		groupsInfo.updateGroupInfo(this);
@@ -211,7 +211,8 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 		outString(buff, outFile);
 	}
 
-	SPRINTF(buff, "%10llu matri%s fully constructed\n", constrTotal(), constrTotal() == 1 ? "x was" : "ces were");
+	const auto nTotal = numMatrOfType(t_totalConstr);
+	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
 	outEnumInformation(pOutFile);
@@ -226,7 +227,8 @@ FClass2(CEnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
 		return;
 
 	char buff[256];
-	SPRINTF(buff, "%10llu matri%s fully constructed\n", constrTotal(), constrTotal() == 1 ? "x was" : "ces were");
+	const auto nTotal = numMatrOfType(t_totalConstr);
+	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
 	outEnumInformation(pOutFile);
@@ -290,6 +292,7 @@ FClass2(CEnumInfo, void)::updateConstrCounters(int matrFlags, const EnumeratorPn
 		pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
 }
 
+#if CANON_ON_GPU
 FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem) {
 	// Recalculating counters by the group order info
 	updateGroupInfo(pOrderInfo, nElem);
@@ -302,6 +305,7 @@ FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderIn
 	addMatrix(total.numMatrOfType(t_canonical), nSimple);
 	incNumbSimpleDesign(nSimple);
 }
+#endif
 
 FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 {
@@ -313,7 +317,7 @@ FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 {
 	size_t len = SNPRINTF(buffer, lenBuffer, "%s       %9llu       %9llu",
 						   this->strToScreen(), this->constrCanonical(), numbSimpleDesign());
-	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->constrTotal());
+	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->numMatrOfType(t_totalConstr));
 	len += this->convertTime(this->runTime(), buffer + len, lenBuffer - len);
 
 	// Prepare the comments regarding the results
