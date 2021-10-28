@@ -14,6 +14,37 @@ void CNumbInfo::outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const
 	SNPRINTF(buffer + poz, lenBuf - poz, "\n");
 }
 
+COrderNumb *COrderInfo::GetByKey(size_t groupOrder) {
+	size_t left = 0;
+	if (groupOrder == 1) {
+		if (m_cNumbInfo.GetAt(0)->groupOrder() == 1)
+			return m_cNumbInfo.GetAt(0);
+	}
+	else {
+		size_t right = m_cNumbInfo.GetSize() - 1;
+		while (left <= right) {
+			const auto i = (right + left) >> 1;
+			const auto grOrder = m_cNumbInfo.GetAt(i)->groupOrder();
+			if (grOrder == groupOrder) {
+				return m_cNumbInfo.GetAt(i);
+			}
+
+			if (grOrder < groupOrder)
+				left = i + 1;
+			else {
+				if (i)
+					right = i - 1;
+				else
+					break;  // index cannot be negative
+			}
+		}
+	}
+
+	auto *pOrderInfo = new COrderNumb(groupOrder);
+	m_cNumbInfo.InsertAt(left, pOrderInfo);
+	return pOrderInfo;
+}
+
 void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo)
 {
 	const auto nElem = pGroupInfo->GetSize();
@@ -50,6 +81,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 	size_t maxLen = 0;
 	for (; i < iMax; i++) {  // Loop over the orders of the groups
 		const auto* pInfo = GetAt(i);
+		const auto a = pInfo->groupOrder();
 		for (size_t j = 0; j < pInfo->numOrderNumbers(); j++) {
 			const auto* p = pInfo->getOrderNumbers(j);
 			if (p->groupOrder() <= 1)
@@ -80,26 +112,31 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 	strcpy_s(line + len, countof(line) - len, "\n");
 	outString(line, file);
 
+	const auto lenToCount = maxLen + SPRINTF(buffer, SHIFT"%10zd", (size_t)1);
 	COrderInfo total(0, 1, 0);
 	auto *pCombinedNumbInfo = total.getCombinedNumbInfo();
 	for (i = GetStartIdx(); i < iMax; i++) {
 		const auto *pInfo = GetAt(i);
-		for (size_t j = 0; j < pInfo->numOrderNumbers(); j++) {
+		// For i == 0, first element, which corresponds to the group of order 1
+		// of the COrderNumbArray  could be empty
+		size_t j = i || pInfo->numMatrOfType(t_canonical) > 0? 0 : 1;
+		for (; j < pInfo->numOrderNumbers(); j++) {
 			const auto *p = pInfo->getOrderNumbers(j);
 			pCombinedNumbInfo->addMatrices(p);
 			len = SPRINTF(buffer, SHIFT"%10zd", pInfo->groupOrder());
 			if (maxLen) {
-				if (p->groupOrder() <= 1) {
-					memset(buffer + len, ' ', maxLen);
-					len += maxLen;
-				} else
+				if (p->groupOrder() > 1)
 					len += SNPRINTF(buffer + len, countof(buffer) - len, "*%zd", p->groupOrder());
+
+				if (len < lenToCount) {
+					memset(buffer + len, ' ', lenToCount - len);
+					len = lenToCount;
+				}
 			}
 
-			pInfo->outNumbInfo(buffer, countof(buffer) - len, len);
+			p->outNumbInfo(buffer, countof(buffer) - len, len);
+			outString(buffer, file);
 		}
-
-		outString(buffer, file);
 	}
 
 	outString(line, file);
@@ -108,7 +145,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 		memset(buffer + len, ' ', maxLen);
 		len += maxLen;
 	}
-	total.outNumbInfo(buffer, countof(buffer) - len, len);
+	total.getOrderNumbers()->outNumbInfo(buffer, countof(buffer) - len, len);
 	outString(buffer, file);
 }
 
