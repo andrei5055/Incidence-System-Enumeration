@@ -166,20 +166,23 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 		// When we are not waiting for all threads to finish on rowMaster() level, 
 		// we need to reconstruct the information regarding master's column orbits here 
 		// because it could be changed when master will continue its calculation
+		ColOrbPntr pColOrb;
+		for (S iPart = 0; iPart < numParts; iPart++) {
+			for (S i = 0; i < rowMaster(); i++) {
+				const auto* pOrbIni = pMaster->colOrbitsIni(iPart)[i];
+				const auto* pOrb = pMaster->colOrbits(iPart)[i];
+				m_ppColOrbIni[iPart][i]->clone(pOrbIni);
+				pColOrb = m_ppColOrb[iPart][i] = (ColOrbPntr)((char*)m_ppColOrb[iPart][i] + ((char*)pOrb - (char*)pOrbIni));
+				pColOrb->clone(pOrb);
 
-		for (size_t i = 0; i < rowMaster(); i++) {
-			m_ppColOrbIni[0][i]->clone(pMaster->colOrbitsIni()[i]);
-			const size_t idx = ((char *)pMaster->colOrbits()[i] - (char *)pMaster->colOrbitsIni()[i]) / lenColOrbitElement;
-			if (idx)
-				m_ppColOrb[0][i] = (ColOrbPntr)((char *)m_ppColOrb[0][i] + idx * lenColOrbitElement);
+				const size_t idx = i * maxElement;
+				for (int j = 0; j < maxElement; j++) {
+					const auto* pUnforcedOrb = pMaster->unforcedColOrbPntr(iPart)[idx+j];
+					if (!pUnforcedOrb)
+						continue;
 
-			m_ppColOrb[0][i]->clone(pMaster->colOrbits()[i]);
-			for (int j = 0; j < maxElement; j++) {
-				const size_t idx = i * maxElement + j;
-				if (pMaster->unforcedColOrbPntr()[idx]) {
-					const auto shift = (char *)pMaster->unforcedColOrbPntr()[idx] - (char *)pMaster->colOrbitsIni()[i];
-					unforcedColOrbPntr()[idx] = (ColOrbPntr)((char *)colOrbitsIni()[i] + shift);
-					unforcedColOrbPntr()[idx]->clone(pMaster->unforcedColOrbPntr()[idx]);
+					pColOrb = unforcedColOrbPntr(iPart)[idx+j] = (ColOrbPntr)((char*)colOrbitsIni(iPart)[i] + ((char*)pUnforcedOrb - (char*)pOrbIni));
+					pColOrb->clone(pUnforcedOrb);
 				}
 			}
 		}

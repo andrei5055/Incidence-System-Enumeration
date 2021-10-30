@@ -452,7 +452,7 @@ protected:
 	CK virtual bool fileExists(const char *path, bool file = true) const;
 	CK virtual bool createNewFile(const char *fName) const	{ return true; }
 	CK virtual bool SeekLogFile() const						{ return false; }
-	void rowSetFragm(T *pRow, T val, size_t len) const {
+	void rowSetFragm(S *pRow, S val, size_t len) const {
 		for (auto j = len; j--;)
 			pRow[j] = val;
 	}
@@ -489,6 +489,7 @@ private:
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
+
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
 #endif

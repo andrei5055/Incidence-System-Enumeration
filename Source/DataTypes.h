@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define TEST						false // true   // Test mode
+#define TEST					  false //true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -17,7 +17,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					(TEST? 0 : 15)
+#define USE_THREADS					(TEST? 0 : 15)	// default numer if thread used, If NOT 0, it can be chanaged by THREAD_NUMBER
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0

@@ -227,7 +227,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const auto lenBuffer = countof(buff);
 	const auto threadNumb = pParam->threadNumb;
 	// We will not launch separate thread, when threadNumb is equal to 1
-	const int mt_level = threadNumb > 1? pParam->mt_level : INT_MAX;
+	const int mt_level = threadNumb >= 1? pParam->mt_level : INT_MAX;
 
 	size_t lenName = 0;
 	bool knownResults = false;
@@ -292,6 +292,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	if (threadFlag) {
 		lenStab = pMaster->stabiliserLengthExt();
 		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
+		if (pMaster->getGroupOnParts())
+			updateCanonicityChecker(rowNumb(), colNumb());
+
 		pRowSolution = pMaster->rowStuff(nRow);
 		InitGroupOderStorage(pMaster->getGroupOnParts());
 		this->setOutFile(pMaster->outFile());
@@ -299,7 +302,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		const auto firstUnforced = pMaster->firstUnforcedRow();
 		if (firstUnforced > 0) {
 			setFirstUnforcedRow(firstUnforced);
-			memcpy(forcibleLambdaPntr() + firstUnforced, pMaster->forcibleLambdaPntr() + firstUnforced, (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr()));
+
+			// Unforced lambda's are stored one by one for all parts and rows
+			const auto lenght = numParts() * (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr());
+			const auto from = firstUnforced * numParts();
+			memcpy(forcibleLambdaPntr() + from, pMaster->forcibleLambdaPntr() + from, lenght);
 		}
 	} else {
 		lenStab = nRow = firstNonfixedRow - 2;
@@ -309,7 +316,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		pEnumInfo->startClock();
 
 #if USE_THREADS_ENUM 
-		pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
+		if (pParam->threadNumb)
+			pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
 		CMatrixData<TDATA_TYPES>::ResetCounter();
 	#if USE_POOL
 		// Create an asio::io_service and a thread_group (through pool in essence)
@@ -339,8 +347,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	// For multi-threaded version we need to test only one top level solution
 	const bool multiPartDesign = numParts() > 1;
 	const auto outInfo = t_saveRowToChange + t_saveRowPermutations;
-//	const T nRowEnd = 0;// nRow ? nRow + 1 : 0;
-	const T nRowEnd = nRow ? nRow + 1 : 0;
+	const auto nRowEnd = nRow ? nRow + 1 : 0;
 
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
 
@@ -363,7 +370,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
-		if (!nRowEnd && nRow == mt_level) {
+		if (pThreadEnum && nRow == mt_level) {
 			// We are in master enumerator
 			while (pRowSolution) {
 				(pThreadEnum+thrIdx)->setupThreadForBIBD(this, nRow, thrIdx);
@@ -715,7 +722,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	delete[] firstPartIdx;
 
 #if USE_THREADS_ENUM && !WAIT_THREADS
-	if (!threadFlag)
+	if (pThreadEnum)
 		threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, pParam->threadNumb);
 #endif
 
@@ -943,8 +950,8 @@ FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 	while (i-- > nRow)
 		m_pRow[i] = pSolutions + nParts * (i - nRow);
 
-	if (nRow) 
-		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nParts * nRow * sizeof(*rowStuffPntr()));
+	if (pMaster) // Just in case, copying pointers to the solutions from master
+		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nRow * sizeof(*rowStuffPntr()));
 }
 
 FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const

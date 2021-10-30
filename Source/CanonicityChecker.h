@@ -229,7 +229,7 @@ CanonicityChecker()::~CCanonicityChecker()
 
 CanonicityChecker(void)::updateCanonicityChecker(T rowNumb, T colNumb)
 {
-	// When we use automorphism on parts, we need two copies aech opf the following
+	// When we use automorphism on parts, we need two copies each of the following
 	m_pPermutSparse = new CPermut[2];
 	m_pPermutSparse[0].Init(rowNumb, new T[rowNumb]);
 	m_pPermutSparse[1].Init(rowNumb, new T[colNumb]);

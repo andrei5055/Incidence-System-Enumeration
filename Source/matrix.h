@@ -244,17 +244,20 @@ public:
 	CK C_tDesign(int t, int v, int k, int lambda);
 	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), Class2(C_BIBD)(pMaster, nRow) {}
 	CK ~C_tDesign()											{}
-	CK inline S getT() const								{ return m_t; }
-	CK inline S lambda() const								{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
+	CK inline auto getT() const								{ return m_t; }
+	CK inline auto lambda() const							{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
 private:
-	const S m_t;
+	const T m_t;
 };
 
 Class2Def(CCombinedBIBD) : public Class2(C_BIBD)
 {
 public:
 	CK CCombinedBIBD(int v, int k, const std::vector<uint>& lambda);
-	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {}
+	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {
+		auto *pPartsInformation = InitPartsInfo(pMaster->numParts());
+		pPartsInformation->CopyPartInfo(pMaster->partsInfo());
+	}
 	CK ~CCombinedBIBD()										{ if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(t_numbSetType idx) const	{ return paramSets()[idx]; }
