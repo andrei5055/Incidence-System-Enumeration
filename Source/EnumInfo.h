@@ -74,7 +74,6 @@ public:
 	}
 	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
-	#define constrCanonical()	numMatrOfType(t_canonical)
 	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_totalConstr); }
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
 #if !CONSTR_ON_GPU

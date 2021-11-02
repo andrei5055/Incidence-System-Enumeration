@@ -144,5 +144,7 @@ public:
 	inline auto GetStartIdx() const				{ return GetAt(0)->nonEmptyInfo()? 0 : 1; }
 protected:
 	CK void updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem);
+private:
+	void addGroupOrders(const COrderInfo* pOrderInfo);
 };
 

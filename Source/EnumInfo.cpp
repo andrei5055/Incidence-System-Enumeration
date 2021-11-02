@@ -72,7 +72,7 @@ FClass2(CEnumInfo, bool)::compareTime(char *pTime1, char *pTime2)
 
 FClass2(CEnumInfo, void)::updateEnumInfo(const CEnumInfo *pInfo)
 {
-	incrConstrCanonical(pInfo->constrCanonical());
+	incrConstrCanonical(pInfo->numMatrOfType(t_canonical));
 	incrConstrTotal(pInfo->numMatrOfType(t_totalConstr));
 }
 
@@ -93,7 +93,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
 		return;
 
-	const ulonglong nCanon = constrCanonical();
+	const ulonglong nCanon = numMatrOfType(t_canonical);
 	const ulonglong *pTestNumber;
 	bool reportNeeded = false;
 	clock_t currClock = clock();
@@ -157,7 +157,7 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 {
 	if (nThread >= 1) {
 		// Save already collected information 
-		const ulonglong nCanon = constrCanonical();
+		const ulonglong nCanon = numMatrOfType(t_canonical);
 		const ulonglong nTotal = numMatrOfType(t_totalConstr);
 		const ulonglong nrbTotal = numbSimpleDesign();
 		CGroupsInfo groupsInfo;
@@ -198,7 +198,7 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	if (!(m_pParam->outType & t_Summary))
 		return;
 
-	const ulonglong nConstrMatr = constrCanonical();
+	const ulonglong nConstrMatr = numMatrOfType(t_canonical);
 	char buff[256];
 	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
 	const size_t len = strlen(buff);
@@ -316,7 +316,7 @@ FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 {
 	size_t len = SNPRINTF(buffer, lenBuffer, "%s       %9llu       %9llu",
-						   this->strToScreen(), this->constrCanonical(), numbSimpleDesign());
+						   this->strToScreen(), this->numMatrOfType(t_canonical), numbSimpleDesign());
 	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->numMatrOfType(t_totalConstr));
 	len += this->convertTime(this->runTime(), buffer + len, lenBuffer - len);
 

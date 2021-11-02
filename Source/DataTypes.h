@@ -17,7 +17,7 @@
 #define CK
 #endif
 #else
-#define USE_THREADS					(TEST? 0 : 15)	// default numer if thread used, If NOT 0, it can be chanaged by THREAD_NUMBER
+#define USE_THREADS					15 //(TEST? 0 : 15)	// default numer if thread used, If NOT 0, it can be chanaged by THREAD_NUMBER
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
@@ -389,7 +389,7 @@ extern int ccc;
 #if CHECK_CONSTRUCTED
 	#define START_NUMBER         9
 	#define END_NUMBER			91
-	#define CHECK_CONSTR(x, y)    enumInfo()->constrCanonical() >= x && enumInfo()->constrCanonical() <= y
+	#define CHECK_CONSTR(x, y)    enumInfo()->numMatrOfType(t_canonical) >= x && enumInfo()->numMatrOfType(t_canonical) <= y
 #else
 #define CHECK_CONSTR(x, y)		true
 #endif
@@ -403,7 +403,7 @@ extern int ccc;
     #define OUTPUT_SOLUTION(x,...)
 #endif
 
-#define OUT_MATRIX(x, y, z, w, v, canon)		{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->constrCanonical()+1, canon);  MUTEX_UNLOCK(out_mutex); }
+#define OUT_MATRIX(x, y, z, w, v, canon)		{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->numMatrOfType(t_canonical)+1, canon);  MUTEX_UNLOCK(out_mutex); }
 #if PRINT_CURRENT_MATRIX
 	#define OUTPUT_MATRIX(x, y, z, v, canon)	if (MAKE_OUTPUT()) \
 													OUT_MATRIX(x, y, z, ++ccc, v, canon)

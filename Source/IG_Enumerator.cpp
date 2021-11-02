@@ -158,7 +158,7 @@ FClass2(CIG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matrix
 
 	if (retVal && this->checkProperty(t_printTransposedMatrix)) {
 		// Printing of the transposed matrix
-		transpMatr.printOut(this->outFile(), nCols, pEnumInfo->constrCanonical() + 1, &canonChecker);
+		transpMatr.printOut(this->outFile(), nCols, pEnumInfo->numMatrOfType(t_canonical) + 1, &canonChecker);
 	}
 
 	return retVal;

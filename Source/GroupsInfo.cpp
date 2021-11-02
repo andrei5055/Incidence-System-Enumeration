@@ -45,28 +45,27 @@ COrderNumb *COrderInfo::GetByKey(size_t groupOrder) {
 	return pOrderInfo;
 }
 
-void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo)
-{
-	const auto nElem = pGroupInfo->GetSize();
-	for (auto i = pGroupInfo->GetStartIdx(); i < nElem; i++) {
-		const auto *pOrderInfo = pGroupInfo->GetAt(i);
-		const auto numCanons = pOrderInfo->numMatrOfType(t_canonical);
-		const auto numSimple = pOrderInfo->numMatrOfType(t_simple);
-		auto *pInfo = addGroupOrder(pOrderInfo->groupOrder(), 1, numCanons, numSimple);
-		pInfo->addMatrixTrans(pOrderInfo->numMatrOfType(t_transitive), pOrderInfo->numMatrOfType(t_simpleTrans));
+void CGroupsInfo::addGroupOrders(const COrderInfo *pOrderInfo) {
+	const auto groupOrder = pOrderInfo->groupOrder();
+	for (size_t j = 0; j < pOrderInfo->numOrderNumbers(); j++) {
+		const auto* p = pOrderInfo->getOrderNumbers(j);
+		const auto numCanons = p->numMatrOfType(t_canonical);
+		const auto numSimple = p->numMatrOfType(t_simple);
+		auto* pInfo = addGroupOrder(groupOrder, p->groupOrder(), numCanons, numSimple);
+		pInfo->addMatrixTrans(p->numMatrOfType(t_transitive), p->numMatrOfType(t_simpleTrans));
 	}
 }
 
-void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem)
-{
+void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo) {
+	const auto nElem = pGroupInfo->GetSize();
+	for (auto i = pGroupInfo->GetStartIdx(); i < nElem; i++)
+		addGroupOrders(pGroupInfo->GetAt(i));
+}
+
+void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem) {
 	size_t i = pOrderInfoBase->numMatrOfType(t_canonical) ? 0 : 1;
-	for (; i < nElem; i++) {
-		const COrderInfo *pOrderInfo = pOrderInfoBase + i;
-		const auto numCanons = pOrderInfo->numMatrOfType(t_canonical);
-		const auto numSimple = pOrderInfo->numMatrOfType(t_simple);
-		auto *pInfo = addGroupOrder(pOrderInfo->groupOrder(), 1, numCanons, numSimple);
-		pInfo->addMatrixTrans(pOrderInfo->numMatrOfType(t_transitive), pOrderInfo->numMatrOfType(t_simpleTrans));
-	}
+	for (; i < nElem; i++)
+		addGroupOrders(pOrderInfoBase + i);
 }
 
 void CGroupsInfo::printGroupInfo(FILE *file) const

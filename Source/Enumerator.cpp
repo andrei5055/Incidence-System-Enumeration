@@ -361,7 +361,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
 
 	// minimal index of the part, which will be changed on current row
-	T *firstPartIdx = new T[nRows];
+	auto *firstPartIdx = new T[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
 	bool canonMatrix = false;
 
@@ -370,7 +370,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
-		if (pThreadEnum && nRow == mt_level) {
+		const bool usingThreads = pThreadEnum && nRow == mt_level;
+		if (usingThreads) {
 			// We are in master enumerator
 			while (pRowSolution) {
 				(pThreadEnum+thrIdx)->setupThreadForBIBD(this, nRow, thrIdx);
@@ -423,6 +424,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			pEnumInfo->reportProgress(pThreadEnum, threadNumb);
 #endif
 		} else {
+#else
+			const bool usingThreads = false;
 #endif
 			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
@@ -461,7 +464,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #if USE_THREADS
 									pMatrix->printOut(this->outFile(), nRow, 0, this);
 #else
-									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->constrCanonical(), this);
+									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->numMatrOfType(t_canonical), this);
 #endif
 									mtx.unlock();
 								}
@@ -561,9 +564,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 					OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
 				} else {
-					if (pMaster)
-						break;
-
 					if (multiPartDesign) {
 						// When solution for the first part is not canonical, we don't have
 						// to check all combinations of solutions for remaining parts
@@ -598,40 +598,42 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #endif
 		if (multiPartDesign) {
 			// We enumerate the multi-part designs
+			if (usingThreads) {
+				// We just finished with all solutions tested by the threads.
+				rowStuff(nRow)->restoreSolutionIndex();
+			} else
 			if (!pRowSolution) {
 				if (iFirstPartIdx) {
-					T lastPartIdx = firstPartIdx[nRow - 1];
-					// We can reach this point by two different paths:
-					// (a) matrix is NOT canonical OR
-					// (b) matrix was canonical, but solution for one of the parts was not found
-					// When we do have (b), but firstPartIdx[nRow - 1] == 0, we should proceed as in case (a)
-#define NEW 1
-#if NEW
-					nRow--;
-#endif
+					// We can reach this point by three different paths:
+					// 1. We are not using threads AND
+					//   (a) matrix is NOT canonical OR
+					//   (b) matrix was canonical, but solution for one of the parts was not found
+					// 2. We are using threads AND we are done with next rows.
+					// When we do have (1.b), but firstPartIdx[nRow] == 0, we should proceed as in case (1.a)
+					--nRow;
+					auto lastPartIdx = usingThreads? numParts()-1 : firstPartIdx[nRow];
 					bool check_all_solution = !canonMatrix;
 					if (canonMatrix) {
-#if NEW
 						// When there is no solution for some part, the indices
 						// for all remaining parts are equal to 0
 						pRowSolution = rowStuff(nRow);
 						while (lastPartIdx && (pRowSolution + lastPartIdx)->allSolutionChecked())
-							(pRowSolution+ lastPartIdx--)->setSolutionIndex(0);
+							(pRowSolution + lastPartIdx--)->setSolutionIndex(0);
 
 						if (lastPartIdx) {
 							firstPartIdx[nRow] = lastPartIdx;
 							this->setCurrentRowNumb(nRow);
+							if (usingThreads) {
+								// We need to restart the whole process on the threads for next row
+								rowStuff(nRow + 1)->restoreSolutionIndex();
+							}
 							continue;
 						}
-#endif
+
 						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
 							this->resetUnforcedColOrb(iFirstPartIdx);
 					}
 
-#if NEW == 0
-					if (!canonMatrix || !lastPartIdx)
-						nRow--;
-#endif
 					iFirstPartIdx = numParts() - 1;
 					while (true) {
 						pRowSolution = rowStuff(nRow, iFirstPartIdx);
@@ -671,7 +673,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				const auto nRowNext = nRow;
 				this->reset(nRow, resetSolutions);
 				// we need to go to previous row
-				if (nRow-- <= nRowEnd)
+				if (nRow-- < nRowEnd)
 					break;
 
 				if (pNextRowSolution)

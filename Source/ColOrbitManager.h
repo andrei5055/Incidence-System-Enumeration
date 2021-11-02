@@ -176,7 +176,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 				pColOrb->clone(pOrb);
 
 				const size_t idx = i * maxElement;
-				for (int j = 0; j < maxElement; j++) {
+				for (int j = maxElement; j--;) {
 					const auto* pUnforcedOrb = pMaster->unforcedColOrbPntr(iPart)[idx+j];
 					if (!pUnforcedOrb)
 						continue;
