@@ -145,7 +145,7 @@ FClass2(CBIBD_Enumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, co
 
 FClass2(CBIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
-	int lambdaSetSize = 0;
+	size_t lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
 	len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
 
@@ -170,7 +170,7 @@ FClass2(CBIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) con
 	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %3" _FRMT", %2" _FRMT", %2" _FRMT", ", getObjName(), v, b, b * k / v, k);
 }
 
-FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet, char* buf, size_t lenBuffer, int* pLambdaSetSize) const
+FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet, char* buf, size_t lenBuffer, size_t *pLambdaSetSize) const
 {
 	const auto lambdaNumb = lambdaSet->GetSize();
 	if (pLambdaSetSize)

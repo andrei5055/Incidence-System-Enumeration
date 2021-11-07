@@ -3,7 +3,7 @@
 template class CCombBIBD_Enumerator<TDATA_TYPES>;
 
 #if !CONSTR_ON_GPU
-FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, int *pLambdaSetSize) const {
+FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, size_t *pLambdaSetSize) const {
 	return addLambdaInform(paramSet(t_lSet), buf, lenBuffer, pLambdaSetSize);
 }
 
@@ -76,7 +76,7 @@ FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const Enum
 
 FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const CanonicityCheckerPntr owner) {
 	auto lanbdaSet = paramSet(t_lSet);
-	auto jMax = lanbdaSet->GetSize() - 1;
+	const int jMax = lanbdaSet->GetSize() - 1;
 	CVector<T> lengths;
 	T prevLambda = 0;
 	uint count;

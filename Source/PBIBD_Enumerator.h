@@ -12,7 +12,7 @@ protected:
 	CK size_t findLambda(size_t lambdaCur) const;
 	CK virtual void ReportLamdaProblem(S i, S j, S lambda) const;
 	CK const char *getObjName() const override					{ return "PBIBD"; }
-	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int *pLambdaSetSize = NULL) const {
+	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const {
 		return addLambdaInform(this->getInSys()->GetNumSet(t_lSet), buffer, lenBuffer, pLambdaSetSize);
 	}
 };

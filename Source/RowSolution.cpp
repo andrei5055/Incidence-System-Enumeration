@@ -40,9 +40,7 @@ int compareSolutions (const void *p1, const void *p2)
 }
 #endif
 
-FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex)
-{
-#define HARD_REMOVE	1   // Remove solution instead of marking them as t_invalid_as_righ_part
+FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex) {
 	auto *pCanonFlags = solutionPerm()->canonFlags();
 	// The forward or backward loop over all solutions isomorphic to the just tested solutions 
 	if (startIndex > 0) {

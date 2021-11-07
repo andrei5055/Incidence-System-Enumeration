@@ -31,7 +31,7 @@ protected:
 	CK size_t numLambdas() const override				{ return 1; }
 	CK T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const override { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
-	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, int* pLambdaSetSize = NULL) const override;
+	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const override;
 	CK int getJobTitleInfo(char *buffer, int lenBuffer) const override;
 	void getEnumerationObjectKey(char* pKey, int len) const override;
 	char* getEnumerationObjectKeyA(char* pKey, int len) const override;

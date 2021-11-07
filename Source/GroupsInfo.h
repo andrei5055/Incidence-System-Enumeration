@@ -40,7 +40,7 @@ class COrderNumb : public CNumbInfo
 {
 public:
 	COrderNumb(size_t groupOrder=1) : m_groupOrder(groupOrder)	{}
-	CC inline size_t groupOrder() const							{ return m_groupOrder; }
+	CC inline auto groupOrder() const							{ return m_groupOrder; }
 private:
 	const size_t m_groupOrder;
 };
@@ -62,7 +62,7 @@ public:
 		for (auto i = m_cNumbInfo.GetSize(); i--;)
 			delete m_cNumbInfo[i];
 	}
-	CC inline size_t groupOrder() const							{ return m_groupOrder; }
+	CC inline auto groupOrder() const							{ return m_groupOrder; }
 	CC inline CNumbInfo *addMatrix(size_t extraGroupOrder, ulonglong num, ulonglong nSimple) {
 		return GetByKey(extraGroupOrder)->addMatrix(num, nSimple);
 	}
@@ -141,7 +141,7 @@ public:
 	void printGroupInfo(FILE *file) const;
 	void calcCountersTotal(COrderInfo *pTotal);
 	CK void updateGroupInfo(const CGroupsInfo *pGroupInfo);
-	inline auto GetStartIdx() const				{ return GetAt(0)->nonEmptyInfo()? 0 : 1; }
+	inline size_t GetStartIdx() const				{ return GetAt(0)->nonEmptyInfo()? 0 : 1; }
 protected:
 	CK void updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem);
 private:

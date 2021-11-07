@@ -19,7 +19,7 @@ typedef CArray<uchar, uchar> CArrayOfCanonFlags;
 
 
 #define USING_FORMER_CANON_FLAG 0	// For now we are using t_formerCanon_solution as t_not_canon_solution
-#define HARD_REMOVE	1				// Remove solution instead of marking them as t_invalid_as_righ_part
+#define HARD_REMOVE	0				// Remove solution instead of marking them as t_invalid_as_righ_part
 
 enum solutionType {
 	t_not_canon_solution   = 0,
@@ -433,7 +433,7 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(PermutStoragePntr pPermStorage
 FClass2(CRowSolution, bool)::checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin) {
 	size_t idx = solutionIndex() + 1;
 	for (uint i = 0; i < solutionLength(); i++, pColOrbit = pColOrbit->next()) {
-		auto minVal = pColOrbit->length();
+		size_t minVal = pColOrbit->length();
 		const size_t limitWeight = minVal * (kMin - pColOrbit->columnWeight());
 		// To start, we need to set the solution index to -1
 		resetSolutionIndex();

@@ -44,10 +44,10 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Non-canonical ***");
 
 		if (pCanonCheck) {
-			len = SNPRINTF(pTmp += len, lenBuf -= len, "    |Aut(M)| = %6llu", pCanonCheck->groupOrder());
+			len = SNPRINTF(pTmp += len, lenBuf -= len, "    |Aut(M)| = %6zu", pCanonCheck->groupOrder());
 			size_t exrtraGroupOrder = pCanonCheck->extraGroupOrder() ? pCanonCheck->extraGroupOrder()->groupOrder() : 0;
 			if (exrtraGroupOrder > 1)
-				len = SNPRINTF(pTmp += len, lenBuf -= len, "*%llu", exrtraGroupOrder);
+				len = SNPRINTF(pTmp += len, lenBuf -= len, "*%zu", exrtraGroupOrder);
 		}
 
 		SNPRINTF(pTmp +=len, lenBuf-=len, "\n");
