@@ -76,7 +76,7 @@ FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const Enum
 
 FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const CanonicityCheckerPntr owner) {
 	auto lanbdaSet = paramSet(t_lSet);
-	const int jMax = lanbdaSet->GetSize() - 1;
+	const auto jMax = lanbdaSet->GetSize() - 1;
 	CVector<T> lengths;
 	T prevLambda = 0;
 	uint count;
