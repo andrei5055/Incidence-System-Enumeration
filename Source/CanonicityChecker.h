@@ -253,6 +253,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	const auto colOrbLen = pEnum->colOrbitLen();
 	const auto* pPartInfo = pMatr->partsInfo();
+	const auto nonCombinedDesign = numParts() == 1;
 	PREPARE_PERM_OUT(permColStorage());
 
 	bool calcGroupOrder = true;
@@ -336,7 +337,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 							continue;
 						}
 
-						if (!usingGroupOnBlocks && !nPart && pRowOut) {
+						if (!usingGroupOnBlocks && nonCombinedDesign && pRowOut) {
 							if (outInfo & t_saveRowToChange)
 								*pRowOut = rowToChange(nRow);
 #ifndef USE_CUDA

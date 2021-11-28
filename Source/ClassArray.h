@@ -1,6 +1,5 @@
 /*
  *  ClassArray.h
- *  BlockDesign
  *
  *  Created by Andrei Ivanov on 12/16/10.
  *  Copyright 2010 __MyCompanyName__. All rights reserved.
@@ -45,9 +44,13 @@ public:
 	// Potentially growing the array
 	CC void SetAtGrow(size_t nIndex, ARG_TYPE newElement);
 	CC size_t Add(ARG_TYPE newElement)				{ const size_t nIndex = m_nSize; SetAtGrow(nIndex, newElement); return nIndex; }
-	CK int Append(const CClassArray& src);
+	CK void Append(const CClassArray& src);
 	CK void Copy(const CClassArray& src);
-	
+	void operator = (const CClassArray<TYPE, ARG_TYPE>& src) {
+		RemoveAll();
+		Append(src);
+	}
+
 	// overloaded operator helpers
 	CK TYPE operator[](size_t nIndex) const			{ return GetAt(nIndex); }
 	CK TYPE& operator[](size_t nIndex)				{ return ElementAt(nIndex); }
@@ -61,7 +64,7 @@ public:
 protected:
 	CC void ConstructElements(TYPE* pElements, size_t nCount);
 	CC void DestructElements(TYPE* pElements, size_t nCount);
-	CK void CopyElements(TYPE* pDest, const TYPE* pSrc, int nCount);
+	CK void CopyElements(TYPE* pDest, const TYPE* pSrc, size_t nCount);
 	
 	TYPE* m_pData;   // the actual array of data
 	size_t m_nSize;  // # of elements (upperBound - 1)
@@ -75,8 +78,7 @@ protected:
 template<class TYPE, class ARG_TYPE>
 CClassArray<TYPE, ARG_TYPE>::~CClassArray()
 {
-	if (m_pData != NULL)
-	{
+	if (m_pData) {
 		DestructElements(m_pData, m_nSize);
 		delete[] (char*)m_pData;
 	}
@@ -91,7 +93,7 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 	if (nNewSize == 0)
 	{
 		// shrink to nothing
-		if (m_pData != NULL)
+		if (m_pData)
 		{
 			DestructElements(m_pData, m_nSize);
 			delete[] (char*)m_pData;
@@ -163,14 +165,13 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 }
 
 template<class TYPE, class ARG_TYPE>
-int CClassArray<TYPE, ARG_TYPE>::Append(const CClassArray& src)
+void CClassArray<TYPE, ARG_TYPE>::Append(const CClassArray& src)
 {
 	assert(this != &src);   // cannot append to itself
 	
-	int nOldSize = m_nSize;
+	auto nOldSize = m_nSize;
 	SetSize(m_nSize + src.m_nSize);
 	CopyElements(m_pData + nOldSize, src.m_pData, src.m_nSize);
-	return nOldSize;
 }
 
 template<class TYPE, class ARG_TYPE>
@@ -298,11 +299,10 @@ void CClassArray<TYPE, ARG_TYPE>::DestructElements(TYPE* pElements, size_t nCoun
 }
 
 template<class TYPE, class ARG_TYPE>
-void CClassArray<TYPE, ARG_TYPE>::CopyElements(TYPE* pDest, const TYPE* pSrc, int nCount)
+void CClassArray<TYPE, ARG_TYPE>::CopyElements(TYPE* pDest, const TYPE* pSrc, size_t nCount)
 {
 	// default is element-copy using assignment
 	while (nCount--)
 		*pDest++ = *pSrc++;
 }
-
 #endif

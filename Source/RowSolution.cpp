@@ -289,7 +289,7 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 		case t_formerCanon_solution: buffer[i + 1] = '#'; break;
 #endif
 #if !HARD_REMOVE
-		default: if (!isValidSolution(solIdx))
+		default: if (!validSolution(solIdx))
 					buffer[i + 1] = '-';
 #endif
 		}
