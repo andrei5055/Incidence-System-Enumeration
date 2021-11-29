@@ -50,6 +50,12 @@ public:
 															return GetData();
 														}
 	CK inline uchar *canonFlags() const					{ return canonFlgs()->GetData(); }
+	CSolutionPerm& operator = (const CSolutionPerm& src) {
+		RemoveAll();
+		Append(src);
+		*m_CanonFlgs = *src.canonFlgs();
+		return *this;
+	}
 private:
 	CK inline CArrayOfCanonFlags *canonFlgs() const		{ return m_CanonFlgs; }
 public:
@@ -64,6 +70,7 @@ public:
 																	InitSolutions(length, nVect, pCoord);
 																}
 	CK ~CRowSolution()											{ delete solutionPerm(); }
+	CRowSolution& operator = (const CRowSolution& src);
 	CK inline const auto *firstSolution() const					{ return this->GetData(); }
 	CK inline const auto *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionLength(); }
 	CK inline const auto *currSolution() const					{ return firstSolution() + variantIndex() * solutionLength(); }
@@ -79,7 +86,7 @@ public:
 	CK inline bool validSolution(size_t idx) const				{ const uchar *pCanonFlags = solutionPerm()->canonFlags();
 																  return pCanonFlags ? *(pCanonFlags + idx) != t_invalid_as_righ_part : true; }
 #endif
-	CK void InitSolutions(S size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL);
+	CK void InitSolutions(T size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL, PERMUT_ELEMENT_TYPE lastIdx = 0);
 	CK inline auto solutionLength() const						{ return m_Length; }
 	CK inline void setSolutionLength(T length)					{ m_Length = length; }
 	CK CRowSolution *getSolution();
@@ -97,8 +104,6 @@ public:
 	CK inline auto numSolutions() const							{ return m_nNumSolutions; }
 	inline bool isLastSolution() const							{ return solutionIndex() + 1 == numSolutions(); }
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
-	CK inline void setNnextPortion(CRowSolution *pNext)         { m_pNextPortion = pNext; }
-	CK inline auto nextPortion() const							{ return m_pNextPortion;  }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
 private:
@@ -128,18 +133,45 @@ private:
 	PERMUT_ELEMENT_TYPE m_nSavedSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;
 	size_t m_nLenSolOrb;
-	const CRowSolution *m_pNextPortion = NULL;
 };
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
 
-FClass2(CRowSolution, void)::InitSolutions(S length, size_t nVect, CArrayOfVectorElements *pCoord)
+FClass2(CRowSolution, void)::InitSolutions(T length, size_t nVect, CArrayOfVectorElements *pCoordSrc, PERMUT_ELEMENT_TYPE lastIdx)
 {
 	setSolutionIndex(0);
 	setSolutionLength(length);					// vector length
 	delete solutionPerm();
 	setSolutionPerm(new CSolutionPerm());
 	setNumSolutions(nVect);
+	if (pCoordSrc) {
+		CArrayOfVectorElements* pCoord = getCoord();
+		const auto len = length * (lastIdx + 1);
+		if (len > pCoord->GetSize())
+			IncreaseVectorSize(len - pCoord->GetSize());
+		memcpy(pCoord->GetData(), pCoordSrc->GetData(), len * sizeof(*pCoord->GetData()));
+	}
+}
+
+FClass2(CRowSolution, CRowSolution<T,S>&)::operator = (const CRowSolution<T,S>& src) {
+	// This function is used only for initiation of row solutions used by threads
+	// We need to find maximum index of solution which is potentially could be used as a right part
+	const auto iMax = src.solutionIndex();
+	const auto* pPerm = src.solutionPerm()->GetData();
+	// iMax could be zero for i-th (i > 1) part of CombBIBD
+	// nSols is the number of solutions used for current thread
+	const PERMUT_ELEMENT_TYPE nSols = iMax ? iMax + 1 : src.numSolutions();
+	PERMUT_ELEMENT_TYPE i = nSols;
+	PERMUT_ELEMENT_TYPE maxIdx = pPerm[--i];
+	while (i--) {
+		if (maxIdx < pPerm[i])
+			maxIdx = pPerm[i];
+	}
+
+	InitSolutions(src.solutionLength(), nSols, src.getCoord(), maxIdx);
+	*solutionPerm() = *src.solutionPerm();
+	setSolutionIndex(iMax);
+	return *this;
 }
 
 FClass2(CRowSolution, T *)::newSolution() {
@@ -165,11 +197,10 @@ FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 FClass2(CRowSolution, T *)::copySolution(const InSysSolverPntr pSysSolver)
 {
 	auto pSolution = lastSolution();
-	if (!pSysSolver->isValidSolution(pSolution))
-		return pSolution;
-
-	pSolution = newSolution();
-	memcpy(pSolution, pSolution - solutionLength(), solutionLength() * sizeof(pSolution[0]));
+	if (pSysSolver->isValidSolution(pSolution)) {
+		pSolution = newSolution();
+		memcpy(pSolution, pSolution - solutionLength(), solutionLength() * sizeof(pSolution[0]));
+	}
 	return pSolution;
 }
 
@@ -190,7 +221,7 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 #if USE_PERM
 	const auto pFirst = firstSolution();
 	const auto nSolutions = numSolutions();
-	CSolutionPerm *pPerm = solutionPerm();
+	auto *pPerm = solutionPerm();
 	PERMUT_ELEMENT_TYPE n, idx = 0;
 	for (auto i = solutionLength(); i--;) {
 		// Current min and max values we have to test

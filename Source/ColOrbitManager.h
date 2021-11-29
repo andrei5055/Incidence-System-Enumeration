@@ -32,10 +32,11 @@ public:
 	CC inline auto *colOrbits(S iPart = 0) const		{ return m_ppColOrb[iPart]; }
 	CC inline S currentRowNumb() const					{ return m_nCurrRow; }
 	CC inline auto colOrbitsIni(S iPart = 0) const		{ return m_ppColOrbIni[iPart]; }
-	CC void initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator, const Class1(CColOrbitManager) *pMaster = NULL, void *pMem = NULL);
+	CC void initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator,
+		                      int use_master_solutions = 0, const Class1(CColOrbitManager) *pMaster = NULL, void *pMem = NULL);
 	CK void copyColOrbitInfo(const Class1(CColOrbitManager) *pColOrb, S nRow);
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;
-	CC void closeColOrbits() const;
+	CC void closeColOrbits(int use_master_solution) const;
 	CC inline auto colOrbit(S idx, S idxPart = 0) const	{ return m_ppColOrb[idxPart][idx]; }
 	CC inline auto colOrbitIni(S nRow, S idxPart) const { return *(colOrbitsIni(idxPart) + nRow); }
 protected:
@@ -107,15 +108,15 @@ FClass1(CColOrbitManager, void)::ReleaseColOrbitManager()
 	delete[] m_ppColOrb;
 }
 
-FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDescr, bool using_IS_enumerator, const  Class1(CColOrbitManager) *pMaster, void *pMem)
+FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDescr, bool using_IS_enumerator,
+												   int use_master_solutions, const Class1(CColOrbitManager) *pMaster, void *pMem)
 {
 	m_IS_enumerator = using_IS_enumerator;
 	// Number of CColOrbits taken from pMaster
-	setRowMaster(pMaster ? pMaster->currentRowNumb() + 1 : 0);
+	setRowMaster(pMaster ? pMaster->currentRowNumb() + use_master_solutions : 0);
 
 	// In order not to re-create orbits on the way back, we will store them in different places.
 	// Therefore, we must have number of rows as a multiplier for fromMaster and nCol_2.
-	const auto fromMaster = WAIT_THREADS ? rowMaster() * colNumb() : 0;
 	const auto nCol_2 = nRows * colNumb();
 	auto numParts = pGroupDescr ? pGroupDescr->numParts() : 1;
 #ifndef USE_CUDA		// NOT yet implemented for GPU
@@ -133,6 +134,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 
 
 	const int maxElement = rank();
+	const auto fromMaster = WAIT_THREADS ? (rowMaster() + 1 - use_master_solutions) * colNumb() : 0;
 	if (!using_IS_enumerator) {
 #ifndef USE_CUDA		// NOT yet implemented for GPU
 		auto pColOrbitsCS = pMem ? (Class1(CColOrbitCS) *)pMem : new  Class1(CColOrbitCS)[nCol_2 - fromMaster];
@@ -148,7 +150,8 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 			m_ppOrb[i] = pColOrbitsIS + i - fromMaster;
 	}
 
-	auto iMin = WAIT_THREADS ? rowMaster() : 0;
+	const auto iMin = WAIT_THREADS ? rowMaster() + 1 - use_master_solutions : 0;
+	const auto iMax = rowMaster() + 1 - use_master_solutions;
 	for (S j = 0; j < numParts; j++) {
 		const auto shift = pGroupDescr? pGroupDescr->getShift(j) : 0;
 		auto i = nRows;
@@ -168,7 +171,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 		// because it could be changed when master will continue its calculation
 		ColOrbPntr pColOrb;
 		for (S iPart = 0; iPart < numParts; iPart++) {
-			for (S i = 0; i < rowMaster(); i++) {
+			for (S i = 0; i < iMax; i++) {
 				const auto* pOrbIni = pMaster->colOrbitsIni(iPart)[i];
 				const auto* pOrb = pMaster->colOrbits(iPart)[i];
 				m_ppColOrbIni[iPart][i]->clone(pOrbIni);
@@ -253,9 +256,9 @@ FClass1(CColOrbitManager, void)::restoreColOrbitInfo(S nRow, const size_t *pColO
 	}
 }
 
-FClass1(CColOrbitManager, void)::closeColOrbits() const
+FClass1(CColOrbitManager, void)::closeColOrbits(int use_master_solution) const
 {
-	auto pntr = colOrbitsIni()[WAIT_THREADS ? rowMaster() : 0];
+	auto pntr = colOrbitsIni()[WAIT_THREADS ? (rowMaster() + 1 - use_master_solution) : 0];
 	if (m_IS_enumerator)
 		delete[] (Class1(CColOrbitIS) *)pntr;
 	else

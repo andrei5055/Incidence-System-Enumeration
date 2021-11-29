@@ -1,6 +1,5 @@
 #pragma once
 #include <time.h>
-//#include "DataTypes.h"
 #include "GroupsInfo.h"
 
 class CTimerInfo

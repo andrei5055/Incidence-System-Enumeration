@@ -17,7 +17,8 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, T *p
 	// This part of the program will be a bit more complicated for general case
 	assert(matrCol.rank() <= 2);
 
-	matrCol.initiateColOrbits(rowNumb, 0, this->matrix()->partsInfo(), this->IS_enumerator());
+	const auto use_master_sol = designParams()->use_master_sol;
+	matrCol.initiateColOrbits(rowNumb, 0, this->matrix()->partsInfo(), this->IS_enumerator(), use_master_sol);
 	auto pColIdxMem = pColIdxStorage? pColIdxStorage : new S[nCols];
 
 	const auto colOrbLen = matrCol.colOrbitLen();

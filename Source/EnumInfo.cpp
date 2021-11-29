@@ -240,17 +240,18 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 	if (!outFile)
 		return;
 
+#define SPACE "        "
 	char buff[256];
-	SPRINTF(buff, "\n        Using %zd-bit program with%s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
+	SPRINTF(buff, "\n" SPACE "Using % zd - bit program with % s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
 	auto outLen = outString(buff, outFile);
 
 	const auto dLen = sizeof(SIZE_TYPE);
 	char* pDataType = dLen == 1 ? "char" : (dLen == 2 ? "int16" : "int32");
-	SPRINTF(buff, "        Main data storage format: \"unsigned %s\"\n", pDataType);
+	SPRINTF(buff, SPACE "Main data storage format: \"unsigned %s\"\n", pDataType);
 	outLen += outString(buff, outFile);
 
 	const auto nThreads = designInfo()->threadNumb;
-	if (USE_THREADS >= 1) {
+	if (nThreads > 1) {
 		char buffer[32];
 		if (printMTlevel)
 			SPRINTF(buffer, "row %d", multiThreadLevel());
@@ -259,13 +260,17 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 
 		SPRINTF(buff, "%10zd threads launched on %s (%swaiting to finish mode)\n", nThreads, buffer, WAIT_THREADS ? "" : "not ");
 	} else
-		SPRINTF(buff, "        Single thread mode\n");
+		SPRINTF(buff, SPACE "Single thread mode\n");
 
 	outLen += outString(buff, outFile);
 
-	if (nThreads >= 1 && CANON_ON_GPU) {
-		SPRINTF(buff, "        Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+	if (nThreads >= 1) {
+		SPRINTF(buff, SPACE "Solutions obtained by master are %s by the thread%s\n", designInfo()->use_master_sol ? "used" : "copied", nThreads>1? "s" : "");
 		outLen += outString(buff, outFile);
+		if (CANON_ON_GPU) {
+			SPRINTF(buff, SPACE"        Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+			outLen += outString(buff, outFile);
+		}
 	}
 
 	SPRINTF(buff, "        Canonicity of partial constructed matrix was %sused\n", USE_CANON_GROUP ? "" : "not ");

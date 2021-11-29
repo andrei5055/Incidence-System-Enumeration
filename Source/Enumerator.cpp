@@ -295,7 +295,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		if (pMaster->getGroupOnParts())
 			updateCanonicityChecker(rowNumb(), colNumb());
 
-		pRowSolution = pMaster->rowStuff(nRow);
+		pRowSolution = rowStuff(nRow);
 		InitGroupOderStorage(pMaster->getGroupOnParts());
 		this->setOutFile(pMaster->outFile());
 		setX0_3(pMaster->getX0_3());
@@ -349,7 +349,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const auto outInfo = t_saveRowToChange + t_saveRowPermutations;
 	const auto nRowEnd = nRow ? nRow + 1 : 0;
 
-	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), pMaster);
+	const auto use_master_sol = designParams()->use_master_sol;
+	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), use_master_sol, pMaster);
 
 	// Construct nontrivial group, acting on parts (groups of blocks)
 	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
@@ -667,15 +668,14 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				}
 			}
 
+			if (nRow < nRowEnd)
+				break;
+
 			bool resetSolutions = true;
 			firstPartIdx[nRow] = 0;  // When we are here the first fragment of CombBIB will be changed
 			while (!(pNextRowSolution = pRowSolution) || !(pRowSolution = pRowSolution->NextSolution(useCanonGroup))) {
-				const auto nRowNext = nRow;
 				this->reset(nRow, resetSolutions);
-				// we need to go to previous row
-				if (nRow-- < nRowEnd)
-					break;
-
+				const auto nRowNext = nRow--;
 				if (pNextRowSolution)
 					pNextRowSolution->restoreSolutionIndex();
 
@@ -698,6 +698,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				if (firstPartIdx[nRow] = j) {
 					this->setCurrentRowNumb(nRow);
 					firstPartIdx[nRow] = 1;
+					break;
+				}
+
+				if (nRow < nRowEnd) {
+					pRowSolution = NULL;
 					break;
 				}
 
@@ -728,17 +733,17 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, pParam->threadNumb);
 #endif
 
-    this->closeColOrbits();
+    this->closeColOrbits(use_master_sol);
 
 	if (!threadFlag || !USE_THREADS_ENUM) {
 
 #if USE_THREADS_ENUM
 		delete[] pThreadEnum;
 #else
-//#ifdef USE_CUDA
+ifdef USE_CUDA
 		// This method is called after thread is ended, When they are used
 		LAUNCH_CANONICITY_TESTING(enumInfo(), this);
-//#endif
+endif
 #endif
 
 #if !CONSTR_ON_GPU
@@ -942,9 +947,9 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 	}
 }
 
-FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
-{
-	const auto nRow = pMaster? pMaster->currentRowNumb() + 1 : 0;
+FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster) {
+	const auto use_master_sol = designParams()->use_master_sol;
+	const auto nRow = pMaster? pMaster->currentRowNumb() + use_master_sol : 0;
 	const auto pMatrix = pMaster? pMaster->matrix() : this->matrix();
 	const auto nParts = pMatrix->numParts();
 	auto i = rowNumb();
@@ -952,8 +957,16 @@ FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster)
 	while (i-- > nRow)
 		m_pRow[i] = pSolutions + nParts * (i - nRow);
 
-	if (pMaster) // Just in case, copying pointers to the solutions from master
+	if (pMaster) {
+		if (!use_master_sol) {
+			const auto* pRowSolution = pMaster->rowStuff(nRow);
+			for (auto i = 0; i < numParts(); i++)
+				*(pSolutions + i) = *(pRowSolution + i);
+		}
+
+		// Just in case, copying pointers to the solutions from master
 		memcpy(rowStuffPntr(), pMaster->rowStuffPntr(), nRow * sizeof(*rowStuffPntr()));
+	}
 }
 
 FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool rowNeeded) const

@@ -426,6 +426,13 @@ int main(int argc, char * argv[])
 			continue;
 		}
 
+		pos = find(line, "USE_MASTER_SOLUTIONS");
+		if (pos != string::npos) {
+			// When 1, the solutions obtained by master will be used in the threads
+			const auto use_master_sol = static_cast<int>(getInteger(line, &pos));
+			param->use_master_sol = (use_master_sol != string::npos) ? use_master_sol : 1;
+			continue;
+		}
 		pos = find(line, "THREAD_LEVEL");
 		if (pos != string::npos) {
 			// Define the row number, where threads will be launched
