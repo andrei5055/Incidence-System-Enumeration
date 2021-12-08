@@ -350,6 +350,7 @@ int main(int argc, char * argv[])
 	uint outType = t_Summary;
 	string *pLine = new string();
 	string &line = *pLine;
+	int use_master_sol = 0;
 	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
 		size_t pos = line.find("//");
@@ -429,8 +430,10 @@ int main(int argc, char * argv[])
 		pos = find(line, "USE_MASTER_SOLUTIONS");
 		if (pos != string::npos) {
 			// When 1, the solutions obtained by master will be used in the threads
-			const auto use_master_sol = static_cast<int>(getInteger(line, &pos));
-			param->use_master_sol = (use_master_sol != string::npos) ? use_master_sol : 1;
+			use_master_sol = static_cast<int>(getInteger(line, &pos));
+			if (use_master_sol == string::npos)
+				use_master_sol = 1;
+			param->use_master_sol = use_master_sol;
 			continue;
 		}
 		pos = find(line, "THREAD_LEVEL");
@@ -569,9 +572,15 @@ int main(int argc, char * argv[])
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
 			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
-		else
+		else {
+			if (objType == t_CombinedBIBD)
+				param->use_master_sol = 0;
+
 			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
 				break;
+
+			param->use_master_sol = use_master_sol;
+		}
 
 		firstRun = false;
 	}

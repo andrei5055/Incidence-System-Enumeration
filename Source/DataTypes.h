@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define TEST					  false //true   // Test mode
+#define TEST					  false // true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -34,7 +34,7 @@
 #define REPORT_PROGRESS(x,...)
 #else
 #define USE_THREADS_ENUM			USE_THREADS
-#if !USE_CUDA
+#if !USE_CUDAFthreads
 #define EXIT(x)						
 #else
 #define EXIT(x)						exit(x)
@@ -558,6 +558,7 @@ public:
 	uint outType = 0;				// Flags which define the output information of the task
 	uint grpOrder = 0;				// Limits for order of the group of the matrices which will be printed
 	size_t threadNumb = 0;			// Number of threads launched to perform task
+	int use_master_sol = 0;			// the solutions defined by master will be used (1) or copied (0) by the threads
 	bool firstMatr = true;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed
 	std::string workingDir = "";	// Current working directory name
