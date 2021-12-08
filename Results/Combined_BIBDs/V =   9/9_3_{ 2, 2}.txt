@@ -31,7 +31,7 @@ CBIBD(  9,  3, { 2, 2})
     _________________________________________________________________________________
         Total:          16407107         4068169              21               1
 
-  16407107 matrices constructed in 22:10.36
+  16407107 matrices constructed in 20:14.49
    4068169 matrices have no replicated blocks
   29774260 matrices were fully constructed
 
