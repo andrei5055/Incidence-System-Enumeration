@@ -351,6 +351,7 @@ int main(int argc, char * argv[])
 	string *pLine = new string();
 	string &line = *pLine;
 	int use_master_sol = 0;
+	int find_master_design = 0;
 	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
 		size_t pos = line.find("//");
@@ -436,6 +437,20 @@ int main(int argc, char * argv[])
 			param->use_master_sol = use_master_sol;
 			continue;
 		}
+
+		pos = find(line, "FIND_MASTER_BIBD");
+		if (pos != string::npos) {
+			// When 1, the parts of Combined BIBD will be merged and canonical BIBD will be constructed
+			// After that we will try to find that "original" BIBD in the ordered list of previously constructed
+			// "original" BIBDs. In that way we will find all BIBD which could be split into several parts
+			// and all such non-isomorphic splits
+			find_master_design = static_cast<int>(getInteger(line, &pos));
+			if (find_master_design == string::npos)
+				find_master_design = 1;
+			param->find_master_design = find_master_design;
+			continue;
+		}
+
 		pos = find(line, "THREAD_LEVEL");
 		if (pos != string::npos) {
 			// Define the row number, where threads will be launched
@@ -575,11 +590,14 @@ int main(int argc, char * argv[])
 		else {
 			if (objType == t_CombinedBIBD)
 				param->use_master_sol = 0;
+			else
+				param->find_master_design = 0;   // This option for CombBIBD only
 
 			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
 				break;
 
 			param->use_master_sol = use_master_sol;
+			param->find_master_design = find_master_design;
 		}
 
 		firstRun = false;

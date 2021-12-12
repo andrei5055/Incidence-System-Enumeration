@@ -28,7 +28,7 @@ protected:
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 	virtual int getJobTitleInfo(char *buffer, int lenBuffer) const;
 #endif
-	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const;
 	CK virtual bool checkLambda(S val) const						{ return val == lambda(); }
 	CK virtual void ReportLamdaProblem(S i, S j, S lambda) const {
 		OUT_STRING(buff, 256, "Wrong number of common units in the rows (" ME_FRMT ", " ME_FRMT "): " ME_FRMT " != " ME_FRMT "\n",
@@ -69,7 +69,7 @@ FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPa
 	return checkChoosenSolution(pSolution, this->currentRowNumb(), nPart, idx);
 }
 
-FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
+FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, const EnumeratorPntr pEnum) const
 {
 	const auto partsInfo = pMatrix->partsInfo();
 	const auto iMin = this->lenStabilizer();
@@ -125,6 +125,10 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 				return false;
 			}
 		}
+	}
+
+	if (designParams()->find_master_design) {
+		pBuf = NULL;
 	}
 
 	bool noReplicatedBlockFound = true;

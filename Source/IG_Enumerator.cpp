@@ -94,7 +94,7 @@ FClass2(CIG_Enumerator, bool)::createNewFile(const char *fName) const {
 	return true;
 }
 
-FClass2(CIG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
+FClass2(CIG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, const EnumeratorPntr pEnum) const
 {
 	if (!Class2(CPBIBD_Enumerator)::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;

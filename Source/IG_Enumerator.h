@@ -24,7 +24,7 @@ public:
 	inline auto areaWeight() const						{ return m_pAreaWeight; }
 protected:
 	CK bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix,
-		       int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const override;
+		       int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const override;
 	bool makeFileName(char *buffer, size_t lenBuffer, const char *ext) const override;
 	CK const char *getObjName() const override			{ return "I-Graph"; }
 	CK bool fileExists(const char *path, bool file = true) const override;

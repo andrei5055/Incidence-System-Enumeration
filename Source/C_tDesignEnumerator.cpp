@@ -304,7 +304,7 @@ FClass2(C_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMas
 	}
 }
 
-FClass2(C_tDesignEnumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, EnumeratorPntr pEnum) const
+FClass2(C_tDesignEnumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags, const EnumeratorPntr pEnum) const
 {
 	if (!Class2(CBIBD_Enumerator)::TestFeatures(pEnumInfo, pMatrix, pMatrFlags))
 		return false;

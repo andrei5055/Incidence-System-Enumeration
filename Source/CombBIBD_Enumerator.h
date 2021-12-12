@@ -15,11 +15,14 @@ public:
 	~CCombBIBD_Enumerator()	{
 		delete[] m_FirstPartSolutionIdx;
 		delete[] m_bSolutionsWereConstructed;
+		delete[] columnPermut();
+		delete m_pSpareMatrix;
 		delete[] m_pGroupOrders;
 		delete m_pGroupOrder;
 	}
+	const auto *columnPermut() const					{ return m_pColumnPermut;}
 protected:
-	CK const char*  getObjName() const override			{ return "CBIBD"; }
+	CK const char* getObjName() const override			{ return "CBIBD"; }
 	CK const char* getTopLevelDirName() const override 	{ return "Combined_BIBDs"; }
 	CK RowSolutionPntr setFirstRowSolutions() override;
 	CK void CreateForcedRows() override;
@@ -56,9 +59,13 @@ private:
 	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
 	CK void CreateFirstRow(S *pFirstRow=NULL);
+	CK void createColumnPermut() override;
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;
+	MatrixDataPntr m_pSpareMatrix = NULL;
+	T* m_pColumnPermut = NULL;
+	bool m_bFirsRowWasCreated = false;
 };
 

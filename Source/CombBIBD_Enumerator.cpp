@@ -39,11 +39,15 @@ FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateForcedRows() {
+	if (m_bFirsRowWasCreated)
+		return;
+
 	// Combined BIBDs having n parts will be constructed with first "artificial" row:
 	//  n, n, ...,n, n-1, ..., n-1, n-2,..., n-2,... 2,...2,1...,1
 	// It's why we need to start enumeration with the row number 1.
 	this->setCurrentRowNumb(1);
 	CreateFirstRow();
+	m_bFirsRowWasCreated = true;
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
@@ -65,8 +69,11 @@ FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
 
 FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const EnumeratorPntr pMaster)
 {
+	if (m_pSpareMatrix)
+		return m_pSpareMatrix;
+
 	const auto pMatr = pMaster ? pMaster->matrix() : this->matrix();
-	MatrixDataPntr pSpareMatrix = new CMatrixData<T, S>();
+	MatrixDataPntr pSpareMatrix = m_pSpareMatrix = new CMatrixData<T, S>();;
 	pSpareMatrix->Init(pMatr->rowNumb(), pMatr->colNumb());
 	CreateFirstRow(pSpareMatrix->GetRow(0));
 	auto *pPartsInformation = pSpareMatrix->InitPartsInfo(this->numParts());
@@ -75,14 +82,14 @@ FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const Enum
 }
 
 FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const CanonicityCheckerPntr owner) {
-	auto lanbdaSet = paramSet(t_lSet);
-	const auto jMax = lanbdaSet->GetSize() - 1;
+	const auto lambdaSet = paramSet(t_lSet);
+	const auto jMax = lambdaSet->GetSize() - 1;
 	CVector<T> lengths;
 	T prevLambda = 0;
 	uint count;
 	uint factorial;
 	for (int j = 0; j <= jMax; j++) {
-		const auto lambda = lanbdaSet->GetAt(j);
+		const auto lambda = lambdaSet->GetAt(j);
 		if (prevLambda == lambda) {
 			factorial *= (++count);
 			if (j < jMax)
@@ -108,4 +115,59 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 	auto pGroupOnParts = new CGroupOnParts<T>(owner, lengths, 3);
 	InitGroupOderStorage(pGroupOnParts);
 	return pGroupOnParts;
+}
+
+FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
+	// Construct permutation of columns used by all threads when find_master_design is set to 1
+	m_pColumnPermut = new T[matrix()->colNumb()];
+
+	const auto pInSys = this->getInSys();
+	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
+	const auto v = pInSys->rowNumb() - 1;
+	const auto pR_set = this->paramSet(t_rSet);
+	const auto lambdaSet = this->paramSet(t_lSet);
+
+
+	T nextIdx, idx, n, i = 0;
+	// Indices of first lambda columns of all parts
+	// they have 1's in first & second rows
+	for (T j = nextIdx = 0; j < numParts(); j++) {
+		const auto nMax = lambdaSet->GetAt(j);
+		idx = nextIdx + (n = 0);
+		while (n++ < nMax)
+			m_pColumnPermut[i++] = idx++;
+
+		nextIdx += pR_set->GetAt(j) * v / k;
+	}
+
+	// Indices of columns which have 1's in first row, but not in second one
+	for (T j = nextIdx = 0; j < numParts(); j++) {
+		const auto nMax = pR_set->GetAt(j);
+		idx = nextIdx + (n = lambdaSet->GetAt(j));
+		while (n++ < nMax)
+			m_pColumnPermut[i++] = idx++;
+
+		nextIdx += nMax * v / k;
+	}
+
+	// Indices of columns which have 1's in second row, but not in first one
+	for (T j = nextIdx = 0; j < numParts(); j++) {
+		const auto nMax = 2 * (n = pR_set->GetAt(j)) - lambdaSet->GetAt(j);
+		idx = nextIdx + n;
+		while (n++ < nMax)
+			m_pColumnPermut[i++] = idx++;
+
+		nextIdx += pR_set->GetAt(j) * v / k;
+	}
+
+	// Indices of columns which have 0's in first & second rows
+	for (T j = nextIdx = 0; j < numParts(); j++) {
+		const auto r = pR_set->GetAt(j);
+		const auto nMax = r * v / k;
+		idx = nextIdx + (n = 2 * r - lambdaSet->GetAt(j));
+		while (n++ < nMax)
+			m_pColumnPermut[i++] = idx++;
+
+		nextIdx += nMax;
+	}
 }

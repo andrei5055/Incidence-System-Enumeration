@@ -221,6 +221,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	setDesignParams(pParam);
+	const auto* pInpMaster = pMaster;
 #if !CONSTR_ON_GPU
 	std::mutex mtx;
 	char buff[256], jobTitle[256];
@@ -314,6 +315,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		pRowSolution = setFirstRowSolutions();
 		this->setEnumInfo(pEnumInfo);
 		pEnumInfo->startClock();
+
+		if (designParams()->find_master_design)
+			createColumnPermut();
 
 #if USE_THREADS_ENUM 
 		if (pParam->threadNumb)
@@ -446,7 +450,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					if (canonMatrix) {
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
-						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, this)) {
+						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, pMaster)) {
 							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
 								pEnumInfo->setNoReplBlockFlag(false);
 								level = getInSys()->GetK();
@@ -532,10 +536,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, canonMatrix);
 
 				if (canonMatrix) {
-					if (pMaster) {
-						copyInfoFromMaster(pMaster);
+					if (pInpMaster) {
+						copyInfoFromMaster(pInpMaster);
 #if WAIT_THREADS
-						pMaster = NULL;
+						pInpMaster = NULL;
 						*pTreadCode = t_threadRunning;
 #endif
 					}
@@ -546,8 +550,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					setPrintResultRowNumber(nRow);
 					pRowSolution = FindRowSolution(firstPartIdx + nRow - 1);
 #if USE_THREADS && !WAIT_THREADS
-					if (pMaster && pRowSolution) {
-						pMaster = NULL;
+					if (pInpMaster && pRowSolution) {
+						pInpMaster = NULL;
 						*pTreadCode = t_threadRunning;
 					}
 #endif
@@ -803,10 +807,9 @@ endif
 #endif
 	} else {
 		if (pTreadCode)
-			*pTreadCode = pMaster ? t_threadLaunchFail : t_threadFinished;
+			*pTreadCode = pInpMaster ? t_threadLaunchFail : t_threadFinished;
 	}
 
-	delete pSpareMatrix;
 	return true;
 } 
 

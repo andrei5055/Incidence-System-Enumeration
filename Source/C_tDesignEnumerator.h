@@ -30,7 +30,7 @@ protected:
 	CK virtual void prepareToTestExtraFeatures();
 	CK virtual void copyInfoFromMaster(const EnumeratorPntr pMaster);
 	CK size_t numLambdas()const override						{ return 1; }
-	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const;
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const;
 #if USE_EXRA_EQUATIONS
 	CK virtual CEquSystem *equSystem()							{ return this; }
 	CK virtual bool prepareToFindRowSolution()					{ equSystem()->resetArray(); return true; }

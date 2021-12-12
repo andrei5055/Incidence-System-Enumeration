@@ -419,7 +419,7 @@ public:
 	CK virtual T *forcibleLambdaPntr(T nRow = 0) const		{ return NULL; }
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
-	CK inline auto designParams() const						{ return m_pParam; }
+	CK inline auto *designParams() const					{ return m_pParam; }
 
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
@@ -466,7 +466,7 @@ private:
 	virtual const char* getObjNameFormat() const			{ return "%9s:        "; }
 	void UpdateEnumerationDB(char **pInfo, int len) const;
 	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
-	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, EnumeratorPntr pEnum = NULL) const { return true; }
+	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(S *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
@@ -489,6 +489,7 @@ private:
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
+	CK virtual void createColumnPermut()					{}
 
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
