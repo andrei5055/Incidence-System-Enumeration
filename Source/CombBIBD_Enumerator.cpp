@@ -39,26 +39,23 @@ FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateForcedRows() {
-	if (m_bFirsRowWasCreated)
-		return;
-
+	// As of today (12/12/2021), method is called for master only
 	// Combined BIBDs having n parts will be constructed with first "artificial" row:
 	//  n, n, ...,n, n-1, ..., n-1, n-2,..., n-2,... 2,...2,1...,1
 	// It's why we need to start enumeration with the row number 1.
 	this->setCurrentRowNumb(1);
 	CreateFirstRow();
-	m_bFirsRowWasCreated = true;
+	if (designParams()->find_master_design)
+		createColumnPermut();
 }
 
-FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
-{
+FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow() {
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
 	const auto v = pInSys->rowNumb() - 1;
 	const auto pR_set = this->paramSet(t_rSet);
 	const auto iMax = static_cast<T>(this->numParts());
-	if (!pFirstRow)
-		pFirstRow = pInSys->GetRow(0);
+	S *pFirstRow = pInSys->GetRow(0);
 
 	for (T i = 0; i < iMax; i++) {
 		const auto b = pR_set->GetAt(i) * v / k;
@@ -67,15 +64,18 @@ FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow(S* pFirstRow)
 	}
 }
 
-FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const EnumeratorPntr pMaster)
-{
+FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const EnumeratorPntr pMaster) {
+	// Create matris which will be used only when there is non-trivial group on parts
 	if (m_pSpareMatrix)
 		return m_pSpareMatrix;
 
-	const auto pMatr = pMaster ? pMaster->matrix() : this->matrix();
-	MatrixDataPntr pSpareMatrix = m_pSpareMatrix = new CMatrixData<T, S>();;
+	if (!pMaster)
+		pMaster = this;
+
+	const auto pMatr = pMaster->matrix();
+	MatrixDataPntr pSpareMatrix = m_pSpareMatrix = new CMatrixData<T, S>();
 	pSpareMatrix->Init(pMatr->rowNumb(), pMatr->colNumb());
-	CreateFirstRow(pSpareMatrix->GetRow(0));
+	memcpy(pSpareMatrix->GetRow(0), pMatr->GetRow(0), pMatr->colNumb() * sizeof(pSpareMatrix->GetRow(0)[0]));
 	auto *pPartsInformation = pSpareMatrix->InitPartsInfo(this->numParts());
 	pPartsInformation->CopyPartInfo(pMatr->partsInfo());
 	return pSpareMatrix;
@@ -107,6 +107,7 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 		prevLambda = lambda;
 		factorial = count = 1;
 	}
+
 	if (!lengths.GetSize())
 		return NULL;
 
@@ -117,16 +118,56 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 	return pGroupOnParts;
 }
 
+FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
+	if (m_pOriginalMatrix ||                        // matrix of master design was already constructed
+		!designParams()->find_master_design ||      // no need to find master design OR
+		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
+		return;
+
+	if (pMaster)
+		m_bColPermutOwner = static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut();
+
+	const auto v = matrix()->rowNumb() - 1;
+	const auto b = matrix()->colNumb();
+	m_pOriginalMatrix = new CMatrixData<T, S>();
+	m_pOriginalMatrix->Init(v, b);
+
+	// Set first two rows and first columns of "master" design
+	// Because they always be the same, it would be better to do it only once
+	// First, we need to define paramete lambda for "master" design
+	const auto lambdaSet = this->paramSet(t_lSet);
+	T lambda = 0;
+	for (auto j = numParts(); j--;)
+		lambda += lambdaSet->GetAt(j);
+
+	const auto pInSys = this->getInSys();
+	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
+	const auto r = lambda * (v - 1) / (k - 1);
+	auto* pRow = m_pOriginalMatrix->GetRow(0);
+	rowSetFragm(pRow, 1, r);				// 1's of the first r column of the first row
+	rowSetFragm(pRow + r, 0, 2*b - r);		// 0's to remaining part of the first and the whole second row
+	rowSetFragm(pRow += b, 1, lambda);		// 1's to first lambda columns of the second row
+	rowSetFragm(pRow + r, 1, r - lambda);   // 1's to columns [r, 2*r - lambda - 1] of the second row
+
+	// Remaining part of the first column
+	T i = 1;
+	while (++i < k)
+		*(pRow += b) = 1;
+
+	while (i++ < b)
+		*(pRow += b) = 0;
+}
+
 FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 	// Construct permutation of columns used by all threads when find_master_design is set to 1
 	m_pColumnPermut = new T[matrix()->colNumb()];
+	m_bColPermutOwner = true;    // only master thread could be the owner
 
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
 	const auto v = pInSys->rowNumb() - 1;
 	const auto pR_set = this->paramSet(t_rSet);
 	const auto lambdaSet = this->paramSet(t_lSet);
-
 
 	T nextIdx, idx, n, i = 0;
 	// Indices of first lambda columns of all parts
