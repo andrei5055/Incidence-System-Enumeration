@@ -15,12 +15,14 @@ public:
 	~CCombBIBD_Enumerator()	{
 		delete[] m_FirstPartSolutionIdx;
 		delete[] m_bSolutionsWereConstructed;
-		delete[] columnPermut();
 		delete m_pSpareMatrix;
+		delete m_pOriginalMatrix;
 		delete[] m_pGroupOrders;
 		delete m_pGroupOrder;
+		if (m_bColPermutOwner)
+			delete[] columnPermut();
 	}
-	const auto *columnPermut() const					{ return m_pColumnPermut;}
+	const auto *columnPermut() const					{ return m_pColumnPermut; }
 protected:
 	CK const char* getObjName() const override			{ return "CBIBD"; }
 	CK const char* getTopLevelDirName() const override 	{ return "Combined_BIBDs"; }
@@ -31,7 +33,7 @@ protected:
 	CK VectorPntr paramSet(t_numbSetType idx) const override { 
 		return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); 
 	}
-	CK size_t numLambdas() const override				{ return 1; }
+	CK size_t numLambdas() const override				{ return 1; }  // Used only in FindSolution which is called separatly for each part
 	CK T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const override { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
 	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const override;
@@ -51,21 +53,23 @@ protected:
 		if (!m_pGroupOrders && pGroupOnParts)
 			m_pGroupOrders = new size_t [pGroupOnParts->numGroups()];
 	}
-	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster);
+	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) override;
+	CK void CreateAuxiliaryStructures(const EnumeratorPntr pMaster) override;
 	CK void resetGroupOrder() override					{ m_pGroupOrder->setGroupOrder(1); }
 	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }
 	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
 private:
 	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
-	CK void CreateFirstRow(S *pFirstRow=NULL);
-	CK void createColumnPermut() override;
+	CK void CreateFirstRow();
+	CK void createColumnPermut();
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;
 	MatrixDataPntr m_pSpareMatrix = NULL;
+	MatrixDataPntr m_pOriginalMatrix = NULL;
 	T* m_pColumnPermut = NULL;
-	bool m_bFirsRowWasCreated = false;
+	bool m_bColPermutOwner = false;
 };
 

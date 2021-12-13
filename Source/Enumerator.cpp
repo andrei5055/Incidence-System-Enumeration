@@ -316,9 +316,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		this->setEnumInfo(pEnumInfo);
 		pEnumInfo->startClock();
 
-		if (designParams()->find_master_design)
-			createColumnPermut();
-
 #if USE_THREADS_ENUM 
 		if (pParam->threadNumb)
 			pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
@@ -364,6 +361,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	T level, nPart;
 	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
+
+	CreateAuxiliaryStructures(pMaster);
 
 	// minimal index of the part, which will be changed on current row
 	auto *firstPartIdx = new T[nRows];

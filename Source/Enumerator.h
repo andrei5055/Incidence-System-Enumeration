@@ -457,6 +457,7 @@ protected:
 			pRow[j] = val;
 	}
 	CK virtual MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) { return NULL; }
+	CK virtual void CreateAuxiliaryStructures(const EnumeratorPntr pMaster)			{}
 	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
@@ -489,7 +490,6 @@ private:
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
-	CK virtual void createColumnPermut()					{}
 
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
