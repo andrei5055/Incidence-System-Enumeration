@@ -127,10 +127,6 @@ FClass2(CBIBD_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matr
 		}
 	}
 
-	if (designParams()->find_master_design) {
-		pBuf = NULL;
-	}
-
 	bool noReplicatedBlockFound = true;
 	for (auto j = this->colNumb(); j--;) {
 		T k = 0;

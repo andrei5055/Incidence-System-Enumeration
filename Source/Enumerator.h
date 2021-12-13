@@ -459,6 +459,7 @@ protected:
 	CK virtual MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) { return NULL; }
 	CK virtual void CreateAuxiliaryStructures(const EnumeratorPntr pMaster)			{}
 	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
+	CK virtual void FindMasterBIBD() const					{}
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }

@@ -125,7 +125,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		return;
 
 	if (pMaster)
-		m_bColPermutOwner = static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut();
+		m_pColumnPermut = (T *)(static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut());
 
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
@@ -154,7 +154,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 	while (++i < k)
 		*(pRow += b) = 1;
 
-	while (i++ < b)
+	while (i++ < v)
 		*(pRow += b) = 0;
 }
 
@@ -211,4 +211,19 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 		nextIdx += nMax;
 	}
+}
+
+
+FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() const {
+	// Merging parts into one BIBD with the first two canonical rows.
+	const auto v = matrix()->rowNumb() - 1;
+	const auto b = matrix()->colNumb();
+	for (T i = 2; i < v; i++) {
+		auto* pRowSrc = matrix()->GetRow(i+1);
+		auto* pRow = m_pOriginalMatrix->GetRow(i);
+		for (T j = 1; j < b; j++)
+			pRow[j] = pRowSrc[columnPermut()[j]];
+	}
+
+	m_pOriginalMatrix->printOut(this->outFile(), v, 0, this);
 }

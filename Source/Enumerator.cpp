@@ -447,6 +447,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					EXIT(-1);
 					canonMatrix = this->TestCanonicity(nRow, &canonParam, outInfo);
 					if (canonMatrix) {
+						if (designParams()->find_master_design)
+							FindMasterBIBD();
+
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;
 						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, pMaster)) {
