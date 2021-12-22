@@ -360,7 +360,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	MatrixDataPntr pSpareMatrix = pGroupOnParts? CreateSpareMatrix(pMaster) : NULL;
 
 	T level, nPart;
-	TestCanonParams<T,S> canonParam = {this, &nPart, &level, pGroupOnParts, pSpareMatrix};
+	TestCanonParams<T,S> canonParam = {this, matrix(), numParts(), false, &nPart, &level, pGroupOnParts, pSpareMatrix};
 
 	CreateAuxiliaryStructures(pMaster);
 

@@ -15,6 +15,7 @@
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
 
+#define USE_COL_PERMUT  0
 #define CPermut				CSimpleArray<S>
 #define CColNumbStorage		CContainer<S>
 
@@ -32,7 +33,10 @@ Class2Def(CRowSolution);
 template <typename T, typename S>
 struct TestCanonParams {
 	const MatrixColPntr pEnum;
-	S* pPartNumb;
+	const MatrixDataPntr pMatrix;
+	T numParts;
+	bool check_trivial_row_perm;
+	T* pPartNumb;
 	S* pRowOut;
 	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
@@ -83,7 +87,7 @@ public:
 	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem);
-	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo, RowSolutionPntr pRowSolution = NULL);
+	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo = t_saveNothing, RowSolutionPntr pRowSolution = NULL);
 	void outputAutomorphismInfo(FILE *file, const MatrixDataPntr pMatrix = NULL) const;
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline T *permRow() const					{ return m_pPermutRow->elementPntr(); }
@@ -115,7 +119,7 @@ protected:
 	CK inline auto getGroupOnParts() const { return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
 private:
-	CC T *init(T nRow, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts);
+	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, bool permColProvided);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
@@ -148,7 +152,8 @@ private:
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	CPermut *m_pPermutRow;
 	CPermut *m_pPermutCol;
-	CPermut* m_pPermutSparse;
+	CPermut* m_pPermutSparse = NULL;
+
 	CColNumbStorage **m_nColNumbStorage;
 	PermutStoragePntr m_pPermutStorage[3];
 	T *m_pObits[2][2];
@@ -159,14 +164,13 @@ private:
 	T m_nNumRow;
 	const T m_numParts;
 	CGroupOnParts<T>* m_pGroupOnParts;
+	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, S numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
-	m_pPermutSparse = NULL;
-
 	setColIndex(new T[nCol << 1]);
 	m_pCounter = new CCounter<int>(rank);
 	m_nColNumbStorage = new CColNumbStorage *[rank];
@@ -222,6 +226,7 @@ CanonicityChecker()::~CCanonicityChecker()
 	delete[] colIndex();
 	delete[] improvedSolution();
 	delete[] m_pObits[0][0];
+	delete[] m_pTrivialPermutCol;
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif
@@ -233,6 +238,11 @@ CanonicityChecker(void)::updateCanonicityChecker(T rowNumb, T colNumb)
 	m_pPermutSparse = new CPermut[2];
 	m_pPermutSparse[0].Init(rowNumb, new T[rowNumb]);
 	m_pPermutSparse[1].Init(rowNumb, new T[colNumb]);
+#if USE_COL_PERMUT
+	m_pTrivialPermutCol = new T[colNumb];
+	for (auto i = colNumb; i--;)
+		m_pTrivialPermutCol[i] = i;
+#endif
 }
 
 CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
@@ -247,29 +257,33 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	const auto* pGroupOnParts = pCanonParam->pGroupOnParts;
 	// Construct trivial permutations for rows and columns
 	const auto rowPermut = outInfo & t_saveRowPermutations;
-	const auto* pMatr = pEnum->matrix();
+	const auto* pMatr = pCanonParam->pMatrix;
 	const auto* pMatrPerm = pMatr;
+	const auto numParts = pCanonParam->numParts;
+	bool check_trivial_row_perm = pCanonParam->check_trivial_row_perm;
 	auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
 
 	const auto colOrbLen = pEnum->colOrbitLen();
 	const auto* pPartInfo = pMatr->partsInfo();
-	const auto nonCombinedDesign = numParts() == 1;
+	const auto nonCombinedDesign = numParts == 1;
 	PREPARE_PERM_OUT(permColStorage());
 
 	bool calcGroupOrder = true;
 	bool retVal = true;
 	bool usingGroupOnBlocks = false;
-	size_t lenMatr, numGroups = 0;
-
-	T colNumb, startingRowNumb = 0;
-	S *pMatrTo, *pMatrFrom;
+#if !USE_COL_PERMUT
+	size_t lenMatr;
+	S* pMatrTo, * pMatrFrom;
+	T colNumb;
+#endif
+	size_t numGroups = 0;
+	T startingRowNumb = 0;
 	size_t idxPerm[16];			// to keep the indices of currently used permutation
 	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
-	bool check_trivial_row_perm = false;
 
 	T idxPartSrc[16];			// to keep the initial (source) indices of the parts
-	T* pPartSrc = numParts() <= countof(idxPartSrc) ? idxPartSrc : new T[numParts()];
-	for (auto i = numParts(); i--;)
+	T* pPartSrc = numParts <= countof(idxPartSrc) ? idxPartSrc : new T[numParts];
+	for (auto i = numParts; i--;)
 		pPartSrc[i] = i;
 
 	const S* pCurrSolution;
@@ -287,11 +301,12 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	size_t startIndex = 0;
 #endif
+	bool permColProvided = false;
 	auto pOrbits = orbits();
 	while (true) {
 #ifndef USE_CUDA
 		T* permRows;
-		T *permColumn = init(nRowMax, rowPermut, pOrbits, &permRows, usingGroupOnBlocks);
+		T *permColumn = init(nRowMax, numParts, rowPermut, pOrbits, &permRows, usingGroupOnBlocks, permColProvided);
 
 		T nRow = ELEMENT_MAX;
 		if (check_trivial_row_perm) {
@@ -312,9 +327,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			// Loop for all remaining matrix's rows
 			for (; nRow < nRowMax; nRow++) {
 				const auto* pRow = pMatr->GetRow(nRow);
-				const auto nRW = *(permRows + nRow);
+
 				const auto* pRowPerm = pMatrPerm->GetRow(*(permRows + nRow));
-				for (T nPart = 0; nPart < numParts(); nPart++) {
+				for (T nPart = 0; nPart < numParts; nPart++) {
 					const auto nPartSrc = pPartSrc[nPart];
 					const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPartSrc);
 					const auto* pColOrbit = pEnum->colOrbit(nRow, nPartSrc);
@@ -401,7 +416,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				if (!rowPermut) {
 					// We are here to define the canonicity of partially constructed matrix AND we just found the non-trivial automorphism.
 					// Let's construct the permutation of the column's orbits which corresponds to just found automorphism
-					for (T nPart = 0; nPart < numParts(); nPart++) {
+					for (T nPart = 0; nPart < numParts; nPart++) {
 						auto pPermStorage = permStorage(nPart);
 						const auto* pColOrbitIni = pEnum->colOrbitIni(nRow, nPart);
 						const auto* pColOrbit = pEnum->colOrbit(nRow, nPart);
@@ -459,10 +474,14 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (!usingGroupOnBlocks) {
 			// Corresponding data were not initialized yet
 			usingGroupOnBlocks = true;
+			permColProvided = true;
 			numGroups = pGroupOnParts->numGroups();
 			// Initialization of variables used with the group acting on the parts of the matrix
 			pIndxPerms = numGroups < countof(idxPerm) ? idxPerm : new size_t[numGroups];
 			memset(pIndxPerms, 0, numGroups * sizeof(*pIndxPerms));
+#if USE_COL_PERMUT
+			permColProvided = true;
+#else
 			colNumb = (pMatrPerm = pCanonParam->pSpareMatrix)->colNumb();
 			startingRowNumb = pGroupOnParts->getStartingRowNumb();
 			// copy first startingRowNumb rows
@@ -475,7 +494,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			pMatrTo += lenMatr;
 			pMatrFrom += lenMatr;
 			lenMatr = (nRowMax - startingRowNumb) * colNumb * sizeof(*pMatrTo);
- 
+#endif
 			calcGroupOrder = savePermut = false;	// Permutations and group order should not be saved for Spare Matrix
 			pOrbits += numRow();
 			resetGroupOrder();
@@ -491,13 +510,17 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (idx >= numGroups)
 			break;
 
+#if USE_COL_PERMUT
+		permColumn = m_pPermutSparse[1].elementPntr();
+		memcpy(permColumn, m_pTrivialPermutCol, sizeof(permColumn[0])* numCols());
+#else
 		// Permuting the parts of the matrix in accordance with the current set of permutations
-		const auto* pPartsInfo = pMatr->partsInfo();
 		memcpy(pMatrTo, pMatrFrom, lenMatr);
-
-		for (auto i = numParts(); i--;)
+#endif
+		for (auto i = numParts; i--;)
 			pPartSrc[i] = i;
 
+		const auto* pPartsInfo = pMatr->partsInfo();
 		for (size_t idx = 0; idx < numGroups; idx++) {
 			const auto idxPerm = *(pIndxPerms + idx);
 			// For the current set of parts, check if all parts remain in place.
@@ -507,9 +530,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			const auto pntr = pGroupOnParts->groupHandle(idx);
 			// Address of next permutation to try for current group
 			const auto* pPerm = pntr->getPermutation(idxPerm);
+#if !USE_COL_PERMUT
 			const auto idxPart = pntr->partIdx();  // absolute index of the first part moved by current symmetrical group  
 			const auto nCol = pPartsInfo->colNumb(idxPart);
 			const size_t lenPart = nCol * sizeof(*pMatrTo);
+#endif
 			for (auto jFrom = 0; jFrom < pntr->permLength(); ++jFrom) {
 				// For the current set of parts, check if the j-th part remains in place.
 				auto jTo = *(pPerm + jFrom);
@@ -517,15 +542,21 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 					continue;
 
 				// Calculate absolute indices and save source index 
-				auto *pPartTo = pMatrTo + pPartsInfo->getShift(jTo += idxPart);
-				const auto *pPartFrom = pMatrFrom + pPartsInfo->getShift(jFrom += idxPart);
+				const auto idxTo = pPartsInfo->getShift(jTo += idxPart);
+				const auto idxFrom = pPartsInfo->getShift(jFrom += idxPart);
 				pPartSrc[jTo] = jFrom;
-
+#if USE_COL_PERMUT
+				// Copying set of indeces of columns which corresponds to the moved part of CombinedBIBD 
+				memcpy(permColumn + idxTo, m_pTrivialPermutCol + idxFrom, sizeof(permColumn[0] * nCol);
+#else
+				auto* pPartTo = pMatrTo + idxTo;
+				const auto* pPartFrom = pMatrFrom + idxFrom;
 				for (auto j = startingRowNumb; j < nRowMax; j++) {
 					memcpy(pPartTo, pPartFrom, lenPart);
 					pPartTo += colNumb;
 					pPartFrom += colNumb;
 				}
+#endif
 			}
 		}
 

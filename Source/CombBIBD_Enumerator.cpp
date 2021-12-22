@@ -214,16 +214,20 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 }
 
 
-FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() const {
+FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
 	for (T i = 2; i < v; i++) {
-		auto* pRowSrc = matrix()->GetRow(i+1);
+		auto* pRowSrc = matrix()->GetRow(i + 1);
 		auto* pRow = m_pOriginalMatrix->GetRow(i);
 		for (T j = 1; j < b; j++)
 			pRow[j] = pRowSrc[columnPermut()[j]];
 	}
 
 	m_pOriginalMatrix->printOut(this->outFile(), v, 0, this);
+	T nPart = 1;
+	T level;
+	TestCanonParams<T, S> canonParam = { this, m_pOriginalMatrix, 1, true, &nPart, &level };
+	auto canonMatrix = this->TestCanonicity(v, &canonParam);
 }
