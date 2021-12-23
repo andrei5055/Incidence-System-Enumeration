@@ -21,6 +21,8 @@ public:
 		delete m_pGroupOrder;
 		if (m_bColPermutOwner)
 			delete[] columnPermut();
+
+		delete [] m_pColPermut;
 	}
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
 protected:
@@ -70,7 +72,8 @@ private:
 	CGroupOrder<T> *m_pGroupOrder = NULL;
 	MatrixDataPntr m_pSpareMatrix = NULL;
 	MatrixDataPntr m_pOriginalMatrix = NULL;
-	T* m_pColumnPermut = NULL;
+	T* m_pColumnPermut = NULL;				// Permutation of columns (usially calculated by master and used by the threads
+	T* m_pColPermut = NULL;                 // Memory, which will keep current permutation of columns
 	bool m_bColPermutOwner = false;
 };
 

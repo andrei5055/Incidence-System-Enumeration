@@ -35,11 +35,11 @@ struct TestCanonParams {
 	const MatrixColPntr pEnum;
 	const MatrixDataPntr pMatrix;
 	T numParts;
-	bool check_trivial_row_perm;
 	T* pPartNumb;
 	S* pRowOut;
 	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
+	T* pPermCol;
 };
 
 Class1Def(CGroupOrder) {
@@ -259,7 +259,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	const auto* pMatr = pCanonParam->pMatrix;
 	const auto* pMatrPerm = pMatr;
 	const auto numParts = pCanonParam->numParts;
-	bool check_trivial_row_perm = pCanonParam->check_trivial_row_perm;
+	bool check_trivial_row_perm = pCanonParam->pPermCol != NULL;
 	auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
 
 	const auto colOrbLen = pEnum->colOrbitLen();
@@ -300,7 +300,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	size_t startIndex = 0;
 #endif
-	T* permColumn = NULL;
+	T* permColumn = pCanonParam->pPermCol;
 	auto pOrbits = orbits();
 	while (true) {
 #ifndef USE_CUDA

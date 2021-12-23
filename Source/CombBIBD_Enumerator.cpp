@@ -124,11 +124,16 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
 		return;
 
-	if (pMaster)
-		m_pColumnPermut = (T *)(static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut());
-
-	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
+	if (pMaster) {
+		m_pColumnPermut = (T*)(static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut());
+		if (m_pColumnPermut)
+			m_pColPermut = new T[b];
+	}
+
+#if TEST
+	// Creating structures to help debug the search of "master" designs for Combined BIBDs
+	const auto v = matrix()->rowNumb() - 1;
 	m_pOriginalMatrix = new CMatrixData<T, S>();
 	m_pOriginalMatrix->Init(v, b);
 
@@ -156,6 +161,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 
 	while (i++ < v)
 		*(pRow += b) = 0;
+#endif
 }
 
 FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
@@ -218,6 +224,8 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
+#if TEST
+	// Create "master" matrix (just for debugging)
 	for (T i = 2; i < v; i++) {
 		auto* pRowSrc = matrix()->GetRow(i + 1);
 		auto* pRow = m_pOriginalMatrix->GetRow(i);
@@ -226,8 +234,11 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	}
 
 	m_pOriginalMatrix->printOut(this->outFile(), v, 0, this);
+#endif
+
 	T nPart = 1;
 	T level;
-	TestCanonParams<T, S> canonParam = { this, m_pOriginalMatrix, 1, true, &nPart, &level };
+	memcpy(m_pColPermut, columnPermut(), b * sizeof(m_pColPermut[0]));
+	TestCanonParams<T, S> canonParam = { this, m_pOriginalMatrix, 1, &nPart, &level, NULL, NULL, m_pColPermut };
 	auto canonMatrix = this->TestCanonicity(v, &canonParam);
 }
