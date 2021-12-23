@@ -15,7 +15,7 @@
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
 
-#define USE_COL_PERMUT  0
+
 #define CPermut				CSimpleArray<S>
 #define CColNumbStorage		CContainer<S>
 
@@ -119,7 +119,7 @@ protected:
 	CK inline auto getGroupOnParts() const { return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
 private:
-	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, bool permColProvided);
+	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
@@ -301,12 +301,12 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	size_t startIndex = 0;
 #endif
-	bool permColProvided = false;
+	T* permColumn = NULL;
 	auto pOrbits = orbits();
 	while (true) {
 #ifndef USE_CUDA
 		T* permRows;
-		T *permColumn = init(nRowMax, numParts, rowPermut, pOrbits, &permRows, usingGroupOnBlocks, permColProvided);
+		permColumn = init(nRowMax, numParts, rowPermut, pOrbits, &permRows, usingGroupOnBlocks, permColumn);
 
 		T nRow = ELEMENT_MAX;
 		if (check_trivial_row_perm) {
@@ -474,13 +474,12 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (!usingGroupOnBlocks) {
 			// Corresponding data were not initialized yet
 			usingGroupOnBlocks = true;
-			permColProvided = true;
 			numGroups = pGroupOnParts->numGroups();
 			// Initialization of variables used with the group acting on the parts of the matrix
 			pIndxPerms = numGroups < countof(idxPerm) ? idxPerm : new size_t[numGroups];
 			memset(pIndxPerms, 0, numGroups * sizeof(*pIndxPerms));
 #if USE_COL_PERMUT
-			permColProvided = true;
+			startingRowNumb = pGroupOnParts ? 1 : 0;
 #else
 			colNumb = (pMatrPerm = pCanonParam->pSpareMatrix)->colNumb();
 			startingRowNumb = pGroupOnParts->getStartingRowNumb();
@@ -511,11 +510,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			break;
 
 #if USE_COL_PERMUT
-		permColumn = m_pPermutSparse[1].elementPntr();
-		memcpy(permColumn, m_pTrivialPermutCol, sizeof(permColumn[0])* numCols());
+		memcpy(permColumn, m_pTrivialPermutCol, sizeof(permColumn[0]) * pMatr->colNumb());
 #else
 		// Permuting the parts of the matrix in accordance with the current set of permutations
 		memcpy(pMatrTo, pMatrFrom, lenMatr);
+		permColumn = NULL;     // In that case the trivial permutation will be construct in CanonicityChecker::init(...)
 #endif
 		for (auto i = numParts; i--;)
 			pPartSrc[i] = i;
@@ -530,9 +529,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			const auto pntr = pGroupOnParts->groupHandle(idx);
 			// Address of next permutation to try for current group
 			const auto* pPerm = pntr->getPermutation(idxPerm);
-#if !USE_COL_PERMUT
-			const auto idxPart = pntr->partIdx();  // absolute index of the first part moved by current symmetrical group  
+			const auto idxPart = pntr->partIdx();  // absolute index of the first part moved by current symmetrical group
 			const auto nCol = pPartsInfo->colNumb(idxPart);
+#if !USE_COL_PERMUT
 			const size_t lenPart = nCol * sizeof(*pMatrTo);
 #endif
 			for (auto jFrom = 0; jFrom < pntr->permLength(); ++jFrom) {
@@ -547,7 +546,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				pPartSrc[jTo] = jFrom;
 #if USE_COL_PERMUT
 				// Copying set of indeces of columns which corresponds to the moved part of CombinedBIBD 
-				memcpy(permColumn + idxTo, m_pTrivialPermutCol + idxFrom, sizeof(permColumn[0] * nCol);
+				memcpy(permColumn + idxTo, m_pTrivialPermutCol + idxFrom, sizeof(permColumn[0]) * nCol);
 #else
 				auto* pPartTo = pMatrTo + idxTo;
 				const auto* pPartFrom = pMatrFrom + idxFrom;

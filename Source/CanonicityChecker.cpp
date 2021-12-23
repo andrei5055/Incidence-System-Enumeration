@@ -32,7 +32,7 @@ CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *p
 	setSolutionStorage(NULL);
 }
 
-CanonicityChecker(T *)::init(T nRow, bool savePerm, T *pOrbits, T** pPermRows, bool groupOnParts) {
+CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** pPermRows, bool groupOnParts, T *pPermCol) {
 	T *pRow, *pCol;
 	if (!groupOnParts) {
 		setNumRow(nRow);
@@ -41,7 +41,7 @@ CanonicityChecker(T *)::init(T nRow, bool savePerm, T *pOrbits, T** pPermRows, b
 	}
 	else {
 		pRow = m_pPermutSparse[0].elementPntr();
-		pCol = m_pPermutSparse[1].elementPntr();
+		pCol = pPermCol? pPermCol : m_pPermutSparse[1].elementPntr();
 	}
 
 	setStabilizerLength(nRow - 1);
@@ -51,13 +51,15 @@ CanonicityChecker(T *)::init(T nRow, bool savePerm, T *pOrbits, T** pPermRows, b
 	for (auto i = nRow; i--;)
 		*(pRow + i) = *(pOrbits + i) = i;
 
-	for (auto nCol = numCol(); nCol-- > nRow;)
-		*(pCol + nCol) = nCol;
+	if (!pPermCol) {
+		for (auto nCol = numCol(); nCol-- > nRow;)
+			*(pCol + nCol) = nCol;
 
-	memcpy(pCol, pRow, nRow * sizeof(*pCol));
+		memcpy(pCol, pRow, nRow * sizeof(*pCol));
+	}
 
 	if (!groupOnParts) {
-		for (auto iPart = numParts(); iPart--;) {
+		for (auto iPart = numParts; iPart--;) {
 			auto pColPermStorage = permStorage(iPart);
 			pColPermStorage->initPermutStorage();
 			if (savePerm)

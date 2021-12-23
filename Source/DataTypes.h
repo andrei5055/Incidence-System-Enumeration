@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define TEST					  false // true   // Test mode
+#define TEST					   false //true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -25,6 +25,7 @@
 #define CK
 #endif
 
+#define USE_COL_PERMUT				1
 #define WAIT_THREADS				(USE_THREADS && 0)
 
 #if CONSTR_ON_GPU
@@ -262,12 +263,12 @@ public:
 	CC inline CSimpleArray(size_t len = 0) : m_nLen(len)	{ m_pElem = len? new S[len] : NULL; }
 	CC virtual ~CSimpleArray()								{ delete [] elementPntr(); }
 	inline void Init(size_t len, S *pElem)					{ m_pElem = pElem; m_nLen = len; }
-	CC inline S element(size_t idx) const					{ return m_pElem[idx]; }
+	CC inline auto element(size_t idx) const				{ return m_pElem[idx]; }
 	inline void setElement(size_t idx, S val)				{ m_pElem[idx] = val; }
-	CC inline S *elementPntr() const						{ return m_pElem; }
-	CC inline size_t numElement() const						{ return m_nLen; }
-	inline S GetAt(size_t idx)  const						{ return element(idx); }
-	inline S *GetElement(size_t idx)  const					{ return elementPntr() + idx; }
+	CC inline auto *elementPntr() const						{ return m_pElem; }
+	CC inline auto numElement() const						{ return m_nLen; }
+	inline auto GetAt(size_t idx)  const					{ return element(idx); }
+	inline auto *GetElement(size_t idx)  const				{ return elementPntr() + idx; }
 protected:
 private:
     S *m_pElem;
@@ -277,14 +278,14 @@ private:
 Class1Def(BlockGroupDescr) : public CSimpleArray<S> {
 public:
 	CC BlockGroupDescr(size_t nParts) : CSimpleArray<S>(nParts << 1) {}
-	CC inline S numParts() const							{ return static_cast<S>(numElement() >> 1); }
-	CC inline S getShift(S idx) const						{ return static_cast<S>(element(idx << 1)); }
-	CC inline S colNumb(S idx = 0) const					{ return static_cast<S>(element((idx << 1) + 1)); }
+	CC inline auto numParts() const							{ return static_cast<S>(numElement() >> 1); }
+	CC inline auto getShift(S idx) const					{ return static_cast<S>(element(idx << 1)); }
+	CC inline auto colNumb(S idx = 0) const					{ return static_cast<S>(element((idx << 1) + 1)); }
 	CC inline void SetPartInfo(size_t idx, S shift, S len)	{
 		setElement(idx << 1, shift);
 		setElement((idx << 1) + 1, len);
 	}
-	CC inline S GetPartInfo(S idx, S *pLen) const {
+	CC auto GetPartInfo(S idx, S *pLen) const {
 		*pLen = colNumb(idx);
 		return getShift(idx);
 	}
@@ -309,9 +310,9 @@ public:
 	CC ~CContainer()								{}
     CC inline void resetArray()                     { m_nNumb = 0; }
 	CC inline void addElement(S val)                { *(this->elementPntr() + m_nNumb++) = val; }
-    CC inline size_t numb() const                   { return m_nNumb; }
+    CC inline auto numb() const						{ return m_nNumb; }
     inline void incNumb()                           { m_nNumb++; }
-	inline size_t GetSize() const					{ return numb(); }
+	inline auto GetSize() const						{ return numb(); }
 private:
 	size_t m_nNumb;
 };
