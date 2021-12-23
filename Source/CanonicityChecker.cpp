@@ -47,16 +47,12 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 	setStabilizerLength(nRow - 1);
 	setStabilizerLengthAut(ELEMENT_MAX);
 
-	*pPermRows = pRow;
-	for (auto i = nRow; i--;)
-		*(pRow + i) = *(pOrbits + i) = i;
+	const auto len = nRow * sizeof(*pRow);
+	memcpy(*pPermRows = pRow, m_pTrivialPermutCol, len);
+	memcpy(pOrbits, m_pTrivialPermutCol, len);
 
-	if (!pPermCol) {
-		for (auto nCol = numCol(); nCol-- > nRow;)
-			*(pCol + nCol) = nCol;
-
-		memcpy(pCol, pRow, nRow * sizeof(*pCol));
-	}
+	if (!pPermCol)
+		memcpy(pCol, m_pTrivialPermutCol, numCol() * sizeof(*pCol));
 
 	if (!groupOnParts) {
 		for (auto iPart = numParts; iPart--;) {

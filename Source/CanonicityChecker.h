@@ -209,6 +209,10 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags
 
 	if (mult > 1)
 		m_pObits[0][1] = pntr + nRow;
+
+	m_pTrivialPermutCol = new T[nCol];
+	for (auto i = nCol; i--;)
+		m_pTrivialPermutCol[i] = i;
 }
 
 CanonicityChecker()::~CCanonicityChecker()
@@ -238,11 +242,6 @@ CanonicityChecker(void)::updateCanonicityChecker(T rowNumb, T colNumb)
 	m_pPermutSparse = new CPermut[2];
 	m_pPermutSparse[0].Init(rowNumb, new T[rowNumb]);
 	m_pPermutSparse[1].Init(rowNumb, new T[colNumb]);
-#if USE_COL_PERMUT
-	m_pTrivialPermutCol = new T[colNumb];
-	for (auto i = colNumb; i--;)
-		m_pTrivialPermutCol[i] = i;
-#endif
 }
 
 CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
@@ -509,12 +508,10 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		if (idx >= numGroups)
 			break;
 
-#if USE_COL_PERMUT
 		memcpy(permColumn, m_pTrivialPermutCol, sizeof(permColumn[0]) * pMatr->colNumb());
-#else
+#if !USE_COL_PERMUT
 		// Permuting the parts of the matrix in accordance with the current set of permutations
 		memcpy(pMatrTo, pMatrFrom, lenMatr);
-		permColumn = NULL;     // In that case the trivial permutation will be construct in CanonicityChecker::init(...)
 #endif
 		for (auto i = numParts; i--;)
 			pPartSrc[i] = i;
