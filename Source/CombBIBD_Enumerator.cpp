@@ -119,10 +119,11 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
-	if (m_pOriginalMatrix ||                        // matrix of master design was already constructed
+	if (m_pCanonChecker ||							// canonicity checker was already constructed
 		!designParams()->find_master_design ||      // no need to find master design OR
 		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
 		return;
+
 
 	const auto b = matrix()->colNumb();
 	if (pMaster) {
@@ -131,11 +132,12 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 			m_pColPermut = new T[b];
 	}
 
-#if TEST
 	// Creating structures to help debug the search of "master" designs for Combined BIBDs
 	const auto v = matrix()->rowNumb() - 1;
-	m_pOriginalMatrix = new CMatrixData<T, S>();
-	m_pOriginalMatrix->Init(v, b);
+	auto *pOriginalMatrix = new CMatrixData<T, S>();
+	pOriginalMatrix->Init(v, b);
+
+	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);
 
 	// Set first two rows and first columns of "master" design
 	// Because they always be the same, it would be better to do it only once
@@ -148,7 +150,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
 	const auto r = lambda * (v - 1) / (k - 1);
-	auto* pRow = m_pOriginalMatrix->GetRow(0);
+	auto* pRow = pOriginalMatrix->GetRow(0);
 	rowSetFragm(pRow, 1, r);				// 1's of the first r column of the first row
 	rowSetFragm(pRow + r, 0, 2*b - r);		// 0's to remaining part of the first and the whole second row
 	rowSetFragm(pRow += b, 1, lambda);		// 1's to first lambda columns of the second row
@@ -161,13 +163,15 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 
 	while (i++ < v)
 		*(pRow += b) = 0;
-#endif
 }
 
 FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 	// Construct permutation of columns used by all threads when find_master_design is set to 1
-	m_pColumnPermut = new T[matrix()->colNumb()];
-	m_bColPermutOwner = true;    // only master thread could be the owner
+	const auto b = matrix()->colNumb();
+	m_pColumnPermut = new T[b];
+	m_bColPermutOwner = true;		 // only master thread could be the owner
+	if (!designParams()->threadNumb) // if the threads will not be used
+		m_pColPermut = new T[b];
 
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
@@ -221,24 +225,42 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 
 FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
+#define USE_COMBINED_MATRIX   false // (!TEST || 1)  // Cannonicity is checked on combined matrix,
+											// which has indices of parts in its first row
+
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
-#if TEST
-	// Create "master" matrix (just for debugging)
+	// Creating:
+	// (a) "original" matrix by merging parts according to columnPermut()
+	// (b) the orbits on columns for each row of that matrix
+	auto* pMatr = m_pCanonChecker->matrix();
 	for (T i = 2; i < v; i++) {
 		auto* pRowSrc = matrix()->GetRow(i + 1);
-		auto* pRow = m_pOriginalMatrix->GetRow(i);
+		auto* pRow = pMatr->GetRow(i);
 		for (T j = 1; j < b; j++)
 			pRow[j] = pRowSrc[columnPermut()[j]];
 	}
 
-	m_pOriginalMatrix->printOut(this->outFile(), v, 0, this);
+#if TEST
+	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
+
+	// Createin orbits on colums
 
 	T nPart = 1;
 	T level;
+#if USE_COMBINED_MATRIX
 	memcpy(m_pColPermut, columnPermut(), b * sizeof(m_pColPermut[0]));
-	TestCanonParams<T, S> canonParam = { this, m_pOriginalMatrix, 1, &nPart, &level, NULL, NULL, m_pColPermut };
-	auto canonMatrix = this->TestCanonicity(v, &canonParam);
+#else
+	for (auto j = b; j--;)
+		m_pColPermut[j] = j;
+#endif
+	TestCanonParams<T, S> canonParam =
+#if USE_COMBINED_MATRIX
+			{ this, matrix(), 1, &nPart, &level, NULL, NULL, m_pColPermut, 1 };
+#else
+	        { this, pMatr, 1, &nPart, &level, NULL, NULL, m_pColPermut};
+#endif
+	auto canonMatrix = this->TestCanonicity(v + USE_COMBINED_MATRIX, &canonParam);
 }

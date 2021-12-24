@@ -57,7 +57,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		}
 	}
 
-	this->MakeRow(pSol, false);
+	CMatrixCanonChecker::MakeRow(pSol, false);
 
 	// Define intersection of current row with previous one:
 	auto lastRowToCheck = lenStabilizer();

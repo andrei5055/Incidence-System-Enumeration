@@ -16,13 +16,13 @@ public:
 		delete[] m_FirstPartSolutionIdx;
 		delete[] m_bSolutionsWereConstructed;
 		delete m_pSpareMatrix;
-		delete m_pOriginalMatrix;
 		delete[] m_pGroupOrders;
 		delete m_pGroupOrder;
 		if (m_bColPermutOwner)
 			delete[] columnPermut();
 
 		delete [] m_pColPermut;
+		delete m_pCanonChecker;
 	}
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
 protected:
@@ -71,9 +71,10 @@ private:
 	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;
 	MatrixDataPntr m_pSpareMatrix = NULL;
-	MatrixDataPntr m_pOriginalMatrix = NULL;
-	T* m_pColumnPermut = NULL;				// Permutation of columns (usially calculated by master and used by the threads
-	T* m_pColPermut = NULL;                 // Memory, which will keep current permutation of columns
+	CMatrixCanonChecker* m_pCanonChecker = NULL; // used for cannonization of original matrix
+	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
+	T* m_pColPermut = NULL;						 // Memory, which will keep current permutation of columns
 	bool m_bColPermutOwner = false;
+
 };
 

@@ -40,6 +40,7 @@ struct TestCanonParams {
 	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
 	T* pPermCol;
+	T startingRowNumb;                   // starting row for the loop in TestCanonicity (used when pPermCol != NULL)
 };
 
 Class1Def(CGroupOrder) {
@@ -276,7 +277,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	T colNumb;
 #endif
 	size_t numGroups = 0;
-	T startingRowNumb = 0;
+	T startingRowNumb = pCanonParam->startingRowNumb;
 	size_t idxPerm[16];			// to keep the indices of currently used permutation
 	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
 

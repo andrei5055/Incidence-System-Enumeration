@@ -34,14 +34,20 @@ CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *p
 
 CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** pPermRows, bool groupOnParts, T *pPermCol) {
 	T *pRow, *pCol;
-	if (!groupOnParts) {
-		setNumRow(nRow);
-		pRow = permRow();
-		pCol = permCol();
+	if (!pPermCol) {
+		if (!groupOnParts) {
+			setNumRow(nRow);
+			pRow = permRow();
+			pCol = permCol();
+		}
+		else {
+			pRow = m_pPermutSparse[0].elementPntr();
+			pCol = m_pPermutSparse[1].elementPntr();
+		}
 	}
 	else {
 		pRow = m_pPermutSparse[0].elementPntr();
-		pCol = pPermCol? pPermCol : m_pPermutSparse[1].elementPntr();
+		pCol = pPermCol;
 	}
 
 	setStabilizerLength(nRow - 1);
@@ -51,27 +57,28 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 	memcpy(*pPermRows = pRow, m_pTrivialPermutCol, len);
 	memcpy(pOrbits, m_pTrivialPermutCol, len);
 
-	if (!pPermCol)
+	if (!pPermCol) {
 		memcpy(pCol, m_pTrivialPermutCol, numCol() * sizeof(*pCol));
 
-	if (!groupOnParts) {
-		for (auto iPart = numParts; iPart--;) {
-			auto pColPermStorage = permStorage(iPart);
-			pColPermStorage->initPermutStorage();
-			if (savePerm)
-				pColPermStorage->savePermut(numRow(), permRow());
+		if (!groupOnParts) {
+			for (auto iPart = numParts; iPart--;) {
+				auto pColPermStorage = permStorage(iPart);
+				pColPermStorage->initPermutStorage();
+				if (savePerm)
+					pColPermStorage->savePermut(numRow(), permRow());
+			}
+
+			setGroupOrder(1);
+			if (permColStorage() && (savePerm || permRowStorage())) {
+				permColStorage()->initPermutStorage();
+				if (savePerm)
+					permColStorage()->savePermut(numCol(), pCol);
+			}
+
+
+			if (permRowStorage())
+				permRowStorage()->initPermutStorage();
 		}
-
-		setGroupOrder(1);
-		if (permColStorage() && (savePerm || permRowStorage())) {
-			permColStorage()->initPermutStorage();
-			if (savePerm)
-				permColStorage()->savePermut(numCol(), pCol);
-		}
-
-
-		if (permRowStorage())
-			permRowStorage()->initPermutStorage();
 	}
 
 	return pCol;

@@ -159,7 +159,7 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 	if (t >= this->currentRowNumb() + 2)
 		t = this->currentRowNumb() + 1;
 
-	this->MakeRow(pSol, false);
+	CMatrixCanonChecker::MakeRow(pSol, false);
 
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	const auto *pCurrRow = this->matrix()->GetRow(this->currentRowNumb());
