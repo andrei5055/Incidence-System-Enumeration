@@ -132,12 +132,13 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 			m_pColPermut = new T[b];
 	}
 
-	// Creating structures to help debug the search of "master" designs for Combined BIBDs
+	// Creating structures for the search of "master" designs for Combined BIBDs
 	const auto v = matrix()->rowNumb() - 1;
 	auto *pOriginalMatrix = new CMatrixData<T, S>();
 	pOriginalMatrix->Init(v, b);
 
 	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);
+	m_pCanonChecker->initiateColOrbits(v, 0, NULL, /*matrix()->partsInfo(),*/ false);// , use_master_sol, pMaster);
 
 	// Set first two rows and first columns of "master" design
 	// Because they always be the same, it would be better to do it only once
@@ -149,7 +150,11 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 
 	const auto pInSys = this->getInSys();
 	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
-	const auto r = lambda * (v - 1) / (k - 1);
+	const auto r = static_cast<T>(lambda * (v - 1) / (k - 1));
+	T solution[] = { r, lambda, static_cast<T>(r - lambda) };
+	m_pCanonChecker->MakeRow(0, solution);
+	m_pCanonChecker->MakeRow(1, solution+1);
+	return;
 	auto* pRow = pOriginalMatrix->GetRow(0);
 	rowSetFragm(pRow, 1, r);				// 1's of the first r column of the first row
 	rowSetFragm(pRow + r, 0, 2*b - r);		// 0's to remaining part of the first and the whole second row

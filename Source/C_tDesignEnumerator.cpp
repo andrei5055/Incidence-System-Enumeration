@@ -152,17 +152,18 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 {
 #if USE_EXRA_EQUATIONS == 0
 	// Check if solution is valid (for elimination of invalid solutions)
-	if (this->currentRowNumb() <= 1)
+	const auto nRow = this->currentRowNumb();
+	if (nRow <= 1)
 		return true;		// Nothing to test
 
 	auto t = tDesign()->getT();
-	if (t >= this->currentRowNumb() + 2)
-		t = this->currentRowNumb() + 1;
+	if (t >= nRow + 2)
+		t = nRow + 1;
 
-	CMatrixCanonChecker::MakeRow(pSol, false);
+	CMatrixCanonChecker::MakeRow(nRow, pSol, false);
 
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
-	const auto *pCurrRow = this->matrix()->GetRow(this->currentRowNumb());
+	const auto *pCurrRow = this->matrix()->GetRow(nRow);
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);

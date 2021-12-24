@@ -2,9 +2,8 @@
 
 template class CMatrixCanonChecker<TDATA_TYPES>;
 
-FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(const S* pRowSolution, bool nextColOrbNeeded, S partIdx) const
+FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, bool nextColOrbNeeded, T partIdx) const
 {
-	const auto nRow = this->currentRowNumb();
 	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
 	if (nextColOrbNeeded)
 		nextColOrbNeeded &= nRow + 1 < matrix()->rowNumb();

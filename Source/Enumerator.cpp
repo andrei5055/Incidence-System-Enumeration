@@ -840,7 +840,8 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 	flag &= !iFirstPartIdx;   // X0_3 condition should be checked only on first part
 	                          // of CombBIBD or on regular incidence system
 	// Loop over all portions of the solution
-	auto* const pSolutionWereConstructed = getSolutionsWereConstructed(numParts(), currentRowNumb()+1);
+	const auto nRow = currentRowNumb();
+	auto* const pSolutionWereConstructed = getSolutionsWereConstructed(numParts(), nRow + 1);
 	for (auto i = 0; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
@@ -856,7 +857,7 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 			continue;
 
 		const auto pCurrSolution = pPartRowSolution->currSolution();
-		m_pFirstColOrb[i] = CMatrixCanonChecker::MakeRow(pCurrSolution, true, i);
+		m_pFirstColOrb[i] = CMatrixCanonChecker::MakeRow(nRow, pCurrSolution, true, i);
 
 		if (flag) {
 			flag = false;

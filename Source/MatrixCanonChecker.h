@@ -1,6 +1,7 @@
 #pragma once
 #include "ColOrbitManager.h"
 #include "matrix.h"
+#include "EnumInfo.h"
 
 Class2Def(CMatrixCol) : public CColOrbitManager<S>
 {
@@ -23,16 +24,16 @@ public:
 		setIS_Enumerator(enumFlags & t_IS_enumerator);
 		setOutFile(NULL);
 	}
-	CC inline const auto matrix() const { return m_pMatrix; }
-	CK inline bool IS_enumerator() const { return m_bIS_Emunerator; }
-	inline void closeFile() { if (outFile()) { fclose(outFile()); setOutFile(NULL); } }
+	CC inline const auto matrix() const					{ return m_pMatrix; }
+	CK inline bool IS_enumerator() const				{ return m_bIS_Emunerator; }
+	inline void closeFile()								{ if (outFile()) { fclose(outFile()); setOutFile(NULL); } }
 #if !CONSTR_ON_GPU
-	CC inline void setOutFile(FILE * file) { m_pFile = file; }
+	CC inline void setOutFile(FILE * file)				{ m_pFile = file; }
 #endif
-	inline FILE * outFile() const { return m_pFile; }
-	inline FILE * *outFilePntr() { return &m_pFile; }
+	inline FILE * outFile() const						{ return m_pFile; }
+	inline FILE * *outFilePntr()						{ return &m_pFile; }
 protected:
-	CC inline void setIS_Enumerator(bool val) { m_bIS_Emunerator = val; }
+	CC inline void setIS_Enumerator(bool val)			{ m_bIS_Emunerator = val; }
 	void rowSetFragm(S* pRow, S val, size_t len) const {
 		for (auto j = len; j--;)
 			pRow[j] = val;
@@ -49,8 +50,6 @@ private:
 	FILE* m_pFile;
 };
 
-#include "EnumInfo.h"
-
 Class2Def(CMatrixCanonChecker) : public Class2(CMatrixCol), public Class2(CCanonicityChecker)
 {
 public:
@@ -63,13 +62,12 @@ public:
 
 	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, T rowNumb, T colNumb, S maxElem, bool IS_enum) :
 		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
-		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem) { setEnumInfo(NULL); }
-	CC ~CMatrixCanonChecker() { delete enumInfo(); }
+		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
+	CC ~CMatrixCanonChecker()									{ delete enumInfo(); }
 
-	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo) { m_pEnumInfo = pEnumInfo; }
-	CC inline EnumInfoPntr enumInfo() const { return m_pEnumInfo; }
-protected:
-	CK ColOrbPntr MakeRow(const S* pRowSolution, bool nextColOrbNeeded, S partIdx = 0) const;
+	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
+	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
+	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
 private:
 	EnumInfoPntr m_pEnumInfo;
 };
