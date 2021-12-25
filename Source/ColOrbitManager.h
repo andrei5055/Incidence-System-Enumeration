@@ -37,8 +37,8 @@ public:
 	CK void copyColOrbitInfo(const Class1(CColOrbitManager) *pColOrb, S nRow);
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;
 	CC void closeColOrbits(int use_master_solution) const;
-	CC inline auto colOrbit(S idx, S idxPart = 0) const	{ return m_ppColOrb[idxPart][idx]; }
-	CC inline auto colOrbitIni(S nRow, S idxPart) const { return *(colOrbitsIni(idxPart) + nRow); }
+	CC inline auto colOrbit(S idx, S idxPart = 0) const				{ return m_ppColOrb[idxPart][idx]; }
+	CC inline auto colOrbitIni(S nRow, S idxPart = 0) const			{ return *(colOrbitsIni(idxPart) + nRow); }
 protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)		{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetUnforcedColOrb(S idxPart, S nRow = 0)		{

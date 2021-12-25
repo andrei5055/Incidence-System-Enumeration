@@ -124,7 +124,6 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
 		return;
 
-
 	const auto b = matrix()->colNumb();
 	if (pMaster) {
 		m_pColumnPermut = (T*)(static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut());
@@ -138,30 +137,22 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 	pOriginalMatrix->Init(v, b);
 
 	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);
-	m_pCanonChecker->initiateColOrbits(v, 0, NULL, /*matrix()->partsInfo(),*/ false);// , use_master_sol, pMaster);
+	m_pCanonChecker->initiateColOrbits(v, 0, NULL, true);
 
 	// Set first two rows and first columns of "master" design
 	// Because they always be the same, it would be better to do it only once
-	// First, we need to define paramete lambda for "master" design
-	const auto lambdaSet = this->paramSet(t_lSet);
+	// First, we need to define parameter lambda for "master" design
+	const auto lambdaSet = paramSet(t_lSet);
 	T lambda = 0;
 	for (auto j = numParts(); j--;)
 		lambda += lambdaSet->GetAt(j);
 
-	const auto pInSys = this->getInSys();
-	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
+	const auto k = this->getInSys()->GetNumSet(t_kSet)->GetAt(0);
 	const auto r = static_cast<T>(lambda * (v - 1) / (k - 1));
 	T solution[] = { r, lambda, static_cast<T>(r - lambda) };
 	m_pCanonChecker->MakeRow(0, solution);
 	m_pCanonChecker->MakeRow(1, solution+1);
-	return;
-	auto* pRow = pOriginalMatrix->GetRow(0);
-	rowSetFragm(pRow, 1, r);				// 1's of the first r column of the first row
-	rowSetFragm(pRow + r, 0, 2*b - r);		// 0's to remaining part of the first and the whole second row
-	rowSetFragm(pRow += b, 1, lambda);		// 1's to first lambda columns of the second row
-	rowSetFragm(pRow + r, 1, r - lambda);   // 1's to columns [r, 2*r - lambda - 1] of the second row
-
-	// Remaining part of the first column
+	auto* pRow = pOriginalMatrix->GetRow(1);
 	T i = 1;
 	while (++i < k)
 		*(pRow += b) = 1;
@@ -178,11 +169,10 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 	if (!designParams()->threadNumb) // if the threads will not be used
 		m_pColPermut = new T[b];
 
-	const auto pInSys = this->getInSys();
-	const auto k = pInSys->GetNumSet(t_kSet)->GetAt(0);
-	const auto v = pInSys->rowNumb() - 1;
-	const auto pR_set = this->paramSet(t_rSet);
-	const auto lambdaSet = this->paramSet(t_lSet);
+	const auto v = matrix()->rowNumb() - 1;
+	const auto k = getInSys()->GetNumSet(t_kSet)->GetAt(0);
+	const auto pR_set = paramSet(t_rSet);
+	const auto lambdaSet = paramSet(t_lSet);
 
 	T nextIdx, idx, n, i = 0;
 	// Indices of first lambda columns of all parts
@@ -230,42 +220,104 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 
 FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
-#define USE_COMBINED_MATRIX   false // (!TEST || 1)  // Cannonicity is checked on combined matrix,
-											// which has indices of parts in its first row
-
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
 	// Creating:
 	// (a) "original" matrix by merging parts according to columnPermut()
 	// (b) the orbits on columns for each row of that matrix
+
+	// Column permutation can be changed later, so copy it.
+	T colPermut[256];
+	T* pColPermut = (countof(colPermut) >= b) ? colPermut : new T[b];
+	memcpy(pColPermut, columnPermut(), b * sizeof(pColPermut[0]));
+
 	auto* pMatr = m_pCanonChecker->matrix();
 	for (T i = 2; i < v; i++) {
 		auto* pRowSrc = matrix()->GetRow(i + 1);
 		auto* pRow = pMatr->GetRow(i);
-		for (T j = 1; j < b; j++)
-			pRow[j] = pRowSrc[columnPermut()[j]];
+		for (auto j = b; --j >= 1;)
+			pRow[j] = pRowSrc[pColPermut[j]];
+
+		// Create column orbits
+		CColOrbit<T>* pColOrbitLast;
+		auto *pNewColOrbit = (i < v - 1) ? m_pCanonChecker->colOrbitIni(i + 1) : NULL;
+		T j, jMax, lenOrb, type;
+		j = jMax = 0;
+		const auto* pColOrbit = m_pCanonChecker->colOrbit(i);
+		while (pColOrbit) {
+			T n = 0;
+			type = pRow[j];
+			jMax += (lenOrb = pColOrbit->length());
+			if (lenOrb > 1) {
+				n = type;
+				while (++j < jMax)
+					n += pRow[j];
+
+				if (n && n < lenOrb) {
+					// Orbit is split in two parts
+
+					T j2, j1 = (j2 = j) - lenOrb;
+					const T jLast = j1 + n;
+					while (j1 < jLast) {
+						// Find first 0 in current fragment
+						while (pRow[j1]) j1++;
+						if (j1 == jLast)
+							break;
+
+						// Find last 1 in current fragment
+						while (!pRow[--j2]);
+
+						if (pNewColOrbit) {
+							// Rearranging corresponding elements of the column permutation
+							auto tmp = pColPermut[j1];
+							pColPermut[j1] = pColPermut[j2];
+							pColPermut[j2] = tmp;
+						}
+
+						pRow[j1++] = 1;
+						pRow[j2--] = 0;
+					}
+
+					if (pNewColOrbit) {
+						pNewColOrbit = pNewColOrbit->InitOrbit(n, colOrbitLen(), pColOrbit, 1);
+						type = 0;
+					}
+				} else
+					n = 0;
+			} else
+				j = jMax;
+
+			if (pNewColOrbit)
+				pNewColOrbit = (pColOrbitLast = pNewColOrbit)->InitOrbit(lenOrb - n, colOrbitLen(), pColOrbit, type);
+
+			pColOrbit = pColOrbit->next();
+		}
+
+		if (pNewColOrbit)
+			pColOrbitLast->setNext(NULL);
 	}
+
+	if (pColPermut != colPermut)
+		delete[] pColPermut;
 
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
-
-	// Createin orbits on colums
-
 	T nPart = 1;
 	T level;
-#if USE_COMBINED_MATRIX
-	memcpy(m_pColPermut, columnPermut(), b * sizeof(m_pColPermut[0]));
-#else
 	for (auto j = b; j--;)
 		m_pColPermut[j] = j;
-#endif
-	TestCanonParams<T, S> canonParam =
-#if USE_COMBINED_MATRIX
-			{ this, matrix(), 1, &nPart, &level, NULL, NULL, m_pColPermut, 1 };
-#else
-	        { this, pMatr, 1, &nPart, &level, NULL, NULL, m_pColPermut};
-#endif
-	auto canonMatrix = this->TestCanonicity(v + USE_COMBINED_MATRIX, &canonParam);
+
+	TestCanonParams<T, S> canonParam = { this, pMatr, 1, &nPart, &level, NULL, NULL, m_pColPermut};
+	auto canonMatrix = this->TestCanonicity(v, &canonParam);
 }
+/*
+Matrix #   1    |Aut(M)| =     12*2
+11111111110000000000
+11110000001111110000
+11001100001100001111
+00110011000011001111
+00001010111010111100
+00000101110101110011
+*/

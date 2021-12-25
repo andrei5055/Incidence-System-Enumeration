@@ -13,7 +13,7 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 	const auto colOrbLen = this->colOrbitLen();
 
 	const auto rank = CCanonicityChecker<T, S>::rank();
-	const int maxElement = rank - 1;
+	const auto maxElement = rank - 1;
 	const auto* pColOrbitIni = this->colOrbitIni(nRow, partIdx);
 
 	ColOrbPntr pNextRowColOrbitNew = NULL;
