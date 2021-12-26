@@ -68,6 +68,7 @@ public:
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
 	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
+	CK void CreateColumnOrbits(T nRow, T *pColPermut, S *pRow) const;
 private:
 	EnumInfoPntr m_pEnumInfo;
 };

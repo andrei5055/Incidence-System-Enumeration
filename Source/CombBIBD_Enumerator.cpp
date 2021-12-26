@@ -231,6 +231,7 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	T colPermut[256];
 	T* pColPermut = (countof(colPermut) >= b) ? colPermut : new T[b];
 	memcpy(pColPermut, columnPermut(), b * sizeof(pColPermut[0]));
+	static int cntr; cntr++;
 
 	auto* pMatr = m_pCanonChecker->matrix();
 	for (T i = 2; i < v; i++) {
@@ -239,63 +240,7 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 		for (auto j = b; --j >= 1;)
 			pRow[j] = pRowSrc[pColPermut[j]];
 
-		// Create column orbits
-		CColOrbit<T>* pColOrbitLast;
-		auto *pNewColOrbit = (i < v - 1) ? m_pCanonChecker->colOrbitIni(i + 1) : NULL;
-		T j, jMax, lenOrb, type;
-		j = jMax = 0;
-		const auto* pColOrbit = m_pCanonChecker->colOrbit(i);
-		while (pColOrbit) {
-			T n = 0;
-			type = pRow[j];
-			jMax += (lenOrb = pColOrbit->length());
-			if (lenOrb > 1) {
-				n = type;
-				while (++j < jMax)
-					n += pRow[j];
-
-				if (n && n < lenOrb) {
-					// Orbit is split in two parts
-
-					T j2, j1 = (j2 = j) - lenOrb;
-					const T jLast = j1 + n;
-					while (j1 < jLast) {
-						// Find first 0 in current fragment
-						while (pRow[j1]) j1++;
-						if (j1 == jLast)
-							break;
-
-						// Find last 1 in current fragment
-						while (!pRow[--j2]);
-
-						if (pNewColOrbit) {
-							// Rearranging corresponding elements of the column permutation
-							auto tmp = pColPermut[j1];
-							pColPermut[j1] = pColPermut[j2];
-							pColPermut[j2] = tmp;
-						}
-
-						pRow[j1++] = 1;
-						pRow[j2--] = 0;
-					}
-
-					if (pNewColOrbit) {
-						pNewColOrbit = pNewColOrbit->InitOrbit(n, colOrbitLen(), pColOrbit, 1);
-						type = 0;
-					}
-				} else
-					n = 0;
-			} else
-				j = jMax;
-
-			if (pNewColOrbit)
-				pNewColOrbit = (pColOrbitLast = pNewColOrbit)->InitOrbit(lenOrb - n, colOrbitLen(), pColOrbit, type);
-
-			pColOrbit = pColOrbit->next();
-		}
-
-		if (pNewColOrbit)
-			pColOrbitLast->setNext(NULL);
+		m_pCanonChecker->CreateColumnOrbits(i, pColPermut, pRow);
 	}
 
 	if (pColPermut != colPermut)
@@ -306,18 +251,13 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 #endif
 	T nPart = 1;
 	T level;
-	for (auto j = b; j--;)
-		m_pColPermut[j] = j;
 
-	TestCanonParams<T, S> canonParam = { this, pMatr, 1, &nPart, &level, NULL, NULL, m_pColPermut};
-	auto canonMatrix = this->TestCanonicity(v, &canonParam);
+	TestCanonParams<T, S> canonParam = { m_pCanonChecker, pMatr, 1, &nPart, &level};
+	auto canonMatrix = m_pCanonChecker->TestCanonicity(v, &canonParam, t_saveRowPermutations);
+	if (!canonMatrix) {
+
+		const auto pPermRow = m_pCanonChecker->permRow();
+		const auto pPermCol = m_pCanonChecker->permCol();
+		level = 1;
+	}
 }
-/*
-Matrix #   1    |Aut(M)| =     12*2
-11111111110000000000
-11110000001111110000
-11001100001100001111
-00110011000011001111
-00001010111010111100
-00000101110101110011
-*/
