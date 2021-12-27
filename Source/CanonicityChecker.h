@@ -36,7 +36,7 @@ struct TestCanonParams {
 	const MatrixDataPntr pMatrix;
 	T numParts;
 	T* pPartNumb;
-	S* pRowOut;
+	T* pRowOut;
 	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
 	T* pPermCol;

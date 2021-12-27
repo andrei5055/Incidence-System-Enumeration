@@ -3,6 +3,8 @@
 #include "matrix.h"
 #include "EnumInfo.h"
 
+Class2Def(CEnumInfo);
+
 Class2Def(CMatrixCol) : public CColOrbitManager<S>
 {
 public:
@@ -68,7 +70,8 @@ public:
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
 	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
-	CK void CreateColumnOrbits(T nRow, T *pColPermut, S *pRow) const;
+	CK void CreateColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
+	CK void CanonizeMatrix();
 private:
 	EnumInfoPntr m_pEnumInfo;
 };

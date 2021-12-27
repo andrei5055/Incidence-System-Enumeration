@@ -1,5 +1,7 @@
 #include "MatrixCanonChecker.h"
+#include "RowSolution.h"
 
+//template class CEnumInfo<TDATA_TYPES>;
 template class CMatrixCanonChecker<TDATA_TYPES>;
 
 FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, bool nextColOrbNeeded, T partIdx) const
@@ -84,7 +86,7 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 	return pNextRowColOrbitNew;
 }
 
-FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, T *pColPermut, S *pRow) const {
+FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColPermut) const {
 	// Create column orbits for row number nRow of the matrix()
 	// and make it cannonical, if it is possible
 	if (!pRow)
@@ -92,7 +94,9 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, T *pColPermut, S 
 
 	const auto* pColOrbit = colOrbit(nRow++);
 	CColOrbit<T>* pColOrbitLast;
-	auto* pNewColOrbit = (nRow < matrix()->rowNumb()) ? colOrbitIni(nRow) : NULL;
+	const auto v = matrix()->rowNumb();
+	const auto b = !pColPermut ? matrix()->colNumb() : 0;
+	auto* pNewColOrbit = (nRow < v) ? colOrbitIni(nRow) : NULL;
 	T j, jMax, lenOrb, type;
 	j = jMax = 0;
 	while (pColOrbit) {
@@ -120,12 +124,22 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, T *pColPermut, S 
 
 					if (pNewColOrbit) {
 						// Rearranging corresponding elements of the column permutation
-						auto tmp = pColPermut[j1];
-						pColPermut[j1] = pColPermut[j2];
-						pColPermut[j2] = tmp;
+						if (!pColPermut) {
+							// Permutation of two columns in the remaining rows of the matrix
+							auto *pNextRow = pRow;
+							for (auto i1 = nRow; i1 < v; i1++) {
+								pNextRow += b;
+								if (pNextRow[j1] != pNextRow[j2])
+									pNextRow[j2] = 1 - (pNextRow[j1] = pNextRow[j2]);
+							}
+						} else {
+							auto tmp = pColPermut[j1];
+							pColPermut[j1] = pColPermut[j2];
+							pColPermut[j2] = tmp;
+						}
 					}
 
-					pRow[j1++] = 1;   // When we going back, ferst we change index.
+					pRow[j1++] = 1;   // When we going back, first we change index.
 					pRow[j2] = 0;     // This is why we have no symmetry here.
 				}
 
@@ -148,4 +162,45 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, T *pColPermut, S 
 
 	if (pNewColOrbit)
 		pColOrbitLast->setNext(NULL);
+}
+
+FClass2(CMatrixCanonChecker, void)::CanonizeMatrix() {
+	const auto b = matrix()->colNumb();
+	const auto v = matrix()->rowNumb();
+	T colBuffer[512], *pColumnBuf = b <= countof(colBuffer)? colBuffer : new T[b];
+	const auto len = b * sizeof(pColumnBuf[0]);
+	TestCanonParams<T, S> canonParam = { this, matrix(), 1};
+	while (!TestCanonicity(v, &canonParam, t_saveRowPermutations)) {
+		// Rearrage the row of matrix in accordance with
+		// the permutations permRow() which was just found
+		auto* pPermRow = permRow();
+		bool adjustColumnOrbits = false;
+		for (T tmp, from, i = 0; i < v; i++) {
+			T* pRow;
+			if (i != (from = pPermRow[i])) {
+				T* pFrom;
+				memcpy(pColumnBuf, pFrom = pRow = matrix()->GetRow(tmp = i), len);
+				do {
+					pPermRow[tmp] = tmp;
+					T* pTo = pFrom;
+					memcpy(pTo, pFrom = matrix()->GetRow(tmp = from), len);
+				} while ((from = pPermRow[from]) != i);
+
+				pPermRow[tmp] = tmp;
+				memcpy(pFrom, pColumnBuf, len);
+				adjustColumnOrbits = true;
+			} else {
+				// Column orbits need to be adjusted only at least one previous row was moved
+				if (!adjustColumnOrbits)
+					continue;
+
+				pRow = matrix()->GetRow(i);
+			}
+
+			CreateColumnOrbits(i, pRow);
+		}
+	}
+
+	if (pColumnBuf != colBuffer)
+		delete[] pColumnBuf;
 }

@@ -231,8 +231,6 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	T colPermut[256];
 	T* pColPermut = (countof(colPermut) >= b) ? colPermut : new T[b];
 	memcpy(pColPermut, columnPermut(), b * sizeof(pColPermut[0]));
-	static int cntr; cntr++;
-
 	auto* pMatr = m_pCanonChecker->matrix();
 	for (T i = 2; i < v; i++) {
 		auto* pRowSrc = matrix()->GetRow(i + 1);
@@ -240,24 +238,14 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 		for (auto j = b; --j >= 1;)
 			pRow[j] = pRowSrc[pColPermut[j]];
 
-		m_pCanonChecker->CreateColumnOrbits(i, pColPermut, pRow);
+		m_pCanonChecker->CreateColumnOrbits(i, pRow, pColPermut);
 	}
 
 	if (pColPermut != colPermut)
 		delete[] pColPermut;
 
+	m_pCanonChecker->CanonizeMatrix();
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
-	T nPart = 1;
-	T level;
-
-	TestCanonParams<T, S> canonParam = { m_pCanonChecker, pMatr, 1, &nPart, &level};
-	auto canonMatrix = m_pCanonChecker->TestCanonicity(v, &canonParam, t_saveRowPermutations);
-	if (!canonMatrix) {
-
-		const auto pPermRow = m_pCanonChecker->permRow();
-		const auto pPermCol = m_pCanonChecker->permCol();
-		level = 1;
-	}
 }
