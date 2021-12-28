@@ -1,6 +1,8 @@
 #pragma once
 #include "BIBD_Enumerator.h"
 
+class CDesignDB;
+
 Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 {
 public:
@@ -12,19 +14,9 @@ public:
 		m_bSolutionsWereConstructed = new unsigned char[len];
 		memset(m_bSolutionsWereConstructed, 0, len);
 	}
-	~CCombBIBD_Enumerator()	{
-		delete[] m_FirstPartSolutionIdx;
-		delete[] m_bSolutionsWereConstructed;
-		delete m_pSpareMatrix;
-		delete[] m_pGroupOrders;
-		delete m_pGroupOrder;
-		if (m_bColPermutOwner)
-			delete[] columnPermut();
-
-		delete [] m_pColPermut;
-		delete m_pCanonChecker;
-	}
+	~CCombBIBD_Enumerator();
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
+	auto * designDB() const								{ return m_pDesignDB; }
 protected:
 	CK const char* getObjName() const override			{ return "CBIBD"; }
 	CK const char* getTopLevelDirName() const override 	{ return "Combined_BIBDs"; }
@@ -66,15 +58,17 @@ private:
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
 	CK void CreateFirstRow();
 	CK void createColumnPermut();
+	CK void setDesignDB(CDesignDB *pntr)				{ m_pDesignDB = pntr; }
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;
 	MatrixDataPntr m_pSpareMatrix = NULL;
 	CMatrixCanonChecker* m_pCanonChecker = NULL; // used for cannonization of original matrix
-	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
 	T* m_pColPermut = NULL;						 // Memory, which will keep current permutation of columns
 	bool m_bColPermutOwner = false;
-
+	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
+	CDesignDB* m_pDesignDB = NULL;               // DB where the "master" design are stored
+	static std::mutex m_mutexDB;				 // mutext for DB access when "master" DB as added
 };
 

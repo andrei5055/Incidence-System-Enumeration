@@ -1,6 +1,24 @@
 #include "CombBIBD_Enumerator.h"
+#include "DesignDB.h"
 
 template class CCombBIBD_Enumerator<TDATA_TYPES>;
+std::mutex CCombBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
+
+FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
+	delete[] m_FirstPartSolutionIdx;
+	delete[] m_bSolutionsWereConstructed;
+	delete m_pSpareMatrix;
+	delete[] m_pGroupOrders;
+	delete m_pGroupOrder;
+	if (m_bColPermutOwner) {
+		// Only the master thread is the owner of these data
+		delete[] columnPermut();
+		delete designDB();
+	}
+
+	delete[] m_pColPermut;
+	delete m_pCanonChecker;
+}
 
 #if !CONSTR_ON_GPU
 FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, size_t *pLambdaSetSize) const {
@@ -111,7 +129,6 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 	if (!lengths.GetSize())
 		return NULL;
 
-
 	updateCanonicityChecker(rowNumb(), colNumb());
 	auto pGroupOnParts = new CGroupOnParts<T>(owner, lengths, 3);
 	InitGroupOderStorage(pGroupOnParts);
@@ -126,7 +143,9 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 
 	const auto b = matrix()->colNumb();
 	if (pMaster) {
-		m_pColumnPermut = (T*)(static_cast<const CCombBIBD_Enumerator*>(pMaster)->columnPermut());
+		auto pCombBIBD_master = static_cast<const CCombBIBD_Enumerator*>(pMaster);
+		setDesignDB(pCombBIBD_master->designDB());
+		m_pColumnPermut = (T*)pCombBIBD_master->columnPermut();
 		if (m_pColumnPermut)
 			m_pColPermut = new T[b];
 	}
@@ -216,6 +235,11 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 		nextIdx += nMax;
 	}
+
+	if (designParams()->find_master_design) {
+		// Create DB for storing "master" BIBDs
+		setDesignDB(new CDesignDB(v*b));
+	}
 }
 
 
@@ -248,4 +272,7 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
+	m_mutexDB.lock();
+	designDB()->AddRecord(pMatr->GetDataPntr());
+	m_mutexDB.unlock();
 }
