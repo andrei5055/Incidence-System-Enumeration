@@ -53,6 +53,7 @@ protected:
 	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }
 	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
 	CK void FindMasterBIBD() override;
+	CK void beforeEnumInfoOutput() const override;
 private:
 	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }

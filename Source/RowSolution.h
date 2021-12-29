@@ -124,7 +124,7 @@ private:
 	CK inline T *lastSolution() const							{ return (T *)currSolution() - solutionLength(); }
 #if USE_THREADS || USE_MY_QUICK_SORT
 	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
-	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const;
+	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const T *pSecnd) const;
 #endif
 
 	T m_Length;
@@ -357,10 +357,10 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPe
 }
 
 #if USE_THREADS || USE_MY_QUICK_SORT
-FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const S *pSecnd) const
+FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const T *pSecnd) const
 {
 	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionLength();
-	for (S i = 0; i < solutionLength(); i++) {
+	for (T i = 0; i < solutionLength(); i++) {
 		if (*(pFirst + i) > *(pSecnd + i))
 			return 1;
 
@@ -374,7 +374,7 @@ FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const 
 FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
 	long i = left, j = right;
 	const auto pivotIdx = (left + right) >> 1;
-	const S *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
+	const auto *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
 
 	/* partition */
 	while (i <= j) {

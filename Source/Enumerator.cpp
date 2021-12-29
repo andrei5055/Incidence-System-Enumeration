@@ -757,6 +757,7 @@ endif
 		if (!pParam->firstMatr)
 			outString("\n" END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
+		beforeEnumInfoOutput();
 		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0);
 
 		closeFile();
