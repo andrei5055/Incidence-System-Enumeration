@@ -112,9 +112,9 @@ void CDesignDB::quickSort(size_t *arr, size_t left, size_t right) const {
 			arr[i++] = arr[j];
 			arr[j--] = tmp;
 		} else {
-			i++;
-			if (j) j--;
-			else break;
+			if (i == j)
+				i++;
+			break;
 		}
 	}
 
