@@ -26,7 +26,7 @@ private:
 	size_t m_nRecLen;							    // length of each record
 	const T *m_pRecStorage = NULL;					// memory for record storing
 	size_t m_nIndLen;
-	size_t* m_pIndices;
+	size_t* m_pIndices = NULL;
 	compareFunc m_pCompareFunc = NULL;
 	compareFuncA m_pCompareFuncA = NULL;
 	bool m_bStorageOwner = false;

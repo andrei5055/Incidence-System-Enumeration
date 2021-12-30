@@ -66,7 +66,7 @@ bool CDesignDB::reallocateMemory() {
 	return true;
 }
 
-int compareRecords(recPtr pRec1, recPtr pRec2) {
+int compareRecordsA(recPtr pRec1, recPtr pRec2) {
 	const auto* pMaster_1 = (masterInfo*)pRec1;
 	const auto* pMaster_2 = (masterInfo*)pRec2;
 	const auto decompNumber_1 = pMaster_1->numbDecomp;
@@ -79,8 +79,19 @@ int compareRecords(recPtr pRec1, recPtr pRec2) {
 	return decompNumber_1 > decompNumber_2 ? 1 : -1;
 }
 
+int compareRecords(recPtr pRec1, recPtr pRec2) {
+	const auto* pMaster_1 = (masterInfo*)pRec1;
+	const auto* pMaster_2 = (masterInfo*)pRec2;
+	if (pMaster_1->groupOrder == pMaster_2->groupOrder) {
+		return (pMaster_1->numbDecomp == pMaster_2->numbDecomp) ? 0 :
+			pMaster_1->numbDecomp > pMaster_2->numbDecomp ? 1 : -1;
+	}
+
+	return pMaster_1->groupOrder > pMaster_2->groupOrder ? 1 : -1;
+}
+
 void CDesignDB::SortRecods(FILE *file) {
-	if (recNumb() <= 1)
+	if (!recNumb())
 		return;   // nothing to sort;
 
 	setCompareFunc(compareRecords);
@@ -88,11 +99,51 @@ void CDesignDB::SortRecods(FILE *file) {
 	if (!file)
 		return;
 
+	masterInfo* pRec;
+#if 0
 	fprintf(file, "\nMaster #:    Number of Decomp:   |Aut(M)|:\n");
 	for (size_t i = 0; i < recNumb(); i++) {
-		auto* pRec = (masterInfo*)(firstRecord() + pSortedRecords[i] * recordLength());
+		pRec = (masterInfo*)getRecord(pSortedRecords[i]);
 		fprintf(file, "%4zd:          %6zd           %5zd\n", i+1, pRec->numbDecomp, pRec->groupOrder);
 	}
+#else
+#define SHIFT "    "
+	char buff[256];
+	const auto lenStr = sprintf_s(buff, SHIFT " |Aut(M)|:    Decomp:    Masters: ");
+	fprintf(file, "\n%s\n", buff);
+	memset(buff, '_', lenStr);
+	fprintf(file, SHIFT "%s\n", buff);
+
+	const auto last = recNumb() - 1;
+	size_t i = 0;
+	pRec = (masterInfo*)getRecord(pSortedRecords[0]);
+	unsigned long long total = 0, totalDIBD = 0;
+	while (i != recNumb()) {
+		bool newGroupOrder = true;
+		auto groupOrder = pRec->groupOrder;
+		auto numbDecomp = pRec->numbDecomp;
+		size_t numbMasters = 1;
+		bool sameGroupOrder = true;
+		bool sameDecomp = true;
+		while (sameGroupOrder && (!sameDecomp || ++i < recNumb())) {
+			pRec = (masterInfo*)getRecord(pSortedRecords[i]);
+			sameGroupOrder = groupOrder == pRec->groupOrder;
+			sameDecomp = numbDecomp == pRec->numbDecomp;
+			if (sameGroupOrder && sameDecomp && i != last) {
+				numbMasters++;
+				continue;
+			}
+
+			fprintf(file, SHIFT "%7zd   %7zd    %7zd\n", groupOrder, numbDecomp, numbMasters);
+			totalDIBD += numbMasters;
+			total += numbMasters * numbDecomp;
+			numbDecomp = pRec->numbDecomp;
+			numbMasters = 1;
+		}
+	}
+	fprintf(file, SHIFT "%s\n", buff);
+	fprintf(file, SHIFT "  Total:  %7zd      %5zd\n", total, totalDIBD);
+#endif
 }
 
 
