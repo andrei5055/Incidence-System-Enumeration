@@ -242,7 +242,6 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 	}
 }
 
-
 FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
@@ -273,7 +272,7 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
 	m_mutexDB.lock();
-	designDB()->AddRecord(pMatr->GetDataPntr());
+	designDB()->AddRecord(pMatr->GetDataPntr(), m_pCanonChecker->groupOrder());
 	m_mutexDB.unlock();
 }
 

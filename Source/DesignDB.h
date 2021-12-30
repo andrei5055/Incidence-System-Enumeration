@@ -2,7 +2,12 @@
 #include <stdio.h>
 
 #define STARTING_DB_VOLUME	100
-#define LEN_HEADER			sizeof(unsigned int)
+typedef struct {
+	size_t numbDecomp;
+	size_t groupOrder;
+} masterInfo;
+
+#define LEN_HEADER			sizeof(masterInfo)
 
 typedef const unsigned char * recPtr;
 
@@ -19,7 +24,7 @@ public:
 		delete[] m_pRecStorage;
 		delete[] m_pSortedRecords;
 	}
-	bool AddRecord(recPtr pRecord);
+	void AddRecord(recPtr pRecord, size_t groupOrder);
 	void SortRecods(FILE* file = NULL);
 private:
 	size_t FindRecord(recPtr pRecord, int* pResCmp);

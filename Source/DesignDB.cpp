@@ -1,14 +1,17 @@
 #include <cstring>
 #include "DesignDB.h"
+#include <assert.h>
 
 
-bool CDesignDB::AddRecord(recPtr pRecord) {
+void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
 	int cmpRes;
-	size_t iMin = FindRecord(pRecord, &cmpRes);
+	const auto iMin = FindRecord(pRecord, &cmpRes);
 	if (!cmpRes) {
 		// Increase counter for the record just found
-		++*(unsigned int *)(m_pRecStorage + iMin * m_nRecLen);
-		return false;
+		auto* pMasterInfo = (masterInfo *)(m_pRecStorage + m_pRecPermutation[iMin] * m_nRecLen);
+		pMasterInfo->numbDecomp++;
+		assert(pMasterInfo->groupOrder == groupOrder);
+		return;
 	}
 
 	if (m_nRecNumb == m_nRecNumbMax) {
@@ -18,14 +21,15 @@ bool CDesignDB::AddRecord(recPtr pRecord) {
 
 	auto* pntr = m_pRecStorage + m_nRecNumb * m_nRecLen;
 	memcpy(pntr + LEN_HEADER, pRecord, m_nRecLen - LEN_HEADER);
-	*(unsigned int *)(pntr) = 1;
+	auto* pMasterInfo = (masterInfo*)(pntr);
+	pMasterInfo->numbDecomp = 1;
+	pMasterInfo->groupOrder = groupOrder;
 
 	size_t i = m_nRecNumb;
 	for (; i > iMin; i--)
 		m_pRecPermutation[i] = m_pRecPermutation[i - 1];
 
 	m_pRecPermutation[i] = m_nRecNumb++;
-	return true;
 }
 
 size_t CDesignDB::FindRecord(recPtr pRecord, int *pResCmp) {
@@ -76,20 +80,22 @@ void CDesignDB::SortRecods(FILE *file) {
 	if (!file)
 		return;
 
-	fprintf(file, "\nMaster Design:   Numb of Decompositions:\n");
+	fprintf(file, "\nMaster #:    Number of Decomp:   |Aut(M)|:\n");
 	for (size_t i = 0; i < recNumb(); i++) {
-		auto* pRec = firstRecord() + m_pSortedRecords[i] * recordLength();
-		fprintf(file, "   %6zd:                 %5d\n", i+1, *(int*)pRec);
+		auto* pRec = (masterInfo*)(firstRecord() + m_pSortedRecords[i] * recordLength());
+		fprintf(file, "%4zd:          %6zd           %5zd\n", i+1, pRec->numbDecomp, pRec->groupOrder);
 	}
 }
 
 int CDesignDB::compareRecords(const size_t idx, recPtr pSecnd) const {
-	static int cntr = 0; cntr++;
-	auto *pFirst = firstRecord() + idx * recordLength();
-	const auto decompNumber_1 = *(unsigned int *)pFirst;
-	const auto decompNumber_2 = *(unsigned int *)pSecnd;
-	if (decompNumber_1 == decompNumber_2)
-		return 0;
+	const auto* pMaster_1 = (masterInfo*)(firstRecord() + idx * recordLength());
+	const auto* pMaster_2 = (masterInfo*)pSecnd;
+	const auto decompNumber_1 = pMaster_1->numbDecomp;
+	const auto decompNumber_2 = pMaster_2->numbDecomp;
+	if (decompNumber_1 == decompNumber_2) {
+		return (pMaster_1->groupOrder == pMaster_2->groupOrder)? 0 :
+				pMaster_1->groupOrder > pMaster_2->groupOrder ? 1 : -1;
+	}
 
 	return decompNumber_1 > decompNumber_2 ? 1 : -1;
 }

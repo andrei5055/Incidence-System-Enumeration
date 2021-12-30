@@ -384,11 +384,23 @@ FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long
 		while (j != pivotIdx && compareVectors(arr[j], pivot) == 1)
 			j--;
 
+		if (i < j) {
+			const auto tmp = arr[i];
+			arr[i++] = arr[j];
+			arr[j--] = tmp;
+		}
+		else {
+			if (i == j)
+				i++;
+			break;
+		}
+/*
 		if (i <= j) {
 			const auto tmp = arr[i];
 			arr[i++] = arr[j];
 			arr[j--] = tmp;
 		}
+		*/
 	}
 
 	/* recursion */
