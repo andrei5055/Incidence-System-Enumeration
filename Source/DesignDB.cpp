@@ -83,19 +83,14 @@ void CDesignDB::SortRecods(FILE *file) {
 	if (recNumb() <= 1)
 		return;   // nothing to sort;
 
-	delete[] m_pSortedRecords;
-	m_pSortedRecords = new size_t[recNumb()];
-	for (auto i = recNumb(); i--;)
-		m_pSortedRecords[i] = i;
-
 	setCompareFunc(compareRecords);
-	quickSort(m_pSortedRecords, 0, recNumb()-1);
+	const auto *pSortedRecords = Sort(recNumb());
 	if (!file)
 		return;
 
 	fprintf(file, "\nMaster #:    Number of Decomp:   |Aut(M)|:\n");
 	for (size_t i = 0; i < recNumb(); i++) {
-		auto* pRec = (masterInfo*)(firstRecord() + m_pSortedRecords[i] * recordLength());
+		auto* pRec = (masterInfo*)(firstRecord() + pSortedRecords[i] * recordLength());
 		fprintf(file, "%4zd:          %6zd           %5zd\n", i+1, pRec->numbDecomp, pRec->groupOrder);
 	}
 }

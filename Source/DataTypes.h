@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define TEST					   false //true   // Test mode
+#define TEST					  false //true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -115,8 +115,6 @@
 										// with respect to the Aut G(M(n)) of the first n rows of M
 #define USE_STRONG_CANONICITY	(USE_CANON_GROUP && 0)			// Find equivalent solutions for ALL USED canonical solutions of M(n+1)
 #define USE_STRONG_CANONICITY_A	(USE_STRONG_CANONICITY && 1)	// Strong canonicity on ALL (not only used) canonical solutions of M(n+1)
-
-#define USE_MY_QUICK_SORT			(USE_THREADS > 1 || 1)      // For multithead version we cannot use regular quicksort, since we are using some global variable here
 
 #define SLIP_TIME					500  //    in microseconds
 #define REPORT_INTERVAL				(5 * 1000 * 100)

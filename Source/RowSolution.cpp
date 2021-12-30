@@ -13,7 +13,6 @@
 
 template class CRowSolution<TDATA_TYPES>;
 
-#if USE_THREADS || USE_MY_QUICK_SORT
 int compareVectors(const unsigned char * pFirstIn, const unsigned char * pSecndIn, const CSorter<unsigned char>*pntr) {
 	const SIZE_TYPE* pFirst = (SIZE_TYPE*)pFirstIn;
 	const SIZE_TYPE* pSecnd = (SIZE_TYPE*)pSecndIn;
@@ -28,33 +27,6 @@ int compareVectors(const unsigned char * pFirstIn, const unsigned char * pSecndI
 
 	return 0;
 }
-#else
-#if USE_PERM
-const VECTOR_ELEMENT_TYPE *pntrSolution;
-#endif
-size_t sizeSolution;
-
-int compareSolutions (const void *p1, const void *p2)
-{
-#if USE_PERM
-    const VECTOR_ELEMENT_TYPE *pFirst = pntrSolution + *(PERMUT_ELEMENT_TYPE *)p1 * sizeSolution;
-    const VECTOR_ELEMENT_TYPE *pSecnd = pntrSolution + *(PERMUT_ELEMENT_TYPE *)p2 * sizeSolution;
-#else
-    const VECTOR_ELEMENT_TYPE *pFirst = (VECTOR_ELEMENT_TYPE *)p1;
-    const VECTOR_ELEMENT_TYPE *pSecnd = (VECTOR_ELEMENT_TYPE *)p2;
-#endif
-    for (size_t i = 0; i < sizeSolution; i++) {
-        if (*(pFirst+i) > *(pSecnd+i))
-            return 1;
-        
-        if (*(pFirst+i) < *(pSecnd+i))
-            return -1;
-    }
-
-    return 0;
-}
-#endif
-
 
 FClass2(CRowSolution, void)::InitSolutions(T length, size_t nVect, CArrayOfVectorElements* pCoordSrc, PERMUT_ELEMENT_TYPE lastIdx)
 {
@@ -299,22 +271,10 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPe
 	uchar* pCanonFlags;
 	auto pPerm = initSorting(&pCanonFlags);
 	setRecordStorage(firstSolution());
-	for (auto i = numSolutions(); i--;)
-		*(pPerm + i) = i;
-
 	if (doSorting && numSolutions() > 1) {
-#if USE_THREADS || USE_MY_QUICK_SORT
 		// When we use threads, we cannot use qsort, since in our implementation
 		// qsort will use global variables - pntrSolution and sizeSolution
-		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
-#else
-		extern size_t sizeSolution;
-		extern const S* pntrSolution;
-		sizeSolution = solutionLength();
-		pntrSolution = firstSolution();
-		int compareSolutions(const void* p1, const void* p2);
-		qsort(pPerm, numSolutions(), sizeof(pPerm[0]), compareSolutions);
-#endif
+		Sort(numSolutions(), pPerm);
 	}
 
 	if (doSorting && pPermStorage)

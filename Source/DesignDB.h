@@ -23,7 +23,6 @@ public:
 	}
 	~CDesignDB() {
 		delete[] m_pRecPermutation;
-		delete[] m_pSortedRecords;
 	}
 	void AddRecord(recPtr pRecord, size_t groupOrder);
 	void SortRecods(FILE* file = NULL);
@@ -35,6 +34,5 @@ private:
 	size_t m_nRecNumb = 0;					// number of DB records
 	size_t m_nRecNumbMax = 0;				// max number of DB records
 	size_t* m_pRecPermutation = NULL;		// permutation defining the order of records
-	size_t *m_pSortedRecords = NULL;		// the array of indices of sorted records
 };
 

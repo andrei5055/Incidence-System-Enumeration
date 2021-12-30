@@ -10,7 +10,7 @@ public:
 	~CSorter()										{ setRecordStorage(); }
 	inline size_t recordLength() const				{ return m_nRecLen; }
 protected:
-	void quickSort(size_t* arr, size_t left, size_t right) const;
+	size_t *Sort(size_t nElementst, size_t* arr = NULL);
 	const T *getRecord(size_t idx) const			{ return firstRecord() + idx * recordLength(); }
 	inline const T *firstRecord() const				{ return m_pRecStorage; }
 	inline void setRecordLength(size_t len)			{ m_nRecLen = len; }
@@ -20,13 +20,39 @@ protected:
 	inline void setCompareFuncA(compareFuncA pF)	{ m_pCompareFuncA = pF; }
 	inline void setCompareFunc(compareFunc pF)		{ m_pCompareFunc = pF; }
 	inline void setStorageOwner(bool val = true)	{ m_bStorageOwner = val; }
+	inline void setIndexOwner(bool val)				{ m_bIndicesOwner = val; }
 private:
-	size_t m_nRecLen;							// length of each record
+	void quickSort(size_t* arr, size_t left, size_t right) const;
+	size_t m_nRecLen;							    // length of each record
 	const T *m_pRecStorage = NULL;					// memory for record storing
+	size_t m_nIndLen;
+	size_t* m_pIndices;
 	compareFunc m_pCompareFunc = NULL;
 	compareFuncA m_pCompareFuncA = NULL;
 	bool m_bStorageOwner = false;
+	bool m_bIndicesOwner = false;
 };
+
+template<typename T>
+size_t *CSorter<T>::Sort(size_t nElements, size_t *arr) {
+	if (!arr) {
+		if (!m_pIndices || m_nIndLen < nElements) {
+			if (m_bIndicesOwner)
+				delete[] m_pIndices;
+
+			setIndexOwner(true);
+			m_pIndices = new size_t[m_nIndLen = nElements];
+		}
+
+		arr = m_pIndices;
+	}
+
+	for (auto i = nElements; i--;)
+		arr[i] = i;
+
+	quickSort(arr, 0, nElements - 1);
+	return arr;
+}
 
 template<typename T>
 void CSorter<T>::quickSort(size_t* arr, size_t left, size_t right) const {
