@@ -13,7 +13,22 @@
 
 template class CRowSolution<TDATA_TYPES>;
 
-#if !USE_THREADS && !USE_MY_QUICK_SORT
+#if USE_THREADS || USE_MY_QUICK_SORT
+int compareVectors(const unsigned char * pFirstIn, const unsigned char * pSecndIn, const CSorter<unsigned char>*pntr) {
+	const SIZE_TYPE* pFirst = (SIZE_TYPE*)pFirstIn;
+	const SIZE_TYPE* pSecnd = (SIZE_TYPE*)pSecndIn;
+	const auto iMax = pntr->recordLength() / sizeof(SIZE_TYPE);
+	for (SIZE_TYPE i = 0; i < iMax; i++) {
+		if (*(pFirst + i) > *(pSecnd + i))
+			return 1;
+
+		if (*(pFirst + i) < *(pSecnd + i))
+			return -1;
+	}
+
+	return 0;
+}
+#else
 #if USE_PERM
 const VECTOR_ELEMENT_TYPE *pntrSolution;
 #endif
@@ -39,6 +54,24 @@ int compareSolutions (const void *p1, const void *p2)
     return 0;
 }
 #endif
+
+
+FClass2(CRowSolution, void)::InitSolutions(T length, size_t nVect, CArrayOfVectorElements* pCoordSrc, PERMUT_ELEMENT_TYPE lastIdx)
+{
+	setSolutionIndex(0);
+	setSolutionLength(length);					// vector length
+	delete solutionPerm();
+	setSolutionPerm(new CSolutionPerm());
+	setCompareFuncA(compareVectors);
+	setNumSolutions(nVect);
+	if (pCoordSrc) {
+		CArrayOfVectorElements* pCoord = getCoord();
+		const auto len = length * (lastIdx + 1);
+		if (len > pCoord->GetSize())
+			IncreaseVectorSize(len - pCoord->GetSize());
+		memcpy(pCoord->GetData(), pCoordSrc->GetData(), len * sizeof(*pCoord->GetData()));
+	}
+}
 
 FClass2(CRowSolution, void)::removeNoncanonicalSolutions(size_t startIndex) {
 	auto *pCanonFlags = solutionPerm()->canonFlags();
@@ -255,6 +288,39 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const T *pSolution, siz
 	}
 
 	return startIndex;
+}
+
+FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPermStorage) {
+	// Calling this function, we do not necessarily need a real sorting.
+	// In some cases, just the initiation would be enough.
+	if (!this || !numSolutions() || !solutionLength())
+		return;
+
+	uchar* pCanonFlags;
+	auto pPerm = initSorting(&pCanonFlags);
+	setRecordStorage(firstSolution());
+	for (auto i = numSolutions(); i--;)
+		*(pPerm + i) = i;
+
+	if (doSorting && numSolutions() > 1) {
+#if USE_THREADS || USE_MY_QUICK_SORT
+		// When we use threads, we cannot use qsort, since in our implementation
+		// qsort will use global variables - pntrSolution and sizeSolution
+		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
+#else
+		extern size_t sizeSolution;
+		extern const S* pntrSolution;
+		sizeSolution = solutionLength();
+		pntrSolution = firstSolution();
+		int compareSolutions(const void* p1, const void* p2);
+		qsort(pPerm, numSolutions(), sizeof(pPerm[0]), compareSolutions);
+#endif
+	}
+
+	if (doSorting && pPermStorage)
+		sortSolutionsByGroup(pPermStorage);
+	else
+		memset(pCanonFlags, 1, numSolutions());
 }
 
 #if PRINT_SOLUTIONS

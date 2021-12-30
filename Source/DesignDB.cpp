@@ -19,7 +19,7 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
 		reallocateMemory();
 	}
 
-	auto* pntr = getRecord(m_nRecNumb);
+	auto* pntr = (unsigned char *)getRecord(m_nRecNumb);
 	memcpy(pntr + LEN_HEADER, pRecord, recordLength() - LEN_HEADER);
 	auto* pMasterInfo = (masterInfo*)(pntr);
 	pMasterInfo->numbDecomp = 1;

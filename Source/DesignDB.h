@@ -18,6 +18,7 @@ public:
 	CDesignDB(size_t len) : CSorter(len+LEN_HEADER) {
 		m_nRecNumbMax = STARTING_DB_VOLUME;
 		m_pRecPermutation = new size_t[m_nRecNumbMax];
+		setStorageOwner();
 		setRecordStorage(new unsigned char[recordLength() * m_nRecNumbMax]);
 	}
 	~CDesignDB() {
@@ -29,9 +30,6 @@ public:
 private:
 	size_t FindRecord(recPtr pRecord, int* pResCmp);
 	bool reallocateMemory();
-//	void quickSort(size_t * arr, size_t left, size_t right) const;
-//	int compareRecords(const size_t idx, recPtr pSecnd) const;
-
 	inline auto recNumb() const					{ return m_nRecNumb; }
 
 	size_t m_nRecNumb = 0;					// number of DB records

@@ -11,6 +11,7 @@
 
 #include "InSysRowEquation.h"
 #include "ColOrbits.h"
+#include "Sorter.h"
 
 Class2Def(CInSysSolver);
 Class2Def(CPermutStorage);
@@ -62,10 +63,12 @@ public:
 	CArrayOfCanonFlags *m_CanonFlgs;
 };
 
-Class2Def(CRowSolution) : public CVector<S>
+Class2Def(CRowSolution) : public CVector<S>, CSorter<unsigned char>
 {
 public:
-	CK CRowSolution(S length = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL) : CVector<S>(length * nVect, pCoord) {
+	CK CRowSolution(T length = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL) :
+		                                                        CVector<S>(length * nVect, pCoord),
+																CSorter(length * sizeof(T)) {
 																	setSolutionPerm(NULL);
 																	InitSolutions(length, nVect, pCoord);
 																}
@@ -88,7 +91,7 @@ public:
 #endif
 	CK void InitSolutions(T size = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL, PERMUT_ELEMENT_TYPE lastIdx = 0);
 	CK inline auto solutionLength() const						{ return m_Length; }
-	CK inline void setSolutionLength(T length)					{ m_Length = length; }
+	CK inline void setSolutionLength(T length)					{ setRecordLength((m_Length = length)*sizeof(T)); }
 	CK CRowSolution *getSolution();
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin);
@@ -122,10 +125,6 @@ private:
 	size_t findSolution(const T *pSolution, size_t i, size_t iMax, const CSolutionPerm *pSolPerm, size_t &lastCanonIdx, size_t *pNextSolutionIdx) const;
 	inline auto lenOrbitOfSolution() const						{ return m_nLenSolOrb; }
 	CK inline T *lastSolution() const							{ return (T *)currSolution() - solutionLength(); }
-#if USE_THREADS || USE_MY_QUICK_SORT
-	CK void quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const;
-	CK int compareVectors(const PERMUT_ELEMENT_TYPE idx, const T *pSecnd) const;
-#endif
 
 	T m_Length;
 	size_t m_nNumSolutions;
@@ -136,22 +135,6 @@ private:
 };
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
-
-FClass2(CRowSolution, void)::InitSolutions(T length, size_t nVect, CArrayOfVectorElements *pCoordSrc, PERMUT_ELEMENT_TYPE lastIdx)
-{
-	setSolutionIndex(0);
-	setSolutionLength(length);					// vector length
-	delete solutionPerm();
-	setSolutionPerm(new CSolutionPerm());
-	setNumSolutions(nVect);
-	if (pCoordSrc) {
-		CArrayOfVectorElements* pCoord = getCoord();
-		const auto len = length * (lastIdx + 1);
-		if (len > pCoord->GetSize())
-			IncreaseVectorSize(len - pCoord->GetSize());
-		memcpy(pCoord->GetData(), pCoordSrc->GetData(), len * sizeof(*pCoord->GetData()));
-	}
-}
 
 FClass2(CRowSolution, CRowSolution<T,S>&)::operator = (const CRowSolution<T,S>& src) {
 	// This function is used only for initiation of row solutions used by threads
@@ -323,95 +306,6 @@ FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin
 
 	return true;
 }
-
-FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPermStorage) {
-	// Calling this function, we do not necessarily need a real sorting.
-	// In some cases, just the initiation would be enough.
-	if (!this || !numSolutions() || !solutionLength())
-		return;
-
-	uchar *pCanonFlags;
-	auto pPerm = initSorting(&pCanonFlags);
-	for (auto i = numSolutions(); i--;)
-		*(pPerm + i) = i;
-
-	if (doSorting && numSolutions() > 1) {
-#if USE_THREADS || USE_MY_QUICK_SORT
-		// When we use threads, we cannot use qsort, since in our implementation
-		// qsort will use global variables - pntrSolution and sizeSolution
-		quickSort(pPerm, 0, static_cast<long>(numSolutions() - 1));
-#else
-		extern size_t sizeSolution;
-		extern const S* pntrSolution;
-		sizeSolution = solutionLength();
-		pntrSolution = firstSolution();
-		int compareSolutions(const void *p1, const void *p2);
-		qsort(pPerm, numSolutions(), sizeof(pPerm[0]), compareSolutions);
-#endif
-	}
-
-	if (doSorting && pPermStorage)
-		sortSolutionsByGroup(pPermStorage);
-	else
-		memset(pCanonFlags, 1, numSolutions());
-}
-
-#if USE_THREADS || USE_MY_QUICK_SORT
-FClass2(CRowSolution, int)::compareVectors(const PERMUT_ELEMENT_TYPE idx, const T *pSecnd) const
-{
-	const VECTOR_ELEMENT_TYPE *pFirst = firstSolution() + idx * solutionLength();
-	for (T i = 0; i < solutionLength(); i++) {
-		if (*(pFirst + i) > *(pSecnd + i))
-			return 1;
-
-		if (*(pFirst + i) < *(pSecnd + i))
-			return -1;
-	}
-
-	return 0;
-}
-
-FClass2(CRowSolution, void)::quickSort(PERMUT_ELEMENT_TYPE *arr, long left, long right) const {
-	long i = left, j = right;
-	const auto pivotIdx = (left + right) >> 1;
-	const auto *pivot = firstSolution() + arr[pivotIdx] * solutionLength();
-
-	/* partition */
-	while (i <= j) {
-		while (i != pivotIdx && compareVectors(arr[i], pivot) == -1)
-			i++;
-
-		while (j != pivotIdx && compareVectors(arr[j], pivot) == 1)
-			j--;
-
-		if (i < j) {
-			const auto tmp = arr[i];
-			arr[i++] = arr[j];
-			arr[j--] = tmp;
-		}
-		else {
-			if (i == j)
-				i++;
-			break;
-		}
-/*
-		if (i <= j) {
-			const auto tmp = arr[i];
-			arr[i++] = arr[j];
-			arr[j--] = tmp;
-		}
-		*/
-	}
-
-	/* recursion */
-	if (left < j)
-		quickSort(arr, left, j);
-
-	if (i < right)
-		quickSort(arr, i, right);
-}
-#endif
-
 
 FClass2(CRowSolution, void)::sortSolutionsByGroup(PermutStoragePntr pPermStorage)
 {
