@@ -8,7 +8,7 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
 	const auto iMin = FindRecord(pRecord, &cmpRes);
 	if (!cmpRes) {
 		// Increase counter for the record just found
-		auto* pMasterInfo = (masterInfo *)(m_pRecStorage + m_pRecPermutation[iMin] * m_nRecLen);
+		auto* pMasterInfo = (masterInfo *)getRecord(m_pRecPermutation[iMin]);
 		pMasterInfo->numbDecomp++;
 		assert(pMasterInfo->groupOrder == groupOrder);
 		return;
@@ -19,8 +19,8 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
 		reallocateMemory();
 	}
 
-	auto* pntr = m_pRecStorage + m_nRecNumb * m_nRecLen;
-	memcpy(pntr + LEN_HEADER, pRecord, m_nRecLen - LEN_HEADER);
+	auto* pntr = getRecord(m_nRecNumb);
+	memcpy(pntr + LEN_HEADER, pRecord, recordLength() - LEN_HEADER);
 	auto* pMasterInfo = (masterInfo*)(pntr);
 	pMasterInfo->numbDecomp = 1;
 	pMasterInfo->groupOrder = groupOrder;
@@ -39,7 +39,7 @@ size_t CDesignDB::FindRecord(recPtr pRecord, int *pResCmp) {
 	while (low < high) {
 		mid = low + (high - low) / 2;
 
-		recPtr pRecordMid = m_pRecStorage + m_pRecPermutation[mid] * recordLength() + LEN_HEADER;
+		recPtr pRecordMid = getRecord(m_pRecPermutation[mid]) + LEN_HEADER;
 		if (!(*pResCmp = memcmp(pRecordMid, pRecord, recordLength() - LEN_HEADER)))
 			return mid;
 
@@ -60,11 +60,23 @@ bool CDesignDB::reallocateMemory() {
 	m_pRecPermutation = pRecPerm;
 
 	auto* pNewRecStorage = new unsigned char[newRecNumber * recordLength()];
-	memcpy(pNewRecStorage, m_pRecStorage, m_nRecNumbMax * recordLength() * sizeof(pNewRecStorage[0]));
-	delete[] m_pRecStorage;
-	m_pRecStorage = pNewRecStorage;
+	memcpy(pNewRecStorage, firstRecord(), m_nRecNumbMax * recordLength() * sizeof(pNewRecStorage[0]));
+	setRecordStorage(pNewRecStorage);
 	m_nRecNumbMax = newRecNumber;
 	return true;
+}
+
+int compareRecords(recPtr pRec1, recPtr pRec2) {
+	const auto* pMaster_1 = (masterInfo*)pRec1;
+	const auto* pMaster_2 = (masterInfo*)pRec2;
+	const auto decompNumber_1 = pMaster_1->numbDecomp;
+	const auto decompNumber_2 = pMaster_2->numbDecomp;
+	if (decompNumber_1 == decompNumber_2) {
+		return (pMaster_1->groupOrder == pMaster_2->groupOrder) ? 0 :
+			pMaster_1->groupOrder > pMaster_2->groupOrder ? 1 : -1;
+	}
+
+	return decompNumber_1 > decompNumber_2 ? 1 : -1;
 }
 
 void CDesignDB::SortRecods(FILE *file) {
@@ -76,6 +88,7 @@ void CDesignDB::SortRecods(FILE *file) {
 	for (auto i = recNumb(); i--;)
 		m_pSortedRecords[i] = i;
 
+	setCompareFunc(compareRecords);
 	quickSort(m_pSortedRecords, 0, recNumb()-1);
 	if (!file)
 		return;
@@ -87,47 +100,4 @@ void CDesignDB::SortRecods(FILE *file) {
 	}
 }
 
-int CDesignDB::compareRecords(const size_t idx, recPtr pSecnd) const {
-	const auto* pMaster_1 = (masterInfo*)(firstRecord() + idx * recordLength());
-	const auto* pMaster_2 = (masterInfo*)pSecnd;
-	const auto decompNumber_1 = pMaster_1->numbDecomp;
-	const auto decompNumber_2 = pMaster_2->numbDecomp;
-	if (decompNumber_1 == decompNumber_2) {
-		return (pMaster_1->groupOrder == pMaster_2->groupOrder)? 0 :
-				pMaster_1->groupOrder > pMaster_2->groupOrder ? 1 : -1;
-	}
 
-	return decompNumber_1 > decompNumber_2 ? 1 : -1;
-}
-
-void CDesignDB::quickSort(size_t *arr, size_t left, size_t right) const {
-	size_t i = left, j = right;
-	const auto pivotIdx = (left + right) >> 1;
-	auto pivot = firstRecord() + arr[pivotIdx] * recordLength();
-
-	/* partition */
-	while (i <= j) {
-		while (i != pivotIdx && compareRecords(arr[i], pivot) == -1)
-			i++;
-
-		while (j != pivotIdx && compareRecords(arr[j], pivot) == 1)
-			j--;
-
-		if (i < j) {
-			const auto tmp = arr[i];
-			arr[i++] = arr[j];
-			arr[j--] = tmp;
-		} else {
-			if (i == j)
-				i++;
-			break;
-		}
-	}
-
-	/* recursion */
-	if (left < j)
-		quickSort(arr, left, j);
-
-	if (i < right)
-		quickSort(arr, i, right);
-}
