@@ -116,27 +116,29 @@ void CDesignDB::SortRecods(FILE *file) {
 
 	const auto last = recNumb() - 1;
 	size_t i = 0;
-	pRec = (masterInfo*)getRecord(pSortedRecords[0]);
+	pRec = (masterInfo *)getRecord(pSortedRecords[0]);
 	unsigned long long total = 0, totalDIBD = 0;
-	while (i != recNumb()) {
-		bool newGroupOrder = true;
-		auto groupOrder = pRec->groupOrder;
-		auto numbDecomp = pRec->numbDecomp;
-		size_t numbMasters = 1;
-		bool sameGroupOrder = true;
-		bool sameDecomp = true;
-		while (sameGroupOrder && (!sameDecomp || ++i < recNumb())) {
-			pRec = (masterInfo*)getRecord(pSortedRecords[i]);
-			sameGroupOrder = groupOrder == pRec->groupOrder;
-			sameDecomp = numbDecomp == pRec->numbDecomp;
-			if (sameGroupOrder && sameDecomp && i != last) {
-				numbMasters++;
-				continue;
-			}
 
+	auto groupOrder = pRec->groupOrder;
+	auto numbDecomp = pRec->numbDecomp;
+	size_t jMax = 1, numbMasters = 1;
+	while (++i < recNumb()) {
+		pRec = (masterInfo*)getRecord(pSortedRecords[i]);
+		if (groupOrder == pRec->groupOrder && numbDecomp == pRec->numbDecomp) {
+			numbMasters++;
+			if (i != last)
+				continue;
+		}
+		else {
+			if (i == last)
+				jMax = 2;
+		}
+
+		for (auto j = jMax; j--;) {
 			fprintf(file, SHIFT "%7zd   %7zd    %7zd\n", groupOrder, numbDecomp, numbMasters);
 			totalDIBD += numbMasters;
 			total += numbMasters * numbDecomp;
+			groupOrder = pRec->groupOrder;
 			numbDecomp = pRec->numbDecomp;
 			numbMasters = 1;
 		}
