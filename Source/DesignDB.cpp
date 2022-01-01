@@ -123,7 +123,8 @@ void CDesignDB::outWithFormat_0(const size_t * pSortedRecords, FILE * file) cons
 
 	auto groupOrder = pRec->groupOrder;
 	auto numbDecomp = pRec->numbDecomp;
-	size_t jMax = 1, numbMasters = 1;
+	size_t numbDecompMaxGlobal, numbDecompMax, jMax, numbMasters;
+	numbDecompMaxGlobal = numbDecompMax = numbMasters = jMax = 1;
 	bool flag = true;
 	size_t len_buff = sizeof(buff);
 	while (++i < recNumb()) {
@@ -146,27 +147,58 @@ void CDesignDB::outWithFormat_0(const size_t * pSortedRecords, FILE * file) cons
 				flag = false;
 			}
 			else {
-				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), ",%zd",numbMasters);
+				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), ",%zd", numbMasters);
 			}
 
-			if (numbDecomp > 1)
-				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), "*%zd", numbDecomp);
+			if (numbDecomp > 1) {
+				if (numbDecompMax < numbDecomp) {
+					if (numbDecompMaxGlobal < (numbDecompMax = numbDecomp))
+						numbDecompMaxGlobal = numbDecompMax;
+				}
 
-			if (groupOrder != pRec->groupOrder || /*jMax == 2 && */!j && i == last) {
-				fprintf(file, SHIFT "%s\n", buff);
+				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), "*%zd", numbDecomp);
+			}
+
+			if (groupOrder != pRec->groupOrder || !j && i == last) {
+				char saved;
+				int j = 70;
+				int k = 0;
+				while (true) {
+					const bool flg = strlen(buff + k) > j;
+					if (flg) {
+						// Need to split decomposition information for given groupOrder into two strings
+						while (buff[k+j] != ',') j--;
+						saved = buff[k + ++j];
+						buff[k + j] = '\0';
+					}
+
+					if (!flg) {
+						const auto len = strlen(buff + k);
+						memset(buff + k + len, ' ', 70 - len);
+						sprintf_s(buff + k + 70, len_buff - (k + 70), "%5zd", numbDecompMax);
+					}
+					fprintf(file, SHIFT "%s\n", buff+k);
+					if (!flg)
+						break;
+
+					memset(buff + k + j - 16, ' ', 16);
+					buff[k + j] = saved;
+					k += j - 16;
+				}
+
 				groupOrder = pRec->groupOrder;
 				flag = true;
 			}
 
 			numbDecomp = pRec->numbDecomp;
-			numbMasters = 1;
+			numbDecompMax = numbMasters = 1;
 		}
 	}
 
 	memset(buff, '_', lenStr);
 	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);
-	fprintf(file, SHIFT "  Total:  %7zd    Masters:%7zd\n", totalCombined, totalMasters);
+	fprintf(file, SHIFT "  Total:  %7zd    Masters:%5zd   MaxDecomposition: %zd: \n", totalCombined, totalMasters, numbDecompMaxGlobal);
 }
 
 void CDesignDB::outWithFormat_1(const size_t* pSortedRecords, FILE* file) const {
