@@ -381,9 +381,11 @@ int main(int argc, char * argv[])
 			transform(line.begin(), line.end(), line.begin(), ::toupper);
 		}
 
+
 		if (line.find("END_JOB") != string::npos)
 			break;
 
+		const auto length = line.length();
 		pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
 			newWorkDir = line.substr(pos + 1);
@@ -431,9 +433,8 @@ int main(int argc, char * argv[])
 		pos = find(line, "USE_MASTER_SOLUTIONS");
 		if (pos != string::npos) {
 			// When 1, the solutions obtained by master will be used in the threads
-			use_master_sol = static_cast<int>(getInteger(line, &pos));
-			if (use_master_sol == string::npos)
-				use_master_sol = 1;
+			const auto val = length > pos ? getInteger(line, &pos) : string::npos;
+			use_master_sol = val != string::npos ? static_cast<int>(val) : 1;
 			param->use_master_sol = use_master_sol;
 			continue;
 		}
@@ -444,17 +445,32 @@ int main(int argc, char * argv[])
 			// After that we will try to find that "original" BIBD in the ordered list of previously constructed
 			// "original" BIBDs. In that way we will find all BIBD which could be split into several parts
 			// and all such non-isomorphic splits
-			find_master_design = static_cast<int>(getInteger(line, &pos));
-			if (find_master_design == string::npos)
-				find_master_design = 1;
+			const auto val = length > pos ? getInteger(line, &pos) : string::npos;
+			find_master_design = val != string::npos ? static_cast<int>(val) : 1;
 			param->find_master_design = find_master_design;
+			if (find_master_design) {
+				pos = find(line, "FORMAT_MASTER_BIBD");
+				if (pos != string::npos) {
+					int format_ID = 0;
+					const auto val = length > pos? getInteger(line, &pos) : string::npos;
+					if (val != string::npos) {
+						if (val < 0 || val > 2) {
+							printf("FORMAT_MASTER_BIBD=%zd is invalid. Will use default: 0", val);
+						}
+						else
+							format_ID = static_cast<int>(val);
+					}
+
+					 param->format_master_BIBDs = format_ID;
+				}
+			}
 			continue;
 		}
 
 		pos = find(line, "THREAD_LEVEL");
 		if (pos != string::npos) {
 			// Define the row number, where threads will be launched
-			const auto mt_level = getInteger(line, &pos);
+			const auto mt_level = length > pos ? getInteger(line, &pos) : string::npos;
 			if (mt_level == string::npos) {
 				printf("Cannot define thread level from: \"%s\"\n", line.c_str());
 				printf("Will use the default calculated from object's parameter: v / 2\n");

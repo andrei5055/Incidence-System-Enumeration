@@ -282,6 +282,6 @@ FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {
 
 	// Sorting "master" BIBDs by their numbers of decompositions
 	outString(" \n\n" BEG_OUT_BLOCK "Decomposition info:" END_OUT_BLOCK "\n", outFile());
-	designDB()->SortRecods(outFile());
+	designDB()->SortRecods(outFile(), designParams()->format_master_BIBDs);
 	outString(" \n" END_OUT_BLOCK "Decomposition info" BEG_OUT_BLOCK "\n\n", outFile());
 }

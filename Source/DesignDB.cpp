@@ -90,34 +90,97 @@ int compareRecords(recPtr pRec1, recPtr pRec2) {
 	return pMaster_1->groupOrder > pMaster_2->groupOrder ? 1 : -1;
 }
 
-void CDesignDB::SortRecods(FILE *file) {
+void CDesignDB::SortRecods(FILE* file, int formatID) {
 	if (!recNumb())
 		return;   // nothing to sort;
 
 	setCompareFunc(compareRecords);
-	const auto *pSortedRecords = Sort(recNumb());
+	const auto* pSortedRecords = Sort(recNumb());
 	if (!file)
 		return;
 
-	masterInfo* pRec;
-#if 0
-	fprintf(file, "\nMaster #:    Number of Decomp:   |Aut(M)|:\n");
-	for (size_t i = 0; i < recNumb(); i++) {
-		pRec = (masterInfo*)getRecord(pSortedRecords[i]);
-		fprintf(file, "%4zd:          %6zd           %5zd\n", i+1, pRec->numbDecomp, pRec->groupOrder);
+	switch (formatID) {
+	case 0: return outWithFormat_0(pSortedRecords, file);
+	case 1: return outWithFormat_1(pSortedRecords, file);
+	case 2: return outWithFormat_2(pSortedRecords, file);
 	}
-#else
+}
+
 #define SHIFT "    "
-	char buff[256];
-	const auto lenStr = sprintf_s(buff, SHIFT " |Aut(M)|:    Decomp:    Masters: ");
+
+void CDesignDB::outWithFormat_0(const size_t * pSortedRecords, FILE * file) const {
+	char buff[256], *pBuff;
+	const auto lenStr = sprintf_s(buff, SHIFT " |Aut(M)|:       Decomp: ");
 	fprintf(file, "\n%s\n", buff);
 	memset(buff, '_', lenStr);
+	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);
 
 	const auto last = recNumb() - 1;
 	size_t i = 0;
-	pRec = (masterInfo *)getRecord(pSortedRecords[0]);
-	unsigned long long total = 0, totalDIBD = 0;
+	auto* pRec = (const masterInfo*)getRecord(pSortedRecords[0]);
+	unsigned long long totalCombined = 0, totalMasters = 0;
+
+	auto groupOrder = pRec->groupOrder;
+	auto numbDecomp = pRec->numbDecomp;
+	size_t jMax = 1, numbMasters = 1;
+	bool flag = true;
+	size_t len_buff = sizeof(buff);
+	while (++i < recNumb()) {
+		pRec = (masterInfo*)getRecord(pSortedRecords[i]);
+		if (groupOrder == pRec->groupOrder && numbDecomp == pRec->numbDecomp) {
+			numbMasters++;
+			if (i != last)
+				continue;
+		}
+		else {
+			if (i == last)
+				jMax = 2;
+		}
+
+		for (auto j = jMax; j--;) {
+			totalMasters += numbMasters;
+			totalCombined += numbMasters * numbDecomp;
+			if (flag) {
+				pBuff += sprintf_s(pBuff = buff, len_buff, "%7zd   %7zd", groupOrder, numbMasters);
+				flag = false;
+			}
+			else {
+				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), ",%zd",numbMasters);
+			}
+
+			if (numbDecomp > 1)
+				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), "*%zd", numbDecomp);
+
+			if (groupOrder != pRec->groupOrder || /*jMax == 2 && */!j && i == last) {
+				fprintf(file, SHIFT "%s\n", buff);
+				groupOrder = pRec->groupOrder;
+				flag = true;
+			}
+
+			numbDecomp = pRec->numbDecomp;
+			numbMasters = 1;
+		}
+	}
+
+	memset(buff, '_', lenStr);
+	buff[lenStr] = '\0';
+	fprintf(file, SHIFT "%s\n", buff);
+	fprintf(file, SHIFT "  Total:  %7zd    Masters:%7zd\n", totalCombined, totalMasters);
+}
+
+void CDesignDB::outWithFormat_1(const size_t* pSortedRecords, FILE* file) const {
+	char buff[256];
+	const auto lenStr = sprintf_s(buff, SHIFT " |Aut(M)|:    Masters:    Decomp: ");
+	fprintf(file, "\n%s\n", buff);
+	memset(buff, '_', lenStr);
+	buff[lenStr] = '\0';
+	fprintf(file, SHIFT "%s\n", buff);
+
+	const auto last = recNumb() - 1;
+	size_t i = 0;
+	auto* pRec = (const masterInfo*)getRecord(pSortedRecords[0]);
+	unsigned long long totalCombined = 0, totalMasters = 0;
 
 	auto groupOrder = pRec->groupOrder;
 	auto numbDecomp = pRec->numbDecomp;
@@ -135,17 +198,29 @@ void CDesignDB::SortRecods(FILE *file) {
 		}
 
 		for (auto j = jMax; j--;) {
-			fprintf(file, SHIFT "%7zd   %7zd    %7zd\n", groupOrder, numbDecomp, numbMasters);
-			totalDIBD += numbMasters;
-			total += numbMasters * numbDecomp;
+			fprintf(file, SHIFT "%7zd   %7zd    %7zd\n", groupOrder, numbMasters, numbDecomp);
+			totalMasters += numbMasters;
+			totalCombined += numbMasters * numbDecomp;
 			groupOrder = pRec->groupOrder;
 			numbDecomp = pRec->numbDecomp;
 			numbMasters = 1;
 		}
 	}
+
 	fprintf(file, SHIFT "%s\n", buff);
-	fprintf(file, SHIFT "  Total:  %7zd      %5zd\n", total, totalDIBD);
-#endif
+	fprintf(file, SHIFT "  Total:  %7zd    %7zd\n", totalMasters, totalCombined);
 }
+
+void CDesignDB::outWithFormat_2(const size_t * pSortedRecords, FILE * file) const {
+	unsigned long long totalCombined = 0;
+	fprintf(file, "\n" SHIFT "Master #:    Number of Decomp:   |Aut(M)|:\n");
+	for (size_t i = 0; i < recNumb(); i++) {
+		auto *pRec = (const masterInfo*)getRecord(pSortedRecords[i]);
+		totalCombined += pRec->numbDecomp;
+		fprintf(file, SHIFT "%4zd:          %6zd           %5zd\n", i + 1, pRec->numbDecomp, pRec->groupOrder);
+	}
+	fprintf(file, SHIFT "Total:        %7zd\n", totalCombined);
+}
+
 
 

@@ -25,14 +25,16 @@ public:
 		delete[] m_pRecPermutation;
 	}
 	void AddRecord(recPtr pRecord, size_t groupOrder);
-	void SortRecods(FILE* file = NULL);
+	void SortRecods(FILE* file = NULL, int formatID = 0);
 private:
 	size_t FindRecord(recPtr pRecord, int* pResCmp);
 	bool reallocateMemory();
 	inline auto recNumb() const					{ return m_nRecNumb; }
+	void outWithFormat_0(const size_t * pSortedRecords, FILE * file) const;
+	void outWithFormat_1(const size_t * pSortedRecords, FILE * file) const;
+	void outWithFormat_2(const size_t * pSortedRecords, FILE * file) const;
 
 	size_t m_nRecNumb = 0;					// number of DB records
 	size_t m_nRecNumbMax = 0;				// max number of DB records
 	size_t* m_pRecPermutation = NULL;		// permutation defining the order of records
 };
-
