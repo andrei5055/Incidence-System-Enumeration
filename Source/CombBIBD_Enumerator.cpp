@@ -271,9 +271,12 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
-	m_mutexDB.lock();
+	if (designParams()->threadNumb > 1)
+		m_mutexDB.lock();
+
 	designDB()->AddRecord(pMatr->GetDataPntr(), m_pCanonChecker->groupOrder());
-	m_mutexDB.unlock();
+	if (designParams()->threadNumb > 1)
+		m_mutexDB.unlock();
 }
 
 FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {
