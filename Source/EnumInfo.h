@@ -45,8 +45,8 @@ typedef enum {
 } t_resType;
 
 typedef enum {
-	t_Summary =		  1<<0,		// default
-	t_AllObject =	  1<<1,
+	t_Summary =				1<<0,		// default
+	t_AllObject =			1<<1,
 	t_GroupOrbits =			1<<2,
 	t_GroupGeneratingSet = t_GroupOrbits + (1<<3),
 	t_Transitive =			1<<4,

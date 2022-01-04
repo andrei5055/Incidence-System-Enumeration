@@ -60,6 +60,9 @@ private:
 	CK void CreateFirstRow();
 	CK void createColumnPermut();
 	CK void setDesignDB(CDesignDB *pntr)				{ m_pDesignDB = pntr; }
+	CK bool sharedDB() const							{ return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
+	CK void setMaster(CCombBIBD_Enumerator* pntr)		{ m_pMaster = pntr; }
+	CK CCombBIBD_Enumerator* master() const				{ return m_pMaster; }
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
@@ -71,5 +74,6 @@ private:
 	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
 	CDesignDB* m_pDesignDB = NULL;               // DB where the "master" design are stored
 	static std::mutex m_mutexDB;				 // mutext for DB access when "master" DB as added
+	CCombBIBD_Enumerator* m_pMaster = NULL;
 };
 

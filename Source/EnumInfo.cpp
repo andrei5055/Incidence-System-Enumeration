@@ -273,6 +273,9 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 		}
 	}
 
+	if (designInfo()->find_master_design)
+		SPRINTF(buff, "        Thread master DB was %sused\n", designInfo()->thread_master_DB ? "" : "not ");
+
 	SPRINTF(buff, "        Canonicity of partial constructed matrix was %sused\n", USE_CANON_GROUP ? "" : "not ");
 	outLen += outString(buff, outFile);
 

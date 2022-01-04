@@ -10,6 +10,17 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete m_pSpareMatrix;
 	delete[] m_pGroupOrders;
 	delete m_pGroupOrder;
+	if (master() && designParams()->thread_master_DB) {
+		auto *pMasterDB = master()->designDB();
+		m_mutexDB.lock();
+		if (pMasterDB) {
+			pMasterDB->mergeDesignDB(designDB());
+			delete designDB();
+		} else
+			master()->setDesignDB(designDB());
+
+		m_mutexDB.unlock();
+	}
 	if (m_bColPermutOwner) {
 		// Only the master thread is the owner of these data
 		delete[] columnPermut();
@@ -142,16 +153,18 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		return;
 
 	const auto b = matrix()->colNumb();
+	const auto v = matrix()->rowNumb() - 1;
+	auto pCombBIBD_master = static_cast<const CCombBIBD_Enumerator*>(pMaster);
+	setMaster((CCombBIBD_Enumerator *)pCombBIBD_master);
 	if (pMaster) {
-		auto pCombBIBD_master = static_cast<const CCombBIBD_Enumerator*>(pMaster);
-		setDesignDB(pCombBIBD_master->designDB());
 		m_pColumnPermut = (T*)pCombBIBD_master->columnPermut();
 		if (m_pColumnPermut)
 			m_pColPermut = new T[b];
+
+		setDesignDB(designParams()->thread_master_DB? new CDesignDB(v * b) : pCombBIBD_master->designDB());
 	}
 
 	// Creating structures for the search of "master" designs for Combined BIBDs
-	const auto v = matrix()->rowNumb() - 1;
 	auto *pOriginalMatrix = new CMatrixData<T, S>();
 	pOriginalMatrix->Init(v, b);
 
@@ -238,7 +251,7 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 	if (designParams()->find_master_design) {
 		// Create DB for storing "master" BIBDs
-		setDesignDB(new CDesignDB(v*b));
+		setDesignDB(!designParams()->thread_master_DB || !designParams()->threadNumb ? new CDesignDB(v*b) : NULL);
 	}
 }
 
@@ -271,11 +284,11 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
-	if (designParams()->threadNumb > 1)
+	if (sharedDB())
 		m_mutexDB.lock();
 
 	designDB()->AddRecord(pMatr->GetDataPntr(), m_pCanonChecker->groupOrder());
-	if (designParams()->threadNumb > 1)
+	if (sharedDB())
 		m_mutexDB.unlock();
 }
 

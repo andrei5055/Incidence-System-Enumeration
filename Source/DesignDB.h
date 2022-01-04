@@ -24,12 +24,13 @@ public:
 	~CDesignDB() {
 		delete[] m_pRecPermutation;
 	}
-	void AddRecord(recPtr pRecord, size_t groupOrder);
+	void AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
 	void SortRecods(FILE* file = NULL, int formatID = 0);
+	void mergeDesignDB(const CDesignDB* pDB);
+	inline auto recNumb() const					{ return m_nRecNumb; }
 private:
 	size_t FindRecord(recPtr pRecord, int* pResCmp);
 	bool reallocateMemory();
-	inline auto recNumb() const					{ return m_nRecNumb; }
 	void outWithFormat_0(const size_t * pSortedRecords, FILE * file) const;
 	void outWithFormat_1(const size_t * pSortedRecords, FILE * file) const;
 	void outWithFormat_2(const size_t * pSortedRecords, FILE * file) const;

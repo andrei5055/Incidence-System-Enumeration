@@ -3,13 +3,13 @@
 #include <assert.h>
 
 
-void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
+void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) {
 	int cmpRes;
 	const auto iMin = FindRecord(pRecord, &cmpRes);
 	if (!cmpRes) {
 		// Increase counter for the record just found
 		auto* pMasterInfo = (masterInfo *)getRecord(m_pRecPermutation[iMin]);
-		pMasterInfo->numbDecomp++;
+		pMasterInfo->numbDecomp += numbDecomp;
 		assert(pMasterInfo->groupOrder == groupOrder);
 		return;
 	}
@@ -22,7 +22,7 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder) {
 	auto* pntr = (unsigned char *)getRecord(m_nRecNumb);
 	memcpy(pntr + LEN_HEADER, pRecord, recordLength() - LEN_HEADER);
 	auto* pMasterInfo = (masterInfo*)(pntr);
-	pMasterInfo->numbDecomp = 1;
+	pMasterInfo->numbDecomp = numbDecomp;
 	pMasterInfo->groupOrder = groupOrder;
 
 	size_t i = m_nRecNumb;
@@ -64,6 +64,13 @@ bool CDesignDB::reallocateMemory() {
 	setRecordStorage(pNewRecStorage);
 	m_nRecNumbMax = newRecNumber;
 	return true;
+}
+
+void CDesignDB::mergeDesignDB(const CDesignDB* pDB) {
+	for (size_t i = 0; i < pDB->recNumb(); i++) {
+		auto *pRec = (const masterInfo*)pDB->getRecord(i);
+		AddRecord((unsigned char*)pRec + LEN_HEADER, pRec->groupOrder, pRec->numbDecomp);
+	}
 }
 
 int compareRecordsA(recPtr pRec1, recPtr pRec2) {
@@ -131,7 +138,7 @@ void CDesignDB::outWithFormat_0(const size_t * pSortedRecords, FILE * file) cons
 	bool flag = true;
 	size_t len_buff = sizeof(buff);
 	while (++i < recNumb()) {
-		pRec = (masterInfo*)getRecord(pSortedRecords[i]);
+		pRec = (const masterInfo*)getRecord(pSortedRecords[i]);
 		if (groupOrder == pRec->groupOrder && numbDecomp == pRec->numbDecomp) {
 			numbMasters++;
 			if (i != last)

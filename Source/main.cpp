@@ -295,6 +295,28 @@ static size_t getInteger(const string &str, size_t *pPos) {
 	return tmp == "YES"? 1 : 0;
 }
 
+void getMasterBIBD_param(const string& line, const size_t lineLength, designParam* param) {
+	size_t pos = find(line, "FORMAT_MASTER_BIBD");
+	if (pos != string::npos) {
+		int format_ID = 0;
+		const auto val = lineLength > pos ? getInteger(line, &pos) : string::npos;
+		if (val != string::npos) {
+			if (val < 0 || val > 2) {
+				printf("FORMAT_MASTER_BIBD=%zd is invalid. Will use default: 0", val);
+			}
+			else
+				format_ID = static_cast<int>(val);
+		}
+
+		param->format_master_BIBDs = format_ID;
+	}
+	pos = find(line, "THREAD_MASTER_BIBD");
+	if (pos != string::npos) {
+		const auto val = lineLength > pos ? getInteger(line, &pos) : string::npos;
+		param->thread_master_DB = val != string::npos ? static_cast<int>(val) : 1;
+	}
+}
+
 int main(int argc, char * argv[])
 {
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
@@ -447,25 +469,12 @@ int main(int argc, char * argv[])
 			// and all such non-isomorphic splits
 			const auto val = length > pos ? getInteger(line, &pos) : string::npos;
 			find_master_design = val != string::npos ? static_cast<int>(val) : 1;
-			param->find_master_design = find_master_design;
-			if (find_master_design) {
-				pos = find(line, "FORMAT_MASTER_BIBD");
-				if (pos != string::npos) {
-					int format_ID = 0;
-					const auto val = length > pos? getInteger(line, &pos) : string::npos;
-					if (val != string::npos) {
-						if (val < 0 || val > 2) {
-							printf("FORMAT_MASTER_BIBD=%zd is invalid. Will use default: 0", val);
-						}
-						else
-							format_ID = static_cast<int>(val);
-					}
-
-					 param->format_master_BIBDs = format_ID;
-				}
-			}
+			if (find_master_design)
+				getMasterBIBD_param(line, length, param);
 			continue;
 		}
+
+		getMasterBIBD_param(line, length, param);
 
 		pos = find(line, "THREAD_LEVEL");
 		if (pos != string::npos) {
@@ -604,9 +613,10 @@ int main(int argc, char * argv[])
 			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
 		else {
-			if (objType == t_CombinedBIBD)
+			if (objType == t_CombinedBIBD) {
+				param->find_master_design = find_master_design;
 				param->use_master_sol = 0;
-			else
+			} else
 				param->find_master_design = 0;   // This option for CombBIBD only
 
 			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
