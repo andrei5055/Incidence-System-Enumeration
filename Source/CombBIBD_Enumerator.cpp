@@ -14,7 +14,15 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 		auto *pMasterDB = master()->designDB();
 		m_mutexDB.lock();
 		if (pMasterDB) {
+#if 1
+			// Merging two Design DBs as ordered sets
+			auto *pNewDB = new CDesignDB(pMasterDB->recordLength());
+			pNewDB->mergeDesignDBs(pMasterDB, designDB());
+			master()->setDesignDB(pNewDB);
+			delete pMasterDB;
+#else
 			pMasterDB->mergeDesignDB(designDB());
+#endif
 			delete designDB();
 		} else
 			master()->setDesignDB(designDB());

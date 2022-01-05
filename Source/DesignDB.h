@@ -27,9 +27,11 @@ public:
 	void AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
 	void SortRecods(FILE* file = NULL, int formatID = 0);
 	void mergeDesignDB(const CDesignDB* pDB);
+	void mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B);
 	inline auto recNumb() const					{ return m_nRecNumb; }
+	inline size_t* getPermut() const			{ return m_pRecPermutation; }
 private:
-	size_t FindRecord(recPtr pRecord, int* pResCmp);
+	size_t FindRecord(recPtr pRecord, int* pResCmp) const;
 	bool reallocateMemory();
 	void outWithFormat_0(const size_t * pSortedRecords, FILE * file) const;
 	void outWithFormat_1(const size_t * pSortedRecords, FILE * file) const;

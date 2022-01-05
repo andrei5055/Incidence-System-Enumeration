@@ -32,7 +32,7 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) 
 	m_pRecPermutation[i] = m_nRecNumb++;
 }
 
-size_t CDesignDB::FindRecord(recPtr pRecord, int *pResCmp) {
+size_t CDesignDB::FindRecord(recPtr pRecord, int *pResCmp) const {
 	*pResCmp = 1;
 	size_t mid(0), low(0), high(m_nRecNumb);
 	// Repeat until the pointers low and high meet each other
@@ -70,6 +70,65 @@ void CDesignDB::mergeDesignDB(const CDesignDB* pDB) {
 	for (size_t i = 0; i < pDB->recNumb(); i++) {
 		auto *pRec = (const masterInfo*)pDB->getRecord(i);
 		AddRecord((unsigned char*)pRec + LEN_HEADER, pRec->groupOrder, pRec->numbDecomp);
+	}
+}
+
+void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
+	const auto len = recordLength() - LEN_HEADER;
+	size_t ind_A = 0, ind_B = 0;
+	const auto* perm_A = pDB_A->getPermut();
+	const auto* perm_B = pDB_B->getPermut();
+	const unsigned char* pRec_A, *pRec_B = NULL;
+	int state = 3;
+	while (true) {
+		if (state & 1) {
+			if (ind_A >= pDB_A->recNumb()) {
+				pRec_A = (ind_A = ind_B) < pDB_B->recNumb() ? (const unsigned char*)(pDB_A = pDB_B)->getRecord(perm_B[ind_A++]) : NULL;
+				break;
+			}
+
+			pRec_A = (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]);
+		}
+
+		if (state & 2) {
+			if (ind_B >= pDB_B->recNumb())
+				break;
+
+			pRec_B = (const unsigned char*)pDB_B->getRecord(perm_B[ind_B++]);
+		}
+
+		if (m_nRecNumb == m_nRecNumbMax) {
+			// All previously allocated memory were used - need to reallocate
+			reallocateMemory();
+		}
+		auto* pntr = (unsigned char*)getRecord(m_nRecNumb++);
+
+		const auto cmpResult = memcmp(pRec_A + LEN_HEADER, pRec_B + LEN_HEADER, len);
+		if (cmpResult <= 0) {
+			memcpy(pntr, pRec_A, recordLength());
+			if (!cmpResult) {
+				((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pDB_B)->numbDecomp;
+				state = 3;
+			}
+			else
+				state = 1;
+		}
+		else {
+			memcpy(pntr, pRec_B, recordLength());
+			state = 2;
+		}
+	}
+
+	// Copying remaining records
+	while (pRec_A) {
+		if (m_nRecNumb == m_nRecNumbMax) {
+			// All previously allocated memory were used - need to reallocate
+			reallocateMemory();
+		}
+
+		auto* pntr = (unsigned char*)getRecord(m_nRecNumb++);
+		memcpy(pntr, pRec_A, recordLength());
+		pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
 	}
 }
 
