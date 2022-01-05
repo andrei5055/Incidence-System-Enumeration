@@ -83,7 +83,8 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 	while (true) {
 		if (state & 1) {
 			if (ind_A >= pDB_A->recNumb()) {
-				pRec_A = (ind_A = ind_B) < pDB_B->recNumb() ? (const unsigned char*)(pDB_A = pDB_B)->getRecord(perm_B[ind_A++]) : NULL;
+				perm_A = perm_B;
+				pRec_A = (ind_A = ind_B) < pDB_B->recNumb() ? (const unsigned char*)(pDB_A = pDB_B)->getRecord(perm_A[ind_A++]) : NULL;
 				break;
 			}
 
@@ -101,8 +102,9 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 			// All previously allocated memory were used - need to reallocate
 			reallocateMemory();
 		}
-		auto* pntr = (unsigned char*)getRecord(m_nRecNumb++);
-
+		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
+		getPermut()[m_nRecNumb] = m_nRecNumb;
+		m_nRecNumb++;
 		const auto cmpResult = memcmp(pRec_A + LEN_HEADER, pRec_B + LEN_HEADER, len);
 		if (cmpResult <= 0) {
 			memcpy(pntr, pRec_A, recordLength());
@@ -126,7 +128,9 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 			reallocateMemory();
 		}
 
-		auto* pntr = (unsigned char*)getRecord(m_nRecNumb++);
+		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
+		getPermut()[m_nRecNumb] = m_nRecNumb;
+		m_nRecNumb++;
 		memcpy(pntr, pRec_A, recordLength());
 		pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
 	}

@@ -19,7 +19,7 @@ public:
 	auto * designDB() const								{ return m_pDesignDB; }
 protected:
 	CK const char* getObjName() const override			{ return "CBIBD"; }
-	CK const char* getTopLevelDirName() const override 	{ return "Combined_BIBDs"; }
+	CK const char* getTopLevelDirName() const override 	{ return designParams()->find_master_design? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs"; }
 	CK RowSolutionPntr setFirstRowSolutions() override;
 	CK void CreateForcedRows() override;
 	CK T firtstNonfixedRowNumber() const override		{ return 3; }
@@ -65,7 +65,7 @@ private:
 	CK CCombBIBD_Enumerator* master() const				{ return m_pMaster; }
 
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
-	size_t *m_pGroupOrders = NULL;			// orders of group, acting on the parts with the same lambda
+	size_t *m_pGroupOrders = NULL;				 // orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;
 	MatrixDataPntr m_pSpareMatrix = NULL;
 	CMatrixCanonChecker* m_pCanonChecker = NULL; // used for cannonization of original matrix

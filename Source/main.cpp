@@ -458,8 +458,8 @@ int main(int argc, char * argv[])
 			const auto val = length > pos ? getInteger(line, &pos) : string::npos;
 			use_master_sol = val != string::npos ? static_cast<int>(val) : 1;
 			if (use_master_sol > 1 || use_master_sol < 0) {
-				printf("USE_MASTER_SOLUTIONS should be 0 or 1, got %d", use_master_sol);
-				printf("Will use the default value 1");
+				printf("USE_MASTER_SOLUTIONS should be 0 or 1, got %d\n", use_master_sol);
+				printf("Will use the default value 1\n");
 				use_master_sol = 1;
 			}
 			param->use_master_sol = use_master_sol;
