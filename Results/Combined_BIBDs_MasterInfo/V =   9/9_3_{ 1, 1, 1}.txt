@@ -1,0 +1,49 @@
+CBIBD(  9,  3, { 1, 1, 1})
+ 
+
+<<<< Decomposition info:>>>> 
+
+     |Aut(M)|:    Masters:                    Decompositions:    
+    ___________________________________________________________________________________________
+          1          36    36                                                                    
+          2          14    14                                                                    
+          3           6    6                                                                     
+          9           1    1                                                                     
+         12           1    1                                                                     
+         16           1    1                                                                     
+         54           1    1                                                                     
+        432           1    1                                                                     
+    ___________________________________________________________________________________________
+      Total:         61       Deconpositions: 61    MaxDecomp for master: 1
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
+    _________________________________________________________________________________
+             1                36              36               0               0
+             1*2               8               8               0               0
+             2                 4               4               0               0
+             2*2               2               2               0               0
+             3                 4               4               0               0
+             3*2               2               2               0               0
+             9*2               1               1               1               1
+            12*2               1               1               0               0
+            16*2               1               1               0               0
+            54*2               1               1               1               1
+           432*6               1               1               1               1
+    _________________________________________________________________________________
+        Total:                61              61               3               3
+
+        61 matrices constructed in  0.22
+        61 matrices have no replicated blocks
+       274 matrices were fully constructed
+
+        Using  64 - bit program with  no Assembly
+        Main data storage format: "unsigned char"
+         2 threads launched on row 5 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

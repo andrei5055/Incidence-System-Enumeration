@@ -1,0 +1,40 @@
+CBIBD(  7,  3, { 1, 1, 1})
+ 
+
+<<<< Decomposition info:>>>> 
+
+     |Aut(M)|:    Masters:                    Decompositions:    
+    ___________________________________________________________________________________________
+          6           1    1                                                                     
+         12           1    1                                                                     
+         21           1    1                                                                     
+         24           1    1                                                                     
+        168           1    1                                                                     
+    ___________________________________________________________________________________________
+      Total:          5       Deconpositions: 5    MaxDecomp for master: 1
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
+    _________________________________________________________________________________
+             3*2               1               1               0               0
+            12*2               1               1               0               0
+            21*2               1               1               1               1
+            24*2               1               1               0               0
+           168*6               1               1               1               1
+    _________________________________________________________________________________
+        Total:                 5               5               2               2
+
+         5 matrices constructed in  0.04
+         5 matrices have no replicated blocks
+        10 matrices were fully constructed
+
+        Using  64 - bit program with  no Assembly
+        Main data storage format: "unsigned char"
+         2 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
