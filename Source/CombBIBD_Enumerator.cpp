@@ -169,7 +169,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		if (m_pColumnPermut)
 			m_pColPermut = new T[b];
 
-		setDesignDB(designParams()->thread_master_DB? new CDesignDB(v * b) : pCombBIBD_master->designDB());
+		setDesignDB(designParams()->thread_master_DB? new CDesignDB((v-2) * b + LEN_HEADER) : pCombBIBD_master->designDB());
 	}
 
 	// Creating structures for the search of "master" designs for Combined BIBDs
@@ -259,7 +259,7 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 
 	if (designParams()->find_master_design) {
 		// Create DB for storing "master" BIBDs
-		setDesignDB(!designParams()->thread_master_DB || !designParams()->threadNumb ? new CDesignDB(v*b) : NULL);
+		setDesignDB(!designParams()->thread_master_DB || !designParams()->threadNumb ? new CDesignDB((v - 2)*b + LEN_HEADER) : NULL);
 	}
 }
 
@@ -295,7 +295,8 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 	if (sharedDB())
 		m_mutexDB.lock();
 
-	designDB()->AddRecord(pMatr->GetDataPntr(), m_pCanonChecker->groupOrder());
+	// No need to keep first two rows, they are the same for all master BIBDs
+	designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, m_pCanonChecker->groupOrder());
 	if (sharedDB())
 		m_mutexDB.unlock();
 }

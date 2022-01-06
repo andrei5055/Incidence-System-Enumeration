@@ -80,11 +80,19 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 	const auto* perm_B = pDB_B->getPermut();
 	const unsigned char* pRec_A, *pRec_B = NULL;
 	int state = 3;
+	FILE* file = NULL; // fopen("C:\\Users\\16507\\OneDrive\\Documents\\Calc\\Combined_BIBDs_MasterInfo\\V =   6\\aaa.txt", "a");
+	if (file)
+		fprintf(file, " I am in mergeDesignDBs num_records: %zd  %zd  recLen = %zd\n", pDB_A->recNumb(), pDB_B->recNumb(), recordLength());
 	while (true) {
 		if (state & 1) {
 			if (ind_A >= pDB_A->recNumb()) {
 				perm_A = perm_B;
-				pRec_A = (ind_A = ind_B) < pDB_B->recNumb() ? (const unsigned char*)(pDB_A = pDB_B)->getRecord(perm_A[ind_A++]) : NULL;
+				pDB_A = pDB_B;
+				ind_A = ind_B;
+				if (state & 2)
+					pRec_A = ind_A < pDB_B->recNumb() ? (const unsigned char*)(pDB_A)->getRecord(perm_A[ind_A++]) : NULL;
+				else
+					pRec_A = pRec_B;
 				break;
 			}
 
@@ -109,7 +117,7 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 		if (cmpResult <= 0) {
 			memcpy(pntr, pRec_A, recordLength());
 			if (!cmpResult) {
-				((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pDB_B)->numbDecomp;
+				((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pRec_B)->numbDecomp;
 				state = 3;
 			}
 			else
@@ -119,9 +127,14 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 			memcpy(pntr, pRec_B, recordLength());
 			state = 2;
 		}
+
+		if (file)
+			fprintf(file, "Added group:  %3zd  state = %d\n", ((masterInfo*)pntr)->groupOrder, state);
 	}
 
 	// Copying remaining records
+	if (file)
+		fprintf(file, "Adding remaining records\n");
 	while (pRec_A) {
 		if (m_nRecNumb == m_nRecNumbMax) {
 			// All previously allocated memory were used - need to reallocate
@@ -133,6 +146,13 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 		m_nRecNumb++;
 		memcpy(pntr, pRec_A, recordLength());
 		pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
+		if (file)
+			fprintf(file, "Added group:  %3zd\n", ((masterInfo*)pntr)->groupOrder);
+	}
+
+	if (file) {
+		fprintf(file, "Done with the the merge\n");
+		fclose(file);
 	}
 }
 

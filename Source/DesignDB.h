@@ -15,7 +15,7 @@ typedef const unsigned char * recPtr;
 class CDesignDB : public CSorter<unsigned char>
 {
 public:
-	CDesignDB(size_t len) : CSorter(len+LEN_HEADER) {
+	CDesignDB(size_t len) : CSorter(len) {
 		m_nRecNumbMax = STARTING_DB_VOLUME;
 		m_pRecPermutation = new size_t[m_nRecNumbMax];
 		setStorageOwner();
