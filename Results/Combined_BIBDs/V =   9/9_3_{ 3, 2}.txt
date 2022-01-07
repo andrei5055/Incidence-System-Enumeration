@@ -1,0 +1,36 @@
+CBIBD(  9,  3, { 3, 2})
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1     70739355200       354862237               0               0
+             2         1743328           13904               0               0
+             3           32100            1192               0               0
+             4            2426              38               0               0
+             6             921              87               0               0
+             8              45               5               0               0
+             9             107              17             107              17
+            12              38               0               0               0
+            16              12               0               0               0
+            18              44               2              44               2
+            24               6               0               0               0
+            27               2               0               2               0
+            36               1               0               1               0
+            48               1               0               0               0
+            54              10               0              10               0
+           108               3               0               3               0
+           432               1               0               1               0
+    _______________________________________________________________________________
+        Total:     70741134245       354877482             168              19
+
+ 70741134245 matrices constructed in 16:14:04:00.00
+   354877482 matrices have no replicated blocks
+131750125845 matrices were fully constructed
+
+        Using  64 - bit program with  no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 5 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

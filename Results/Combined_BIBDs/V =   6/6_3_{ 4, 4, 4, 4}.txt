@@ -42,13 +42,14 @@ CBIBD(  6,  3, { 4, 4, 4, 4})
     __________________________________________________________________________________
         Total:               2490               1             129               1
 
-      2490 matrices constructed in  2.71
+      2490 matrices constructed in  2.18
          1 matrix has no replicated blocks
       9396 matrices were fully constructed
 
-        Using 64-bit program with no Assembly
+        Using  64 - bit program with  no Assembly
         Main data storage format: "unsigned char"
         20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

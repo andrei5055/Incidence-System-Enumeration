@@ -1,0 +1,37 @@
+CBIBD(  8,  4, { 6, 3})
+
+        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+    _______________________________________________________________________________
+             1        10632038          774611               0               0
+             2           12322            1394               0               0
+             3            2711             171               0               0
+             4            1350              44               0               0
+             6              73               5               0               0
+             7               6               6               0               0
+             8              78               6               6               2
+            12              42               0               0               0
+            16              13               6               9               6
+            21              15               1               0               0
+            24              12               2               4               2
+            32               3               2               3               2
+            48               3               0               1               0
+            64               1               0               1               0
+            96               2               0               2               0
+           168               2               1               2               1
+           192               3               0               3               0
+          1344               1               0               1               0
+    _______________________________________________________________________________
+        Total:        10648675          776249              32              13
+
+  10648675 matrices constructed in  5:16.27
+    776249 matrices have no replicated blocks
+  18804533 matrices were fully constructed
+
+        Using  64 - bit program with  no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 5 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
