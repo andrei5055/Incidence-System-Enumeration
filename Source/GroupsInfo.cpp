@@ -8,8 +8,9 @@ void CNumbInfo::addMatrices(const CNumbInfo *pNumbInfo)
 
 void CNumbInfo::outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const
 {
+	const char *formats[] = { "", "   %12llu", "   %10llu", "   %4llu", "   %4llu" };
 	for (auto j = t_canonical; j < t_design_type_total; j = (t_design_type)(j + 1))
-		poz += SNPRINTF(buffer + poz, lenBuf - poz, "      %10llu", numMatrOfType(j));
+		poz += SNPRINTF(buffer + poz, lenBuf - poz, formats[j], numMatrOfType(j));
 
 	SNPRINTF(buffer + poz, lenBuf - poz, "\n");
 }
@@ -101,7 +102,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 		len += maxLen;
 	}
 
-	len += SNPRINTF(buffer+len, countof(line)-len, "          Nd:             Ns:            Ndt:            Nst:\n");
+	len += SNPRINTF(buffer+len, countof(line)-len, "          Nd:           Ns:   Ndt:   Nst:\n");
 	outString(buffer, file);
 
 	strcpy_s(line, countof(line), SHIFT);

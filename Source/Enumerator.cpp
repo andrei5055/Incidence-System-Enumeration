@@ -1003,8 +1003,43 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 			break;
 		}
 
-		if (file[1] && strcmp(buf[0], buf[1]))
-			break;
+		if (file[1] && strcmp(buf[0], buf[1])) {
+			if (buf[0][0] == '_' && buf[0][0] == buf[1][0])
+				continue;  // skip decorating line
+
+			// Try to compare each word separately
+			// Trim leading "new lines"
+			size_t len[] = { strlen(buf[0]), strlen(buf[1]) };
+			for (int i = 0; i < 2; i++) {
+				while (*(buf[i] + len[i] - 1) == '\n')
+					len[i]--;
+			}
+
+			char* pBeg[2], * pEnd[] = { buf[0]-1, buf[1]-1 };
+			int flag = 0;
+			while (!flag) {
+				const bool cond = buf[0] + len[0] == pEnd[0];
+				if (cond != (buf[1] + len[1] == pEnd[1])) {
+					flag = 1;
+					break;
+				}
+				else
+				if (cond)
+					break;
+
+				for (int i = 0; i < 2; i++) {
+					pBeg[i] = pEnd[i];
+					while (*(++pBeg[i]) == ' ');
+					char* p = pBeg[i];
+					while (*++p != ' ' && *p != '\n' && *p != '\0');
+					*(pEnd[i] = p) = '\0';
+				}
+				flag = strcmp(pBeg[0], pBeg[1]);
+			}
+
+			if (flag)
+				break;
+		}
 	}
 
 	return false;
