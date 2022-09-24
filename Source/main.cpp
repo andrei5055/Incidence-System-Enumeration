@@ -25,12 +25,19 @@ const char *obj_name[] = {
 };
 
 // Order of checking object names during parsing of parameters
-t_objectType idx_obj_type[] = {t_PBIBD, t_CombinedBIBD, t_BIBD, t_tDesign, t_IncidenceSystem, t_SemiSymmetricGraph};
+t_objectType idx_obj_type[] = {
+	t_objectType::t_PBIBD,
+	t_objectType::t_CombinedBIBD,
+	t_objectType::t_BIBD,
+	t_objectType::t_tDesign,
+	t_objectType::t_IncidenceSystem,
+	t_objectType::t_SemiSymmetricGraph
+};
 
 int find_T_designParam(int v, int k, int lambda)
 {
 	int lam = lambda;
-	int prevLambda, lambdas[10];
+	int prevLambda(0), lambdas[10] = {};
 	int i = 1;
 	do {
 		lambdas[++i - 2] = prevLambda = lambda;
@@ -80,7 +87,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 	int i = 0;
 	int j = 0;
 	int flag = 0;
-	char symb;
+	char symb(0);
 	do {
 		int num = 0;
 		while (true) {
@@ -185,29 +192,29 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	if (pParam->outType & t_GroupOrbits)
 		enumFlags |= t_outRowOrbits;
 
-	const auto lambda = pParam->InterStruct()->lambda();
+	const auto& lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
-		if (lambda.size() > 1 || objType == t_SemiSymmetricGraph) {
-			static t_objectType obj_types[] = { t_PBIBD, t_CombinedBIBD, t_SemiSymmetricGraph };
+		if (lambda.size() > 1 || objType == t_objectType::t_SemiSymmetricGraph) {
+			static t_objectType obj_types[] = { t_objectType::t_PBIBD, t_objectType::t_CombinedBIBD, t_objectType::t_SemiSymmetricGraph };
 			switch (objType) {
-			case t_PBIBD:
+			case t_objectType::t_PBIBD:
 				pInSys = new Class2(C_PBIBD)(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new Class2(CPBIBD_Enumerator)(pInSys, enumFlags);
 				break;
-			case t_SemiSymmetricGraph:
+			case t_objectType::t_SemiSymmetricGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaysKeepRowPermute;
 				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, pParam->k, pParam->r, lambda);
 				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
 				break;
-			case t_CombinedBIBD:
+			case t_objectType::t_CombinedBIBD:
 				pInSys = new Class2(CCombinedBIBD)(pParam->v, pParam->k, lambda);
 				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
 				break;
 			default:
-				printf("LambdaSet has %zu elements, in that case the object type cannot be \'%s\'\n", lambda.size(), obj_name[objType]);
+				printf("LambdaSet has %zu elements, in that case the object type cannot be \'%s\'\n", lambda.size(), obj_name[+objType]);
 				printf("Possible values are:");
 				for (int i = 0; i < countof(obj_types); i++)
-					printf("\n    %s", obj_name[obj_types[i]]);
+					printf("\n    %s", obj_name[+obj_types[i]]);
 
 				return false;
 			}
@@ -215,18 +222,18 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 		else {
 			pInSys = new Class2(C_BIBD)(pParam->v, pParam->k, 2, lambda[0]);
 			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
-			objType = t_BIBD;
+			objType = t_objectType::t_BIBD;
 		}
 	}
 	else {
 		pInSys = new Class2(C_tDesign)(pParam->t, pParam->v, pParam->k, lambda[0]);
 		pInSysEnum = new Class2(C_tDesignEnumerator)(static_cast<TDesignPntr>(pInSys), enumFlags);
-		objType = t_tDesign;
+		objType = t_objectType::t_tDesign;
 	}
 
 	pInSys->setObjectType(objType);
 
-	char buff[256], buffer[256];
+	char buff[256] = {}, buffer[256] = {};
 	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
 	cout << buff;
 	Class2(CInsSysEnumInfo) enumInfo(buff);
@@ -251,7 +258,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 			cout << '\r' << buffer;
 		}
 		else {
-			cout << "Some problem durring the enumeration found\n";
+			cout << "Some problem was found during the enumeration\n";
 			pInSysEnum->closeFile();
 		}
 	}
@@ -367,7 +374,7 @@ int main(int argc, char * argv[])
 
 	// By default, we enumerating BIBDs 
 	t_parsingStage stage = t_objectTypeStage;
-	t_objectType objType = t_BIBD;
+	t_objectType objType = t_objectType::t_BIBD;
 	t_operationType operType = t_Enumeration;
 	uint outType = t_Summary;
 	string *pLine = new string();
@@ -513,8 +520,9 @@ int main(int argc, char * argv[])
 			operType = t_Canonicity;
 
 		for (int i = 0; i < countof(idx_obj_type); i++) {
-			if (line.find(obj_name[idx_obj_type[i]]) != string::npos) {
-				objType = idx_obj_type[i];
+			const auto type = idx_obj_type[i];
+			if (line.find(obj_name[static_cast<int>(type)]) != string::npos) {
+				objType = type;
 				break;
 			}
 		}
@@ -588,20 +596,22 @@ int main(int argc, char * argv[])
 		size_t from = -1;
 		bool BIBD_flag = false;
 		switch (objType) {
-		case t_tDesign:	if (!getTParam(line.substr(0, beg), param)) {
+		case t_objectType::t_tDesign:
+						if (!getTParam(line.substr(0, beg), param)) {
 							from = 0;
 							break;
 						}
 
-		case t_BIBD:	BIBD_flag = true;
-		case t_CombinedBIBD:
-		case t_SemiSymmetricGraph:
-		case t_PBIBD:	if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
+		case t_objectType::t_BIBD:	BIBD_flag = true;
+		case t_objectType::t_CombinedBIBD:
+		case t_objectType::t_SemiSymmetricGraph:
+		case t_objectType::t_PBIBD:
+						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
 						break;
 
-		case t_IncidenceSystem: 
+		case t_objectType::t_IncidenceSystem:
 						break;
 		}
 
@@ -613,12 +623,12 @@ int main(int argc, char * argv[])
 		if (param->workingDir != newWorkDir || firstRun)
 			param->workingDir = string(newWorkDir);
 
-		if ((param->objType = objType) == t_SemiSymmetricGraph) {
+		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
 			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
 		else {
-			if (objType == t_CombinedBIBD) {
+			if (objType == t_objectType::t_CombinedBIBD) {
 				param->find_master_design = find_master_design;
 				param->use_master_sol = 0;
 			} else
@@ -644,4 +654,3 @@ int main(int argc, char * argv[])
 // To 
 // cuda - memcheck --leak - check full . / CDTools_GPU.exe
 // nvprof CDTools_GPU.exe
-// C program to find GCD of two numbers

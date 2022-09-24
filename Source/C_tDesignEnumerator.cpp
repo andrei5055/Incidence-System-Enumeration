@@ -48,10 +48,6 @@ FClass2(C_tDesignEnumerator, bool)::makeJobTitle(const designParam *pParam, char
 }
 #endif
 
-FClass2(C_tDesignEnumerator, void)::outputTitle(FILE* file) const {
-	fprintf(file, "%12s:        %9s:  %9s:       %9s: %9s:      %9s:\n", this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
-}
-
 FClass2(C_tDesignEnumerator, void)::prepareToTestExtraFeatures()
 {
 	m_pIntersectionStorage = new CIntersectionStorage<S>(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));

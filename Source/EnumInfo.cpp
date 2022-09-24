@@ -41,7 +41,7 @@ FClass2(CEnumInfo, double)::stringToTime(char *pTime)
 
 	double time = 0;
 	size_t i = countof(outDiv);
-	char *pDivPlace[countof(outDiv)];
+	char* pDivPlace[countof(outDiv)] = {};
 	char *pDiv = NULL;
 	while (i-- && (pDiv = strrchr(pTime, outDiv[i])) != NULL) {
 		time += atoi(pDiv + 1) * mult[i + 1];
@@ -72,8 +72,8 @@ FClass2(CEnumInfo, bool)::compareTime(char *pTime1, char *pTime2)
 
 FClass2(CEnumInfo, void)::updateEnumInfo(const CEnumInfo *pInfo)
 {
-	incrConstrCanonical(pInfo->numMatrOfType(t_canonical));
-	incrConstrTotal(pInfo->numMatrOfType(t_totalConstr));
+	incrConstrCanonical(pInfo->numMatrOfType(t_design_type::t_canonical));
+	incrConstrTotal(pInfo->numMatrOfType(t_design_type::t_totalConstr));
 }
 
 FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
@@ -93,20 +93,25 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
 		return;
 
-	const ulonglong nCanon = numMatrOfType(t_canonical);
+	const auto nCanon = numMatrOfType(t_design_type::t_canonical);
 	const ulonglong *pTestNumber;
 	bool reportNeeded = false;
 	clock_t currClock = clock();
 	switch (reportType) {
-		case t_reportByTime:	if (currClock - prevClockReport() < CLOCKS_PER_SEC * 30)
+	case t_reportCriteria::t_reportByTime:
+								if (currClock - prevClockReport() < CLOCKS_PER_SEC * 30)
 									return;
 
 								setPrevClockReport(currClock);
 								reportNeeded = true;
-		case t_reportNow:		pTestNumber = NULL; break;
-		case t_matrConstructed:	pTestNumber = &nCanon;
+		case t_reportCriteria::t_reportNow:
+								pTestNumber = NULL;
 								break;
-		case t_treadEnded:		if (currClock - prevClockReport() < CLOCKS_PER_SEC)
+		case t_reportCriteria::t_matrConstructed:
+								pTestNumber = &nCanon;
+								break;
+		case t_reportCriteria::t_treadEnded:
+								if (currClock - prevClockReport() < CLOCKS_PER_SEC)
 									return;
 								pTestNumber = &m_nCounter;
 	}
@@ -116,11 +121,11 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 
 	if (reportNeeded || nCanon >= reportBound()) {
 		switch (reportType) {
-			case t_matrConstructed:
-			case t_reportNow:
-			case t_treadEnded:	  pGroupInfo = this;
-			case t_reportByTime:
-				{
+			case t_reportCriteria::t_matrConstructed:
+			case t_reportCriteria::t_reportNow:
+			case t_reportCriteria::t_treadEnded:
+				pGroupInfo = this;
+			case t_reportCriteria::t_reportByTime: {
 					FOPEN(file, reportFileName(), "w");
 					if (file) {
 						fprintf(file, "%s\n", strToScreen());
@@ -132,10 +137,10 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	}
 
 	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
-	std::cout << '\r' << strToScreen() << (reportType == t_reportByTime ? "==>" : "   ")
+	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? "==>" : "   ")
 			  << "  Canon: " << nCanon 
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
-			  << "  Total: " << numMatrOfType(t_totalConstr)
+			  << "  Total: " << numMatrOfType(t_design_type::t_totalConstr)
 			  << "  RunTime: " << runTime << " min.";
 	fflush(stdout);
 
@@ -157,8 +162,8 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 {
 	if (nThread >= 1) {
 		// Save already collected information 
-		const ulonglong nCanon = numMatrOfType(t_canonical);
-		const ulonglong nTotal = numMatrOfType(t_totalConstr);
+		const ulonglong nCanon = numMatrOfType(t_design_type::t_canonical);
+		const ulonglong nTotal = numMatrOfType(t_design_type::t_totalConstr);
 		const ulonglong nrbTotal = numbSimpleDesign();
 		CGroupsInfo groupsInfo;
 		groupsInfo.updateGroupInfo(this);
@@ -173,10 +178,10 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 			groupsInfo.updateGroupInfo(pThreadEnum->enumInfo());
 		}
 			
-		reportProgress(t_reportByTime, &groupsInfo);
+		reportProgress(t_reportCriteria::t_reportByTime, &groupsInfo);
 		// Restore information
-		setNumMatrOfType(nCanon, t_canonical);
-		setNumMatrOfType(nTotal, t_totalConstr);
+		setNumMatrOfType(nCanon, t_design_type::t_canonical);
+		setNumMatrOfType(nTotal, t_design_type::t_totalConstr);
 		setNumbSimpleDesign(nrbTotal);
 	} else {
 		updateEnumInfo(pThreadEnum->enumInfo());
@@ -198,20 +203,20 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	if (!(m_pParam->outType & t_Summary))
 		return;
 
-	const ulonglong nConstrMatr = numMatrOfType(t_canonical);
+	const auto nConstrMatr = numMatrOfType(t_design_type::t_canonical);
 	char buff[256];
 	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
-	const size_t len = strlen(buff);
+	const auto len = strlen(buff);
 	convertTime(runTime(), buff + len, countof(buff) - len, false);
 	outString(buff, outFile);
 
-	const ulonglong nMatr = numbSimpleDesign();
+	const auto nMatr = numbSimpleDesign();
 	if (nConstrMatr > 0) {
 		SPRINTF(buff, "%10llu matri%s ha%s no replicated blocks\n", nMatr, nMatr == 1 ? "x" : "ces", nMatr == 1 ? "s" : "ve");
 		outString(buff, outFile);
 	}
 
-	const auto nTotal = numMatrOfType(t_totalConstr);
+	const auto nTotal = numMatrOfType(t_design_type::t_totalConstr);
 	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
@@ -227,7 +232,7 @@ FClass2(CEnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
 		return;
 
 	char buff[256];
-	const auto nTotal = numMatrOfType(t_totalConstr);
+	const auto nTotal = numMatrOfType(t_design_type::t_totalConstr);
 	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
@@ -324,17 +329,17 @@ FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 {
 	size_t len = SNPRINTF(buffer, lenBuffer, "%s       %9llu       %9llu",
-						   this->strToScreen(), this->numMatrOfType(t_canonical), numbSimpleDesign());
-	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->numMatrOfType(t_totalConstr));
+						  this->strToScreen(), this->numMatrOfType(t_design_type::t_canonical), numbSimpleDesign());
+	len += SNPRINTF(buffer + len, lenBuffer - len, "       %8llu    ", this->numMatrOfType(t_design_type::t_totalConstr));
 	len += this->convertTime(this->runTime(), buffer + len, lenBuffer - len);
 
 	// Prepare the comments regarding the results
 	const char *pResComment = NULL;
 	switch (this->getResType()) {
-	case t_resNew:			pResComment = "N"; break;
-	case t_resBetter:		pResComment = "B"; break;
-	case t_resWorse:		pResComment = "W"; break;
-	case t_resInconsistent:	pResComment = "???";
+	case t_resType::t_resNew:			pResComment = "N"; break;
+	case t_resType::t_resBetter:		pResComment = "B"; break;
+	case t_resType::t_resWorse:			pResComment = "W"; break;
+	case t_resType::t_resInconsistent:	pResComment = "???";
 	}
 
 	SNPRINTF(buffer + len, lenBuffer - len, "  %s       \n", pResComment);

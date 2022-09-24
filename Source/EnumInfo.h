@@ -22,27 +22,27 @@ protected:
 	inline clock_t startTime() const						{ return m_startClock; }
 private:
 
-	clock_t m_startClock;
-	clock_t m_prevClock;
-	clock_t m_prevClockReport;
-	size_t m_reportInt;
-	ulonglong m_prevCounter;
-	float m_fRunTime;
+	clock_t m_startClock = 0;
+	clock_t m_prevClock = 0;
+	clock_t m_prevClockReport = 0;
+	size_t m_reportInt = 0;
+	ulonglong m_prevCounter = 0;
+	float m_fRunTime = 0.0f;
 };
 
-typedef enum {
+enum class t_reportCriteria {
 	t_reportNow,
 	t_reportByTime,
 	t_matrConstructed,
 	t_treadEnded
-} t_reportCriteria;
+};
 
-typedef enum {
+enum class t_resType {
 	t_resNew,
 	t_resBetter,
 	t_resWorse,
 	t_resInconsistent
-} t_resType;
+};
 
 typedef enum {
 	t_Summary =				1<<0,		// default
@@ -73,7 +73,7 @@ public:
 	}
 	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
-	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_totalConstr); }
+	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_design_type::t_totalConstr); }
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
 #if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL);
@@ -103,10 +103,10 @@ protected:
 	inline t_resType getResType() const						{ return m_nResType; }
 private:
 	static double stringToTime(char *pTime);
-	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_canonical); }
+	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_design_type::t_canonical); }
 	CC inline void resetCounters()							{ m_nCounter = 0; }
 	inline void incCounter()								{ m_nCounter++; }
-	inline void reportThreadProgress()						{ incCounter(); reportProgress(t_treadEnded); }
+	inline void reportThreadProgress()						{ incCounter(); reportProgress(t_reportCriteria::t_treadEnded); }
 	CC virtual void setNumbSimpleDesign(ulonglong v)		{}
 	CC inline void setReportBound(ulonglong val)			{ m_nReportBound = val; }
 	inline ulonglong reportBound() const					{ return m_nReportBound; }

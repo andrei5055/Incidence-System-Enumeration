@@ -182,8 +182,8 @@ extern std::mutex out_mutex;
 
 #define FCLOSE(file)			do {if (file) fclose(file);} while(0)
 
-#define SNPRINTF(x, len, ...)			snprintf(x, len, __VA_ARGS__)
-#define SPRINTF(x, ...)			      SNPRINTF(x, sizeof(x), __VA_ARGS__)
+#define SNPRINTF(x, len, ...)	static_cast<size_t>(snprintf(x, len, __VA_ARGS__))
+#define SPRINTF(x, ...)			SNPRINTF(x, sizeof(x), __VA_ARGS__)
 #define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which 
 #define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
 
@@ -484,14 +484,20 @@ void setPrintResultNumVar(size_t numVar);
 #define setPrintResultNumVar(nVar)
 #endif
 
-typedef enum {
+enum class t_objectType {
 	t_BIBD,			// default
 	t_CombinedBIBD,
 	t_tDesign,
 	t_PBIBD,
 	t_IncidenceSystem,
-	t_SemiSymmetricGraph,
-} t_objectType;
+	t_SemiSymmetricGraph
+};
+
+template<typename T>
+inline int operator + (T val) { return static_cast<int>(val); }
+
+template<typename T>
+inline T operator ++ (T& val) { return val = static_cast<T>(+val + 1); }
 
 typedef enum {
 	t_enumDefault			= 0,
@@ -548,7 +554,7 @@ public:
 	}
 	inline CInterStruct *InterStruct()	const		{ return m_pInterStruct; }
 	inline void SetInterStruct(CInterStruct *pntr)	{ m_pInterStruct = pntr; }
-	t_objectType objType;
+	t_objectType objType = t_objectType::t_BIBD;
 	int v = 0;
 	int k = 0;
 	int r = 0;

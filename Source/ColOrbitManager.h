@@ -195,7 +195,7 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 		m_ppColOrb[0][0]->Init(colNumb());
 		if (numParts > 1) {
 			// Initiating the leading column orbits of all block
-			S len;
+			S len(0);
 			while (numParts--) {
 				const auto shift = pGroupDescr->GetPartInfo(numParts, &len);
 				m_ppColOrb[numParts][firstRow]->Init(len);

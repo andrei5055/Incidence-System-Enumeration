@@ -65,7 +65,7 @@ public:
 		m_nCols = nCols;
 		m_nMaxElement = maxElement;
 		setDataOwner(!data);
-		m_nLenData = m_nRows * m_nCols * sizeof(S);
+		m_nLenData = sizeof(S) * m_nRows * m_nCols;
 		m_pData = data? data : m_nLenData? new S[m_nRows * m_nCols] : NULL;
 	}
 

@@ -2,15 +2,15 @@
 
 void CNumbInfo::addMatrices(const CNumbInfo *pNumbInfo)
 {
-	for (auto i = t_totalConstr; i < t_design_type_total; i = (t_design_type)(i + 1))
+	for (auto i = t_design_type::t_totalConstr; i < t_design_type::t_design_type_total; ++i)
 		addMatrOfType(pNumbInfo->numMatrOfType(i), i);
 }
 
 void CNumbInfo::outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const
 {
 	const char *formats[] = { "", "   %12llu", "   %10llu", "   %4llu", "   %4llu" };
-	for (auto j = t_canonical; j < t_design_type_total; j = (t_design_type)(j + 1))
-		poz += SNPRINTF(buffer + poz, lenBuf - poz, formats[j], numMatrOfType(j));
+	for (auto j = t_design_type::t_canonical; j < t_design_type::t_design_type_total; ++j)
+		poz += SNPRINTF(buffer + poz, lenBuf - poz, formats[+j], numMatrOfType(j));
 
 	SNPRINTF(buffer + poz, lenBuf - poz, "\n");
 }
@@ -50,10 +50,10 @@ void CGroupsInfo::addGroupOrders(const COrderInfo *pOrderInfo) {
 	const auto groupOrder = pOrderInfo->groupOrder();
 	for (size_t j = 0; j < pOrderInfo->numOrderNumbers(); j++) {
 		const auto* p = pOrderInfo->getOrderNumbers(j);
-		const auto numCanons = p->numMatrOfType(t_canonical);
-		const auto numSimple = p->numMatrOfType(t_simple);
+		const auto numCanons = p->numMatrOfType(t_design_type::t_canonical);
+		const auto numSimple = p->numMatrOfType(t_design_type::t_simple);
 		auto* pInfo = addGroupOrder(groupOrder, p->groupOrder(), numCanons, numSimple);
-		pInfo->addMatrixTrans(p->numMatrOfType(t_transitive), p->numMatrOfType(t_simpleTrans));
+		pInfo->addMatrixTrans(p->numMatrOfType(t_design_type::t_transitive), p->numMatrOfType(t_design_type::t_simpleTrans));
 	}
 }
 
@@ -64,7 +64,7 @@ void CGroupsInfo::updateGroupInfo(const CGroupsInfo *pGroupInfo) {
 }
 
 void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem) {
-	size_t i = pOrderInfoBase->numMatrOfType(t_canonical) ? 0 : 1;
+	auto i = pOrderInfoBase->numMatrOfType(t_design_type::t_canonical) ? 0 : 1;
 	for (; i < nElem; i++)
 		addGroupOrders(pOrderInfoBase + i);
 }
@@ -119,7 +119,7 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 		const auto *pInfo = GetAt(i);
 		// For i == 0, first element, which corresponds to the group of order 1
 		// of the COrderNumbArray  could be empty
-		size_t j = i || pInfo->numMatrOfType(t_canonical) > 0? 0 : 1;
+		size_t j = i || pInfo->numMatrOfType(t_design_type::t_canonical) > 0? 0 : 1;
 		for (; j < pInfo->numOrderNumbers(); j++) {
 			const auto *p = pInfo->getOrderNumbers(j);
 			pCombinedNumbInfo->addMatrices(p);

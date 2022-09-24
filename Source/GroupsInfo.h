@@ -1,39 +1,39 @@
 #pragma once
 #include "DataTypes.h"
 
-typedef enum {
-	t_totalConstr,
+enum class t_design_type {
+	t_totalConstr = 0,
 	t_canonical,
 	t_simple,
 	t_transitive,
 	t_simpleTrans,
 	t_design_type_total
-} t_design_type;
+};
 
 class CNumbInfo
 {
 public:
 	CC CNumbInfo()												{ resetNumbInfo(); }
 	CC ~CNumbInfo()												{}
-	CK inline ulonglong numMatrOfType(t_design_type t)	const	{ return m_nCounter[t]; }
-	inline void setNumMatrOfType(ulonglong val, t_design_type t){ m_nCounter[t] = val; }
+	CK inline ulonglong numMatrOfType(t_design_type t)	const	{ return m_nCounter[+t]; }
+	inline void setNumMatrOfType(ulonglong val, t_design_type t){ m_nCounter[+t] = val; }
 	CC inline CNumbInfo *addMatrix(ulonglong numb, ulonglong nSimple) {
-		addMatrOfType(numb, t_canonical);
-		addMatrOfType(nSimple, t_simple);
+		addMatrOfType(numb, t_design_type::t_canonical);
+		addMatrOfType(nSimple, t_design_type::t_simple);
 		return this;
 	}
 	CC void addMatrixTrans(ulonglong numb, ulonglong nSimple) {
-		addMatrOfType(numb, t_transitive);
-		addMatrOfType(nSimple, t_simpleTrans);
+		addMatrOfType(numb, t_design_type::t_transitive);
+		addMatrOfType(nSimple, t_design_type::t_simpleTrans);
 	}
 
 	void addMatrices(const CNumbInfo *pNumbInfo);
 	void outNumbInfo(char *buffer, const size_t lenBuf, size_t poz) const;
 	CC inline void resetNumbInfo()								{ memset(m_nCounter, 0, sizeof(m_nCounter)); }
 protected:
-	CC inline void addMatrOfType(ulonglong v, t_design_type t)	{ m_nCounter[t] += v; }
+	CC inline void addMatrOfType(ulonglong v, t_design_type t)	{ m_nCounter[+t] += v; }
 private:
-	ulonglong m_nCounter[t_design_type_total];
+	ulonglong m_nCounter[t_design_type::t_design_type_total];
 };
 
 class COrderNumb : public CNumbInfo
@@ -71,7 +71,7 @@ public:
 			m_cNumbInfo[i]->resetNumbInfo();
 	}
 	CC inline auto nonEmptyInfo() const	{
-		return m_cNumbInfo.GetSize() > 1 || numMatrOfType(t_canonical);
+		return m_cNumbInfo.GetSize() > 1 || numMatrOfType(t_design_type::t_canonical);
 	}
 	CK inline ulonglong numMatrOfType(t_design_type t)	const	{ return m_cNumbInfo[0]->numMatrOfType(t); }
 	CC inline void addMatrixTrans(ulonglong n, ulonglong nS)	{ m_cNumbInfo[0]->addMatrixTrans(n, nS); }
@@ -88,7 +88,7 @@ public:
 	inline COrderNumb *getOrderNumbers(size_t idx=0) const		{ return m_cNumbInfo[idx]; }
 	inline CNumbInfo *getCombinedNumbInfo() const				{ return m_cNumbInfo[0]; }
 private:
-	size_t m_groupOrder;
+	size_t m_groupOrder = 0;
 	COrderNumbArray m_cNumbInfo;
 };
 

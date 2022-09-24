@@ -79,11 +79,11 @@ public:
 
 protected:
 private:
-    CK inline uint numFilter() const            { return m_nFilter; }
-    CK inline FilterData *getFilterData(int i = 0) const	{ return m_pFilterData + i; }
+    CK inline auto numFilter() const				{ return m_nFilter; }
+    CK inline auto *getFilterData(int i = 0) const	{ return m_pFilterData + i; }
 
-    FilterData *m_pFilterData;
-    uint m_nFilter;
+    FilterData *m_pFilterData = NULL;
+    uint m_nFilter = 0;
 };
 
 #endif /* defined(__BIBD_Mac__RightPartFilter__) */

@@ -43,7 +43,7 @@ private:
 	inline auto intersectionStorage() const						{ return m_pIntersectionStorage; }
 	virtual const char* getTopLevelDirName() const				{ return "t-designs"; }
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const { makeJobTitle(NULL, pInfo, len); }
-	virtual void outputTitle(FILE *file) const;
+	virtual const char* getObjNameFormat() const				{ return "%12s:        "; }
 
 #if USE_EXRA_EQUATIONS	
 	CVariableMapping *constructExtraEquations(size_t t, size_t nVar);

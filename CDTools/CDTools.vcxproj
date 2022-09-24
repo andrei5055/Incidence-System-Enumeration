@@ -35,7 +35,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -167,6 +167,7 @@
     <ClInclude Include="..\Source\CombBIBD_Enumerator.h" />
     <ClInclude Include="..\Source\C_tDesignEnumerator.h" />
     <ClInclude Include="..\Source\DataTypes.h" />
+    <ClInclude Include="..\Source\DesignDB.h" />
     <ClInclude Include="..\Source\Enumerator.h" />
     <ClInclude Include="..\Source\EnumInfo.h" />
     <ClInclude Include="..\Source\Equation.h" />
@@ -184,6 +185,7 @@
     <ClInclude Include="..\Source\PermutStorage.h" />
     <ClInclude Include="..\Source\RightPartFilter.h" />
     <ClInclude Include="..\Source\RowSolution.h" />
+    <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
@@ -194,6 +196,7 @@
     <ClCompile Include="..\Source\CanonicityChecker.cpp" />
     <ClCompile Include="..\Source\CombBIBD_Enumerator.cpp" />
     <ClCompile Include="..\Source\C_tDesignEnumerator.cpp" />
+    <ClCompile Include="..\Source\DesignDB.cpp" />
     <ClCompile Include="..\Source\Enumerator.cpp" />
     <ClCompile Include="..\Source\EnumInfo.cpp" />
     <ClCompile Include="..\Source\Equation.cpp" />
@@ -206,6 +209,7 @@
     <ClCompile Include="..\Source\InSysSolver.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\Matrix.cpp" />
+    <ClCompile Include="..\Source\MatrixCanonChecker.cpp" />
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />

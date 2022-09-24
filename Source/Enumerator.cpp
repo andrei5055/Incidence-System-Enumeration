@@ -286,7 +286,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	// Allocate memory for the orbits of two consecutive rows
 	T nRow, lenStab;
 	RowSolutionPntr pRowSolution;
-	RowSolutionPntr pNextRowSolution;
+	RowSolutionPntr pNextRowSolution = NULL;
 	InitRowSolutions(pMaster);
 	const auto nRows = rowNumb();
 	const bool threadFlag = pMaster != NULL;
@@ -359,7 +359,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	setGroupOnParts(pGroupOnParts);
 	MatrixDataPntr pSpareMatrix = pGroupOnParts? CreateSpareMatrix(pMaster) : NULL;
 
-	T level, nPart;
+	T level(0), nPart(0);
 	TestCanonParams<T,S> canonParam = {this, matrix(), numParts(), &nPart, &level, pGroupOnParts, pSpareMatrix};
 
 	CreateAuxiliaryStructures(pMaster);
@@ -431,7 +431,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #else
 			const bool usingThreads = false;
 #endif
-			REPORT_PROGRESS(pEnumInfo, t_reportByTime);
+			REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
 			MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
 
@@ -480,7 +480,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 								ccc = 0;
 #endif
 								if (!this->rowMaster())  // We are not in the slave thread
-									REPORT_PROGRESS(pEnumInfo, t_matrConstructed);
+									REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_matrConstructed);
 							}
 						}
 					}
@@ -768,7 +768,7 @@ endif
 			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
 			// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
-			if (pParam->objType != t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
+			if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
 				// Create the file name with the current results 
 				strcpy_s(jobTitle, countof(jobTitle), buff);
 				strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
@@ -776,24 +776,24 @@ endif
 				if (betterResults) {
 					remove(buff);			// Remove file with previous results
 					rename(jobTitle, buff);	// Rename file
-					resType = t_resBetter;
+					resType = t_resType::t_resBetter;
 				}
 				else {
 					if (pParam->firstMatr)
 						remove(jobTitle);	// Deleting new file only when it does not contain matrices and 
 
-					resType = t_resWorse;
+					resType = t_resType::t_resWorse;
 				}
 			}
 			else
-				resType = t_resInconsistent; // results are not the same as before
+				resType = t_resType::t_resInconsistent; // results are not the same as before
 		}
 		else {
-			if (pParam->objType != t_SemiSymmetricGraph) {
+			if (pParam->objType != t_objectType::t_SemiSymmetricGraph) {
 				if (getMasterFileName(buff, lenBuffer, &lenName))
 				    compareResults(buff, lenName);
 			}
-			resType = t_resNew;
+			resType = t_resType::t_resNew;
 		}
 
 		pEnumInfo->setResType(resType);
@@ -818,7 +818,7 @@ endif
 
 FClass2(CEnumerator, void)::reset(T nRow, bool resetSolutions) {
 	const auto *pMatrix = this->matrix();
-	const auto *ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
+	const auto *ppOrb = colOrbitPntr() + pMatrix->colNumb() * nRow;
 
 	auto j = numParts();
 	if (j > 1) {
@@ -901,15 +901,16 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 	if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
 		return 0;		// Directory could not be used
 
-	if (this->getTopLevelDirName()) {
-		len += SNPRINTF(dirName + len, lenBuffer - len, "%s/", this->getTopLevelDirName());
+	const auto* pDirName = this->getTopLevelDirName();
+	if (pDirName) {
+		len += SNPRINTF(dirName + len, lenBuffer - len, "%s/", pDirName);
 		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
 			return 0;	// Directory could not be used
 	}
 
 	if (rowNeeded) {
 		auto rowNumb = getInSys()->rowNumbExt();
-		if (pParam->objType == t_SemiSymmetricGraph)
+		if (pParam->objType == t_objectType::t_SemiSymmetricGraph)
 			rowNumb *= pParam->r / pParam->k;
 
 		len += SNPRINTF(dirName + len, lenBuffer - len, "V =%4d/", rowNumb);
@@ -923,7 +924,7 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer, char *tmpBuff)
 {
 	// characters to skip at the beginning of each line
-	static bool skipTable[256];
+	bool skipTable[256] = {};
 	skipTable[' '] = skipTable['\n'] = skipTable['\t'] = true;
 
 	bool outBlock = false;
@@ -970,7 +971,7 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 {
 	const size_t lenBuf = 256;
 	const size_t len = strlen(CONSTRUCTED_IN);
-	char buf[3][lenBuf], *pntr[2] = {NULL, NULL};
+	char buf[3][lenBuf] = {}, * pntr[2] = { NULL, NULL };
 	while (true) {
 		bool eof = false;
 		for (int i = 0; i < 2; i++) {
@@ -1015,7 +1016,7 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 					len[i]--;
 			}
 
-			char* pBeg[2], * pEnd[] = { buf[0]-1, buf[1]-1 };
+			char* pBeg[2] = {}, * pEnd[] = { buf[0] - 1, buf[1] - 1 };
 			int flag = 0;
 			while (!flag) {
 				const bool cond = buf[0] + len[0] == pEnd[0];

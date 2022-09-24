@@ -278,10 +278,10 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 #endif
 	size_t numGroups = 0;
 	T startingRowNumb = pCanonParam->startingRowNumb;
-	size_t idxPerm[16];			// to keep the indices of currently used permutation
+	size_t idxPerm[16] = {};	// to keep the indices of currently used permutation
 	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
 
-	T idxPartSrc[16];			// to keep the initial (source) indices of the parts
+	T idxPartSrc[16] = {};		// to keep the initial (source) indices of the parts
 	T* pPartSrc = numParts <= countof(idxPartSrc) ? idxPartSrc : new T[numParts];
 	for (auto i = numParts; i--;)
 		pPartSrc[i] = i;
@@ -305,7 +305,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	auto pOrbits = orbits();
 	while (true) {
 #ifndef USE_CUDA
-		T* permRows;
+		T* permRows = NULL;
 		permColumn = init(nRowMax, numParts, rowPermut, pOrbits, &permRows, usingGroupOnBlocks, permColumn);
 
 		T nRow = ELEMENT_MAX;

@@ -270,7 +270,7 @@ void CDesignDB::outWithFormat_0(const size_t * pSortedRecords, FILE * file) cons
 	memset(buff, '_', lenStr);
 	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);
-	fprintf(file, SHIFT "  Total:  %9zd       Deconpositions: %zd    MaxDecomp for master: %zd\n", totalMasters, totalCombined, numbDecompMaxGlobal);
+	fprintf(file, SHIFT "  Total:  %9zd       Decompositions: %zd    MaxDecomp for master: %zd\n", totalMasters, totalCombined, numbDecompMaxGlobal);
 }
 
 void CDesignDB::outWithFormat_1(const size_t* pSortedRecords, FILE* file) const {

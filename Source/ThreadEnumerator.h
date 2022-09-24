@@ -62,24 +62,24 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 		const InSysPntr pSlaveDesign;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
-		case t_BIBD:
+		case t_objectType::t_BIBD:
 			    pSlaveDesign = new C_BIBD<T, S>((const C_BIBD<T, S> *)(pInSys), nRow);
 				m_pEnum = new CBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
-		case t_CombinedBIBD:
+		case t_objectType::t_CombinedBIBD:
 				pSlaveDesign = new CCombinedBIBD<T, S>((const Class2(CCombinedBIBD) *)(pInSys), nRow);
 				m_pEnum = new CCombBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
-		case t_tDesign: {
+		case t_objectType::t_tDesign: {
 				const auto pSlaveTDesign = new C_tDesign<T, S>((const Class2(C_tDesign) *)(pInSys), nRow);
 				m_pEnum = new C_tDesignEnumerator<T, S>(pSlaveTDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 			}
-		case t_PBIBD:
+		case t_objectType::t_PBIBD:
 				pSlaveDesign = new C_PBIBD<T, S>((const Class2(C_PBIBD) *)(pInSys), nRow);
 				m_pEnum = new CPBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
-		case t_SemiSymmetricGraph:
+		case t_objectType::t_SemiSymmetricGraph:
 			    pSlaveDesign = new CSemiSymmetricGraph<T, S>((const Class2(CSemiSymmetricGraph) *)(pInSys), nRow);
 				m_pEnum = new CIG_Enumerator<T, S>(pSlaveDesign, pMaster->designParams(), enumFlags, threadIdx, NUM_GPU_WORKERS);
 				m_pEnum->CloneMasterInfo(pMaster, nRow);

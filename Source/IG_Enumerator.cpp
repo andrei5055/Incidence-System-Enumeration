@@ -158,7 +158,7 @@ FClass2(CIG_Enumerator, bool)::TestFeatures(EnumInfoPntr pEnumInfo, const Matrix
 
 	if (retVal && this->checkProperty(t_printTransposedMatrix)) {
 		// Printing of the transposed matrix
-		transpMatr.printOut(this->outFile(), nCols, pEnumInfo->numMatrOfType(t_canonical) + 1, &canonChecker);
+		transpMatr.printOut(this->outFile(), nCols, pEnumInfo->numMatrOfType(t_design_type::t_canonical) + 1, &canonChecker);
 	}
 
 	return retVal;
@@ -191,10 +191,10 @@ FClass2(CIG_Enumerator, bool)::prepareToFindRowSolution() {
 	const auto pMatrix = this->matrix();
 	const auto nLambd = this->designParams()->lambdaB().size();
 	const auto len = r + k + nLambd + 2 * nLambdas();
-	S bufIdx[64];
+	S bufIdx[64] = {};
 	S *pIdx = len > countof(bufIdx) ? new S[len] : bufIdx;
 
-	uchar blockFlg[64];
+	uchar blockFlg[64] = {};
 	uchar *pBlockFlags = pMatrix->colNumb() > countof(blockFlg)? new uchar [pMatrix->colNumb()] : blockFlg;
 
 	auto pIntersection = rowIntersections();
