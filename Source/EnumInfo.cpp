@@ -247,7 +247,7 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 
 #define SPACE "        "
 	char buff[256];
-	SPRINTF(buff, "\n" SPACE "Using % zd - bit program with % s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
+	SPRINTF(buff, "\n" SPACE "Using %zd-bit program with%s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
 	auto outLen = outString(buff, outFile);
 
 	const auto dLen = sizeof(SIZE_TYPE);

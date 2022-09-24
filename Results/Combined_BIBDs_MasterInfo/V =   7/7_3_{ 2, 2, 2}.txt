@@ -28,39 +28,39 @@ CBIBD(  7,  3, { 2, 2, 2})
 >>>> Decomposition info<<<< 
 
 
-        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
-    _________________________________________________________________________________
-             1              1890              21               0               0
-             1*2             106               4               0               0
-             2                98               2               0               0
-             2*2              33               2               0               0
-             3                74               0               0               0
-             3*2              33               2               0               0
-             4                23               0               0               0
-             4*2              18               0               0               0
-             6                 4               0               0               0
-             6*2               6               1               0               0
-             8                 4               0               0               0
-             8*2               8               0               0               0
-             8*6               1               0               0               0
-            12                 2               0               0               0
-            12*2               5               0               0               0
-            21*2               4               0               4               0
-            24*2               6               0               0               0
-            24*6               1               0               0               0
-            42*6               1               1               1               1
-            48*6               1               0               0               0
-           168*6               1               0               1               0
-    _________________________________________________________________________________
-        Total:              2319              33               6               1
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+             1             1890           21      0      0
+             1*2            106            4      0      0
+             2               98            2      0      0
+             2*2             33            2      0      0
+             3               74            0      0      0
+             3*2             33            2      0      0
+             4               23            0      0      0
+             4*2             18            0      0      0
+             6                4            0      0      0
+             6*2              6            1      0      0
+             8                4            0      0      0
+             8*2              8            0      0      0
+             8*6              1            0      0      0
+            12                2            0      0      0
+            12*2              5            0      0      0
+            21*2              4            0      4      0
+            24*2              6            0      0      0
+            24*6              1            0      0      0
+            42*6              1            1      1      1
+            48*6              1            0      0      0
+           168*6              1            0      1      0
+    _____________________________________________________________
+        Total:             2319           33      6      1
 
-      2319 matrices constructed in  1.08
+      2319 matrices constructed in  0.74
         33 matrices have no replicated blocks
       8711 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-         2 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
