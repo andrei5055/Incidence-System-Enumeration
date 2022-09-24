@@ -8,25 +8,25 @@ CBIBD(  7,  3, { 1, 1})
          48           1    1                                                                     
         168           1    1                                                                     
     ___________________________________________________________________________________________
-      Total:          2       Deconpositions: 2    MaxDecomp for master: 1
+      Total:          2       Decompositions: 2    MaxDecomp for master: 1
  
 >>>> Decomposition info<<<< 
 
 
-        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
-    _________________________________________________________________________________
-            24*2               1               1               0               0
-           168*2               1               1               1               1
-    _________________________________________________________________________________
-        Total:                 2               2               1               1
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+            24*2              1            1      0      0
+           168*2              1            1      1      1
+    _____________________________________________________________
+        Total:                2            2      1      1
 
-         2 matrices constructed in  0.02
+         2 matrices constructed in  0.01 sec
          2 matrices have no replicated blocks
          3 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-         2 threads launched on row 4 (not waiting to finish mode)
+        10 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

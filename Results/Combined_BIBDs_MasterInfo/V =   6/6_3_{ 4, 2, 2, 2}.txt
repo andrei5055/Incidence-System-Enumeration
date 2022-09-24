@@ -10,27 +10,27 @@ CBIBD(  6,  3, { 4, 2, 2, 2})
          12           6    6                                                                     
          60           3    3                                                                     
     ___________________________________________________________________________________________
-      Total:         12       Deconpositions: 12    MaxDecomp for master: 1
+      Total:         12       Decompositions: 12    MaxDecomp for master: 1
  
 >>>> Decomposition info<<<< 
 
 
-        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
-    _________________________________________________________________________________
-             3*6               1               0               0               0
-             6*6               2               0               0               0
-            12*6               6               0               6               0
-            60*6               3               1               3               1
-    _________________________________________________________________________________
-        Total:                12               1               9               1
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+             3*6              1            0      0      0
+             6*6              2            0      0      0
+            12*6              6            0      6      0
+            60*6              3            1      3      1
+    _____________________________________________________________
+        Total:               12            1      9      1
 
-        12 matrices constructed in  0.02
+        12 matrices constructed in  0.02 sec
          1 matrix has no replicated blocks
         14 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-         2 threads launched on row 3 (not waiting to finish mode)
+        10 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

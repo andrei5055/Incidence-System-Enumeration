@@ -11,30 +11,30 @@ CBIBD(  6,  3, { 2, 2, 2, 2})
          24           3    3                                                                     
          60           2    1,1*2                                                                 
     ___________________________________________________________________________________________
-      Total:          9       Deconpositions: 10    MaxDecomp for master: 2
+      Total:          9       Decompositions: 10    MaxDecomp for master: 2
  
 >>>> Decomposition info<<<< 
 
 
-        |Aut(D)|             Nd:             Ns:            Ndt:            Nst:
-    __________________________________________________________________________________
-             3*2                1               1               0               0
-             3*4                1               1               0               0
-            12*2                3               3               3               3
-            12*6                2               2               2               2
-            12*8                1               1               1               1
-            60*6                1               1               1               1
-            60*24               1               1               1               1
-    __________________________________________________________________________________
-        Total:                 10              10               8               8
+        |Aut(D)|             Nd:           Ns:   Ndt:   Nst:
+    ______________________________________________________________
+             3*2               1            1      0      0
+             3*4               1            1      0      0
+            12*2               3            3      3      3
+            12*6               2            2      2      2
+            12*8               1            1      1      1
+            60*6               1            1      1      1
+            60*24              1            1      1      1
+    ______________________________________________________________
+        Total:                10           10      8      8
 
-        10 matrices constructed in  0.02
+        10 matrices constructed in  0.02 sec
         10 matrices have no replicated blocks
         15 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-         2 threads launched on row 3 (not waiting to finish mode)
+        10 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

@@ -14,7 +14,7 @@ CBIBD(  6,  3, { 4, 4, 4, 2})
          36           1    1*57                                                                  
          60           4    1,1*5,1*30,1*94                                                       
     ___________________________________________________________________________________________
-      Total:         48       Deconpositions: 1722    MaxDecomp for master: 223
+      Total:         48       Decompositions: 1722    MaxDecomp for master: 223
  
 >>>> Decomposition info<<<< 
 
@@ -40,7 +40,7 @@ CBIBD(  6,  3, { 4, 4, 4, 2})
     _____________________________________________________________
         Total:             1722            1    164      1
 
-      1722 matrices constructed in  0.66
+      1722 matrices constructed in  0.65 sec
          1 matrix has no replicated blocks
       5652 matrices were fully constructed
 

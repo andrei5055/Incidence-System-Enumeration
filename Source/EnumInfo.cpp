@@ -31,7 +31,7 @@ FClass2(CEnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf,
 		lenBuf -= 3;
 	}
 
-	pBuf += SNPRINTF(pBuf, lenBuf, "%02d%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
+	pBuf += SNPRINTF(pBuf, lenBuf, "%02d sec%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
 	return pBuf - buffer;
 }
 

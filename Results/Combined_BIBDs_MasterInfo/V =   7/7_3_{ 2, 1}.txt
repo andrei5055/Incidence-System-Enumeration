@@ -14,32 +14,32 @@ CBIBD(  7,  3, { 2, 1})
         144           1    1                                                                     
         168           1    1                                                                     
     ___________________________________________________________________________________________
-      Total:          9       Deconpositions: 16    MaxDecomp for master: 3
+      Total:          9       Decompositions: 16    MaxDecomp for master: 3
  
 >>>> Decomposition info<<<< 
 
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             2               1               0               0               0
-             3               4               2               0               0
-             4               1               0               0               0
-             6               1               0               0               0
-             8               1               0               0               0
-            12               2               0               0               0
-            21               2               1               2               1
-            24               3               0               0               0
-           168               1               0               1               0
-    _______________________________________________________________________________
-        Total:              16               3               3               1
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             2              1            0      0      0
+             3              4            2      0      0
+             4              1            0      0      0
+             6              1            0      0      0
+             8              1            0      0      0
+            12              2            0      0      0
+            21              2            1      2      1
+            24              3            0      0      0
+           168              1            0      1      0
+    ___________________________________________________________
+        Total:             16            3      3      1
 
-        16 matrices constructed in  0.05
+        16 matrices constructed in  0.02 sec
          3 matrices have no replicated blocks
         23 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-         2 threads launched on row 4 (not waiting to finish mode)
+        10 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
