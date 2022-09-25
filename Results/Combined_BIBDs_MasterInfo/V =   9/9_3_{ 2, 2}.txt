@@ -31,7 +31,7 @@ CBIBD(  9,  3, { 2, 2})
         384           1    1                                                                     
         432           1    1                                                                     
     ___________________________________________________________________________________________
-      Total:    8997267       Deconpositions: 16407107    MaxDecomp for master: 32
+      Total:    8997267       Decompositions: 16407107    MaxDecomp for master: 32
  
 >>>> Decomposition info<<<< 
 
@@ -71,7 +71,7 @@ CBIBD(  9,  3, { 2, 2})
    4068169 matrices have no replicated blocks
   29774260 matrices were fully constructed
 
-        Using  64 - bit program with  no Assembly
+        Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
          2 threads launched on row 5 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
