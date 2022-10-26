@@ -315,7 +315,7 @@ FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderIn
 	init();
 	resetNumbInfo(1);
 	const ulonglong nSimple = total.numMatrOfType(t_simple);
-	addMatrix(total.numMatrOfType(t_canonical), nSimple);
+	addMatrix(total.numMatrOfType(t_design_type::t_canonical), nSimple);
 	incNumbSimpleDesign(nSimple);
 }
 #endif

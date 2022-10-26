@@ -102,7 +102,6 @@ private:
 	mutable S m_nStabExtern;
 #if USE_THREADS
 	static ulonglong m_matrixCounter;
-	static std::mutex m_mutex;
 	static ulonglong GetNextCounter();
 public:
 	static void ResetCounter() { m_matrixCounter = 0; }

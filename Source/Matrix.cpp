@@ -10,12 +10,9 @@ template class CCombinedBIBD<TDATA_TYPES>;
 
 #if USE_THREADS_ENUM
 ulonglong CMatrixData<TDATA_TYPES>::m_matrixCounter;
-std::mutex CMatrixData<TDATA_TYPES>::m_mutex;
 
 FClass2(CMatrixData, ulonglong)::GetNextCounter() {
-	MUTEX_LOCK(m_mutex);
 	const auto matrixNumber = ++m_matrixCounter;
-	MUTEX_UNLOCK(m_mutex);
 	return matrixNumber;
 }
 #endif

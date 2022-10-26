@@ -15,6 +15,7 @@
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
 
+#define CHECK_PERMUTS		0 // Check permuteations used for combined BIBD enumeration
 
 #define CPermut				CSimpleArray<S>
 #define CColNumbStorage		CContainer<S>
@@ -140,6 +141,11 @@ private:
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
 		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize);
 	CC void UpdateOrbits(const T *permut, const T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
+#if CHECK_PERMUTS
+	CC void check_permut(const T* permut, T len_perm) const;
+#else
+#define check_permut(permut, len_perm)
+#endif
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -244,6 +250,15 @@ CanonicityChecker(void)::updateCanonicityChecker(T rowNumb, T colNumb)
 	m_pPermutSparse[0].Init(rowNumb, new T[rowNumb]);
 	m_pPermutSparse[1].Init(rowNumb, new T[colNumb]);
 }
+
+#if CHECK_PERMUTS
+CanonicityChecker(void)::check_permut(const T* permut, T len_perm) const {
+	for (auto i = len_perm; i--;) {
+		for (auto j = len_perm; j-- && permut[j] != i;);
+		assert(j != ELEMENT_MAX);
+	}
+}
+#endif
 
 CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* pCanonParam, uint outInfo, RowSolutionPntr pRowSolution)
 {
@@ -538,12 +553,11 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				if (jFrom == jTo)
 					continue;
 
-				// Calculate absolute indices and save source index 
+				// Calculate absolute indices and save the source index
 				const auto idxTo = pPartsInfo->getShift(jTo += idxPart);
-				const auto idxFrom = pPartsInfo->getShift(jFrom += idxPart);
-				pPartSrc[jTo] = jFrom;
+				const auto idxFrom = pPartsInfo->getShift(pPartSrc[jTo] = jFrom + idxPart);
 #if USE_COL_PERMUT
-				// Copying set of indeces of columns which corresponds to the moved part of CombinedBIBD 
+				// Copying a set of column indices corresponding to the moved part of the Combined BIBD
 				memcpy(permColumn + idxTo, m_pTrivialPermutCol + idxFrom, sizeof(permColumn[0]) * nCol);
 #else
 				auto* pPartTo = pMatrTo + idxTo;
@@ -556,6 +570,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 #endif
 			}
 		}
+
+		check_permut(pPartSrc, numParts);
+		check_permut(permColumn, pMatr->colNumb());
 
 		// After permitation of parts we also need 
 		// to try trivial permutation on rows

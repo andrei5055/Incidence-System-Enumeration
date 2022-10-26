@@ -120,7 +120,6 @@
 #define REPORT_INTERVAL				(5 * 1000 * 100)
 #define REPORT_INTERVAL_OBJ_NUMB	10000
 
-#define PRINT_MATRICES				0
 #define SOLUTION_STATISTICS			0
 #define WRITE_MULTITHREAD_LOG		0
 
@@ -388,7 +387,7 @@ extern int ccc;
 #if CHECK_CONSTRUCTED
 	#define START_NUMBER         9
 	#define END_NUMBER			91
-	#define CHECK_CONSTR(x, y)    enumInfo()->numMatrOfType(t_canonical) >= x && enumInfo()->numMatrOfType(t_canonical) <= y
+	#define CHECK_CONSTR(x, y)    enumInfo()->numMatrOfType(t_design_type::t_canonical) >= x && enumInfo()->numMatrOfType(t_design_type::t_canonical) <= y
 #else
 #define CHECK_CONSTR(x, y)		true
 #endif
@@ -402,7 +401,7 @@ extern int ccc;
     #define OUTPUT_SOLUTION(x,...)
 #endif
 
-#define OUT_MATRIX(x, y, z, w, v, canon)		{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->numMatrOfType(t_canonical)+1, canon);  MUTEX_UNLOCK(out_mutex); }
+#define OUT_MATRIX(x, y, z, w, v, canon)		{ MUTEX_LOCK(out_mutex); x->printOut(y, z, w, NULL, v->numMatrOfType(t_design_type::t_canonical)+1, canon);  MUTEX_UNLOCK(out_mutex); }
 #if PRINT_CURRENT_MATRIX
 	#define OUTPUT_MATRIX(x, y, z, v, canon)	if (MAKE_OUTPUT()) \
 													OUT_MATRIX(x, y, z, ++ccc, v, canon)

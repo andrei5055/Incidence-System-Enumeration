@@ -223,7 +223,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	setDesignParams(pParam);
 	const auto* pInpMaster = pMaster;
 #if !CONSTR_ON_GPU
-	std::mutex mtx;
+	static std::mutex mtx;
 	char buff[256], jobTitle[256];
 	const auto lenBuffer = countof(buff);
 	const auto threadNumb = pParam->threadNumb;
@@ -471,7 +471,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #if USE_THREADS
 									pMatrix->printOut(this->outFile(), nRow, 0, this);
 #else
-									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->numMatrOfType(t_canonical), this);
+									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->numMatrOfType(t_design_type::t_canonical), this);
 #endif
 									mtx.unlock();
 								}
