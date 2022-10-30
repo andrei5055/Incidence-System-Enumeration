@@ -54,13 +54,15 @@ CBIBD(  7,  3, { 2, 2, 2})
     _____________________________________________________________
         Total:             2319           33      6      1
 
-      2319 matrices constructed in  0.78 sec
-        33 matrices have no replicated blocks
-      8711 matrices were fully constructed
+      2319 matrices were constructed in  0.73 sec,
+         6 of them are transitive on the rows.
+        33 matrices have no replicated blocks,
+         1 of them is transitive on the rows.
+      8711 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 4 (not waiting to finish mode)
+        10 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

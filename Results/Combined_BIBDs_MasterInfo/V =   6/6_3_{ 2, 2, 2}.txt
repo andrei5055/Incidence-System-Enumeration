@@ -22,9 +22,11 @@ CBIBD(  6,  3, { 2, 2, 2})
     _____________________________________________________________
         Total:                5            5      5      5
 
-         5 matrices constructed in  0.00 sec
-         5 matrices have no replicated blocks
-         6 matrices were fully constructed
+         5 matrices were constructed in  0.00 sec,
+         5 of them are transitive on the rows.
+         5 matrices have no replicated blocks,
+         5 of them are transitive on the rows.
+         6 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"

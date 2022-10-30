@@ -20,9 +20,11 @@ CBIBD(  7,  3, { 1, 1})
     _____________________________________________________________
         Total:                2            2      1      1
 
-         2 matrices constructed in  0.01 sec
-         2 matrices have no replicated blocks
-         3 matrices were fully constructed
+         2 matrices were constructed in  0.00 sec,
+         1 of them is transitive on the rows.
+         2 matrices have no replicated blocks,
+         1 of them is transitive on the rows.
+         3 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"

@@ -24,9 +24,11 @@ CBIBD(  6,  3, { 4, 2})
     ___________________________________________________________
         Total:             12            1      9      1
 
-        12 matrices constructed in  0.02 sec
-         1 matrix has no replicated blocks
-        14 matrices were fully constructed
+        12 matrices were constructed in  0.02 sec,
+         9 of them are transitive on the rows.
+         1 matrix has no replicated blocks,
+         1 of them is transitive on the rows.
+        14 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
