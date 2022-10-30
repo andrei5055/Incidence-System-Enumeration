@@ -1,28 +1,31 @@
 CBIBD(  6,  3, { 4, 4, 2})
 
-        |Aut(D)|            Nd:             Ns:            Ndt:            Nst:
-    _________________________________________________________________________________
-             1                16               0               0               0
-             1*2               1               0               0               0
-             2                12               0               0               0
-             3                46               0               0               0
-             3*2               2               0               0               0
-             6                 7               0               0               0
-             6*2               2               0               0               0
-            12                33               0              33               0
-            12*2               6               0               6               0
-            60                 3               0               3               0
-            60*2               3               1               3               1
-    _________________________________________________________________________________
-        Total:               131               1              45               1
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+             1               16            0      0      0
+             1*2              1            0      0      0
+             2               12            0      0      0
+             3               46            0      0      0
+             3*2              2            0      0      0
+             6                7            0      0      0
+             6*2              2            0      0      0
+            12               33            0     33      0
+            12*2              6            0      6      0
+            60                3            0      3      0
+            60*2              3            1      3      1
+    _____________________________________________________________
+        Total:              131            1     45      1
 
-       131 matrices constructed in  0.01
-         1 matrix has no replicated blocks
-       273 matrices were fully constructed
+       131 matrices were constructed in  0.04 sec,
+        45 of them are transitive on the rows.
+         1 matrix has no replicated blocks,
+         1 of them is transitive on the rows.
+       273 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 3 (not waiting to finish mode)
+        10 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

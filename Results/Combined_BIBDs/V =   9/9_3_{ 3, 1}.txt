@@ -18,15 +18,17 @@ CBIBD(  9,  3, { 3, 1})
            108              1            0      1      0
            432              1            0      1      0
     ___________________________________________________________
-        Total:        15574414          208362              40              10
+        Total:       15574414       208362     40     10
 
-  15574414 matrices constructed in  7:31.56
-    208362 matrices have no replicated blocks
-  29903475 matrices were fully constructed
+  15574414 matrices were constructed in 14:22.77 sec,
+        40 of them are transitive on the rows.
+    208362 matrices have no replicated blocks,
+        10 of them are transitive on the rows.
+  29903475 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 5 (not waiting to finish mode)
+        10 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
