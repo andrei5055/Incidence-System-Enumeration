@@ -15,7 +15,7 @@
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
 
-#define CHECK_PERMUTS		0 // Check permuteations used for combined BIBD enumeration
+#define CHECK_PERMUTS		0 // Check permutations used for combined BIBD enumeration
 
 #define CPermut				CSimpleArray<S>
 #define CColNumbStorage		CContainer<S>

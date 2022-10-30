@@ -183,8 +183,6 @@ extern std::mutex out_mutex;
 
 #define SNPRINTF(x, len, ...)	static_cast<size_t>(snprintf(x, len, __VA_ARGS__))
 #define SPRINTF(x, ...)			SNPRINTF(x, sizeof(x), __VA_ARGS__)
-#define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which 
-#define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
 
 #ifndef USE_CUDA
 #define THROW() throw;

@@ -31,7 +31,7 @@ FClass2(CEnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf,
 		lenBuf -= 3;
 	}
 
-	pBuf += SNPRINTF(pBuf, lenBuf, "%02d sec%s", (int)(100 * (time - secTime)), alignment? "" : "\n");
+	pBuf += SNPRINTF(pBuf, lenBuf, "%02d sec%s", (int)(100 * (time - secTime)), alignment? "" : ",\n");
 	return pBuf - buffer;
 }
 
@@ -189,6 +189,11 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 	}
 }
 
+FClass2(CEnumInfo, void)::outAdditionalInfo(ulonglong nMatr, FILE *outFile, char *buff, size_t lenBuff) const {
+	SNPRINTF(buff, lenBuff, "%10llu " OF_THEM " %s transitive on the rows.\n", nMatr, nMatr == 1 ? "is" : "are");
+	outString(buff, outFile);
+}
+
 FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
 {
 	setRunTime();
@@ -199,25 +204,29 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	if (!pGroupInfo)
 		pGroupInfo = this;
 
-	pGroupInfo->printGroupInfo(outFile);
+	COrderInfo total(0, 1, 0);
+	pGroupInfo->printGroupInfo(outFile, total);
 	if (!(m_pParam->outType & t_Summary))
 		return;
 
-	const auto nConstrMatr = numMatrOfType(t_design_type::t_canonical);
+	auto nMatr = numMatrOfType(t_design_type::t_canonical);
 	char buff[256];
-	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nConstrMatr, nConstrMatr == 1 ? "x" : "ces");
+	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nMatr, nMatr == 1 ? "x was" : "ces were");
 	const auto len = strlen(buff);
 	convertTime(runTime(), buff + len, countof(buff) - len, false);
 	outString(buff, outFile);
 
-	const auto nMatr = numbSimpleDesign();
-	if (nConstrMatr > 0) {
-		SPRINTF(buff, "%10llu matri%s ha%s no replicated blocks\n", nMatr, nMatr == 1 ? "x" : "ces", nMatr == 1 ? "s" : "ve");
+	if (nMatr) {
+		outAdditionalInfo(total.numMatrOfType(t_design_type::t_transitive), outFile, buff, sizeof(buff));
+		nMatr = total.numMatrOfType(t_design_type::t_simple);
+		SPRINTF(buff, "%10llu matri%s no replicated blocks,\n", nMatr, nMatr == 1 ? "x has" : "ces have");
 		outString(buff, outFile);
+
+		outAdditionalInfo(total.numMatrOfType(t_design_type::t_simpleTrans), outFile, buff, sizeof(buff));
 	}
 
-	const auto nTotal = numMatrOfType(t_design_type::t_totalConstr);
-	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
+	nMatr = numMatrOfType(t_design_type::t_totalConstr);
+	SPRINTF(buff, "%10llu matri%s fully constructed.\n", nMatr, nMatr == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
 	outEnumInformation(pOutFile);

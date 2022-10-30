@@ -138,7 +138,7 @@ public:
 			GetAt(i)->resetNumbInfo();
 	}
 
-	void printGroupInfo(FILE *file) const;
+	void printGroupInfo(FILE *file, COrderInfo& total) const;
 	void calcCountersTotal(COrderInfo *pTotal);
 	CK void updateGroupInfo(const CGroupsInfo *pGroupInfo);
 	inline size_t GetStartIdx() const				{ return GetAt(0)->nonEmptyInfo()? 0 : 1; }

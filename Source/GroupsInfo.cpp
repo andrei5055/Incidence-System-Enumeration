@@ -69,7 +69,7 @@ void CGroupsInfo::updateGroupInfo(const COrderInfo *pOrderInfoBase, size_t nElem
 		addGroupOrders(pOrderInfoBase + i);
 }
 
-void CGroupsInfo::printGroupInfo(FILE *file) const
+void CGroupsInfo::printGroupInfo(FILE *file, COrderInfo& total) const
 {
 	auto i = GetStartIdx();
 	const auto iMax = GetSize();
@@ -113,7 +113,6 @@ void CGroupsInfo::printGroupInfo(FILE *file) const
 	outString(line, file);
 
 	const auto lenToCount = maxLen + SPRINTF(buffer, SHIFT"%10zd", (size_t)1);
-	COrderInfo total(0, 1, 0);
 	auto *pCombinedNumbInfo = total.getCombinedNumbInfo();
 	for (i = GetStartIdx(); i < iMax; i++) {
 		const auto *pInfo = GetAt(i);

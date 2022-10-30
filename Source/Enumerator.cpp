@@ -941,6 +941,9 @@ static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer, ch
 			// Block was not open
 			outBlock = strstr(tmpBuff, BEG_OUT_BLOCK) != NULL;
 			if (!outBlock) {
+				if (strstr(tmpBuff, OF_THEM))
+					continue;
+
 				// Remove leading spaces:
 				auto* pCurrentSymb = tmpBuff;
 				while (skipTable[*pCurrentSymb++]);

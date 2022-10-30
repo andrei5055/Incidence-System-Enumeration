@@ -2,6 +2,10 @@
 #include <time.h>
 #include "GroupsInfo.h"
 
+#define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which
+#define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
+#define OF_THEM		            "of them"   // Marker of supporting information to skip
+
 class CTimerInfo
 {
 public:
@@ -104,6 +108,7 @@ protected:
 private:
 	static double stringToTime(char *pTime);
 	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_design_type::t_canonical); }
+	void outAdditionalInfo(ulonglong nMatr, FILE* outFile, char* buff, size_t lenBuf) const;
 	CC inline void resetCounters()							{ m_nCounter = 0; }
 	inline void incCounter()								{ m_nCounter++; }
 	inline void reportThreadProgress()						{ incCounter(); reportProgress(t_reportCriteria::t_treadEnded); }
