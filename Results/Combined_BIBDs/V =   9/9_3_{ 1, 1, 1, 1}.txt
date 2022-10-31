@@ -31,7 +31,7 @@ CBIBD(  9,  3, { 1, 1, 1, 1})
     ______________________________________________________________
         Total:             22727        22727      8      8
 
-     22727 matrices were constructed in  1:31.38 sec,
+     22727 matrices were constructed in 26.06 sec,
          8 of them are transitive on the rows.
      22727 matrices have no replicated blocks,
          8 of them are transitive on the rows.
@@ -39,7 +39,7 @@ CBIBD(  9,  3, { 1, 1, 1, 1})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        10 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on row 6 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
