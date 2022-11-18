@@ -446,16 +446,17 @@ int main(int argc, char * argv[])
 
 		pos = find(line, "THREAD_NUMBER");
 		if (pos != string::npos) {
+			param->threadNumb = USE_THREADS;
+#if USE_MUTEX
 			// Define the number of threads launched to perform task
 			const size_t threadNumb = getInteger(line, &pos);
 			if (threadNumb == string::npos) {
 				printf("Cannot define thread number from: \"%s\"\n", line.c_str());
 				printf("Will use the default value: %d\n", USE_THREADS);
-				param->threadNumb = USE_THREADS;
 			}
 			else
 				param->threadNumb = threadNumb;
-
+#endif
 			continue;
 		}
 

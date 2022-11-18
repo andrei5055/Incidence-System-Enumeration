@@ -16,9 +16,9 @@ public:
 	inline float runTime() const							{ return m_fRunTime; }
 protected:
 	inline clock_t prevClock() const						{ return m_prevClock; }
-	CK inline void setPrevClock(clock_t &val)				{ m_prevClock = val; }
+	CK inline void setPrevClock(const clock_t &val)			{ m_prevClock = val; }
 	inline clock_t prevClockReport() const					{ return m_prevClockReport; }
-	CK inline void setPrevClockReport(clock_t &val)			{ m_prevClockReport = val; }
+	CK inline void setPrevClockReport(const clock_t &val)	{ m_prevClockReport = val; }
 	inline size_t reportInt() const							{ return m_reportInt; }
 	CK inline void setReportInt(size_t val)					{ m_reportInt = val; }
 	inline ulonglong prevCounter() const					{ return m_prevCounter; }

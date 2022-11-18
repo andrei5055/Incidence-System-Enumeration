@@ -746,10 +746,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #if USE_THREADS_ENUM
 		delete[] pThreadEnum;
 #else
-ifdef USE_CUDA
+#ifdef USE_CUDA
 		// This method is called after thread is ended, When they are used
 		LAUNCH_CANONICITY_TESTING(enumInfo(), this);
-endif
+#endif
 #endif
 
 #if !CONSTR_ON_GPU

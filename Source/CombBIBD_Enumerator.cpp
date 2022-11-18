@@ -2,7 +2,9 @@
 #include "DesignDB.h"
 
 template class CCombBIBD_Enumerator<TDATA_TYPES>;
+#if USE_MUTEX
 std::mutex CCombBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
+#endif
 
 FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete[] m_FirstPartSolutionIdx;
@@ -10,6 +12,7 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete m_pSpareMatrix;
 	delete[] m_pGroupOrders;
 	delete m_pGroupOrder;
+#if USE_MUTEX
 	if (master() && designParams()->thread_master_DB) {
 		auto *pMasterDB = master()->designDB();
 		m_mutexDB.lock();
@@ -29,6 +32,7 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 
 		m_mutexDB.unlock();
 	}
+#endif
 	if (m_bColPermutOwner) {
 		// Only the master thread is the owner of these data
 		delete[] columnPermut();
@@ -292,13 +296,17 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 #if TEST
 	pMatr->printOut(this->outFile(), v, 0, this);
 #endif
+
+#if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.lock();
-
+#endif
 	// No need to keep first two rows, they are the same for all master BIBDs
 	designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, m_pCanonChecker->groupOrder());
+#if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.unlock();
+#endif
 }
 
 FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {
