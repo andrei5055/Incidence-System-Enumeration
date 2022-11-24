@@ -40,6 +40,7 @@
 
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
 int ccc = 0;
+bool startPrinting = START_PRINTING_AFTER <= 0;
 #endif
 
 #if USE_MUTEX
@@ -624,9 +625,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						// When there is no solution for some part, the indices
 						// for all remaining parts are equal to 0
 						pRowSolution = rowStuff(nRow);
-						while (lastPartIdx && (pRowSolution + lastPartIdx)->allSolutionChecked())
+						while (lastPartIdx && (pRowSolution + lastPartIdx)->allSolutionChecked()) {
+							this->resetUnforcedColOrb(lastPartIdx, nRow + 1);
 							(pRowSolution + lastPartIdx--)->setSolutionIndex(0);
+						}
 
+						this->resetUnforcedColOrb(lastPartIdx, nRow + 1);
 						if (lastPartIdx) {
 							firstPartIdx[nRow] = lastPartIdx;
 							this->setCurrentRowNumb(nRow);
@@ -636,9 +640,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 							}
 							continue;
 						}
-
-						for (iFirstPartIdx = numParts(); iFirstPartIdx--;)
-							this->resetUnforcedColOrb(iFirstPartIdx);
 					}
 
 					iFirstPartIdx = numParts() - 1;

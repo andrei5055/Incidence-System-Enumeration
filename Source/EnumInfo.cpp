@@ -144,6 +144,9 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 			  << "  RunTime: " << runTime << " min.";
 	fflush(stdout);
 
+#if TEST
+	startPrinting = nCanon >= START_PRINTING_AFTER;
+#endif
 	// Adjust reportInt to report approx. 1 time per 60 seconds
 	if (!pTestNumber || currClock == prevClock())
 		return;

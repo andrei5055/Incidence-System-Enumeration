@@ -36,6 +36,10 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 		auto len = SNPRINTF(pTmp, lenBuf, "\nMatrix # %3llu", matrNumber);
 		if (number)
 			len = SNPRINTF(pTmp +=len, lenBuf-=len, ".%llu", number);
+#if TEST
+		else
+			startPrinting = matrNumber >= START_PRINTING_AFTER;
+#endif
 
 		if (!canon)
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Non-canonical ***");

@@ -237,7 +237,7 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 	if (nRowToBuild > 1) {
 		auto fLambda = forcibleLambda(nRow - 1, numPart);
 		// Take a pointer to the first orbit, forcibly constructed with 1's 
-		auto *pTmp = *(this->currUnforcedOrbPtr(numPart) + 1);
+		const auto *pTmp = *(this->currUnforcedOrbPtr(numPart) + 1);
 		const auto X0_3 = getX0_3();
 		const auto check_X0_3_flg = X0_3 && check_X0_3(numPart);
 		while (pTmp) {

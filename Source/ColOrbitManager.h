@@ -42,7 +42,7 @@ public:
 protected:
 	CK inline void setColOrbitCurr(ColOrbPntr pntr, S idxPart)		{ setColOrbit(pntr, currentRowNumb(), idxPart); }
 	CK inline void resetUnforcedColOrb(S idxPart, S nRow = 0)		{
-		memset(pntr2UnforcedColOrb(nRow? nRow : currentRowNumb(), idxPart), 0, m_pShift[sizeof(*unforcedColOrbPntr())]);
+		memset(pntr2UnforcedColOrb(nRow? nRow : currentRowNumb(), idxPart), 0, rank()*sizeof(*unforcedColOrbPntr()));
 	}
 	CK inline ColOrbPntr* pntr2UnforcedColOrb(S nRow, S nPart) const { return unforcedColOrbPntr(nPart) + m_pShift[nRow]; }
 	CK void addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nParts, S n);
@@ -269,8 +269,13 @@ FClass1(CColOrbitManager, void)::closeColOrbits(int use_master_solution) const
 
 FClass1(CColOrbitManager, void)::addForciblyConstructedColOrbit(ColOrbPntr pColOrbit, S nPart, S n)
 {
-	auto ppTmp = currUnforcedOrbPtr(nPart) + n;
+	auto *ppTmp = currUnforcedOrbPtr(nPart) + n;
 	pColOrbit->setNext(*ppTmp);
+#if TEST
+	// Check if the loop was created. It helped to investigate some bug.
+	if (*ppTmp && (*ppTmp)->next() == pColOrbit)
+		*ppTmp = pColOrbit;
+#endif
 	*ppTmp = pColOrbit;
 }
 
