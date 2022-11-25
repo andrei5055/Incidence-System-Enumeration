@@ -44,7 +44,7 @@ CBIBD(  6,  3, { 4, 4, 2, 2})
     _____________________________________________________________
         Total:              604            2    113      2
 
-       604 matrices were constructed in  0.20 sec,
+       604 matrices were constructed in  0.19 sec,
        113 of them are transitive on the rows.
          2 matrices have no replicated blocks,
          2 of them are transitive on the rows.
