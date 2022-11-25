@@ -33,7 +33,7 @@ protected:
 	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const override;
 	CK int getJobTitleInfo(char *buffer, int lenBuffer) const override;
 	void getEnumerationObjectKey(char* pKey, int len) const override;
-	char* getEnumerationObjectKeyA(char* pKey, int len) const override;
+	char* getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) const override;
 	const char* getObjNameFormat() const override		{ return "  %14s:      "; }
 #endif
 	CK bool checkForcibleLambda(T fLambda, T nRows, T numPart) const override {

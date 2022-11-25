@@ -141,7 +141,7 @@ protected:
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
-	virtual char *getEnumerationObjectKeyA(char* pKey, int len) const		{ return NULL; }
+	virtual char *getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) const		{ return NULL; }
 	virtual void outputTitle(FILE* file) const;
 	virtual const char* getObjNameFormat() const			{ return "%9s:        "; }
 	void UpdateEnumerationDB(char **pInfo, int len) const;

@@ -60,8 +60,13 @@ FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pKey, int len
 	SNPRINTF(pKey, len, "%s", buffer + strlen(this->getObjName()));
 }
 
-FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int len) const {
-	getEnumerationObjectKey(pKey, len);
+FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn) const {
+	if (pKeyIn) {
+		if (pKey != pKeyIn)
+			strncpy_s(pKey, len, pKeyIn, len - 1);
+	} else
+		getEnumerationObjectKey(pKey, len);
+
 	auto* pntr = strstr(pKey, "})");
 	*pntr = '\0';
 	return pKey;

@@ -144,7 +144,7 @@
 #define CHECK_CONSTRUCTED			0
 
 
-#define USE_MUTEX     (USE_THREADS >= 1 && (PRINT_SOLUTIONS || PRINT_PERMUTATION || PRINT_PERMUTATION))
+#define USE_MUTEX     (USE_THREADS >= 1 || (PRINT_SOLUTIONS || PRINT_PERMUTATION || PRINT_PERMUTATION))
 #if USE_MUTEX
 #include <mutex>
 extern std::mutex out_mutex;
@@ -179,7 +179,7 @@ extern std::mutex out_mutex;
 	#define FOPEN(x, y, z)	  	 FILE *OPEN_FILE(x, y, z)
 #endif
 
-#define FCLOSE(file)			do {if (file) fclose(file);} while(0)
+#define FCLOSE(file)			if (file) fclose(file)
 
 #define SNPRINTF(x, len, ...)	static_cast<size_t>(snprintf(x, len, __VA_ARGS__))
 #define SPRINTF(x, ...)			SNPRINTF(x, sizeof(x), __VA_ARGS__)

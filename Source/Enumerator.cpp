@@ -1066,17 +1066,11 @@ FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, b
 		ppFile[1] = filePrev;
 	}
 
-	if (!ppFile[1]) {
-		cmpProcedure(ppFile);
-		FCLOSE(file);
-		return false;
-	}
-
 	const bool retVal = cmpProcedure(ppFile, pBetterResults);
 	FCLOSE(file);
 	FCLOSE(ppFile[1]);
 
-	return retVal;
+	return ppFile[1]? retVal : false;
 }
 
 static void outKeyInfo(const char* key, char **pInfo, FILE* file, const char *pComment = NULL)
@@ -1132,7 +1126,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	if (!dbFile)
 		return;
 
-	char key[32], adjustedKey[32];
+	char key[32], adjustedKey[32], keyCmp[32];
 	this->getEnumerationObjectKey(key, countof(key));
 	// the lexicografical order of key's could be adjusted for some type of designs using:
 	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey));
@@ -1158,7 +1152,12 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 		if (buffer[0] != ';') {
 			// Not a comment line
 			if (compareFlag && !firstLine) {
-				resCmp = strncmp(buffer, key, lenKey);
+				if (pAdjKey) {
+					this->getEnumerationObjectKeyA(keyCmp, countof(keyCmp), buffer);
+					resCmp = strcmp(buffer, pAdjKey);
+				} else
+					resCmp = strncmp(buffer, key, lenKey);
+/*
 				if (pAdjKey && resCmp) {
 					if (resCmp < 0 && !strncmp(buffer, pAdjKey, lenKeyAdj))
 						resCmp = 1;
@@ -1167,6 +1166,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 							resCmp = strncmp(pAdjKey, buffer, lenKeyAdj);
 						}
 				}
+				*/
 				if (resCmp >= 0) {
 					const char* pComment = !resCmp? strstr(buffer, " >> ") : NULL;
 					outKeyInfo(key, pInfo, f, pComment);
@@ -1176,9 +1176,13 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 				}
 			}
 		}
+
 		firstLine = false;
-		if (fputs(buffer, f) < 0)
+		if (fputs(buffer, f) < 0) {
+			FCLOSE(dbFile);
+			FCLOSE(f);
 			return; // Something wrong
+		}
 	}
 
 	if (compareFlag)
