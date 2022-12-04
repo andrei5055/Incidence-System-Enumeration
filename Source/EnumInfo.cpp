@@ -119,7 +119,14 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	if (pTestNumber && *pTestNumber % reportInt())
 		return;
 
-	if (reportNeeded || nCanon >= reportBound()) {
+	const auto numMatrTotalConstructed = numMatrOfType(t_design_type::t_totalConstr);
+	double recentCanonProportion = -1;
+	if ((reportNeeded || nCanon >= reportBound()) && nCanon >= prevReportCounter() || nCanon > prevReportCounter()) {
+		const auto recentCanonNumb = nCanon - prevReportCounter();
+		if (recentCanonNumb)
+			recentCanonProportion = (static_cast<double>(numMatrTotalConstructed - prevReportCounter(1))) / recentCanonNumb;
+		setPrevReportCounter(nCanon);
+		setPrevReportCounter(numMatrTotalConstructed, 1);
 		switch (reportType) {
 			case t_reportCriteria::t_matrConstructed:
 			case t_reportCriteria::t_reportNow:
@@ -136,12 +143,25 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 		}
 	}
 
+	char buffer[64];
+	if (nCanon) {
+		const auto len = SPRINTF(buffer, "  Efficiency:  %6.2f", static_cast<double>(numMatrTotalConstructed) / nCanon);
+
+		if (recentCanonProportion > 0)
+			snprintf(buffer + len, countof(buffer) - len - 1, "  latest: %6.2f  ", recentCanonProportion);
+		else
+			snprintf(buffer + len, countof(buffer) - len - 1, "                  ");
+	}
+	else
+		buffer[0] = 0;
+
 	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
 	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? "==>" : "   ")
 			  << "  Canon: " << nCanon 
 			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
-			  << "  Total: " << numMatrOfType(t_design_type::t_totalConstr)
-			  << "  RunTime: " << runTime << " min.";
+			  << "  Total: " << numMatrTotalConstructed
+			  << "  RunTime: " << runTime << " min."
+			  << buffer;
 	fflush(stdout);
 
 #if TEST

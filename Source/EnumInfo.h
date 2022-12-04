@@ -109,9 +109,11 @@ private:
 	static double stringToTime(char *pTime);
 	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_design_type::t_canonical); }
 	void outAdditionalInfo(ulonglong nMatr, FILE* outFile, char* buff, size_t lenBuf) const;
-	CC inline void resetCounters()							{ m_nCounter = 0; }
+	CC inline void resetCounters()							{ m_prevReportCounter[0] = m_prevReportCounter[1] = m_nCounter = 0; }
 	inline void incCounter()								{ m_nCounter++; }
 	inline void reportThreadProgress()						{ incCounter(); reportProgress(t_reportCriteria::t_treadEnded); }
+	inline auto prevReportCounter(int idx = 0) const		{ return m_prevReportCounter[idx]; }
+	inline void setPrevReportCounter(ulonglong nCanon, int idx = 0)	{ m_prevReportCounter[idx] = nCanon; }
 	CC virtual void setNumbSimpleDesign(ulonglong v)		{}
 	CC inline void setReportBound(ulonglong val)			{ m_nReportBound = val; }
 	inline ulonglong reportBound() const					{ return m_nReportBound; }
@@ -120,6 +122,7 @@ private:
 	inline designParam *designInfo() const					{ return m_pParam; }
 
 	ulonglong m_nCounter;
+	ulonglong m_prevReportCounter[2];
 	const char *m_pStrToScreen;
 	ulonglong m_nReportBound;
 	char *m_pReportFileName;

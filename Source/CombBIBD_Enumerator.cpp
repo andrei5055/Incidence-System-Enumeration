@@ -111,7 +111,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateFirstRow() {
 }
 
 FClass2(CCombBIBD_Enumerator, CMatrixData<T, S> *)::CreateSpareMatrix(const EnumeratorPntr pMaster) {
-	// Create matris which will be used only when there is non-trivial group on parts
+	// Create matrix which will be used only when there is non-trivial group on parts
 	if (m_pSpareMatrix)
 		return m_pSpareMatrix;
 
