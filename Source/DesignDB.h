@@ -24,7 +24,7 @@ public:
 	~CDesignDB() {
 		delete[] m_pRecPermutation;
 	}
-	void AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
+	size_t AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
 	void SortRecods(FILE* file = NULL, int formatID = 0);
 	void mergeDesignDB(const CDesignDB* pDB);
 	void mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B);

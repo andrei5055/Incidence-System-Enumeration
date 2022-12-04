@@ -3,15 +3,16 @@
 #include <assert.h>
 
 
-void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) {
+size_t CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) {
 	int cmpRes;
 	const auto iMin = FindRecord(pRecord, &cmpRes);
 	if (!cmpRes) {
 		// Increase counter for the record just found
-		auto* pMasterInfo = (masterInfo *)getRecord(m_pRecPermutation[iMin]);
+		const auto idx = m_pRecPermutation[iMin];
+		auto* pMasterInfo = (masterInfo *)getRecord(idx);
 		pMasterInfo->numbDecomp += numbDecomp;
 		assert(pMasterInfo->groupOrder == groupOrder);
-		return;
+		return idx;
 	}
 
 	if (m_nRecNumb == m_nRecNumbMax) {
@@ -29,7 +30,7 @@ void CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) 
 	for (; i > iMin; i--)
 		m_pRecPermutation[i] = m_pRecPermutation[i - 1];
 
-	m_pRecPermutation[i] = m_nRecNumb++;
+	return m_pRecPermutation[i] = m_nRecNumb++;
 }
 
 size_t CDesignDB::FindRecord(recPtr pRecord, int *pResCmp) const {

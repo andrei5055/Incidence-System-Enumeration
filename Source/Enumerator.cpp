@@ -464,11 +464,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #if !CONSTR_ON_GPU
 								if (this->printMatrix(pParam)) {
 									mtx.lock();
-									if (pParam->firstMatr) {
-										pParam->firstMatr = false;
-										outString(" \n" BEG_OUT_BLOCK "Constructed Matrices: " END_OUT_BLOCK, this->outFile());
-									}
-
+									outBlockTitle();
 #if USE_THREADS
 									pMatrix->printOut(this->outFile(), nRow, 0, this);
 #else
@@ -1207,6 +1203,20 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	error += enumerationDB;
 	error += "'";
 	perror(error.c_str());
+}
+
+FClass2(CEnumerator, void)::outBlockTitle(const char* title, bool checkFirstMatr) const
+{
+	if (checkFirstMatr) {
+		if (!designParams()->firstMatr)
+			return;
+
+		designParams()->firstMatr = false;
+	}
+
+	char buffer[64];
+	SPRINTF(buffer, " \n" BEG_OUT_BLOCK "%s: " END_OUT_BLOCK "\n", title);
+	outString(buffer, outFile());
 }
 
 #if PRINT_SOLUTIONS

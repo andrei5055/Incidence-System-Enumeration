@@ -104,7 +104,8 @@ private:
 	static ulonglong m_matrixCounter;
 	static ulonglong GetNextCounter();
 public:
-	static void ResetCounter() { m_matrixCounter = 0; }
+	static void ResetCounter()				{ m_matrixCounter = 0; }
+	static auto getMatrixCounter()			{ return m_matrixCounter; }
 #endif
 };
 

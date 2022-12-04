@@ -138,6 +138,8 @@ protected:
 	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
 	CK virtual void FindMasterBIBD()						{}
 	CK virtual void beforeEnumInfoOutput() const			{}
+	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
+	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
@@ -166,7 +168,6 @@ private:
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const { return 0; }
 	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
-	inline void setDesignParams(designParam* pntr)			{ m_pParam = pntr; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
 
 #if PRINT_SOLUTIONS

@@ -8,7 +8,7 @@ Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 public:
 	CCombBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
 		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
-		setR(getInSys()->GetR(lenStabilizer()));
+		setR(getInSys()->GetR(lenStabilizer())); 
 		m_FirstPartSolutionIdx = new PERMUT_ELEMENT_TYPE[rowNumb()];
 		const auto len = rowNumb() * numParts();
 		m_bSolutionsWereConstructed = new unsigned char[len];
@@ -54,6 +54,10 @@ protected:
 	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
 	CK void FindMasterBIBD() override;
 	CK void beforeEnumInfoOutput() const override;
+	CK void setDesignParams(designParam* pntr) override { 
+		CEnumerator::setDesignParams(pntr); 
+		m_bOutputMasters = pntr->outType & t_outputType::t_CombMasters;
+	}
 private:
 	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
@@ -61,6 +65,7 @@ private:
 	CK void createColumnPermut();
 	CK void setDesignDB(CDesignDB *pntr)				{ m_pDesignDB = pntr; }
 	CK bool sharedDB() const							{ return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
+	CK bool outputMaster() const						{ return m_bOutputMasters; }
 #if USE_MUTEX
 	CK void setMaster(CCombBIBD_Enumerator* pntr)		{ m_pMaster = pntr; }
 	CK CCombBIBD_Enumerator* master() const				{ return m_pMaster; }
@@ -79,5 +84,6 @@ private:
 	bool m_bColPermutOwner = false;
 	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
 	CDesignDB* m_pDesignDB = NULL;               // DB where the "master" design are stored
+	bool m_bOutputMasters = false;
 };
 

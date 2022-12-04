@@ -298,20 +298,22 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 		delete[] pColPermut;
 
 	m_pCanonChecker->CanonizeMatrix();
-#if TEST
-	pMatr->printOut(this->outFile(), v, 0, this);
-#endif
 
 #if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.lock();
 #endif
 	// No need to keep first two rows, they are the same for all master BIBDs
-	designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, m_pCanonChecker->groupOrder());
+	const auto idx = designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, m_pCanonChecker->groupOrder());
+	if (outputMaster()) {
+		outBlockTitle();
+		pMatr->printOut(this->outFile(), v, matrix()->getMatrixCounter() + 1, m_pCanonChecker, idx + 1);
+	}
 #if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.unlock();
 #endif
+
 }
 
 FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {
@@ -319,7 +321,7 @@ FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {
 		return;
 
 	// Sorting "master" BIBDs by their numbers of decompositions
-	outString(" \n\n" BEG_OUT_BLOCK "Decomposition info:" END_OUT_BLOCK "\n", outFile());
+	outBlockTitle("Decomposition info", false);
 	designDB()->SortRecods(outFile(), designParams()->format_master_BIBDs);
 	outString(" \n" END_OUT_BLOCK "Decomposition info" BEG_OUT_BLOCK "\n\n", outFile());
 }

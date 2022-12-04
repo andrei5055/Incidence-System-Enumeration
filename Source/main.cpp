@@ -578,6 +578,9 @@ int main(int argc, char * argv[])
 					}
 				}
 			}
+
+			if (output.find("COMB_MASTERS") != string::npos)
+				outType |= t_CombMasters;   // Make output of Master BIBDs for Combined BIBDs
 		}
 
 		// Define  parameter values
