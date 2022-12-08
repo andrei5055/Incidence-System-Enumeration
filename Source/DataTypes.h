@@ -565,7 +565,6 @@ public:
 	size_t threadNumb = 0;			// Number of threads launched to perform task
 	int use_master_sol = 0;			// the solutions defined by master will be used (1) or copied (0) by the threads
 	int find_master_design = 0;     // find master BIBD, when CombBIBDs are enumerated
-	int format_master_BIBDs = 0;	// Format of output of information regarding master BIBD decompositions: 0-2
 	int thread_master_DB = 0;       // Keep Master DB for each thread (no mutex will be used)
 	bool firstMatr = true;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed

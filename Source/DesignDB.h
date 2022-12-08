@@ -25,7 +25,7 @@ public:
 		delete[] m_pRecPermutation;
 	}
 	size_t AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
-	void SortRecods(FILE* file = NULL, int formatID = 0);
+	void SortRecods(FILE* file = NULL);
 	void mergeDesignDB(const CDesignDB* pDB);
 	void mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B);
 	inline auto recNumb() const					{ return m_nRecNumb; }
@@ -33,9 +33,7 @@ public:
 private:
 	size_t FindRecord(recPtr pRecord, int* pResCmp) const;
 	bool reallocateMemory();
-	void outWithFormat_0(const size_t * pSortedRecords, FILE * file) const;
-	void outWithFormat_1(const size_t * pSortedRecords, FILE * file) const;
-	void outWithFormat_2(const size_t * pSortedRecords, FILE * file) const;
+	void outWithFormat(const size_t * pSortedRecords, FILE * file) const;
 
 	size_t m_nRecNumb = 0;					// number of DB records
 	size_t m_nRecNumbMax = 0;				// max number of DB records

@@ -303,21 +303,7 @@ static size_t getInteger(const string &str, size_t *pPos) {
 }
 
 void getMasterBIBD_param(const string& line, const size_t lineLength, designParam* param) {
-	size_t pos = find(line, "FORMAT_MASTER_BIBD");
-	if (pos != string::npos) {
-		int format_ID = 0;
-		const auto val = lineLength > pos ? getInteger(line, &pos) : string::npos;
-		if (val != string::npos) {
-			if (val < 0 || val > 2) {
-				printf("FORMAT_MASTER_BIBD=%zd is invalid. Will use default: 0", val);
-			}
-			else
-				format_ID = static_cast<int>(val);
-		}
-
-		param->format_master_BIBDs = format_ID;
-	}
-	pos = find(line, "THREAD_MASTER_BIBD");
+	size_t pos = find(line, "THREAD_MASTER_BIBD");
 	if (pos != string::npos) {
 		const auto val = lineLength > pos ? getInteger(line, &pos) : string::npos;
 		param->thread_master_DB = val != string::npos ? static_cast<int>(val) : 1;
