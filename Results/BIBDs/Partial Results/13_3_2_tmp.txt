@@ -1,19 +1,28 @@
 BIBD( 13,  52, 12,  3,  2)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-            12               1               1               0               0
-            39               1               1               1               1
-           156               1               1               1               1
-    _______________________________________________________________________________
-        Total:               3               3               2               2
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1         109519       109519      0      0
+             2            131          131      0      0
+             3             58           58      0      0
+             4              1            1      0      0
+             6              1            1      0      0
+            12              1            1      0      0
+            39              1            1      1      1
+           156              1            1      1      1
+    ___________________________________________________________
+        Total:         109713       109713      2      2
 
-         3 matrices constructed in  1:45:10.14
-         3 matrices have no replicated blocks
-      5780 matrices were fully constructed
+    109713 matrices were constructed in  6:13:37:59.25 sec,
+         2 of them are transitive on the rows.
+    109713 matrices have no replicated blocks,
+         2 of them are transitive on the rows.
+ 229570418 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 6 (not waiting to finish mode)
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 6 (not waiting to finish mode)
+        Solutions obtained by master are used by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

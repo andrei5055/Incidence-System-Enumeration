@@ -2,12 +2,12 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommandArguments>jobsA.txt</LocalDebuggerCommandArguments>
-    <LocalDebuggerWorkingDirectory>C:\Users\16507\OneDrive\Documents\Calc</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>C:\Users\16507\Results</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>jobsA.txt</LocalDebuggerCommandArguments>
-    <LocalDebuggerWorkingDirectory>C:\Users\16507\Calc\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>C:\Users\16507\Results</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

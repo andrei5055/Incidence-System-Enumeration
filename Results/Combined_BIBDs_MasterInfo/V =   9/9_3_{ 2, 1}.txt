@@ -1,28 +1,27 @@
 CBIBD(  9,  3, { 2, 1})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          1        6685    6123,411*2,148*3,3*4                                                  
-          2         379    276,89*2,14*3                                                         
-          3          45    33,9*2,3*3                                                            
-          4          24    19,2*2,3*3                                                            
-          6          15    12,3*2                                                                
-          8           2    1,1*2                                                                 
-          9           2    1,1*2                                                                 
-         12           6    4,2*2                                                                 
-         16           3    2,1*2                                                                 
-         18           3    2,1*2                                                                 
-         24           4    4                                                                     
-         36           1    1                                                                     
-         48           1    1                                                                     
-         54           1    1*2                                                                   
-        432           1    1                                                                     
-       1296           1    1                                                                     
-    ___________________________________________________________________________________________
-      Total:       7173       Decompositions: 8039    MaxDecomp for master: 4
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      1       6685     7401    6123*1 + 411*2 + 148*3 + 3*4
+      2        379      496    276*1 + 89*2 + 14*3
+      3         45       60    33*1 + 9*2 + 3*3
+      4         24       32    19*1 + 2*2 + 3*3
+      6         15       18    12*1 + 3*2
+      8          2        3    1 + 2
+      9          2        3    1 + 2
+     12          6        8    4*1 + 2*2
+     16          3        4    2*1 + 2
+     18          3        4    2*1 + 2
+     24          4        4    4*1
+     36          1        1    1
+     48          1        1    1
+     54          1        2    2
+    432          1        1    1
+   1296          1        1    1
+______________________________________________________________________________________________
+  Total:      7173     8039    MaxDecomp for master: 4
  
 >>>> Decomposition info<<<< 
 
@@ -45,7 +44,7 @@ CBIBD(  9,  3, { 2, 1})
     ___________________________________________________________
         Total:           8039         3514     10      3
 
-      8039 matrices were constructed in  3.49 sec,
+      8039 matrices were constructed in  0.82 sec,
         10 of them are transitive on the rows.
       3514 matrices have no replicated blocks,
          3 of them are transitive on the rows.
@@ -53,7 +52,7 @@ CBIBD(  9,  3, { 2, 1})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 6 (not waiting to finish mode)
+        15 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

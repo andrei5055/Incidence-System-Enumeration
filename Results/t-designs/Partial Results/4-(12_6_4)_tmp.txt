@@ -1,0 +1,13 @@
+4-( 12,   6,  4)
+
+         0 matrices were constructed in  2:06:03.57 sec,
+         0 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 6 (not waiting to finish mode)
+        Solutions obtained by master are used by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

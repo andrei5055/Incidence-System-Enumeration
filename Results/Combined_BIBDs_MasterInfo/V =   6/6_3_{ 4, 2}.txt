@@ -1,16 +1,15 @@
 CBIBD(  6,  3, { 4, 2})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          6           1    1*2                                                                   
-         12           2    2*2                                                                   
-         36           1    1                                                                     
-         60           2    1,1*4                                                                 
-    ___________________________________________________________________________________________
-      Total:          6       Decompositions: 12    MaxDecomp for master: 4
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      6          1        2    2
+     12          2        4    2*2
+     36          1        1    1
+     60          2        5    1 + 4
+______________________________________________________________________________________________
+  Total:         6       12    MaxDecomp for master: 4
  
 >>>> Decomposition info<<<< 
 
@@ -24,7 +23,7 @@ CBIBD(  6,  3, { 4, 2})
     ___________________________________________________________
         Total:             12            1      9      1
 
-        12 matrices were constructed in  0.00 sec,
+        12 matrices were constructed in  0.02 sec,
          9 of them are transitive on the rows.
          1 matrix has no replicated blocks,
          1 of them is transitive on the rows.
@@ -32,7 +31,8 @@ CBIBD(  6,  3, { 4, 2})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        Single thread mode
+        15 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

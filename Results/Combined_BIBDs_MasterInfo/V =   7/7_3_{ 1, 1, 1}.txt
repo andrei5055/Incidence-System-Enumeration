@@ -1,17 +1,16 @@
 CBIBD(  7,  3, { 1, 1, 1})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          6           1    1                                                                     
-         12           1    1                                                                     
-         21           1    1                                                                     
-         24           1    1                                                                     
-        168           1    1                                                                     
-    ___________________________________________________________________________________________
-      Total:          5       Decompositions: 5    MaxDecomp for master: 1
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      6          1        1    1
+     12          1        1    1
+     21          1        1    1
+     24          1        1    1
+    168          1        1    1
+______________________________________________________________________________________________
+  Total:         5        5    MaxDecomp for master: 1
  
 >>>> Decomposition info<<<< 
 
@@ -34,7 +33,7 @@ CBIBD(  7,  3, { 1, 1, 1})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        10 threads launched on row 3 (not waiting to finish mode)
+        15 threads launched on row 2 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

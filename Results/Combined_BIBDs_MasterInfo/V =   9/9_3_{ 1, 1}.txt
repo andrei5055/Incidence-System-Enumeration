@@ -1,15 +1,14 @@
 CBIBD(  9,  3, { 1, 1})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          4           1    1                                                                     
-         24           1    1                                                                     
-        432           1    1                                                                     
-    ___________________________________________________________________________________________
-      Total:          3       Decompositions: 3    MaxDecomp for master: 1
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      4          1        1    1
+     24          1        1    1
+    432          1        1    1
+______________________________________________________________________________________________
+  Total:         3        3    MaxDecomp for master: 1
  
 >>>> Decomposition info<<<< 
 
@@ -22,7 +21,7 @@ CBIBD(  9,  3, { 1, 1})
     _____________________________________________________________
         Total:                3            3      1      1
 
-         3 matrices were constructed in  0.05 sec,
+         3 matrices were constructed in  0.00 sec,
          1 of them is transitive on the rows.
          3 matrices have no replicated blocks,
          1 of them is transitive on the rows.
@@ -30,7 +29,7 @@ CBIBD(  9,  3, { 1, 1})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 6 (not waiting to finish mode)
+        15 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

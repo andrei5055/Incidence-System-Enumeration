@@ -1,20 +1,19 @@
 CBIBD(  6,  3, { 4, 4, 4, 2})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          1           2    1*16,1*52                                                             
-          2           6    1*5,1*9,1*10,1*18,1*25,1*147                                          
-          3           9    1*4,3*7,1*8,1*11,1*15,1*71,1*90                                       
-          4           3    1*11,1*17,1*110                                                       
-          6          11    1*2,1*4,2*5,1*9,1*23,1*33,1*48,1*69,1*98,1*223                        
-         12          12    2*2,2*3,2*4,1*18,1*20,1*30,1*31,1*124,1*135                           
-         36           1    1*57                                                                  
-         60           4    1,1*5,1*30,1*94                                                       
-    ___________________________________________________________________________________________
-      Total:         48       Decompositions: 1722    MaxDecomp for master: 223
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      1          2       68    16 + 52
+      2          6      214    5 + 9 + 10 + 18 + 25 + 147
+      3          9      220    4 + 3*7 + 8 + 11 + 15 + 71 + 90
+      4          3      138    11 + 17 + 110
+      6         11      519    2 + 4 + 2*5 + 9 + 23 + 33 + 48 + 69 + 98 + 223
+     12         12      376    2*2 + 2*3 + 2*4 + 18 + 20 + 30 + 31 + 124 + 135
+     36          1       57    57
+     60          4      130    1 + 5 + 30 + 94
+______________________________________________________________________________________________
+  Total:        48     1722    MaxDecomp for master: 223
  
 >>>> Decomposition info<<<< 
 
@@ -40,7 +39,7 @@ CBIBD(  6,  3, { 4, 4, 4, 2})
     _____________________________________________________________
         Total:             1722            1    164      1
 
-      1722 matrices were constructed in  0.66 sec,
+      1722 matrices were constructed in  1.04 sec,
        164 of them are transitive on the rows.
          1 matrix has no replicated blocks,
          1 of them is transitive on the rows.
@@ -48,7 +47,7 @@ CBIBD(  6,  3, { 4, 4, 4, 2})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        10 threads launched on row 4 (not waiting to finish mode)
+        15 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

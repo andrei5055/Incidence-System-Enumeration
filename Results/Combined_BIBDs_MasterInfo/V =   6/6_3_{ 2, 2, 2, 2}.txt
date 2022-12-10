@@ -1,17 +1,16 @@
 CBIBD(  6,  3, { 2, 2, 2, 2})
  
+<<<< Decomposition info: >>>> 
 
-<<<< Decomposition info:>>>> 
-
-     |Aut(M)|:    Masters:                    Decompositions:    
-    ___________________________________________________________________________________________
-          3           1    1                                                                     
-          6           1    1                                                                     
-         12           2    2                                                                     
-         24           3    3                                                                     
-         60           2    1,1*2                                                                 
-    ___________________________________________________________________________________________
-      Total:          9       Decompositions: 10    MaxDecomp for master: 2
+ |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+______________________________________________________________________________________________
+      3          1        1    1
+      6          1        1    1
+     12          2        2    2*1
+     24          3        3    3*1
+     60          2        3    1 + 2
+______________________________________________________________________________________________
+  Total:         9       10    MaxDecomp for master: 2
  
 >>>> Decomposition info<<<< 
 
@@ -28,7 +27,7 @@ CBIBD(  6,  3, { 2, 2, 2, 2})
     ______________________________________________________________
         Total:                10           10      8      8
 
-        10 matrices were constructed in  0.01 sec,
+        10 matrices were constructed in  0.02 sec,
          8 of them are transitive on the rows.
         10 matrices have no replicated blocks,
          8 of them are transitive on the rows.
@@ -36,7 +35,8 @@ CBIBD(  6,  3, { 2, 2, 2, 2})
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        Single thread mode
+        15 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used
