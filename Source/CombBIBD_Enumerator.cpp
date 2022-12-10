@@ -69,6 +69,11 @@ FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int l
 
 	auto* pntr = strstr(pKey, "})");
 	*pntr = '\0';
+
+	// Key prefix
+	strcpy_s(pKey+len, len, pKey);
+	pntr = strstr(pKey+len, "{");
+	*pntr = '\0';
 	return pKey;
 }
 

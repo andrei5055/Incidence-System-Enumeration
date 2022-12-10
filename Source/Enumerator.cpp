@@ -1122,10 +1122,13 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	if (!dbFile)
 		return;
 
-	char key[32], adjustedKey[32], keyCmp[32];
+	char key[32], adjustedKey[64], keyCmp[64];
 	this->getEnumerationObjectKey(key, countof(key));
 	// the lexicografical order of key's could be adjusted for some type of designs using:
-	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey));
+	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey)/2);
+	const char* pAdjKeyPrefix = adjustedKey + countof(adjustedKey) / 2;
+	const char* keyCmpPrefix = keyCmp + countof(keyCmp) / 2;
+	const auto lenAdjKey = strlen(pAdjKey);
 
 	if (i) {
 		this->outputTitle(dbFile);
@@ -1148,21 +1151,24 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 		if (buffer[0] != ';') {
 			// Not a comment line
 			if (compareFlag && !firstLine) {
-				if (pAdjKey) {
-					this->getEnumerationObjectKeyA(keyCmp, countof(keyCmp), buffer);
-					resCmp = strcmp(buffer, pAdjKey);
-				} else
-					resCmp = strncmp(buffer, key, lenKey);
-/*
-				if (pAdjKey && resCmp) {
-					if (resCmp < 0 && !strncmp(buffer, pAdjKey, lenKeyAdj))
-						resCmp = 1;
-					else
-						if (resCmp > 0) {// && strncmp(buffer, pAdjKey, lenKeyAdj) < 0)
-							resCmp = strncmp(pAdjKey, buffer, lenKeyAdj);
+				if (buffer[0] && !strchr("_-", buffer[0])) {
+					if (pAdjKey) {
+						this->getEnumerationObjectKeyA(keyCmp, countof(keyCmp)/2, buffer);
+						resCmp = strcmp(keyCmpPrefix, pAdjKeyPrefix);
+						if (!resCmp) {
+							const auto lenKeyCmp = strlen(keyCmp);
+							if (lenKeyCmp < lenAdjKey)
+								resCmp = -1;
+							else
+								resCmp = lenKeyCmp == lenAdjKey ? strcmp(keyCmp, pAdjKey) : 1;
 						}
+					}
+					else
+						resCmp = strncmp(buffer, key, lenKey);
 				}
-				*/
+				else
+					resCmp = 1;   // EOF found
+
 				if (resCmp >= 0) {
 					const char* pComment = !resCmp? strstr(buffer, " >> ") : NULL;
 					outKeyInfo(key, pInfo, f, pComment);

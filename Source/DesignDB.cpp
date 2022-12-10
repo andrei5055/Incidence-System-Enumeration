@@ -176,16 +176,20 @@ void CDesignDB::SortRecods(FILE* file) {
 		outWithFormat(pSortedRecords, file);
 }
 
+
+void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const {
 #define SHIFT			""
 #define LEN_DECOMP		62
 #define SHIFT_TO_DECOMP	30
+#define MASTER			 0
+#define DECOMP			 1
+#define LEN_BUFFER    95
 
-void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const {
-	char buff[256], *pBuff = buff;
-	const size_t len_buff = sizeof(buff);
-	sprintf_s(buff, SHIFT " |Aut(M)|: Masters:  Decomp:        Decomposition Look:");
-	const auto lenStr = 94;
-	fprintf(file, "\n%s\n", buff);
+	size_t len_buff = LEN_BUFFER;
+	char* buff = new char[len_buff];
+	char *pBuff = buff;
+	const auto lenStr = LEN_BUFFER-1;
+	fprintf(file, "\n%s\n", SHIFT " |Aut(M)|: Masters:  Decomp:        Decomposition Look:");
 	memset(buff, '_', lenStr);
 	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);
@@ -196,14 +200,15 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 	unsigned long long totalCombined = 0, totalMasters = 0;
 
 	auto groupOrder = pRec->groupOrder;
-	auto numbDecomp = pRec->numbDecomp;
-	size_t numbDecompMaxGlobal, numbDecompMax, jMax, numbMasters, numbMastersGroup, numDecompGroup;
+	size_t numb[2] = { 1, pRec->numbDecomp };
+
+	size_t numbDecompMaxGlobal, numbDecompMax, jMax, numbMastersGroup, numDecompGroup;
 	numDecompGroup = numbMastersGroup = 0;
-	numbDecompMaxGlobal = numbDecompMax = numbMasters = jMax = 1;
+	numbDecompMaxGlobal = numbDecompMax = jMax = 1;
 	while (++i < recNumb()) {
 		pRec = (const masterInfo*)getRecord(pSortedRecords[i]);
-		if (groupOrder == pRec->groupOrder && numbDecomp == pRec->numbDecomp) {
-			numbMasters++;
+		if (groupOrder == pRec->groupOrder && numb[DECOMP] == pRec->numbDecomp) {
+			numb[MASTER]++;
 			if (i != last)
 				continue;
 		}
@@ -213,17 +218,31 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 		}
 
 		for (auto j = jMax; j--;) {
-			numDecompGroup += numbMasters * numbDecomp;
-			numbMastersGroup += numbMasters;
-			if (numbMasters > 1)
-				pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), pBuff == buff? "%zd*" : " + %zd*", numbMasters);
+			numDecompGroup += numb[MASTER] * numb[DECOMP];
+			numbMastersGroup += numb[MASTER];
+			for (int i = numb[MASTER] == 1 ? 1 : 0; i < 2; i++) {
+				char format[16], tmpBuff[32];
+				const auto used = (pBuff != buff && (!i || numb[MASTER] == 1))? strcpy_s(format, " + "), 3 : 0;
+				sprintf_s(format + used, sizeof(format) - used, "%%zd%s", i ? "" : "*");
+				const auto len = sprintf_s(tmpBuff, format, numb[i]);
+				if (len_buff - (pBuff - buff) <= len) {
+					// Reallocating buffer
+					len_buff = 2 * (len_buff + len);
+					char* buffTmp = new char[len_buff];
+					strcpy_s(buffTmp, len_buff, buff);
+					pBuff = buffTmp + (pBuff - buff);
+					delete[] buff;
+					buff = buffTmp;
 
-			if (numbDecompMax < numbDecomp) {
-				if (numbDecompMaxGlobal < (numbDecompMax = numbDecomp))
-					numbDecompMaxGlobal = numbDecompMax;
+				}
+				strcpy_s(pBuff, len_buff - (pBuff - buff), tmpBuff);
+				pBuff += len;
 			}
 
-			pBuff += sprintf_s(pBuff, len_buff - (pBuff - buff), numbMasters > 1 || pBuff == buff? "%zd" : " + %zd", numbDecomp);
+			if (numbDecompMax < numb[DECOMP]) {
+				if (numbDecompMaxGlobal < (numbDecompMax = numb[DECOMP]))
+					numbDecompMaxGlobal = numbDecompMax;
+			}
 
 			if (groupOrder != pRec->groupOrder || !j && i == last) {
 				char saved;
@@ -259,8 +278,8 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 				pBuff = buff;
 			}
 
-			numbDecomp = pRec->numbDecomp;
-			numbDecompMax = numbMasters = 1;
+			numb[MASTER] = numbDecompMax = 1;
+			numb[DECOMP] = pRec->numbDecomp;
 		}
 	}
 
@@ -268,6 +287,7 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);
 	fprintf(file, SHIFT "  Total:  %8zd %8zd    MaxDecomp for master: %zd\n", totalMasters, totalCombined, numbDecompMaxGlobal);
+	delete[] buff;
 }
 
 
