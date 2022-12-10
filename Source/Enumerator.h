@@ -141,13 +141,14 @@ protected:
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
 private:
-	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL) const;
+	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL);
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
-	virtual char *getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) const		{ return NULL; }
+	virtual char *getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) { return NULL; }
+	virtual int compareEnumerationDB_record(const char* record) { return 0; }
 	virtual void outputTitle(FILE* file) const;
 	virtual const char* getObjNameFormat() const			{ return "%9s:        "; }
-	void UpdateEnumerationDB(char **pInfo, int len) const;
-	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL) const;
+	void UpdateEnumerationDB(char **pInfo, int len);
+	bool cmpProcedure(FILE* file[2], bool* pBetterResults = NULL);
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const { return true; }
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(S *pPartNumb);

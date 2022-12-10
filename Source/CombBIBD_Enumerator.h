@@ -33,7 +33,7 @@ protected:
 	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const override;
 	CK int getJobTitleInfo(char *buffer, int lenBuffer) const override;
 	void getEnumerationObjectKey(char* pKey, int len) const override;
-	char* getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) const override;
+	char* getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn = NULL) override;
 	const char* getObjNameFormat() const override		{ return "  %14s:      "; }
 #endif
 	CK bool checkForcibleLambda(T fLambda, T nRows, T numPart) const override {
@@ -49,6 +49,7 @@ protected:
 	}
 	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) override;
 	CK void CreateAuxiliaryStructures(const EnumeratorPntr pMaster) override;
+	CK int compareEnumerationDB_record(const char* record) override;
 	CK void resetGroupOrder() override					{ m_pGroupOrder->setGroupOrder(1); }
 	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }
 	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
@@ -58,6 +59,7 @@ protected:
 		CEnumerator::setDesignParams(pntr); 
 		m_bOutputMasters = pntr->outType & t_outputType::t_CombMasters;
 	}
+
 private:
 	CK void setFirstPartSolutionIndex(PERMUT_ELEMENT_TYPE idx) override { *(m_FirstPartSolutionIdx + currentRowNumb()) = idx; }
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
@@ -85,5 +87,8 @@ private:
 	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
 	CDesignDB* m_pDesignDB = NULL;               // DB where the "master" design are stored
 	bool m_bOutputMasters = false;
+	const char* m_pAdjKeyPrefix;
+	char* m_pAdjKey;
+	size_t m_lenAdjKey;
 };
 

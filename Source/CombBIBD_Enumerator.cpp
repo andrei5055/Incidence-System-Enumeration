@@ -60,12 +60,15 @@ FClass2(CCombBIBD_Enumerator, void)::getEnumerationObjectKey(char* pKey, int len
 	SNPRINTF(pKey, len, "%s", buffer + strlen(this->getObjName()));
 }
 
-FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn) const {
+FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int len, const char* pKeyIn) {
 	if (pKeyIn) {
 		if (pKey != pKeyIn)
 			strncpy_s(pKey, len, pKeyIn, len - 1);
-	} else
-		getEnumerationObjectKey(pKey, len);
+	}
+	else {
+		getEnumerationObjectKey(m_pAdjKey = pKey, len);
+		m_pAdjKeyPrefix = pKey + len;
+	}
 
 	auto* pntr = strstr(pKey, "})");
 	*pntr = '\0';
@@ -74,7 +77,26 @@ FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int l
 	strcpy_s(pKey+len, len, pKey);
 	pntr = strstr(pKey+len, "{");
 	*pntr = '\0';
+	if (!pKeyIn)
+		m_lenAdjKey = strlen(pKey);
+
 	return pKey;
+}
+
+FClass2(CCombBIBD_Enumerator, int)::compareEnumerationDB_record(const char* record) {
+	char keyCmp[64];
+	const auto len = countof(keyCmp) / 2;
+	char* keyCmpPrefix = keyCmp + len;
+	getEnumerationObjectKeyA(keyCmp, len, record);
+	auto resCmp = strcmp(keyCmpPrefix, m_pAdjKeyPrefix);
+	if (!resCmp) {
+		const auto lenKeyCmp = strlen(keyCmp);
+		if (lenKeyCmp < m_lenAdjKey)
+			resCmp = -1;
+		else
+			resCmp = lenKeyCmp == m_lenAdjKey ? strcmp(keyCmp, m_pAdjKey) : 1;
+	}
+	return resCmp;
 }
 
 FClass2(CCombBIBD_Enumerator, RowSolutionPntr)::setFirstRowSolutions() {

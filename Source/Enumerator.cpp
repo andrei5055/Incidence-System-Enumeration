@@ -967,7 +967,7 @@ FClass2(CEnumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, si
 	return true;
 }
 
-FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) const
+FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults)
 {
 	const size_t lenBuf = 256;
 	const size_t len = strlen(CONSTRUCTED_IN);
@@ -1046,8 +1046,7 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults) co
 	return false;
 }
 
-FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) const
-{
+FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, bool *pBetterResults) {
 	FOPEN(file, fileName, "r");
 	if (!file)
 		return false;
@@ -1089,7 +1088,7 @@ FClass2(CEnumerator, void)::outputTitle(FILE *file) const {
 	fprintf(file, format, this->getTopLevelDirName(), "Total #", "Simple #", "Run Time", "Date", "Comments");
 }
 
-FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
+FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len)
 {
 	for (int i = 0; i < len; i++) {
 		// Eliminate all first spaces
@@ -1122,13 +1121,10 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 	if (!dbFile)
 		return;
 
-	char key[32], adjustedKey[64], keyCmp[64];
+	char key[32], adjustedKey[64];// , keyCmp[64];
 	this->getEnumerationObjectKey(key, countof(key));
 	// the lexicografical order of key's could be adjusted for some type of designs using:
 	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey)/2);
-	const char* pAdjKeyPrefix = adjustedKey + countof(adjustedKey) / 2;
-	const char* keyCmpPrefix = keyCmp + countof(keyCmp) / 2;
-	const auto lenAdjKey = strlen(pAdjKey);
 
 	if (i) {
 		this->outputTitle(dbFile);
@@ -1152,19 +1148,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len) const
 			// Not a comment line
 			if (compareFlag && !firstLine) {
 				if (buffer[0] && !strchr("_-", buffer[0])) {
-					if (pAdjKey) {
-						this->getEnumerationObjectKeyA(keyCmp, countof(keyCmp)/2, buffer);
-						resCmp = strcmp(keyCmpPrefix, pAdjKeyPrefix);
-						if (!resCmp) {
-							const auto lenKeyCmp = strlen(keyCmp);
-							if (lenKeyCmp < lenAdjKey)
-								resCmp = -1;
-							else
-								resCmp = lenKeyCmp == lenAdjKey ? strcmp(keyCmp, pAdjKey) : 1;
-						}
-					}
-					else
-						resCmp = strncmp(buffer, key, lenKey);
+					resCmp = pAdjKey? compareEnumerationDB_record(buffer) : strncmp(buffer, key, lenKey);
 				}
 				else
 					resCmp = 1;   // EOF found
