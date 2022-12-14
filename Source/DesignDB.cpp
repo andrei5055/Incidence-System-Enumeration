@@ -189,7 +189,7 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 	char* buff = new char[len_buff];
 	char *pBuff = buff;
 	const auto lenStr = LEN_BUFFER-1;
-	fprintf(file, "\n%s\n", SHIFT " |Aut(M)|: Masters:  Decomp:        Decomposition Look:");
+	fprintf(file, "\n%s\n", SHIFT " |Aut(M)|: Masters:  CBIBDs:           Distribution:");
 	memset(buff, '_', lenStr);
 	buff[lenStr] = '\0';
 	fprintf(file, SHIFT "%s\n", buff);

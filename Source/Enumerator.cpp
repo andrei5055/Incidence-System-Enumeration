@@ -285,7 +285,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	const auto firstNonfixedRow = firtstNonfixedRowNumber();
 	// Allocate memory for the orbits of two consecutive rows
-	T nRow, lenStab;
+	T lenStab;
 	RowSolutionPntr pRowSolution;
 	RowSolutionPntr pNextRowSolution = NULL;
 	InitRowSolutions(pMaster);
@@ -306,9 +306,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			setFirstUnforcedRow(firstUnforced);
 
 			// Unforced lambda's are stored one by one for all parts and rows
-			const auto lenght = numParts() * (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr());
+			const auto length = numParts() * (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr());
 			const auto from = firstUnforced * numParts();
-			memcpy(forcibleLambdaPntr() + from, pMaster->forcibleLambdaPntr() + from, lenght);
+			memcpy(forcibleLambdaPntr() + from, pMaster->forcibleLambdaPntr() + from, length);
 		}
 	} else {
 		lenStab = nRow = firstNonfixedRow - 2;

@@ -68,6 +68,13 @@ typedef enum {
 Class2Def(CThreadEnumerator);
 Class2Def(CEnumerator);
 
+struct WorkingInfo {
+	WorkingInfo(int* pntr, int min, int max) : pNumThreadsOnRow(pntr), minRow(min), maxRow(max) {}
+	int* pNumThreadsOnRow;
+	const int minRow;
+	const int maxRow;
+};
+
 Class2Def(CEnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
@@ -75,13 +82,14 @@ public:
         resetCounters();
 		setReportBound(REPORT_INTERVAL_OBJ_NUMB);
 		m_pReportFileName = NULL;
+		m_lenPrev = 0;
 	}
 	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
 	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_design_type::t_totalConstr); }
 	inline const char *strToScreen() const					{ return m_pStrToScreen; }
 #if !CONSTR_ON_GPU
-	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL);
+	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL, const WorkingInfo* pWorkInfo = NULL);
 	void reportProgress(const ThreadEnumeratorPntr pTreadEnum, size_t nThread = 0);
 #endif
 	virtual ulonglong numbSimpleDesign() const				{ return 0; }
@@ -129,6 +137,7 @@ private:
 	char *m_pReportFileName;
 	t_resType m_nResType;
 	int m_mtlevel;
+	size_t m_lenPrev;			// Length of previous output
 	designParam *m_pParam;
 }; 
 

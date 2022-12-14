@@ -87,7 +87,7 @@ FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
 		m_pReportFileName = NULL;
 }
 
-FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo)
+FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo, const WorkingInfo* pNumLevels)
 {
 	// Only master will report the progress
 	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
@@ -143,25 +143,32 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 		}
 	}
 
-	char buffer[64];
+	char buffer[512];
+	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
+	auto len = SPRINTF(buffer, "  Canon: %lld  NRB: %s%lld  Total: %lld  RunTime: %.2f min.",
+		nCanon, constructedAllNoReplBlockMatrix() ? "=" : "", numbSimpleDesign(), numMatrTotalConstructed, runTime);
+
 	if (nCanon) {
-		const auto len = SPRINTF(buffer, "  Efficiency:  %6.2f", static_cast<double>(numMatrTotalConstructed) / nCanon);
+		len += snprintf(buffer + len, countof(buffer) - len, "  Efficiency:  %6.2f", static_cast<double>(numMatrTotalConstructed) / nCanon);
 
 		if (recentCanonProportion > 0)
-			snprintf(buffer + len, countof(buffer) - len - 1, "  latest: %6.2f  ", recentCanonProportion);
-		else
-			snprintf(buffer + len, countof(buffer) - len - 1, "                  ");
+			len += snprintf(buffer + len, countof(buffer) - len, "  latest: %6.2f", recentCanonProportion);
 	}
-	else
-		buffer[0] = 0;
 
-	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
-	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? "==>" : "   ")
-			  << "  Canon: " << nCanon 
-			  << "  NRB: "   << (constructedAllNoReplBlockMatrix() ? "=" : "") << numbSimpleDesign() 
-			  << "  Total: " << numMatrTotalConstructed
-			  << "  RunTime: " << runTime << " min."
-			  << buffer;
+	if (pNumLevels) {
+		for (int i = pNumLevels->minRow; i <= pNumLevels->maxRow; i++)
+			len += snprintf(buffer + len, countof(buffer) - len, " %d:%d", i, pNumLevels->pNumThreadsOnRow[i]);
+	}
+
+	const auto lenOut = strlen(buffer);
+	if (m_lenPrev > lenOut) {
+		// To cover the previous output with the spaces.
+		memset(buffer + lenOut, ' ', m_lenPrev - lenOut);
+		buffer[m_lenPrev] = '\0';
+	}
+
+	m_lenPrev = lenOut;
+	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? "==>" : "   ") << buffer;
 	fflush(stdout);
 
 #if TEST
@@ -185,11 +192,17 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 {
 	if (nThread >= 1) {
 		// Save already collected information 
-		const ulonglong nCanon = numMatrOfType(t_design_type::t_canonical);
-		const ulonglong nTotal = numMatrOfType(t_design_type::t_totalConstr);
-		const ulonglong nrbTotal = numbSimpleDesign();
+		const auto nCanon = numMatrOfType(t_design_type::t_canonical);
+		const auto nTotal = numMatrOfType(t_design_type::t_totalConstr);
+		const auto nrbTotal = numbSimpleDesign();
 		CGroupsInfo groupsInfo;
 		groupsInfo.updateGroupInfo(this);
+
+		int nTreadsOnRow[64];  // Number of threads currently working on each row
+		int nRowMin, nRowMax = 0;
+		const auto nRows = nRowMin = designInfo()->v + 2;
+		int* pTreadsOnRow = nRows < countof(nTreadsOnRow) ? nTreadsOnRow : new int[nRows];
+		memset(pTreadsOnRow, 0, nRows * sizeof(pTreadsOnRow[0]));
 		for (size_t i = 0; i < nThread; i++, pThreadEnum++) {
 			switch (pThreadEnum->code()) {
 				case t_threadRunning:
@@ -199,13 +212,21 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 
 			updateEnumInfo(pThreadEnum->enumInfo());
 			groupsInfo.updateGroupInfo(pThreadEnum->enumInfo());
+			const auto nRow = pThreadEnum->enumerator()->numRow();
+			if (nRowMin > nRow) nRowMin = nRow;
+			if (nRowMax < nRow) nRowMax = nRow;
+			++pTreadsOnRow[nRow];
 		}
-			
-		reportProgress(t_reportCriteria::t_reportByTime, &groupsInfo);
+
+		WorkingInfo WorkInfo(pTreadsOnRow, nRowMin, nRowMax);
+		reportProgress(t_reportCriteria::t_reportByTime, &groupsInfo, nRowMin <= nRowMax? &WorkInfo : NULL);
+
 		// Restore information
 		setNumMatrOfType(nCanon, t_design_type::t_canonical);
 		setNumMatrOfType(nTotal, t_design_type::t_totalConstr);
 		setNumbSimpleDesign(nrbTotal);
+		if (pTreadsOnRow != nTreadsOnRow)
+			delete[] pTreadsOnRow;
 	} else {
 		updateEnumInfo(pThreadEnum->enumInfo());
 		reportThreadProgress();

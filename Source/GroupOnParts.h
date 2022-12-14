@@ -66,12 +66,12 @@ private:
 Class1Def(CGroupOnParts)
 {
 public:
-	CGroupOnParts(const void* pOwner, const CVector<S>&lenghts, S minRow) :
-		m_pOwner(pOwner), m_nNumGroups(lenghts.GetSize() / 3), m_nMinRowNumb(minRow) {
+	CGroupOnParts(const void* pOwner, const CVector<S>&length, S minRow) :
+		m_pOwner(pOwner), m_nNumGroups(length.GetSize() / 3), m_nMinRowNumb(minRow) {
 		m_pGroupHandles = new CGroupHandle<S>[numGroups()];
-		const auto lenMax = lenghts.GetSize();
+		const auto lenMax = length.GetSize();
 		for (size_t i = 0; i < lenMax; i += 3)
-			m_pGroupHandles[i / 3].InitGroupHandle(lenghts.GetAt(i), lenghts.GetAt(i + 1), lenghts.GetAt(i + 2));
+			m_pGroupHandles[i / 3].InitGroupHandle(length.GetAt(i), length.GetAt(i + 1), length.GetAt(i + 2));
 	}
 	~CGroupOnParts()									{ delete[] m_pGroupHandles; }
 	inline const void* owner() const					{ return m_pOwner; }

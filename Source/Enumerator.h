@@ -101,6 +101,7 @@ public:
 	CK virtual bool noReplicatedBlocks() const				{ return false; }
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline auto *designParams() const					{ return m_pParam; }
+	CK inline T numRow() const								{ return nRow; }
 
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
@@ -196,6 +197,7 @@ private:
 	#define TestCanonicityOnGPU()		false
 #endif
 
+	T nRow;
 	RowSolutionPntr *m_pRow;
 	CSimpleArray<S> *m_pRowEquation;
 	bool m_bUseCanogGroup;
