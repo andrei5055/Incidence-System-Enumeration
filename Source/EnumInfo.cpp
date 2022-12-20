@@ -87,6 +87,8 @@ FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
 		m_pReportFileName = NULL;
 }
 
+#define ARROW   "==>"
+
 FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo, const WorkingInfo* pNumLevels)
 {
 	// Only master will report the progress
@@ -160,15 +162,8 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 			len += snprintf(buffer + len, countof(buffer) - len, " %d:%d", i, pNumLevels->pNumThreadsOnRow[i]);
 	}
 
-	const auto lenOut = strlen(buffer);
-	if (m_lenPrev > lenOut) {
-		// To cover the previous output with the spaces.
-		memset(buffer + lenOut, ' ', m_lenPrev - lenOut);
-		buffer[m_lenPrev] = '\0';
-	}
-
-	m_lenPrev = lenOut;
-	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? "==>" : "   ") << buffer;
+	cleanEndOfLine(buffer);
+	std::cout << '\r' << strToScreen() << (reportType == t_reportCriteria::t_reportByTime ? ARROW : "   ") << buffer;
 	fflush(stdout);
 
 #if TEST
@@ -358,6 +353,19 @@ FClass2(CEnumInfo, void)::updateConstrCounters(int matrFlags, const EnumeratorPn
 		pOrderInfo->addMatrixTrans(1, simpleMatrFlag);
 }
 
+FClass2(CEnumInfo, size_t)::cleanEndOfLine(char* pBuffer) const {
+	const auto lenOut = strlen(pBuffer);
+	auto retVal = lenOut;
+	if (m_lenPrev > lenOut) {
+		// To cover the previous output with the spaces.
+		memset(pBuffer + lenOut, ' ', m_lenPrev - lenOut);
+		pBuffer[retVal = m_lenPrev] = '\0';
+	}
+
+	m_lenPrev = lenOut;
+	return retVal;
+}
+
 #if CANON_ON_GPU
 FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem) {
 	// Recalculating counters by the group order info
@@ -395,6 +403,9 @@ FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 	case t_resType::t_resInconsistent:	pResComment = "???";
 	}
 
-	SNPRINTF(buffer + len, lenBuffer - len, "  %s       \n", pResComment);
+	SNPRINTF(buffer + len, lenBuffer - len, "  %s", pResComment);
+	len = strlen(this->strToScreen()) + strlen(ARROW);
+	len += this->cleanEndOfLine(buffer + len);
+	SNPRINTF(buffer + len, lenBuffer - len, "\n");
 }
 

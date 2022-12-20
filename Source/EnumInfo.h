@@ -114,6 +114,7 @@ public:
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 protected:
 	inline t_resType getResType() const						{ return m_nResType; }
+	size_t cleanEndOfLine(char* pBuffer) const;
 private:
 	static double stringToTime(char *pTime);
 	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_design_type::t_canonical); }
@@ -137,7 +138,7 @@ private:
 	char *m_pReportFileName;
 	t_resType m_nResType;
 	int m_mtlevel;
-	size_t m_lenPrev;			// Length of previous output
+	mutable size_t m_lenPrev;			// Length of previous output
 	designParam *m_pParam;
 }; 
 
