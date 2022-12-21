@@ -38,11 +38,14 @@ protected:
 	CK virtual int addLambdaInfo(char *buffer, size_t lenBuffer, const char *pFrmt = NULL, size_t *pLambdaSetSize = NULL) const
 		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, size_t *pLambdaSetSize) const;
+	CK void CreateForcedRows() override;
+	CK void CreateAuxiliaryStructures(const EnumeratorPntr pMaster) override;
 	CK virtual void setFirstUnforcedRow(T rowNum = 0)				{}
 	CK virtual void resetFirstUnforcedRow()							{}
 	CK inline void setR(S val)										{ m_r = val; }
 	CK inline auto getR() const										{ return m_r; }
 	CK virtual bool check_X0_3(T nPart) const						{ return !nPart; }
+	CK void initDesignDB(const EnumeratorPntr pMaster, size_t rowAdj = 0);
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;

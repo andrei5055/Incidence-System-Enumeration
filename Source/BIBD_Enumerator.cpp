@@ -1,4 +1,5 @@
 #include "BIBD_Enumerator.h"
+#include "DesignDB.h"
 
 template class CBIBD_Enumerator<TDATA_TYPES>;
 
@@ -130,6 +131,23 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {
 	SNPRINTF(pInfo, len, "(%3" _FRMT", %2" _FRMT", %2" _FRMT")",
 		this->rowNumb(), this->getInSys()->GetK(), this->getInSys()->lambda());
+}
+
+FClass2(CBIBD_Enumerator, void)::CreateForcedRows() {
+	this->setCurrentRowNumb(0);
+}
+
+FClass2(CBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
+	if (pMaster && designParams()->find_all_2_decomp)
+		initDesignDB(pMaster);
+}
+
+FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size_t rowAdj) {
+	const auto b = matrix()->colNumb();
+	const auto v = matrix()->rowNumb() - rowAdj;
+	bool flag = designParams()->thread_master_DB;
+	flag = pMaster ? flag : !flag || !designParams()->threadNumb;
+	setDesignDB(flag ? new CDesignDB((v - 2) * b + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
 }
 
 #if !CONSTR_ON_GPU

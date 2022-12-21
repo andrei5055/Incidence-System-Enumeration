@@ -85,6 +85,8 @@ Class2Def(CThreadEnumerator);
 #define MAKE_JOB_TITLE(x, y,...) x->makeJobTitle(y, __VA_ARGS__)
 #endif
 
+class CDesignDB;
+
 Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 {
 public:
@@ -102,7 +104,7 @@ public:
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline auto *designParams() const					{ return m_pParam; }
 	CK inline T numRow() const								{ return nRow; }
-
+	auto* designDB() const									{ return m_pDesignDB; }
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(S nRow) const;
@@ -141,6 +143,7 @@ protected:
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
+	CK void setDesignDB(CDesignDB* pntr)					{ m_pDesignDB = pntr; }
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL);
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
@@ -205,6 +208,7 @@ private:
 	ColOrbPntr* m_pFirstColOrb;
 	T m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
+	CDesignDB* m_pDesignDB = NULL;               // DB where the designs are stored
 
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;

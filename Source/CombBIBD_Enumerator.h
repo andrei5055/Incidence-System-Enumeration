@@ -1,8 +1,6 @@
 #pragma once
 #include "BIBD_Enumerator.h"
 
-class CDesignDB;
-
 Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
 {
 public:
@@ -16,7 +14,6 @@ public:
 	}
 	~CCombBIBD_Enumerator();
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
-	auto * designDB() const								{ return m_pDesignDB; }
 protected:
 	CK const char* getObjName() const override			{ return "CBIBD"; }
 	CK const char* getTopLevelDirName() const override 	{ return designParams()->find_master_design? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs"; }
@@ -65,7 +62,6 @@ private:
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
 	CK void CreateFirstRow();
 	CK void createColumnPermut();
-	CK void setDesignDB(CDesignDB *pntr)				{ m_pDesignDB = pntr; }
 	CK bool sharedDB() const							{ return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
 	CK bool outputMaster() const						{ return m_bOutputMasters; }
 #if USE_MUTEX
@@ -85,7 +81,6 @@ private:
 	T* m_pColPermut = NULL;						 // Memory, which will keep current permutation of columns
 	bool m_bColPermutOwner = false;
 	T* m_pColumnPermut = NULL;					 // Permutation of columns (usially calculated by master and used by the threads
-	CDesignDB* m_pDesignDB = NULL;               // DB where the "master" design are stored
 	bool m_bOutputMasters = false;
 	const char* m_pAdjKeyPrefix;
 	char* m_pAdjKey;

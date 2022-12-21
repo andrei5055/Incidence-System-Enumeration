@@ -205,7 +205,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 		if (m_pColumnPermut)
 			m_pColPermut = new T[b];
 
-		setDesignDB(designParams()->thread_master_DB? new CDesignDB((v-2) * b + LEN_HEADER) : pCombBIBD_master->designDB());
+		initDesignDB(pMaster, 1);
 	}
 
 	// Creating structures for the search of "master" designs for Combined BIBDs
@@ -293,10 +293,8 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 		nextIdx += nMax;
 	}
 
-	if (designParams()->find_master_design) {
-		// Create DB for storing "master" BIBDs
-		setDesignDB(!designParams()->thread_master_DB || !designParams()->threadNumb ? new CDesignDB((v - 2)*b + LEN_HEADER) : NULL);
-	}
+	if (designParams()->find_master_design)
+		initDesignDB(NULL, 1);   // Create DB for storing "master" BIBDs
 }
 
 FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {

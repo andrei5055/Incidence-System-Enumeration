@@ -151,13 +151,14 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 		nCanon, constructedAllNoReplBlockMatrix() ? "=" : "", numbSimpleDesign(), numMatrTotalConstructed, runTime);
 
 	if (nCanon) {
-		len += snprintf(buffer + len, countof(buffer) - len, "  Efficiency:  %6.2f", static_cast<double>(numMatrTotalConstructed) / nCanon);
+		len += snprintf(buffer + len, countof(buffer) - len, "  Efficiency: %.1f", static_cast<double>(numMatrTotalConstructed) / nCanon);
 
 		if (recentCanonProportion > 0)
-			len += snprintf(buffer + len, countof(buffer) - len, "  latest: %6.2f", recentCanonProportion);
+			len += snprintf(buffer + len, countof(buffer) - len, "  latest: %.1f", recentCanonProportion);
 	}
 
 	if (pNumLevels) {
+		len += snprintf(buffer + len, countof(buffer), "  Threads:");
 		for (int i = pNumLevels->minRow; i <= pNumLevels->maxRow; i++)
 			len += snprintf(buffer + len, countof(buffer) - len, " %d:%d", i, pNumLevels->pNumThreadsOnRow[i]);
 	}

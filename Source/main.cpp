@@ -367,6 +367,7 @@ int main(int argc, char * argv[])
 	string &line = *pLine;
 	int use_master_sol = 0;
 	int find_master_design = 0;
+	int find_all_2_decomp = 0;
 	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
 		size_t pos = line.find("//");
@@ -486,6 +487,12 @@ int main(int argc, char * argv[])
 			else
 				param->mt_level = static_cast<int>(mt_level);
 		}
+
+		pos = find(line, "FIND_ALL_2_DECOMPOSITIONS");
+		if (pos != string::npos) {
+			find_all_2_decomp = static_cast<int>(getInteger(line, &pos));
+		}
+
 		pos = find(line, "NO_REPLICATED_BLOCKS");
 		if (pos != string::npos) {
 			param->noReplicatedBlocks = getInteger(line, &pos);
@@ -610,6 +617,7 @@ int main(int argc, char * argv[])
 			break;
 		}
 
+		param->find_all_2_decomp = 0;
 		if (param->workingDir != newWorkDir || firstRun)
 			param->workingDir = string(newWorkDir);
 
@@ -621,8 +629,12 @@ int main(int argc, char * argv[])
 			if (objType == t_objectType::t_CombinedBIBD) {
 				param->find_master_design = find_master_design;
 				param->use_master_sol = 0;
-			} else
+			}
+			else {
 				param->find_master_design = 0;   // This option for CombBIBD only
+				if (objType == t_objectType::t_BIBD)
+					param->find_all_2_decomp = find_all_2_decomp;
+			}
 
 			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
 				break;
