@@ -365,6 +365,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	CreateAuxiliaryStructures(pMaster);
 
+	const auto procFlag = designParams()->find_master_design || designParams()->find_all_2_decomp;
 	// minimal index of the part, which will be changed on current row
 	auto *firstPartIdx = new T[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
@@ -448,8 +449,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					EXIT(-1);
 					canonMatrix = this->TestCanonicity(nRow, &canonParam, outInfo);
 					if (canonMatrix) {
-						if (designParams()->find_master_design)
-							FindMasterBIBD();
+						if (procFlag)
+							ConstructedDesignProcessing();
 
 						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
 						int matrFlags = 0;

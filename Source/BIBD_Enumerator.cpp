@@ -7,6 +7,31 @@ template class CBIBD_Enumerator<TDATA_TYPES>;
 std::mutex CBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
 #endif
 
+FClass2(CBIBD_Enumerator)::~CBIBD_Enumerator() {
+#if USE_MUTEX
+	if (master() && designParams()->thread_master_DB) {
+		auto* pMasterDB = master()->designDB();
+		m_mutexDB.lock();
+		if (pMasterDB) {
+#if 1
+			// Merging two Design DBs as ordered sets
+			auto* pNewDB = new CDesignDB(pMasterDB->recordLength());
+			pNewDB->mergeDesignDBs(pMasterDB, designDB());
+			master()->setDesignDB(pNewDB);
+			delete pMasterDB;
+#else
+			pMasterDB->mergeDesignDB(designDB());
+#endif
+			delete designDB();
+		}
+		else
+			master()->setDesignDB(designDB());
+
+		m_mutexDB.unlock();
+	}
+#endif
+}
+
 FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
 	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
@@ -156,7 +181,7 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 	setDesignDB(flag ? new CDesignDB((v - 2) * b + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
 }
 
-FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
+FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(const CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
 	auto* pMatr = pCanonChecker->matrix();
 #if USE_MUTEX
 	if (sharedDB())

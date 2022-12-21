@@ -50,7 +50,7 @@ protected:
 	CK void resetGroupOrder() override					{ m_pGroupOrder->setGroupOrder(1); }
 	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }
 	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
-	CK void FindMasterBIBD() override;
+	CK void ConstructedDesignProcessing() const override;
 	CK void beforeEnumInfoOutput() const override;
 	CK void setDesignParams(designParam* pntr) override { 
 		CEnumerator::setDesignParams(pntr); 
@@ -63,14 +63,6 @@ private:
 	CK void CreateFirstRow();
 	CK void createColumnPermut();
 	CK bool outputMaster() const override				{ return m_bOutputMasters; }
-#if USE_MUTEX
-	CK void setMaster(CCombBIBD_Enumerator* pntr)		{ m_pMaster = pntr; }
-	CK CCombBIBD_Enumerator* master() const				{ return m_pMaster; }
-
-	CCombBIBD_Enumerator* m_pMaster = NULL;
-#else
-	#define setMaster(x)
-#endif
 	PERMUT_ELEMENT_TYPE* m_FirstPartSolutionIdx;
 	size_t *m_pGroupOrders = NULL;				 // orders of group, acting on the parts with the same lambda
 	CGroupOrder<T> *m_pGroupOrder = NULL;

@@ -139,7 +139,7 @@ protected:
 	CK virtual MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) { return NULL; }
 	CK virtual void CreateAuxiliaryStructures(const EnumeratorPntr pMaster)			{}
 	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
-	CK virtual void FindMasterBIBD()						{}
+	CK virtual void ConstructedDesignProcessing() const		{}
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }

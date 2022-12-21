@@ -9,27 +9,7 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete m_pSpareMatrix;
 	delete[] m_pGroupOrders;
 	delete m_pGroupOrder;
-#if USE_MUTEX
-	if (master() && designParams()->thread_master_DB) {
-		auto *pMasterDB = master()->designDB();
-		m_mutexDB.lock();
-		if (pMasterDB) {
-#if 1
-			// Merging two Design DBs as ordered sets
-			auto *pNewDB = new CDesignDB(pMasterDB->recordLength());
-			pNewDB->mergeDesignDBs(pMasterDB, designDB());
-			master()->setDesignDB(pNewDB);
-			delete pMasterDB;
-#else
-			pMasterDB->mergeDesignDB(designDB());
-#endif
-			delete designDB();
-		} else
-			master()->setDesignDB(designDB());
 
-		m_mutexDB.unlock();
-	}
-#endif
 	if (m_bColPermutOwner) {
 		// Only the master thread is the owner of these data
 		delete[] columnPermut();
@@ -294,7 +274,7 @@ FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
 		initDesignDB(NULL, 1);   // Create DB for storing "master" BIBDs
 }
 
-FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
+FClass2(CCombBIBD_Enumerator, void)::ConstructedDesignProcessing() const {
 	// Merging parts into one BIBD with the first two canonical rows.
 	const auto v = matrix()->rowNumb() - 1;
 	const auto b = matrix()->colNumb();
