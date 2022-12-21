@@ -2,9 +2,6 @@
 #include "DesignDB.h"
 
 template class CCombBIBD_Enumerator<TDATA_TYPES>;
-#if USE_MUTEX
-std::mutex CCombBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
-#endif
 
 FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete[] m_FirstPartSolutionIdx;
@@ -323,22 +320,7 @@ FClass2(CCombBIBD_Enumerator, void)::FindMasterBIBD() {
 		delete[] pColPermut;
 
 	m_pCanonChecker->CanonizeMatrix();
-
-#if USE_MUTEX
-	if (sharedDB())
-		m_mutexDB.lock();
-#endif
-	// No need to keep first two rows, they are the same for all master BIBDs
-	const auto idx = designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, m_pCanonChecker->groupOrder());
-	if (outputMaster()) {
-		outBlockTitle();
-		pMatr->printOut(this->outFile(), v, matrix()->getMatrixCounter() + 1, m_pCanonChecker, idx + 1);
-	}
-#if USE_MUTEX
-	if (sharedDB())
-		m_mutexDB.unlock();
-#endif
-
+	AddMatrixToDB(m_pCanonChecker, 1);
 }
 
 FClass2(CCombBIBD_Enumerator, void)::beforeEnumInfoOutput() const {

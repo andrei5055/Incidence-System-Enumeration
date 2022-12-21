@@ -3,6 +3,10 @@
 
 template class CBIBD_Enumerator<TDATA_TYPES>;
 
+#if USE_MUTEX
+std::mutex CBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
+#endif
+
 FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
 	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
@@ -134,7 +138,9 @@ FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) c
 }
 
 FClass2(CBIBD_Enumerator, void)::CreateForcedRows() {
-	this->setCurrentRowNumb(0);
+	CEnumerator::CreateForcedRows();
+	if (designParams()->find_all_2_decomp)
+		initDesignDB(NULL);
 }
 
 FClass2(CBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
@@ -148,6 +154,26 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 	bool flag = designParams()->thread_master_DB;
 	flag = pMaster ? flag : !flag || !designParams()->threadNumb;
 	setDesignDB(flag ? new CDesignDB((v - 2) * b + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
+}
+
+FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
+	auto* pMatr = pCanonChecker->matrix();
+#if USE_MUTEX
+	if (sharedDB())
+		m_mutexDB.lock();
+#endif
+	// No need to keep first two rows, they are the same for all master BIBDs
+	const auto b = matrix()->colNumb();
+	const auto v = matrix()->rowNumb() - rowAdj;
+	const auto idx = designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, pCanonChecker->groupOrder());
+	if (outputMaster()) {
+		outBlockTitle();
+		pMatr->printOut(this->outFile(), v, matrix()->getMatrixCounter() + 1, pCanonChecker, idx + 1);
+	}
+#if USE_MUTEX
+	if (sharedDB())
+		m_mutexDB.unlock();
+#endif
 }
 
 #if !CONSTR_ON_GPU

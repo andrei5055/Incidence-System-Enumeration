@@ -62,13 +62,11 @@ private:
 	CK PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const override { return *(m_FirstPartSolutionIdx + nRow); }
 	CK void CreateFirstRow();
 	CK void createColumnPermut();
-	CK bool sharedDB() const							{ return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
-	CK bool outputMaster() const						{ return m_bOutputMasters; }
+	CK bool outputMaster() const override				{ return m_bOutputMasters; }
 #if USE_MUTEX
 	CK void setMaster(CCombBIBD_Enumerator* pntr)		{ m_pMaster = pntr; }
 	CK CCombBIBD_Enumerator* master() const				{ return m_pMaster; }
 
-	static std::mutex m_mutexDB;				 // mutext for DB access when "master" DB as added
 	CCombBIBD_Enumerator* m_pMaster = NULL;
 #else
 	#define setMaster(x)
