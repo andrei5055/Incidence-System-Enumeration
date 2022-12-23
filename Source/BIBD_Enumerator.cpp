@@ -1,36 +1,6 @@
 #include "BIBD_Enumerator.h"
-#include "DesignDB.h"
 
 template class CBIBD_Enumerator<TDATA_TYPES>;
-
-#if USE_MUTEX
-std::mutex CBIBD_Enumerator<TDATA_TYPES>::m_mutexDB;
-#endif
-
-FClass2(CBIBD_Enumerator)::~CBIBD_Enumerator() {
-#if USE_MUTEX
-	if (master() && designParams()->thread_master_DB) {
-		auto* pMasterDB = master()->designDB();
-		m_mutexDB.lock();
-		if (pMasterDB) {
-#if 1
-			// Merging two Design DBs as ordered sets
-			auto* pNewDB = new CDesignDB(pMasterDB->recordLength());
-			pNewDB->mergeDesignDBs(pMasterDB, designDB());
-			master()->setDesignDB(pNewDB);
-			delete pMasterDB;
-#else
-			pMasterDB->mergeDesignDB(designDB());
-#endif
-			delete designDB();
-		}
-		else
-			master()->setDesignDB(designDB());
-
-		m_mutexDB.unlock();
-	}
-#endif
-}
 
 FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
@@ -183,13 +153,13 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 
 FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(const CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
 	auto* pMatr = pCanonChecker->matrix();
+	const auto b = pMatr->colNumb();
+	const auto v = pMatr->rowNumb() - rowAdj;
 #if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.lock();
 #endif
 	// No need to keep first two rows, they are the same for all master BIBDs
-	const auto b = matrix()->colNumb();
-	const auto v = matrix()->rowNumb() - rowAdj;
 	const auto idx = designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, pCanonChecker->groupOrder());
 	if (outputMaster()) {
 		outBlockTitle();

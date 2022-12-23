@@ -118,7 +118,7 @@ protected:
 	CC virtual void resetGroupOrder()				{}
 	CC virtual void incGroupOrder()					{}
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr) { m_pGroupOnParts = pntr; }
-	CK inline auto getGroupOnParts() const { return m_pGroupOnParts; }
+	CK inline auto getGroupOnParts() const			{ return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
@@ -170,7 +170,7 @@ private:
 	const uint m_enumFlags;
 	T m_nNumRow;
 	const T m_numParts;
-	CGroupOnParts<T>* m_pGroupOnParts;
+	CGroupOnParts<T>* m_pGroupOnParts = NULL;
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 };
 
@@ -238,6 +238,8 @@ CanonicityChecker()::~CCanonicityChecker()
 	delete[] improvedSolution();
 	delete[] m_pObits[0][0];
 	delete[] m_pTrivialPermutCol;
+	if (getGroupOnParts() && getGroupOnParts()->owner() == this)
+		delete getGroupOnParts();
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif

@@ -49,6 +49,10 @@ std::mutex out_mutex;
 
 template class CEnumerator<TDATA_TYPES>;
 
+#if USE_MUTEX
+std::mutex CEnumerator<TDATA_TYPES>::m_mutexDB;
+#endif
+
 FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 {
 	struct stat info;
@@ -737,7 +741,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, pParam->threadNumb);
 #endif
 
-    this->closeColOrbits(use_master_sol);
+    this->closeColOrbits();
 
 	if (!threadFlag || !USE_THREADS_ENUM) {
 

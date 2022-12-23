@@ -66,7 +66,6 @@ public:
 		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
 		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
 	CC ~CMatrixCanonChecker()									{ delete enumInfo(); }
-
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
 	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;

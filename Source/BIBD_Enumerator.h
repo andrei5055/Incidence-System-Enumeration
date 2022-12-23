@@ -15,7 +15,7 @@ public:
 		setR(getInSys()->GetR(0));
 		C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - pBIBD->GetK());
 	}
-	~CBIBD_Enumerator();
+
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
@@ -50,12 +50,7 @@ protected:
 	CK virtual bool outputMaster() const							{ return false; }
 	CK void ConstructedDesignProcessing() const override			{ AddMatrixToDB(this); }
 	CK void AddMatrixToDB(const CMatrixCanonChecker* pCanonChecker, int rowAdj = 0) const;
-#if USE_MUTEX
-	CK void setMaster(CBIBD_Enumerator* pntr) { m_pMaster = pntr; }
-	CK auto master() const { return m_pMaster; }
-#else
-#define setMaster(x)
-#endif
+
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
@@ -65,12 +60,6 @@ private:
 	CK bool sharedDB() const										 { return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
 
 	S m_r;
-#if USE_MUTEX
-	CBIBD_Enumerator* m_pMaster = NULL;
-protected:
-	static std::mutex m_mutexDB;				 // mutex for accessing the database, it is used when BIBD  or the "master" for CBIBD is added
-
-#endif
 };
 
 FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting)

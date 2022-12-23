@@ -63,17 +63,18 @@
 #ifndef USE_CUDA
 #ifdef _DEBUG  
 	// For Memory leakage detection
-	#define CHECK_MEMORY_LEAK		0
+	#define CHECK_MEMORY_LEAK		1
 #if CHECK_MEMORY_LEAK
 	#define _CRTDBG_MAP_ALLOC
 	#include <stdlib.h>
 	#include <crtdbg.h>
-	#define DEBUG_CLIENTBLOCK   new( _CLIENT_BLOCK, __FILE__, __LINE__)
+	#define DEBUG_CLIENTBLOCK   new( _NORMAL_BLOCK, __FILE__, __LINE__)
 	#define new DEBUG_CLIENTBLOCK
 #else
 	#define _CrtSetReportMode(x,y)
 	#define _CrtSetReportFile(x,y)
 	#define _CrtDumpMemoryLeaks()
+	#define _CrtSetBreakAlloc(x)
 #endif
 
 #else  
@@ -105,6 +106,7 @@
 	#define _CrtSetReportMode(x,y)
 	#define _CrtSetReportFile(x,y)
 	#define _CrtDumpMemoryLeaks()
+	#define _CrtSetBreakAlloc(x)
   #define USE_ASM				  0
 #endif
 
@@ -541,6 +543,7 @@ private:
 	CInterStruct *m_pNext = NULL;
 };
 
+class CDesignDB;
 
 class designParam {
 public:
@@ -577,10 +580,13 @@ public:
 	const auto &lambdaB() const					{ return m_pInterStruct->lambdaB(); }
 	inline auto lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
+	inline void setDesignDB(CDesignDB* pntr)	{ m_pDesignDB = pntr; }
+	inline CDesignDB *setDesignDB() const		{ return m_pDesignDB; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
 									// (will be used for formated output)
+	CDesignDB* m_pDesignDB;
 };
 
 #define VAR_1		1

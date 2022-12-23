@@ -13,7 +13,6 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	if (m_bColPermutOwner) {
 		// Only the master thread is the owner of these data
 		delete[] columnPermut();
-		delete designDB();
 	}
 
 	delete[] m_pColPermut;

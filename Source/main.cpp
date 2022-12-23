@@ -266,11 +266,18 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 		pInSysEnum->closeFile();
 	}
 
+
+	delete pInSys;
+	if (pParam->find_all_2_decomp) {
+		pParam->setDesignDB(pInSysEnum->designDB());
+		pInSysEnum->setDesignDB(NULL);
+	}
+
+	delete pInSysEnum;
+
 	if (resetMTlevel)
 		pParam->mt_level = 0;
 
-	delete pInSys;
-	delete pInSysEnum;
 	CloseCanonInfo();
 	return true;
 }
@@ -312,12 +319,14 @@ void getMasterBIBD_param(const string& line, const size_t lineLength, designPara
 
 int main(int argc, char * argv[])
 {
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
+//	_CrtSetBreakAlloc(194);  // Put here the memory allocation number you want to stop at.
 
 	const char *pSummaryFile = "EnumSummary.txt";
 	cudaDeviceReset();
@@ -356,7 +365,7 @@ int main(int argc, char * argv[])
 	designParam *param = new designParam();
 	param->threadNumb = USE_THREADS;
 	param->noReplicatedBlocks = false;
-	std::string newWorkDir = "./";
+
 
 	// By default, we enumerating BIBDs 
 	t_parsingStage stage = t_objectTypeStage;
@@ -365,6 +374,8 @@ int main(int argc, char * argv[])
 	uint outType = t_Summary;
 	string *pLine = new string();
 	string &line = *pLine;
+	string* pWorkDir = new string("./");
+	string& newWorkDir = *pWorkDir;
 	int use_master_sol = 0;
 	int find_master_design = 0;
 	int find_all_2_decomp = 0;
@@ -404,13 +415,14 @@ int main(int argc, char * argv[])
 		const auto length = line.length();
 		pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
-			newWorkDir = line.substr(pos + 1);
-			std::replace(newWorkDir.begin(), newWorkDir.end(), '\\', '/');
-			if (newWorkDir.c_str()[newWorkDir.length() - 1] != '/')
-				newWorkDir += '/';
+			line = line.substr(pos + 1);
+			std::replace(line.begin(), line.end(), '\\', '/');
+			if (line.back() != '/')
+				line += '/';
+
 
 			struct stat sb;
-			const auto* pWorkDir = newWorkDir.c_str();
+			const auto* pWorkDir = line.c_str();
 			const char* pCause = NULL;
 			if (stat(pWorkDir, &sb))
 				pCause = "get information about";
@@ -424,8 +436,10 @@ int main(int argc, char * argv[])
 						if (!(S_IWRITE & sb.st_mode))
 							pCause = "write into";
 
-			if (!pCause)
+			if (!pCause) {
+				newWorkDir = line;
 				continue;
+			}
 
 			printf("Cannot %s working directory: \'%s\'\n", pCause, pWorkDir);
 			break;
@@ -619,7 +633,7 @@ int main(int argc, char * argv[])
 
 		param->find_all_2_decomp = 0;
 		if (param->workingDir != newWorkDir || firstRun)
-			param->workingDir = string(newWorkDir);
+			param->workingDir = newWorkDir;
 
 		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
@@ -647,6 +661,7 @@ int main(int argc, char * argv[])
 	}
 
 	delete pLine;
+	delete pWorkDir;
 	infile.close();
 
 	delete param;

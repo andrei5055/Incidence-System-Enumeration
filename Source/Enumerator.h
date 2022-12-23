@@ -2,6 +2,7 @@
 #include "RowSolution.h"
 #include "InSysSolver.h"
 #include "MatrixCanonChecker.h"
+#include "DesignDB.h"
 
 #define CONSTRUCTED_IN " constructed in"
 
@@ -85,8 +86,6 @@ Class2Def(CThreadEnumerator);
 #define MAKE_JOB_TITLE(x, y,...) x->makeJobTitle(y, __VA_ARGS__)
 #endif
 
-class CDesignDB;
-
 Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 {
 public:
@@ -104,6 +103,7 @@ public:
 	CK virtual void CloneMasterInfo(const EnumeratorPntr p, size_t nRow) {}
 	CK inline auto *designParams() const					{ return m_pParam; }
 	CK inline T numRow() const								{ return nRow; }
+	CK void setDesignDB(CDesignDB* pntr)					{ m_pDesignDB = pntr; }
 	auto* designDB() const									{ return m_pDesignDB; }
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
@@ -143,7 +143,12 @@ protected:
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
-	CK void setDesignDB(CDesignDB* pntr)					{ m_pDesignDB = pntr; }
+#if USE_MUTEX
+	CK void setMaster(CEnumerator* pntr) { m_pMaster = pntr; }
+	CK auto master() const									{ return m_pMaster; }
+#else
+#define setMaster(x)
+#endif
 private:
 	virtual bool compareResults(char *fileName, size_t lenFileName, bool *pBetterResults = NULL);
 	virtual void getEnumerationObjectKey(char *pKey, int len) const { strcpy_s(pKey, len, "EMPTY_KEY"); }
@@ -215,6 +220,10 @@ private:
 #endif
  protected:
 	unsigned char* m_bSolutionsWereConstructed = NULL;
+#if USE_MUTEX
+	CEnumerator* m_pMaster = NULL;
+	static std::mutex m_mutexDB;				 // mutex for accessing the database, it is used when BIBD  or the "master" for CBIBD is added
+#endif
 };
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
@@ -229,13 +238,44 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 }
 
 FClass2(CEnumerator)::~CEnumerator() {
+#if USE_MUTEX
+	const auto flag = master() == NULL;
+	if (master()) {
+		if (designParams()->thread_master_DB) {
+			auto* pMasterDB = master()->designDB();
+			m_mutexDB.lock();
+			if (pMasterDB) {
+				// Merging two Design DBs as ordered sets
+				if (designDB()->recNumb()) {
+					auto* pNewDB = new CDesignDB(pMasterDB->recordLength());
+					pNewDB->mergeDesignDBs(pMasterDB, designDB());
+					master()->setDesignDB(pNewDB);
+					delete pMasterDB;
+				}
+			}
+			else {
+				master()->setDesignDB(designDB());
+				setDesignDB(NULL);
+			}
+
+			m_mutexDB.unlock();
+			delete designDB();
+		}
+	}
+	else {
+		delete designDB();
+	}
+#endif
+
 	delete[] rowStuff(this->rowMaster());
 	delete[] rowStuffPntr();
 	delete rowEquation();
 
 	auto* pGroupOnParts = getGroupOnParts();
-	if (pGroupOnParts && pGroupOnParts->owner() == this)
+	if (pGroupOnParts && pGroupOnParts->owner() == this) {
 		delete pGroupOnParts;
+		setGroupOnParts(NULL);
+	}
 
 	delete[] m_lastRightPartIndex;
 	delete[] m_pFirstColOrb;
