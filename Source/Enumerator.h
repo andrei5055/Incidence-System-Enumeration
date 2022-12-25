@@ -92,7 +92,7 @@ public:
 	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline RowSolutionPntr rowStuff(T nRow = 0, T iPart = 0) const	{ return m_pRow[nRow] + iPart; }
-	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, const EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
+	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
 															{ return false; }
 	CK virtual T getX0_3() const							{ return 0; }
@@ -137,14 +137,14 @@ protected:
 	CK virtual bool SeekLogFile() const						{ return false; }
 
 	CK virtual MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) { return NULL; }
-	CK virtual void CreateAuxiliaryStructures(const EnumeratorPntr pMaster)			{}
+	CK virtual void CreateAuxiliaryStructures(EnumeratorPntr pMaster)			{}
 	CK virtual void InitGroupOderStorage(const CGroupOnParts<T>* pGroupOnParts)		{}
 	CK virtual void ConstructedDesignProcessing() const		{}
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
 #if USE_MUTEX
-	CK void setMaster(CEnumerator* pntr) { m_pMaster = pntr; }
+	CK void setMaster(CEnumerator* pntr)					{ m_pMaster = pntr; }
 	CK auto master() const									{ return m_pMaster; }
 #else
 #define setMaster(x)
@@ -248,7 +248,7 @@ FClass2(CEnumerator)::~CEnumerator() {
 				// Merging two Design DBs as ordered sets
 				if (designDB()->recNumb()) {
 					auto* pNewDB = new CDesignDB(pMasterDB->recordLength());
-					pNewDB->mergeDesignDBs(pMasterDB, designDB());
+					pNewDB->combineDesignDBs(pMasterDB, designDB());
 					master()->setDesignDB(pNewDB);
 					delete pMasterDB;
 				}

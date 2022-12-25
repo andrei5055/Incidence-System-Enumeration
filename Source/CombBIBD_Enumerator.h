@@ -45,7 +45,7 @@ protected:
 			m_pGroupOrders = new size_t [pGroupOnParts->numGroups()];
 	}
 	CK MatrixDataPntr CreateSpareMatrix(const EnumeratorPntr pMaster) override;
-	CK void CreateAuxiliaryStructures(const EnumeratorPntr pMaster) override;
+	CK void CreateAuxiliaryStructures(EnumeratorPntr pMaster) override;
 	CK int compareEnumerationDB_record(const char* record) override;
 	CK void resetGroupOrder() override					{ m_pGroupOrder->setGroupOrder(1); }
 	CK void incGroupOrder() override					{ m_pGroupOrder->setGroupOrder(m_pGroupOrder->groupOrder() + 1); }

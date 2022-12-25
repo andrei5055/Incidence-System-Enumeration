@@ -153,7 +153,7 @@ void thread_message(int threadIdx, const char *pComment, t_threadCode code, void
 #endif
 
 template<typename T, typename S>
-void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, const EnumeratorPntr pMaster)
+void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, EnumeratorPntr pMaster)
 {
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
@@ -223,7 +223,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 }
 #endif
 
-FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, const EnumeratorPntr pMaster, t_threadCode* pTreadCode)
+FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	setDesignParams(pParam);
 	const auto* pInpMaster = pMaster;

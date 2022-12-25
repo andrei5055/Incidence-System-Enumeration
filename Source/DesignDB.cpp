@@ -67,14 +67,12 @@ bool CDesignDB::reallocateMemory() {
 	return true;
 }
 
-void CDesignDB::mergeDesignDB(const CDesignDB* pDB) {
-	for (size_t i = 0; i < pDB->recNumb(); i++) {
-		auto *pRec = (const masterInfo*)pDB->getRecord(i);
-		AddRecord((unsigned char*)pRec + LEN_HEADER, pRec->groupOrder, pRec->numbDecomp);
-	}
-}
+void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag) {
+	// When complFlag == false this function will merge the two design DBs, otherwise,
+	// it will pick designs from the first DB that don't exist in the second one.
+	if (complFlag && pDB_A->recNumb() == pDB_B->recNumb())
+		return;
 
-void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 	const auto len = recordLength() - LEN_HEADER;
 	size_t ind_A = 0, ind_B = 0;
 	const auto* perm_A = pDB_A->getPermut();
@@ -88,7 +86,7 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 				pDB_A = pDB_B;
 				ind_A = ind_B;
 				if (state & 2)
-					pRec_A = ind_A < pDB_B->recNumb() ? (const unsigned char*)(pDB_A)->getRecord(perm_A[ind_A++]) : NULL;
+					pRec_A = ind_A < pDB_B->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
 				else
 					pRec_A = pRec_B;
 				break;
@@ -104,6 +102,18 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 			pRec_B = (const unsigned char*)pDB_B->getRecord(perm_B[ind_B++]);
 		}
 
+		const auto cmpResult = memcmp(pRec_A + LEN_HEADER, pRec_B + LEN_HEADER, len);
+		if (complFlag) {
+			if (!cmpResult) {
+				state = 3;
+				continue;
+			}
+
+			// Since our databases store records in ascending order, an entry from
+			// the second database cannot be less than an entry from the first one.
+			assert(cmpResult < 0);
+		}
+
 		if (m_nRecNumb == m_nRecNumbMax) {
 			// All previously allocated memory were used - need to reallocate
 			reallocateMemory();
@@ -111,7 +121,6 @@ void CDesignDB::mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B) {
 		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
 		getPermut()[m_nRecNumb] = m_nRecNumb;
 		m_nRecNumb++;
-		const auto cmpResult = memcmp(pRec_A + LEN_HEADER, pRec_B + LEN_HEADER, len);
 		if (cmpResult <= 0) {
 			memcpy(pntr, pRec_A, recordLength());
 			if (!cmpResult) {

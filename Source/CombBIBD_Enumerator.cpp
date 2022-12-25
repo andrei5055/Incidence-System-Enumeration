@@ -166,7 +166,7 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 	return pGroupOnParts;
 }
 
-FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
+FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pMaster) {
 	if (m_pCanonChecker ||							// canonicity checker was already constructed
 		!designParams()->find_master_design ||      // no need to find master design OR
 		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
@@ -175,7 +175,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorP
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb() - 1;
 	auto pCombBIBD_master = static_cast<const CCombBIBD_Enumerator*>(pMaster);
-	setMaster((CCombBIBD_Enumerator *)pCombBIBD_master);
+	setMaster(pMaster);
 	if (pMaster) {
 		m_pColumnPermut = (T*)pCombBIBD_master->columnPermut();
 		if (m_pColumnPermut)

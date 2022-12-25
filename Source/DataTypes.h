@@ -581,7 +581,7 @@ public:
 	inline auto lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 	inline void setDesignDB(CDesignDB* pntr)	{ m_pDesignDB = pntr; }
-	inline CDesignDB *setDesignDB() const		{ return m_pDesignDB; }
+	inline CDesignDB *designDB() const			{ return m_pDesignDB; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()

@@ -11,7 +11,7 @@ public:
 	CK CThreadEnumerator()							{ reset(); }
 	CK ~CThreadEnumerator()							{ release(); }
 	CK void setupThreadForBIBD(const EnumeratorPntr pMaster, size_t nRow, int threadIdx);
-	void EnumerateBIBD(designParam *pParam, const EnumeratorPntr pMaster);
+	void EnumerateBIBD(designParam *pParam, EnumeratorPntr pMaster);
 	CK inline t_threadCode code() const				{ return m_code; }
 	CK inline EnumeratorPntr enumerator() const		{ return m_pEnum; }
 	CK inline EnumInfoPntr enumInfo() const			{ return enumerator()? enumerator()->enumInfo() : NULL; }
@@ -92,7 +92,7 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 	setCode(t_threadUndefined);
 }
 
-FClass2(CThreadEnumerator, void)::EnumerateBIBD(designParam *pParam, const EnumeratorPntr pMaster) {
+FClass2(CThreadEnumerator, void)::EnumerateBIBD(designParam *pParam, EnumeratorPntr pMaster) {
 	thread_message(threadID(), "threadEnumerate START", code(), m_pEnum);
 	m_pEnum->Enumerate(pParam, false, m_pEnum->enumInfo(), pMaster, &m_code);
 	thread_message(threadID(), "threadEnumerate DONE", code());

@@ -118,9 +118,9 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 			num = 10 * num + symb;
 		}
 
-		auto iStruct = param->InterStruct();
+		auto lambdaSet = param->InterStruct()->lambdaPtr();
 		if (j == 2) {
-			iStruct->lambdaPtr()->push_back(num);
+			lambdaSet->push_back(num);
 			if (symb == '}')
 				return true;
 
@@ -129,7 +129,7 @@ static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_
 
 		if (j++ == 2) {
 			if (BIBD_flag) {
-				iStruct->lambdaPtr()->push_back(num);
+				lambdaSet->push_back(num);
 				return true;
 			}
 
@@ -269,7 +269,17 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 
 	delete pInSys;
 	if (pParam->find_all_2_decomp) {
-		pParam->setDesignDB(pInSysEnum->designDB());
+		auto* pDesignDB = pInSysEnum->designDB();
+		if (pParam->find_master_design) {
+			// Compare two databases with BIBDs and make output
+			// of the designs which are NOT in second database.
+			CDesignDB complementDB(pDesignDB->recordLength());
+			complementDB.combineDesignDBs(pParam->designDB(), pDesignDB, true);
+			delete pDesignDB;
+		}
+		else
+			pParam->setDesignDB(pDesignDB);
+
 		pInSysEnum->setDesignDB(NULL);
 	}
 
@@ -365,7 +375,7 @@ int main(int argc, char * argv[])
 	designParam *param = new designParam();
 	param->threadNumb = USE_THREADS;
 	param->noReplicatedBlocks = false;
-
+	auto lambdaSet = param->InterStruct()->lambdaPtr();
 
 	// By default, we enumerating BIBDs 
 	t_parsingStage stage = t_objectTypeStage;
@@ -603,7 +613,7 @@ int main(int argc, char * argv[])
 
 		param->outType = outType;
 		param->t = 2;
-		param->InterStruct()->lambdaPtr()->resize(0);
+		lambdaSet->resize(0);
 		size_t from = -1;
 		bool BIBD_flag = false;
 		switch (objType) {
@@ -645,15 +655,28 @@ int main(int argc, char * argv[])
 				param->use_master_sol = 0;
 			}
 			else {
-				param->find_master_design = 0;   // This option for CombBIBD only
+				param->find_master_design = 0;   // This option for CombBIBDs only
 				if (objType == t_objectType::t_BIBD)
 					param->find_all_2_decomp = find_all_2_decomp;
 			}
 
-			if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
-				break;
+			const auto baseLambda = param->lambda()[0];
+			const auto iMax = param->find_all_2_decomp ? baseLambda >> 1 : 0;
+			for (uint i = 0; i <= iMax; i++) {
+				if (i) {
+					// For all 2-part decomposition search only
+					param->objType = t_objectType::t_CombinedBIBD;
+					param->find_master_design = 1;
+					lambdaSet->resize(0);
+					lambdaSet->push_back(i);
+					lambdaSet->push_back(baseLambda - i);
+				}
+				if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
+					break;
+			}
 
 			param->use_master_sol = use_master_sol;
+			delete param->designDB();
 			param->find_master_design = find_master_design;
 		}
 

@@ -26,8 +26,7 @@ public:
 	}
 	size_t AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
 	void SortRecods(FILE* file = NULL);
-	void mergeDesignDB(const CDesignDB* pDB);
-	void mergeDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B);
+	void combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag = false);
 	inline auto recNumb() const					{ return m_nRecNumb; }
 	inline size_t* getPermut() const			{ return m_pRecPermutation; }
 private:

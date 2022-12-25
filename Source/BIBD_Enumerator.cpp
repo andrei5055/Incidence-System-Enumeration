@@ -138,9 +138,11 @@ FClass2(CBIBD_Enumerator, void)::CreateForcedRows() {
 		initDesignDB(NULL);
 }
 
-FClass2(CBIBD_Enumerator, void)::CreateAuxiliaryStructures(const EnumeratorPntr pMaster) {
-	if (pMaster && designParams()->find_all_2_decomp)
+FClass2(CBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pMaster) {
+	if (pMaster && designParams()->find_all_2_decomp) {
+		setMaster(pMaster);
 		initDesignDB(pMaster);
+	}
 }
 
 FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size_t rowAdj) {

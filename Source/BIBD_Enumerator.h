@@ -40,7 +40,7 @@ protected:
 		{ return SNPRINTF(buffer, lenBuffer, pFrmt, lambda()); }
 	int addLambdaInform(const Class1(CVector)* lambdaSet, char* buffer, size_t lenBuffer, size_t *pLambdaSetSize) const;
 	CK void CreateForcedRows() override;
-	CK void CreateAuxiliaryStructures(const EnumeratorPntr pMaster) override;
+	CK void CreateAuxiliaryStructures(EnumeratorPntr pMaster) override;
 	CK virtual void setFirstUnforcedRow(T rowNum = 0)				{}
 	CK virtual void resetFirstUnforcedRow()							{}
 	CK inline void setR(S val)										{ m_r = val; }
