@@ -19,6 +19,8 @@ public:
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 	CK bool outNonCombinedDesigns(const CDesignDB& designDB, designParam* pParam);
+	CK bool outNonCombinedDesigns(designParam* pParam, const char* pOutputInfo);
+
 #endif
 protected:
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);

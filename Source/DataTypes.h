@@ -169,6 +169,7 @@ extern std::mutex out_mutex;
 #define FILE_NAME(x)			x".txt"
 #define CURRENT_RESULTS			"_dbl"
 #define INTERMEDIATE_RESULTS	"_tmp"
+#define END_OF_FILE				"EOF"
 
 #ifdef WIN
 	#define OPEN_FILE(x, y, z)	 fopen_s(&x, y, z)
@@ -590,4 +591,6 @@ private:
 	CDesignDB* m_pDesignDB = NULL;
 };
 
+template <typename T, typename S>
+bool RunOperation(designParam* pParam, const char* pSummaryFileName, bool FirstPath, char* pBuffer = NULL, size_t lenBuffer = 0);
 #define VAR_1		1

@@ -1,4 +1,7 @@
+#include <fstream>      // std::ifstream
 #include "BIBD_Enumerator.h"
+
+using namespace std;
 
 template class CBIBD_Enumerator<TDATA_TYPES>;
 
@@ -227,8 +230,6 @@ FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet
 	return len + SNPRINTF(buf + len, lenBuffer - len, "}");
 }
 
-#include <fstream>      // std::ifstream
-using namespace std;
 int validLastLine(const char *filename, const char *testLine)
 {
 	ifstream fin;
@@ -271,7 +272,7 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 		return true;
 
 	if (designParams()->logFile.empty())
-		return validLastLine(pFileName, "testLine");
+		return validLastLine(pFileName, END_OF_FILE);
 
 	return designParams()->logFile != pFileName;
 }
@@ -286,9 +287,22 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(const CDesignDB& designDB
 
 	const auto& lambda = pParam->InterStruct()->lambda();
 	fprintf(outFile(), "Found %zd BIBDs, which could not be represented as combined with lambdas = {%d, %d)\n", designDB.recNumb(), lambda[0], lambda[1]);
-	fprintf(outFile(), "%s\n", "testLine");
+	fprintf(outFile(), "%s\n", END_OF_FILE);
 	fclose(outFile());
 	return true;
 }
 
+FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const char *pOutputInfo) {
+	pParam->objType = t_objectType::t_BIBD;
+	setDesignParams(pParam);
+	const auto flag = setOutputFile();
+	pParam->objType = t_objectType::t_CombinedBIBD;
+	if (!flag)
+		return false;
+
+	fprintf(outFile(), pOutputInfo);
+	fprintf(outFile(), "\n%s\n", END_OF_FILE);
+	fclose(outFile());
+	return true;
+}
 #endif

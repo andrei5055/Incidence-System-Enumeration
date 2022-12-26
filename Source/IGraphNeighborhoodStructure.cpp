@@ -36,9 +36,6 @@ static bool isPrime(int k) {
 	return k == primeNumb[i];
 }
 
-template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath);
-
 bool IntersectionArrayIsValid(int nVertex, int k, const int *pVal, const int *pMult, int iMax, int *pUsedFlags) {
 	const bool doubleFlag = pMult[iMax] == k && pVal[iMax];
 	const int a = doubleFlag? pVal[iMax] + 1 : 1;

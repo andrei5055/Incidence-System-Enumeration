@@ -172,7 +172,15 @@ static bool getTParam(const string &paramText, designParam *param)
 }
 
 template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath)
+void output_2_decompInfo(designParam * param, const char* pBuffer) {
+	const auto& lambda = param->InterStruct()->lambda();
+	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
+	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
+	bibdEnum.outNonCombinedDesigns(param, pBuffer);
+}
+
+template <typename T, typename S>
+bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath, char *pBuffer, size_t lenBuffer)
 {
 	if (pParam->v <= 0) {
 		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
@@ -236,6 +244,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	char buff[256] = {}, buffer[256] = {};
 	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
 	cout << buff;
+
 	Class2(CInsSysEnumInfo) enumInfo(buff);
 	enumInfo.setDesignInfo(pParam);
 	if (FirstPath) {
@@ -276,15 +285,13 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 			CDesignDB complementDB(pDesignDB->recordLength());
 			complementDB.combineDesignDBs(pParam->designDB(), pDesignDB, true);
 			delete pDesignDB;
-			if (complementDB.recNumb()) {
-				// There is at least one non-combined BIBD.
-				Class2(C_BIBD) bibd(pParam->v, pParam->k, 2, lambda[0] + lambda[1]);
-				Class2(CBIBD_Enumerator) bibdEnum(&bibd, enumFlags);
-				bibdEnum.outNonCombinedDesigns(complementDB, pParam);
-			}
+			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], complementDB.recNumb());
 		}
-		else
+		else {
 			pParam->setDesignDB(pDesignDB);
+			if (pBuffer)
+				sprintf_s(pBuffer, lenBuffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
+		}
 
 		pInSysEnum->setDesignDB(NULL);
 	}
@@ -668,6 +675,8 @@ int main(int argc, char * argv[])
 
 			const auto baseLambda = param->lambda()[0];
 			const auto iMax = param->find_all_2_decomp ? baseLambda >> 1 : 0;
+			char buffer[256];
+			size_t used = 0;
 			for (uint i = 0; i <= iMax; i++) {
 				if (i) {
 					// For all 2-part decomposition search only
@@ -676,14 +685,19 @@ int main(int argc, char * argv[])
 					lambdaSet->resize(0);
 					lambdaSet->push_back(i);
 					lambdaSet->push_back(baseLambda - i);
+					used = strlen(buffer);
 				}
-				if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun))
+				if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun, buffer + used, countof(buffer) - used))
 					break;
 			}
+
+			if (param->find_all_2_decomp)
+				output_2_decompInfo<TDATA_TYPES>(param, buffer);
 
 			param->use_master_sol = use_master_sol;
 			delete param->designDB();
 			param->find_master_design = find_master_design;
+			param->logFile = "";
 		}
 
 		firstRun = false;
