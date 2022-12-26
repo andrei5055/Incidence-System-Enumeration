@@ -118,9 +118,9 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 			// All previously allocated memory were used - need to reallocate
 			reallocateMemory();
 		}
+
 		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
-		getPermut()[m_nRecNumb] = m_nRecNumb;
-		m_nRecNumb++;
+		getPermut()[m_nRecNumb++] = m_nRecNumb;
 		if (cmpResult <= 0) {
 			memcpy(pntr, pRec_A, recordLength());
 			if (!cmpResult) {
@@ -144,8 +144,7 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 		}
 
 		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
-		getPermut()[m_nRecNumb] = m_nRecNumb;
-		m_nRecNumb++;
+		getPermut()[m_nRecNumb++] = m_nRecNumb;
 		memcpy(pntr, pRec_A, recordLength());
 		pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
 	}

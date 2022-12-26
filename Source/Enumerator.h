@@ -143,9 +143,13 @@ protected:
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
+	CK virtual bool outFileIsValid(const struct stat& info, const char* pFileName=NULL) const { return info.st_size > outFileValidSize(); }
+	size_t outFileValidSize() const							{ return 50; }
 #if USE_MUTEX
 	CK void setMaster(CEnumerator* pntr)					{ m_pMaster = pntr; }
 	CK auto master() const									{ return m_pMaster; }
+	CK bool setOutputFile(size_t* pLenName = NULL);
+
 #else
 #define setMaster(x)
 #endif
@@ -230,6 +234,7 @@ FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int 
 	Class2(CMatrixCanonChecker)(pMatrix, enumFlags) {
 	const auto numParts = this->numParts();
 	m_pRow = new RowSolutionPntr[numParts * pMatrix->rowNumb()];
+	m_pRow[0] = NULL;
 	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[numParts];
 	m_pFirstColOrb = new ColOrbPntr[numParts];
 	setRowEquation(NULL);

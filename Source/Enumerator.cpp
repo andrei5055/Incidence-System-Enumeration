@@ -56,7 +56,13 @@ std::mutex CEnumerator<TDATA_TYPES>::m_mutexDB;
 FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 {
 	struct stat info;
-	return (stat(path, &info) == 0) && (file || info.st_mode & S_IFDIR);
+	if (stat(path, &info))
+		return false;
+
+	if (!file)
+		return info.st_mode & S_IFDIR;
+
+	return outFileIsValid(info, path);
 }
 
 FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
@@ -236,32 +242,15 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const int mt_level = threadNumb >= 1? pParam->mt_level : INT_MAX;
 
 	size_t lenName = 0;
-	bool knownResults = false;
 	if (writeFile) {
 		// We will be here only for the master
 		pParam->firstMatr = true;
 		if (!makeJobTitle(pParam, jobTitle, countof(jobTitle), "\n"))
 			return false;
 
-		// Construct the file name of the file with the enumeration results
-		if (!getMasterFileName(buff, lenBuffer, &lenName))
+		if (!setOutputFile(&lenName))
 			return false;
 
-		// The results are known, if the file with the enumeration results exists
-		knownResults = fileExists(buff);
-		if (knownResults)
-			strcpy_s(buff + lenName, lenBuffer - lenName, FILE_NAME(CURRENT_RESULTS));
-		else
-			lenName = 0;
-
-		// Create a new file for output of the enumeration results
-		const auto newFile = this->createNewFile(buff);
-		const auto seekFile = !newFile && SeekLogFile() ? long(designParams()->rewindLen) : 0;
-		FOPEN(file, buff, newFile ? "w" : (seekFile ? "r+t" : "a"));
-		if (seekFile)  // Previously written end of the log file needs to be removed
-			fseek(file, -seekFile, SEEK_END);
-
-		this->setOutFile(file);
 		outString(jobTitle, this->outFile());
 	} else
 		this->setOutFile(NULL);
@@ -771,20 +760,22 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
 			// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
 			if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
-				// Create the file name with the current results 
-				strcpy_s(jobTitle, countof(jobTitle), buff);
-				strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
+				resType = t_resType::t_resWorse;
+				pParam->betterResults = betterResults;
+				if (pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
+					// Create the name of the file with the current results
+					strcpy_s(jobTitle, countof(jobTitle), buff);
+					strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
 
-				if (betterResults) {
-					remove(buff);			// Remove file with previous results
-					rename(jobTitle, buff);	// Rename file
-					resType = t_resType::t_resBetter;
-				}
-				else {
-					if (pParam->firstMatr)
-						remove(jobTitle);	// Deleting new file only when it does not contain matrices and 
-
-					resType = t_resType::t_resWorse;
+					if (betterResults) {
+						remove(buff);			// Remove file with previous results
+						rename(jobTitle, buff);	// Rename file
+						resType = t_resType::t_resBetter;
+					}
+					else {
+						if (pParam->firstMatr)
+							remove(jobTitle);	// Deleting new file only when it does not contain matrices
+					}
 				}
 			}
 			else
@@ -969,6 +960,42 @@ FClass2(CEnumerator, bool)::getMasterFileName(char *buffer, size_t lenBuffer, si
 
 	// Create file name for the output of final enumeration results
 	strcpy_s(buffer + *pLenName, lenBuffer - *pLenName, FILE_NAME(""));
+	return true;
+}
+
+FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
+	char buff[256];
+	const auto lenBuffer = countof(buff);
+	size_t lenName;
+	if (!pLenName)
+		pLenName = &lenName;
+
+	// Construct the file name of the file with the enumeration results
+	if (!getMasterFileName(buff, lenBuffer, pLenName))
+		return false;
+
+	// The results are known, if the file with the enumeration results exists
+	bool knownResults = fileExists(buff);
+	if (knownResults)
+		strcpy_s(buff + *pLenName, lenBuffer - *pLenName, FILE_NAME(CURRENT_RESULTS));
+	else
+		*pLenName = 0;
+
+	// Create a new file for output of the enumeration results
+	const auto newFile = this->createNewFile(buff);
+	const auto seekFile = !newFile && SeekLogFile() ? long(designParams()->rewindLen) : 0;
+	FOPEN(file, buff, newFile ? "w" : (seekFile ? "r+t" : "a"));
+	if (seekFile)  // Previously written end of the log file needs to be removed
+		fseek(file, -seekFile, SEEK_END);
+
+	this->setOutFile(file);
+	if (designParams()->find_all_2_decomp && designParams()->objType == t_objectType::t_BIBD) {
+		if (designParams()->logFile.empty()) {
+			// Save the name of the output file, we will need it to add decomposition information.
+			designParams()->logFile = buff;
+		}
+	}
+
 	return true;
 }
 

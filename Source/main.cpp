@@ -276,6 +276,12 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 			CDesignDB complementDB(pDesignDB->recordLength());
 			complementDB.combineDesignDBs(pParam->designDB(), pDesignDB, true);
 			delete pDesignDB;
+			if (complementDB.recNumb()) {
+				// There is at least one non-combined BIBD.
+				Class2(C_BIBD) bibd(pParam->v, pParam->k, 2, lambda[0] + lambda[1]);
+				Class2(CBIBD_Enumerator) bibdEnum(&bibd, enumFlags);
+				bibdEnum.outNonCombinedDesigns(complementDB, pParam);
+			}
 		}
 		else
 			pParam->setDesignDB(pDesignDB);

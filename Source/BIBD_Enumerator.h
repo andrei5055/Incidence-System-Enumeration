@@ -18,6 +18,7 @@ public:
 
 #if !CONSTR_ON_GPU
 	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
+	CK bool outNonCombinedDesigns(const CDesignDB& designDB, designParam* pParam);
 #endif
 protected:
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
@@ -50,13 +51,15 @@ protected:
 	CK virtual bool outputMaster() const							{ return false; }
 	CK void ConstructedDesignProcessing() const override			{ AddMatrixToDB(this); }
 	CK void AddMatrixToDB(const CMatrixCanonChecker* pCanonChecker, int rowAdj = 0) const;
+	CK bool createNewFile(const char* fName) const override			{ return designParams()->designDB() == NULL; }
+	CK  bool outFileIsValid(const struct stat& info, const char* pFileName=NULL) const override;
 
 private:
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const;
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
-	virtual const char *getTopLevelDirName() const					 { return "BIBDs"; }
+	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp? "Non-Combined_BIBDs" : "BIBDs"; }
 	CK bool sharedDB() const										 { return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
 
 	S m_r;

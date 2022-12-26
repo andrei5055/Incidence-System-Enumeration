@@ -572,8 +572,9 @@ public:
 	int find_all_2_decomp = 0;      // Find all decompositions of the BIBDs into 2 components
 	bool firstMatr = true;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed
+	bool betterResults = false;		//
 	std::string workingDir = "";	// Current working directory name
-	std::string logFile = "";		//
+	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
 	const auto &lambda() const					{ return m_pInterStruct->lambda(); }
 	const auto &lambdaA() const					{ return m_pInterStruct->lambdaA(); }
@@ -586,7 +587,7 @@ private:
 	CInterStruct *m_pInterStruct = NULL;
 	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
 									// (will be used for formated output)
-	CDesignDB* m_pDesignDB;
+	CDesignDB* m_pDesignDB = NULL;
 };
 
 #define VAR_1		1

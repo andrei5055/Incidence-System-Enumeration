@@ -67,7 +67,7 @@ private:
 	ColOrbPntr *m_ppOrb;
 	ColOrbPntr **m_ppColOrbIni;
 	size_t m_nColOrbLen;
-	S m_nRowMaster;
+	S m_nRowMaster = 0;
 	bool m_IS_enumerator;
 	int m_Memoryidx = -1;      // when >= 0, it's index where allocated memory is stored
 };

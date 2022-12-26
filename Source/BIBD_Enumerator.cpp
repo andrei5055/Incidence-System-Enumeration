@@ -226,4 +226,69 @@ FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet
 
 	return len + SNPRINTF(buf + len, lenBuffer - len, "}");
 }
+
+#include <fstream>      // std::ifstream
+using namespace std;
+int validLastLine(const char *filename, const char *testLine)
+{
+	ifstream fin;
+	fin.open(filename);
+	if (!fin.is_open())
+		return -1;
+
+	fin.seekg(-1, ios_base::end);                // go to one spot before the EOF
+	bool flag = false;
+	while (true) {
+		char ch;
+		fin.get(ch);                            // Get current byte's data
+
+		if ((int)fin.tellg() <= 1) {            // If the data was at or before the 0th byte
+			fin.seekg(0);                       // The first line is the last line
+			break;
+		}
+
+		if (ch == '\n') {						// If the data was a newline
+			if (flag)
+				break;
+		}
+		else
+			flag = true;						// first non-end line symbol found
+
+		fin.seekg(-3, ios_base::cur);			// Move to the front of that data, then to the front of the data before it
+	}
+
+	char lastLine[256];
+	fin.getline(lastLine, countof(lastLine));   // Read the current line
+	fin.close();
+	return strstr(lastLine, testLine)? 1 : 0;
+}
+
+FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const char *pFileName) const {
+	if (!CEnumerator::outFileIsValid(info))
+		return false;
+
+	if (designParams()->objType != t_objectType::t_BIBD || !designParams()->find_all_2_decomp)
+		return true;
+
+	if (designParams()->logFile.empty())
+		return validLastLine(pFileName, "testLine");
+
+	return designParams()->logFile != pFileName;
+}
+
+FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(const CDesignDB& designDB, designParam* pParam) {
+	pParam->objType = t_objectType::t_BIBD;
+	setDesignParams(pParam);
+	const auto flag = setOutputFile();
+	pParam->objType = t_objectType::t_CombinedBIBD;
+	if (!flag)
+		return false;
+
+	const auto& lambda = pParam->InterStruct()->lambda();
+	fprintf(outFile(), "Found %zd BIBDs, which could not be represented as combined with lambdas = {%d, %d)\n", designDB.recNumb(), lambda[0], lambda[1]);
+	fprintf(outFile(), "%s\n", "testLine");
+	fclose(outFile());
+	return true;
+}
+
 #endif
