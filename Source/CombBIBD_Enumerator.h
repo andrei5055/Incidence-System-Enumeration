@@ -21,6 +21,7 @@ protected:
 	CK void CreateForcedRows() override;
 	CK T firtstNonfixedRowNumber() const override		{ return 3; }
 	CC T lenStabilizer() const override					{ return 1; }
+	CK bool createNewFile(const char* fName) const override   { return true; } // To overrite method for regular BIBDs
 	CK VectorPntr paramSet(t_numbSetType idx) const override { 
 		return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); 
 	}

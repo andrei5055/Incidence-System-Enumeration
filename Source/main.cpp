@@ -484,6 +484,8 @@ int main(int argc, char * argv[])
 			continue;
 		}
 
+#if WAIT_THREADS
+		// the option USE_MASTER_SOLUTIONS coud be used only when master waits for all threads finish on rowMaster() level
 		pos = find(line, "USE_MASTER_SOLUTIONS");
 		if (pos != string::npos) {
 			// When 1, the solutions obtained by master will be used in the threads
@@ -497,7 +499,7 @@ int main(int argc, char * argv[])
 			param->use_master_sol = use_master_sol;
 			continue;
 		}
-
+#endif
 		pos = find(line, "FIND_MASTER_BIBD");
 		if (pos != string::npos) {
 			// When 1, the parts of Combined BIBD will be merged and canonical BIBD will be constructed
@@ -705,6 +707,7 @@ int main(int argc, char * argv[])
 					// For all 2-part decomposition search only
 					param->objType = t_objectType::t_CombinedBIBD;
 					param->find_master_design = 1;
+					param->use_master_sol = 0;
 					lambdaSet->resize(0);
 					lambdaSet->push_back(i * lambda);
 					lambdaSet->push_back(baseLambda - i * lambda);
