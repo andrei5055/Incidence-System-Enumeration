@@ -172,11 +172,11 @@ static bool getTParam(const string &paramText, designParam *param)
 }
 
 template <typename T, typename S>
-void output_2_decompInfo(designParam * param, const char* pBuffer) {
+void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const char* pBuffer = NULL) {
 	const auto& lambda = param->InterStruct()->lambda();
 	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
 	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
-	bibdEnum.outNonCombinedDesigns(param, pBuffer);
+	bibdEnum.outNonCombinedDesigns(param, pDesignDB, pBuffer);
 }
 
 template <typename T, typename S>
@@ -285,6 +285,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 			CDesignDB complementDB(pDesignDB->recordLength());
 			complementDB.combineDesignDBs(pParam->designDB(), pDesignDB, true);
 			delete pDesignDB;
+			output_2_decompInfo<TDATA_TYPES>(pParam, &complementDB);
 			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], complementDB.recNumb());
 		}
 		else {
@@ -718,7 +719,7 @@ int main(int argc, char * argv[])
 			}
 
 			if (param->find_all_2_decomp)
-				output_2_decompInfo<TDATA_TYPES>(param, buffer);
+				output_2_decompInfo<TDATA_TYPES>(param, NULL, buffer);
 
 			param->use_master_sol = use_master_sol;
 			delete param->designDB();

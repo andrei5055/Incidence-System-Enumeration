@@ -158,17 +158,15 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 
 FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(const CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
 	auto* pMatr = pCanonChecker->matrix();
-	const auto b = pMatr->colNumb();
-	const auto v = pMatr->rowNumb() - rowAdj;
 #if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.lock();
 #endif
 	// No need to keep first two rows, they are the same for all master BIBDs
-	const auto idx = designDB()->AddRecord(pMatr->GetDataPntr() + 2 * b, pCanonChecker->groupOrder());
+	const auto idx = designDB()->AddRecord(pMatr->GetRow(2), pCanonChecker->groupOrder());
 	if (outputMaster()) {
 		outBlockTitle();
-		pMatr->printOut(this->outFile(), v, matrix()->getMatrixCounter() + 1, pCanonChecker, idx + 1);
+		pMatr->printOut(this->outFile(), pMatr->rowNumb() - rowAdj, matrix()->getMatrixCounter() + 1, pCanonChecker, idx + 1);
 	}
 #if USE_MUTEX
 	if (sharedDB())
@@ -218,7 +216,7 @@ FClass2(CBIBD_Enumerator, int)::addLambdaInform(const Class1(CVector) *lambdaSet
 {
 	const auto lambdaNumb = lambdaSet->GetSize();
 	if (pLambdaSetSize)
-		*pLambdaSetSize = static_cast<int>(lambdaNumb);
+		*pLambdaSetSize = lambdaNumb;
 
 	const auto* pFrmt = "{%2d";
 	int len = 0;
@@ -277,7 +275,10 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 	return designParams()->logFile != pFileName;
 }
 
-FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(const CDesignDB& designDB, designParam* pParam) {
+FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, const char* pOutputInfo) {
+	if (pDesignDB && !pDesignDB->recNumb())
+		return true;
+
 	pParam->objType = t_objectType::t_BIBD;
 	setDesignParams(pParam);
 	const auto flag = setOutputFile();
@@ -285,24 +286,35 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(const CDesignDB& designDB
 	if (!flag)
 		return false;
 
-	const auto& lambda = pParam->InterStruct()->lambda();
-	fprintf(outFile(), "Found %zd BIBDs, which could not be represented as combined with lambdas = {%d, %d)\n", designDB.recNumb(), lambda[0], lambda[1]);
-	fprintf(outFile(), "%s\n", END_OF_FILE);
+	if (pDesignDB) {
+		const auto& lambdaSet = pParam->InterStruct()->lambda();
+		const auto v = matrix()->rowNumb();
+		const auto b = matrix()->colNumb();
+		const size_t r = getR();
+
+		const size_t length[] = { b, r, lambda(), r - lambda() };
+		auto* pntr = matrix()->GetRow(0);
+		memset(pntr + getR(), 0, (2 * b - r) * sizeof(*pntr));
+		for (int j = 1; j <= 3; j++) {
+			for (auto i = length[j]; i--;)
+				*(pntr + i) = 1;
+			pntr += length[j - 1];
+		}
+
+		pntr = matrix()->GetRow(2);
+		const auto len = pDesignDB->recordLength() - LEN_HEADER;
+		for (size_t i = 0; i < pDesignDB->recNumb(); i++) {
+			const auto rec = (uchar *)pDesignDB->getRecord(i);
+			memcpy(pntr, rec + LEN_HEADER, len);
+			setGroupOrder(((const masterInfo*)rec)->groupOrder);
+			matrix()->printOut(outFile(), v, i, this);
+		}
+
+	} else
+		fprintf(outFile(), "\n\n%s\n%s\n", pOutputInfo, END_OF_FILE);
+
 	fclose(outFile());
 	return true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const char *pOutputInfo) {
-	pParam->objType = t_objectType::t_BIBD;
-	setDesignParams(pParam);
-	const auto flag = setOutputFile();
-	pParam->objType = t_objectType::t_CombinedBIBD;
-	if (!flag)
-		return false;
-
-	fprintf(outFile(), pOutputInfo);
-	fprintf(outFile(), "\n%s\n", END_OF_FILE);
-	fclose(outFile());
-	return true;
-}
 #endif

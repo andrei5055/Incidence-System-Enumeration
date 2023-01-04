@@ -10,9 +10,9 @@ public:
 	~CSorter()										{ setRecordStorage(); releaseIndices(); }
 
 	inline size_t recordLength() const				{ return m_nRecLen; }
+	const T* getRecord(size_t idx) const			{ return firstRecord() + idx * recordLength(); }
 protected:
 	size_t *Sort(size_t nElementst, size_t* arr = NULL);
-	const T *getRecord(size_t idx) const			{ return firstRecord() + idx * recordLength(); }
 	inline const T *firstRecord() const				{ return m_pRecStorage; }
 	inline void setRecordLength(size_t len)			{ m_nRecLen = len; }
 	inline void setRecordStorage(const T *pntr = NULL)	{ if (m_bStorageOwner) delete[] m_pRecStorage;
