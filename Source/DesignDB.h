@@ -3,10 +3,12 @@
 #include "Sorter.h"
 
 #define STARTING_DB_VOLUME	100
-typedef struct {
+struct masterInfo {
 	size_t numbDecomp;
 	size_t groupOrder;
-} masterInfo;
+	inline void setDesignNumber(size_t number)	{ numbDecomp = number; }
+	inline size_t designNumber() const			{ return numbDecomp; }
+};
 
 #define LEN_HEADER			sizeof(masterInfo)
 

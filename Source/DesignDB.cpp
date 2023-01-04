@@ -127,8 +127,12 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 				((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pRec_B)->numbDecomp;
 				state = 3;
 			}
-			else
+			else {
+				if (complFlag)
+					((masterInfo*)pntr)->setDesignNumber(ind_A);
+
 				state = 1;
+			}
 		}
 		else {
 			memcpy(pntr, pRec_B, recordLength());

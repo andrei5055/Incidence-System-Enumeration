@@ -303,11 +303,14 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 
 		pntr = matrix()->GetRow(2);
 		const auto len = pDesignDB->recordLength() - LEN_HEADER;
-		for (size_t i = 0; i < pDesignDB->recNumb(); i++) {
-			const auto rec = (uchar *)pDesignDB->getRecord(i);
-			memcpy(pntr, rec + LEN_HEADER, len);
-			setGroupOrder(((const masterInfo*)rec)->groupOrder);
-			matrix()->printOut(outFile(), v, i, this);
+		const auto nBIBDs = pDesignDB->recNumb();
+		fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for lambdas={%d,%d}:\n",
+			nBIBDs, (nBIBDs > 1 ? "s" : ""), (nBIBDs > 1 ? "are" : "is"), lambdaSet[0], lambdaSet[1]);
+		for (size_t i = 0; i < nBIBDs; i++) {
+			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
+			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
+			setGroupOrder(rec->groupOrder);
+			matrix()->printOut(outFile(), v, i+1, this, rec->designNumber());
 		}
 
 	} else
