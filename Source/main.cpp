@@ -723,8 +723,10 @@ int main(int argc, char * argv[])
 			}
 
 			param->use_master_sol = use_master_sol;
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 2; i++) {
 				delete param->designDB(i);
+				param->setDesignDB(NULL, i);
+			}
 
 			param->find_master_design = find_master_design;
 			param->logFile = "";

@@ -334,8 +334,8 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 				// Calculate intersections with previously obtained DB of BIBDs
 				auto* pIntersectionDB = new CDesignDB(pDesignDB->recordLength());
 				pIntersectionDB->combineDesignDBs(pDB, pDesignDB, false, true);
-				delete pDB;
 				pParam->setDesignDB(pIntersectionDB, 1);
+				delete pDB;
 			}
 			delete pDesignDB;
 		}
