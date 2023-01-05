@@ -67,7 +67,7 @@ bool CDesignDB::reallocateMemory() {
 	return true;
 }
 
-void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag) {
+void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag, bool intersecFlag) {
 	// When complFlag == false this function will merge the two design DBs, otherwise,
 	// it will pick designs from the first DB that don't exist in the second one.
 	if (complFlag && pDB_A->recNumb() == pDB_B->recNumb())
@@ -113,6 +113,12 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 			// the second database cannot be less than an entry from the first one.
 			assert(cmpResult < 0);
 		}
+		else if (intersecFlag) {
+			if (cmpResult) {
+				state = cmpResult < 0 ? 1 : 2;
+				continue;
+			}
+		}
 
 		if (m_nRecNumb == m_nRecNumbMax) {
 			// All previously allocated memory were used - need to reallocate
@@ -124,7 +130,9 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 		if (cmpResult <= 0) {
 			memcpy(pntr, pRec_A, recordLength());
 			if (!cmpResult) {
-				((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pRec_B)->numbDecomp;
+				if (!intersecFlag)
+					((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pRec_B)->numbDecomp;
+
 				state = 3;
 			}
 			else {
@@ -140,17 +148,19 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 		}
 	}
 
-	// Copying remaining records
-	while (pRec_A) {
-		if (m_nRecNumb == m_nRecNumbMax) {
-			// All previously allocated memory were used - need to reallocate
-			reallocateMemory();
-		}
+	if (!intersecFlag) {
+		// Copying remaining records
+		while (pRec_A) {
+			if (m_nRecNumb == m_nRecNumbMax) {
+				// All previously allocated memory were used - need to reallocate
+				reallocateMemory();
+			}
 
-		auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
-		getPermut()[m_nRecNumb++] = m_nRecNumb;
-		memcpy(pntr, pRec_A, recordLength());
-		pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
+			auto* pntr = (unsigned char*)getRecord(m_nRecNumb);
+			getPermut()[m_nRecNumb++] = m_nRecNumb;
+			memcpy(pntr, pRec_A, recordLength());
+			pRec_A = ind_A < pDB_A->recNumb() ? (const unsigned char*)pDB_A->getRecord(perm_A[ind_A++]) : NULL;
+		}
 	}
 }
 

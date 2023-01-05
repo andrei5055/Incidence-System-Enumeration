@@ -282,11 +282,11 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 		if (pParam->find_master_design) {
 			// Compare two databases with BIBDs and make output
 			// of the designs which are NOT in second database.
-			CDesignDB complementDB(pDesignDB->recordLength());
-			complementDB.combineDesignDBs(pParam->designDB(), pDesignDB, true);
+			auto* pComplementDB = new CDesignDB(pDesignDB->recordLength());
+			pComplementDB->combineDesignDBs(pParam->designDB(), pDesignDB, true);
+			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], pComplementDB->recNumb());
 			delete pDesignDB;
-			output_2_decompInfo<TDATA_TYPES>(pParam, &complementDB);
-			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], complementDB.recNumb());
+			output_2_decompInfo<TDATA_TYPES>(pParam, pComplementDB);
 		}
 		else {
 			pParam->setDesignDB(pDesignDB);
@@ -718,11 +718,14 @@ int main(int argc, char * argv[])
 					break;
 			}
 
-			if (param->find_all_2_decomp)
-				output_2_decompInfo<TDATA_TYPES>(param, NULL, buffer);
+			if (param->find_all_2_decomp) {
+				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer);
+			}
 
 			param->use_master_sol = use_master_sol;
-			delete param->designDB();
+			for (int i = 0; i < 2; i++)
+				delete param->designDB(i);
+
 			param->find_master_design = find_master_design;
 			param->logFile = "";
 		}

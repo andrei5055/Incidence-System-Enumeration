@@ -582,13 +582,13 @@ public:
 	const auto &lambdaB() const					{ return m_pInterStruct->lambdaB(); }
 	inline auto lambdaSizeMax() const			{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
-	inline void setDesignDB(CDesignDB* pntr)	{ m_pDesignDB = pntr; }
-	inline CDesignDB *designDB() const			{ return m_pDesignDB; }
+	inline void setDesignDB(const CDesignDB* pntr, int idx = 0)	{ m_pDesignDB[idx] = pntr; }
+	inline const CDesignDB *designDB(int idx = 0) const			{ return m_pDesignDB[idx]; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
 									// (will be used for formated output)
-	CDesignDB* m_pDesignDB = NULL;
+	const CDesignDB* m_pDesignDB[2] = { NULL, NULL };
 };
 
 template <typename T, typename S>

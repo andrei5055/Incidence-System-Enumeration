@@ -276,8 +276,15 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 }
 
 FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, const char* pOutputInfo) {
-	if (pDesignDB && !pDesignDB->recNumb())
+	if (!pOutputInfo && !pDesignDB->recNumb()) {
+		auto* pDB = pParam->designDB(1);
+		if (pDB) {
+			delete pDesignDB;
+		} else
+			pParam->setDesignDB(pDesignDB, 1);
+
 		return true;
+	}
 
 	pParam->objType = t_objectType::t_BIBD;
 	setDesignParams(pParam);
@@ -286,33 +293,54 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 	if (!flag)
 		return false;
 
-	if (pDesignDB) {
+	const auto v = matrix()->rowNumb();
+	const auto b = matrix()->colNumb();
+	const size_t r = getR();
+	const size_t length[] = { b, r, lambda(), r - lambda() };
+	auto* pntr = matrix()->GetRow(0);
+	memset(pntr + getR(), 0, (2 * b - r) * sizeof(*pntr));
+	for (int j = 1; j <= 3; j++) {
+		for (auto i = length[j]; i--;)
+			*(pntr + i) = 1;
+
+		pntr += length[j - 1];
+	}
+
+	pntr = matrix()->GetRow(2);
+	const auto len = pDesignDB->recordLength() - LEN_HEADER;
+	const auto nBIBDs = pDesignDB->recNumb();
+	fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for ",
+		nBIBDs, (nBIBDs > 1 ? "s" : ""), (nBIBDs > 1 ? "are" : "is"));
+
+	if (!pOutputInfo) {
 		const auto& lambdaSet = pParam->InterStruct()->lambda();
-		const auto v = matrix()->rowNumb();
-		const auto b = matrix()->colNumb();
-		const size_t r = getR();
+		fprintf(outFile(), "lambdas = {%d,%d}:\n", lambdaSet[0], lambdaSet[1]);
+	}
+	else {
+		fprintf(outFile(), "any pair of lambdas\n");
+	}
 
-		const size_t length[] = { b, r, lambda(), r - lambda() };
-		auto* pntr = matrix()->GetRow(0);
-		memset(pntr + getR(), 0, (2 * b - r) * sizeof(*pntr));
-		for (int j = 1; j <= 3; j++) {
-			for (auto i = length[j]; i--;)
-				*(pntr + i) = 1;
-			pntr += length[j - 1];
+	for (size_t i = 0; i < nBIBDs; i++) {
+		const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
+		memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
+		setGroupOrder(rec->groupOrder);
+		matrix()->printOut(outFile(), v, i+1, this, rec->designNumber());
+	}
+
+	if (!pOutputInfo) {
+		auto* pDB = pParam->designDB(1);
+		if (pDB) {
+			if (pDB->recNumb()) {
+				// Calculate intersections with previously obtained DB of BIBDs
+				auto* pIntersectionDB = new CDesignDB(pDesignDB->recordLength());
+				pIntersectionDB->combineDesignDBs(pDB, pDesignDB, false, true);
+				delete pDB;
+				pParam->setDesignDB(pIntersectionDB, 1);
+			}
+			delete pDesignDB;
 		}
-
-		pntr = matrix()->GetRow(2);
-		const auto len = pDesignDB->recordLength() - LEN_HEADER;
-		const auto nBIBDs = pDesignDB->recNumb();
-		fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for lambdas={%d,%d}:\n",
-			nBIBDs, (nBIBDs > 1 ? "s" : ""), (nBIBDs > 1 ? "are" : "is"), lambdaSet[0], lambdaSet[1]);
-		for (size_t i = 0; i < nBIBDs; i++) {
-			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
-			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
-			setGroupOrder(rec->groupOrder);
-			matrix()->printOut(outFile(), v, i+1, this, rec->designNumber());
-		}
-
+		else
+			pParam->setDesignDB(pDesignDB, 1);
 	} else
 		fprintf(outFile(), "\n\n%s\n%s\n", pOutputInfo, END_OF_FILE);
 

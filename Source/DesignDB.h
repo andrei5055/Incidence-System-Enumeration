@@ -23,12 +23,11 @@ public:
 		setStorageOwner();
 		setRecordStorage(new unsigned char[recordLength() * m_nRecNumbMax]);
 	}
-	~CDesignDB() {
-		delete[] m_pRecPermutation;
-	}
+	~CDesignDB()								{ delete[] m_pRecPermutation; }
 	size_t AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp = 1);
 	void SortRecods(FILE* file = NULL);
-	void combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag = false);
+	void combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B, bool complFlag = false, bool intersecFlag = false);
+	inline void resetRecNumb()					{ m_nRecNumb = 0; }
 	inline auto recNumb() const					{ return m_nRecNumb; }
 	inline size_t* getPermut() const			{ return m_pRecPermutation; }
 private:
