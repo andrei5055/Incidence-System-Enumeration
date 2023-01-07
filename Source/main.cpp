@@ -245,24 +245,24 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
 	cout << buff;
 
-	Class2(CInsSysEnumInfo) enumInfo(buff);
-	enumInfo.setDesignInfo(pParam);
+	auto* pEnumInfo = new CInsSysEnumInfo<TDATA_TYPES>(buff);
+	pEnumInfo->setDesignInfo(pParam);
 	if (FirstPath) {
 		FOPEN(outFile, pSummFile, "w");
-		enumInfo.outEnumInformation(&outFile, false);
+		pEnumInfo->outEnumInformation(&outFile, false);
 		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
 	}
 
 	const bool resetMTlevel = pParam->mt_level == 0;
 	if (resetMTlevel) {
 		// The row number, on which the threads will be launched was not defined.
-		// Let's do it here by other parameters 
+		// Let's do it here by other parameters
 		pParam->mt_level = pInSysEnum->define_MT_level(pParam);
 	}
 
 	try {
-		if (pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, &enumInfo)) {
-			enumInfo.reportResult(buffer, countof(buffer));
+		if (pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, pEnumInfo)) {
+			pEnumInfo->reportResult(buffer, countof(buffer));
 			outString(buffer, pSummFile);
 			cout << '\r' << buffer;
 		}
@@ -286,15 +286,21 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 			pComplementDB->combineDesignDBs(pParam->designDB(), pDesignDB, true);
 			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], pComplementDB->recNumb());
 			delete pDesignDB;
+			delete pEnumInfo;
 			output_2_decompInfo<TDATA_TYPES>(pParam, pComplementDB);
 		}
 		else {
+			// Saving pEnumInfo for use it after enumeration of combined BIBDs
+			pParam->m_pEnumInfo = pEnumInfo;
 			pParam->setDesignDB(pDesignDB);
 			if (pBuffer)
 				sprintf_s(pBuffer, lenBuffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
 		}
 
 		pInSysEnum->setDesignDB(NULL);
+	}
+	else {
+		delete pEnumInfo;
 	}
 
 	delete pInSysEnum;
@@ -720,6 +726,8 @@ int main(int argc, char * argv[])
 
 			if (param->find_all_2_decomp) {
 				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer);
+				delete param->m_pEnumInfo;
+				param->m_pEnumInfo = NULL;
 			}
 
 			param->use_master_sol = use_master_sol;

@@ -234,7 +234,7 @@ FClass2(CEnumInfo, void)::outAdditionalInfo(ulonglong nMatr, FILE *outFile, char
 	outString(buff, outFile);
 }
 
-FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo)
+FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, const CGroupsInfo *pGroupInfo, const char* pComment)
 {
 	setRunTime();
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
@@ -269,7 +269,7 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	SPRINTF(buff, "%10llu matri%s fully constructed.\n", nMatr, nMatr == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
-	outEnumInformation(pOutFile);
+	outEnumInformation(pOutFile, true, pComment);
 	if (removeReportFile) // Remove temporary file with the intermediate results	
 		remove(reportFileName());
 }
@@ -288,7 +288,7 @@ FClass2(CEnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
 	outEnumInformation(pOutFile);
 }
 
-FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel) const
+FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel, const char *pComment) const
 {
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
 	if (!outFile)
@@ -338,6 +338,11 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel)
 
 	SPRINTF(buff, "        Super strong canonicity was %sused\n\n", USE_STRONG_CANONICITY_A ? "" : "not ");
 	outLen += outString(buff, outFile);
+	if (pComment) {
+		SPRINTF(buff, "%s\n", pComment);
+		outLen += outString(buff, outFile);
+	}
+
 	FCLOSE(outFile);
 	*pOutFile = NULL;
 	designInfo()->rewindLen = outLen;

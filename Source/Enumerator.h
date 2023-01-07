@@ -104,7 +104,8 @@ public:
 	CK inline auto *designParams() const					{ return m_pParam; }
 	CK inline T numRow() const								{ return nRow; }
 	CK void setDesignDB(CDesignDB* pntr)					{ m_pDesignDB = pntr; }
-	auto* designDB() const									{ return m_pDesignDB; }
+	CK auto* designDB() const								{ return m_pDesignDB; }
+	CK void compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char* buffer = NULL, const char* pLastComment = NULL);
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(S nRow) const;

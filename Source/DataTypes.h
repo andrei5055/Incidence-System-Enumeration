@@ -545,6 +545,7 @@ private:
 };
 
 class CDesignDB;
+Class2Def(CInsSysEnumInfo);
 
 class designParam {
 public:
@@ -577,6 +578,8 @@ public:
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
+	CInsSysEnumInfo<TDATA_TYPES>* m_pEnumInfo = NULL;
+
 	const auto &lambda() const					{ return m_pInterStruct->lambda(); }
 	const auto &lambdaA() const					{ return m_pInterStruct->lambdaA(); }
 	const auto &lambdaB() const					{ return m_pInterStruct->lambdaB(); }

@@ -749,52 +749,17 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			outString("\n" END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
 		beforeEnumInfoOutput();
-		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0);
-
-		closeFile();
-		t_resType resType;
-		if (lenName) {
-			// Compare current results with previously obtained
-			bool betterResults = true;
-			const char *currentFile = FILE_NAME(CURRENT_RESULTS);
-			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
-			// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
-			if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
-				resType = t_resType::t_resWorse;
-				pParam->betterResults = betterResults;
-				if (pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
-					// Create the name of the file with the current results
-					strcpy_s(jobTitle, countof(jobTitle), buff);
-					strcpy_s(jobTitle + lenName, countof(jobTitle) - lenName, currentFile);
-
-					if (betterResults) {
-						remove(buff);			// Remove file with previous results
-						rename(jobTitle, buff);	// Rename file
-						resType = t_resType::t_resBetter;
-					}
-					else {
-						if (pParam->firstMatr)
-							remove(jobTitle);	// Deleting new file only when it does not contain matrices
-					}
-				}
-			}
-			else
-				resType = t_resType::t_resInconsistent; // results are not the same as before
+		if (pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
+			compareResults(pEnumInfo, lenName, buff);
+			if (pParam->outType & t_Summary)
+				pEnumInfo->outEnumInformation(this->outFilePntr());
 		}
 		else {
-			if (pParam->objType != t_objectType::t_SemiSymmetricGraph) {
-				if (getMasterFileName(buff, lenBuffer, &lenName))
-				    compareResults(buff, lenName);
-			}
-			resType = t_resType::t_resNew;
+			fclose(outFile());
 		}
 
-		pEnumInfo->setResType(resType);
-
-		if (pParam->outType & t_Summary)
-			pEnumInfo->outEnumInformation(this->outFilePntr());
-
 		this->setEnumInfo(NULL);
+
 #endif
 
 #if SOLUTION_STATISTICS
@@ -807,7 +772,58 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	}
 
 	return true;
-} 
+}
+
+FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char *buffer, const char *lastCOmment) {
+	auto* pParam = designParams();
+	const auto flg = pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp;
+	if (true || flg)
+		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0, NULL, lastCOmment);
+
+	char buff[256];
+	t_resType resType;
+	if (lenName) {
+		// Compare current results with previously obtained
+		bool betterResults = true;
+		const char* currentFile = FILE_NAME(CURRENT_RESULTS);
+		if (buffer) {
+			strcpy_s(buff, buffer);
+			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
+		}
+		// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
+		if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
+			resType = t_resType::t_resWorse;
+			pParam->betterResults = betterResults;
+			if (true || pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
+				// Create the name of the file with the current results
+				char buffA[256];
+				strcpy_s(buffA, buff);
+				strcpy_s(buffA + lenName, countof(buffA) - lenName, currentFile);
+
+				if (betterResults) {
+					remove(buff);			// Remove file with previous results
+					rename(buffA, buff);	// Rename file
+					resType = t_resType::t_resBetter;
+				}
+				else {
+					if (pParam->firstMatr)
+						remove(buffA);	// Deleting new file only when it does not contain matrices
+				}
+			}
+		}
+		else
+			resType = t_resType::t_resInconsistent; // results are not the same as before
+	}
+	else {
+		if (pParam->objType != t_objectType::t_SemiSymmetricGraph) {
+			if (getMasterFileName(buff, countof(buff), &lenName))
+				compareResults(buff, lenName);
+		}
+		resType = t_resType::t_resNew;
+	}
+
+	pEnumInfo->setResType(resType);
+}
 
 FClass2(CEnumerator, void)::reset(T nRow, bool resetSolutions) {
 	const auto *pMatrix = this->matrix();

@@ -341,10 +341,26 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		}
 		else
 			pParam->setDesignDB(pDesignDB, 1);
-	} else
-		fprintf(outFile(), "\n\n%s\n%s\n", pOutputInfo, END_OF_FILE);
 
-	fclose(outFile());
+		fclose(outFile());
+	}
+	else {
+		fprintf(outFile(), "\n\n%s\n", pOutputInfo);
+//		pParam->m_pEnumInfo->outEnumInfo(this->outFilePntr(), true, NULL, END_OF_FILE);
+
+		const bool resetMTlevel = pParam->mt_level == 0;
+		if (resetMTlevel) {
+			// The row number, on which the threads will be launched was not defined.
+			// Let's do it here by other parameters
+			pParam->mt_level = define_MT_level(pParam);
+		}
+		compareResults(pParam->m_pEnumInfo, 0, NULL, END_OF_FILE);
+		if (resetMTlevel)
+			pParam->mt_level = 0;
+
+	}
+
+
 	return true;
 }
 

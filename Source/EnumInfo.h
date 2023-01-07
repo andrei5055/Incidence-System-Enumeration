@@ -104,13 +104,13 @@ public:
 	void RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem);
 #endif
 	void setReportFileName(const char *pntr);
-	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL);
+	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL, const char* pComment = NULL);
 	void outEnumAdditionalInfo(FILE **pOutFile) const;
 	size_t convertTime(float time, char *buffer, size_t lenBuf, bool alignment = true) const;
 	CK inline void setResType(t_resType resType)			{ m_nResType = resType; }
 	CC inline void resetEnumInfo()							{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
-	void outEnumInformation(FILE **pOutFile, bool printMTlevel = true) const;
+	void outEnumInformation(FILE** pOutFile, bool printMTlevel = true, const char* pComment = NULL) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 protected:
 	inline t_resType getResType() const						{ return m_nResType; }
