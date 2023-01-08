@@ -172,7 +172,7 @@ static bool getTParam(const string &paramText, designParam *param)
 }
 
 template <typename T, typename S>
-void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const char* pBuffer = NULL) {
+void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const char* pBuffer = NULL, const char* pSummaryFileName = NULL) {
 	const auto& lambda = param->InterStruct()->lambda();
 	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
 	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
@@ -180,21 +180,19 @@ void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const c
 	if (pBuffer) {
 		char buffer[256];
 		param->enumInfo()->reportResult(buffer, countof(buffer));
-		//outString(buffer, pSummFile);
+		outString(buffer, pSummaryFileName);
 		cout << '\r' << buffer;
 	}
 }
 
 template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstPath, char *pBuffer, size_t lenBuffer)
+bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, char *pBuffer, size_t lenBuffer)
 {
 	if (pParam->v <= 0) {
 		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
 		return false;
 	}
 
-	const string workingDir = pParam->workingDir + pSummaryFileName;
-	const char *pSummFile = workingDir.c_str();
 	InitCanonInfo(pParam->threadNumb);
 	Class2(C_InSys) *pInSys = NULL;
 	Class2(C_InSysEnumerator) *pInSysEnum = NULL;
@@ -713,6 +711,9 @@ int main(int argc, char * argv[])
 				}
 			}
 
+
+			const string workingDir = param->workingDir + pSummaryFile;
+			const char* pSummFile = workingDir.c_str();
 			char buffer[256];
 			size_t used = 0;
 			for (uint i = 0; i <= iMax; i++) {
@@ -726,12 +727,14 @@ int main(int argc, char * argv[])
 					lambdaSet->push_back(baseLambda - i * lambda);
 					used = strlen(buffer);
 				}
-				if (!RunOperation<TDATA_TYPES>(param, pSummaryFile, firstRun, buffer + used, countof(buffer) - used))
+				if (!RunOperation<TDATA_TYPES>(param, pSummFile, firstRun, buffer + used, countof(buffer) - used))
 					break;
+
+				firstRun = false;
 			}
 
 			if (param->find_all_2_decomp) {
-				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer);
+				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer, pSummFile);
 				delete param->enumInfo();
 				param->setEnumInfo(NULL);
 			}

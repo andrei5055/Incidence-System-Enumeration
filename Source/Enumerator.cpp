@@ -780,7 +780,7 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 	const auto flg = pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp;
 	pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0, NULL, lastCOmment);
 
-	char buff[256];
+	char buff[256] = { 0 };
 	if (!lenName && !buffer && pParam->objType != t_objectType::t_SemiSymmetricGraph) {
 		const auto& resFile = pParam->logFile;
 		if (resFile.empty()) {
@@ -797,37 +797,42 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 	}
 
 	t_resType resType = t_resType::t_resNew;
+	const char* currentFile = FILE_NAME(CURRENT_RESULTS);
 	if (lenName) {
 		// Compare current results with previously obtained
 		bool betterResults = true;
-		const char* currentFile = FILE_NAME(CURRENT_RESULTS);
 		if (buffer) {
 			strcpy_s(buff, buffer);
 			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
 		}
+		std::string newResult(buff);
 		// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
 		if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
 			resType = t_resType::t_resWorse;
 			pParam->betterResults = betterResults;
 			// Create the name of the file with the current results
-			std::string newResult(buff);
-			newResult.append(currentFile);
-			char buffA[256];
-			strcpy_s(buffA, buff);
-			strcpy_s(buffA + lenName, countof(buffA) - lenName, currentFile);
-
 			if (betterResults) {
 				remove(buff);			// Remove file with previous results
 				rename(newResult.c_str(), buff);	// Rename file
 				resType = t_resType::t_resBetter;
 			}
 			else {
-				if (pParam->firstMatr)
-					remove(newResult.c_str());	// Deleting new file only when it does not contain matrices
+				remove(newResult.c_str());
 			}
 		}
 		else {
 			resType = t_resType::t_resInconsistent; // results are not the same as before
+		}
+	}
+
+	if (resType != t_resType::t_resInconsistent) {
+		const char* suffix[] = { FILE_NAME(INTERMEDIATE_RESULTS), FILE_NAME("") };
+		for (int i = 0; i < countof(suffix); i++) {
+			char* pntr = strstr(buff, suffix[i]);
+			if (pntr) {
+				strcpy_s(pntr, countof(buff) - (pntr - buff), FILE_NAME(INTERMEDIATE_RESULTS));
+				remove(buff);
+			}
 		}
 	}
 
