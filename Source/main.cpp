@@ -177,6 +177,12 @@ void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const c
 	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
 	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
 	bibdEnum.outNonCombinedDesigns(param, pDesignDB, pBuffer);
+	if (pBuffer) {
+		char buffer[256];
+		param->enumInfo()->reportResult(buffer, countof(buffer));
+		//outString(buffer, pSummFile);
+		cout << '\r' << buffer;
+	}
 }
 
 template <typename T, typename S>
@@ -291,7 +297,7 @@ bool RunOperation(designParam *pParam, const char *pSummaryFileName, bool FirstP
 		}
 		else {
 			// Saving pEnumInfo for use it after enumeration of combined BIBDs
-			pParam->m_pEnumInfo = pEnumInfo;
+			pParam->setEnumInfo(pEnumInfo);
 			pParam->setDesignDB(pDesignDB);
 			if (pBuffer)
 				sprintf_s(pBuffer, lenBuffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
@@ -726,8 +732,8 @@ int main(int argc, char * argv[])
 
 			if (param->find_all_2_decomp) {
 				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer);
-				delete param->m_pEnumInfo;
-				param->m_pEnumInfo = NULL;
+				delete param->enumInfo();
+				param->setEnumInfo(NULL);
 			}
 
 			param->use_master_sol = use_master_sol;

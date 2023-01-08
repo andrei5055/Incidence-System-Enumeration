@@ -578,7 +578,6 @@ public:
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
-	CInsSysEnumInfo<TDATA_TYPES>* m_pEnumInfo = NULL;
 
 	const auto &lambda() const					{ return m_pInterStruct->lambda(); }
 	const auto &lambdaA() const					{ return m_pInterStruct->lambdaA(); }
@@ -587,11 +586,14 @@ public:
 	inline void setLambdaSizeMax(size_t val)	{ m_lambdaSizeMax = val; }
 	inline void setDesignDB(const CDesignDB* pntr, int idx = 0)	{ m_pDesignDB[idx] = pntr; }
 	inline const CDesignDB *designDB(int idx = 0) const			{ return m_pDesignDB[idx]; }
+	inline auto* enumInfo() const				{ return m_pEnumInfo; }
+	inline void setEnumInfo(CInsSysEnumInfo<TDATA_TYPES>* pntr) { m_pEnumInfo = pntr; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
 									// (will be used for formated output)
 	const CDesignDB* m_pDesignDB[2] = { NULL, NULL };
+	CInsSysEnumInfo<TDATA_TYPES>* m_pEnumInfo = NULL;
 };
 
 template <typename T, typename S>

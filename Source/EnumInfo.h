@@ -45,7 +45,8 @@ enum class t_resType {
 	t_resNew,
 	t_resBetter,
 	t_resWorse,
-	t_resInconsistent
+	t_resInconsistent,
+	t_resPostponed
 };
 
 typedef enum {
@@ -78,7 +79,8 @@ struct WorkingInfo {
 Class2Def(CEnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
-	CC CEnumInfo(const char *pStrToScreen = NULL) : m_pStrToScreen(pStrToScreen) {
+	CC CEnumInfo(const char *pStrToScreen = NULL) {
+		m_pStrToScreen = pStrToScreen? pStrToScreen : "";
         resetCounters();
 		setReportBound(REPORT_INTERVAL_OBJ_NUMB);
 		m_pReportFileName = NULL;
@@ -87,7 +89,7 @@ public:
 	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
 public:
 	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_design_type::t_totalConstr); }
-	inline const char *strToScreen() const					{ return m_pStrToScreen; }
+	inline const char *strToScreen() const					{ return m_pStrToScreen.c_str(); }
 #if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL, const WorkingInfo* pWorkInfo = NULL);
 	void reportProgress(const ThreadEnumeratorPntr pTreadEnum, size_t nThread = 0);
@@ -133,7 +135,7 @@ private:
 
 	ulonglong m_nCounter;
 	ulonglong m_prevReportCounter[2];
-	const char *m_pStrToScreen;
+	std::string m_pStrToScreen;
 	ulonglong m_nReportBound;
 	char *m_pReportFileName;
 	t_resType m_nResType;

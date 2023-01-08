@@ -406,6 +406,7 @@ FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 	case t_resType::t_resNew:			pResComment = "N"; break;
 	case t_resType::t_resBetter:		pResComment = "B"; break;
 	case t_resType::t_resWorse:			pResComment = "W"; break;
+	case t_resType::t_resPostponed:     pResComment = "P"; break;
 	case t_resType::t_resInconsistent:	pResComment = "???";
 	}
 

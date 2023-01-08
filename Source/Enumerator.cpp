@@ -756,6 +756,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		}
 		else {
 			fclose(outFile());
+			pEnumInfo->setResType(t_resType::t_resPostponed);
 		}
 
 		this->setEnumInfo(NULL);
@@ -774,14 +775,28 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	return true;
 }
 
-FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char *buffer, const char *lastCOmment) {
+FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char* buffer, const char* lastCOmment) {
 	auto* pParam = designParams();
 	const auto flg = pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp;
-	if (true || flg)
-		pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0, NULL, lastCOmment);
+	pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0, NULL, lastCOmment);
 
 	char buff[256];
-	t_resType resType;
+	if (!lenName && !buffer && pParam->objType != t_objectType::t_SemiSymmetricGraph) {
+		const auto& resFile = pParam->logFile;
+		if (resFile.empty()) {
+			if (getMasterFileName(buff, countof(buff), &lenName))
+				lenName = 0;
+		}
+		else {
+			lenName = resFile.find(CURRENT_RESULTS);
+			if (lenName == string::npos)
+				lenName = 0;
+			else
+				buffer = resFile.c_str();
+		}
+	}
+
+	t_resType resType = t_resType::t_resNew;
 	if (lenName) {
 		// Compare current results with previously obtained
 		bool betterResults = true;
@@ -794,32 +809,26 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 		if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
 			resType = t_resType::t_resWorse;
 			pParam->betterResults = betterResults;
-			if (true || pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
-				// Create the name of the file with the current results
-				char buffA[256];
-				strcpy_s(buffA, buff);
-				strcpy_s(buffA + lenName, countof(buffA) - lenName, currentFile);
+			// Create the name of the file with the current results
+			std::string newResult(buff);
+			newResult.append(currentFile);
+			char buffA[256];
+			strcpy_s(buffA, buff);
+			strcpy_s(buffA + lenName, countof(buffA) - lenName, currentFile);
 
-				if (betterResults) {
-					remove(buff);			// Remove file with previous results
-					rename(buffA, buff);	// Rename file
-					resType = t_resType::t_resBetter;
-				}
-				else {
-					if (pParam->firstMatr)
-						remove(buffA);	// Deleting new file only when it does not contain matrices
-				}
+			if (betterResults) {
+				remove(buff);			// Remove file with previous results
+				rename(newResult.c_str(), buff);	// Rename file
+				resType = t_resType::t_resBetter;
+			}
+			else {
+				if (pParam->firstMatr)
+					remove(newResult.c_str());	// Deleting new file only when it does not contain matrices
 			}
 		}
-		else
+		else {
 			resType = t_resType::t_resInconsistent; // results are not the same as before
-	}
-	else {
-		if (pParam->objType != t_objectType::t_SemiSymmetricGraph) {
-			if (getMasterFileName(buff, countof(buff), &lenName))
-				compareResults(buff, lenName);
 		}
-		resType = t_resType::t_resNew;
 	}
 
 	pEnumInfo->setResType(resType);
