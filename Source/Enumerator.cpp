@@ -776,63 +776,68 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 }
 
 FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char* buffer, const char* lastCOmment) {
-	auto* pParam = designParams();
-	const auto flg = pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp;
 	pEnumInfo->outEnumInfo(this->outFilePntr(), lenName == 0, NULL, lastCOmment);
 
-	char buff[256] = { 0 };
-	if (!lenName && !buffer && pParam->objType != t_objectType::t_SemiSymmetricGraph) {
-		const auto& resFile = pParam->logFile;
-		if (resFile.empty()) {
-			if (getMasterFileName(buff, countof(buff), &lenName))
-				lenName = 0;
-		}
-		else {
-			lenName = resFile.find(CURRENT_RESULTS);
-			if (lenName == string::npos)
-				lenName = 0;
-			else
-				buffer = resFile.c_str();
-		}
-	}
-
 	t_resType resType = t_resType::t_resNew;
-	const char* currentFile = FILE_NAME(CURRENT_RESULTS);
-	if (lenName) {
-		// Compare current results with previously obtained
-		bool betterResults = true;
+	// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
+	auto* pParam = designParams();
+	if (pParam->objType != t_objectType::t_SemiSymmetricGraph) {
+		char buff[256] = { 0 };
+		if (!lenName) {
+			if (!buffer) {
+				const auto& resFile = pParam->logFile;
+				if (!resFile.empty()) {
+					lenName = resFile.find(CURRENT_RESULTS);
+					if (lenName == string::npos)
+						lenName = 0;
+					else
+						buffer = resFile.c_str();
+				}
+			}
+
+			if (!lenName) {
+				buffer = NULL;
+				if (!getMasterFileName(buff, countof(buff), &lenName))
+					return;
+			}
+		}
+
 		if (buffer) {
 			strcpy_s(buff, buffer);
-			strcpy_s(buff + lenName, countof(buff) - lenName, currentFile);
+			if (lenName)
+				strcpy_s(buff + lenName, countof(buff) - lenName, FILE_NAME(CURRENT_RESULTS));
 		}
+
+		// Compare current results with previously obtained
+		bool betterResults = true;
 		std::string newResult(buff);
-		// TO DO: For Semi-Symmetric graphs more complicated comparison function should be implemented
-		if (pParam->objType != t_objectType::t_SemiSymmetricGraph && compareResults(buff, lenName, &betterResults)) {
-			resType = t_resType::t_resWorse;
-			pParam->betterResults = betterResults;
-			// Create the name of the file with the current results
-			if (betterResults) {
-				remove(buff);			// Remove file with previous results
-				rename(newResult.c_str(), buff);	// Rename file
-				resType = t_resType::t_resBetter;
+		if (compareResults(buff, lenName, buffer ? &betterResults : NULL)) {
+			if (buffer) {
+				resType = t_resType::t_resWorse;
+				pParam->betterResults = betterResults;
+				// Create the name of the file with the current results
+				if (betterResults) {
+					remove(buff);			// Remove file with previous results
+					rename(newResult.c_str(), buff);	// Rename file
+					resType = t_resType::t_resBetter;
+				}
+				else {
+					remove(newResult.c_str());
+				}
 			}
-			else {
-				remove(newResult.c_str());
+
+			const char* suffix[] = { FILE_NAME(INTERMEDIATE_RESULTS), FILE_NAME("") };
+			for (int i = 0; i < countof(suffix); i++) {
+				char* pntr = strstr(buff, suffix[i]);
+				if (pntr) {
+					strcpy_s(pntr, countof(buff) - (pntr - buff), FILE_NAME(INTERMEDIATE_RESULTS));
+					remove(buff);
+				}
 			}
 		}
 		else {
-			resType = t_resType::t_resInconsistent; // results are not the same as before
-		}
-	}
-
-	if (resType != t_resType::t_resInconsistent) {
-		const char* suffix[] = { FILE_NAME(INTERMEDIATE_RESULTS), FILE_NAME("") };
-		for (int i = 0; i < countof(suffix); i++) {
-			char* pntr = strstr(buff, suffix[i]);
-			if (pntr) {
-				strcpy_s(pntr, countof(buff) - (pntr - buff), FILE_NAME(INTERMEDIATE_RESULTS));
-				remove(buff);
-			}
+			if (buffer)
+				resType = t_resType::t_resInconsistent; // results are not the same as before
 		}
 	}
 
@@ -1004,12 +1009,10 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 	if (!getMasterFileName(buff, lenBuffer, pLenName))
 		return false;
 
-	// The results are known, if the file with the enumeration results exists
-	bool knownResults = fileExists(buff);
+	// The results are known, if the file with the enumeration results exists and it is valid
+	const bool knownResults = fileExists(buff);
 	if (knownResults)
 		strcpy_s(buff + *pLenName, lenBuffer - *pLenName, FILE_NAME(CURRENT_RESULTS));
-	else
-		*pLenName = 0;
 
 	// Create a new file for output of the enumeration results
 	const auto newFile = this->createNewFile(buff);
@@ -1024,6 +1027,15 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 			// Save the name of the output file, we will need it to add decomposition information.
 			designParams()->logFile = buff;
 		}
+	}
+
+	if (!knownResults) {
+		if (pLenName != &lenName) {
+			strcpy_s(buff + *pLenName, lenBuffer - *pLenName, FILE_NAME(CURRENT_RESULTS));
+			remove(buff);			// Just in case, we delete duplicate results, if any.
+		}
+
+		*pLenName = 0;
 	}
 
 	return true;
@@ -1124,8 +1136,8 @@ FClass2(CEnumerator, bool)::compareResults(char *fileName, size_t lenFileName, b
 	}
 
 	const bool retVal = cmpProcedure(ppFile, pBetterResults);
-	FCLOSE(file);
-	FCLOSE(ppFile[1]);
+	for (auto i = countof(ppFile); i--;)
+		FCLOSE(ppFile[i]);
 
 	return ppFile[1]? retVal : false;
 }

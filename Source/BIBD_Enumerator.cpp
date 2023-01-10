@@ -310,7 +310,7 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 	const auto len = pDesignDB->recordLength() - LEN_HEADER;
 	const auto nBIBDs = pDesignDB->recNumb();
 	fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for ",
-		nBIBDs, (nBIBDs > 1 ? "s" : ""), (nBIBDs > 1 ? "are" : "is"));
+		nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
 
 	if (!pOutputInfo) {
 		const auto& lambdaSet = pParam->InterStruct()->lambda();
