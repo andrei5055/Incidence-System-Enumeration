@@ -276,22 +276,36 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 }
 
 FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, const char* pOutputInfo) {
-	if (!pOutputInfo && !pDesignDB->recNumb()) {
-		auto* pDB = pParam->designDB(1);
-		if (pDB) {
-			delete pDesignDB;
-		} else
-			pParam->setDesignDB(pDesignDB, 1);
-
-		return true;
-	}
-
 	pParam->objType = t_objectType::t_BIBD;
 	setDesignParams(pParam);
 	const auto flag = setOutputFile();
 	pParam->objType = t_objectType::t_CombinedBIBD;
 	if (!flag)
 		return false;
+
+	const auto nBIBDs = pDesignDB->recNumb();
+	fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for ",
+		nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
+
+	if (!pOutputInfo) {
+		const auto& lambdaSet = pParam->InterStruct()->lambda();
+		fprintf(outFile(), "lambdas = {%d,%d}:\n", lambdaSet[0], lambdaSet[1]);
+		if (!nBIBDs) {
+			auto* pDB = pParam->designDB(1);
+			if (pDB) {
+				delete pDesignDB;
+				((CDesignDB*)pDB)->resetRecNumb();
+			}
+			else
+				pParam->setDesignDB(pDesignDB, 1);
+
+			fclose(outFile());
+			return true;
+		}
+	}
+	else {
+		fprintf(outFile(), "any pair of lambdas\n");
+	}
 
 	const auto v = matrix()->rowNumb();
 	const auto b = matrix()->colNumb();
@@ -308,18 +322,6 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 
 	pntr = matrix()->GetRow(2);
 	const auto len = pDesignDB->recordLength() - LEN_HEADER;
-	const auto nBIBDs = pDesignDB->recNumb();
-	fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for ",
-		nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
-
-	if (!pOutputInfo) {
-		const auto& lambdaSet = pParam->InterStruct()->lambda();
-		fprintf(outFile(), "lambdas = {%d,%d}:\n", lambdaSet[0], lambdaSet[1]);
-	}
-	else {
-		fprintf(outFile(), "any pair of lambdas\n");
-	}
-
 	for (size_t i = 0; i < nBIBDs; i++) {
 		const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
 		memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
@@ -357,7 +359,6 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 			pParam->mt_level = 0;
 
 	}
-
 
 	return true;
 }
