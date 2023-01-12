@@ -38,13 +38,12 @@ FClass2(C_tDesignEnumerator, bool)::makeFileName(char *buffer, size_t lenBuffer,
 	return true;
 }
 
-FClass2(C_tDesignEnumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
+FClass2(C_tDesignEnumerator, void)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	const auto t = tDesign()->getT();
 	const auto k = tDesign()->GetK();
 	SNPRINTF(buffer, lenBuffer, ME_FRMT"-(%3"  _FRMT", %3"  _FRMT", %2"  _FRMT")%s",
 						t, this->rowNumb(), k, tDesign()->lambda(), comment);
-	return true;
 }
 #endif
 

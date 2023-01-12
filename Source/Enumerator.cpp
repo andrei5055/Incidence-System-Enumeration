@@ -229,13 +229,19 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 }
 #endif
 
+FClass2(CEnumerator, void)::outputJobTitle() const {
+	char jobTitle[256];
+	makeJobTitle(designParams(), jobTitle, countof(jobTitle), "\n");
+	outString(jobTitle, this->outFile());
+}
+
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	setDesignParams(pParam);
 	const auto* pInpMaster = pMaster;
 #if !CONSTR_ON_GPU
 	static std::mutex mtx;
-	char buff[256], jobTitle[256];
+	char buff[256];
 	const auto lenBuffer = countof(buff);
 	const auto threadNumb = pParam->threadNumb;
 	// We will not launch separate thread, when threadNumb is equal to 1
@@ -245,13 +251,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	if (writeFile) {
 		// We will be here only for the master
 		pParam->firstMatr = true;
-		if (!makeJobTitle(pParam, jobTitle, countof(jobTitle), "\n"))
-			return false;
-
 		if (!setOutputFile(&lenName))
 			return false;
 
-		outString(jobTitle, this->outFile());
+		outputJobTitle();
 	} else
 		this->setOutFile(NULL);
 
@@ -749,18 +752,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			outString("\n" END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
 		beforeEnumInfoOutput();
-		if (pParam->objType != t_objectType::t_BIBD || !pParam->find_all_2_decomp) {
-			compareResults(pEnumInfo, lenName, buff);
-			if (pParam->outType & t_Summary)
-				pEnumInfo->outEnumInformation(this->outFilePntr());
-		}
-		else {
-			fclose(outFile());
-			pEnumInfo->setResType(t_resType::t_resPostponed);
-		}
+		compareResults(pEnumInfo, lenName, buff);
+		if (pParam->outType & t_Summary)
+			pEnumInfo->outEnumInformation(this->outFilePntr());
 
 		this->setEnumInfo(NULL);
-
 #endif
 
 #if SOLUTION_STATISTICS
@@ -1022,10 +1018,11 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 		fseek(file, -seekFile, SEEK_END);
 
 	this->setOutFile(file);
-	if (designParams()->find_all_2_decomp && designParams()->objType == t_objectType::t_BIBD) {
+	if (designParams()->find_all_2_decomp == 1 && designParams()->objType == t_objectType::t_BIBD) {
 		if (designParams()->logFile.empty()) {
 			// Save the name of the output file, we will need it to add decomposition information.
 			designParams()->logFile = buff;
+			outputJobTitle();
 		}
 	}
 

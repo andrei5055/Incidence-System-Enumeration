@@ -17,7 +17,7 @@ public:
 	}
 
 #if !CONSTR_ON_GPU
-	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
+	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 	CK bool outNonCombinedDesigns(designParam* pParam, const CDesignDB* designDB, const char* pOutputInfo);
 
 #endif
@@ -60,7 +60,7 @@ private:
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
-	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp? "Non-Combined_BIBDs" : "BIBDs"; }
+	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp == 1? "Non-Combined_BIBDs" : "BIBDs"; }
 	CK bool sharedDB() const										 { return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
 
 	S m_r;

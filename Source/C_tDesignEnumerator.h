@@ -18,7 +18,7 @@ public:
 	CK C_tDesignEnumerator(const Class2(C_tDesign) *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_tDesignEnumerator();
 #if !CONSTR_ON_GPU
-	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
+	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 	CK virtual bool isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const;
 	PERMUT_ELEMENT_TYPE *getIntersectionParam(const size_t **ppNumb) const;

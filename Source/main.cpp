@@ -698,12 +698,13 @@ int main(int argc, char * argv[])
 						printf("\nParameters (v, k, lambda) = (%d, %d, %d) cannot be parameters of BIBD.", param->v, param->k, baseLambda);
 						continue;
 					}
-					if (param->find_all_2_decomp = find_all_2_decomp) {
+					param->find_all_2_decomp = find_all_2_decomp ? 2 : 0;
+					if (find_all_2_decomp) {
 						while (lambda <= (baseLambda >> 1) && (vMinus1 * lambda / kMinus1) * kMinus1 != vMinus1 * lambda)
 							lambda++;
 
 						if (lambda > (baseLambda >> 1)) {
-							printf("\n BIBD is not a Compombined BIBD.");
+							printf("\n BIBD is not a Combined BIBD.");
 							continue;
 						}
 						iMax = baseLambda / (2 * lambda);
@@ -720,7 +721,7 @@ int main(int argc, char * argv[])
 				if (i) {
 					// For all 2-part decomposition search only
 					param->objType = t_objectType::t_CombinedBIBD;
-					param->find_master_design = 1;
+					param->find_all_2_decomp = param->find_master_design = 1;
 					param->use_master_sol = 0;
 					lambdaSet->resize(0);
 					lambdaSet->push_back(i * lambda);

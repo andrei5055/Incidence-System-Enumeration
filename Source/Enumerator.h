@@ -93,8 +93,7 @@ public:
 	CC virtual ~CEnumerator();
 	CK inline RowSolutionPntr rowStuff(T nRow = 0, T iPart = 0) const	{ return m_pRow[nRow] + iPart; }
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
-	virtual bool makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const
-															{ return false; }
+	virtual void makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const {}
 	CK virtual T getX0_3() const							{ return 0; }
 	CK inline RowSolutionPntr *rowStuffPntr() const			{ return m_pRow;  }
 	CK virtual void setFirstUnforcedRow(T row = 0)			{}
@@ -143,6 +142,7 @@ protected:
 	CK virtual void ConstructedDesignProcessing() const		{}
 	CK virtual void beforeEnumInfoOutput() const			{}
 	CK void outBlockTitle(const char* title = "Constructed Matrices", bool checkFirstMatr = true) const;
+	CK void outputJobTitle() const;
 	CK virtual void setDesignParams(designParam* ptr)		{ m_pParam = ptr; }
 	CK virtual bool outFileIsValid(const struct stat& info, const char* pFileName=NULL) const { return info.st_size > outFileValidSize(); }
 	size_t outFileValidSize() const							{ return 50; }

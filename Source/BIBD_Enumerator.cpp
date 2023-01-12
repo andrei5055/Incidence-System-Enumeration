@@ -185,7 +185,7 @@ FClass2(CBIBD_Enumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, co
 	return true;
 }
 
-FClass2(CBIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
+FClass2(CBIBD_Enumerator, void)::makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment) const
 {
 	size_t lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
@@ -200,8 +200,6 @@ FClass2(CBIBD_Enumerator, bool)::makeJobTitle(const designParam *pParam, char *b
 	}
 	else
 		SNPRINTF(buffer + len, lenBuffer - len, ")%s", comment);
-
-	return true;
 }
 
 FClass2(CBIBD_Enumerator, int)::getJobTitleInfo(char *buffer, int lenBuffer) const
@@ -266,7 +264,7 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 	if (!CEnumerator::outFileIsValid(info))
 		return false;
 
-	if (designParams()->objType != t_objectType::t_BIBD || !designParams()->find_all_2_decomp)
+	if (designParams()->objType != t_objectType::t_BIBD || designParams()->find_all_2_decomp != 1)
 		return true;
 
 	if (designParams()->logFile.empty())
