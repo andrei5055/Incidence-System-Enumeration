@@ -276,18 +276,24 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, const char* pOutputInfo) {
 	pParam->objType = t_objectType::t_BIBD;
 	setDesignParams(pParam);
-	const auto flag = setOutputFile();
+	auto flag = setOutputFile();
 	pParam->objType = t_objectType::t_CombinedBIBD;
 	if (!flag)
 		return false;
 
 	const auto nBIBDs = pDesignDB->recNumb();
-	fprintf(outFile(), "\n\n%zd BIBD%s which %s NOT combined for ",
-		nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
+	const auto& lambdaSet = pParam->InterStruct()->lambda();
+	// It's not our first apperance here OR wee will be here at least three times.
+	flag = pParam->designDB(1) || lambdaSet[0] + pParam->lambdaStep() < lambdaSet[1];
+	if (flag)
+		fprintf(outFile(), "%s%zd BIBD%s which %s NOT combined for ", pParam->printEmptyLines()? "\n\n" : "",
+				nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
 
+	pParam->setEmptyLines(nBIBDs != 0 || !flag);
 	if (!pOutputInfo) {
-		const auto& lambdaSet = pParam->InterStruct()->lambda();
-		fprintf(outFile(), "lambdas = {%d,%d}:\n", lambdaSet[0], lambdaSet[1]);
+		if (flag)
+			fprintf(outFile(), "lambdas = {%d,%d}%s\n", lambdaSet[0], lambdaSet[1], nBIBDs? ":" : "");
+
 		if (!nBIBDs) {
 			auto* pDB = pParam->designDB(1);
 			if (pDB) {
@@ -302,29 +308,32 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		}
 	}
 	else {
-		fprintf(outFile(), "any pair of lambdas\n");
+		fprintf(outFile(), "any pair of lambdas%s\n", nBIBDs ? ":" : "");
 	}
 
-	const auto v = matrix()->rowNumb();
-	const auto b = matrix()->colNumb();
-	const size_t r = getR();
-	const size_t length[] = { b, r, lambda(), r - lambda() };
-	auto* pntr = matrix()->GetRow(0);
-	memset(pntr + getR(), 0, (2 * b - r) * sizeof(*pntr));
-	for (int j = 1; j <= 3; j++) {
-		for (auto i = length[j]; i--;)
-			*(pntr + i) = 1;
+	// Set flag for the empty lines output on the next appearence of that method
+	if (nBIBDs && flag) {
+		const auto v = matrix()->rowNumb();
+		const auto b = matrix()->colNumb();
+		const size_t r = getR();
+		const size_t length[] = { b, r, lambda(), r - lambda() };
+		auto* pntr = matrix()->GetRow(0);
+		memset(pntr + getR(), 0, (2 * b - r) * sizeof(*pntr));
+		for (int j = 1; j <= 3; j++) {
+			for (auto i = length[j]; i--;)
+				*(pntr + i) = 1;
 
-		pntr += length[j - 1];
-	}
+			pntr += length[j - 1];
+		}
 
-	pntr = matrix()->GetRow(2);
-	const auto len = pDesignDB->recordLength() - LEN_HEADER;
-	for (size_t i = 0; i < nBIBDs; i++) {
-		const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
-		memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
-		setGroupOrder(rec->groupOrder);
-		matrix()->printOut(outFile(), v, i+1, this, rec->designNumber());
+		pntr = matrix()->GetRow(2);
+		const auto len = pDesignDB->recordLength() - LEN_HEADER;
+		for (size_t i = 0; i < nBIBDs; i++) {
+			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
+			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
+			setGroupOrder(rec->groupOrder);
+			matrix()->printOut(outFile(), v, i + 1, this, rec->designNumber());
+		}
 	}
 
 	if (!pOutputInfo) {
@@ -346,16 +355,12 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 	}
 	else {
 		fprintf(outFile(), "\n\n%s\n", pOutputInfo);
-		const bool resetMTlevel = pParam->mt_level == 0;
-		if (resetMTlevel) {
-			// The row number, on which the threads will be launched was not defined.
-			// Let's do it here by other parameters
-			pParam->mt_level = define_MT_level(pParam);
-		}
+		// Set MT_level used for regular BIBDs enumeration.
+		const auto MT_level = pParam->MT_level();
+		pParam->set_MT_level(pParam->MT_level(1), 0);
 		compareResults(pParam->enumInfo(), 0, NULL, END_OF_FILE);
-		if (resetMTlevel)
-			pParam->mt_level = 0;
-
+		// Restore MT_Level
+		pParam->set_MT_level(MT_level);
 	}
 
 	return true;

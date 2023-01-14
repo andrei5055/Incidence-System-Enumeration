@@ -186,8 +186,7 @@ void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const c
 }
 
 template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, char *pBuffer, size_t lenBuffer)
-{
+bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, char *pBuffer, size_t lenBuffer) {
 	if (pParam->v <= 0) {
 		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
 		return false;
@@ -257,11 +256,11 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, ch
 		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
 	}
 
-	const bool resetMTlevel = pParam->mt_level == 0;
+	const bool resetMTlevel = pParam->MT_level() == 0;
 	if (resetMTlevel) {
 		// The row number, on which the threads will be launched was not defined.
 		// Let's do it here by other parameters
-		pParam->mt_level = pInSysEnum->define_MT_level(pParam);
+		pParam->set_MT_level(pInSysEnum->define_MT_level(pParam));
 	}
 
 	try {
@@ -297,6 +296,8 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, ch
 			// Saving pEnumInfo for use it after enumeration of combined BIBDs
 			pParam->setEnumInfo(pEnumInfo);
 			pParam->setDesignDB(pDesignDB);
+			// Saving mt_level used for regular BIBDs enumeration
+			pParam->set_MT_level(pParam->MT_level(), 1);
 			if (pBuffer)
 				sprintf_s(pBuffer, lenBuffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
 		}
@@ -310,7 +311,7 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, ch
 	delete pInSysEnum;
 
 	if (resetMTlevel)
-		pParam->mt_level = 0;
+		pParam->set_MT_level(0);
 
 	CloseCanonInfo();
 	return true;
@@ -535,7 +536,7 @@ int main(int argc, char * argv[])
 				printf("Will use the default calculated from object's parameter: v / 2\n");
 			}
 			else
-				param->mt_level = static_cast<int>(mt_level);
+				param->set_MT_level(static_cast<int>(mt_level));
 		}
 
 		pos = find(line, "FIND_ALL_2_DECOMPOSITIONS");
@@ -707,6 +708,8 @@ int main(int argc, char * argv[])
 							printf("\n BIBD is not a Combined BIBD.");
 							continue;
 						}
+
+						param->setLambdaStep(lambda);
 						iMax = baseLambda / (2 * lambda);
 					}
 				}
@@ -748,6 +751,8 @@ int main(int argc, char * argv[])
 
 			param->find_master_design = find_master_design;
 			param->logFile = "";
+			param->setLambdaStep(0);
+			param->setEmptyLines();
 		}
 
 		firstRun = false;

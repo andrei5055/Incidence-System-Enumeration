@@ -564,8 +564,7 @@ public:
 	int k = 0;
 	int r = 0;
 	int t = 0;
-	int mt_level = 0;				// Matrix row number, where the threads will be launched
-	uint outType = 0;				// Flags which define the output information of the task
+	uint outType = 0;				// Flags which defines the output information of the task
 	uint grpOrder = 0;				// Limits for order of the group of the matrices which will be printed
 	size_t threadNumb = 0;			// Number of threads launched to perform task
 	int use_master_sol = 0;			// the solutions defined by master will be used (1) or copied (0) by the threads
@@ -588,12 +587,20 @@ public:
 	inline const CDesignDB *designDB(int idx = 0) const			{ return m_pDesignDB[idx]; }
 	inline auto* enumInfo() const				{ return m_pEnumInfo; }
 	inline void setEnumInfo(CInsSysEnumInfo<TDATA_TYPES>* pntr) { m_pEnumInfo = pntr; }
+	inline int MT_level(int idx = 0) const		{ return mt_level[idx]; }
+	inline void set_MT_level(int val, int idx = 0) { mt_level[idx] = val; }
+	inline void setLambdaStep(size_t step)		{ m_lambdaStep = step; }
+	inline auto lambdaStep() const				{ return m_lambdaStep; }
+	inline auto printEmptyLines() const			{ return m_emptyLines; }
+	inline void setEmptyLines(bool val = true)	{ m_emptyLines = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
-	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda()
-									// (will be used for formated output)
+	int mt_level[2] = { 0, 0 };		// Matrix row number, where the threads will be launched
+	size_t m_lambdaSizeMax = 0;		// Maximal number of elements in lambda() (it will be used for formated output)
+	size_t m_lambdaStep = 0;        // Step for parameter lambda, used in the loop for non-combined BIBDs search
 	const CDesignDB* m_pDesignDB[2] = { NULL, NULL };
 	CInsSysEnumInfo<TDATA_TYPES>* m_pEnumInfo = NULL;
+	bool m_emptyLines = true;
 };
 
 template <typename T, typename S>

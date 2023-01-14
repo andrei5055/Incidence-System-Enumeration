@@ -245,7 +245,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const auto lenBuffer = countof(buff);
 	const auto threadNumb = pParam->threadNumb;
 	// We will not launch separate thread, when threadNumb is equal to 1
-	const int mt_level = threadNumb >= 1? pParam->mt_level : INT_MAX;
+	const int mt_level = threadNumb >= 1? pParam->MT_level() : INT_MAX;
 
 	size_t lenName = 0;
 	if (writeFile) {

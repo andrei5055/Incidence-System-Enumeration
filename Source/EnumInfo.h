@@ -130,7 +130,7 @@ private:
 	CC inline void setReportBound(ulonglong val)			{ m_nReportBound = val; }
 	inline ulonglong reportBound() const					{ return m_nReportBound; }
 	CC inline char *reportFileName() const					{ return m_pReportFileName; }
-	inline int multiThreadLevel() const 					{ return m_pParam->mt_level; }
+	inline int multiThreadLevel() const 					{ return m_pParam->MT_level(); }
 	inline designParam *designInfo() const					{ return m_pParam; }
 
 	ulonglong m_nCounter;
