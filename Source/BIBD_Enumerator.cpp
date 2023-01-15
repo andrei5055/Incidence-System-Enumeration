@@ -273,7 +273,7 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 	return designParams()->logFile != pFileName;
 }
 
-FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, const char* pOutputInfo) {
+FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, string& outputInfo, bool addInfo) {
 	pParam->objType = t_objectType::t_BIBD;
 	setDesignParams(pParam);
 	auto flag = setOutputFile();
@@ -282,37 +282,25 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		return false;
 
 	const auto nBIBDs = pDesignDB->recNumb();
+	auto* pDB = pParam->designDB(1);
 	const auto& lambdaSet = pParam->InterStruct()->lambda();
 	// It's not our first apperance here OR wee will be here at least three times.
-	flag = pParam->designDB(1) || lambdaSet[0] + pParam->lambdaStep() < lambdaSet[1];
+	flag = pDB || lambdaSet[0] + pParam->lambdaStep() < lambdaSet[1];
 	if (flag)
 		fprintf(outFile(), "%s%zd BIBD%s which %s NOT combined for ", pParam->printEmptyLines()? "\n\n" : "",
 				nBIBDs, (nBIBDs != 1 ? "s" : ""), (nBIBDs != 1 ? "are" : "is"));
 
 	pParam->setEmptyLines(nBIBDs != 0 || !flag);
-	if (!pOutputInfo) {
+	if (addInfo) {
 		if (flag)
 			fprintf(outFile(), "lambdas = {%d,%d}%s\n", lambdaSet[0], lambdaSet[1], nBIBDs? ":" : "");
-
-		if (!nBIBDs) {
-			auto* pDB = pParam->designDB(1);
-			if (pDB) {
-				delete pDesignDB;
-				((CDesignDB*)pDB)->resetRecNumb();
-			}
-			else
-				pParam->setDesignDB(pDesignDB, 1);
-
-			fclose(outFile());
-			return true;
-		}
 	}
 	else {
 		fprintf(outFile(), "any pair of lambdas%s\n", nBIBDs ? ":" : "");
 	}
 
-	// Set flag for the empty lines output on the next appearence of that method
-	if (nBIBDs && flag) {
+	size_t nSimpleBIBDs = 0;
+	if (nBIBDs) {
 		const auto v = matrix()->rowNumb();
 		const auto b = matrix()->colNumb();
 		const size_t r = getR();
@@ -333,30 +321,42 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
 			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
 
-			if (pParam->printOnlySimpleDesigns() && !matrix()->isSimple(&sameFirst2Columns)) {
+			if (matrix()->isSimple(&sameFirst2Columns))
+				nSimpleBIBDs++;
+			else
+			if (pParam->printOnlySimpleDesigns()) {
 				if (sameFirst2Columns)
 					break;
 				continue;
 			}
 
-			setGroupOrder(rec->groupOrder);
-			matrix()->printOut(outFile(), v, i + 1, this, rec->designNumber());
+			if (flag) {
+				setGroupOrder(rec->groupOrder);
+				matrix()->printOut(outFile(), v, i + 1, this, rec->designNumber());
+			}
 		}
 	}
 
-	if (!pOutputInfo) {
-		auto* pDB = pParam->designDB(1);
+	if (addInfo) {
+		char str[256];
+		sprintf_s(str, "   {%d, %d}: %zd (%zd)", lambdaSet[0], lambdaSet[1], nBIBDs, nSimpleBIBDs);
+		outputInfo += str;
+
 		if (pDB) {
-			if (pDB->recNumb()) {
-				// Calculate intersections with previously obtained DB of BIBDs
-				auto* pIntersectionDB = new CDesignDB(pDesignDB->recordLength());
-				pIntersectionDB->combineDesignDBs(pDB, pDesignDB, false, true);
-				pParam->setDesignDB(pIntersectionDB, 1);
-				delete pDB;
+			if (!nBIBDs) {
+				delete pDesignDB;
+				((CDesignDB*)pDB)->resetRecNumb();
+			} else {
+				if (pDB->recNumb()) {
+					// Calculate intersections with previously obtained DB of BIBDs
+					auto* pIntersectionDB = new CDesignDB(pDesignDB->recordLength());
+					pIntersectionDB->combineDesignDBs(pDB, pDesignDB, false, true);
+					pParam->setDesignDB(pIntersectionDB, 1);
+					delete pDB;
+				}
+				delete pDesignDB;
 			}
-			delete pDesignDB;
-		}
-		else
+		} else
 			pParam->setDesignDB(pDesignDB, 1);
 
 		fclose(outFile());
@@ -365,7 +365,7 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		if (pParam->printOnlySimpleDesigns())
 			fprintf(outFile(), "\n\n" ONE_LINE_BLOCK "(NOTE: It was required to print only simple non-combined BIBDs) " ONE_LINE_BLOCK "\n");
 
-		fprintf(outFile(), "\n\n%s\n", pOutputInfo);
+		fprintf(outFile(), "\n\n%s\n", outputInfo.c_str());
 
 		// Set MT_level used for regular BIBDs enumeration.
 		const auto MT_level = pParam->MT_level();

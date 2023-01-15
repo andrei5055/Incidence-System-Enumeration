@@ -18,7 +18,7 @@ public:
 
 #if !CONSTR_ON_GPU
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
-	CK bool outNonCombinedDesigns(designParam* pParam, const CDesignDB* designDB, const char* pOutputInfo);
+	CK bool outNonCombinedDesigns(designParam* pParam, const CDesignDB* designDB, std::string& outputInfo, bool addInfo = false);
 
 #endif
 protected:

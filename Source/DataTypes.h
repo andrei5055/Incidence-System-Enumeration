@@ -607,5 +607,5 @@ private:
 };
 
 template <typename T, typename S>
-bool RunOperation(designParam* pParam, const char* pSummaryFileName, bool FirstPath, char* pBuffer = NULL, size_t lenBuffer = 0);
+bool RunOperation(designParam* pParam, const char* pSummaryFileName, bool FirstPath, std::string* outInfo = nullptr);
 #define VAR_1		1

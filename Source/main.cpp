@@ -172,12 +172,12 @@ static bool getTParam(const string &paramText, designParam *param)
 }
 
 template <typename T, typename S>
-void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const char* pBuffer = NULL, const char* pSummaryFileName = NULL) {
+void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, string& outputInfo, bool addInfo = false, const char* pSummaryFileName = NULL) {
 	const auto& lambda = param->InterStruct()->lambda();
 	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
 	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
-	bibdEnum.outNonCombinedDesigns(param, pDesignDB, pBuffer);
-	if (pBuffer) {
+	bibdEnum.outNonCombinedDesigns(param, pDesignDB, outputInfo, addInfo);
+	if (!addInfo) {
 		char buffer[256];
 		param->enumInfo()->reportResult(buffer, countof(buffer));
 		outString(buffer, pSummaryFileName);
@@ -186,7 +186,7 @@ void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, const c
 }
 
 template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, char *pBuffer, size_t lenBuffer) {
+bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, std::string* outInfo) {
 	if (pParam->v <= 0) {
 		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
 		return false;
@@ -287,10 +287,9 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, ch
 			// of the designs which are NOT in second database.
 			auto* pComplementDB = new CDesignDB(pDesignDB->recordLength());
 			pComplementDB->combineDesignDBs(pParam->designDB(), pDesignDB, true);
-			sprintf_s(pBuffer, lenBuffer, "   {%d, %d}: %zd", lambda[0], lambda[1], pComplementDB->recNumb());
 			delete pDesignDB;
 			delete pEnumInfo;
-			output_2_decompInfo<TDATA_TYPES>(pParam, pComplementDB);
+			output_2_decompInfo<TDATA_TYPES>(pParam, pComplementDB, *outInfo, true);
 		}
 		else {
 			// Saving pEnumInfo for use it after enumeration of combined BIBDs
@@ -298,8 +297,9 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, ch
 			pParam->setDesignDB(pDesignDB);
 			// Saving mt_level used for regular BIBDs enumeration
 			pParam->set_MT_level(pParam->MT_level(), 1);
-			if (pBuffer)
-				sprintf_s(pBuffer, lenBuffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
+			char buffer[265];
+			sprintf_s(buffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
+			*outInfo = buffer;
 		}
 
 		pInSysEnum->setDesignDB(NULL);
@@ -724,8 +724,7 @@ int main(int argc, char * argv[])
 
 			const string workingDir = param->workingDir + pSummaryFile;
 			const char* pSummFile = workingDir.c_str();
-			char buffer[256];
-			size_t used = 0;
+			std::string outInfo;
 			for (uint i = 0; i <= iMax; i++) {
 				if (i) {
 					// For all 2-part decomposition search only
@@ -735,16 +734,15 @@ int main(int argc, char * argv[])
 					lambdaSet->resize(0);
 					lambdaSet->push_back(i * lambda);
 					lambdaSet->push_back(baseLambda - i * lambda);
-					used = strlen(buffer);
 				}
-				if (!RunOperation<TDATA_TYPES>(param, pSummFile, firstRun, buffer + used, countof(buffer) - used))
+				if (!RunOperation<TDATA_TYPES>(param, pSummFile, firstRun, &outInfo))
 					break;
 
 				firstRun = false;
 			}
 
 			if (param->find_all_2_decomp) {
-				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), buffer, pSummFile);
+				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), outInfo, false, pSummFile);
 				delete param->enumInfo();
 				param->setEnumInfo(NULL);
 			}
