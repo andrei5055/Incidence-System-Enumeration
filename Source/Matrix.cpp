@@ -17,6 +17,26 @@ FClass2(CMatrixData, ulonglong)::GetNextCounter() {
 }
 #endif
 
+FClass2(CMatrixData, bool)::isSimple(bool *pFlag) const {
+	const auto nCol = this->colNumb();
+	const auto* pData = GetDataPntr();
+	for (T j = 1; j < nCol; j++) {
+		const auto* pColData = ++pData;
+		T i = -1;
+		while (++i < this->rowNumb() && *pColData == *(pColData - 1))
+			pColData += nCol;
+
+		if (i == this->rowNumb()) {
+			if (pFlag)
+				*pFlag = j == 1;  // When TRUE, the first 2 columns are identical
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, bool canon) const
 {
 	if (nRow == ELEMENT_MAX)

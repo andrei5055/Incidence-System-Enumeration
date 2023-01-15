@@ -89,6 +89,7 @@ public:
 	CC inline S* GetRow(T nRow, T idx, S* pLen = nullptr) const {
 		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
+	CC bool isSimple(bool* pFlag = NULL) const;
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
 	T m_nRows;

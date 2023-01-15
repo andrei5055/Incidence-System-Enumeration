@@ -956,6 +956,9 @@ static bool getNextLineForComparison(FILE *file, char *buffer, int lenBuffer, ch
 		if (!fgets(tmpBuff, lenBuffer, file))
 			return false;
 
+		if (strstr(tmpBuff, ONE_LINE_BLOCK))
+			continue;
+
 		if (outBlock) {
 			// Block was not open
 			if (strstr(tmpBuff, END_OUT_BLOCK))

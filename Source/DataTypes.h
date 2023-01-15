@@ -593,6 +593,8 @@ public:
 	inline auto lambdaStep() const				{ return m_lambdaStep; }
 	inline auto printEmptyLines() const			{ return m_emptyLines; }
 	inline void setEmptyLines(bool val = true)	{ m_emptyLines = val; }
+	inline auto printOnlySimpleDesigns() const  { return m_printSimpleDesign; }
+	inline void setPrintOnlySimpleDesigns(bool val = true) { m_printSimpleDesign = val; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	int mt_level[2] = { 0, 0 };		// Matrix row number, where the threads will be launched
@@ -601,6 +603,7 @@ private:
 	const CDesignDB* m_pDesignDB[2] = { NULL, NULL };
 	CInsSysEnumInfo<TDATA_TYPES>* m_pEnumInfo = NULL;
 	bool m_emptyLines = true;
+	bool m_printSimpleDesign = false;
 };
 
 template <typename T, typename S>

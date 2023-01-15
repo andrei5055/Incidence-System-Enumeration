@@ -52,7 +52,9 @@ protected:
 	CK virtual bool outputMaster() const							{ return false; }
 	CK void ConstructedDesignProcessing() const override			{ AddMatrixToDB(this); }
 	CK void AddMatrixToDB(const CMatrixCanonChecker* pCanonChecker, int rowAdj = 0) const;
-	CK bool createNewFile(const char* fName) const override			{ return designParams()->designDB() == NULL; }
+	CK bool createNewFile(const char* fName) const override			{
+		return designParams()->find_all_2_decomp != 1 || designParams()->logFile.empty();
+	}
 	CK  bool outFileIsValid(const struct stat& info, const char* pFileName=NULL) const override;
 
 private:

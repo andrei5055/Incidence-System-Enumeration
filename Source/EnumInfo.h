@@ -4,6 +4,7 @@
 
 #define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which
 #define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
+#define ONE_LINE_BLOCK			"#### "		// To skip just one line
 #define OF_THEM		            "of them"   // Marker of supporting information to skip
 
 class CTimerInfo

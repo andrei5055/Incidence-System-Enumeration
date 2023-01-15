@@ -326,11 +326,19 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 			pntr += length[j - 1];
 		}
 
+		bool sameFirst2Columns;
 		pntr = matrix()->GetRow(2);
 		const auto len = pDesignDB->recordLength() - LEN_HEADER;
 		for (size_t i = 0; i < nBIBDs; i++) {
 			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
 			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
+
+			if (pParam->printOnlySimpleDesigns() && !matrix()->isSimple(&sameFirst2Columns)) {
+				if (sameFirst2Columns)
+					break;
+				continue;
+			}
+
 			setGroupOrder(rec->groupOrder);
 			matrix()->printOut(outFile(), v, i + 1, this, rec->designNumber());
 		}
@@ -354,7 +362,11 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		fclose(outFile());
 	}
 	else {
+		if (pParam->printOnlySimpleDesigns())
+			fprintf(outFile(), "\n\n" ONE_LINE_BLOCK "(NOTE: It was required to print only simple non-combined BIBDs) " ONE_LINE_BLOCK "\n");
+
 		fprintf(outFile(), "\n\n%s\n", pOutputInfo);
+
 		// Set MT_level used for regular BIBDs enumeration.
 		const auto MT_level = pParam->MT_level();
 		pParam->set_MT_level(pParam->MT_level(1), 0);

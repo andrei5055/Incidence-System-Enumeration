@@ -589,6 +589,12 @@ int main(int argc, char * argv[])
 			if (output.find("GENERATING SET") != string::npos)
 				outType |= t_GroupGeneratingSet;
 
+			pos = find(output, "ONLY_SIMPLE_DESSIGN");
+			if (pos != string::npos) {
+				const bool val = output[pos] == '=' ? (uint)getInteger(output, &pos) != 0 : true;
+				param->setPrintOnlySimpleDesigns(val);
+			}
+
 			if (output.find("ALL OBJECTS") != string::npos)
 				outType |= t_AllObject;
 			else
