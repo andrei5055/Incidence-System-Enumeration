@@ -232,6 +232,15 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 		}
 		else {
 			pInSys = new Class2(C_BIBD)(pParam->v, pParam->k, 2, lambda[0]);
+			const auto r = pInSys->GetNumSet(t_rSet)->GetAt(0);
+			const int maxNumbCommenElement = (2 * pParam->k * lambda[0] / r) + (r - pParam->k - lambda[0]);
+			if (maxNumbCommenElement < pParam->k) {
+				// According the theorem by Connor, maxNumbCommenElement is
+				// the maximal number of common elements for two blocks
+				enumFlags |= t_noReplicatedBlocks;
+				pInSys->setMaxBlockIntrsection(static_cast<T>(maxNumbCommenElement));
+			}
+
 			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
 			objType = t_objectType::t_BIBD;
 		}

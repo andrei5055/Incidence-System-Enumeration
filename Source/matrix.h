@@ -139,17 +139,19 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 {
  public:
 	CK C_InSys(T nRows, T nCols, int t) : Class2(CMatrix)(nRows, nCols), m_t(t) {
-		setDataOwner(true);	 
+		setDataOwner(true);
+		setMaxBlockIntrsection(nRows);
 		m_ppNumbSet = createParamStorage(t_kSet); // Create 3 sets of vector: Lambda, R, and K 
 	}
 
-	CK C_InSys(const C_InSys *pMaster, size_t nRow) : Class2(CMatrix)(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
-		setDataOwner(nRow == 0);
+	CK C_InSys(const C_InSys *pMaster, T nRows) : Class2(CMatrix)(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
+		setDataOwner(nRows == 0);
 		m_ppNumbSet = pMaster->numbSet();
+		setMaxBlockIntrsection(nRows);
 
 		// Copy first nRow rows of master's matrix
 		const size_t len = this->colNumb() * sizeof(*this->GetRow(0));
-		for (T i = 0; i < nRow; i++)
+		for (auto i = nRows; i--;)
 			memcpy(this->GetRow(i), pMaster->GetRow(i), len);
 	}
 
@@ -172,6 +174,8 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }
 	CK inline t_objectType objectType() const				{ return m_objectType; }
 	virtual S rowNumbExt() const							{ return this->rowNumb(); }
+	CK inline auto maxBlockIntrsection() const              { return m_maxBlockIntersection; }
+	CK inline void setMaxBlockIntrsection(T value)          { m_maxBlockIntersection = value; }
 protected:
 	CK inline bool isDataOwner() const						{ return m_bDataOwner; }
 	CK VectorPntr *createParamStorage(int n) const  {
@@ -193,6 +197,7 @@ private:
 	VectorPntr *m_ppNumbSet;
 	bool m_bDataOwner;
 	const uchar m_t;
+	T m_maxBlockIntersection;
 };
 
 Class2Def(C_BIBD) : public Class2(C_InSys)
@@ -200,7 +205,7 @@ Class2Def(C_BIBD) : public Class2(C_InSys)
  public:
 	CK C_BIBD(int v, int k, int t = 2, int lambda = 0) : Class2(C_InSys)(v, lambda * v * (v - 1) / (k * (k - 1)), t)
 													{ InitParam(v, k, lambda); }
-	CK C_BIBD(const C_BIBD *pMaster, size_t nRow) : Class2(C_InSys)(pMaster, nRow) {}
+	CK C_BIBD(const C_BIBD *pMaster, T nRow) : Class2(C_InSys)(pMaster, nRow) {}
 	CK ~C_BIBD() {}
 protected:
 	CK void InitParam(int v, int k, int lambda) {
@@ -219,7 +224,7 @@ public:
 	CK C_PBIBD(int v, int k, int r, const std::vector<uint> &lambdaSet) : Class2(C_InSys)(v, v * r/k, 2) {
 		InitParam(v, k, r, lambdaSet);
 	}
-	CK C_PBIBD(const Class2(C_InSys) *pMaster, size_t nRow) : Class2(C_InSys)(pMaster, nRow) {}
+	CK C_PBIBD(const Class2(C_InSys) *pMaster, T nRow) : Class2(C_InSys)(pMaster, nRow) {}
 	CK ~C_PBIBD() {}
 protected:
 	CK void InitParam(int v, int k, int r, const std::vector<uint> &lambdaSet) {
@@ -235,7 +240,7 @@ Class2Def(CSemiSymmetricGraph) : public Class2(C_PBIBD)
 public:
 	CK CSemiSymmetricGraph(int v, int k, int r, const std::vector<uint> &lambdaSet) :
 		Class2(C_PBIBD)(v, k, r, lambdaSet) {}
-	CK CSemiSymmetricGraph(const Class2(C_InSys) *pMaster, size_t nRow) : Class2(C_PBIBD)(pMaster, nRow) {}
+	CK CSemiSymmetricGraph(const Class2(C_InSys) *pMaster, T nRow) : Class2(C_PBIBD)(pMaster, nRow) {}
 	CK ~CSemiSymmetricGraph()		{}
 };
 
@@ -243,7 +248,7 @@ Class2Def(C_tDesign) : public Class2(C_BIBD)
 {
 public:
 	CK C_tDesign(int t, int v, int k, int lambda);
-	CK C_tDesign(const C_tDesign *pMaster, size_t nRow) : m_t(pMaster->getT()), Class2(C_BIBD)(pMaster, nRow) {}
+	CK C_tDesign(const C_tDesign *pMaster, T nRow) : m_t(pMaster->getT()), Class2(C_BIBD)(pMaster, nRow) {}
 	CK ~C_tDesign()											{}
 	CK inline auto getT() const								{ return m_t; }
 	CK inline auto lambda() const							{ return this->GetNumSet(t_lSet)->GetAt(getT() - 2); }
@@ -255,7 +260,7 @@ Class2Def(CCombinedBIBD) : public Class2(C_BIBD)
 {
 public:
 	CK CCombinedBIBD(int v, int k, const std::vector<uint>& lambda);
-	CK CCombinedBIBD(const CCombinedBIBD* pMaster, size_t nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {
+	CK CCombinedBIBD(const CCombinedBIBD* pMaster, T nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {
 		auto *pPartsInformation = InitPartsInfo(pMaster->numParts());
 		pPartsInformation->CopyPartInfo(pMaster->partsInfo());
 	}

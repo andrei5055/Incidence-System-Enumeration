@@ -10,7 +10,7 @@ Class2Def(CThreadEnumerator)
 public:
 	CK CThreadEnumerator()							{ reset(); }
 	CK ~CThreadEnumerator()							{ release(); }
-	CK void setupThreadForBIBD(const EnumeratorPntr pMaster, size_t nRow, int threadIdx);
+	CK void setupThreadForBIBD(const EnumeratorPntr pMaster, T nRows, int threadIdx);
 	void EnumerateBIBD(designParam *pParam, EnumeratorPntr pMaster);
 	CK inline t_threadCode code() const				{ return m_code; }
 	CK inline EnumeratorPntr enumerator() const		{ return m_pEnum; }
@@ -55,7 +55,7 @@ Class2Def(C_tDesignEnumerator);
 Class2Def(CBIBD_Enumerator);
 Class2Def(CCombBIBD_Enumerator);
 
-FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, size_t nRow, int threadIdx) {
+FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, T nRow, int threadIdx) {
 	if (pMaster->IS_enumerator()) {
 		auto *pInsSysEnum = (const Class2(C_InSysEnumerator) *)(pMaster);
 		auto *pInSys = static_cast<const InSysPntr>(pInsSysEnum->matrix());
