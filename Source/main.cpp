@@ -544,6 +544,12 @@ int main(int argc, char * argv[])
 			find_all_2_decomp = static_cast<int>(getInteger(line, &pos));
 		}
 
+		pos = find(line, "COMPRESS_MATRICES");
+		if (pos != string::npos) {
+			param->m_compress_matrices = line[pos] == '=' ?
+				static_cast<int>(getInteger(line, &pos)) : 1;
+		}
+
 		pos = find(line, "NO_REPLICATED_BLOCKS");
 		if (pos != string::npos) {
 			param->noReplicatedBlocks = getInteger(line, &pos);

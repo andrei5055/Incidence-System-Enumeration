@@ -153,7 +153,9 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 	const auto v = matrix()->rowNumb() - rowAdj;
 	bool flag = designParams()->thread_master_DB;
 	flag = pMaster ? flag : !flag || !designParams()->threadNumb;
-	setDesignDB(flag ? new CDesignDB((v - 2) * b + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
+	const auto recordLength = (v - 2) * (designParams()->compressMatrices() ? (b + 7) >> 3 : b);
+	setRecordLen(recordLength);
+	setDesignDB(flag ? new CDesignDB(recordLength + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
 }
 
 FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(const CMatrixCanonChecker *pCanonChecker, int rowAdj) const {
@@ -163,11 +165,42 @@ FClass2(CBIBD_Enumerator, void)::AddMatrixToDB(const CMatrixCanonChecker *pCanon
 		m_mutexDB.lock();
 #endif
 	// No need to keep first two rows, they are the same for all master BIBDs
-	const auto idx = designDB()->AddRecord(pMatr->GetRow(2), pCanonChecker->groupOrder());
+	recPtr pRec = pMatr->GetRow(2);
+	uchar* memoryAllocated = NULL;
+	uchar buffer[512];
+	if (designParams()->compressMatrices()) {
+		uchar* pntrMatr = recordLen() > sizeof(buffer)
+			? memoryAllocated = new uchar[recordLen()]
+			: buffer;
+
+		auto* pntrCur = pntrMatr;
+		for (int i = 2; i < pMatr->rowNumb(); i++) {
+			uchar shift = 0;
+			uchar val = 0;
+			for (int j = 0; j < pMatr->colNumb(); j++) {
+				if (*pRec++)
+					val |= 0x80 >> shift;
+				if (++shift == 8) {
+					*pntrCur++ = val;
+					val = shift = 0;
+				}
+			}
+
+			if (shift)
+				*pntrCur++ = val;
+		}
+		pRec = pntrMatr;
+	}
+
+	const auto idx = designDB()->AddRecord(pRec, (DB_INFO_DATA_TYPE)pCanonChecker->groupOrder());
 	if (outputMaster()) {
 		outBlockTitle();
 		pMatr->printOut(this->outFile(), pMatr->rowNumb() - rowAdj, matrix()->getMatrixCounter() + 1, pCanonChecker, idx + 1);
 	}
+
+	if (memoryAllocated)
+		delete[] memoryAllocated;
+
 #if USE_MUTEX
 	if (sharedDB())
 		m_mutexDB.unlock();
@@ -318,7 +351,7 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 		pntr = matrix()->GetRow(2);
 		const auto len = pDesignDB->recordLength() - LEN_HEADER;
 		for (size_t i = 0; i < nBIBDs; i++) {
-			const auto rec = (const masterInfo*)pDesignDB->getRecord(i);
+			const auto rec = (const masterInfo<DB_INFO_DATA_TYPE> *)pDesignDB->getRecord(i);
 			memcpy(pntr, (uchar*)rec + LEN_HEADER, len);
 
 			if (matrix()->isSimple(&sameFirst2Columns))
