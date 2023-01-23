@@ -1,0 +1,47 @@
+CBIBD(  6,  3, {14, 4})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1         11      203    2*8 + 2*9 + 3*15 + 16 + 17 + 40 + 51
+      2         21      308    5 + 4*6 + 7 + 2*9 + 5*10 + 2*13 + 3*25 + 2*30 + 43
+      3         24      309    4 + 7*5 + 4*6 + 2*8 + 11 + 6*20 + 25 + 2*37
+      4          4       64    5 + 2*17 + 25
+      6         18      247    2*3 + 2*4 + 2*5 + 8 + 3*13 + 3*17 + 5*25
+     12         20      217    2*2 + 6*3 + 3*10 + 3*11 + 6*22
+     36          2       12    3 + 9
+     60          5       41    1 + 4 + 3*12
+______________________________________________________________________________________________
+  Total:       105     1401    MaxDecomp for master: 51
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1            587            0      0      0
+             2            218            0      0      0
+             3            373            0      0      0
+             4             11            0      0      0
+             6             67            0      0      0
+            12            132            0    132      0
+            36              1            0      0      0
+            60             12            0     12      0
+    ___________________________________________________________
+        Total:           1401            0    144      0
+
+      1401 matrices were constructed in  0.11 sec,
+       144 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+      2040 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

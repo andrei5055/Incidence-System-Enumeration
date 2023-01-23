@@ -1,0 +1,57 @@
+CBIBD(  6,  3, {24, 4})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1        163     5259    4*8 + 16*9 + 6*10 + 2*14 + 6*15 + 15*16 + 5*17 + 22*18 + 2*19 +
+                               5*20 + 12*21 + 39 + 7*40 + 6*41 + 47 + 3*48 + 2*49 + 5*50 +
+                               7*51 + 13*52 + 2*70 + 71 + 14*72 + 6*73
+      2         98     2366    2*5 + 10*6 + 6*7 + 5*9 + 5*10 + 2*12 + 11*13 + 2*22 + 10*25 +
+                               2*28 + 15*30 + 4*40 + 24*43
+      3        115     2340    4 + 15*5 + 20*6 + 5*8 + 5*11 + 25*20 + 2*25 + 5*26 + 3*36 +
+                               34*37
+      4         16      274    4 + 2*5 + 3*8 + 2*16 + 17 + 3*25 + 4*28
+      6         40      676    3 + 5*4 + 5 + 5*8 + 5*13 + 4*17 + 19*25
+      8          3       41    9 + 2*16
+     12         42      579    2*2 + 10*3 + 5*10 + 5*11 + 20*22
+     24         14      157    2*2 + 6 + 7 + 5*13 + 5*15
+     36          2       15    6 + 9
+     60          7       65    1 + 4 + 5*12
+    720          1        4    4
+______________________________________________________________________________________________
+  Total:       501    11776    MaxDecomp for master: 73
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1           8143            0      0      0
+             2           1105            0      0      0
+             3           1869            0      0      0
+             4             82            0      0      0
+             6            172            0      0      0
+             8              3            0      0      0
+            12            342            0    342      0
+            24             38            0     38      0
+            36              2            0      0      0
+            60             19            0     19      0
+           720              1            0      1      0
+    ___________________________________________________________
+        Total:          11776            0    400      0
+
+     11776 matrices were constructed in  0.71 sec,
+       400 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+     16419 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

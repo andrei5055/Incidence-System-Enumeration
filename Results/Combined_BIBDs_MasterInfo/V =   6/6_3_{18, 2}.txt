@@ -1,0 +1,48 @@
+CBIBD(  6,  3, {18, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1         23      156    6*4 + 12*6 + 5*12
+      2         28      146    2*2 + 6*3 + 8*4 + 2*6 + 10*8
+      3         37      200    16*3 + 4*4 + 17*8
+      4          7       24    4*2 + 4 + 2*6
+      6         19       86    4*2 + 4*3 + 11*6
+      8          2        6    2*3
+     12         20       88    8*2 + 12*6
+     24         10       30    2*1 + 4*3 + 4*4
+     36          1        2    2
+     60          5       17    1 + 4*4
+    720          1        1    1
+______________________________________________________________________________________________
+  Total:       153      756    MaxDecomp for master: 12
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1            276            0      0      0
+             2            120            0      0      0
+             3            220            0      0      0
+             6             40            0      0      0
+            12             90            0     90      0
+            60             10            0     10      0
+    ___________________________________________________________
+        Total:            756            0    100      0
+
+       756 matrices were constructed in  0.09 sec,
+       100 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+       955 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

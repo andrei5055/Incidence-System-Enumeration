@@ -1,0 +1,48 @@
+CBIBD(  6,  3, {34, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1        633     5648    68*4 + 227*6 + 3*10 + 36*11 + 299*12
+      2        235     1482    4*2 + 34*3 + 41*4 + 20*6 + 136*8
+      3        261     1692    64*3 + 19*4 + 178*8
+      4         29      126    7*2 + 10*4 + 12*6
+      6         69      361    8*2 + 7*3 + 54*6
+      8          4       12    4*3
+     12         72      368    16*2 + 56*6
+     24         18       58    2*1 + 8*3 + 8*4
+     36          3        5    1 + 2*2
+     60          9       33    1 + 8*4
+    720          1        1    1
+______________________________________________________________________________________________
+  Total:      1334     9786    MaxDecomp for master: 12
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1           6846            0      0      0
+             2            912            0      0      0
+             3           1560            0      0      0
+             6            144            0      0      0
+            12            306            0    306      0
+            60             18            0     18      0
+    ___________________________________________________________
+        Total:           9786            0    324      0
+
+      9786 matrices were constructed in  0.62 sec,
+       324 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+     12150 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

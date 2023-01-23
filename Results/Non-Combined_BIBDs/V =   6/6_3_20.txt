@@ -1,0 +1,48 @@
+BIBD(  6, 100, 50,  3, 20)
+
+
+0 BIBDs which are NOT combined for lambdas = {2,18}
+0 BIBDs which are NOT combined for lambdas = {4,16}
+0 BIBDs which are NOT combined for lambdas = {6,14}
+0 BIBDs which are NOT combined for lambdas = {8,12}
+0 BIBDs which are NOT combined for lambdas = {10,10}
+0 BIBDs which are NOT combined for any pair of lambdas
+
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  6, 100, 50,  3, 20)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {2, 18}: 0 (0)   {4, 16}: 0 (0)   {6, 14}: 0 (0)   {8, 12}: 0 (0)   {10, 10}: 0 (0)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1             23            0      0      0
+             2             28            0      0      0
+             3             37            0      0      0
+             4              7            0      0      0
+             6             19            0      0      0
+             8              2            0      0      0
+            12             20            0     20      0
+            24             10            0     10      0
+            36              1            0      0      0
+            60              5            0      5      0
+           720              1            0      1      0
+    ___________________________________________________________
+        Total:            153            0     36      0
+
+       153 matrices were constructed in  2.78 sec,
+        36 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+       165 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

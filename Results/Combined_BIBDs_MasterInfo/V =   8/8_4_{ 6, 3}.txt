@@ -2,7 +2,7 @@ CBIBD(  8,  4, { 6, 3})
  
 <<<< Decomposition info: >>>> 
 
- |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
 ______________________________________________________________________________________________
       1    5016069 10613652    2399236*1 + 1295617*2 + 599777*3 + 320252*4 + 179820*5 +
                                93550*6 + 53572*7 + 30041*8 + 18073*9 + 10252*10 + 6049*11 +
@@ -65,7 +65,7 @@ ________________________________________________________________________________
     ___________________________________________________________
         Total:       10648675       776249     32     13
 
-  10648675 matrices were constructed in 39:23.70 sec,
+  10648675 matrices were constructed in 11:26.61 sec,
         32 of them are transitive on the rows.
     776249 matrices have no replicated blocks,
         13 of them are transitive on the rows.
@@ -73,7 +73,7 @@ ________________________________________________________________________________
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 5 (not waiting to finish mode)
+        20 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

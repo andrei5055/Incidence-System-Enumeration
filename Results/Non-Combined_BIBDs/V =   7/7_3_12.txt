@@ -1,0 +1,64 @@
+BIBD(  7,  84, 36,  3, 12)
+
+
+3 BIBDs which are NOT combined for lambdas = {1,11}:
+
+
+3 BIBDs which are NOT combined for lambdas = {2,10}:
+
+
+0 BIBDs which are NOT combined for lambdas = {3,9}
+3 BIBDs which are NOT combined for lambdas = {4,8}:
+
+
+3 BIBDs which are NOT combined for lambdas = {5,7}:
+
+
+73 BIBDs which are NOT combined for lambdas = {6,6}:
+
+
+0 BIBDs which are NOT combined for any pair of lambdas
+
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  7,  84, 36,  3, 12)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {1, 11}: 3 (0)   {2, 10}: 3 (0)   {3, 9}: 0 (0)   {4, 8}: 3 (0)   {5, 7}: 3 (0)   {6, 6}: 73 (0)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1         402404            0      0      0
+             2           8164            0      0      0
+             3           1511            0      0      0
+             4            505            0      0      0
+             6            206            0      0      0
+             8             82            0      0      0
+            12             54            0      0      0
+            16              8            0      0      0
+            21             12            0     12      0
+            24             32            0      0      0
+            36              1            0      0      0
+            42              3            0      3      0
+            48              2            0      0      0
+            72              1            0      0      0
+           144              2            0      0      0
+           168              4            0      4      0
+    ___________________________________________________________
+        Total:         412991            0     19      0
+
+    412991 matrices were constructed in  7:20:01.81 sec,
+        19 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+    564591 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

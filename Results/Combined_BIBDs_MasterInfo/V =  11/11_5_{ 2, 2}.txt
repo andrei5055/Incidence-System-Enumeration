@@ -1,0 +1,54 @@
+CBIBD( 11,  5, { 2, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1         12       12    12*1
+      2         18       18    18*1
+      3          1        1    1
+      4          9        9    9*1
+      5          2        2    2*1
+      6          4        4    4*1
+      8          3        3    3*1
+     12          4        4    4*1
+     24          2        2    2*1
+    120          2        2    2*1
+    660          1        1    1
+______________________________________________________________________________________________
+  Total:        58       58    MaxDecomp for master: 1
+ 
+>>>> Decomposition info <<<< 
+
+
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+             1               12           12      0      0
+             1*2             15           15      0      0
+             2                3            3      0      0
+             2*2              9            9      0      0
+             3                1            1      0      0
+             3*2              4            4      0      0
+             4*2              3            3      0      0
+             5                2            2      0      0
+             6*2              4            4      0      0
+            12*2              2            2      0      0
+            60*2              2            2      0      0
+           660*2              1            1      1      1
+    _____________________________________________________________
+        Total:               58           58      1      1
+
+        58 matrices were constructed in  0.31 sec,
+         1 of them is transitive on the rows.
+        58 matrices have no replicated blocks,
+         1 of them is transitive on the rows.
+       166 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 5 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

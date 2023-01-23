@@ -1,0 +1,52 @@
+BIBD(  7,  77, 33,  3, 11)
+
+
+0 BIBDs which are NOT combined for lambdas = {1,10}
+0 BIBDs which are NOT combined for lambdas = {2,9}
+0 BIBDs which are NOT combined for lambdas = {3,8}
+0 BIBDs which are NOT combined for lambdas = {4,7}
+0 BIBDs which are NOT combined for lambdas = {5,6}
+0 BIBDs which are NOT combined for any pair of lambdas
+
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  7,  77, 33,  3, 11)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {1, 10}: 0 (0)   {2, 9}: 0 (0)   {3, 8}: 0 (0)   {4, 7}: 0 (0)   {5, 6}: 0 (0)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1         149292            0      0      0
+             2           4290            0      0      0
+             3            971            0      0      0
+             4            295            0      0      0
+             6            143            0      0      0
+             8             48            0      0      0
+            12             32            0      0      0
+            16              5            0      0      0
+            21             11            0     11      0
+            24             23            0      0      0
+            42              2            0      2      0
+            48              1            0      0      0
+            72              1            0      0      0
+           144              1            0      0      0
+           168              3            0      3      0
+    ___________________________________________________________
+        Total:         155118            0     16      0
+
+    155118 matrices were constructed in  1:18:35.59 sec,
+        16 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+    217359 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

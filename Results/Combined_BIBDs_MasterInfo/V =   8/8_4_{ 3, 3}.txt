@@ -2,7 +2,7 @@ CBIBD(  8,  4, { 3, 3})
  
 <<<< Decomposition info: >>>> 
 
- |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
 ______________________________________________________________________________________________
       1        305      427    197*1 + 99*2 + 4*3 + 5*4
       2         55       64    46*1 + 9*2
@@ -46,7 +46,7 @@ ________________________________________________________________________________
     _____________________________________________________________
         Total:              601          601      2      2
 
-       601 matrices were constructed in  0.44 sec,
+       601 matrices were constructed in  0.17 sec,
          2 of them are transitive on the rows.
        601 matrices have no replicated blocks,
          2 of them are transitive on the rows.
@@ -54,7 +54,7 @@ ________________________________________________________________________________
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 5 (not waiting to finish mode)
+        20 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

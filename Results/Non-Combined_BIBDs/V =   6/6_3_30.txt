@@ -1,0 +1,47 @@
+BIBD(  6, 150, 75,  3, 30)
+
+
+0 BIBDs which are NOT combined for lambdas = {2,28}
+0 BIBDs which are NOT combined for lambdas = {4,26}
+0 BIBDs which are NOT combined for lambdas = {6,24}
+0 BIBDs which are NOT combined for lambdas = {8,22}
+0 BIBDs which are NOT combined for lambdas = {10,20}
+0 BIBDs which are NOT combined for lambdas = {12,18}
+0 BIBDs which are NOT combined for lambdas = {14,16}
+0 BIBDs which are NOT combined for any pair of lambdas
+
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  6, 150, 75,  3, 30)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {2, 28}: 0 (0)   {4, 26}: 0 (0)   {6, 24}: 0 (0)   {8, 22}: 0 (0)   {10, 20}: 0 (0)   {12, 18}: 0 (0)   {14, 16}: 0 (0)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1            235            0      0      0
+             2            135            0      0      0
+             3            141            0      0      0
+             4             13            0      0      0
+             6             53            0      0      0
+            12             56            0     56      0
+            36              3            0      0      0
+            60              8            0      8      0
+    ___________________________________________________________
+        Total:            644            0     64      0
+
+       644 matrices were constructed in 51.81 sec,
+        64 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+       714 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

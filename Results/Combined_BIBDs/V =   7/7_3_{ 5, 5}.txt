@@ -1,0 +1,50 @@
+CBIBD(  7,  3, { 5, 5})
+
+        |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
+    _____________________________________________________________
+             1          4514502            0      0      0
+             1*2            607            0      0      0
+             2            16248            0      0      0
+             2*2             91            0      0      0
+             3             4702            0      0      0
+             3*2             40            0      0      0
+             4             1083            0      0      0
+             4*2             49            0      0      0
+             6              146            0      0      0
+             6*2              8            0      0      0
+             8               86            0      0      0
+             8*2              9            0      0      0
+            10                2            0      0      0
+            10*2              1            0      0      0
+            12               75            0      0      0
+            12*2             11            0      0      0
+            16                1            0      0      0
+            16*2              1            0      0      0
+            20                1            0      0      0
+            20*2              1            0      0      0
+            21               15            0     15      0
+            21*2              4            0      4      0
+            24               26            0      0      0
+            24*2             10            0      0      0
+            60                1            0      0      0
+            60*2              1            0      0      0
+           168                1            0      1      0
+           168*2              1            0      1      0
+          5040*2              1            1      1      1
+    _____________________________________________________________
+        Total:          4537724            1     22      1
+
+   4537724 matrices were constructed in  2:57.07 sec,
+        22 of them are transitive on the rows.
+         1 matrix has no replicated blocks,
+         1 of them is transitive on the rows.
+   9150538 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

@@ -1,0 +1,45 @@
+CBIBD(  6,  3, {36, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1        836     7562    84*4 + 289*6 + 4*10 + 56*11 + 403*12
+      2        300     1938    46*3 + 47*4 + 22*6 + 185*8
+      3        306     2004    72*3 + 21*4 + 213*8
+      4         22       78    5*2 + 17*4
+      6         87      459    9*2 + 9*3 + 69*6
+     12         90      468    18*2 + 72*6
+     36          3        6    3*2
+     60         10       37    1 + 9*4
+______________________________________________________________________________________________
+  Total:      1654    12552    MaxDecomp for master: 12
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1           9080            0      0      0
+             2           1092            0      0      0
+             3           1857            0      0      0
+             6            162            0      0      0
+            12            342            0    342      0
+            60             19            0     19      0
+    ___________________________________________________________
+        Total:          12552            0    361      0
+
+     12552 matrices were constructed in  0.79 sec,
+       361 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+     15594 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

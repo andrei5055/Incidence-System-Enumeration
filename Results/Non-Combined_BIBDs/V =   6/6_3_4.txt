@@ -1,0 +1,42 @@
+BIBD(  6,  20, 10,  3,  4)
+
+
+2 BIBDs which are NOT combined for any pair of lambdas:
+
+Matrix #   1.1    |Aut(M)| =    720
+11111111110000000000
+11110000001111110000
+10001110001110001110
+01001001101001101101
+00100101010101011011
+00010010110010110111
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  6,  20, 10,  3,  4)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {2, 2}: 2 (1)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+            24              2            0      2      0
+            60              1            0      1      0
+           720              1            1      1      1
+    ___________________________________________________________
+        Total:              4            1      4      1
+
+         4 matrices were constructed in  0.17 sec,
+         4 of them are transitive on the rows.
+         1 matrix has no replicated blocks,
+         1 of them is transitive on the rows.
+         4 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

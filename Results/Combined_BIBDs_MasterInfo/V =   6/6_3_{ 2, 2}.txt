@@ -2,7 +2,7 @@ CBIBD(  6,  3, { 2, 2})
  
 <<<< Decomposition info: >>>> 
 
- |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
 ______________________________________________________________________________________________
      24          1        1    1
      60          1        1    1
@@ -27,7 +27,7 @@ ________________________________________________________________________________
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 3 (not waiting to finish mode)
+        20 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

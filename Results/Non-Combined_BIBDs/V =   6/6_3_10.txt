@@ -1,0 +1,41 @@
+BIBD(  6,  50, 25,  3, 10)
+
+
+0 BIBDs which are NOT combined for lambdas = {2,8}
+0 BIBDs which are NOT combined for lambdas = {4,6}
+0 BIBDs which are NOT combined for any pair of lambdas
+
+
+#### (NOTE: It was required to print only simple non-combined BIBDs) #### 
+
+
+Number of BIBD(  6,  50, 25,  3, 10)'s which are NOT combined for the following {lambda_1, lambda_2}:
+     {2, 8}: 0 (0)   {4, 6}: 0 (0)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             2              1            0      0      0
+             3              2            0      0      0
+             4              1            0      0      0
+             6              5            0      0      0
+            12              6            0      6      0
+            36              1            0      0      0
+            60              3            0      3      0
+    ___________________________________________________________
+        Total:             19            0      9      0
+
+        19 matrices were constructed in  0.25 sec,
+         9 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+        19 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
+EOF

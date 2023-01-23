@@ -1,0 +1,33 @@
+CBIBD(  7,  3, { 3, 2})
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1            338            1      0      0
+             2             79            2      0      0
+             3             87            2      0      0
+             4             25            0      0      0
+             6             14            1      0      0
+             8              8            0      0      0
+            12              8            0      0      0
+            16              1            0      0      0
+            21              6            0      6      0
+            24              8            0      0      0
+            42              1            1      1      1
+           168              1            0      1      0
+    ___________________________________________________________
+        Total:            576            7      8      1
+
+       576 matrices were constructed in  0.13 sec,
+         8 of them are transitive on the rows.
+         7 matrices have no replicated blocks,
+         1 of them is transitive on the rows.
+      1045 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

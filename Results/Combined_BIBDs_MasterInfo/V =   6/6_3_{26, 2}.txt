@@ -1,0 +1,48 @@
+CBIBD(  6,  3, {26, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1        163     1326    26*4 + 69*6 + 8*11 + 60*12
+      2         98      581    3*2 + 17*3 + 21*4 + 8*6 + 49*8
+      3        115      700    36*3 + 10*4 + 69*8
+      4         16       64    6*2 + 4*4 + 6*6
+      6         40      198    6*2 + 6*3 + 28*6
+      8          3        9    3*3
+     12         42      204    12*2 + 30*6
+     24         14       44    2*1 + 6*3 + 6*4
+     36          2        4    2*2
+     60          7       25    1 + 6*4
+    720          1        1    1
+______________________________________________________________________________________________
+  Total:       501     3156    MaxDecomp for master: 12
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1           1798            0      0      0
+             2            392            0      0      0
+             3            686            0      0      0
+             6             84            0      0      0
+            12            182            0    182      0
+            60             14            0     14      0
+    ___________________________________________________________
+        Total:           3156            0    196      0
+
+      3156 matrices were constructed in  0.23 sec,
+       196 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+      3984 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

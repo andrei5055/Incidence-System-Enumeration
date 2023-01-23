@@ -1,0 +1,48 @@
+CBIBD(  6,  3, {22, 2})
+ 
+<<<< Decomposition info: >>>> 
+
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
+______________________________________________________________________________________________
+      1         68      516    14*4 + 31*6 + 2*11 + 21*12
+      2         57      316    2*2 + 12*3 + 15*4 + 4*6 + 24*8
+      3         69      399    25*3 + 7*4 + 37*8
+      4         10       42    3*2 + 3*4 + 4*6
+      6         28      136    5*2 + 4*3 + 19*6
+      8          3        7    1 + 2*3
+     12         30      140    10*2 + 20*6
+     24         12       37    2*1 + 5*3 + 5*4
+     36          2        3    1 + 2
+     60          6       21    1 + 5*4
+    720          1        1    1
+______________________________________________________________________________________________
+  Total:       286     1618    MaxDecomp for master: 12
+ 
+>>>> Decomposition info<<<< 
+
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1            774            0      0      0
+             2            230            0      0      0
+             3            410            0      0      0
+             6             60            0      0      0
+            12            132            0    132      0
+            60             12            0     12      0
+    ___________________________________________________________
+        Total:           1618            0    144      0
+
+      1618 matrices were constructed in  0.14 sec,
+       144 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+      2050 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
