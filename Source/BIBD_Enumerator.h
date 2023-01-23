@@ -64,8 +64,10 @@ private:
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
 	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp == 1? "Non-Combined_BIBDs" : "BIBDs"; }
 	CK bool sharedDB() const										 { return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
-
+	CK inline void setRecordLen(size_t val)						     { m_recordLength = val; }
+	CK inline auto recordLen() const                                 { return m_recordLength; }
 	S m_r;
+	size_t m_recordLength = 0;
 };
 
 FClass2(CBIBD_Enumerator, bool)::checkSolutions(RowSolutionPntr pSolution, S nPart, PERMUT_ELEMENT_TYPE idx, bool doSorting)

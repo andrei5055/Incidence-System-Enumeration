@@ -3,13 +3,13 @@
 #include <assert.h>
 
 
-size_t CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp) {
+size_t CDesignDB::AddRecord(recPtr pRecord, DB_INFO_DATA_TYPE groupOrder, DB_INFO_DATA_TYPE numbDecomp) {
 	int cmpRes;
 	const auto iMin = FindRecord(pRecord, &cmpRes);
 	if (!cmpRes) {
 		// Increase counter for the record just found
 		const auto idx = m_pRecPermutation[iMin];
-		auto* pMasterInfo = (masterInfo *)getRecord(idx);
+		auto* pMasterInfo = (masterInfo<DB_INFO_DATA_TYPE> *)getRecord(idx);
 		pMasterInfo->numbDecomp += numbDecomp;
 		assert(pMasterInfo->groupOrder == groupOrder);
 		return idx;
@@ -22,7 +22,7 @@ size_t CDesignDB::AddRecord(recPtr pRecord, size_t groupOrder, size_t numbDecomp
 
 	auto* pntr = (unsigned char *)getRecord(m_nRecNumb);
 	memcpy(pntr + LEN_HEADER, pRecord, recordLength() - LEN_HEADER);
-	auto* pMasterInfo = (masterInfo*)(pntr);
+	auto* pMasterInfo = (masterInfo<DB_INFO_DATA_TYPE>*)(pntr);
 	pMasterInfo->numbDecomp = numbDecomp;
 	pMasterInfo->groupOrder = groupOrder;
 
@@ -131,13 +131,13 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 			memcpy(pntr, pRec_A, recordLength());
 			if (!cmpResult) {
 				if (!intersecFlag)
-					((masterInfo*)pntr)->numbDecomp += ((const masterInfo*)pRec_B)->numbDecomp;
+					((masterInfo<DB_INFO_DATA_TYPE>*)pntr)->numbDecomp += ((const masterInfo<DB_INFO_DATA_TYPE> *)pRec_B)->numbDecomp;
 
 				state = 3;
 			}
 			else {
 				if (complFlag)
-					((masterInfo*)pntr)->setDesignNumber(ind_A);
+					((masterInfo<DB_INFO_DATA_TYPE>*)pntr)->setDesignNumber(ind_A);
 
 				state = 1;
 			}
@@ -165,8 +165,8 @@ void CDesignDB::combineDesignDBs(const CDesignDB* pDB_A, const CDesignDB* pDB_B,
 }
 
 int compareRecordsA(recPtr pRec1, recPtr pRec2) {
-	const auto* pMaster_1 = (masterInfo*)pRec1;
-	const auto* pMaster_2 = (masterInfo*)pRec2;
+	const auto* pMaster_1 = (masterInfo<DB_INFO_DATA_TYPE>*)pRec1;
+	const auto* pMaster_2 = (masterInfo<DB_INFO_DATA_TYPE>*)pRec2;
 	const auto decompNumber_1 = pMaster_1->numbDecomp;
 	const auto decompNumber_2 = pMaster_2->numbDecomp;
 	if (decompNumber_1 == decompNumber_2) {
@@ -178,8 +178,8 @@ int compareRecordsA(recPtr pRec1, recPtr pRec2) {
 }
 
 int compareRecords(recPtr pRec1, recPtr pRec2) {
-	const auto* pMaster_1 = (masterInfo*)pRec1;
-	const auto* pMaster_2 = (masterInfo*)pRec2;
+	const auto* pMaster_1 = (masterInfo<DB_INFO_DATA_TYPE>*)pRec1;
+	const auto* pMaster_2 = (masterInfo<DB_INFO_DATA_TYPE>*)pRec2;
 	if (pMaster_1->groupOrder == pMaster_2->groupOrder) {
 		return (pMaster_1->numbDecomp == pMaster_2->numbDecomp) ? 0 :
 			pMaster_1->numbDecomp > pMaster_2->numbDecomp ? 1 : -1;
@@ -218,17 +218,17 @@ void CDesignDB::outWithFormat(const size_t * pSortedRecords, FILE * file) const 
 
 	const auto last = recNumb() - 1;
 	size_t i = 0;
-	auto* pRec = (const masterInfo*)getRecord(pSortedRecords[i]);
+	auto* pRec = (const masterInfo<DB_INFO_DATA_TYPE>*)getRecord(pSortedRecords[i]);
 	unsigned long long totalCombined = 0, totalMasters = 0;
 
-	auto groupOrder = pRec->groupOrder;
+	size_t groupOrder = pRec->groupOrder;
 	size_t numb[2] = { 1, pRec->numbDecomp };
 
 	size_t numbDecompMaxGlobal, numbDecompMax, jMax, numbMastersGroup, numDecompGroup;
 	numDecompGroup = numbMastersGroup = 0;
 	numbDecompMaxGlobal = numbDecompMax = jMax = 1;
 	while (++i < recNumb()) {
-		pRec = (const masterInfo*)getRecord(pSortedRecords[i]);
+		pRec = (const masterInfo< DB_INFO_DATA_TYPE>*)getRecord(pSortedRecords[i]);
 		if (groupOrder == pRec->groupOrder && numb[DECOMP] == pRec->numbDecomp) {
 			numb[MASTER]++;
 			if (i != last)
