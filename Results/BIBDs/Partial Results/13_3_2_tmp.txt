@@ -2,22 +2,22 @@ BIBD( 13,  52, 12,  3,  2)
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1      207358011    207358011      0      0
-             2          17453        17453      0      0
-             3            861          861      0      0
+             1      657503819    657503819      0      0
+             2          25471        25471      0      0
+             3           1601         1601      0      0
              4              5            5      0      0
-             6             22           22      0      0
+             6             24           24      0      0
             12              2            2      0      0
             39              1            1      1      1
            156              1            1      1      1
     ___________________________________________________________
-        Total:      207376356    207376356      2      2
+        Total:      657530924    657530924      2      2
 
- 207376356 matrices were constructed in  3:02:59:00.50 sec,
+ 657530924 matrices were constructed in  8:16:27:31.00 sec,
          2 of them are transitive on the rows.
- 207376356 matrices have no replicated blocks,
+ 657530924 matrices have no replicated blocks,
          2 of them are transitive on the rows.
-1140668347 matrices were fully constructed.
+3638093509 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
