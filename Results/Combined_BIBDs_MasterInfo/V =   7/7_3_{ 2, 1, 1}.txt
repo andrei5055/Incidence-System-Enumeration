@@ -2,7 +2,7 @@ CBIBD(  7,  3, { 2, 1, 1})
  
 <<<< Decomposition info: >>>> 
 
- |Aut(M)|: Masters:  Decomp:        Decomposition Look:
+ |Aut(M)|: Masters:  CBIBDs:           Distribution:
 ______________________________________________________________________________________________
       1          1        6    6
       2          6       17    2*2 + 3*3 + 4
@@ -47,7 +47,7 @@ ________________________________________________________________________________
     _____________________________________________________________
         Total:               88           20      5      2
 
-        88 matrices were constructed in  0.02 sec,
+        88 matrices were constructed in  0.18 sec,
          5 of them are transitive on the rows.
         20 matrices have no replicated blocks,
          2 of them are transitive on the rows.
@@ -55,7 +55,7 @@ ________________________________________________________________________________
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 2 (not waiting to finish mode)
+         2 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
