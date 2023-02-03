@@ -1,25 +1,30 @@
 BIBD( 11,  33, 15,  5,  6)
 
         |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1         1022830         1022830               0               0
-             2             444             444               0               0
-             3              47              47               0               0
-             4              71              71               0               0
-             6               7               7               0               0
-             8               2               2               0               0
-            11               1               1               1               1
+    ___________________________________________________________
+             1       49885650     49885650      0      0
+             2           4014         4014      0      0
+             3             84           84      0      0
+             4            101          101      0      0
+             6             20           20      0      0
+             8              5            5      0      0
+            11              2            2      2      2
+            12              1            1      0      0
             36               1               1               0               0
             72               1               1               0               0
-    _______________________________________________________________________________
-        Total:         1023404         1023404               1               1
+    ___________________________________________________________
+        Total:       49889879     49889879      2      2
 
-   1023404 matrices constructed in  2:23:29:50.79
-   1023404 matrices have no replicated blocks
- 195958083 matrices were fully constructed
+  49889879 matrices were constructed in  5:18:13:59.15 sec,
+         2 of them are transitive on the rows.
+  49889879 matrices have no replicated blocks,
+         2 of them are transitive on the rows.
+1667854515 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 5 (not waiting to finish mode)
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        15 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are used by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used
