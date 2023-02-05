@@ -332,11 +332,13 @@ static size_t find(const string &str, const char *strValue)
 	return pos != string::npos ? pos + strlen(strValue) : pos;
 }
 
-static size_t getInteger(const string &str, size_t *pPos) {
+static int getInteger(const string &str, size_t *pPos) {
 	string tmp = str.substr(*pPos + 1);
 	ltrim(tmp);
-	if (!tmp.length())
-		return *pPos = string::npos;
+	if (!tmp.length()) {
+		*pPos = string::npos;
+		return 1;
+	}
 
 	size_t posE = tmp.find(' ');
 	const size_t posE1 = tmp.find(';');
@@ -351,6 +353,28 @@ static size_t getInteger(const string &str, size_t *pPos) {
 		return atoi(tmp.c_str());
 
 	return tmp == "YES"? 1 : 0;
+}
+
+template <typename T>
+static int getIntegerParam(const string& str, const char* pKeyWord, T *pValue, size_t* pPos = nullptr) {
+	size_t pos = find(str, pKeyWord);
+	if (pos == string::npos)
+		return 0;		// keyWord was not found
+
+	const bool flag = str[pos] != '=';
+	if (flag) {
+		*pValue = 1;	// the value is determined by the presence of the keyword
+		string tmp = str.substr(pos);
+		ltrim(tmp);
+		if (!tmp.length())
+			return -1;	// there is nothing after keyWords
+	} else
+		*pValue = static_cast<T>(getInteger(str, &pos));
+
+	if (pPos)
+		*pPos = pos;
+
+	return 1;
 }
 
 void getMasterBIBD_param(const string& line, const size_t lineLength, designParam* param) {
@@ -489,18 +513,15 @@ int main(int argc, char * argv[])
 			break;
 		}
 
-		pos = find(line, "THREAD_NUMBER");
-		if (pos != string::npos) {
+		switch (getIntegerParam(line, "THREAD_NUMBER", &param->threadNumb)) {
+		case 0: break;
+		case -1:
+			printf("Cannot define thread number from: \"%s\"\n", line.c_str());
+			printf("Will use the default value: %d\n", USE_THREADS);
 			param->threadNumb = USE_THREADS;
-#if USE_MUTEX
-			// Define the number of threads launched to perform task
-			const size_t threadNumb = getInteger(line, &pos);
-			if (threadNumb == string::npos) {
-				printf("Cannot define thread number from: \"%s\"\n", line.c_str());
-				printf("Will use the default value: %d\n", USE_THREADS);
-			}
-			else
-				param->threadNumb = threadNumb;
+		default:
+#if !USE_MUTEX
+			param->threadNumb = USE_THREADS;
 #endif
 			continue;
 		}
@@ -521,51 +542,33 @@ int main(int argc, char * argv[])
 			continue;
 		}
 #endif
-		pos = find(line, "FIND_MASTER_BIBD");
-		if (pos != string::npos) {
-			// When 1, the parts of Combined BIBD will be merged and canonical BIBD will be constructed
-			// After that we will try to find that "original" BIBD in the ordered list of previously constructed
-			// "original" BIBDs. In that way we will find all BIBD which could be split into several parts
-			// and all such non-isomorphic splits
-			const auto val = length > pos ? getInteger(line, &pos) : string::npos;
-			find_master_design = val != string::npos ? static_cast<int>(val) : 1;
-			if (find_master_design)
-				getMasterBIBD_param(line, length, param);
-			continue;
+		if (getIntegerParam(line, "FIND_MASTER_BIBD", &find_master_design)) {
+			if (find_master_design) {
+				// When 1, the parts of Combined BIBD will be merged and canonical BIBD will be constructed
+				// After that we will try to find that "original" BIBD in the ordered list of previously constructed
+				// "original" BIBDs. In that way we will find all BIBD which could be split into several parts
+				// and all such non-isomorphic splits
+				if (find_master_design)
+					getMasterBIBD_param(line, length, param);
+				continue;
+			}
 		}
 
 		getMasterBIBD_param(line, length, param);
 
-		pos = find(line, "THREAD_LEVEL");
-		if (pos != string::npos) {
-			// Define the row number, where threads will be launched
-			const auto mt_level = length > pos ? getInteger(line, &pos) : string::npos;
-			if (mt_level == string::npos) {
+		size_t mt_level;
+		switch (getIntegerParam(line, "THREAD_LEVEL", &mt_level)) {
+			case -1:
 				printf("Cannot define thread level from: \"%s\"\n", line.c_str());
 				printf("Will use the default calculated from object's parameter: v / 2\n");
-			}
-			else
-				param->set_MT_level(static_cast<int>(mt_level));
+			case 0: break;
+			default: param->set_MT_level(static_cast<int>(mt_level));
 		}
 
-		pos = find(line, "FIND_ALL_2_DECOMPOSITIONS");
-		if (pos != string::npos) {
-			find_all_2_decomp = static_cast<int>(getInteger(line, &pos));
-		}
+		getIntegerParam(line, "FIND_ALL_2_DECOMPOSITIONS", &find_all_2_decomp);
+		getIntegerParam(line, "COMPRESS_MATRICES", &param->m_compress_matrices);
+		getIntegerParam(line, "NO_REPLICATED_BLOCKS", &param->noReplicatedBlocks);
 
-		pos = find(line, "COMPRESS_MATRICES");
-		if (pos != string::npos) {
-			param->m_compress_matrices = line[pos] == '=' ?
-				static_cast<int>(getInteger(line, &pos)) : 1;
-		}
-
-		pos = find(line, "NO_REPLICATED_BLOCKS");
-		if (pos != string::npos) {
-			param->noReplicatedBlocks = getInteger(line, &pos);
-			if (pos == string::npos)
-				continue;
-			line = line.substr(pos);
-		}
 		// Define a job type
 		if (line.find("ENUMERATION") != string::npos)
 			operType = t_Enumeration;
@@ -592,6 +595,10 @@ int main(int argc, char * argv[])
 		if (pos != string::npos) {
 			outType = t_Summary;
 			string output = line.substr(pos);
+			bool val;
+			if (getIntegerParam(output, "ONLY_SIMPLE_DESSIGN", &val))
+				param->setPrintOnlySimpleDesigns(val);
+
 			if (output.find("NO SUMMARY") != string::npos)
 				outType &= (-1 ^ t_Summary);
 			else
@@ -603,12 +610,6 @@ int main(int argc, char * argv[])
 
 			if (output.find("GENERATING SET") != string::npos)
 				outType |= t_GroupGeneratingSet;
-
-			pos = find(output, "ONLY_SIMPLE_DESSIGN");
-			if (pos != string::npos) {
-				const bool val = output[pos] == '=' ? (uint)getInteger(output, &pos) != 0 : true;
-				param->setPrintOnlySimpleDesigns(val);
-			}
 
 			if (output.find("ALL OBJECTS") != string::npos)
 				outType |= t_AllObject;
