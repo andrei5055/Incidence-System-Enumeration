@@ -62,7 +62,7 @@ private:
 	CK bool checkChoosenSolution(RowSolutionPntr pPrevSolution, T nRow, T nPart, PERMUT_ELEMENT_TYPE usedSolIndex) const;
 	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const { return nRows == 2? checkLambda(fLambda) : fLambda <= lambda(); }
 	CK inline auto lambda() const									 { return this->getInSys()->lambda(); }
-	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp == 1? "Non-Combined_BIBDs" : "BIBDs"; }
+	virtual const char *getTopLevelDirName() const					 { return designParams()->find_all_2_decomp == 1? "Quasi-Combined_BIBDs" : "BIBDs"; }
 	CK bool sharedDB() const										 { return designParams()->threadNumb > 1 && !designParams()->thread_master_DB; }
 	CK inline void setRecordLen(size_t val)						     { m_recordLength = val; }
 	CK inline auto recordLen() const                                 { return m_recordLength; }
