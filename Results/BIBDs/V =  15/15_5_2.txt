@@ -1,0 +1,13 @@
+BIBD( 15,  21,  7,  5,  2)
+
+         0 matrices were constructed in  0.03 sec,
+         0 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 5 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+
