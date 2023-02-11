@@ -46,14 +46,15 @@ int ccc = 0;
 bool startPrinting = START_PRINTING_AFTER <= 0;
 #endif
 
+template class CEnumerator<TDATA_TYPES>;
 #if USE_MUTEX
 std::mutex out_mutex;
+std::mutex CEnumerator<TDATA_TYPES>::m_mutexDB;
 #endif
 
-template class CEnumerator<TDATA_TYPES>;
-
-#if USE_MUTEX
-std::mutex CEnumerator<TDATA_TYPES>::m_mutexDB;
+#if USE_THREADS
+std::mutex CEnumerator<TDATA_TYPES>::m_mutexThreadPool;
+CThreadEnumPool<TDATA_TYPES>* CEnumerator<TDATA_TYPES>::m_pThreadEnumPool = NULL;
 #endif
 
 FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
@@ -170,7 +171,7 @@ void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, 
 FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) **ppThreadEnum, size_t nThread) const
 {
 	// Try to find the index of not-running thread
-	const auto flag = code == t_threadNotUsed;
+	const auto noNewTask = code == t_threadNotUsed;
 	size_t loopingTime = 0;
 	while (true) {
 		if (loopingTime > REPORT_INTERVAL) {
@@ -202,22 +203,24 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 				LAUNCH_CANONICITY_TESTING(pEnum, this);
 				this->enumInfo()->updateGroupInfo(pEnum->enumInfo());
 				thread_message(thrIdx, "finished", code);
-				if (flag) {
+				if (noNewTask) {
 					// Changing code, otherwise we in next call CEnumInfo<T>::reportProgress(...)
 					// t_canonical/t_totalConstr matrices will be counted one more time
-					pEnum->setCode(t_threadNotUsed); 
+					pEnum->setCode(t_threadNotUsed);
+					addToPool(pEnum);
 				}
 
 				this->enumInfo()->reportProgress(&pEnum);
-				if (flag)
+				if (noNewTask) {
 					continue;
+				}
 
 			case t_threadLaunchFail:
 				pEnum->reInit();
 
 			case t_threadNotUsed:
 				thread_message(thrIdx, "notUsed", code);
-				return thrIdx;
+				return thrIdx;  // When noNewTask is true, we are only here when all threads have finished.
 
 			case t_threadRunning:
 				if (++thrIdx == nThread)
@@ -229,6 +232,12 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 				break;
 		}
 	}
+}
+
+FClass2(CEnumerator, void)::addToPool(ThreadEnumeratorPntr pEnum) const {
+	m_mutexThreadPool.lock();
+	m_pThreadEnumPool->addToPool(pEnum);
+	m_mutexThreadPool.unlock();
 }
 #endif
 

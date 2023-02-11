@@ -47,10 +47,16 @@ private:
 Class2Def(CThreadEnumPool)
 {
  public:
-	CK CThreadEnumPool(Class2(CThreadEnumerator) **pntr, size_t numb) : m_ppThreadEnums(pntr), m_numb(numb) {}
+	CK CThreadEnumPool(Class2(CThreadEnumerator) * *pntr, size_t numb) : m_ppThreadEnums(pntr), m_numbMax(numb) {}
+	CK void addToPool(ThreadEnumeratorPntr pEnum)		 {
+		assert(m_numbUsed < m_numbMax);
+		m_ppThreadEnums[m_numbUsed++] = pEnum;
+	}
 private:
 	Class2(CThreadEnumerator)** m_ppThreadEnums = NULL;
-	size_t m_numb = 0;
+	const size_t m_numbMax = 0;
+	size_t m_numbUsed = 0;
+
 };
 
 #if USE_THREADS
