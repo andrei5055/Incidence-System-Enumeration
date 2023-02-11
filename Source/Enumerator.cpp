@@ -36,6 +36,9 @@
 	"Please define corresponding method for making directory"
 #endif
 
+#define SET_DIRECTORY(dirName)	if (fileExists(dirName, false) ? 0 : MKDIR(dirName)) \
+									return 0;		// Directory could not be used
+
 #include <mutex>  
 
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
@@ -164,7 +167,7 @@ void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, 
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
 
-FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) *threadEnum, size_t nThread) const
+FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) **ppThreadEnum, size_t nThread) const
 {
 	// Try to find the index of not-running thread
 	const auto flag = code == t_threadNotUsed;
@@ -172,7 +175,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 	while (true) {
 		if (loopingTime > REPORT_INTERVAL) {
 			// We run this loop enough to send report message
-			this->enumInfo()->reportProgress(threadEnum, nThread);
+			this->enumInfo()->reportProgress(ppThreadEnum, nThread);
 			loopingTime = 0;
 		}
 
@@ -181,7 +184,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		FILE *file = fopen("Report.txt", "a");
 		fprintf(file, "startIdx = %2d  Spipping code = %d\n", startIdx, code);
 #endif
-		while (threadEnum[thrIdx].code() == code) {
+		while (ppThreadEnum[thrIdx]->code() == code) {
 			if (++thrIdx == nThread)
 				thrIdx = 0;
 
@@ -189,7 +192,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 				break;
 		}
 
-		auto *pEnum = threadEnum + thrIdx;
+		auto *pEnum = ppThreadEnum[thrIdx];
 #if WRITE_MULTITHREAD_LOG 
 		fprintf(file, "==>thrIdx = %2d  CODE = %d  nThread= %d\n", thrIdx, pEnum->code(), nThread);
 		fclose(file);
@@ -205,7 +208,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 					pEnum->setCode(t_threadNotUsed); 
 				}
 
-				this->enumInfo()->reportProgress(pEnum);
+				this->enumInfo()->reportProgress(&pEnum);
 				if (flag)
 					continue;
 
@@ -271,6 +274,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 #if USE_THREADS_ENUM
 	ThreadEnumeratorPntr pThreadEnum = NULL;
+	ThreadEnumeratorPntr* ppThreadEnum = NULL;
 	int thrIdx = 0;
 	#if USE_POOL
 		asio::io_service *pIoService = NULL;
@@ -314,8 +318,14 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		pEnumInfo->startClock();
 
 #if USE_THREADS_ENUM 
-		if (pParam->threadNumb)
-			pThreadEnum = new Class2(CThreadEnumerator)[pParam->threadNumb];
+		if (threadNumb) {
+			pThreadEnum = new Class2(CThreadEnumerator)[threadNumb];
+			ppThreadEnum = new CThreadEnumerator<T,S> *[2 * threadNumb];
+			setThreadEnumPool(new  Class2(CThreadEnumPool)(ppThreadEnum + threadNumb, threadNumb));
+			for (auto i = threadNumb; i--;)
+				ppThreadEnum[i] = pThreadEnum + i;
+		}
+
 		CMatrixData<TDATA_TYPES>::ResetCounter();
 	#if USE_POOL
 		// Create an asio::io_service and a thread_group (through pool in essence)
@@ -372,24 +382,28 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
+		if (pThreadEnum && designParams()->save_restart_info)
+			initiateRestartInfoUpdate();
+
 		const bool usingThreads = pThreadEnum && nRow == mt_level;
 		if (usingThreads) {
 			// We are in master enumerator
 			while (pRowSolution) {
-				(pThreadEnum+thrIdx)->setupThreadForBIBD(this, nRow, thrIdx);
+				auto* pThread = *(ppThreadEnum + thrIdx);
+				pThread->setupThreadForBIBD(this, nRow, thrIdx);
 				do {
 					try {
 #if USE_POOL
-						pIoService->post(bind(threadEnumerate, pThreadEnum + thrIdx, pParam, this));
+						pIoService->post(bind(threadEnumerate, pThread, pParam, this));
 						pIoService->run_one();
 						pIoService->stop();
-//						(pThreadEnum + thrIdx)->getThread()->detach();
+//						pThread->getThread()->detach();
 //						pThreadpool->join_all();
 #else
-						thread t1(threadEnumerate<T, S>, pThreadEnum + thrIdx, pParam, this);
+						thread t1(threadEnumerate<T, S>, pThread, pParam, this);
 						t1.detach();
 #endif
-						thread_message(thrIdx, "detached", (pThreadEnum + thrIdx)->code());
+						thread_message(thrIdx, "detached", pThread->code());
 						break;
 					}
 					catch (const std::system_error& e) {
@@ -412,24 +426,27 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				} while (true);
 
 				// Try to find the index of not-running thread
-				thrIdx = threadWaitingLoop(thrIdx, t_threadRunning, pThreadEnum, threadNumb);
+				thrIdx = threadWaitingLoop(thrIdx, t_threadRunning, ppThreadEnum, threadNumb);
 				pRowSolution = pRowSolution->NextSolution(useCanonGroup);
 			}
 
 #if WAIT_THREADS
 			// All canonocal solutions are distributed amongst the threads
 			// Waiting for all threads finish their jobs
-			threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, threadNumb);
+			threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb);
 			thread_message(999, "DONE", t_threadUndefined);
 			pEnumInfo->reportProgress(t_reportNow);
 #else
-			pEnumInfo->reportProgress(pThreadEnum, threadNumb);
+			pEnumInfo->reportProgress(ppThreadEnum, threadNumb);
 #endif
 		} else {
 #else
 			const bool usingThreads = false;
 #endif
-			REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
+			if (pThreadEnum) {
+				REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
+			}
+
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
 			MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
 
@@ -730,16 +747,18 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 #if USE_THREADS_ENUM && !WAIT_THREADS
 	if (pThreadEnum)
-		threadWaitingLoop(thrIdx, t_threadNotUsed, pThreadEnum, pParam->threadNumb);
+		threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb);
 #endif
 
     this->closeColOrbits();
 
 	if (!threadFlag || !USE_THREADS_ENUM) {
-
-#if USE_THREADS_ENUM
 		delete[] pThreadEnum;
-#else
+		delete[] ppThreadEnum;
+		delete threadEnumPool();
+
+
+#if !USE_THREADS_ENUM
 #ifdef USE_CUDA
 		// This method is called after thread is ended, When they are used
 		LAUNCH_CANONICITY_TESTING(enumInfo(), this);
@@ -922,14 +941,12 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 	lenBuffer--;		// Reserving 1 byte for last '/'
 
 	auto len = SNPRINTF(dirName, lenBuffer, "%s", pParam->workingDir.c_str());
-	if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
-		return 0;		// Directory could not be used
+	SET_DIRECTORY(dirName);
 
 	const auto* pDirName = this->getTopLevelDirName();
 	if (pDirName) {
 		len += SNPRINTF(dirName + len, lenBuffer - len, "%s/", pDirName);
-		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
-			return 0;	// Directory could not be used
+		SET_DIRECTORY(dirName);
 	}
 
 	if (rowNeeded) {
@@ -938,8 +955,7 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 			rowNumb *= pParam->r / pParam->k;
 
 		len += SNPRINTF(dirName + len, lenBuffer - len, "V =%4d/", rowNumb);
-		if (fileExists(dirName, false) ? 0 : MKDIR(dirName))
-			return 0;	// Directory could not be used
+		SET_DIRECTORY(dirName);
 	}
 
 	return len;
@@ -1008,6 +1024,19 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 	if (!getMasterFileName(buff, lenBuffer, pLenName))
 		return false;
 
+	if (designParams()->save_restart_info) {
+		std::string restart_info(buff);
+		const auto pos = restart_info.find_last_of('.');
+		restart_info.erase(pos);
+		restart_info += "_Restart_";
+		char buff[16];
+		_itoa_s(designParams()->save_restart_info, buff, 10);
+		restart_info += buff;
+		const auto* dir = restart_info.c_str();
+		SET_DIRECTORY(dir);
+		designParams()->restart_info_dir = restart_info;
+	}
+
 	// The results are known, if the file with the enumeration results exists and it is valid
 	const bool knownResults = fileExists(buff);
 	if (knownResults)
@@ -1039,6 +1068,14 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 	}
 
 	return true;
+}
+
+FClass2(CEnumerator, void)::initiateRestartInfoUpdate() {
+	const auto currClock = clock();
+/*	if (currClock - prevClockUpdate() < CLOCKS_PER_SEC * designParams()->restart_update_unterval)
+		return;
+*/
+	return;
 }
 
 FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults)

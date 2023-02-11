@@ -81,19 +81,22 @@ Class2Def(CEnumInfo) : public CTimerInfo, public CGroupsInfo, public CNumbInfo
 {
 public:
 	CC CEnumInfo(const char *pStrToScreen = NULL) {
-		m_pStrToScreen = pStrToScreen? pStrToScreen : "";
+		m_pStrToScreen = pStrToScreen? new std::string(pStrToScreen) : NULL;
         resetCounters();
 		setReportBound(REPORT_INTERVAL_OBJ_NUMB);
 		m_pReportFileName = NULL;
 		m_lenPrev = 0;
+		m_bReportProgress = !PRINT_SOLUTIONS && m_pStrToScreen;
 	}
-	CC virtual ~CEnumInfo()									{ delete[] reportFileName(); }
+	CC virtual ~CEnumInfo()									{ delete[] reportFileName();
+															  delete m_pStrToScreen;
+															}
 public:
 	CK inline void incrConstrTotal(ulonglong val = 1)		{ addMatrOfType(val, t_design_type::t_totalConstr); }
-	inline const char *strToScreen() const					{ return m_pStrToScreen.c_str(); }
+	inline const char *strToScreen() const					{ return m_pStrToScreen? m_pStrToScreen->c_str() : NULL; }
 #if !CONSTR_ON_GPU
 	void reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo = NULL, const WorkingInfo* pWorkInfo = NULL);
-	void reportProgress(const ThreadEnumeratorPntr pTreadEnum, size_t nThread = 0);
+	void reportProgress(Class2(CThreadEnumerator)** ppTreadEnum, size_t nThread = 0);
 #endif
 	virtual ulonglong numbSimpleDesign() const				{ return 0; }
 	CC virtual void incNumbSimpleDesign(ulonglong v = 1)	{}
@@ -136,13 +139,14 @@ private:
 
 	ulonglong m_nCounter;
 	ulonglong m_prevReportCounter[2];
-	std::string m_pStrToScreen;
+	std::string *m_pStrToScreen;
 	ulonglong m_nReportBound;
 	char *m_pReportFileName;
 	t_resType m_nResType;
 	int m_mtlevel;
 	mutable size_t m_lenPrev;			// Length of previous output
 	designParam *m_pParam;
+	bool m_bReportProgress;
 }; 
 
 Class2Def(CInsSysEnumInfo) : public Class2(CEnumInfo)

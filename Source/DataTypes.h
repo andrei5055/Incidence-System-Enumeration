@@ -579,6 +579,9 @@ public:
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
+	int save_restart_info = 0;		// Save restart information that will be used to restart the program.
+	std::string restart_info_dir;
+	size_t restart_update_unterval = 10 * 60; // default update interval in sec.
 
 	const auto &lambda() const					{ return m_pInterStruct->lambda(); }
 	const auto &lambdaA() const					{ return m_pInterStruct->lambdaA(); }

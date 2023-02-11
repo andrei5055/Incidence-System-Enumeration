@@ -79,6 +79,7 @@ typedef enum {
 } t_ProcType;
 
 Class2Def(CThreadEnumerator);
+Class2Def(CThreadEnumPool);
 
 #if CONSTR_ON_GPU
 #define MAKE_JOB_TITLE(x, y,...)
@@ -168,7 +169,7 @@ private:
 	CK RowSolutionPntr FindRowSolution(S *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
 #if USE_THREADS
-	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr threadEnum, size_t nThread) const;
+	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread) const;
 #endif
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
@@ -183,11 +184,14 @@ private:
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const { return 0; }
 	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
-	CK virtual void setForcibleLambda(T nRow, T val, T nPart) {}
+	CK virtual void setForcibleLambda(T row, T val, T pPart){}
+	CK inline void setThreadEnumPool(Class2(CThreadEnumPool) *pntr)	{ m_pThreadEnumPool = pntr; }
+	CK inline Class2(CThreadEnumPool)* threadEnumPool() const		{ return m_pThreadEnumPool; }
 
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
 #endif
+	CK void initiateRestartInfoUpdate();
 
 #if USE_STRONG_CANONICITY_A
 	void checkUnusedSolutions(CRowSolution<T> *pRowSolution);
@@ -229,6 +233,7 @@ private:
 	CEnumerator* m_pMaster = NULL;
 	static std::mutex m_mutexDB;				 // mutex for accessing the database, it is used when BIBD  or the "master" for CBIBD is added
 #endif
+	Class2(CThreadEnumPool) *m_pThreadEnumPool = NULL;
 };
 
 FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :

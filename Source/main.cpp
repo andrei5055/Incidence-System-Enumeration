@@ -565,6 +565,7 @@ int main(int argc, char * argv[])
 			default: param->set_MT_level(static_cast<int>(mt_level));
 		}
 
+		getIntegerParam(line, "SAVE_RESTART_INFO", &param->save_restart_info);
 		getIntegerParam(line, "FIND_ALL_2_DECOMPOSITIONS", &find_all_2_decomp);
 		getIntegerParam(line, "COMPRESS_MATRICES", &param->m_compress_matrices);
 		getIntegerParam(line, "NO_REPLICATED_BLOCKS", &param->noReplicatedBlocks);
@@ -693,6 +694,9 @@ int main(int argc, char * argv[])
 		param->find_all_2_decomp = 0;
 		if (param->workingDir != newWorkDir || firstRun)
 			param->workingDir = newWorkDir;
+
+//		if (param->save_restart_info) {
+//		}
 
 		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);

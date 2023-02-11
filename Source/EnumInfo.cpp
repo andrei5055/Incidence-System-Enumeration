@@ -91,8 +91,9 @@ FClass2(CEnumInfo, void)::setReportFileName(const char *pntr)
 
 FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGroupsInfo *pGroupInfo, const WorkingInfo* pNumLevels)
 {
-	// Only master will report the progress
-	if (PRINT_SOLUTIONS || !strToScreen() || !reportFileName())
+	// Only master will report the progress and
+	// only when there are no output of the solutions on the screen i.e. PRINT_SOLUTIONS = 0
+	if (!m_bReportProgress)
 		return;
 
 	const auto nCanon = numMatrOfType(t_design_type::t_canonical);
@@ -184,7 +185,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	setReportInt(repInt);
 }
 
-FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThreadEnum, size_t nThread)
+FClass2(CEnumInfo, void)::reportProgress(Class2(CThreadEnumerator) **ppThreadEnum, size_t nThread)
 {
 	if (nThread >= 1) {
 		// Save already collected information 
@@ -199,7 +200,8 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 		const auto nRows = nRowMin = designInfo()->v + 2;
 		int* pTreadsOnRow = nRows < countof(nTreadsOnRow) ? nTreadsOnRow : new int[nRows];
 		memset(pTreadsOnRow, 0, nRows * sizeof(pTreadsOnRow[0]));
-		for (size_t i = 0; i < nThread; i++, pThreadEnum++) {
+		for (size_t i = 0; i < nThread; i++, ppThreadEnum++) {
+			const auto* pThreadEnum = *ppThreadEnum;
 			switch (pThreadEnum->code()) {
 				case t_threadRunning:
 				case t_threadFinished: break;
@@ -224,7 +226,7 @@ FClass2(CEnumInfo, void)::reportProgress(const Class2(CThreadEnumerator) *pThrea
 		if (pTreadsOnRow != nTreadsOnRow)
 			delete[] pTreadsOnRow;
 	} else {
-		updateEnumInfo(pThreadEnum->enumInfo());
+		updateEnumInfo(ppThreadEnum[0]->enumInfo());
 		reportThreadProgress();
 	}
 }

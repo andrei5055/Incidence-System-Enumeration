@@ -44,6 +44,15 @@ private:
 #endif
 };
 
+Class2Def(CThreadEnumPool)
+{
+ public:
+	CK CThreadEnumPool(Class2(CThreadEnumerator) **pntr, size_t numb) : m_ppThreadEnums(pntr), m_numb(numb) {}
+private:
+	Class2(CThreadEnumerator)** m_ppThreadEnums = NULL;
+	size_t m_numb = 0;
+};
+
 #if USE_THREADS
 #include "C_tDesignEnumerator.h"
 #include "PBIBD_Enumerator.h"
