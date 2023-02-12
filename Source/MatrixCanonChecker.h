@@ -8,11 +8,11 @@ Class2Def(CEnumInfo);
 Class2Def(CMatrixCol) : public CColOrbitManager<S>
 {
 public:
-	CC CMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_enumDefault) :
+	CC CMatrixCol(const InSysPntr pMatrix, uint enumFlags = t_enumDefault) :
 		CColOrbitManager<S>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags);
 	}
-	CC CMatrixCol(const MatrixDataPntr pMatrix, S rowNumb, S colNumb, S maxElem, uint enumFlags) :
+	CC CMatrixCol(const InSysPntr pMatrix, S rowNumb, S colNumb, S maxElem, uint enumFlags) :
 		CColOrbitManager<S>(maxElem + 1, rowNumb, colNumb, pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags & (t_allFlags ^ t_matrixOwner));
 	}
@@ -20,7 +20,7 @@ public:
 		if (isMatrOwner())
 			delete matrix();
 	}
-	CC inline void initiateMatrixCol(const MatrixDataPntr pMatrix, uint enumFlags = t_IS_enumerator) {
+	CC inline void initiateMatrixCol(const InSysPntr pMatrix, uint enumFlags = t_IS_enumerator) {
 		m_pMatrix = pMatrix;
 		setMatrOwner(enumFlags & t_matrixOwner);
 		setIS_Enumerator(enumFlags & t_IS_enumerator);
@@ -46,7 +46,7 @@ private:
 	CC inline void setMatrOwner(bool val)				{ m_bMatrOwner = val; }
 	CC inline bool isMatrOwner() const					{ return m_bMatrOwner; }
 
-	const MatrixDataPntr m_pMatrix;
+	const InSysPntr m_pMatrix;
 	bool m_bMatrOwner;
 	bool m_bIS_Emunerator;
 	FILE* m_pFile;
@@ -55,14 +55,14 @@ private:
 Class2Def(CMatrixCanonChecker) : public Class2(CMatrixCol), public Class2(CCanonicityChecker)
 {
 public:
-	CC CMatrixCanonChecker(const MatrixDataPntr pMatrix, uint enumFlags) :
+	CC CMatrixCanonChecker(const InSysPntr pMatrix, uint enumFlags) :
 		Class2(CMatrixCol)(pMatrix, enumFlags),
 		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags, pMatrix->numParts())
 	{
 		setEnumInfo(NULL);
 	}
 
-	CC CMatrixCanonChecker(MatrixDataPntr pMatrix, T rowNumb, T colNumb, S maxElem, bool IS_enum) :
+	CC CMatrixCanonChecker(InSysPntr pMatrix, T rowNumb, T colNumb, S maxElem, bool IS_enum) :
 		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
 		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
 	CC ~CMatrixCanonChecker()									{ delete enumInfo(); }

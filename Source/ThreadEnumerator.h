@@ -48,10 +48,11 @@ Class2Def(CThreadEnumPool)
 {
  public:
 	CK CThreadEnumPool(Class2(CThreadEnumerator) * *pntr, size_t numb) : m_ppThreadEnums(pntr), m_numbMax(numb) {}
-	CK void addToPool(ThreadEnumeratorPntr pEnum)		 {
-		assert(m_numbUsed < m_numbMax);
-		m_ppThreadEnums[m_numbUsed++] = pEnum;
-	}
+	CK inline void pushToPool(ThreadEnumeratorPntr pEnum)	{ assert(m_numbUsed < m_numbMax);
+															  m_ppThreadEnums[m_numbUsed++] = pEnum;
+															}
+	CK inline size_t poolSize() const						{ return m_numbUsed; }
+	CK ThreadEnumeratorPntr popFromPool()					{ return m_ppThreadEnums[--m_numbUsed]; }
 private:
 	Class2(CThreadEnumerator)** m_ppThreadEnums = NULL;
 	const size_t m_numbMax = 0;
@@ -72,9 +73,8 @@ Class2Def(CCombBIBD_Enumerator);
 
 FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, T nRow, int threadIdx) {
 	if (pMaster->IS_enumerator()) {
-		auto *pInsSysEnum = (const Class2(C_InSysEnumerator) *)(pMaster);
-		auto *pInSys = static_cast<const InSysPntr>(pInsSysEnum->matrix());
-		const InSysPntr pSlaveDesign;
+		auto *pInSys = pMaster->matrix();
+		InSysPntr pSlaveDesign;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
 		case t_objectType::t_BIBD:
@@ -101,6 +101,7 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 				break;
 		}
 
+		pSlaveDesign->setObjectType(pInSys->objectType());
 		m_pEnum->setEnumInfo(new Class2(CInsSysEnumInfo)());
 	}
 

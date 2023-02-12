@@ -8,7 +8,7 @@
 
 template class C_InSysEnumerator<TDATA_TYPES>;
 
-FClass2(C_InSysEnumerator, void)::CanonizeByColumns(MatrixDataPntr pMatrix, T *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
+FClass2(C_InSysEnumerator, void)::CanonizeByColumns(InSysPntr pMatrix, T *pColIdxStorage, CanonicityCheckerPntr pCanonChecker, bool permCol) const
 {
 	const auto rowNumb = pMatrix->rowNumb();
 	const auto nCols = pMatrix->colNumb();

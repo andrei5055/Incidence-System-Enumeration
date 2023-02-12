@@ -185,7 +185,7 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pM
 	}
 
 	// Creating structures for the search of "master" designs for Combined BIBDs
-	auto *pOriginalMatrix = new CMatrixData<T, S>();
+	auto *pOriginalMatrix = new C_InSys<T, S>();
 	pOriginalMatrix->Init(v, b);
 
 	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);

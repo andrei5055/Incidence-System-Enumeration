@@ -90,7 +90,7 @@ Class2Def(CThreadEnumPool);
 Class2Def(CEnumerator) : public Class2(CMatrixCanonChecker)
 {
 public:
-	CK CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
+	CK CEnumerator(const InSysPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline RowSolutionPntr rowStuff(T nRow = 0, T iPart = 0) const	{ return m_pRow[nRow] + iPart; }
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
@@ -173,6 +173,7 @@ private:
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr) { m_pThreadEnumPool = pntr; }
 	CK inline Class2(CThreadEnumPool)* threadEnumPool()				{ return m_pThreadEnumPool; }
 	CK void addToPool(ThreadEnumeratorPntr pEnum) const;
+	CK ThreadEnumeratorPntr* getFromPool(size_t* pThreadNumb) const;
 #endif
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
@@ -240,7 +241,7 @@ private:
 #endif
 };
 
-FClass2(CEnumerator)::CEnumerator(const MatrixPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
+FClass2(CEnumerator)::CEnumerator(const InSysPntr pMatrix, uint enumFlags, int treadIdx, uint nCanonChecker) :
 	Class2(CMatrixCanonChecker)(pMatrix, enumFlags) {
 	const auto numParts = this->numParts();
 	m_pRow = new RowSolutionPntr[numParts * pMatrix->rowNumb()];

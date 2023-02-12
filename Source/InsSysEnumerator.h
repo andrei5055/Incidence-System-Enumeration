@@ -39,7 +39,7 @@ protected:
 #define addColOrbitForVariable(...)
 #endif
 	CK virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix);
-	virtual void CanonizeByColumns(MatrixDataPntr pMatrix, T *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
+	virtual void CanonizeByColumns(InSysPntr pMatrix, T *pColIdxStorage, CanonicityCheckerPntr pCanonChecker = NULL, bool permCol = false) const;
 private:
 	CK void addForciblyConstructedColOrbit(CColOrbit<S> *pColOrbit, CColOrbit<S> *pPrev, S nPart, S idx);
 	CK virtual RowSolutionPntr setFirstRowSolutions();

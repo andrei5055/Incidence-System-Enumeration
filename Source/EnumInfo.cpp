@@ -391,6 +391,7 @@ FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderIn
 
 FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 {
+	if (!pInfo) return;
 	Class2(CEnumInfo)::updateEnumInfo(pInfo);
 	incNumbSimpleDesign(pInfo->numbSimpleDesign());
 }
