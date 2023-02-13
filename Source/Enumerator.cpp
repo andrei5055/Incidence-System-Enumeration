@@ -249,7 +249,7 @@ FClass2(CEnumerator, void)::addToPool(ThreadEnumeratorPntr pEnum) const {
 	m_mutexThreadPool.unlock();
 }
 
-FClass2(CEnumerator, ThreadEnumeratorPntr *)::getFromPool(size_t* pThreadNumb) const {
+FClass2(CEnumerator, ThreadEnumeratorPntr *)::getFromPool(size_t numSolutions, size_t* pThreadNumb) const {
 	m_mutexThreadPool.lock();
 
 	ThreadEnumeratorPntr *ppThreadEnum = NULL;
@@ -257,7 +257,6 @@ FClass2(CEnumerator, ThreadEnumeratorPntr *)::getFromPool(size_t* pThreadNumb) c
 	if (poolSize >= 2) {
 		// Allocate threads to work under the supervision of the current
 		// thread only when the pool contains more than one thread.
-		const auto numSolutions = rowStuff(nRow)->numSolutions();
 		auto i = *pThreadNumb = min(poolSize, numSolutions);
 		ppThreadEnum = new CThreadEnumerator<T, S> *[i];
 		while (i--)
@@ -428,7 +427,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			initiateRestartInfoUpdate();
 
 		if (nRow == mt_level && threadFlag && !ppThreadEnum) {
-			ppThreadEnum = NULL;// getFromPool(&threadNumb);
+			const auto numSolutions = rowStuff(nRow)->numSolutions();
+			if (numSolutions > 1)
+				ppThreadEnum = getFromPool(numSolutions, &threadNumb);
 		}
 
 		const bool usingThreads = ppThreadEnum && nRow == mt_level;
@@ -483,7 +484,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			thread_message(999, "DONE", t_threadUndefined);
 			pEnumInfo->reportProgress(t_reportNow);
 #else
-			pEnumInfo->reportProgress(ppThreadEnum, threadNumb);
+			if (!threadFlag)
+				pEnumInfo->reportProgress(ppThreadEnum, threadNumb);
 #endif
 		} else {
 #else

@@ -173,7 +173,7 @@ private:
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr) { m_pThreadEnumPool = pntr; }
 	CK inline Class2(CThreadEnumPool)* threadEnumPool()				{ return m_pThreadEnumPool; }
 	CK void addToPool(ThreadEnumeratorPntr pEnum) const;
-	CK ThreadEnumeratorPntr* getFromPool(size_t* pThreadNumb) const;
+	CK ThreadEnumeratorPntr* getFromPool(size_t numSolutions, size_t* pThreadNumb) const;
 #endif
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
