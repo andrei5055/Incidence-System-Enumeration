@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31729.503
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CDTools", "CDTools.vcxproj", "{F69B13B6-D50D-4970-935F-8A8B7C31E686}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CDTools_GPU", "..\CDTools_GPU\CDTools_GPU.vcxproj", "{0FE5D30F-9547-4365-A946-9347F130DA89}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BIBD_list", "..\BIBD_list\BIBD_list.vcxproj", "{1513C6CF-C235-430B-A433-F48BABE9FB7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,20 @@ Global
 		{0FE5D30F-9547-4365-A946-9347F130DA89}.Release|Win32.ActiveCfg = Release|x64
 		{0FE5D30F-9547-4365-A946-9347F130DA89}.Release|x64.ActiveCfg = Release|x64
 		{0FE5D30F-9547-4365-A946-9347F130DA89}.Release|x64.Build.0 = Release|x64
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|ARM.ActiveCfg = Debug|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|Win32.Build.0 = Debug|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|x64.ActiveCfg = Debug|x64
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Debug|x64.Build.0 = Debug|x64
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|ARM.ActiveCfg = Release|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|Win32.ActiveCfg = Release|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|Win32.Build.0 = Release|Win32
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|x64.ActiveCfg = Release|x64
+		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -125,9 +125,9 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	const auto numMatrTotalConstructed = numMatrOfType(t_design_type::t_totalConstr);
 	double recentCanonProportion = -1;
 	if ((reportNeeded || nCanon >= reportBound()) && nCanon >= prevReportCounter() || nCanon > prevReportCounter()) {
-		const auto recentCanonNumb = nCanon - prevReportCounter();
-		if (recentCanonNumb)
-			recentCanonProportion = (static_cast<double>(numMatrTotalConstructed - prevReportCounter(1))) / recentCanonNumb;
+		if (nCanon > prevReportCounter() && numMatrTotalConstructed > prevReportCounter(1))
+			recentCanonProportion = (static_cast<double>(numMatrTotalConstructed - prevReportCounter(1))) / (nCanon - prevReportCounter());
+
 		setPrevReportCounter(nCanon);
 		setPrevReportCounter(numMatrTotalConstructed, 1);
 		switch (reportType) {
@@ -147,6 +147,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	}
 
 	char buffer[512];
+//	std::stringstream buffer;
 	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
 	auto len = SPRINTF(buffer, "  Canon: %lld  NRB: %s%lld  Total: %lld  RunTime: %.2f min.",
 		nCanon, constructedAllNoReplBlockMatrix() ? "=" : "", numbSimpleDesign(), numMatrTotalConstructed, runTime);
@@ -160,8 +161,11 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 
 	if (pNumLevels) {
 		len += snprintf(buffer + len, countof(buffer), "  Threads:");
-		for (int i = pNumLevels->minRow; i <= pNumLevels->maxRow; i++)
-			len += snprintf(buffer + len, countof(buffer) - len, " %d:%d", i, pNumLevels->pNumThreadsOnRow[i]);
+		for (int i = pNumLevels->minRow; i <= pNumLevels->maxRow; i++) {
+			const auto numThreads = pNumLevels->pNumThreadsOnRow[i];
+			if (numThreads)
+				len += snprintf(buffer + len, countof(buffer) - len, " %d:%d", i, numThreads);
+		}
 	}
 
 	cleanEndOfLine(buffer);
