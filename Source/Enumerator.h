@@ -169,7 +169,7 @@ private:
 	CK RowSolutionPntr FindRowSolution(S *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
 #if USE_THREADS
-	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread) const;
+	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread, bool threadFlag) const;
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr) { m_pThreadEnumPool = pntr; }
 	CK inline Class2(CThreadEnumPool)* threadEnumPool()				{ return m_pThreadEnumPool; }
 	CK void addToPool(ThreadEnumeratorPntr pEnum) const;

@@ -168,13 +168,13 @@ void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, 
 	threadEnum->EnumerateBIBD(param, pMaster);
 }
 
-FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) **ppThreadEnum, size_t nThread) const
+FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Class2(CThreadEnumerator) **ppThreadEnum, size_t nThread, bool threadFlag) const
 {
 	// Try to find the index of not-running thread
 	const auto noNewTask = code == t_threadNotUsed;
 	size_t loopingTime = 0;
 	while (nThread) {
-		if (loopingTime > REPORT_INTERVAL) {
+		if (!threadFlag && loopingTime > REPORT_INTERVAL) {
 			// We run this loop enough to send report message
 			this->enumInfo()->reportProgress(ppThreadEnum, nThread);
 			loopingTime = 0;
@@ -209,7 +209,9 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 					pEnum->setCode(t_threadNotUsed);
 				}
 
-				this->enumInfo()->reportProgress(&pEnum);
+				if (!threadFlag)
+					this->enumInfo()->reportProgress(&pEnum);
+
 				if (noNewTask) {
 					// Removing current thread from the array
 					ppThreadEnum[thrIdx] = ppThreadEnum[--nThread];
@@ -473,14 +475,14 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				} while (true);
 
 				// Try to find the index of not-running thread
-				thrIdx = threadWaitingLoop(thrIdx, t_threadRunning, ppThreadEnum, threadNumb);
+				thrIdx = threadWaitingLoop(thrIdx, t_threadRunning, ppThreadEnum, threadNumb, threadFlag);
 				pRowSolution = pRowSolution->NextSolution(useCanonGroup);
 			}
 
 #if WAIT_THREADS
 			// All canonocal solutions are distributed amongst the threads
 			// Waiting for all threads finish their jobs
-			threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb);
+			threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb, threadFlag);
 			thread_message(999, "DONE", t_threadUndefined);
 			pEnumInfo->reportProgress(t_reportNow);
 #else
@@ -795,7 +797,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 #if USE_THREADS_ENUM && !WAIT_THREADS
 	if (ppThreadEnum)
-		threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb);
+		threadWaitingLoop(thrIdx, t_threadNotUsed, ppThreadEnum, threadNumb, threadFlag);
 #endif
 
     this->closeColOrbits();
