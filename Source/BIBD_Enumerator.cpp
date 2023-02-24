@@ -72,20 +72,24 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	const auto colNumb = partsInfo? partsInfo->colNumb() : this->colNumb();
 	const auto r = partsInfo ? colNumb * k / rowNumb : this->getR();
 
-	S columns[32], *pColumnIdx = columns;
+	S columns[256], *pColumnIdx = columns;
 	if (lambda > countof(columns))
 		pColumnIdx = new S[lambda];
 
 	// Define "lambda" blocks, which contain both current and previous elements.
 	// When doing that, check the necessary and sufficient conditions
 	// for the intersection of the first (second), previous and current elements
+	bool check_remaining_element = false;
+	bool retVal = true;
 	S idx = 0;
 	S j = 0;
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
 			if (idx == x0_3) {					// (x0_3+1)-th common block found
-				if (j < r)   					//      among the first r blocks of design
-					return false;				// The tested solution can not be used in the canonical matrix
+				if (j < r) {  					//      among the first r blocks of design
+					retVal = false;				// The tested solution can not be used in the canonical matrix
+					break;
+				}
 
 				if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
 					S i = -1;				// Check necessary and sufficient conditions for the
@@ -94,40 +98,48 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 							break;
 					}
 
-					if (i == idx || pColumnIdx[i] >= r) // All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
-						return false;       // The tested solution can not be used in the canonical matrix
+					if (i == idx || pColumnIdx[i] >= r) {// All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
+						retVal = false;       // The tested solution can not be used in the canonical matrix
+						break;
+					}
 				}
 				else {
 					// When we are here, the intersection of second, previous and current elements is OK
 					if (++lastRowToCheck == currRowNumb) // adjust the limit of the loop below
-						return true;					 // there are no untested elements
+						break;					 // there are no untested elements
 				}
 			}
 
 			pColumnIdx[idx++] = j;
-			if (idx == lambda)
+			if (idx == lambda) {
+				check_remaining_element = true;
 				break;
+			}
 		}
 
 		++j;
 	}
 
-	//     for remaining elements:
-	do {
-		pCurrRow = pMatrix->GetRow(currRowNumb);
-		auto j = x0_3;
-		for (auto i = lambda; i--;) {
-			if (pCurrRow[pColumnIdx[i]]) {
-				if (!j--)
-					return false;
+	if (retVal && check_remaining_element) {
+		//     for remaining elements:
+		do {
+			pCurrRow = pMatrix->GetRow(currRowNumb);
+			auto j = x0_3;
+			for (auto i = lambda; i--;) {
+				if (pCurrRow[pColumnIdx[i]]) {
+					if (!j--) {
+						retVal = false;
+						break;
+					}
+				}
 			}
-		}
-	} while (--currRowNumb > lastRowToCheck);
+		} while (retVal && --currRowNumb > lastRowToCheck);
+	}
 
 	if (pColumnIdx != columns)
 		delete[] pColumnIdx;
 
-	return true;
+	return retVal;
 }
 
 FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {

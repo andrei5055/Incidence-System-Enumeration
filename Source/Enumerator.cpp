@@ -204,7 +204,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 				this->enumInfo()->updateGroupInfo(pEnum->enumInfo());
 				thread_message(thrIdx, "finished", code);
 				if (noNewTask) {
-					// Changing code, otherwise we in next call CEnumInfo<T>::reportProgress(...)
+					// Changing code, otherwise during next call CEnumInfo<T>::reportProgress(...)
 					// t_canonical/t_totalConstr matrices will be counted one more time
 					pEnum->setCode(t_threadNotUsed);
 				}
