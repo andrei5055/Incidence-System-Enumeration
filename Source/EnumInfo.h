@@ -118,6 +118,7 @@ public:
 	static bool compareTime(char *time1, char *time2);
 	void outEnumInformation(FILE** pOutFile, bool printMTlevel = true, const char* pComment = NULL) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
+	void updateCounters(CEnumInfo* p);
 protected:
 	inline t_resType getResType() const						{ return m_nResType; }
 	size_t cleanEndOfLine(char* pBuffer) const;

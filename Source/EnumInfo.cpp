@@ -206,11 +206,8 @@ FClass2(CEnumInfo, void)::reportProgress(Class2(CThreadEnumerator) **ppThreadEnu
 		memset(pTreadsOnRow, 0, nRows * sizeof(pTreadsOnRow[0]));
 		for (size_t i = 0; i < nThread; i++, ppThreadEnum++) {
 			const auto* pThreadEnum = *ppThreadEnum;
-			switch (pThreadEnum->code()) {
-				case t_threadRunning:
-				case t_threadFinished: break;
-				default:	continue;
-			}
+			if (pThreadEnum->code() != t_threadRunning)
+				continue;
 
 			updateEnumInfo(pThreadEnum->enumInfo());
 			groupsInfo.updateGroupInfo(pThreadEnum->enumInfo());
@@ -378,6 +375,12 @@ FClass2(CEnumInfo, size_t)::cleanEndOfLine(char* pBuffer) const {
 	return retVal;
 }
 
+FClass2(CEnumInfo, void)::updateCounters(EnumInfoPntr pNumbInfo) {
+	updateGroupInfo(pNumbInfo);
+	addMatrices(pNumbInfo);
+	pNumbInfo->resetNumbInfo();
+}
+
 #if CANON_ON_GPU
 FClass2(CEnumInfo, void)::RecalcCountersByGroupOrders(const COrderInfo* pOrderInfo, size_t nElem) {
 	// Recalculating counters by the group order info
@@ -399,6 +402,7 @@ FClass2(CInsSysEnumInfo, void)::updateEnumInfo(const EnumInfoPntr pInfo)
 	Class2(CEnumInfo)::updateEnumInfo(pInfo);
 	incNumbSimpleDesign(pInfo->numbSimpleDesign());
 }
+
 
 FClass2(CInsSysEnumInfo, void)::reportResult(char *buffer, int lenBuffer) const
 {

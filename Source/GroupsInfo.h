@@ -19,7 +19,8 @@ public:
 	inline void setNumMatrOfType(ulonglong val, t_design_type t){ m_nCounter[+t] = val; }
 	CC inline CNumbInfo *addMatrix(ulonglong numb, ulonglong nSimple) {
 		addMatrOfType(numb, t_design_type::t_canonical);
-		addMatrOfType(nSimple, t_design_type::t_simple);
+		if (nSimple)
+			addMatrOfType(nSimple, t_design_type::t_simple);
 		return this;
 	}
 	CC void addMatrixTrans(ulonglong numb, ulonglong nSimple) {

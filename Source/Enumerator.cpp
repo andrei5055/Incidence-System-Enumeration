@@ -201,7 +201,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		switch (pEnum->code()) {
 			case t_threadFinished:
 				LAUNCH_CANONICITY_TESTING(pEnum, this);
-				this->enumInfo()->updateGroupInfo(pEnum->enumInfo());
+				this->enumInfo()->updateCounters(pEnum->enumInfo());
 				thread_message(thrIdx, "finished", code);
 				if (noNewTask) {
 					// Changing code, otherwise during next call CEnumInfo<T>::reportProgress(...)
