@@ -14,7 +14,7 @@ BIBD( 13,  26, 12,  6,  5)
     ___________________________________________________________
         Total:       19072802     19072802      4      4
 
-  19072802 matrices were constructed in  3:06:27.91 sec,
+  19072802 matrices were constructed in  2:09:23.19 sec,
          4 of them are transitive on the rows.
   19072802 matrices have no replicated blocks,
          4 of them are transitive on the rows.
@@ -22,8 +22,8 @@ BIBD( 13,  26, 12,  6,  5)
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 6 (not waiting to finish mode)
-        Solutions obtained by master are used by the threads
+        20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

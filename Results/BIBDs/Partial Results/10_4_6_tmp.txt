@@ -1,0 +1,29 @@
+BIBD( 10,  45, 18,  4,  6)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1        7934706      7934706      0      0
+             2            586          586      0      0
+             3             47           47      0      0
+             4              1            1      0      0
+             5              9            9      0      0
+             6              9            9      0      0
+             9              4            4      0      0
+            10              3            3      3      3
+    ___________________________________________________________
+        Total:        7935365      7935365      3      3
+
+   7935365 matrices were constructed in  1:11:32:16.15 sec,
+         3 of them are transitive on the rows.
+   7935365 matrices have no replicated blocks,
+         3 of them are transitive on the rows.
+  57534235 matrices were fully constructed.
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

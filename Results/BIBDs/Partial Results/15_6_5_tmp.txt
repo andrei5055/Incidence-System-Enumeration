@@ -1,22 +1,20 @@
-BIBD( 11,  44, 20,  5,  8)
+BIBD( 15,  35, 14,  6,  5)
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1          31388        31388      0      0
-             2             48           48      0      0
-             4              4            4      0      0
+            42              1            1      0      0
     ___________________________________________________________
-        Total:          31440        31440      0      0
+        Total:              1            1      0      0
 
-     31440 matrices were constructed in  6:23:28:51.81 sec,
+         1 matrix was constructed in  5:48:17.69 sec,
          0 of them are transitive on the rows.
-     31440 matrices have no replicated blocks,
+         1 matrix has no replicated blocks,
          0 of them are transitive on the rows.
-     72122 matrices were fully constructed.
+         1 matrix was fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on row 5 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

@@ -2,34 +2,36 @@ BIBD( 10,  36, 18,  5,  8)
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1          31000        31000      0      0
-             2            468          468      0      0
-             3             62           62      0      0
-             4            109          109      0      0
+             1     2139667211    954316613      0      0
+             2         194486        67445      0      0
+             3            640          577      0      0
+             4           1274          575      0      0
              5              1            1      0      0
-             6             10           10      0      0
-             8             22           22      0      0
+             6             60           42      0      0
+             8             71           56      0      0
              9              3            3      0      0
-            12              2            2      0      0
-            16              8            8      0      0
-            24              2            2      0      0
-            64              3            3      0      0
+            12              8            6      0      0
+            16             14           12      0      0
+            18              1            1      0      0
+            24              3            3      0      0
+            32              5            4      0      0
+            64              5            5      0      0
             80              1            1      1      1
            144              1            1      0      0
            320              1            1      1      1
            720              1            1      1      1
     ___________________________________________________________
-        Total:          31694        31694      3      3
+        Total:     2139863786    954385347      3      3
 
-     31694 matrices were constructed in  2:51:22.07 sec,
+2139863786 matrices were constructed in  1:03:07:33.94 sec,
          3 of them are transitive on the rows.
-     31694 matrices have no replicated blocks,
+ 954385347 matrices have no replicated blocks,
          3 of them are transitive on the rows.
-   3131901 matrices were fully constructed.
+3261690991 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 4 (not waiting to finish mode)
+        15 threads launched on row 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
