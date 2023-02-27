@@ -13,7 +13,7 @@ BIBD( 21,  30, 10,  7,  3)
     ___________________________________________________________
         Total:           3809         3809      0      0
 
-      3438 matrices were constructed in 23:18:17.24 sec,
+      3809 matrices were constructed in 23:18:17.24 sec,
          0 of them are transitive on the rows.
       3809 matrices have no replicated blocks,
          0 of them are transitive on the rows.
