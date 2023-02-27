@@ -1236,7 +1236,7 @@ static void outKeyInfo(const char* key, char **pInfo, FILE* file, const char *pC
 	char       buf[80];
 	localtime_s(&tstruct, &now);
 	strftime(buf, sizeof(buf), "%b %d, %Y", &tstruct);
-	fprintf(file, "%s  %12s   %9s  %15s  %13s", key, pInfo[1], pInfo[2], pInfo[0], buf);
+	fprintf(file, "%s  %12s %12s  %15s  %13s", key, pInfo[1], pInfo[2], pInfo[0], buf);
 	if (pComment)
 		fprintf(file, "%s", pComment);
 	else

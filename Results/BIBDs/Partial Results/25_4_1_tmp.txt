@@ -1,11 +1,28 @@
 BIBD( 25,  50,  8,  4,  1)
 
-         0 matrices constructed in 11:17:02.92
-         0 matrices were fully constructed
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1              2            2      0      0
+             3              8            8      0      0
+             6              1            1      0      0
+             9              3            3      0      0
+            21              1            1      0      0
+            63              1            1      0      0
+           150              1            1      1      1
+           504              1            1      0      0
+    ___________________________________________________________
+        Total:             18           18      1      1
+
+        18 matrices were constructed in 11:04:50:41.37 sec,
+         1 of them is transitive on the rows.
+        18 matrices have no replicated blocks,
+         1 of them is transitive on the rows.
+        19 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 6 (not waiting to finish mode)
+        20 threads launched on row 9 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

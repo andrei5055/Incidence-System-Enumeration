@@ -1,11 +1,11 @@
 BIBD( 36,  42,  7,  6,  1)
 
-         0 matrices were constructed in  1:17.14 sec,
+         0 matrices were constructed in  1:08.41 sec,
          0 matrices were fully constructed.
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 14 (not waiting to finish mode)
+        20 threads launched on row 5 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
