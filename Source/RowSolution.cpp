@@ -32,8 +32,9 @@ FClass2(CRowSolution, void)::InitSolutions(T length, size_t nVect, CArrayOfVecto
 {
 	setSolutionIndex(0);
 	setSolutionLength(length);					// vector length
-	delete solutionPerm();
-	setSolutionPerm(new CSolutionPerm());
+	if (!solutionPerm())
+		setSolutionPerm(new CSolutionPerm());
+
 	setCompareFuncA(compareVectors);
 	setNumSolutions(nVect);
 	if (pCoordSrc) {

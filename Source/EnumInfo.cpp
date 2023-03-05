@@ -55,13 +55,13 @@ FClass2(CEnumInfo, size_t)::convertTime(double time, char *buffer, size_t lenBuf
 		if (out[i] > 0 || flag || outDiv[i] == '.') {
 			pBuf += SNPRINTF(pBuf, lenBuf, (flag? "%02d%c" : "%2d%c"), out[i], outDiv[i]);
 			flag = true;
-		} else
-		if (alignment)
-			pBuf += SNPRINTF(pBuf, lenBuf, "   ");
-		else
 			continue;
+		}
 
-		lenBuf -= 3;
+		if (alignment) {
+			pBuf += SNPRINTF(pBuf, lenBuf, "   ");
+			lenBuf -= 3;
+		}
 	}
 
 	pBuf += SNPRINTF(pBuf, lenBuf, "%02d sec%s", (int)(100 * (time - secTime)), alignment? "" : ",\n");
