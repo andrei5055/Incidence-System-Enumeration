@@ -9,7 +9,40 @@ template class CInsSysEnumInfo<TDATA_TYPES>;
 
 static const int outDiv[] = { ':', ':', ':', '.' };
 
-FClass2(CEnumInfo, size_t)::convertTime(float time, char *buffer, size_t lenBuf, bool alignment) const
+#undef MAC
+#undef _MAC
+#include <rpc.h>
+
+double FileTimeToSeconds(FILETIME* pFiletime) {
+#define TEN_MILLIONS 10000000
+	return ((double)((*pFiletime).dwHighDateTime * 4.294967296E9) + (double)(*pFiletime).dwLowDateTime) / TEN_MILLIONS;
+}
+
+void CTimerInfo::get_cpu_usage(double& user, double& system) {
+	struct _FILETIME creation_time, exit_time, kernel_time, user_time;
+	GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time);
+	user = FileTimeToSeconds(&user_time);
+	system = FileTimeToSeconds(&kernel_time);
+}
+
+void CTimerInfo::startClock() {
+	setPrevClock(m_prevClockReport = m_startClock = clock());
+	setReportInt(1);
+	setPrevCounter(0);
+
+	// Save initial values for user and system times
+	get_cpu_usage(m_ProcTime[0], m_ProcTime [1]);
+}
+
+void CTimerInfo::setRunTime() {
+	m_fRunTime = (float)(clock() - startTime()) / CLOCKS_PER_SEC;
+	double user_time, system_time;
+	get_cpu_usage(user_time, system_time);
+	m_ProcTime[0] = user_time - m_ProcTime[0];
+	m_ProcTime[1] = system_time - m_ProcTime[1];
+}
+
+FClass2(CEnumInfo, size_t)::convertTime(double time, char *buffer, size_t lenBuf, bool alignment) const
 {
 	const int secTime = (int)time;
 	const int minTime = secTime / 60;
@@ -272,23 +305,19 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	SPRINTF(buff, "%10llu matri%s fully constructed.\n", nMatr, nMatr == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
+	outString("\nProcessing times are:\n", outFile);
+	const char *time_name[] = { "user_time", "kernel (system) time" };
+	for (int i = 0; i < 2; i++) {
+		SPRINTF(buff, "%22s: ", time_name[i]);
+		const auto lenBuff = strlen(buff);
+		convertTime(procTime(i), buff + lenBuff, countof(buff) - lenBuff, false);
+		outString(buff, outFile);
+	}
+	outString("\n", outFile);
+
 	outEnumInformation(pOutFile, true, pComment);
 	if (removeReportFile) // Remove temporary file with the intermediate results	
 		remove(reportFileName());
-}
-
-FClass2(CEnumInfo, void)::outEnumAdditionalInfo(FILE **pOutFile) const
-{
-	FILE *outFile = pOutFile ? *pOutFile : NULL;
-	if (!outFile)
-		return;
-
-	char buff[256];
-	const auto nTotal = numMatrOfType(t_design_type::t_totalConstr);
-	SPRINTF(buff, "%10llu matri%s fully constructed\n", nTotal, nTotal == 1 ? "x was" : "ces were");
-	outString(buff, outFile);
-
-	outEnumInformation(pOutFile);
 }
 
 FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel, const char *pComment) const

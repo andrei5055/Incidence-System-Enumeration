@@ -12,9 +12,10 @@ class CTimerInfo
 public:
 	CC inline CTimerInfo()									{}
 	CC inline ~CTimerInfo()									{}
-	CK inline void startClock()								{ setPrevClock(m_prevClockReport = m_startClock = clock());  setReportInt(1);  setPrevCounter(0); }
-	inline void setRunTime()								{ m_fRunTime = (float)(clock() - startTime()) / CLOCKS_PER_SEC; }
-	inline float runTime() const							{ return m_fRunTime; }
+	CK void startClock();
+	CK void setRunTime();
+	inline auto runTime() const								{ return m_fRunTime; }
+	inline auto procTime(int idx) const						{ return m_ProcTime[idx]; }
 protected:
 	inline clock_t prevClock() const						{ return m_prevClock; }
 	CK inline void setPrevClock(const clock_t &val)			{ m_prevClock = val; }
@@ -26,13 +27,15 @@ protected:
 	CK inline void setPrevCounter(ulonglong value)			{ m_prevCounter = value; }
 	inline clock_t startTime() const						{ return m_startClock; }
 private:
+	CK void get_cpu_usage(double& user, double& system);
 
 	clock_t m_startClock = 0;
 	clock_t m_prevClock = 0;
 	clock_t m_prevClockReport = 0;
 	size_t m_reportInt = 0;
 	ulonglong m_prevCounter = 0;
-	float m_fRunTime = 0.0f;
+	double m_fRunTime = 0.0f;
+	double m_ProcTime[2];
 };
 
 enum class t_reportCriteria {
@@ -111,8 +114,7 @@ public:
 #endif
 	void setReportFileName(const char *pntr);
 	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL, const char* pComment = NULL);
-	void outEnumAdditionalInfo(FILE **pOutFile) const;
-	size_t convertTime(float time, char *buffer, size_t lenBuf, bool alignment = true) const;
+	size_t convertTime(double time, char *buffer, size_t lenBuf, bool alignment = true) const;
 	CK inline void setResType(t_resType resType)			{ m_nResType = resType; }
 	CC inline void resetEnumInfo()							{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
