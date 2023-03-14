@@ -52,11 +52,11 @@ protected:
 	CK inline void setCurrUnforcedOrbPtr(S nRow, S nPart)			{ m_ppUnforcedColOrbCurr[nPart] = pntr2UnforcedColOrb(nRow, nPart); }
 	CC inline void setCurrentRowNumb(S n)							{ m_nCurrRow = n; }
 	CC inline auto *unforcedColOrbPntr(S idxPart = 0) const			{ return m_ppUnforcedColOrb[idxPart]; }
+	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 	CC inline auto rowMaster() const								{ return m_nRowMaster; }
 private:
 	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart)	{ m_ppColOrb[idxPart][idx] = pntr; }
 	CC inline void setColOrbitLen(size_t len)						{ m_nColOrbLen = len; }
-	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 
 	S m_nCurrRow;
 	uint m_nShiftMult;
@@ -116,7 +116,8 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 {
 	m_IS_enumerator = using_IS_enumerator;
 	// Number of CColOrbits taken from pMaster
-	setRowMaster(pMaster ? pMaster->currentRowNumb() + use_master_solutions : 0);
+	if (!pMaster || !rowMaster())
+	    setRowMaster(pMaster ? pMaster->currentRowNumb() + use_master_solutions : 0);
 
 	// In order not to re-create orbits on the way back, we will store them in different places.
 	// Therefore, we must have number of rows as a multiplier for fromMaster and nCol_2.

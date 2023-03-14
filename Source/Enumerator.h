@@ -93,6 +93,7 @@ public:
 	CK CEnumerator(const InSysPntr pMatrix, uint enumFlags, int treadIdx = -1, uint nCanonChecker = 0);
 	CC virtual ~CEnumerator();
 	CK inline RowSolutionPntr rowStuff(T nRow = 0, T iPart = 0) const	{ return m_pRow[nRow] + iPart; }
+	CK void releaseRowStuff(T nRow);
 	CK bool Enumerate(designParam *pParam, bool writeFile = false, EnumInfoPntr pEnumInfo = NULL, EnumeratorPntr pMaster = NULL, t_threadCode *pTreadCode = NULL);
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int len, const char *comment = "") const {}
 	CK virtual T getX0_3() const							{ return 0; }
@@ -245,7 +246,7 @@ FClass2(CEnumerator)::CEnumerator(const InSysPntr pMatrix, uint enumFlags, int t
 	Class2(CMatrixCanonChecker)(pMatrix, enumFlags) {
 	const auto numParts = this->numParts();
 	m_pRow = new RowSolutionPntr[numParts * pMatrix->rowNumb()];
-	m_pRow[0] = NULL;
+	memset(m_pRow, 0, sizeof(m_pRow[0]) * numParts * pMatrix->rowNumb());
 	m_lastRightPartIndex = new PERMUT_ELEMENT_TYPE[numParts];
 	m_pFirstColOrb = new ColOrbPntr[numParts];
 	setRowEquation(NULL);

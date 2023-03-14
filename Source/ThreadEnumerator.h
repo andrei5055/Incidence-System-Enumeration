@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IG_Enumerator.h"
-
+#define NEW_CODE    0
 Class2Def(CEnumerator);
 Class2Def(CEnumInfo);
 
@@ -20,7 +20,11 @@ public:
 	CK inline t_threadCode code() const				{ return m_code; }
 	CK inline EnumeratorPntr enumerator() const		{ return m_pEnum; }
 	CK inline EnumInfoPntr enumInfo() const			{ return enumerator()? enumerator()->enumInfo() : NULL; }
+#if NEW_CODE
+	CK inline void reInit()							{ reset(); }
+#else
 	CK inline void reInit()							{ release(); reset(); }
+#endif
 #if WRITE_MULTITHREAD_LOG
 	inline void setThreadID(int id)					{ m_threadID = id; }
 	inline int threadID() const					    { return m_threadID; }
@@ -37,7 +41,11 @@ public:
 #endif
 private:
 	CK inline void release()						{ delete enumerator(); }
+#if NEW_CODE
+	CK inline void reset()							{ setCode(t_threadNotUsed); }
+#else
 	CK inline void reset()							{ m_pEnum = NULL; setCode(t_threadNotUsed); }
+#endif
 
 	EnumeratorPntr m_pEnum;
 	t_threadCode m_code;
@@ -78,6 +86,7 @@ Class2Def(CCombBIBD_Enumerator);
 
 FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaster, T nRow, int threadIdx) {
 	if (pMaster->IS_enumerator()) {
+		if (!m_pEnum) {
 		auto *pInSys = pMaster->matrix();
 		InSysPntr pSlaveDesign;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
@@ -108,6 +117,12 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 
 		pSlaveDesign->setObjectType(pInSys->objectType());
 		m_pEnum->setEnumInfo(new Class2(CInsSysEnumInfo)());
+		} else {
+			// Releasing some memory if needed
+			m_pEnum->releaseRowStuff(nRow);
+			((InSysPntr)(m_pEnum->matrix()))->DuplicateMasterMatrix(pMaster->matrix(), nRow);
+			nRow = 0;
+		}
 	}
 
 	setCode(t_threadUndefined);

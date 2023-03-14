@@ -958,6 +958,17 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 	}
 }
 
+
+FClass2(CEnumerator, void)::releaseRowStuff(T nRow) {
+	if (nRow < rowMaster()) {
+		// One of the previous masters of this thread ran it on a line with a larger number
+		// and we will need to reallocate memory to solve strings and maybe some other needs
+		delete[] rowStuff(this->rowMaster());
+		memset(m_pRow, 0, sizeof(m_pRow[0]) * numParts() * rowNumb());
+		setRowMaster(0);
+	}
+}
+
 FClass2(CEnumerator, void)::InitRowSolutions(const EnumeratorPntr pMaster) {
 	const auto use_master_sol = designParams()->use_master_sol;
 	const auto nRow = pMaster? pMaster->currentRowNumb() + use_master_sol : 0;
