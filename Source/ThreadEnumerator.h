@@ -8,7 +8,12 @@ Class2Def(CEnumInfo);
 Class2Def(CThreadEnumerator)
 {
 public:
-	CK CThreadEnumerator()							{ reset(); }
+	CK CThreadEnumerator()							{ m_pEnum = NULL; reset();
+#if WRITE_MULTITHREAD_LOG
+		extern int threadCntr;
+		m_threadID = threadCntr++;
+#endif
+	}
 	CK ~CThreadEnumerator()							{ release(); }
 	CK void setupThreadForBIBD(const EnumeratorPntr pMaster, T nRows, int threadIdx);
 	void EnumerateBIBD(designParam *pParam, EnumeratorPntr pMaster);
@@ -109,8 +114,8 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 }
 
 FClass2(CThreadEnumerator, void)::EnumerateBIBD(designParam *pParam, EnumeratorPntr pMaster) {
-	thread_message(threadID(), "threadEnumerate START", code(), m_pEnum);
+	THREAD_MESSAGE(threadID(), -1, "threadEnumerate START", code(), m_pEnum);
 	m_pEnum->Enumerate(pParam, false, m_pEnum->enumInfo(), pMaster, &m_code);
-	thread_message(threadID(), "threadEnumerate DONE", code());
+	THREAD_MESSAGE(threadID(), -1, "threadEnumerate DONE", code());
 }
 #endif

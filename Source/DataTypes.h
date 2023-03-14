@@ -434,12 +434,6 @@ typedef enum {
 	t_threadNotUsed
 } t_threadCode;
 
-#if USE_THREADS && WRITE_MULTITHREAD_LOG
-void thread_message(int threadIdx, const char *pComment, t_threadCode code, void *pntr = 0);
-#else
-	#define thread_message(threadIdx, pComment, code, ...)
-#endif
-
 size_t outString(const char *str, FILE *file);
 size_t outString(const char *str, const char *fileName, const char *mode = "a");
 
@@ -615,3 +609,23 @@ private:
 template <typename T, typename S>
 bool RunOperation(designParam* pParam, const char* pSummaryFileName, bool FirstPath, std::string* outInfo = nullptr);
 #define VAR_1		1
+
+
+#if USE_THREADS && WRITE_MULTITHREAD_LOG
+Class2Def(CEnumerator);
+
+template<typename T, typename S>
+void thread_message(int threadID, int threadIdx, const char* pComment, t_threadCode code, const EnumeratorPntr pntr = NULL)
+{
+	MUTEX_LOCK(out_mutex);
+	FOPEN(file, "Report.txt", "a");
+	fprintf(file, "threadID = %d,  thrIdx = %2d: %10s  (%d) %p\n", threadID, threadIdx, pComment, code, pntr);
+	fclose(file);
+	MUTEX_UNLOCK(out_mutex);
+}
+
+#define THREAD_MESSAGE(threadID, threadIdx, pComment, code, ...)	\
+		thread_message<T,S>(threadID, threadIdx, pComment, code, __VA_ARGS__)
+#else
+#define THREAD_MESSAGE(threadID, threadIdx, pComment, code, ...)
+#endif

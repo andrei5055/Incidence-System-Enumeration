@@ -21,6 +21,9 @@
 	#endif
 
 	using namespace THREAD_NAME_SPACE;
+#if WRITE_MULTITHREAD_LOG
+	int threadCntr = 0;
+#endif
 #endif
 
 #include "InSysSolver.h"
@@ -153,14 +156,6 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
 }
 
 #if USE_THREADS_ENUM
-#if WRITE_MULTITHREAD_LOG
-void thread_message(int threadIdx, const char *pComment, t_threadCode code, void *pntr)
-{
-	FILE *file = fopen("Report.txt", "a");
-	fprintf(file, "thrIdx = %2d: %10s  (%d) %p\n", threadIdx, pComment, code, pntr);
-	fclose(file);
-}
-#endif
 
 template<typename T, typename S>
 void threadEnumerate(Class2(CThreadEnumerator) *threadEnum, designParam *param, EnumeratorPntr pMaster)
@@ -181,10 +176,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		}
 
 		const int startIdx = thrIdx;
-#if WRITE_MULTITHREAD_LOG 
-		FILE *file = fopen("Report.txt", "a");
-		fprintf(file, "startIdx = %2d  Spipping code = %d\n", startIdx, code);
-#endif
+		THREAD_MESSAGE(-1, startIdx, "<== startIdx: threadWaitingLoop BEFOR loop", code, this);
 		while (ppThreadEnum[thrIdx]->code() == code) {
 			if (++thrIdx == nThread)
 				thrIdx = 0;
@@ -194,15 +186,13 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		}
 
 		auto *pEnum = ppThreadEnum[thrIdx];
-#if WRITE_MULTITHREAD_LOG 
-		fprintf(file, "==>thrIdx = %2d  CODE = %d  nThread= %d\n", thrIdx, pEnum->code(), nThread);
-		fclose(file);
-#endif
+		THREAD_MESSAGE(pEnum->threadID(), thrIdx, "threadWaitingLoop AFTER loop", pEnum->code(), this);
+
 		switch (pEnum->code()) {
 			case t_threadFinished:
 				LAUNCH_CANONICITY_TESTING(pEnum, this);
 				this->enumInfo()->updateCounters(pEnum->enumInfo());
-				thread_message(thrIdx, "finished", code);
+				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "finished", pEnum->code(), this);
 				if (noNewTask) {
 					// Changing code, otherwise during next call CEnumInfo<T>::reportProgress(...)
 					// t_canonical/t_totalConstr matrices will be counted one more time
@@ -226,9 +216,10 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 
 			case t_threadLaunchFail:
 				pEnum->reInit();
+				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "<== thrIdx: t_threadLaunchFail", pEnum->code(), this);
 
 			case t_threadNotUsed:
-				thread_message(thrIdx, "notUsed", code);
+				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "notUsed", code, this);
 				return thrIdx;  // When noNewTask is true, we are only here when all threads have finished.
 
 			case t_threadRunning:
@@ -255,7 +246,7 @@ FClass2(CEnumerator, ThreadEnumeratorPntr *)::getFromPool(size_t numSolutions, s
 	m_mutexThreadPool.lock();
 
 	ThreadEnumeratorPntr *ppThreadEnum = NULL;
-	auto poolSize = m_pThreadEnumPool->poolSize();
+	const auto poolSize = m_pThreadEnumPool->poolSize();
 	if (poolSize >= 2) {
 		// Allocate threads to work under the supervision of the current
 		// thread only when the pool contains more than one thread.
@@ -402,7 +393,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	const auto use_master_sol = designParams()->use_master_sol;
 	this->initiateColOrbits(nRows, nRow, pMatrix->partsInfo(), this->IS_enumerator(), use_master_sol, pMaster);
-
+#if WRITE_MULTITHREAD_LOG
+	if (pMaster)
+		thread_message(-1, pMaster->currentRowNumb(), "<<-- Current Row SET MASTER", t_threadCode::t_threadUndefined, this);
+#endif
 	// Construct nontrivial group, acting on parts (groups of blocks)
 	// As of today (09/29/2021), it should work only for CombBIBD's with at least two equal lambda's
 	auto* pGroupOnParts = pMaster ? pMaster->getGroupOnParts() : makeGroupOnParts(this);
@@ -425,9 +419,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
+#if RESTART_IMPLEMENTED
 		if (ppThreadEnum && designParams()->save_restart_info)
 			initiateRestartInfoUpdate();
-
+#endif
 		if (nRow == mt_level && threadFlag && !ppThreadEnum) {
 			const auto numSolutions = rowStuff(nRow)->numSolutions();
 			if (numSolutions > 1)
@@ -452,7 +447,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						thread t1(threadEnumerate<T, S>, pThread, pParam, this);
 						t1.detach();
 #endif
-						thread_message(thrIdx, "detached", pThread->code());
+						THREAD_MESSAGE(pThread->threadID(), thrIdx, "detached", pThread->code(), this);
 						break;
 					}
 					catch (const std::system_error& e) {

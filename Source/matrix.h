@@ -145,6 +145,10 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	}
 
 	CK C_InSys(const C_InSys *pMaster, T nRows) : Class2(CMatrix)(pMaster->rowNumb(), pMaster->colNumb()), m_t(pMaster->GetT())  {
+		DuplicateMasterMatrix(pMaster, nRows);
+	}
+
+	CK void DuplicateMasterMatrix(const C_InSys* pMaster, T nRows) {
 		setDataOwner(nRows == 0);
 		m_ppNumbSet = pMaster->numbSet();
 		setMaxBlockIntrsection(nRows);
