@@ -569,7 +569,8 @@ public:
 	bool firstMatr = true;			// TRUE, when first matrix of the set was not yet outputted
 	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed
 	bool betterResults = false;		//
-	bool m_compress_matrices = false; // Use bitwise compression of the matrices stored in the database 
+	bool m_compress_matrices = false; // Use bitwise compression of the matrices stored in the database
+	bool m_bUseThreadPool = false;	// allow threads to start threads
 	std::string workingDir = "";	// Current working directory name
 	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
@@ -595,6 +596,7 @@ public:
 	inline auto printOnlySimpleDesigns() const  { return m_printSimpleDesign; }
 	inline void setPrintOnlySimpleDesigns(bool val = true) { m_printSimpleDesign = val; }
 	inline auto compressMatrices() const        { return m_compress_matrices; }
+	inline auto useThreadPool() const			{ return m_bUseThreadPool; }
 private:
 	CInterStruct *m_pInterStruct = NULL;
 	int mt_level[2] = { 0, 0 };		// Matrix row number, where the threads will be launched

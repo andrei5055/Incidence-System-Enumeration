@@ -171,10 +171,12 @@ private:
 	CK virtual T MakeSystem(T numPart) = 0;
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread, bool threadFlag) const;
-	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr) { m_pThreadEnumPool = pntr; }
-	CK inline Class2(CThreadEnumPool)* threadEnumPool()				{ return m_pThreadEnumPool; }
-	CK void addToPool(ThreadEnumeratorPntr pEnum) const;
+	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr, int i = 0)
+																		{ m_pThreadEnumPool[i] = pntr; }
+	CK inline Class2(CThreadEnumPool)* threadEnumPool(int i = 0) const	{ return m_pThreadEnumPool[i]; }
+	CK void addToPool(ThreadEnumeratorPntr pEnum, int poolIdx = 0) const;
 	CK ThreadEnumeratorPntr* getFromPool(size_t numSolutions, size_t* pThreadNumb) const;
+	CK void emptyPool(Class2(CThreadEnumerator)** ppThreadEnum, size_t& nThread) const;
 #endif
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX)
 															{ return NULL; }
@@ -237,8 +239,8 @@ private:
 	static std::mutex m_mutexDB;				 // mutex for accessing the database, it is used when BIBD  or the "master" for CBIBD is added
 #endif
 #if USE_THREADS
-	static CThreadEnumPool<T,S> *m_pThreadEnumPool;
-	static std::mutex m_mutexThreadPool;
+	static CThreadEnumPool<T,S> *m_pThreadEnumPool[2];
+	static std::mutex m_mutexThreadPool[2];
 #endif
 };
 

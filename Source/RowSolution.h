@@ -96,6 +96,7 @@ public:
 	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin);
 	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
+	CK inline auto numRemainingSolutions() const				{ return numSolutions() - solutionIndex(); }
 #if PRINT_SOLUTIONS
 	void printSolutions(FILE *file, bool markNextUsed, T nRow, T nPortion, bool addPortionNumb = false) const;
 #endif
@@ -105,7 +106,7 @@ public:
 	CK inline auto *solutionPerm() const						{ return m_pSolutionPerm; }
 	CK void resetSolution()										{ setSolutionIndex(0); solutionPerm()->RemoveAll(); }
 	CK inline auto numSolutions() const							{ return m_nNumSolutions; }
-	inline bool isLastSolution() const							{ return solutionIndex() + 1 == numSolutions(); }
+	inline bool isLastSolution() const							{ return numRemainingSolutions() == 1; }
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }

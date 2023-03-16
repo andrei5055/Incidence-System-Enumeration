@@ -56,8 +56,8 @@ std::mutex CEnumerator<TDATA_TYPES>::m_mutexDB;
 #endif
 
 #if USE_THREADS
-std::mutex CEnumerator<TDATA_TYPES>::m_mutexThreadPool;
-CThreadEnumPool<TDATA_TYPES>* CEnumerator<TDATA_TYPES>::m_pThreadEnumPool = NULL;
+std::mutex CEnumerator<TDATA_TYPES>::m_mutexThreadPool[2];
+CThreadEnumPool<TDATA_TYPES>* CEnumerator<TDATA_TYPES>::m_pThreadEnumPool[2] = { NULL, NULL };
 #endif
 
 FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
@@ -167,12 +167,27 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 {
 	// Try to find the index of not-running thread
 	const auto noNewTask = code == t_threadNotUsed;
+	if (noNewTask && threadFlag) {
+		// Moving control over thre thread to main master
+		for (thrIdx = 0; thrIdx < nThread; thrIdx++) {
+			auto* pEnum = ppThreadEnum[thrIdx];
+			addToPool(pEnum, pEnum->code() == t_threadNotUsed? 0 : 1);
+		}
+		return -1;
+	}
+
+	CThreadEnumPool<T, S>* pMasterPool = threadEnumPool(1);
 	size_t loopingTime = 0;
 	while (nThread) {
-		if (!threadFlag && loopingTime > REPORT_INTERVAL) {
-			// We run this loop enough to send report message
-			this->enumInfo()->reportProgress(ppThreadEnum, nThread);
-			loopingTime = 0;
+		if (!threadFlag) {
+			if (loopingTime > REPORT_INTERVAL) {
+				// We run this loop enough to send report message
+				this->enumInfo()->reportProgress(ppThreadEnum, nThread);
+				loopingTime = 0;
+			}
+
+			if (pMasterPool && pMasterPool->poolSize())
+				emptyPool(ppThreadEnum, nThread);
 		}
 
 		const int startIdx = thrIdx;
@@ -180,13 +195,12 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		while (ppThreadEnum[thrIdx]->code() == code) {
 			if (noNewTask) {
 				auto* pEnum = ppThreadEnum[thrIdx];
-				pEnum->reInit();
 				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "Adding to the pool B", pEnum->code(), this);
 				addToPool(pEnum);
 				ppThreadEnum[thrIdx] = ppThreadEnum[--nThread];
 				if (thrIdx == nThread) {
 					if (!thrIdx)
-						break;
+						return -1;
 
 					thrIdx = 0;
 				}
@@ -252,30 +266,41 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 	return -1;
 }
 
-FClass2(CEnumerator, void)::addToPool(ThreadEnumeratorPntr pEnum) const {
-	m_mutexThreadPool.lock();
-	m_pThreadEnumPool->pushToPool(pEnum);
-	m_mutexThreadPool.unlock();
+FClass2(CEnumerator, void)::addToPool(ThreadEnumeratorPntr pEnum, int poolIdx) const {
+	m_mutexThreadPool[poolIdx].lock();
+	threadEnumPool(poolIdx)->pushToPool(pEnum);
+	m_mutexThreadPool[poolIdx].unlock();
 }
 
 FClass2(CEnumerator, ThreadEnumeratorPntr *)::getFromPool(size_t numSolutions, size_t* pThreadNumb) const {
-	m_mutexThreadPool.lock();
+	m_mutexThreadPool[0].lock();
 
 	ThreadEnumeratorPntr *ppThreadEnum = NULL;
-	const auto poolSize = m_pThreadEnumPool->poolSize();
+	auto* threadPool = threadEnumPool();
+	const auto poolSize = threadPool->poolSize();
 	if (poolSize >= 2) {
 		// Allocate threads to work under the supervision of the current
 		// thread only when the pool contains more than one thread.
 		auto i = *pThreadNumb = min(poolSize, numSolutions);
 		ppThreadEnum = new CThreadEnumerator<T, S> *[i];
 		while (i--)
-			ppThreadEnum[i] = m_pThreadEnumPool->popFromPool();
+			ppThreadEnum[i] = threadPool->popFromPool();
 	}
 
-	m_mutexThreadPool.unlock();
+	m_mutexThreadPool[0].unlock();
 	return ppThreadEnum;
 }
 
+FClass2(CEnumerator, void)::emptyPool(Class2(CThreadEnumerator)** ppThreadEnum, size_t& nThread) const {
+	auto* threadPool = threadEnumPool(1);
+	if (threadPool->poolSize()) {
+		m_mutexThreadPool[1].lock();
+		while (threadPool->poolSize())
+			ppThreadEnum[nThread++] = threadPool->popFromPool();
+
+		m_mutexThreadPool[1].unlock();
+	}
+}
 #endif
 
 FClass2(CEnumerator, void)::outputJobTitle() const {
@@ -297,7 +322,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		threadNumb >= 1? // We will not launch separate threads, when threadNumb is equal to 1
 		!pMaster						// Are we here for "grandmaster"?
 		? pParam->MT_level()			// Yes - determine the level by input parameters.
-		: pMaster->currentRowNumb() + 1 // No - next in relation to the master's level
+		: pParam->useThreadPool()       // Reuse threads by allowing them to launch new threads
+		? pMaster->currentRowNumb() + 1 // Yes - next in relation to the master's level
+		: INT_MAX
 		: INT_MAX;
 
 	size_t lenName = 0;
@@ -370,8 +397,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #if USE_THREADS_ENUM 
 		if (threadNumb) {
 			pThreadEnum = new Class2(CThreadEnumerator)[threadNumb];
-			ppThreadEnum = new CThreadEnumerator<T,S> *[2 * threadNumb];
-			setThreadEnumPool(new  Class2(CThreadEnumPool)(ppThreadEnum + threadNumb, threadNumb));
+			ppThreadEnum = new CThreadEnumerator<T,S> *[3 * threadNumb];
+			setThreadEnumPool(new Class2(CThreadEnumPool)(ppThreadEnum + threadNumb, threadNumb), 0);
+			setThreadEnumPool(pParam->useThreadPool()? new Class2(CThreadEnumPool)(ppThreadEnum + 2 * threadNumb, threadNumb) : NULL, 1);
+
 			for (auto i = threadNumb; i--;)
 				ppThreadEnum[i] = pThreadEnum + i;
 		}
@@ -440,9 +469,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			initiateRestartInfoUpdate();
 #endif
 		if (nRow == mt_level && threadFlag && !ppThreadEnum) {
-			const auto numSolutions = rowStuff(nRow)->numSolutions();
-			if (numSolutions > 1)
-				ppThreadEnum = getFromPool(numSolutions, &threadNumb);
+			const auto numRemainingSolutions = pRowSolution->numRemainingSolutions();
+			if (numRemainingSolutions > 1) {
+				if (threadEnumPool()->poolSize() > 1)
+					ppThreadEnum = getFromPool(numRemainingSolutions, &threadNumb);
+			} else
+				mt_level++;   // perhaps, we will do it on next level.
 		}
 
 		const bool usingThreads = ppThreadEnum && nRow == mt_level;
@@ -504,7 +536,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #else
 			const bool usingThreads = false;
 #endif
-			if (ppThreadEnum) {
+			if (!threadFlag) {
 				REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
 			}
 
@@ -816,7 +848,8 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	delete[] ppThreadEnum;
 	if (!threadFlag || !USE_THREADS_ENUM) {
 		delete[] pThreadEnum;
-		delete threadEnumPool();
+		for (int i = 0; i < 2; i++)
+			delete threadEnumPool(i);
 
 
 #if !USE_THREADS_ENUM

@@ -569,6 +569,7 @@ int main(int argc, char * argv[])
 		getIntegerParam(line, "FIND_ALL_2_DECOMPOSITIONS", &find_all_2_decomp);
 		getIntegerParam(line, "COMPRESS_MATRICES", &param->m_compress_matrices);
 		getIntegerParam(line, "NO_REPLICATED_BLOCKS", &param->noReplicatedBlocks);
+		getIntegerParam(line, "USE_THREAD_POOL", &param->m_bUseThreadPool);
 
 		// Define a job type
 		if (line.find("ENUMERATION") != string::npos)
