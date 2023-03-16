@@ -178,6 +178,22 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		const int startIdx = thrIdx;
 		THREAD_MESSAGE(-1, startIdx, "<== startIdx: threadWaitingLoop BEFOR loop", code, this);
 		while (ppThreadEnum[thrIdx]->code() == code) {
+			if (noNewTask) {
+				auto* pEnum = ppThreadEnum[thrIdx];
+				pEnum->reInit();
+				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "Adding to the pool B", pEnum->code(), this);
+				addToPool(pEnum);
+				ppThreadEnum[thrIdx] = ppThreadEnum[--nThread];
+				if (thrIdx == nThread) {
+					if (!thrIdx)
+						break;
+
+					thrIdx = 0;
+				}
+
+				continue;
+			}
+
 			if (++thrIdx == nThread)
 				thrIdx = 0;
 
@@ -210,13 +226,13 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 
 					// ... and adding it to the pool.
 					pEnum->reInit();
+					THREAD_MESSAGE(pEnum->threadID(), thrIdx, "Adding to the pool A", pEnum->code(), this);
 					addToPool(pEnum);
 					continue;
 				}
 
 			case t_threadLaunchFail:
 				pEnum->reInit();
-				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "<== thrIdx: t_threadLaunchFail", pEnum->code(), this);
 
 			case t_threadNotUsed:
 				THREAD_MESSAGE(pEnum->threadID(), thrIdx, "notUsed", code, this);
@@ -277,7 +293,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	char buff[256];
 	const auto lenBuffer = countof(buff);
 	auto threadNumb = pParam->threadNumb;
-	const int mt_level =
+	int mt_level =
 		threadNumb >= 1? // We will not launch separate threads, when threadNumb is equal to 1
 		!pMaster						// Are we here for "grandmaster"?
 		? pParam->MT_level()			// Yes - determine the level by input parameters.
