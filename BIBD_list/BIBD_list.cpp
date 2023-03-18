@@ -53,7 +53,15 @@ void output_func(const out_struct& out, T t, Args... args) { // recursive variad
 
 class opt_descr;
 
-typedef int (*check_fn)(const opt_descr& opt, int v, int b, int r, int k, int l, string& comment);
+typedef enum {
+    no_comment,        // Add to output without comment
+    with_comment,      // Add to output with comment
+    adjust_comments,   // Add output to previous comment
+    replace_comments,  // Replace previous comments by a new one
+    nothing            // Not including this set of parameters in output list
+} output;
+
+typedef output (*check_fn)(const opt_descr& opt, int v, int b, int r, int k, int l, string& comment);
 typedef void (*report_fn)(opt_descr& opt, const out_struct& out, int total);
 typedef void (*constr_fn)(opt_descr& opt);
 
@@ -68,12 +76,6 @@ public:
     constr_fn constr_func[2];
     void* extra_param;
 };
-
-typedef enum {
-    no_comment,        // Add to output without comment
-    with_comment,      // Add to output with comment
-    nothing            // Not including this set of parameters in output list
-} output;
 
 int set_option(const string& inOpt, const char *arg, opt_descr *opts, int num_opts, string &error) {
     if (inOpt[0] != '-')
@@ -212,10 +214,10 @@ int check_Simplicity(int v, int b, int r, int k, int λ) {
     return idx;
 }
 
-int check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+output check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
    static const char* pComment[] = { "S", "S-", "!S", "DPS: m=2, d=0"};
    int idx = check_Simplicity(v, b, r, k, λ);
-   if (idx < 0) {
+   if (idx < 0 /* || idx == 3 */) {
 #if CHECK_ON_COMPLEMENT
        idx = check_Simplicity(v, b, b - r, v - k, b - 2 * r + λ);
        if (idx < 0)
@@ -229,16 +231,24 @@ int check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ, s
     return output::with_comment;
 }
 
-int cntr1, cntr2;
-int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
-    const bool flag = comment.find("DPS: m=2") != string::npos;
+bool is_simple(const string& comment, bool& flag) {
+    flag = comment.find("DPS: m=2") != string::npos;
     if (!flag) {
         const auto pos = comment.find('S');
         if (pos != string::npos) {
-            if (!(comment[pos + 1] == '-' || (pos > 0 && comment[pos - 1] == '!')))
-                return output::no_comment;
+            const auto comStr = comment.c_str();
+            if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!')))
+                return true;
         }
     }
+
+    return false;
+}
+
+output check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+    bool flag;
+    if (is_simple(comment, flag))
+        return output::no_comment;
 
     string opt_comment, saved_comment;
 
@@ -252,6 +262,7 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
     // Therefore, we must exit the next loop when we first see that the inequality is not satisfied
     bool inequality_holds = true;
     const int mMax = flag ? 2 : λ;
+    int mLast = -1;
 
     int m = 1;
     while (inequality_holds && (++m <= mMax)) {
@@ -286,7 +297,7 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
                     if (opt_comment != saved_comment)
                         opt_comment = saved_comment;
 
-                    if (!flag)
+                    if (!flag && mLast != m - 1)
                         opt_comment += " m<=" + to_string(m - 1);
 
                     // Define the maximum for disjoint block number for previous value of m
@@ -298,7 +309,7 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
                         opt_comment += ",";
 
                     if (!flag)
-                        opt_comment += " m=" + to_string(m);
+                        opt_comment += " m=" + to_string(mLast = m);
 
                     int yOut = y;
                     if (λ > m) {
@@ -317,17 +328,12 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
                         assert(x1 + x2 == b - m);
                         assert(x1 >= 0);
                         assert(x2 >= 0);
-                        cntr1++;
                         if (x1 && x2) {
                             opt_comment += " (" + to_string(y) + "," + to_string(y + 1) + ")";
                             continue;
                         }
 
-                        cntr2++;
-                        if (!x1) {
-                            yOut++;
-                        }
-                        else {
+                        if (x1) {
                             if (lastReported == yOut) {
                                 // Removing last ',' from previous output
                                 const auto pos = opt_comment.find_last_of(',');
@@ -336,7 +342,8 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
 
                                 continue;
                             }
-                        }
+                        } else
+                            yOut++;
                     } 
                     else {
                         assert(y == 1);
@@ -360,10 +367,110 @@ int check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int λ
 
     ++*(pntr);
     comment = flag? opt_comment : opt.name + ":" + opt_comment;
-    return output::with_comment;
+    return flag? output::adjust_comments : output::with_comment;
 }
 
-int check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+    bool flag;
+    if (is_simple(comment, flag))
+        return output::no_comment;
+
+    // Investigating integer solutions for following system:
+    // 
+    // x{0} +         x{y} +         x{y+1} = b - m
+    //              y*x{y} +   (y+1)*x{y+1} = k(r - m)
+    //        y*(y-1)*x{y} * (y+1)*y*x{y+1} = k(k − 1)(λ − m)
+
+    if (λ == 1)
+        return output::no_comment;
+    
+    int mMax;
+    if ((mMax = λ) == 2) {
+        const int x1 = k * (r - 2);
+        const int x0 = b - x1 - 2;
+        assert(x0 >= 0);
+        const auto rc = comment.find("DPS: m=2, d=0") != string::npos;
+        comment = opt.name;
+        if (rc)
+            comment += "+DPS";
+
+        comment += ": m=2 (x0=" + to_string(x0) + ", x1=" + to_string(x1) + ")";
+        return rc? output::replace_comments : output::with_comment;
+    }
+    return output::no_comment;
+
+    auto pos = comment.find_last_of("m<=");
+    if (pos == string::npos)
+        pos = comment.find_last_of("m=");
+
+    if (pos != string::npos) {
+        string valStr = comment.substr(++pos);
+        if (!is_number(valStr)) {
+            pos = valStr.find(" (");
+            assert(pos != string::npos);
+            mMax = atoi(valStr.substr(0, pos).c_str());
+            if (mMax-- <= 1)
+                return output::no_comment;
+
+            // We extract 1, because we already know all solutions for mMax + 1.
+        } else
+            mMax = atoi(valStr.c_str());
+    }
+
+    const int flg = comment.find("d=0") != string::npos? 1 : 0;  // if flg=true, then x{0} = 0;
+
+    int rightPart[3];
+    int* leftPart[3];
+    int integers[256]; 
+    const auto len = k;
+    leftPart[0] = 3 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[3 * len];
+    leftPart[2] = (leftPart[1] = leftPart[0] + len) + len;
+    int m = 1;
+    while (++m <= mMax) {
+        memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
+        for (int i = flag ? 1 : 0; i <= len; i++) {
+            leftPart[0][i] = 1;
+            leftPart[2][i] = (i - 1) * (leftPart[1][i] = i);
+        }
+
+        rightPart[0] = b - m;
+        rightPart[1] = k * (r - m);
+        rightPart[2] = k * (k - 1) * (λ - m);
+        if (flag) {
+            rightPart[1] -= rightPart[0];
+            rightPart[2] -= 2 * rightPart[1];
+            assert(rightPart[1] >= 0);
+            assert(rightPart[2] >= 0);
+            for (int i = 1; i <= len; i++)
+                leftPart[2][i] -= 2 * (--leftPart[1][i]);
+        }
+
+        int i = len + 1;
+        int step = -1;
+        while (true) {
+            while ((i += step) > flg) {
+                int val = rightPart[2] / leftPart[2][i];
+                const int val1 = rightPart[1] / leftPart[1][i];
+                if (val > val1)
+                    val = val1;
+
+                if (val > rightPart[0])
+                    val = rightPart[0];
+
+                rightPart[2] -= val * leftPart[2][i];
+                rightPart[1] -= val * leftPart[1][i];
+                rightPart[0] -= val;
+            }
+        }
+    }
+
+    if (leftPart[0] != integers)
+        delete[] leftPart[0];
+
+    return output::no_comment;
+}
+
+output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     static int oddPrime[] = { 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
 
     const auto brc_condition = opt.intValue;
@@ -465,7 +572,7 @@ int check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, string& 
     return output::with_comment;
 }
 
-int check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+output check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     static opt_descr opt_BRC = { "BRC", check_BRC, nullptr, { 1, 1 }, 1, "" };
     if (!opt_BRC.extra_param)
         opt_BRC.extra_param = opt.extra_param;
@@ -632,6 +739,27 @@ int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,
     return 0;
 }
 
+bool set_comments(const opt_descr* opts, int num_opts, int v, int b, int r, int k, int λ, string& comment) {
+    string tmp;
+    for (int j = 1; j < num_opts; j++) {
+        const check_fn check_func = opts[j].check_func;
+        if (!check_func)
+            continue;
+
+        tmp = comment;
+        switch ((*check_func)(opts[j], v, b, r, k, λ, tmp)) {
+            case with_comment:      comment += (comment.empty()? " " : "; ") + tmp;
+                                    break;
+            case adjust_comments:   comment += tmp;
+            case no_comment:        break;
+            case replace_comments:  comment = " " + tmp;
+                                    break;
+            case nothing:           return false;
+        }
+    }
+
+    return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -642,6 +770,7 @@ int main(int argc, char* argv[])
     opt_descr opts[] = { {"F", nullptr, summary_title, {}, -1, ""},
                          {"S", check_Simplicity, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
                          {"DPS", check_DPS_condition, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
+                         {"SYS", solve_DPS_system, nullptr, {-1, 2}, 1, "", init_Cntr},
                          {"BRC", check_BRC, report_BRC, {-1, 2}, 1, "", init_Cntr},
                          {"O", check_Residual, report_Residual, {-1,1}, 1, "", init_Cntr},
                        };
@@ -698,17 +827,9 @@ int main(int argc, char* argv[])
                 if (j >= 0)
                     continue; // j-th parameter is not in the predescribed range
  
-                string comment, tmp;
-                for (int j = 1; j < num_opts; j++) {
-                    const check_fn check_func = opts[j].check_func;
-                    if (check_func) {
-                        switch ((*check_func)(opts[j], v, b, r, k, λ, tmp)) {
-                            case with_comment:  comment += " " + tmp;
-                            case no_comment:    break;
-                            case nothing:       continue;
-                        }
-                    }
-                }
+                string comment;
+                if (!set_comments(opts, num_opts, v, b, r, k, λ, comment))
+                    continue;
 
                 pBuff = buff;
                 if (cntr >= 0)
@@ -742,7 +863,5 @@ int main(int argc, char* argv[])
         if (destr_func)
             (*destr_func)(opts[j]);
     }
-
-    cout << "**** " << cntr1  << "   " << cntr2;
 }
 
