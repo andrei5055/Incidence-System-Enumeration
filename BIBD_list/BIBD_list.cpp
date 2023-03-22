@@ -336,7 +336,7 @@ output check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int
                         if (x1) {
                             if (lastReported == yOut) {
                                 // Removing last ',' from previous output
-                                const auto pos = opt_comment.find_last_of(',');
+                                const auto pos = opt_comment.rfind(',');
                                 if (pos != string::npos)
                                     opt_comment = opt_comment.substr(0, pos);
 
@@ -370,9 +370,44 @@ output check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int
     return flag? output::adjust_comments : output::with_comment;
 }
 
+#define USE_CHECK   0
+
+#if USE_CHECK
+void check(const int *solution, const int* right_part, int last_dx = 0) {
+    static int r_part[3], last;
+    if (!solution) {
+        last = last_dx;
+        for (int i = 0; i < 3; i++)
+            r_part[i] = right_part[i];
+
+        return;
+    }
+
+    int sum[3] = { solution[0] + solution[1], solution[1], 0 };
+    for (int i = 2; i <= last; i++) {
+        sum[0] += solution[i];
+        sum[1] += i * solution[i];
+        sum[2] += i * (i - 1) * solution[i] / 2;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        if (sum[i] + right_part[i] != r_part[i])
+            break;
+    }
+}
+#else
+#define check(x, y, ...)
+#endif
 output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+    if (v == b)
+        return output::no_comment;
+    //36   84 35 15 14
+//    if (!(v == 36 && r == 35 && k == 15))
+//        return output::no_comment;
+
     bool flag;
-    if (is_simple(comment, flag))
+    const auto simple = is_simple(comment, flag);
+    if (simple)
         return output::no_comment;
 
     // Investigating integer solutions for following system:
@@ -384,90 +419,276 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (λ == 1)
         return output::no_comment;
     
-    int mMax;
-    if ((mMax = λ) == 2) {
-        const int x1 = k * (r - 2);
-        const int x0 = b - x1 - 2;
-        assert(x0 >= 0);
-        const auto rc = comment.find("DPS: m=2, d=0") != string::npos;
-        comment = opt.name;
-        if (rc)
-            comment += "+DPS";
+    int nd = 1, mMax = simple? 1 : λ;
+    const char *dps_comment = "DPS: m=2, d=0";
+    auto pos = comment.find(dps_comment);
+    const auto rc = pos != string::npos;
+    if (rc) {
+        mMax = 2;
+        string valStr = comment.substr(pos + strlen(dps_comment));
+        pos = valStr.rfind("(");
+        if (pos != string::npos) {
+            valStr = valStr.substr(pos + 1);
+            pos = valStr.rfind(")");
+            valStr = valStr.substr(0, pos);
+            if (is_number(valStr))
+                nd = atoi(valStr.c_str());
+        }
+    }
 
-        comment += ": m=2 (x0=" + to_string(x0) + ", x1=" + to_string(x1) + ")";
+    if (λ == 2 || nd > 1) {
+        const int xd = nd > 1
+                       ? k * (k - 1) * (λ - 2) / (nd * (nd - 1))
+                       : simple? 1 : k * (r - 2);
+        const int x0 = b - xd - mMax;
+        assert(x0 >= 0);
+        comment = opt.name;
+        if (rc) {
+            // When we are here, x0 = 0, k elements which belong to these two
+            // identical blocks with all remaining (b - 2) blocks form a BIBD with parameters
+            // (k, b-2, r - 2, k(r-2)/(b-2), λ-2)
+            const auto k1 = k * (r - 2) / (b - 2);
+            assert(k1 - 1 == (λ - 2) * (k - 1) / (r - 2));
+            comment += "+DPS";
+        }
+
+        comment += ": m=2 (n0=" + to_string(x0) + ", n" + to_string(nd) + "=" + to_string(xd) + ")";
         return rc? output::replace_comments : output::with_comment;
     }
-    return output::no_comment;
 
-    auto pos = comment.find_last_of("m<=");
-    if (pos == string::npos)
-        pos = comment.find_last_of("m=");
+    int idx = 3;
+    pos = comment.rfind("m<=");
+    if (pos == string::npos) {
+        idx = 2;
+        pos = comment.rfind("m=");
+    }
 
     if (pos != string::npos) {
-        string valStr = comment.substr(++pos);
+        string valStr = comment.substr(pos + idx);
         if (!is_number(valStr)) {
-            pos = valStr.find(" (");
+            pos = valStr.find_last_of(", (");
             assert(pos != string::npos);
             mMax = atoi(valStr.substr(0, pos).c_str());
-            if (mMax-- <= 1)
-                return output::no_comment;
-
-            // We extract 1, because we already know all solutions for mMax + 1.
         } else
             mMax = atoi(valStr.c_str());
     }
 
-    const int flg = comment.find("d=0") != string::npos? 1 : 0;  // if flg=true, then x{0} = 0;
+    int idx0 = (!simple) && comment.find("d=0") != string::npos? 1 : 0;
+
+    // limits for block intersection from Connor's theorem
+    int cMin = k + λ - r;
+    if (cMin < 0)
+        cMin = 0;
+    int cMax = (2 * k * λ + r * (r - k - λ)) / r;
+    if (cMax > k)
+        cMax = k;
 
     int rightPart[3];
     int* leftPart[3];
     int integers[256]; 
-    const auto len = k;
+    auto len = k + 1;
     leftPart[0] = 3 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[3 * len];
-    leftPart[2] = (leftPart[1] = leftPart[0] + len) + len;
-    int m = 1;
+    int* solution = (leftPart[2] = (leftPart[1] = leftPart[0] + len) + len) + len;
+    memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
+
+    int iMin = idx0 ? 1 : 0;
+    if (iMin < cMin)
+        iMin = idx0 = cMin;
+
+    // idx0, n0 = n1 =...= n{idx0-1} = 0; n{idx0} is the lowest, which is not necessarily 0
+    for (int i = 0; i <= cMax - iMin; i++) {
+        leftPart[0][i] = 1;
+        leftPart[2][i] = (i - 1) * (leftPart[1][i] = i) / 2;
+    }
+
+    int m = simple? 0 : 1;
+    string info, info_m, info_s;
     while (++m <= mMax) {
-        memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
-        for (int i = flag ? 1 : 0; i <= len; i++) {
-            leftPart[0][i] = 1;
-            leftPart[2][i] = (i - 1) * (leftPart[1][i] = i);
-        }
+        len = cMax - cMin;
+        if (m < mMax || simple)
+            len++;
 
         rightPart[0] = b - m;
         rightPart[1] = k * (r - m);
-        rightPart[2] = k * (k - 1) * (λ - m);
-        if (flag) {
+        rightPart[2] = k * (k - 1) * (λ - m) / 2;
+        for (int i = 0; i < idx0; i++) {
             rightPart[1] -= rightPart[0];
-            rightPart[2] -= 2 * rightPart[1];
+            rightPart[2] -= rightPart[1];
             assert(rightPart[1] >= 0);
             assert(rightPart[2] >= 0);
-            for (int i = 1; i <= len; i++)
-                leftPart[2][i] -= 2 * (--leftPart[1][i]);
         }
 
-        int i = len + 1;
+        int numSolutions = 0;
+        for (int i = 0; i <= len; i++)
+            solution[i] = 0;
+
+        int i = len--;
+        check(NULL, rightPart, len);
         int step = -1;
+        int val, val1;
         while (true) {
-            while ((i += step) > flg) {
-                int val = rightPart[2] / leftPart[2][i];
-                const int val1 = rightPart[1] / leftPart[1][i];
-                if (val > val1)
-                    val = val1;
+            while ((i += step) >= 0) {
+                if (step > 0) {
+                    if (solution[i]) {
+                        --solution[i];
+                        rightPart[2] += leftPart[2][i];
+                        rightPart[1] += leftPart[1][i];
+                        rightPart[0]++;
+                        check(solution, rightPart);
+                        step = -1;
+                    }
+                    else {
+                        if (i >= len) {       // the current highest coordinate has been set to 0
+                            break;
+                            if (--len == 2)   // decrease the number of the last modified coordinate
+                                break;
+                            step = -1;
+                        }
+                    }
 
-                if (val > rightPart[0])
-                    val = rightPart[0];
+                    continue;
+                }
 
-                rightPart[2] -= val * leftPart[2][i];
-                rightPart[1] -= val * leftPart[1][i];
-                rightPart[0] -= val;
+                switch (i) {
+                case 2:     val = rightPart[2];
+                            if (rightPart[0] >= val && rightPart[1] >= val<<1) {
+                                rightPart[2] = 0;
+                                rightPart[1] -= val<<1;
+                                rightPart[0] -= solution[2] = val;
+                                check(solution, rightPart);
+                            }
+                            else {
+                                step = 1;
+                                if (val = solution[i = 3]) {
+                                    rightPart[2] += val * leftPart[2][i];
+                                    rightPart[1] += val * leftPart[1][i];
+                                    rightPart[0] += val;
+                                    solution[i] = 0;
+                                    check(solution, rightPart);
+                                }
+                            }
+                            break;
+                case 1:     val = rightPart[1];
+                            if (rightPart[0] >= val) {
+                                rightPart[1] = 0;
+                                rightPart[0] -= solution[1] = val;
+                                check(solution, rightPart);
+                            }
+                            else {
+                                step = 1;
+                                if (val = solution[i = 2]) {
+                                    rightPart[2] += val;
+                                    rightPart[1] += val << 1;
+                                    rightPart[0] += val;
+                                    solution[i] = 0;
+                                    check(solution, rightPart);
+                                }
+                            }
+                            break;
+                case 0:     solution[0] = rightPart[0];
+                            rightPart[0] = 0;
+                            break;
+                default:
+                            val = rightPart[2] / leftPart[2][i];
+                            val1 = rightPart[1] / leftPart[1][i];
+                            if (val > val1)
+                                val = val1;
+
+                            if (val > rightPart[0])
+                                val = rightPart[0];
+
+                            // A necessary condition for the existence of non-negative solutions
+                            // which will satisfy the second equation of our system
+                            if ((rightPart[0] - val) * leftPart[1][i - 1] < rightPart[1] - val * leftPart[1][i]) {
+                                step = 1;
+                                continue;
+                            }
+
+                            if (solution[i] = val) {
+                                rightPart[2] -= val * leftPart[2][i];
+                                rightPart[1] -= val * leftPart[1][i];
+                                rightPart[0] -= val;
+                                check(solution, rightPart);
+                            }
+                }
+
+                if (!rightPart[0]) {
+                    if (rightPart[1]) {
+                        // It is impossible to satisfy the second equation
+                        // We need to reject the coordinate just assigned
+                        val = solution[i];
+                        rightPart[2] += val * leftPart[2][i];
+                        rightPart[1] += val * leftPart[1][i];
+                        rightPart[0] += val;
+                        solution[i] = 0;
+                        check(solution, rightPart);
+
+                        while (i < len && !solution[++i]);
+                        if (i == len)
+                            break;
+                    }
+                    else
+                        if (!rightPart[2])
+                            break;
+
+                    step = 1;
+                    if (!i--)
+                        rightPart[i = 0] += solution[0];
+                }
             }
+
+
+            while (len >= 0 && !solution[len])
+                len--;
+
+            const auto found_solution = !rightPart[0] && !rightPart[1] && !rightPart[2];
+            if (found_solution && !numSolutions++) {
+                info_s.erase();
+                for (int i = 0; i < len; i++) {
+                    if (solution[i])
+                        info_s = " n" + to_string(i+idx0) + "=" + to_string(solution[i]);
+                }
+
+                info_m = " n" + to_string(len+idx0) + "=" + to_string(solution[len]);
+                info_s += info_m;
+            }
+
+            step = 1;
+            rightPart[2] += solution[2];
+            rightPart[0] += solution[0] + solution[1] + solution[2];
+            rightPart[1] += solution[1] + (solution[2] << 1);
+            solution[0] = solution[1] = solution[2] = 0;
+            check(solution, rightPart);
+
+            if (len <= 2)   // no reasons to change x{2}, it is the oly one in the 3-d equation
+                break;      // no more solutions for current m
+
+            i = 2;
+            while (!solution[++i]);
+            i--;
+        }
+
+        if (!info.empty())
+            info += ";";
+
+
+        info += " m=" + to_string(m) + " ";
+        if (numSolutions > 1)
+            info += "#:" + to_string(numSolutions) + info_m;
+        else {
+            assert(simple || m == mMax);
+            if (numSolutions)
+                info += "(" + info_s.substr(1) + ")";
+            else
+                info += " NO_SOLUTIONS";
         }
     }
 
     if (leftPart[0] != integers)
         delete[] leftPart[0];
 
-    return output::no_comment;
+    comment = opt.name + ":" + info;
+    return rc ? output::replace_comments : output::with_comment;
 }
 
 output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
@@ -636,7 +857,7 @@ int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,
 
         if (arg == "-H" || arg == "-HELP") {
             string prog_name(argv[0]);
-            const auto pos = prog_name.find_last_of('\\');
+            const auto pos = prog_name.rfind('\\');
             if (pos != string::npos)
                 prog_name = prog_name.substr(pos+1);
             
@@ -777,6 +998,8 @@ int main(int argc, char* argv[])
 
     const auto num_opts = sizeof(opts) / sizeof(opts[0]);
 
+    const auto start = clock();
+
     int cntr = -1;  // by default this counter will not be used
     const int numParam = sizeof(param) / sizeof(param[0]);
     if (parsingParameters(argc, argv, num_opts, opts, param, numParam, minVal, maxVal, &cntr) < 0)
@@ -854,6 +1077,16 @@ int main(int argc, char* argv[])
         if (report_func)
             (*report_func)(opts[j], out, cntr < 0? total : cntr);
     }
+
+    auto runTime = (unsigned long)(clock() - start) / CLOCKS_PER_SEC;
+    const auto sec = runTime % 60;
+    auto min = (runTime -= sec) / 60;
+    if (min > 60) {
+        const auto hours = (min - (min % 60)) / 60;
+        output_func(out, "Run Time: ", hours, "h ", min % 60, " min ", sec, " sec");
+    }
+
+    output_func(out, "Run Time: ", min, " min ", sec, " sec");
 
     if (outFile)
         fclose(outFile);
