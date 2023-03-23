@@ -231,14 +231,37 @@ output check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ
     return output::with_comment;
 }
 
-bool is_simple(const string& comment, bool& flag) {
-    flag = comment.find("DPS: m=2") != string::npos;
-    if (!flag) {
-        const auto pos = comment.find('S');
-        if (pos != string::npos) {
-            const auto comStr = comment.c_str();
-            if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!')))
-                return true;
+bool is_simple(const string& comment, bool& flag, int* pVal = nullptr) {
+    static const char* tag = "DPS: m";
+    static auto lenTag = strlen(tag);
+    const auto comStr = comment.c_str();
+    auto pos = comment.find(tag);
+    flag = false;
+    if (pos != string::npos) {
+        pos += lenTag;
+        if (comStr[pos++] != '=')
+            pos++;
+
+        const auto posEnd = comment.find(" ");
+        string valStr = comment.substr(pos);
+        if (posEnd > pos)
+            valStr = valStr.substr(0, posEnd - pos);
+
+        const int val = atoi(valStr.c_str());
+        flag = val == 2;
+        if (pVal)
+            *pVal = val;
+
+        return false;
+    }
+
+    pos = comment.find('S');
+    if (pos != string::npos) {  
+        if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!'))) {
+            if (pVal)
+                *pVal = 1;
+
+            return true;
         }
     }
 
@@ -399,16 +422,18 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 #define check(x, y, ...)
 #endif
 output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
-    if (v == b)
+    if (v == b || λ == 1)
         return output::no_comment;
     //36   84 35 15 14
-//    if (!(v == 36 && r == 35 && k == 15))
-//        return output::no_comment;
+
+ //   if (!(v ==  42 && r == 41 && k == 14))
+ //       return output::no_comment;
 
     bool flag;
-    const auto simple = is_simple(comment, flag);
-    if (simple)
-        return output::no_comment;
+    int mMax = λ;
+    const auto simple = is_simple(comment, flag, &mMax);
+//    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
+//        return output::no_comment;
 
     // Investigating integer solutions for following system:
     // 
@@ -416,10 +441,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     //              y*x{y} +   (y+1)*x{y+1} = k(r - m)
     //        y*(y-1)*x{y} * (y+1)*y*x{y+1} = k(k − 1)(λ − m)
 
-    if (λ == 1)
-        return output::no_comment;
-    
-    int nd = 1, mMax = simple? 1 : λ;
+    int nd = 1;
     const char *dps_comment = "DPS: m=2, d=0";
     auto pos = comment.find(dps_comment);
     const auto rc = pos != string::npos;
@@ -439,8 +461,11 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (λ == 2 || nd > 1) {
         const int xd = nd > 1
                        ? k * (k - 1) * (λ - 2) / (nd * (nd - 1))
-                       : simple? 1 : k * (r - 2);
-        const int x0 = b - xd - mMax;
+                       : simple
+                       ? k * (k - 1) * (λ - 1) / 2
+                       : k * (r - 2);
+        const int x1 = simple ? k * (r - 1) - 2 * xd : 0;
+        const int x0 = b - xd - mMax - x1;
         assert(x0 >= 0);
         comment = opt.name;
         if (rc) {
@@ -452,7 +477,15 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             comment += "+DPS";
         }
 
-        comment += ": m=2 (n0=" + to_string(x0) + ", n" + to_string(nd) + "=" + to_string(xd) + ")";
+        comment += ": m=" + to_string(simple ? 1 : 2) + " (n";
+        if (x0)
+            comment += "0=" + to_string(x0) + ", n";
+
+        if (simple)
+            comment += "1=" + to_string(x1) + ", n2=" + to_string(xd) + ")";
+        else
+            comment += to_string(nd) + "=" + to_string(xd) + ")";
+
         return rc? output::replace_comments : output::with_comment;
     }
 
@@ -522,6 +555,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         for (int i = 0; i <= len; i++)
             solution[i] = 0;
 
+        const char* pNumSolPrefix = "#:";
         int i = len--;
         check(NULL, rightPart, len);
         int step = -1;
@@ -641,16 +675,23 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             while (len >= 0 && !solution[len])
                 len--;
 
-            const auto found_solution = !rightPart[0] && !rightPart[1] && !rightPart[2];
-            if (found_solution && !numSolutions++) {
-                info_s.erase();
-                for (int i = 0; i < len; i++) {
-                    if (solution[i])
-                        info_s = " n" + to_string(i+idx0) + "=" + to_string(solution[i]);
+            if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
+                // Solution found
+                if (!numSolutions++) {
+                    info_s.erase();
+                    for (int i = 0; i < len; i++) {
+                        if (solution[i])
+                            info_s = " n" + to_string(i + idx0) + "=" + to_string(solution[i]);
+                    }
+
+                    info_m = " n" + to_string(len + idx0) + "=" + to_string(solution[len]);
+                    info_s += info_m;
                 }
 
-                info_m = " n" + to_string(len+idx0) + "=" + to_string(solution[len]);
-                info_s += info_m;
+                if (numSolutions >= 100) {
+                    pNumSolPrefix = "#:>=";
+                    break;
+                }
             }
 
             step = 1;
@@ -663,6 +704,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             if (len <= 2)   // no reasons to change x{2}, it is the oly one in the 3-d equation
                 break;      // no more solutions for current m
 
+
             i = 2;
             while (!solution[++i]);
             i--;
@@ -673,15 +715,14 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
 
         info += " m=" + to_string(m) + " ";
-        if (numSolutions > 1)
-            info += "#:" + to_string(numSolutions) + info_m;
-        else {
+        if (numSolutions <= 1) {
             assert(simple || m == mMax);
             if (numSolutions)
                 info += "(" + info_s.substr(1) + ")";
             else
                 info += " NO_SOLUTIONS";
-        }
+        } else
+            info += pNumSolPrefix + to_string(numSolutions) + info_m;
     }
 
     if (leftPart[0] != integers)
