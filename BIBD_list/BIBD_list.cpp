@@ -256,7 +256,7 @@ bool is_simple(const string& comment, bool& flag, int* pVal = nullptr) {
     }
 
     pos = comment.find('S');
-    if (pos != string::npos) {  
+    if (pos != string::npos) {
         if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!'))) {
             if (pVal)
                 *pVal = 1;
@@ -421,17 +421,21 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 #else
 #define check(x, y, ...)
 #endif
+
+#define MAX_SOLUTION_NUMB   10
+
 output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     if (v == b || λ == 1)
         return output::no_comment;
-    //36   84 35 15 14
-
- //   if (!(v ==  42 && r == 41 && k == 14))
- //       return output::no_comment;
+    //     6   20 10  3  4
+     // 13   26  8  4  2
+//    if (!(v == 13 && r == 8 && k == 4))
+//       return output::no_comment;
 
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
+
 //    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
 //        return output::no_comment;
 
@@ -458,35 +462,36 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         }
     }
 
+    string cmnt;
     if (λ == 2 || nd > 1) {
         const int xd = nd > 1
-                       ? k * (k - 1) * (λ - 2) / (nd * (nd - 1))
-                       : simple
-                       ? k * (k - 1) * (λ - 1) / 2
-                       : k * (r - 2);
+            ? k * (k - 1) * (λ - 2) / (nd * (nd - 1))
+            : simple
+            ? k * (k - 1) * (λ - 1) / 2
+            : k * (r - 2);
         const int x1 = simple ? k * (r - 1) - 2 * xd : 0;
         const int x0 = b - xd - mMax - x1;
         assert(x0 >= 0);
-        comment = opt.name;
+        string cmnt1 = opt.name;
         if (rc) {
             // When we are here, x0 = 0, k elements which belong to these two
             // identical blocks with all remaining (b - 2) blocks form a BIBD with parameters
             // (k, b-2, r - 2, k(r-2)/(b-2), λ-2)
             const auto k1 = k * (r - 2) / (b - 2);
             assert(k1 - 1 == (λ - 2) * (k - 1) / (r - 2));
-            comment += "+DPS";
+            cmnt1 += "+DPS";
         }
 
-        comment += ": m=" + to_string(simple ? 1 : 2) + " (n";
+        cmnt = " m=" + to_string(simple ? 1 : 2) + " (n";
         if (x0)
-            comment += "0=" + to_string(x0) + ", n";
+            cmnt += "0=" + to_string(x0) + ", n";
 
-        if (simple)
-            comment += "1=" + to_string(x1) + ", n2=" + to_string(xd) + ")";
-        else
-            comment += to_string(nd) + "=" + to_string(xd) + ")";
+        if (simple) {
+            comment = cmnt1 + ":" + cmnt + "1=" + to_string(x1) + ", n2=" + to_string(xd) + ")";
+            return rc ? output::replace_comments : output::with_comment;
+        }
 
-        return rc? output::replace_comments : output::with_comment;
+        cmnt += to_string(nd) + "=" + to_string(xd) + ")";
     }
 
     int idx = 3;
@@ -506,40 +511,49 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             mMax = atoi(valStr.c_str());
     }
 
-    int idx0 = (!simple) && comment.find("d=0") != string::npos? 1 : 0;
-
     // limits for block intersection from Connor's theorem
     int cMin = k + λ - r;
     if (cMin < 0)
         cMin = 0;
     int cMax = (2 * k * λ + r * (r - k - λ)) / r;
     if (cMax > k)
-        cMax = k;
+        cMax = k; // the intersection in k elements will be considered only in terms of multiplicities
 
     int rightPart[3];
     int* leftPart[3];
     int integers[256]; 
-    auto len = k + 1;
+    auto len = k;
     leftPart[0] = 3 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[3 * len];
     int* solution = (leftPart[2] = (leftPart[1] = leftPart[0] + len) + len) + len;
     memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
 
-    int iMin = idx0 ? 1 : 0;
-    if (iMin < cMin)
-        iMin = idx0 = cMin;
 
     // idx0, n0 = n1 =...= n{idx0-1} = 0; n{idx0} is the lowest, which is not necessarily 0
-    for (int i = 0; i <= cMax - iMin; i++) {
+    for (int i = 0; i <= cMax - cMin; i++) {
         leftPart[0][i] = 1;
         leftPart[2][i] = (i - 1) * (leftPart[1][i] = i) / 2;
     }
 
-    int m = simple? 0 : 1;
+    int idx0Adj = 0;
+    bool useAdj = false;
+    if (!cmnt.empty()) {
+        // We already know all solutions for the maximum possible multiplicity
+        mMax--;
+    }
+    else {
+        useAdj = (!simple) && comment.find("d=0") != string::npos;
+        if (useAdj)
+            idx0Adj = 1;
+    }
+
+    int m = 0;
     string info, info_m, info_s;
     while (++m <= mMax) {
+        int idx0 = cMin;
+        if (useAdj && mMax && idx0 < idx0Adj)
+            idx0 = idx0Adj;
+
         len = cMax - cMin;
-        if (m < mMax || simple)
-            len++;
 
         rightPart[0] = b - m;
         rightPart[1] = k * (r - m);
@@ -551,9 +565,14 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             assert(rightPart[2] >= 0);
         }
 
+        if (len <= 2 && rightPart[2]) {
+            // The solution will include n{k} != 0,
+            // and that case will be covered in the loop for next m
+            continue;
+        }
+
         int numSolutions = 0;
-        for (int i = 0; i <= len; i++)
-            solution[i] = 0;
+        memset(solution, 0, len * sizeof(solution[0]));
 
         const char* pNumSolPrefix = "#:";
         int i = len--;
@@ -679,16 +698,13 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                 // Solution found
                 if (!numSolutions++) {
                     info_s.erase();
-                    for (int i = 0; i < len; i++) {
+                    for (int i = 0; i <= len; i++) {
                         if (solution[i])
-                            info_s = " n" + to_string(i + idx0) + "=" + to_string(solution[i]);
+                            info_s += info_m = " n" + to_string(i + idx0) + "=" + to_string(solution[i]);
                     }
-
-                    info_m = " n" + to_string(len + idx0) + "=" + to_string(solution[len]);
-                    info_s += info_m;
                 }
 
-                if (numSolutions >= 100) {
+                if (numSolutions >= MAX_SOLUTION_NUMB) {
                     pNumSolPrefix = "#:>=";
                     break;
                 }
@@ -716,7 +732,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
         info += " m=" + to_string(m) + " ";
         if (numSolutions <= 1) {
-            assert(simple || m == mMax);
             if (numSolutions)
                 info += "(" + info_s.substr(1) + ")";
             else
@@ -728,7 +743,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (leftPart[0] != integers)
         delete[] leftPart[0];
 
-    comment = opt.name + ":" + info;
+    if (!info.empty() && !cmnt.empty())
+        info += ";";
+
+    comment = opt.name + ":" + info + cmnt;
     return rc ? output::replace_comments : output::with_comment;
 }
 
@@ -1063,6 +1081,10 @@ int main(int argc, char* argv[])
         fopen_S(outFile, pFileName, "w");
     }
 
+    std::stringstream buffer;
+    buffer << std::endl;
+    out_struct out = { buffer, outFile, coutFlag };
+
     int total = 0;
     char buff[256], *pBuff = buff;
     const int rMax = maxVal[2];
@@ -1099,19 +1121,12 @@ int main(int argc, char* argv[])
                 if (cntr >= 0)
                     pBuff += sprintf_s(pBuff, sizeof(buff), "%4d ", ++cntr);
 
-                sprintf_s(pBuff, sizeof(buff) - (pBuff - buff), "#%4d: %4d %4d %2d %2d %2d  %s\n", total, v, b, r, k, λ, comment.c_str());
-                if (outFile)
-                    FPRINTF(outFile, buff);
-
-                if (coutFlag)
-                    cout << buff;
+                sprintf_s(pBuff, sizeof(buff) - (pBuff - buff), "#%4d: %4d %4d %2d %2d %2d  ", total, v, b, r, k, λ);
+                output_func(out, buff, comment);
             }
         }
     }
 
-    std::stringstream buffer;
-    buffer << std::endl;
-    out_struct out = { buffer, outFile, coutFlag };
 
     for (int j = 0; j < num_opts; j++) {
         const report_fn report_func = opts[j].report_func;
