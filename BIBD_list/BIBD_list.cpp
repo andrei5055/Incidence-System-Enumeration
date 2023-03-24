@@ -428,16 +428,17 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (v == b || λ == 1)
         return output::no_comment;
     //     6   20 10  3  4
-     // 13   26  8  4  2
-//    if (!(v == 13 && r == 8 && k == 4))
+     //  49   84 36 21 15
+     // #1133:  171  380 40 18  4
+//    if (!(v == 171 && r == 40 && k == 18))
 //       return output::no_comment;
 
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
 
-//    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
-//        return output::no_comment;
+    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
+        return output::no_comment;
 
     // Investigating integer solutions for following system:
     // 
@@ -457,19 +458,28 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             valStr = valStr.substr(pos + 1);
             pos = valStr.rfind(")");
             valStr = valStr.substr(0, pos);
-            if (is_number(valStr))
-                nd = atoi(valStr.c_str());
+            if (!is_number(valStr)) {
+                pos = valStr.find(",");
+                assert(pos != string::npos);
+                valStr = valStr.substr(pos+1);
+            }
+
+            nd = atoi(valStr.c_str());
         }
     }
 
     string cmnt;
     if (λ == 2 || nd > 1) {
         const int xd = nd > 1
-            ? k * (k - 1) * (λ - 2) / (nd * (nd - 1))
+            ? k * ((k - 1) * (λ - 2) - (r - 2) * (nd - 2)) / nd
             : simple
             ? k * (k - 1) * (λ - 1) / 2
             : k * (r - 2);
-        const int x1 = simple ? k * (r - 1) - 2 * xd : 0;
+        const int x1 = nd > 1
+                       ? (k * (r - 2) - nd * xd) / (nd - 1)
+                       : simple
+                       ? k * (r - 1) - 2 * xd
+                       : 0;
         const int x0 = b - xd - mMax - x1;
         assert(x0 >= 0);
         string cmnt1 = opt.name;
@@ -490,6 +500,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             comment = cmnt1 + ":" + cmnt + "1=" + to_string(x1) + ", n2=" + to_string(xd) + ")";
             return rc ? output::replace_comments : output::with_comment;
         }
+
+
+        if (x1)
+           cmnt += to_string(nd - 1) + "=" + to_string(x1) + ", n";
 
         cmnt += to_string(nd) + "=" + to_string(xd) + ")";
     }
@@ -529,7 +543,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
 
     // idx0, n0 = n1 =...= n{idx0-1} = 0; n{idx0} is the lowest, which is not necessarily 0
-    for (int i = 0; i <= cMax - cMin; i++) {
+    for (int i = 0; i < cMax - cMin; i++) {
         leftPart[0][i] = 1;
         leftPart[2][i] = (i - 1) * (leftPart[1][i] = i) / 2;
     }
@@ -652,11 +666,34 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
                             // A necessary condition for the existence of non-negative solutions
                             // which will satisfy the second equation of our system
-                            if ((rightPart[0] - val) * leftPart[1][i - 1] < rightPart[1] - val * leftPart[1][i]) {
+                            //
+                            // Should we decide to keep the value for solution[i] on the next steps we will need
+                            // to cover the deficit:
+                            const auto deficit = rightPart[1] - val * leftPart[1][i];
+                            // for rightPart[1].
+                            // Let's evaluate when it is possible. It is easy to prove that it is not possible when
+                            const auto maxNonZeroCoordinates = rightPart[0] - val;
+                            //     -(rightPart[2] ? 1 : 0); // this minor improvement of inequality, but it does improve run time
+                            if (maxNonZeroCoordinates * leftPart[1][i - 1] < deficit) {
+                                // We are using the maximal possible value for solution[i-1]
+                                // with its coefficient leftPart[1][i - 1]
                                 step = 1;
                                 continue;
                             }
 
+#if 0  // This works but the execution time is a bit worse
+                            // If the previous criterium did not work, we could try a more sophisticated one, if rightPart[2] > 0;
+                            // Define the maximal index of coordinate which could help us to cover the mentioned deficite.
+
+                            int j = 2;
+                            while (j < i && rightPart[2] / leftPart[2][j])
+                                j++;
+
+                            if (maxNonZeroCoordinates * leftPart[1][j - 1] < deficit) {
+                                step = 1;
+                                continue;
+                            }
+#endif
                             if (solution[i] = val) {
                                 rightPart[2] -= val * leftPart[2][i];
                                 rightPart[1] -= val * leftPart[1][i];
