@@ -415,7 +415,7 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 
     for (int i = 0; i < 3; i++) {
         if (sum[i] + right_part[i] != r_part[i])
-            break;
+            assert(false);
     }
 }
 #else
@@ -424,21 +424,28 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 
 #define MAX_SOLUTION_NUMB   10
 
+void outSolution(const int *solution, const int len, const int shift, string& info_s, string& info_m) {
+    info_s.erase();
+    for (int i = 0; i <= len; i++) {
+        if (solution[i])
+            info_s += info_m = " n" + to_string(i + shift) + "=" + to_string(solution[i]);
+    }
+}
+
 output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     if (v == b || λ == 1)
         return output::no_comment;
-    //     6   20 10  3  4
-     //  49   84 36 21 15
-     // #1133:  171  380 40 18  4
-//    if (!(v == 171 && r == 40 && k == 18))
-//       return output::no_comment;
+
+    // 27  351 39  3  3
+    if (!(v == 27 && r == 39 && k == 3))
+       return output::no_comment;
 
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
 
-    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
-        return output::no_comment;
+//    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
+//        return output::no_comment;
 
     // Investigating integer solutions for following system:
     // 
@@ -529,6 +536,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     int cMin = k + λ - r;
     if (cMin < 0)
         cMin = 0;
+
     int cMax = (2 * k * λ + r * (r - k - λ)) / r;
     if (cMax > k)
         cMax = k; // the intersection in k elements will be considered only in terms of multiplicities
@@ -536,14 +544,13 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     int rightPart[3];
     int* leftPart[3];
     int integers[256]; 
-    auto len = k;
+    auto len = k + 1;
     leftPart[0] = 3 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[3 * len];
     int* solution = (leftPart[2] = (leftPart[1] = leftPart[0] + len) + len) + len;
     memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
 
-
     // idx0, n0 = n1 =...= n{idx0-1} = 0; n{idx0} is the lowest, which is not necessarily 0
-    for (int i = 0; i < cMax - cMin; i++) {
+    for (int i = 0; i <= cMax - cMin; i++) {
         leftPart[0][i] = 1;
         leftPart[2][i] = (i - 1) * (leftPart[1][i] = i) / 2;
     }
@@ -564,10 +571,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     string info, info_m, info_s;
     while (++m <= mMax) {
         int idx0 = cMin;
-        if (useAdj && mMax && idx0 < idx0Adj)
+        if (useAdj && m == mMax && idx0 < idx0Adj)
             idx0 = idx0Adj;
-
-        len = cMax - cMin;
 
         rightPart[0] = b - m;
         rightPart[1] = k * (r - m);
@@ -579,22 +584,39 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             assert(rightPart[2] >= 0);
         }
 
-        if (len <= 2 && rightPart[2]) {
-            // The solution will include n{k} != 0,
-            // and that case will be covered in the loop for next m
-            continue;
+        len = cMax - cMin;
+        if (cMax == k)
+            len--;
+
+        bool run_loop = true;;
+        int numSolutions = 0;
+        if (rightPart[2]) {
+/*            if (len <= 2) {
+                // The solution will include n{k} != 0,
+                // and that case will be covered in the loop for next m
+                continue;
+            }
+            */
+        }
+        else {
+            solution[0] = rightPart[0] - (solution[1] = rightPart[1]);
+            if (solution[0] >= 0) {
+                outSolution(solution, 1, idx0, info_s, info_m);
+                numSolutions = 1;
+            }
+
+            run_loop = false;
         }
 
-        int numSolutions = 0;
-        memset(solution, 0, len * sizeof(solution[0]));
+        memset(solution, 0, (len+1) * sizeof(solution[0]));
 
         const char* pNumSolPrefix = "#:";
-        int i = len--;
+        int i = len + 1;
         check(NULL, rightPart, len);
         int step = -1;
         int val, val1;
-        while (true) {
-            while ((i += step) >= 0) {
+        while (run_loop) {
+            while ((i += step) >= 0 && i <= len) {
                 if (step > 0) {
                     if (solution[i]) {
                         --solution[i];
@@ -670,11 +692,22 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             // Should we decide to keep the value for solution[i] on the next steps we will need
                             // to cover the deficit:
                             const auto deficit = rightPart[1] - val * leftPart[1][i];
+#if 0
+                            int f = 0;
+                            if (i >= 4) {
+                                const auto deficit2 = rightPart[2] - val * leftPart[2][i];
+                                if (deficit > deficit2)
+                                    f = 2;
+                            }
                             // for rightPart[1].
                             // Let's evaluate when it is possible. It is easy to prove that it is not possible when
+                            const auto maxNonZeroCoordinates = rightPart[0] - val - f;
+#else
                             const auto maxNonZeroCoordinates = rightPart[0] - val;
+#endif
+                            const auto mult = rightPart[2] < 2 ? 1 : leftPart[1][i - 1];
                             //     -(rightPart[2] ? 1 : 0); // this minor improvement of inequality, but it does improve run time
-                            if (maxNonZeroCoordinates * leftPart[1][i - 1] < deficit) {
+                            if (maxNonZeroCoordinates * mult < deficit) {
                                 // We are using the maximal possible value for solution[i-1]
                                 // with its coefficient leftPart[1][i - 1]
                                 step = 1;
@@ -733,13 +766,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
             if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
                 // Solution found
-                if (!numSolutions++) {
-                    info_s.erase();
-                    for (int i = 0; i <= len; i++) {
-                        if (solution[i])
-                            info_s += info_m = " n" + to_string(i + idx0) + "=" + to_string(solution[i]);
-                    }
-                }
+                if (!numSolutions++)
+                    outSolution(solution, len, idx0, info_s, info_m);
 
                 if (numSolutions >= MAX_SOLUTION_NUMB) {
                     pNumSolPrefix = "#:>=";
@@ -757,7 +785,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             if (len <= 2)   // no reasons to change x{2}, it is the oly one in the 3-d equation
                 break;      // no more solutions for current m
 
-
             i = 2;
             while (!solution[++i]);
             i--;
@@ -765,7 +792,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
         if (!info.empty())
             info += ";";
-
 
         info += " m=" + to_string(m) + " ";
         if (numSolutions <= 1) {
@@ -1176,16 +1202,15 @@ int main(int argc, char* argv[])
     auto min = (runTime -= sec) / 60;
     if (min > 60) {
         const auto hours = (min - (min % 60)) / 60;
-        output_func(out, "Run Time: ", hours, "h ", min % 60, " min ", sec, " sec");
-    }
-
-    output_func(out, "Run Time: ", min, " min ", sec, " sec");
+        output_func(out, "Run Time: ", hours, "H ", min % 60, "M ", sec, "S");
+    } else
+        output_func(out, "Run Time: ", min, "M ", sec, "S");
 
     if (outFile)
         fclose(outFile);
 
     for (int j = 0; j < num_opts; j++) {
-        const constr_fn destr_func = opts[j].constr_func[1];
+        const auto destr_func = opts[j].constr_func[1];
         if (destr_func)
             (*destr_func)(opts[j]);
     }
