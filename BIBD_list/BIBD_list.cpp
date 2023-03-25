@@ -436,10 +436,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (v == b || λ == 1)
         return output::no_comment;
 
-    // 27  351 39  3  3
-    if (!(v == 27 && r == 39 && k == 3))
-       return output::no_comment;
-
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
