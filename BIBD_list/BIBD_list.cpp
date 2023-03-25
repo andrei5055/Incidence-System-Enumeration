@@ -1198,9 +1198,9 @@ int main(int argc, char* argv[])
     auto min = (runTime -= sec) / 60;
     if (min > 60) {
         const auto hours = (min - (min % 60)) / 60;
-        output_func(out, "Run Time: ", hours, "H ", min % 60, "M ", sec, "S");
+        output_func(out, "Run Time: ", hours, " hrs ", min % 60, " min ", sec, " sec");
     } else
-        output_func(out, "Run Time: ", min, "M ", sec, "S");
+        output_func(out, "Run Time: ", min, " min ", sec, " sec");
 
     if (outFile)
         fclose(outFile);
