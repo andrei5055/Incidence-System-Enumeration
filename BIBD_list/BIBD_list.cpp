@@ -423,6 +423,7 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 #endif
 
 #define MAX_SOLUTION_NUMB   10
+#define PRINT_SOLUTIONS 0
 
 void outSolution(const int *solution, const int len, const int shift, string& info_s, string& info_m) {
     info_s.erase();
@@ -439,7 +440,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
-//    if (!(v == 8 && r == 7 && k == 4))
+    //21   30 10  7  3
+//    if (!(v == 21 && r == 10 && k == 7))
 //        return output::no_comment;
 
 //    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
@@ -563,10 +565,13 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         if (useAdj)
             idx0Adj = 1;
     }
-#define PRINT_SOLUTIONS 0
-#if PRINT_SOLUTIONS
+
+
     FILE* f = NULL;
-    fopen_s(&f, "solutions.txt", "w");
+#if PRINT_SOLUTIONS
+    fopen_s(&f, "solutions.txt", "a");
+    if (f)
+        fprintf(f, "Solution for (v, b, r, k, lambda) = (%d, %d, %d, %d, %d)\n", v, b, r, k, λ);
     static int cntr;
 #endif
     int m = 0;
@@ -761,10 +766,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
             if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
                 // Solution found
-                if (!numSolutions++) {
+                if (!numSolutions++ || f) {
                     outSolution(solution, len, idx0, info_s, info_m);
 #if PRINT_SOLUTIONS
-                    if (f && m > 1) {
+                    if (f) {
                         fprintf(f, "m = %d:  %s\n", m, info_s.c_str());
                         cntr = 0;
                     }
