@@ -540,17 +540,16 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         cMax = k; // the intersection in k elements will be considered only in terms of multiplicities
 
     int rightPart[3];
-    int* leftPart[3];
     int integers[256]; 
     auto len = k + 1;
-    leftPart[0] = 3 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[3 * len];
-    int* solution = (leftPart[2] = (leftPart[1] = leftPart[0] + len) + len) + len;
-    memset(leftPart[0], 0, 3 * len * sizeof(*leftPart[0]));
+    // We will keep left part coefficient only for 3d equation
+    int* leftPart = 2 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[2 * len];
+    int* solution = leftPart + len;
+    memset(leftPart, 0, len * sizeof(leftPart[0]));
 
     // idx0, n0 = n1 =...= n{idx0-1} = 0; n{idx0} is the lowest, which is not necessarily 0
     for (int i = 0; i <= cMax - cMin; i++) {
-        leftPart[0][i] = 1;
-        leftPart[2][i] = (i - 1) * (leftPart[1][i] = i) / 2;
+        leftPart[i] = (i - 1) * i / 2;
     }
 
     int idx0Adj = 0;
@@ -623,8 +622,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                 if (step > 0) {
                     if (solution[i]) {
                         --solution[i];
-                        rightPart[2] += leftPart[2][i];
-                        rightPart[1] += leftPart[1][i];
+                        rightPart[2] += leftPart[i];
+                        rightPart[1] += i;
                         rightPart[0]++;
                         check(solution, rightPart);
                         step = -1;
@@ -652,8 +651,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             else {
                                 step = 1;
                                 if (val = solution[i = 3]) {
-                                    rightPart[2] += val * leftPart[2][i];
-                                    rightPart[1] += val * leftPart[1][i];
+                                    rightPart[2] += val * leftPart[i];
+                                    rightPart[1] += val * i;
                                     rightPart[0] += val;
                                     solution[i] = 0;
                                     check(solution, rightPart);
@@ -681,8 +680,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             rightPart[0] = 0;
                             break;
                 default:
-                            val = rightPart[2] / leftPart[2][i];
-                            val1 = rightPart[1] / leftPart[1][i];
+                            val = rightPart[2] / leftPart[i];
+                            val1 = rightPart[1] / i;
                             if (val > val1)
                                 val = val1;
 
@@ -694,22 +693,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             //
                             // Should we decide to keep the value for solution[i] on the next steps we will need
                             // to cover the deficit:
-                            const auto deficit = rightPart[1] - val * leftPart[1][i];
-#if 0
-                            int f = 0;
-                            if (i >= 4) {
-                                const auto deficit2 = rightPart[2] - val * leftPart[2][i];
-                                if (deficit > deficit2)
-                                    f = 2;
-                            }
-                            // for rightPart[1].
-                            // Let's evaluate when it is possible. It is easy to prove that it is not possible when
-                            const auto maxNonZeroCoordinates = rightPart[0] - val - f;
-#else
+                            auto deficit1 = rightPart[1] - val * i;
                             const auto maxNonZeroCoordinates = rightPart[0] - val;
-#endif
-                            const auto mult = rightPart[2] ? leftPart[1][i - 1] : 1;
-                            if (maxNonZeroCoordinates * mult < deficit) {
+                            const auto mult = rightPart[2] ? i - 1 : 1;
+                            if (maxNonZeroCoordinates * mult < deficit1) {
                                 // We are using the maximal possible value for solution[i-1]
                                 // with its coefficient leftPart[1][i - 1]
                                 step = 1;
@@ -721,17 +708,36 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             // Define the maximal index of coordinate which could help us to cover the mentioned deficite.
 
                             int j = 2;
-                            while (j < i && rightPart[2] / leftPart[2][j])
+                            while (j < i && rightPart[2] / leftPart[j])
                                 j++;
 
-                            if (maxNonZeroCoordinates * leftPart[1][j - 1] < deficit) {
+                            if (maxNonZeroCoordinates * (j - 1) < deficit) {
                                 step = 1;
                                 continue;
                             }
 #endif
+#if 0
+                            const auto valStart = val;
+                            auto deficit2 = rightPart[2] - val * leftPart[i];
+                            auto deficit0 = rightPart[0] - val;
+                            while (val && deficit2 < deficit1 && deficit0 < deficit1 - deficit2) {
+                                val--;
+                                deficit0++;
+                                deficit1 += i;
+                                deficit2 += leftPart[i];
+                            }
+
+                            if (valStart >= val + 3) {
+                                static int ccc;
+                                FILE* f = NULL;
+                                fopen_s(&f, "xxx.txt", "a");
+                                fprintf(f, "%2d --> %2d  cond=%d ccc = %d\n", valStart, val, maxNonZeroCoordinates * mult < deficit1, ++ccc);
+                                fclose(f);
+                            }
+#endif
                             if (solution[i] = val) {
-                                rightPart[2] -= val * leftPart[2][i];
-                                rightPart[1] -= val * leftPart[1][i];
+                                rightPart[2] -= val * leftPart[i];
+                                rightPart[1] -= val * i;
                                 rightPart[0] -= val;
                                 check(solution, rightPart);
                             }
@@ -742,8 +748,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                         // It is impossible to satisfy the second equation
                         // We need to reject the coordinate just assigned
                         val = solution[i];
-                        rightPart[2] += val * leftPart[2][i];
-                        rightPart[1] += val * leftPart[1][i];
+                        rightPart[2] += val * leftPart[i];
+                        rightPart[1] += val * i;
                         rightPart[0] += val;
                         solution[i] = 0;
                         check(solution, rightPart);
@@ -812,8 +818,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             info += pNumSolPrefix + to_string(numSolutions) + info_m;
     }
 
-    if (leftPart[0] != integers)
-        delete[] leftPart[0];
+    if (leftPart != integers)
+        delete[] leftPart;
 
     if (!info.empty() && !cmnt.empty())
         info += ";";
