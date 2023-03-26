@@ -439,6 +439,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
+//    if (!(v == 28 && r == 27 && k == 12))
+//        return output::no_comment;
 
 //    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
 //        return output::no_comment;
@@ -562,7 +564,12 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         if (useAdj)
             idx0Adj = 1;
     }
-
+#define PRINT_SOLUTIONS 0
+#if PRINT_SOLUTIONS
+    FILE* f = NULL;
+    fopen_s(&f, "solutions.txt", "w");
+    static int cntr;
+#endif
     int m = 0;
     string info, info_m, info_s;
     while (++m <= mMax) {
@@ -701,8 +708,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 #else
                             const auto maxNonZeroCoordinates = rightPart[0] - val;
 #endif
-                            const auto mult = rightPart[2] < 2 ? 1 : leftPart[1][i - 1];
-                            //     -(rightPart[2] ? 1 : 0); // this minor improvement of inequality, but it does improve run time
+                            const auto mult = rightPart[2] ? leftPart[1][i - 1] : 1;
                             if (maxNonZeroCoordinates * mult < deficit) {
                                 // We are using the maximal possible value for solution[i-1]
                                 // with its coefficient leftPart[1][i - 1]
@@ -762,8 +768,15 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
             if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
                 // Solution found
-                if (!numSolutions++)
+                if (!numSolutions++) {
                     outSolution(solution, len, idx0, info_s, info_m);
+#if PRINT_SOLUTIONS
+                    if (f && m > 1) {
+                        fprintf(f, "m = %d:  %s\n", m, info_s.c_str());
+                        cntr = 0;
+                    }
+#endif
+                }
 
                 if (numSolutions >= MAX_SOLUTION_NUMB) {
                     pNumSolPrefix = "#:>=";
@@ -804,6 +817,11 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
     if (!info.empty() && !cmnt.empty())
         info += ";";
+
+#if PRINT_SOLUTIONS
+    if (f)
+        fclose(f);
+#endif
 
     comment = opt.name + ":" + info + cmnt;
     return rc ? output::replace_comments : output::with_comment;
