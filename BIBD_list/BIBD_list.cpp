@@ -439,7 +439,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     bool flag;
     int mMax = λ;
     const auto simple = is_simple(comment, flag, &mMax);
-//    if (!(v == 28 && r == 27 && k == 12))
+//    if (!(v == 8 && r == 7 && k == 4))
 //        return output::no_comment;
 
 //    if (simple/* && !(v == 10 && r == 6 && k == 4)*/)
@@ -592,15 +592,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
         bool run_loop = true;;
         int numSolutions = 0;
-        if (rightPart[2]) {
-/*            if (len <= 2) {
-                // The solution will include n{k} != 0,
-                // and that case will be covered in the loop for next m
-                continue;
-            }
-            */
-        }
-        else {
+        if (!rightPart[2]) {
             solution[0] = rightPart[0] - (solution[1] = rightPart[1]);
             if (solution[0] >= 0) {
                 outSolution(solution, 1, idx0, info_s, info_m);
@@ -691,8 +683,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                             // A necessary condition for the existence of non-negative solutions
                             // which will satisfy the second equation of our system
                             //
-                            // Should we decide to keep the value for solution[i] on the next steps we will need
-                            // to cover the deficit:
+                            // Should we decide to keep the value for solution[i] on the next steps
+                            // we will need to cover the deficit:
                             auto deficit1 = rightPart[1] - val * i;
                             const auto maxNonZeroCoordinates = rightPart[0] - val;
                             const auto mult = rightPart[2] ? i - 1 : 1;
@@ -716,8 +708,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                                 continue;
                             }
 #endif
-#if 0
-                            const auto valStart = val;
                             auto deficit2 = rightPart[2] - val * leftPart[i];
                             auto deficit0 = rightPart[0] - val;
                             while (val && deficit2 < deficit1 && deficit0 < deficit1 - deficit2) {
@@ -727,14 +717,11 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                                 deficit2 += leftPart[i];
                             }
 
-                            if (valStart >= val + 3) {
-                                static int ccc;
-                                FILE* f = NULL;
-                                fopen_s(&f, "xxx.txt", "a");
-                                fprintf(f, "%2d --> %2d  cond=%d ccc = %d\n", valStart, val, maxNonZeroCoordinates * mult < deficit1, ++ccc);
-                                fclose(f);
+                            if ((rightPart[0] - val) * mult < deficit1) {
+                                step = 1;
+                                continue;
                             }
-#endif
+
                             if (solution[i] = val) {
                                 rightPart[2] -= val * leftPart[i];
                                 rightPart[1] -= val * i;
