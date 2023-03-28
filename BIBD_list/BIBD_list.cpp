@@ -85,14 +85,20 @@ int set_option(const string& inOpt, const char *arg, opt_descr *opts, int num_op
     for (int i = 0; i < num_opts; i++) {
         auto& opt = opts[i];
         auto pos = inOpt.find(opt.name, 1);
-        if (pos == string::npos)
+        if (pos != 1)
             continue;
 
         if (inOpt[pos += opt.name.length()] != '=') {
+            int k = i;
+            while (++k < num_opts && inOpt.find(opts[k].name, 1) == string::npos);
+            if (k < num_opts)   // There is another option with the same initial characters.
+                continue;       // We will parce it later.
+
+            int j = opt.limits[0];
             buffer << "Invalid option settings: " SQUOT(arg);
-            buffer << "\nExpected '-" << opt.name << "= val', where 'val' is one of {";
-            for (int i = opt.limits[0]; i <= opt.limits[1]; i++)
-                buffer << i;
+            buffer << "\nExpected '-" << opt.name << "= val', where 'val' is one of {" << j++;
+            for (; j <= opt.limits[1]; j++)
+                buffer << ", " << j;
 
             buffer << "}";
         }
@@ -134,6 +140,36 @@ void init_Cntr(opt_descr& opt) {
     opt.extra_param = new int [4];
     memset(opt.extra_param, 0, 4 * sizeof(int));
 }
+
+void init_DPS(opt_descr& opt) {
+
+    if (opt.intValue != 2) {
+        const auto pos = opt.strValue.find_first_of(",|:");
+        if (pos != string::npos) {
+            init_Cntr(opt);
+            auto valStr = opt.strValue.substr(0, pos);
+            auto* pntr = static_cast<int*>(opt.extra_param);
+            if (is_number(valStr))
+                pntr[0] = atoi(valStr.c_str());
+            else {
+                transform(valStr.begin(), valStr.end(), valStr.begin(), ::toupper);
+                if (valStr[pos] == '+' || valStr.find("ALL"))
+                    pntr[0] = INT_MAX;
+                else
+                    cout << "Cannot parse parameter `" << opt.strValue
+                    << "' set to option '" << opt.name << "'";
+            }
+        }
+    } else
+        opt.strValue = "solutions.txt";
+
+    if (!opt.strValue.empty()) {
+        FILE* f;
+        fopen_S(f, opt.strValue.c_str(), "w");
+        fclose(f);
+    }
+}
+
 
 int check_DPS_inequality(int b, int r, int k, int λ, int d = 0, int limitM = 1)
 {
@@ -423,7 +459,6 @@ void check(const int *solution, const int* right_part, int last_dx = 0) {
 #endif
 
 #define MAX_SOLUTION_NUMB   10
-#define PRINT_SOLUTIONS 0
 
 void outSolution(const int *solution, const int len, const int shift, string& info_s, string& info_m) {
     info_s.erase();
@@ -568,15 +603,16 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
 
     FILE* f = NULL;
-#if PRINT_SOLUTIONS
-    fopen_s(&f, "solutions.txt", "a");
-    if (f)
-        fprintf(f, "Solution for (v, b, r, k, lambda) = (%d, %d, %d, %d, %d)\n", v, b, r, k, λ);
-    static int cntr;
-#endif
+    if (!opt.strValue.empty()) {
+        fopen_S(f, opt.strValue.c_str(), "a");
+        if (f)
+            fprintf(f, "Solutions for (v, b, r, k, lambda) = (%d, %d, %d, %d, %d)\n", v, b, r, k, λ);
+    }
+
     int m = 0;
     string info, info_m, info_s;
     while (++m <= mMax) {
+        int cntr = 0;
         int idx0 = cMin;
         if (useAdj && m == mMax && idx0 < idx0Adj)
             idx0 = idx0Adj;
@@ -609,6 +645,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
         memset(solution, 0, (len+1) * sizeof(solution[0]));
 
+        const bool check_validity = m == λ - 1 && !idx0;
         const char* pNumSolPrefix = "#:";
         int i = len + 1;
         check(NULL, rightPart, len);
@@ -766,19 +803,61 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
             if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
                 // Solution found
-                if (!numSolutions++ || f) {
-                    outSolution(solution, len, idx0, info_s, info_m);
-#if PRINT_SOLUTIONS
-                    if (f) {
-                        fprintf(f, "m = %d:  %s\n", m, info_s.c_str());
-                        cntr = 0;
+                bool valid_solution = true;
+                if (check_validity) {
+                    // the solution for m = λ - 1 is not valid if there is a pair
+                    // of different indices (i, j): i != j, i + j > k and n{i} != 0 n{j} != 0
+                    // OR n{i} > 1 for 2 * i > k
+                    const auto half_k = k >> 1;
+                    int i = len + 1;
+                    while (--i > half_k) {
+                        const auto ni = solution[i];
+                        if (!ni)
+                            continue;
+
+                        if (ni > 1)
+                            break;
+
+                        int j;
+                        const auto jMin = k - (j = i);
+                        while (--j > jMin && !solution[j]);
+
+                        if (j > jMin)
+                            break;
                     }
-#endif
+                    if (i > half_k)
+                        valid_solution = false;
                 }
 
-                if (numSolutions >= MAX_SOLUTION_NUMB) {
-                    pNumSolPrefix = "#:>=";
-                    break;
+                if (valid_solution) {
+                    if (f) {
+                        char buffer[512], * pBuff;
+                        const auto lenBuff = sizeof(buffer) / sizeof(buffer[0]);
+                        if (!cntr++) {
+                            pBuff = buffer;
+                            fprintf(f, "m = %d", m);
+                            for (int i = 0; i <= len; i++)
+                                pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "   n%d", i + idx0);
+
+                            fprintf(f, "%s\n", buffer);
+                        }
+
+                        pBuff = buffer;
+                        pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "#%3d:", cntr);
+                        for (int i = 0; i <= len; i++)
+                            pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "%5d", solution[i]);
+
+                        fprintf(f, "%s\n", buffer);
+                    }
+
+                    if (!numSolutions++)
+                        outSolution(solution, len, idx0, info_s, info_m);
+
+                    if (numSolutions >= MAX_SOLUTION_NUMB) {
+                        pNumSolPrefix = "#:>=";
+                        if (!f)
+                            break;
+                    }
                 }
             }
 
@@ -816,10 +895,8 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (!info.empty() && !cmnt.empty())
         info += ";";
 
-#if PRINT_SOLUTIONS
     if (f)
         fclose(f);
-#endif
 
     comment = opt.name + ":" + info + cmnt;
     return rc ? output::replace_comments : output::with_comment;
@@ -1125,7 +1202,7 @@ int main(int argc, char* argv[])
     opt_descr opts[] = { {"F", nullptr, summary_title, {}, -1, ""},
                          {"S", check_Simplicity, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
                          {"DPS", check_DPS_condition, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
-                         {"SYS", solve_DPS_system, nullptr, {-1, 2}, 1, "", init_Cntr},
+                         {"SYS", solve_DPS_system, nullptr, {0, 2}, -1, "", init_DPS},
                          {"BRC", check_BRC, report_BRC, {-1, 2}, 1, "", init_Cntr},
                          {"O", check_Residual, report_Residual, {-1,1}, 1, "", init_Cntr},
                        };
