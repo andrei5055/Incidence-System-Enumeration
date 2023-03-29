@@ -806,17 +806,15 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                     // OR n{i} > 1 for 2 * i > k
 #if 1
                     // This check is stronger than the other one
-                    int i = len + 1;
-                    if (i > 3) {
-                        while (--i && !solution[i]);
-                        const auto ni = solution[i];
-                        int x = 1 + (i - 1) * ni;
-                        for (int j = i; --j > 2;)
-                            x += (j - 1) * solution[j];
-
-                        if (x > k)
-                            valid_solution = false;
+                    int nBlock = 0;
+                    int x = k;
+                    for (int i = len + 1; --i > 2; ) {
+                        for (int t = solution[i]; t-- && i > nBlock;)
+                            x -= i - nBlock++;
                     }
+
+                    if (x < 0)
+                        valid_solution = false;
 #else
                     const auto half_k = (k + 1) >> 1;
                     int i = len + 1;
