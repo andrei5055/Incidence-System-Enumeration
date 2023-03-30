@@ -530,7 +530,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     }
 
     string cmnt;
-    int savedSolution[3];
+    int savedSolution[4];
     if (λ == 2 || nd > 1) {
         const int xd = nd > 1
             ? k * ((k - 1) * (λ - 2) - (r - 2) * (nd - 2)) / nd
@@ -657,6 +657,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             solution[0] = rightPart[0] - (solution[1] = rightPart[1]);
             if (solution[0] >= 0) {
                 outSolution(solution, 1, idx0, info_s, info_m);
+                outSolution(solution, nd, mMax, 0, f, cntr);
                 numSolutions = 1;
             }
 
@@ -665,7 +666,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
         memset(solution, 0, (len+1) * sizeof(solution[0]));
 
-        const bool check_validity = m == λ - 1 && !idx0;
+        const bool check_validity = (m == λ - 1 || m == λ - 2) && !idx0;
         const char* pNumSolPrefix = "#:";
         int i = len + 1;
         check(NULL, rightPart, len);
@@ -825,41 +826,52 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                 // Solution found
                 bool valid_solution = true;
                 if (check_validity) {
-                    // the solution for m = λ - 1 is not valid if there is a pair
-                    // of different indices (i, j): i != j, i + j > k and n{i} != 0 n{j} != 0
-                    // OR n{i} > 1 for 2 * i > k
+                    if (m == λ - 1) {
+                        // the solution for m = λ - 1 is not valid if there is a pair
+                        // of different indices (i, j): i != j, i + j > k and n{i} != 0 n{j} != 0
+                        // OR n{i} > 1 for 2 * i > k
 #if 1
-                    // This check is stronger than the other one
-                    int nBlock = 0;
-                    int x = k;
-                    for (int i = len + 1; --i > 2; ) {
-                        for (int t = solution[i]; t-- && i > nBlock;)
-                            x -= i - nBlock++;
-                    }
+                        // This check is stronger than the other one
+                        int nBlock = 0;
+                        int x = k;
+                        for (int i = len + 1; --i > 2; ) {
+                            for (int t = solution[i]; t-- && i > nBlock;)
+                                x -= i - nBlock++;
+                        }
 
-                    if (x < 0)
-                        valid_solution = false;
+                        if (x < 0)
+                            valid_solution = false;
 #else
-                    const auto half_k = (k + 1) >> 1;
-                    int i = len + 1;
-                    while (--i > half_k) {
-                        const auto ni = solution[i];
-                        if (!ni)
-                            continue;
+                        const auto half_k = (k + 1) >> 1;
+                        int i = len + 1;
+                        while (--i > half_k) {
+                            const auto ni = solution[i];
+                            if (!ni)
+                                continue;
 
-                        if (ni > 1)
-                            break;
+                            if (ni > 1)
+                                break;
 
-                        int j;
-                        const auto jMin = k - (j = i) + 1;
-                        while (--j > jMin && !solution[j]);
+                            int j;
+                            const auto jMin = k - (j = i) + 1;
+                            while (--j > jMin && !solution[j]);
 
-                        if (j > jMin)
-                            break;
-                    }
-                    if (i > half_k)
-                        valid_solution = false;
+                            if (j > jMin)
+                                break;
+                        }
+                        if (i > half_k)
+                            valid_solution = false;
 #endif
+                    }
+                    else { // m == λ - 2
+                        for (int i = len + 1; --i > k/3;) {
+                            if (solution[i] < 3)
+                                continue;
+
+                            if ((3 * i + k - 1) / k > 2)
+                                valid_solution = false;
+                        }
+                    }
                 }
 
                 if (valid_solution) {
