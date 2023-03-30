@@ -468,6 +468,29 @@ void outSolution(const int *solution, const int len, const int shift, string& in
     }
 }
 
+void outSolution(const int* solution, const int len, int m, int idx0, FILE* f, int& cntr) {
+    if (!f)
+        return;
+
+    char buffer[512], * pBuff;
+    const auto lenBuff = sizeof(buffer) / sizeof(buffer[0]);
+    if (!cntr++) {
+        pBuff = buffer;
+        fprintf(f, "\nm = %d", m);
+        for (int i = 0; i <= len; i++)
+            pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "   n%d", i + idx0);
+
+        fprintf(f, "%s\n", buffer);
+    }
+
+    pBuff = buffer;
+    pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "#%3d:", cntr);
+    for (int i = 0; i <= len; i++)
+        pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "%5d", solution[i]);
+
+    fprintf(f, "%s\n", buffer);
+}
+
 output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     if (v == b || λ == 1)
         return output::no_comment;
@@ -507,6 +530,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     }
 
     string cmnt;
+    int savedSolution[3];
     if (λ == 2 || nd > 1) {
         const int xd = nd > 1
             ? k * ((k - 1) * (λ - 2) - (r - 2) * (nd - 2)) / nd
@@ -531,7 +555,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         }
 
         cmnt = " m=" + to_string(simple ? 1 : 2) + " (n";
-        if (x0)
+        if (savedSolution[0] = x0)
             cmnt += "0=" + to_string(x0) + ", n";
 
         if (simple) {
@@ -540,10 +564,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         }
 
 
-        if (x1)
+        if (savedSolution[1] = x1)
            cmnt += to_string(nd - 1) + "=" + to_string(x1) + ", n";
 
-        cmnt += to_string(nd) + "=" + to_string(xd) + ")";
+        cmnt += to_string(savedSolution[3] = nd) + "=" + to_string(savedSolution[2] = xd) + ")";
     }
 
     int idx = 3;
@@ -605,10 +629,10 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             fprintf(f, "Solutions for (v, b, r, k, lambda) = (%d, %d, %d, %d, %d)\n", v, b, r, k, λ);
     }
 
-    int m = 0;
+    int cntr, m = 0;
     string info, info_m, info_s;
     while (++m <= mMax) {
-        int cntr = 0;
+        cntr = 0;
         int idx0 = cMin;
         if (useAdj && m == mMax && idx0 < idx0Adj)
             idx0 = idx0Adj;
@@ -839,25 +863,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                 }
 
                 if (valid_solution) {
-                    if (f) {
-                        char buffer[512], * pBuff;
-                        const auto lenBuff = sizeof(buffer) / sizeof(buffer[0]);
-                        if (!cntr++) {
-                            pBuff = buffer;
-                            fprintf(f, "m = %d", m);
-                            for (int i = 0; i <= len; i++)
-                                pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "   n%d", i + idx0);
-
-                            fprintf(f, "%s\n", buffer);
-                        }
-
-                        pBuff = buffer;
-                        pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "#%3d:", cntr);
-                        for (int i = 0; i <= len; i++)
-                            pBuff += sprintf_s(pBuff, lenBuff - (pBuff - buffer), "%5d", solution[i]);
-
-                        fprintf(f, "%s\n", buffer);
-                    }
+                    outSolution(solution, len, m, idx0, f, cntr);
 
                     if (!numSolutions++)
                         outSolution(solution, len, idx0, info_s, info_m);
@@ -901,8 +907,21 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     if (leftPart != integers)
         delete[] leftPart;
 
-    if (!info.empty() && !cmnt.empty())
-        info += ";";
+    if (!cmnt.empty()) {
+        if (f) {
+            const auto nd = savedSolution[3];
+            solution[0] = savedSolution[0];
+            solution[nd] = savedSolution[2];
+            if (savedSolution[1])
+                solution[nd - 1] = savedSolution[1];
+
+            cntr = 0;
+            outSolution(solution, nd, mMax + 1, 0, f, cntr);
+        }
+
+        if (!info.empty())
+            info += ";";
+    }
 
     if (f)
         fclose(f);
