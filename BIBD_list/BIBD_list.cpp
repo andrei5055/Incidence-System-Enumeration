@@ -629,6 +629,9 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
             fprintf(f, "Solutions for (v, b, r, k, lambda) = (%d, %d, %d, %d, %d)\n", v, b, r, k, λ);
     }
 
+    const int k_supl  = (v - k);
+    const int mult = k_supl * (k_supl - 1);
+    const auto λ_supl = b - 2 * r + λ;
     int cntr, m = 0;
     string info, info_m, info_s;
     while (++m <= mMax) {
@@ -637,6 +640,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         if (useAdj && m == mMax && idx0 < idx0Adj)
             idx0 = idx0Adj;
 
+        const auto kAdj = k_supl - (k + idx0);
         rightPart[0] = b - m;
         rightPart[1] = k * (r - m);
         rightPart[2] = k * (k - 1) * (λ - m) / 2;
@@ -824,8 +828,16 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
 
             if (!rightPart[0] && !rightPart[1] && !rightPart[2]) {
                 // Solution found
-                bool valid_solution = true;
-                if (check_validity) {
+                int s1 = 0;
+                int s2 = 0;
+                for (int i = 0; i <= len; i++) {
+                    const auto x = (kAdj + i) * solution[i];
+                    s1 += x;
+                    s2 += (kAdj + i - 1) * x;
+                }
+
+                bool valid_solution = s1 == k_supl * (b - r - m) && s2 == mult * (λ_supl - m);
+                if (valid_solution && check_validity) {
                     // the solution for m = λ - 1 is not valid if there is a pair
                     // of different indices (i, j): i != j, i + j > k and n{i} != 0 n{j} != 0
                     // OR n{i} > 1 for 2 * i > k
@@ -861,7 +873,6 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
                     if (i > half_k)
                         valid_solution = false;
 #endif
-
                 }
 
                 if (valid_solution) {
