@@ -1,4 +1,4 @@
-#include <fstream>      // std::ifstream
+﻿#include <fstream>      // std::ifstream
 #include "BIBD_Enumerator.h"
 
 using namespace std;
@@ -423,4 +423,234 @@ FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, cons
 	return true;
 }
 
+#define USE_CHECK   0
+
+#if USE_CHECK
+void check(const size_t* solution, const size_t* right_part, size_t last_dx = 0) {
+	static size_t r_part[2], last;
+	if (!solution) {
+		last = last_dx;
+		for (int i = 0; i < countof(r_part); i++)
+			r_part[i] = right_part[i];
+
+		return;
+	}
+
+	size_t sum[2] = { solution[0] + solution[1], solution[1] };
+	for (int i = 2; i <= last; i++) {
+		sum[0] += solution[i];
+		sum[1] += i * solution[i];
+	}
+
+	for (int i = 0; i < countof(r_part); i++) {
+		if (sum[i] + right_part[i] != r_part[i])
+			assert(false);
+	}
+}
+#else
+#define check(x, y, ...)
+#endif
+static bool is_valid_solution(const size_t* solution, size_t r2_minus_λ, int λ) {
+	// Let's consider the descendants of the solution sol[i] != 0 which has i = {0, 1,... λ} common
+	// blocks with the first two elements of the BIBD. Each of them must have j = {λ, λ-1,..., 0}
+	// common blocks among both sets of blocks B1 and B2 containing r-λ blocks each.
+	// Sometimes, this is impossible for small i, and therefore the solution must be discarded.
+	// 
+	// For j1, j2, the minimum intersection in B1 (and in B2) will be j1 + j2 - (r-λ).
+	// Therefore, the solution should be discarded if 2 * (j1 + j2 - (r-λ)) > λ
+	// Last inequality could be rewritten as 2 * (j1 + j2) > 2*r - λ.
+	// When j1 = j2 we also should check that sol[i]>=2 for corresponding i = λ - j1. 
+	int j = -1;
+	while (!solution[++j]);
+
+	int j1 = λ - j;
+	// Loop while minimal intersection of two solutions 
+	// will be greater than λ
+	while (4 * j1 > r2_minus_λ) {
+		const auto numDescendand = solution[λ - j1];
+		if (numDescendand >= 2) {
+			// At least two descendants of that solutions
+			// will be in more than λ blocks
+			return false;  // invalid solution;
+		}
+
+		if (numDescendand) {
+			int j2 = j1;
+			while (2 * (j1 + --j2) > r2_minus_λ) {
+				if (solution[λ - j2])
+					return false;
+			}
+		}
+
+		j1--;
+	}
+	return true;
+}
+
+void solve_system(size_t v, size_t r, size_t k, size_t λ, size_t d) {
+	auto len = d;
+	auto i = d + 1;
+	size_t sol[32], *solution = i < countof(sol)? sol : new size_t [i];
+	memset(solution, 0, i * sizeof(solution[0]));
+	size_t rightPart[2] = { v - 3, λ * (k - 2) - d };
+
+	check(NULL, rightPart, d);
+	const auto r2_minus_λ = 2 * r - λ;
+	int numSolution = 0;
+	int step = -1;
+	size_t val;
+
+#define PRINT_SOL  0
+#if PRINT_SOL
+	FOPEN(f, "sol.txt", "w");
+	char buffer[512];
+	char* pBuff = buffer;
+	pBuff += sprintf_s(pBuff, countof(buffer), "idx:");
+	for (int i = 0; i <= d; i++)
+		pBuff += sprintf_s(pBuff, countof(buffer) - (pBuff - buffer), "%4d", i);
+
+	fprintf(f, "%s\n", buffer);
+
+#endif
+	while (true) {
+		while ((i += step) >= 0 && i <= len) {
+			if (step > 0) {
+				if (solution[i]) {
+					--solution[i];
+					rightPart[1] += i;
+					rightPart[0]++;
+					check(solution, rightPart);
+					step = -1;
+				}
+				else {
+					if (i >= len) {       // the current highest coordinate has been set to 0
+						break;
+						if (--len == 2)   // decrease the number of the last modified coordinate
+							break;
+						step = -1;
+					}
+				}
+
+				continue;
+			}
+
+			switch (i) {
+			case 1:     val = rightPart[1];
+				if (rightPart[0] >= val) {
+					rightPart[1] = 0;
+					rightPart[0] -= solution[1] = val;
+					check(solution, rightPart);
+				}
+				else {
+					step = 1;
+					if (val = solution[i = 2]) {
+						rightPart[1] += val << 1;
+						rightPart[0] += val;
+						solution[i] = 0;
+						check(solution, rightPart);
+					}
+				}
+				break;
+			case 0:     solution[0] = rightPart[0];
+				rightPart[0] = 0;
+				break;
+			default:
+				val = rightPart[1] / i;
+				if (val > rightPart[0])
+					val = rightPart[0];
+
+				if (solution[i] = val) {
+					rightPart[1] -= val * i;
+					rightPart[0] -= val;
+					check(solution, rightPart);
+				}
+			}
+/*
+			if (!rightPart[0]) {
+				if (rightPart[1]) {
+					// It is impossible to satisfy the second equation
+					// We need to reject the coordinate just assigned
+					val = solution[i];
+					rightPart[1] += val * i;
+					rightPart[0] += val;
+					solution[i] = 0;
+					check(solution, rightPart);
+
+					while (i < len && !solution[++i]);
+					if (i == len)
+						break;
+				}
+
+				step = 1;
+				if (!i--)
+					rightPart[i = 0] += solution[0];
+			}
+			*/
+		}
+
+
+		while (len > 0 && !solution[len])
+			len--;
+
+		if (!rightPart[0] && !rightPart[1] && is_valid_solution(solution, r2_minus_λ, (int)λ)) {
+			// Solution found
+			numSolution++;
+#if PRINT_SOL
+			pBuff = buffer;
+			pBuff += sprintf_s(pBuff, countof(buffer), "%2d: ", numSolution);
+			for (int i = 0; i <= d; i++)
+				pBuff += sprintf_s(pBuff, countof(buffer) - (pBuff - buffer), "%4zd", solution[i]);
+
+			fprintf(f, "%s\n", buffer);
+#endif
+		}
+
+		step = 1;
+		rightPart[0] += solution[0] + solution[1];
+		rightPart[1] += solution[1];
+		solution[0] = solution[1] = 0;
+		check(solution, rightPart);
+
+		if (len <= 1)   // no reasons to change x{1}, it is the only one in the 2nd equation
+			break;
+
+		i = 1;
+		while (!solution[++i]);
+		i--;
+	}
+
+#if PRINT_SOL
+	fclose(f);
+#endif
+	if (solution != sol)
+		delete [] solution;
+}
+
+FClass2(CBIBD_Enumerator, bool)::useAsRightPart(CRowSolution<TDATA_TYPES>* pRowSol, PERMUT_ELEMENT_TYPE idx) {
+	// DEfine by d - index of solutions used for 3-d row
+	// System of equations for remaining v-2 rows:
+	//         n0 +           n1 +           n2 + ... +           nd = v - 3
+	//                        n1 +         2*n2 + ... +         d*nd = λ*(k - 2) - d
+	//       λ*n0 +     (λ-1)*n1 +     (λ-2)*n2 + ... +     (λ-d)*nd = (r-λ)*(k-1) - λ + d
+	// (r-2*λ)*n0 + (r-2*λ+1)*n1 + (r-2*λ+2)*n2 + ... + (r-2*λ+d)*nd = (b-2*r+λ)*k - (r-2*λ+d)
+	// 
+	// Actually, we should exclude third and fourth equations, because 
+	//    [3] = λ * [1] - [2]  and [4] = (r-2*λ) * [1] + [2] 
+	const auto d = pRowSol->solutionIndex();
+	if (idx == d)
+		return true;
+
+	const auto k = this->getInSys()->GetK();
+	const auto λ = this->getInSys()->lambda();
+	const auto v = matrix()->rowNumb();
+	const auto r = this->getR();
+	const auto a = pRowSol->currSolution()[0];
+	if (a * (v - 2) == λ * (k - 2))
+		return false;
+
+	if (!idx)
+		solve_system(v, r, k, λ, d);
+
+	return true; 
+}
 #endif

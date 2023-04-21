@@ -1,41 +1,46 @@
 BIBD(  9,  36, 16,  4,  6)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1       270919399        20033654               0               0
-             2          129069           11416               0               0
-             3            1693             717               0               0
-             4            2241             222               0               0
-             6             256              97               0               0
-             8             174              15               0               0
-             9               9               6               6               4
-            10               1               1               0               0
-            12              27               7               0               0
-            16              26               5               0               0
-            18               4               1               2               0
-            24               8               3               0               0
-            27               1               1               1               1
-            32               6               0               0               0
-            40               1               1               0               0
-            54               1               1               1               1
-            60               1               1               0               0
-            64               3               1               0               0
-           120               1               1               0               0
-           128               1               0               0               0
-           144               2               1               2               1
-           360               1               1               0               0
+             1      270919399     20033654      0      0
+             2         129069        11416      0      0
+             3           1693          717      0      0
+             4           2241          222      0      0
+             6            256           97      0      0
+             8            174           15      0      0
+             9              9            6      6      4
+            10              1            1      0      0
+            12             27            7      0      0
+            16             26            5      0      0
+            18              4            1      2      0
+            24              8            3      0      0
+            27              1            1      1      1
+            32              6            0      0      0
+            40              1            1      0      0
+            54              1            1      1      1
+            60              1            1      0      0
+            64              3            1      0      0
+           120              1            1      0      0
+           128              1            0      0      0
+           144              2            1      2      1
+           360              1            1      0      0
     ___________________________________________________________
-        Total:       271052925        20046152              12               7
+        Total:      271052925     20046152     12      7
 
- 271052925 matrices were constructed in  2:03:51.56 sec,
+ 271052925 matrices were constructed in  2:08:24.09 sec,
         12 of them are transitive on the rows.
   20046152 matrices have no replicated blocks,
          7 of them are transitive on the rows.
- 428580540 matrices were fully constructed.
+ 428580543 matrices were fully constructed.
+
+Processing times are:
+             user_time: 13:03:55.39 sec,
+  kernel (system) time: 16.29 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 4 (not waiting to finish mode)
+        25 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

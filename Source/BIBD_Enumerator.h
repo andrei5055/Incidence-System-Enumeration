@@ -52,6 +52,8 @@ protected:
 	CK virtual bool outputMaster() const							{ return false; }
 	CK void ConstructedDesignProcessing() const override			{ AddMatrixToDB(this); }
 	CK void AddMatrixToDB(const CMatrixCanonChecker* pCanonChecker, int rowAdj = 0) const;
+	CK virtual bool checkRightParts(T nRow)                         { return nRow == 3; }
+	CK virtual bool useAsRightPart(CRowSolution<TDATA_TYPES>* pRowSol, PERMUT_ELEMENT_TYPE idx);
 	CK bool createNewFile(const char* fName) const override			{
 		return designParams()->find_all_2_decomp != 1 || designParams()->logFile.empty();
 	}

@@ -33,6 +33,9 @@ protected:
 	CK virtual void setColOrbitForCurrentRow(CColOrbit<S> *pColOrb){}
 	CK virtual VectorPntr paramSet(t_numbSetType idx) const		{ return this->getInSys()->GetNumSet(idx); }
 	CK virtual bool check_X0_3(T nPart) const					{ return false; }
+	CK virtual bool checkRightParts(T nRow)						{ return false; }
+	CK virtual bool useAsRightPart(CRowSolution<TDATA_TYPES> *pRowSol, PERMUT_ELEMENT_TYPE idx)		{ return true;  }
+
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -299,7 +302,11 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 	const auto nLambdas = numLambdas();
 	const auto *pMaxVal = inSysRowEquation()->variableMaxValPntr();
 	bool readyToCheckSolution = false;
+	const bool flg = checkRightParts(nRow);
 	for (PERMUT_ELEMENT_TYPE j = 0; j <= lastRightPartIndex; j++) {
+		if (flg && !useAsRightPart(pPrevRowSolution, j))
+			continue;
+
 #if !HARD_REMOVE
 		if (!pPrevRowSolution->validSolution(j))
 			continue;
