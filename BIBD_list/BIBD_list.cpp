@@ -640,7 +640,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
         if (useAdj && m == mMax && idx0 < idx0Adj)
             idx0 = idx0Adj;
 
-        const auto kAdj = k_supl - (k + idx0);
+        const auto kAdj = k_supl - (k - idx0);
         rightPart[0] = b - m;
         rightPart[1] = k * (r - m);
         rightPart[2] = k * (k - 1) * (λ - m) / 2;
