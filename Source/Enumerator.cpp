@@ -72,7 +72,7 @@ FClass2(CEnumerator, bool)::fileExists(const char *path, bool file) const
 	return outFileIsValid(info, path);
 }
 
-FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(S *pPartNumb)
+FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 {
 	// It's OK to use permStorage() and not permStorage(nPart) here,
 	// because the values permStorage(nPart) are the same for all nPart
