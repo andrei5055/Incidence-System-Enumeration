@@ -111,6 +111,13 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 			if (!pRowSolution || !pRowSolution->numSolutions())
 				break;
 
+#if PRINT_SOLUTIONS_LEX_ORD
+			if (MAKE_OUTPUT()) {
+				pRowSolution->sortSolutions(1, NULL);
+				OUTPUT_SOLUTION(this->rowStuff(currentRowNumb()), outFile(), currentRowNumb(), false, firstPart, i + 1);
+			}
+#endif
+
 			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
 				break;
 

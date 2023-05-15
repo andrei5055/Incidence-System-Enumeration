@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define TEST					  false // true   // Test mode
+#define TEST					   false//true   // Test mode
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -397,7 +397,9 @@ extern int ccc;
 
 
 #if PRINT_SOLUTIONS
-#define START_PRINTING_AFTER    22   // Number of constructed matrices to start the matrix and solution output
+#define START_PRINTING_AFTER    0   // Number of constructed matrices to start the matrix and solution output
+#define PRINT_SOLUTIONS_LEX_ORD 0   // Printing lexicographically ordered solutions
+
 	extern bool startPrinting;
 	#define MAKE_OUTPUT()			startPrinting && CHECK_VAL(ccc) && CHECK_CONSTR(START_NUMBER, END_NUMBER)
 	#define OUTPUT_SOLUTION(x, file, nRow, f, nPartFrom, nPartTo)	if (MAKE_OUTPUT()) \

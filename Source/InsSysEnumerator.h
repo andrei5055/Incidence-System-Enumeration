@@ -170,6 +170,10 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 				continue;
 			}
 
+			// We are here only if orbit of blocks for previous row is split AND
+			// the blocks of the first suborbits just got the kth unit.
+			assert(!weightDeficit);
+			weightDeficit = 1;
 			pColOrbitNext = (pColOrbit = pColOrbitNext)->next();
 
 			// When we are here, only first column(s) of pColOrbPrev orbits should be forcible and diffWeight = 0
