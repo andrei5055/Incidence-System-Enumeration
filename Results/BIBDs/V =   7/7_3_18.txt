@@ -1,32 +1,41 @@
 BIBD(  7, 126, 54,  3, 18)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1        49538671               0               0               0
-             2          136857               0               0               0
-             3           12756               0               0               0
-             4            3320               0               0               0
-             6             857               0               0               0
-             8             277               0               0               0
-            12             150               0               0               0
-            16              16               0               0               0
-            21              28               0              28               0
-            24              69               0               0               0
-            36               3               0               0               0
-            42               4               0               4               0
-            48               3               0               0               0
-            72               2               0               0               0
-           144               2               0               0               0
-           168               5               0               5               0
-    _______________________________________________________________________________
-        Total:        49693020               0              37               0
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1       49538671            0      0      0
+             2         136857            0      0      0
+             3          12756            0      0      0
+             4           3320            0      0      0
+             6            857            0      0      0
+             8            277            0      0      0
+            12            150            0      0      0
+            16             16            0      0      0
+            21             28            0     28      0
+            24             69            0      0      0
+            36              3            0      0      0
+            42              4            0      4      0
+            48              3            0      0      0
+            72              2            0      0      0
+           144              2            0      0      0
+           168              5            0      5      0
+    ___________________________________________________________
+        Total:       49693020            0     37      0
 
-  49693020 matrices constructed in 27:17.71
-         0 matrices have no replicated blocks
-  64235575 matrices were fully constructed
+  49693020 matrices were constructed in 19:42.27 sec,
+        37 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+  64235584 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 3 (not waiting to finish mode)
+Processing times are:
+             user_time:  1:55:46.04 sec,
+  kernel (system) time:  2.01 sec,
+
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

@@ -18,15 +18,20 @@ BIBD( 16,  24,  9,  6,  3)
     ___________________________________________________________
         Total:          18920        18920      0      0
 
-     18920 matrices were constructed in 25.85 sec,
+     18920 matrices were constructed in 17.71 sec,
          0 of them are transitive on the rows.
      18920 matrices have no replicated blocks,
          0 of them are transitive on the rows.
      26905 matrices were fully constructed.
 
+Processing times are:
+             user_time:  1:19.39 sec,
+  kernel (system) time:  0.04 sec,
+
+
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 5 (not waiting to finish mode)
+        20 threads launched on row 4 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
