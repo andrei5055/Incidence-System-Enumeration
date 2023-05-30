@@ -1,23 +1,32 @@
 BIBD( 19,  57,  9,  3,  1)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1          312068          312068               0               0
-             2              52              52               0               0
-             3              35              35               0               0
-             4               1               1               0               0
-             6               2               2               0               0
-            57               1               1               1               1
-           171               1               1               1               1
-    _______________________________________________________________________________
-        Total:          312160          312160               2               2
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1         568399       568399      0      0
+             2            203          203      0      0
+             3             35           35      0      0
+             4              1            1      0      0
+             6              2            2      0      0
+            57              1            1      1      1
+           171              1            1      1      1
+    ___________________________________________________________
+        Total:         568642       568642      2      2
 
-    312160 matrices constructed in  1:08:46:56.15
-    312160 matrices have no replicated blocks
-   3448954 matrices were fully constructed
+    568642 matrices were constructed in  2:00:28:31.37 sec,
+         2 of them are transitive on the rows.
+    568642 matrices have no replicated blocks,
+         2 of them are transitive on the rows.
+   4898701 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 8 (not waiting to finish mode)
+Processing times are:
+             user_time:  5:05:56:42.75 sec,
+  kernel (system) time: 22:23.07 sec,
+
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 8 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used
