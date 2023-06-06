@@ -198,6 +198,7 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 		}
 
 		const int startIdx = thrIdx;
+		bool flag = false;
 		THREAD_MESSAGE(-1, startIdx, "<== startIdx: threadWaitingLoop BEFOR loop", code, this);
 		while (ppThreadEnum[thrIdx]->code() == code) {
 			if (noNewTask) {
@@ -218,8 +219,10 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 			if (++thrIdx == nThread)
 				thrIdx = 0;
 
-			if (thrIdx == startIdx)
+			if (thrIdx == startIdx) {
+				flag = true;
 				break;
+			}
 		}
 
 		auto *pEnum = ppThreadEnum[thrIdx];
@@ -264,8 +267,10 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 					thrIdx = 0;
 
 			case t_threadUndefined:
-				loopingTime += SLIP_TIME;
-				this_thread::sleep_for(chrono::microseconds(SLIP_TIME));
+				if (flag) {
+					loopingTime += SLIP_TIME;
+					this_thread::sleep_for(chrono::microseconds(SLIP_TIME));
+				}
 				break;
 		}
 	}
@@ -334,6 +339,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		: INT_MAX
 		: INT_MAX;
 
+	const auto mt_lev = mt_level;
 	size_t lenName = 0;
 	if (writeFile) {
 		// We'll only be here for the "grandmaster".
@@ -543,7 +549,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #else
 			const bool usingThreads = false;
 #endif
-			if (!threadFlag) {
+			if (!threadFlag && nRow >= mt_lev) {
 				REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
 			}
 
@@ -938,7 +944,7 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 					resType = t_resType::t_resBetter;
 				}
 				else {
-					remove(newResult.c_str());
+//					remove(newResult.c_str());
 				}
 			}
 

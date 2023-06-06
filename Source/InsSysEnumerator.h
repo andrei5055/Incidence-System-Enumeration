@@ -48,7 +48,7 @@ private:
 	CK virtual RowSolutionPntr setFirstRowSolutions();
 	CK virtual T MakeSystem(T numPart);
 	CK virtual RowSolutionPntr FindSolution(T nVar, T nPart, PERMUT_ELEMENT_TYPE lastRightPartIndex = PERMUT_ELEMENT_MAX);
-	CK void setVariableLimit(T nVar, T len, T nRowToBuild, bool checkX0_3, T weightDeficit);
+	CK void setVariableLimit(T nVar, T len, T nRowToBuild, T currentK, T weightDeficit);
 	CK virtual bool checkForcibleLambda(T fLambda, T nRows, T numPart) const		{ return true; }
 	CK virtual void resetFirstUnforcedRow()						{ if (firstUnforcedRow() == this->currentRowNumb())
 																	setFirstUnforcedRow(0);
@@ -58,6 +58,7 @@ private:
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(T *p)					{ m_pForsibleLambda = p; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
+	CK virtual bool lambdaCond(T currentK) const				{ return false; }
 
 	T m_x0_3;
 	T *m_pForsibleLambda;
@@ -186,7 +187,7 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 
 		int mapSetIdx = 0;
 		const auto currLen = pColOrbit->length();
-		setVariableLimit(nVar, currLen, nRowToBuild, !numPart && columnWeight > 2, weightDeficit);
+		setVariableLimit(nVar, currLen, nRowToBuild, columnWeight, weightDeficit);
 		const auto columnWeightPrev = pColOrbPrev->columnWeight();
 		if (pColOrbit->columnWeight() != columnWeightPrev) {
 			// Column weight was changed. It means that x[i] > 0
@@ -223,7 +224,7 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 #endif
 				}
 				else {
-					setVariableLimit(++nVar, len, nRowToBuild, !numPart && columnWeightPrev > 2, weightDeficit);
+					setVariableLimit(++nVar, len, nRowToBuild, columnWeightPrev, weightDeficit);
 					pColOrbitNext = (pColOrbit = pColOrbitNext)->next();
 					if (pColGroupIdx)
 						pColGroupIdx[nVar] = colGroupIdx++;
@@ -455,20 +456,22 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 		setFirstUnforcedRow(this->currentRowNumb());
 }
 
-FClass2(C_InSysEnumerator, void)::setVariableLimit(T nVar, T len, T nRowToBuild, bool checkX0_3, T weightDeficit)
+FClass2(C_InSysEnumerator, void)::setVariableLimit(T nVar, T len, T nRowToBuild, T currentK, T weightDeficit)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
 	this->SetAt(nVar, static_cast<S>((weightDeficit * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
-	// Maximal value of any Xi cannot be bigger than X0_3, when i-th group of columns
-	// already have at least 2 inits in each column. Otherwise, these two rows with the row
-	// which would use the solution, would be bigger than current 3 rows
-	if (checkX0_3 && len > getX0_3())
-		len = getX0_3();
-
-	if (noReplicatedBlocks() && weightDeficit == 1)
+	if (noReplicatedBlocks() && (lambdaCond(currentK) || weightDeficit == 1))
 		len = 1;
+	else {
+		// Maximal value of any Xi cannot be bigger than X0_3, when i-th group of columns
+		// already have at least 2 inits in each column. Otherwise, these two rows with the row
+		// which would use the solution, would be bigger than current 3 rows
+
+		if (!currentNumPart() && currentK > 2 && len > getX0_3())
+			len = getX0_3();
+	}
 
 	inSysRowEquation()->setVariableMaxVal(nVar, len);
 }

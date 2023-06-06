@@ -13,17 +13,33 @@ static const int outDiv[] = { ':', ':', ':', '.' };
 #undef _MAC
 #include <rpc.h>
 
-double FileTimeToSeconds(FILETIME* pFiletime) {
-#define TEN_MILLIONS 10000000
-	return ((double)((*pFiletime).dwHighDateTime * 4.294967296E9) + (double)(*pFiletime).dwLowDateTime) / TEN_MILLIONS;
+#if defined(_WIN32)
+void CTimerInfo::get_cpu_usage(double& user, double& system) {
+	FILETIME creation_time, exit_time, kernel_time, user_time;
+	if (GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time)) {
+		ULARGE_INTEGER kernel, user_t;
+		kernel.HighPart = kernel_time.dwHighDateTime;
+		kernel.LowPart = kernel_time.dwLowDateTime;
+		user_t.HighPart = user_time.dwHighDateTime;
+		user_t.LowPart = user_time.dwLowDateTime;
+		user = (static_cast<double>(kernel.QuadPart) +
+			static_cast<double>(user_t.QuadPart)) * 1e-7;
+		system = static_cast<double>(kernel.QuadPart) * 1e-7;
+	} else
+		user = system = DBL_MAX;
+}
+#else
+double tv_to_double(struct timeval& tv) {
+	return tv.tv_sec + tv.tv_usec / 1e6;
 }
 
 void CTimerInfo::get_cpu_usage(double& user, double& system) {
-	struct _FILETIME creation_time, exit_time, kernel_time, user_time;
-	GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time);
-	user = FileTimeToSeconds(&user_time);
-	system = FileTimeToSeconds(&kernel_time);
+	struct rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+	user = tv_to_double(usage.ru_utime);
+	system = tv_to_double(usage.ru_stime);
 }
+#endif
 
 void CTimerInfo::startClock() {
 	setPrevClock(m_prevClockReport = m_startClock = clock());
@@ -31,15 +47,15 @@ void CTimerInfo::startClock() {
 	setPrevCounter(0);
 
 	// Save initial values for user and system times
-	get_cpu_usage(m_ProcTime[0], m_ProcTime [1]);
+	get_cpu_usage(m_ProcTime[2], m_ProcTime[3]);
 }
 
 void CTimerInfo::setRunTime() {
-	m_fRunTime = (float)(clock() - startTime()) / CLOCKS_PER_SEC;
+	m_fRunTime = (double)(clock() - startTime()) / CLOCKS_PER_SEC;
 	double user_time, system_time;
 	get_cpu_usage(user_time, system_time);
-	m_ProcTime[0] = user_time - m_ProcTime[0];
-	m_ProcTime[1] = system_time - m_ProcTime[1];
+	m_ProcTime[0] = user_time - m_ProcTime[2];
+	m_ProcTime[1] = system_time - m_ProcTime[3];
 }
 
 FClass2(CEnumInfo, size_t)::convertTime(double time, char *buffer, size_t lenBuf, bool alignment) const
@@ -133,6 +149,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	const ulonglong *pTestNumber;
 	bool reportNeeded = false;
 	const auto currClock = clock();
+	static int rrr = 0; rrr++;
 	switch (reportType) {
 	case t_reportCriteria::t_reportByTime:
 								if (currClock - prevClockReport() < CLOCKS_PER_SEC * 30)
@@ -180,7 +197,6 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	}
 
 	char buffer[512];
-//	std::stringstream buffer;
 	const float runTime = (float)(currClock - startTime()) / (60 * CLOCKS_PER_SEC);
 	auto len = SPRINTF(buffer, "  Canon: %lld  NRB: %s%lld  Total: %lld  RunTime: %.2f min.",
 		nCanon, constructedAllNoReplBlockMatrix() ? "=" : "", numbSimpleDesign(), numMatrTotalConstructed, runTime);
