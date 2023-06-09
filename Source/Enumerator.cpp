@@ -944,7 +944,7 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 					resType = t_resType::t_resBetter;
 				}
 				else {
-//					remove(newResult.c_str());
+					remove(newResult.c_str());
 				}
 			}
 

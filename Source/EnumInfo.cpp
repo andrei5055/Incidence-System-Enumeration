@@ -344,8 +344,16 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel,
 
 #define SPACE "        "
 	char buff[256];
-	SPRINTF(buff, "\n" SPACE "Using %zd-bit program with%s Assembly\n", sizeof(size_t) << 3, USE_ASM? "" : " no");
-	auto outLen = outString(buff, outFile);
+	size_t outLen = 0;
+	char* new_line = "\n";
+	if (designInfo()->noReplicatedBlocks) {
+		SPRINTF(buff, "\n" SPACE "Only SIMPLE designs were constructed\n");
+		new_line = "";
+		outLen += outString(buff, outFile);
+	}
+
+	SPRINTF(buff, "%s" SPACE "Using %zd-bit program with%s Assembly\n", new_line, sizeof(size_t) << 3, USE_ASM? "" : " no");
+	outLen += outString(buff, outFile);
 
 	const auto dLen = sizeof(SIZE_TYPE);
 	char* pDataType = dLen == 1 ? "char" : (dLen == 2 ? "int16" : "int32");
