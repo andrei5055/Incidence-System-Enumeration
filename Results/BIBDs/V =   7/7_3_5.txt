@@ -1,30 +1,39 @@
 BIBD(  7,  35, 15,  3,  5)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1              30               0               0               0
-             2              25               0               0               0
-             3              19               0               0               0
-             4               5               0               0               0
-             6               8               0               0               0
-             8               4               0               0               0
-            12               3               0               0               0
-            16               1               0               0               0
-            20               1               0               0               0
-            21               3               0               3               0
-            24               7               0               0               0
-            60               1               0               0               0
-           168               1               0               1               0
-          5040               1               1               1               1
-    _______________________________________________________________________________
-        Total:             109               1               5               1
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1             30            0      0      0
+             2             25            0      0      0
+             3             19            0      0      0
+             4              5            0      0      0
+             6              8            0      0      0
+             8              4            0      0      0
+            12              3            0      0      0
+            16              1            0      0      0
+            20              1            0      0      0
+            21              3            0      3      0
+            24              7            0      0      0
+            60              1            0      0      0
+           168              1            0      1      0
+          5040              1            1      1      1
+    ___________________________________________________________
+        Total:            109            1      5      1
 
-       109 matrices constructed in  0.01
-         1 matrix has no replicated blocks
-       158 matrices were fully constructed
+       109 matrices were constructed in  0.00 sec,
+         5 of them are transitive on the rows.
+         1 matrix has no replicated blocks,
+         1 of them is transitive on the rows.
+       158 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 3 (not waiting to finish mode)
+Processing times are:
+             user_time:  0.00 sec,
+  kernel (system) time:  0.00 sec,
+
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

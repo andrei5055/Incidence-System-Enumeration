@@ -1,35 +1,44 @@
 BIBD(  7, 105, 45,  3, 15)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1         5485096               0               0               0
-             2           36292               0               0               0
-             3            4866               0               0               0
-             4            1266               0               0               0
-             6             422               0               0               0
-             8             134               0               0               0
-            10               4               0               0               0
-            12              83               0               0               0
-            16               9               0               0               0
-            20               4               0               0               0
-            21              21               0              21               0
-            24              46               0               0               0
-            36               3               0               0               0
-            42               2               0               2               0
-            48               1               0               0               0
-            60               3               0               0               0
-           144               1               0               0               0
-           168               3               0               3               0
-          5040               1               0               1               0
-    _______________________________________________________________________________
-        Total:         5528257               0              27               0
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1        5485096            0      0      0
+             2          36292            0      0      0
+             3           4866            0      0      0
+             4           1266            0      0      0
+             6            422            0      0      0
+             8            134            0      0      0
+            10              4            0      0      0
+            12             83            0      0      0
+            16              9            0      0      0
+            20              4            0      0      0
+            21             21            0     21      0
+            24             46            0      0      0
+            36              3            0      0      0
+            42              2            0      2      0
+            48              1            0      0      0
+            60              3            0      0      0
+           144              1            0      0      0
+           168              3            0      3      0
+          5040              1            0      1      0
+    ___________________________________________________________
+        Total:        5528257            0     27      0
 
-   5528257 matrices constructed in  2:46.92
-         0 matrices have no replicated blocks
-   7484406 matrices were fully constructed
+   5528257 matrices were constructed in  1:33.55 sec,
+        27 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+   7484538 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 3 (not waiting to finish mode)
+Processing times are:
+             user_time: 20:59.54 sec,
+  kernel (system) time: 11.21 sec,
+
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

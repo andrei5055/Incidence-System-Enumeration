@@ -1,30 +1,30 @@
-BIBD(  6, 200, 100,  3, 40)
+BIBD(  6, 220, 110,  3, 44)
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1           1101            0      0      0
-             2            335            0      0      0
-             3            366            0      0      0
-             4             37            0      0      0
-             6             87            0      0      0
+             1           1806            0      0      0
+             2            460            0      0      0
+             3            496            0      0      0
+             4             47            0      0      0
+             6            107            0      0      0
              8              5            0      0      0
-            12             90            0     90      0
-            24             20            0     20      0
+            12            110            0    110      0
+            24             22            0     22      0
             36              3            0      0      0
-            60             10            0     10      0
+            60             11            0     11      0
            720              1            0      1      0
     ___________________________________________________________
-        Total:           2055            0    121      0
+        Total:           3068            0    144      0
 
-      2055 matrices were constructed in  0.05 sec,
-       121 of them are transitive on the rows.
+      3068 matrices were constructed in  0.08 sec,
+       144 of them are transitive on the rows.
          0 matrices have no replicated blocks,
          0 of them are transitive on the rows.
-      2335 matrices were fully constructed.
+      3493 matrices were fully constructed.
 
 Processing times are:
-             user_time:  0.50 sec,
-  kernel (system) time:  0.01 sec,
+             user_time:  0.67 sec,
+  kernel (system) time:  0.04 sec,
 
 
         Using 64-bit program with no Assembly

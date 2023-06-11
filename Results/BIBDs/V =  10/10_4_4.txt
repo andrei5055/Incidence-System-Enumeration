@@ -27,15 +27,15 @@ BIBD( 10,  30, 12,  4,  4)
     ___________________________________________________________
         Total:       13769944     10081743     10      8
 
-  13769944 matrices were constructed in  9:03.61 sec,
+  13769944 matrices were constructed in  8:50.64 sec,
         10 of them are transitive on the rows.
   10081743 matrices have no replicated blocks,
          8 of them are transitive on the rows.
-  22318390 matrices were fully constructed.
+  22318358 matrices were fully constructed.
 
 Processing times are:
-             user_time: 50:36.39 sec,
-  kernel (system) time:  0.25 sec,
+             user_time:  1:55:36.71 sec,
+  kernel (system) time:  5.04 sec,
 
 
         Using 64-bit program with no Assembly

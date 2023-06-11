@@ -1,0 +1,41 @@
+BIBD(  9,  54, 24,  4,  9)
+
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1        4131067      4131067      0      0
+             2           2457         2457      0      0
+             3            107          107      0      0
+             4             84           84      0      0
+             6             19           19      0      0
+             8              7            7      0      0
+             9              3            3      3      3
+            12              2            2      0      0
+            16              1            1      0      0
+            18              1            1      0      0
+            24              1            1      0      0
+            48              1            1      0      0
+            54              1            1      1      1
+           432              1            1      1      1
+    ___________________________________________________________
+        Total:        4133752      4133752      5      5
+
+   4133752 matrices were constructed in 20:46:39.33 sec,
+         5 of them are transitive on the rows.
+   4133752 matrices have no replicated blocks,
+         5 of them are transitive on the rows.
+  57707450 matrices were fully constructed.
+
+Processing times are:
+             user_time: 12:22:21:53.92 sec,
+  kernel (system) time:  1:57:42.20 sec,
+
+
+        Only SIMPLE designs were constructed
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
+        Canonicity of partial constructed matrix was used
+        Strong canonicity was not used
+        Super strong canonicity was not used
+

@@ -1,24 +1,33 @@
 BIBD(  6,  70, 35,  3, 14)
 
-        |Aut(D)|          Nd:             Ns:            Ndt:            Nst:
-    _______________________________________________________________________________
-             1               2               0               0               0
-             2               6               0               0               0
-             3               9               0               0               0
-             4               3               0               0               0
-             6              11               0               0               0
-            12              12               0              12               0
-            36               1               0               0               0
-            60               4               0               4               0
-    _______________________________________________________________________________
-        Total:              48               0              16               0
+        |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
+    ___________________________________________________________
+             1              2            0      0      0
+             2              6            0      0      0
+             3              9            0      0      0
+             4              3            0      0      0
+             6             11            0      0      0
+            12             12            0     12      0
+            36              1            0      0      0
+            60              4            0      4      0
+    ___________________________________________________________
+        Total:             48            0     16      0
 
-        48 matrices constructed in  0.04
-         0 matrices have no replicated blocks
-        49 matrices were fully constructed
+        48 matrices were constructed in  0.00 sec,
+        16 of them are transitive on the rows.
+         0 matrices have no replicated blocks,
+         0 of them are transitive on the rows.
+        49 matrices were fully constructed.
 
-Using 64-bit program, Assembly flag: 0
-        20 threads launched on level 3 (not waiting to finish mode)
+Processing times are:
+             user_time:  0.00 sec,
+  kernel (system) time:  0.00 sec,
+
+
+        Using 64-bit program with no Assembly
+        Main data storage format: "unsigned char"
+        20 threads launched on row 3 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

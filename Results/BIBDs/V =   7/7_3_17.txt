@@ -21,11 +21,16 @@ BIBD(  7, 119, 51,  3, 17)
     ___________________________________________________________
         Total:       24801365            0     33      0
 
-  24801365 matrices were constructed in 10:16.06 sec,
+  24801365 matrices were constructed in  7:44.66 sec,
         33 of them are transitive on the rows.
          0 matrices have no replicated blocks,
          0 of them are transitive on the rows.
-  30864602 matrices were fully constructed.
+  32500010 matrices were fully constructed.
+
+Processing times are:
+             user_time:  1:43:46.82 sec,
+  kernel (system) time: 56.79 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
