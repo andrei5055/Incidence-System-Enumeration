@@ -268,8 +268,8 @@ FClass2(CEnumerator, int)::threadWaitingLoop(int thrIdx, t_threadCode code, Clas
 
 			case t_threadUndefined:
 				if (flag) {
-					loopingTime += SLIP_TIME;
-					this_thread::sleep_for(chrono::microseconds(SLIP_TIME));
+					loopingTime += SLEEP_TIME;
+					this_thread::sleep_for(chrono::microseconds(SLEEP_TIME));
 				}
 				break;
 		}

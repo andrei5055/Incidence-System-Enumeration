@@ -118,7 +118,7 @@
 #define USE_STRONG_CANONICITY	(USE_CANON_GROUP && 0)			// Find equivalent solutions for ALL USED canonical solutions of M(n+1)
 #define USE_STRONG_CANONICITY_A	(USE_STRONG_CANONICITY && 1)	// Strong canonicity on ALL (not only used) canonical solutions of M(n+1)
 
-#define SLIP_TIME					500  //    in microseconds
+#define SLEEP_TIME					500  //    in microseconds
 #define REPORT_INTERVAL				(5 * 1000 * 100)
 #define REPORT_INTERVAL_OBJ_NUMB	10000
 
