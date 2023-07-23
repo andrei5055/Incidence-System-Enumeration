@@ -15,7 +15,7 @@ Class2Def(C_tDesignEnumerator) : public  Class2(CBIBD_Enumerator)
 #endif
 {
 public:
-	CK C_tDesignEnumerator(const Class2(C_tDesign) *pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
+	CK C_tDesignEnumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0);
 	CK ~C_tDesignEnumerator();
 #if !CONSTR_ON_GPU
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;

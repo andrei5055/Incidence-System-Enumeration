@@ -4,7 +4,7 @@
 
 template class C_tDesignEnumerator<TDATA_TYPES> ;
 
-FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const TDesignPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
+FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const InSysPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
 	Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker)
 #if USE_EXRA_EQUATIONS
 		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
