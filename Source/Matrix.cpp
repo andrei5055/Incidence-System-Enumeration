@@ -37,7 +37,7 @@ FClass2(CMatrixData, bool)::isSimple(bool *pFlag) const {
 	return true;
 }
 
-FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, bool canon) const
+FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, int canon) const
 {
 	if (nRow == ELEMENT_MAX)
 		nRow = this->rowNumb();
@@ -63,6 +63,9 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 
 		if (!canon)
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Non-canonical ***");
+		else
+		if (canon < 0)
+			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Cannonisity was not tested ***");
 
 		if (pCanonCheck) {
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "    |Aut(M)| = %6zu", pCanonCheck->groupOrder());

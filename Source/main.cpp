@@ -203,22 +203,23 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	if (pParam->outType & t_GroupOrbits)
 		enumFlags |= t_outRowOrbits;
 
+	const auto k = pParam->k;
 	const auto& lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_objectType::t_SemiSymmetricGraph) {
 			static t_objectType obj_types[] = { t_objectType::t_PBIBD, t_objectType::t_CombinedBIBD, t_objectType::t_SemiSymmetricGraph };
 			switch (objType) {
 			case t_objectType::t_PBIBD:
-				pInSys = new Class2(C_PBIBD)(pParam->v, pParam->k, pParam->r, lambda);
+				pInSys = new Class2(C_PBIBD)(pParam->v, k, pParam->r, lambda);
 				pInSysEnum = new Class2(CPBIBD_Enumerator)(pInSys, enumFlags);
 				break;
 			case t_objectType::t_SemiSymmetricGraph:
 				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaysKeepRowPermute;
-				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, pParam->k, pParam->r, lambda);
+				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, k, pParam->r, lambda);
 				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
 				break;
 			case t_objectType::t_CombinedBIBD:
-				pInSys = new Class2(CCombinedBIBD)(pParam->v, pParam->k, lambda);
+				pInSys = new Class2(CCombinedBIBD)(pParam->v, k, lambda);
 				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
 				break;
 			default:
@@ -231,14 +232,18 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 			}
 		}
 		else {
-			pInSys = new Class2(C_BIBD)(pParam->v, pParam->k, 2, lambda[0]);
+			pInSys = new Class2(C_BIBD)(pParam->v, k, 2, lambda[0]);
 			const auto r = pInSys->GetNumSet(t_rSet)->GetAt(0);
-			const int maxNumbCommenElement = (2 * pParam->k * lambda[0] / r) + (r - pParam->k - lambda[0]);
-			if (maxNumbCommenElement < pParam->k) {
+			const int maxNumbCommonElement = (2 * k * lambda[0] / r) + (r - k - lambda[0]);
+			if (maxNumbCommonElement < k) {
 				// According the theorem by Connor, maxNumbCommenElement is
 				// the maximal number of common elements for two blocks
 				enumFlags |= t_noReplicatedBlocks;
-				pInSys->setMaxBlockIntrsection(static_cast<T>(maxNumbCommenElement));
+				pInSys->setMaxBlockIntrsection(static_cast<T>(maxNumbCommonElement));
+			}
+
+			if (k == r) {
+				enumFlags |= t_symmetrical_t_cond;
 			}
 
 			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
@@ -246,7 +251,7 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 		}
 	}
 	else {
-		pInSys = new Class2(C_tDesign)(pParam->t, pParam->v, pParam->k, lambda[0]);
+		pInSys = new Class2(C_tDesign)(pParam->t, pParam->v, k, lambda[0]);
 		pInSysEnum = new Class2(C_tDesignEnumerator)(static_cast<TDesignPntr>(pInSys), enumFlags);
 		objType = t_objectType::t_tDesign;
 	}

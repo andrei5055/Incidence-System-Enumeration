@@ -156,20 +156,28 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 		t = nRow + 1;
 
 	CMatrixCanonChecker::MakeRow(nRow, pSol, false);
+	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
 
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	const auto *pCurrRow = this->matrix()->GetRow(nRow);
+	// Get indices of the intersection of the i previous rows (pIntersection) 
+	// one of which is the curent last row of the matrix and the other (i-1) correspond to all 
+	// C(currentRowNumb()-1, i-1) combinations of previous currentRowNumb()-1 rows 
+	// ... and the pointer to the number of the intersections (pNumb) we need to check (*pNumb = 1, when t = 3)
 	const size_t *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);
     for (uint i = 2; i < t; i++) {
 		const auto lambdaPrev = lambda;
         lambda = pLambdaSet->GetAt(i-1);
-		for (size_t k = pNumb[i - 2]; k--; pIntersection += lambdaPrev) {
+		for (auto k = pNumb[i - 2]; k--; pIntersection += lambdaPrev) {
             size_t val = 0;
 			for (auto j = lambdaPrev; j--;) {
 				if (*(pCurrRow + *(pIntersection + j)))
-                    val++;
+					val++;
+				else
+					if (val + j < lambda)
+						return false;
             }
 
             if (val != lambda)
@@ -177,7 +185,6 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
         }
     }
     
-//	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1);
 #endif
     return true;
 }
