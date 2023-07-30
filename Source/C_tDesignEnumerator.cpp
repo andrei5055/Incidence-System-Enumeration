@@ -10,8 +10,6 @@ FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const InSysPntr pBIBD, uint en
 		, CEquSystem(matrix()->colNumb(), matrix()->rowNumb(), pBIBD->getT()), COrbToVar(matrix()->colNumb())
 #endif
 {
-	m_pIntersectionStorage = NULL;
-
 #if USE_EXRA_EQUATIONS
 	const size_t numElem = COrbToVar::numElement();
 	OrbToVarMapping *pntr = new OrbToVarMapping [numElem];
@@ -22,7 +20,6 @@ FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const InSysPntr pBIBD, uint en
 
 FClass2(C_tDesignEnumerator)::~C_tDesignEnumerator()
 {
-    delete intersectionStorage();
 #if USE_EXRA_EQUATIONS
 	delete [] COrbToVar::GetAt(0);
 #endif
@@ -49,14 +46,12 @@ FClass2(C_tDesignEnumerator, void)::makeJobTitle(const designParam *pParam, char
 
 FClass2(C_tDesignEnumerator, void)::prepareToTestExtraFeatures()
 {
-	m_pIntersectionStorage = new CIntersectionStorage<S>(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
+	InitIntersection(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
 }
 
 FClass2(C_tDesignEnumerator, PERMUT_ELEMENT_TYPE *)::getIntersectionParam(const size_t **ppNumb) const
 {
-	const auto *pPrev = intersectionStorage()->rowsIntersection(this->currentRowNumb());
-    *ppNumb = pPrev->numbIntersection();
-	return pPrev->rowIntersectionPntr();
+	return intersectionParam(ppNumb, this->currentRowNumb());
 }
 
 FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_t nVar)
@@ -65,23 +60,18 @@ FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_
 		return NULL;			// Nothing to test
 
 	const auto lastRowIdx = this->currentRowNumb() - 1;
-	S t = tDesign()->getT() - 2;
-	if (t >= this->currentRowNumb())
-		t = lastRowIdx;
 
     const auto *pCurrRow = this->matrix()->GetRow(0);
 	const auto *pLastRow = this->matrix()->GetRow(lastRowIdx);
-	S tuple[10];
-	T *matrixRowPntr[10];
-	auto *pTuple = t <= countof(tuple) ? tuple : new S[t];
-	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T *[t];
 
-	// Create indices of block containing last element
+	// Create the set of the indices of block containing last element
 	const auto r = this->getR();		// TO DO: Need to be modified to support combined t-designs construction
-	auto ppBlockIdx = new S[r];
-	S idx = 0;
+
+	size_t blockIdx[256];
+	auto ppBlockIdx = r <= countof(blockIdx)? blockIdx : new size_t[r];
+	size_t idx = 0;
 	const auto nCol = this->colNumb();
-	for (S j = 0; j < nCol; j++) {
+	for (size_t j = 0; j < nCol; j++) {
 		if (*(pLastRow + j)) {
 			*(ppBlockIdx + idx++) = j;
 			if (idx == r)
@@ -104,6 +94,14 @@ FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_
 		}
 	}
 
+	S t = tDesign()->getT() - 2;
+	if (t >= this->currentRowNumb())
+		t = lastRowIdx;
+
+	S tuple[10];
+	T* matrixRowPntr[10];
+	auto* pTuple = t <= countof(tuple) ? tuple : new S[t];
+	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T * [t];
 	for (uint i = 1; i < t; i++) {
 		// Construct all (i+1)-subsets of first currentRowNumb() elements
 		uint k = 0;
@@ -134,7 +132,8 @@ FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_
 	if (pMatrixRowPntr != matrixRowPntr)
 		delete[] pMatrixRowPntr;
 
-	delete[] ppBlockIdx;
+	if (ppBlockIdx != blockIdx)
+		delete[] ppBlockIdx;
 
 #if USE_EXRA_EQUATIONS
 	return constructExtraEquations(t, nVar);

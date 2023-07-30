@@ -1,5 +1,6 @@
 #pragma once
 #include "BIBD_Enumerator.h"
+#include "IntersectionStorage.h"
 
 typedef struct {
 	size_t nVar;
@@ -7,9 +8,9 @@ typedef struct {
 } OrbToVarMapping;
 
 typedef CContainer<OrbToVarMapping *> COrbToVar;
-template<class T> class CIntersectionStorage;
 
-Class2Def(C_tDesignEnumerator) : public  Class2(CBIBD_Enumerator)
+
+Class2Def(C_tDesignEnumerator) : public Class2(CBIBD_Enumerator), public CIntersection<S>
 #if USE_EXRA_EQUATIONS
 	, public CEquSystem, private COrbToVar
 #endif
@@ -40,7 +41,6 @@ protected:
 #endif
 private:
 	inline auto tDesign() const									{ return static_cast<TDesignPntr>(this->getInSys()); }
-	inline auto intersectionStorage() const						{ return m_pIntersectionStorage; }
 	virtual const char* getTopLevelDirName() const				{ return "t-designs"; }
 	virtual void getEnumerationObjectKey(char* pInfo, int len) const { makeJobTitle(NULL, pInfo, len); }
 	virtual const char* getObjNameFormat() const				{ return "%12s:        "; }
@@ -54,6 +54,5 @@ private:
 	//	size_t m_nColOrbIdx;
 	//	OrbToVarMapping *m_pOrbVarMapping;
 #endif
-	CIntersectionStorage<S> *m_pIntersectionStorage;
 };
 

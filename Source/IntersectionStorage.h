@@ -58,3 +58,22 @@ private:
     CPrevRowsIntersection *m_pRowsIntersection;
 	Ct_Storage **m_pStorage;
 };
+
+template<class T>
+class CIntersection
+{
+public:
+	~CIntersection()						{ delete intersectionStorage(); }
+protected:
+	void InitIntersection(size_t t, size_t nRow, const CVector<T>* pLambdaSet) {
+		m_pIntersectionStorage = new CIntersectionStorage<T>(t, nRow, pLambdaSet);
+	}
+	PERMUT_ELEMENT_TYPE *intersectionParam(const size_t** ppNumb, size_t row_numb) const {
+		const auto* pPrev = intersectionStorage()->rowsIntersection(row_numb);
+		*ppNumb = pPrev->numbIntersection();
+		return pPrev->rowIntersectionPntr();
+	}
+	inline auto intersectionStorage() const { return m_pIntersectionStorage; }
+private:
+	CIntersectionStorage<T>* m_pIntersectionStorage = NULL;
+};
