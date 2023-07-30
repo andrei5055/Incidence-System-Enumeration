@@ -10,7 +10,7 @@ typedef struct {
 typedef CContainer<OrbToVarMapping *> COrbToVar;
 
 
-Class2Def(C_tDesignEnumerator) : public Class2(CBIBD_Enumerator), public CIntersection<S>
+Class2Def(C_tDesignEnumerator) : public Class2(CBIBD_Enumerator), public Class2(CIntersection)
 #if USE_EXRA_EQUATIONS
 	, public CEquSystem, private COrbToVar
 #endif
@@ -22,13 +22,19 @@ public:
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 	CK virtual bool isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const;
-	PERMUT_ELEMENT_TYPE *getIntersectionParam(const size_t **ppNumb) const;
+	PERMUT_ELEMENT_TYPE *getIntersectionParam(const size_t **ppNumb) const {
+		return intersectionParam(ppNumb, this->currentRowNumb());
+	}
 protected:
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 #endif
-	virtual CVariableMapping<T> *prepareCheckSolutions(size_t nVar);
-	CK virtual void prepareToTestExtraFeatures();
+	virtual CVariableMapping<T> *prepareCheckSolutions(size_t nVar) {
+		return prepareRowIntersections(this->matrix(), this->currentRowNumb(), tDesign()->GetNumSet(t_lSet)->GetAt(0), tDesign()->getT());
+	}
+	CK virtual void prepareToTestExtraFeatures() {
+		InitIntersection(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
+	}
 	CK virtual void copyInfoFromMaster(const EnumeratorPntr pMaster);
 	CK size_t numLambdas()const override						{ return 1; }
 	CK virtual bool TestFeatures(EnumInfoPntr pEnumInfo, const MatrixDataPntr pMatrix, int *pMatrFlags = NULL, const EnumeratorPntr pEnum = NULL) const;

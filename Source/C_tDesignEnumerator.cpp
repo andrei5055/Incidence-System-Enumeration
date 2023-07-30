@@ -2,7 +2,7 @@
 #include "IntersectionStorage.h"
 #include "VariableMapping.h"
 
-template class C_tDesignEnumerator<TDATA_TYPES> ;
+template class C_tDesignEnumerator<TDATA_TYPES>;
 
 FClass2(C_tDesignEnumerator)::C_tDesignEnumerator(const InSysPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
 	Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker)
@@ -43,104 +43,6 @@ FClass2(C_tDesignEnumerator, void)::makeJobTitle(const designParam *pParam, char
 						t, this->rowNumb(), k, tDesign()->lambda(), comment);
 }
 #endif
-
-FClass2(C_tDesignEnumerator, void)::prepareToTestExtraFeatures()
-{
-	InitIntersection(tDesign()->getT(), this->rowNumb(), tDesign()->GetNumSet(t_lSet));
-}
-
-FClass2(C_tDesignEnumerator, PERMUT_ELEMENT_TYPE *)::getIntersectionParam(const size_t **ppNumb) const
-{
-	return intersectionParam(ppNumb, this->currentRowNumb());
-}
-
-FClass2(C_tDesignEnumerator, CVariableMapping<T> *)::prepareCheckSolutions(size_t nVar)
-{
-	if (this->currentRowNumb() <= 1)
-		return NULL;			// Nothing to test
-
-	const auto lastRowIdx = this->currentRowNumb() - 1;
-
-    const auto *pCurrRow = this->matrix()->GetRow(0);
-	const auto *pLastRow = this->matrix()->GetRow(lastRowIdx);
-
-	// Create the set of the indices of block containing last element
-	const auto r = this->getR();		// TO DO: Need to be modified to support combined t-designs construction
-
-	size_t blockIdx[256];
-	auto ppBlockIdx = r <= countof(blockIdx)? blockIdx : new size_t[r];
-	size_t idx = 0;
-	const auto nCol = this->colNumb();
-	for (size_t j = 0; j < nCol; j++) {
-		if (*(pLastRow + j)) {
-			*(ppBlockIdx + idx++) = j;
-			if (idx == r)
-				break;   // No more blocks, containing last element
-		}
-	}
-
-	// Create indices of block containing 0-th and last, 1-st and last etc element.
-	const size_t *pNumb;
-	auto *pIntersection = getIntersectionParam(&pNumb);
-	const auto lambda = tDesign()->GetNumSet(t_lSet)->GetAt(0);
-	for (auto k = pNumb[0]; k--; pCurrRow += nCol, pIntersection += lambda) {
-		size_t i = 0;
-		for (size_t j = 0; j  < r; j++) {
-			if (*(pCurrRow + ppBlockIdx[j])) {
-				*(pIntersection + i) = ppBlockIdx[j];
-				if (++i == lambda)
-					break;	// No more blocks, containing two last elements
-			}
-		}
-	}
-
-	S t = tDesign()->getT() - 2;
-	if (t >= this->currentRowNumb())
-		t = lastRowIdx;
-
-	S tuple[10];
-	T* matrixRowPntr[10];
-	auto* pTuple = t <= countof(tuple) ? tuple : new S[t];
-	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T * [t];
-	for (uint i = 1; i < t; i++) {
-		// Construct all (i+1)-subsets of first currentRowNumb() elements
-		uint k = 0;
-		pTuple[0] = -1;
-		while (k != -1) {
-			auto n = pTuple[k];
-			for (; k <= i; k++)
-				pMatrixRowPntr[k] = this->matrix()->GetRow(pTuple[k] = ++n);
-
-			for (auto j = idx; j--;) {
-				const auto blockIdx = ppBlockIdx[j];
-				uint m = -1;
-				while (++m <= i && *(pMatrixRowPntr[m] + blockIdx));
-				if (m > i)
-					*pIntersection++ = blockIdx;
-			}
-
-			// Construct next (i+1) subset
-			k = i + 1;
-			n = lastRowIdx;
-			while (k-- && pTuple[k] == --n);
-		}
-	}
-
-	if (pTuple != tuple)
-		delete[] pTuple;
-
-	if (pMatrixRowPntr != matrixRowPntr)
-		delete[] pMatrixRowPntr;
-
-	if (ppBlockIdx != blockIdx)
-		delete[] ppBlockIdx;
-
-#if USE_EXRA_EQUATIONS
-	return constructExtraEquations(t, nVar);
-#else
-	return NULL;
-#endif
-}
 
 FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const
 {

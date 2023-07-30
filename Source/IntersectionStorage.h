@@ -1,6 +1,7 @@
 #pragma once
 #include "DataTypes.h"
 #include "Vector.h"
+#include "matrix.h"
 
 typedef CSimpleArray<MATRIX_ELEMENT_TYPE *> Ct_Storage;
 
@@ -59,15 +60,16 @@ private:
 	Ct_Storage **m_pStorage;
 };
 
-template<class T>
-class CIntersection
+
+Class2Def(CIntersection)
 {
 public:
 	~CIntersection()						{ delete intersectionStorage(); }
 protected:
-	void InitIntersection(size_t t, size_t nRow, const CVector<T>* pLambdaSet) {
-		m_pIntersectionStorage = new CIntersectionStorage<T>(t, nRow, pLambdaSet);
+	void InitIntersection(size_t t, size_t nRow, const CVector<S>* pLambdaSet) {
+		m_pIntersectionStorage = new CIntersectionStorage<S>(t, nRow, pLambdaSet);
 	}
+	VariableMappingPntr prepareRowIntersections(const InSysPntr pMatrix, T currRowNumb, T lambda, T t) const;
 	PERMUT_ELEMENT_TYPE *intersectionParam(const size_t** ppNumb, size_t row_numb) const {
 		const auto* pPrev = intersectionStorage()->rowsIntersection(row_numb);
 		*ppNumb = pPrev->numbIntersection();
@@ -75,5 +77,5 @@ protected:
 	}
 	inline auto intersectionStorage() const { return m_pIntersectionStorage; }
 private:
-	CIntersectionStorage<T>* m_pIntersectionStorage = NULL;
+	CIntersectionStorage<S>* m_pIntersectionStorage = NULL;
 };
