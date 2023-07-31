@@ -65,11 +65,11 @@ Class2Def(CIntersection)
 {
 public:
 	~CIntersection()						{ delete intersectionStorage(); }
+	VariableMappingPntr prepareRowIntersections(const InSysPntr pMatrix, T currRowNumb, T lambda, T t) const;
 protected:
 	void InitIntersection(size_t t, size_t nRow, const CVector<S>* pLambdaSet) {
 		m_pIntersectionStorage = new CIntersectionStorage<S>(t, nRow, pLambdaSet);
 	}
-	VariableMappingPntr prepareRowIntersections(const InSysPntr pMatrix, T currRowNumb, T lambda, T t) const;
 	PERMUT_ELEMENT_TYPE *intersectionParam(const size_t** ppNumb, size_t row_numb) const {
 		const auto* pPrev = intersectionStorage()->rowsIntersection(row_numb);
 		*ppNumb = pPrev->numbIntersection();

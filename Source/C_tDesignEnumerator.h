@@ -1,6 +1,5 @@
 #pragma once
 #include "BIBD_Enumerator.h"
-#include "IntersectionStorage.h"
 
 typedef struct {
 	size_t nVar;
@@ -29,7 +28,7 @@ protected:
 #if !CONSTR_ON_GPU
 	virtual bool makeFileName(char *buffer, size_t lenBuffer, const char *ext = NULL) const;
 #endif
-	virtual CVariableMapping<T> *prepareCheckSolutions(size_t nVar) {
+	virtual VariableMappingPntr prepareCheckSolutions(size_t nVar) {
 		return prepareRowIntersections(this->matrix(), this->currentRowNumb(), tDesign()->GetNumSet(t_lSet)->GetAt(0), tDesign()->getT());
 	}
 	CK virtual void prepareToTestExtraFeatures() {

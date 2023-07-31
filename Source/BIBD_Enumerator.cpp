@@ -15,6 +15,17 @@ FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nR
 	return 0;
 }
 
+FClass2(CBIBD_Enumerator, VariableMappingPntr)::prepareCheckSolutions(size_t nVar) {
+	if (!(enumFlags() & t_symmetrical_t_cond))
+		return NULL;
+
+	if (!rowIntersection())
+		m_pRowIntersection = new CIntersection<T, S>();
+
+	const auto λ = lambda();
+	return rowIntersection()->prepareRowIntersections(this->matrix(), this->currentRowNumb(), λ, λ+1);
+}
+
 FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
