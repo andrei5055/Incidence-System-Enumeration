@@ -8,7 +8,6 @@ typedef CSimpleArray<MATRIX_ELEMENT_TYPE *> Ct_Storage;
 class CPrevRowsIntersection
 {
 public:
-    CPrevRowsIntersection()                                         { m_pRowIntersection = NULL; }
     ~CPrevRowsIntersection()										{ delete[] rowIntersectionPntr(); }
 
     void init(const size_t *pNumb, size_t len) {
@@ -20,8 +19,8 @@ public:
 	inline PERMUT_ELEMENT_TYPE *rowIntersectionPntr() const         { return m_pRowIntersection; }
     inline const size_t *numbIntersection() const					{ return m_pNumb; }
 private:
-    const size_t *m_pNumb;
-	PERMUT_ELEMENT_TYPE *m_pRowIntersection;
+    const size_t *m_pNumb = NULL;
+	PERMUT_ELEMENT_TYPE *m_pRowIntersection = NULL;
 };
 
 template<class T>

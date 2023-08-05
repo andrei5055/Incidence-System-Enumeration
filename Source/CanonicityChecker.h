@@ -178,7 +178,7 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
-	setColIndex(new T[nCol << 1]);
+	setColIndex(new T[2 * nCol]);
 	m_pCounter = new CCounter<int>(rank);
 	m_nColNumbStorage = new CColNumbStorage *[rank];
 	for (int i = rank; i--;)

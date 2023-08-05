@@ -88,7 +88,7 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 	if (pMaster->IS_enumerator()) {
 		if (!m_pEnum) {
 		auto *pInSys = pMaster->matrix();
-		InSysPntr pSlaveDesign;
+		InSysPntr pSlaveDesign = NULL;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
 		case t_objectType::t_BIBD:

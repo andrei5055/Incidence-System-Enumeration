@@ -940,7 +940,8 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 				// Create the name of the file with the current results
 				if (betterResults) {
 					remove(buff);			// Remove file with previous results
-					rename(newResult.c_str(), buff);	// Rename file
+					if (rename(newResult.c_str(), buff)) // Rename file
+						cout << "Cannot rename file `" << newResult << "' to '" << std::string(buff) << "'.";
 					resType = t_resType::t_resBetter;
 				}
 				else {
@@ -1147,7 +1148,7 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 		const auto pos = restart_info.find_last_of('.');
 		restart_info.erase(pos);
 		restart_info += "_Restart_";
-		char buff[16];
+		char buff[16] = { '\0' };
 		_itoa_s(designParams()->save_restart_info, buff, 10);
 		restart_info += buff;
 		const auto* dir = restart_info.c_str();
@@ -1164,7 +1165,7 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 	const auto newFile = this->createNewFile(buff);
 	const auto seekFile = !newFile && SeekLogFile() ? long(designParams()->rewindLen) : 0;
 	FOPEN(file, buff, newFile ? "w" : (seekFile ? "r+t" : "a"));
-	if (seekFile)  // Previously written end of the log file needs to be removed
+	if (seekFile && file)  // Previously written end of the log file needs to be removed
 		fseek(file, -seekFile, SEEK_END);
 
 	this->setOutFile(file);
@@ -1393,7 +1394,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len)
 		}
 
 		firstLine = false;
-		if (fputs(buffer, f) < 0) {
+		if (f && fputs(buffer, f) < 0) {
 			FCLOSE(dbFile);
 			FCLOSE(f);
 			return; // Something wrong

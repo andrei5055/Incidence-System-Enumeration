@@ -87,8 +87,8 @@ Class1Def(CColOrbitCS) : public Class1(CColOrbit)
  private:
 	inline void setMaxElement(int maxElement)							{ m_maxElement = maxElement; }
 	CC inline int maxElement()											{ return m_maxElement; }
-	unsigned int *m_pEntryCntrs;
-	int m_maxElement;
+	unsigned int *m_pEntryCntrs = NULL;
+	int m_maxElement = -1;
 };
 
 class CRank {

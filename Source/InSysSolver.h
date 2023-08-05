@@ -63,9 +63,9 @@ private:
 	CVariableMapping *m_pAddedVarStack;
 #endif
 
-    const S *m_pVarMinVal;
-	RowSolutionPntr m_pRowSolution;
-	const int m_t;
+    const S *m_pVarMinVal = NULL;
+	RowSolutionPntr m_pRowSolution = NULL;
+	const int m_t = 0;
 };
 
 FClass2(CInSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len), m_t(t)
