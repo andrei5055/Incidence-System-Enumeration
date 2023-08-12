@@ -857,7 +857,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #endif
 
     this->closeColOrbits();
-
+	
 	delete[] ppThreadEnum;
 	if (!threadFlag || !USE_THREADS_ENUM) {
 		delete[] pThreadEnum;
@@ -1377,9 +1377,8 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len)
 		if (buffer[0] != ';') {
 			// Not a comment line
 			if (compareFlag && !firstLine) {
-				if (buffer[0] && !strchr("_-", buffer[0])) {
+				if (buffer[0] && !strchr("_-", buffer[0]))
 					resCmp = pAdjKey? compareEnumerationDB_record(buffer) : strncmp(buffer, key, lenKey);
-				}
 				else
 					resCmp = 1;   // EOF found
 
