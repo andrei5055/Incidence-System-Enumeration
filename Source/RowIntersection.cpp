@@ -45,10 +45,10 @@ FClass2(CIntersection, VariableMappingPntr)::prepareRowIntersections(const InSys
 	if (t >= currRowNumb)
 		t = lastRowIdx;
 
-	S tuple[10];
-	T* matrixRowPntr[10];
-	auto* pTuple = t <= countof(tuple) ? tuple : new S[t];
-	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new T * [t];
+	T tuple[10];
+	S* matrixRowPntr[10];
+	auto* pTuple = t <= countof(tuple) ? tuple : new T[t];
+	auto pMatrixRowPntr = t <= countof(matrixRowPntr) ? matrixRowPntr : new S * [t];
 	for (T i = 1; i < t; i++) {
 		// Construct all (i+1)-subsets of first currentRowNumb() elements
 		uint k = 0;
