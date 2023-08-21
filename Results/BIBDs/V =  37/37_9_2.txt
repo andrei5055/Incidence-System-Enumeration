@@ -1,25 +1,27 @@
-BIBD( 21,  21,  5,  5,  1)
+BIBD( 37,  37,  9,  9,  2)
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-        120960              1            1      1      1
+            54              1            1      0      0
+           333              1            1      1      1
+          1512              2            2      0      0
     ___________________________________________________________
-        Total:              1            1      1      1
+        Total:              4            4      1      1
 
-         1 matrix was constructed in  0.28 sec,
+         4 matrices were constructed in 16:38:23.70 sec,
          1 of them is transitive on the rows.
-         1 matrix has no replicated blocks,
+         4 matrices have no replicated blocks,
          1 of them is transitive on the rows.
-         1 matrix was fully constructed.
+         4 matrices were fully constructed.
 
 Processing times are:
-             user_time:  0.59 sec,
-  kernel (system) time:  0.00 sec,
+             user_time:  9:03:02:13.90 sec,
+  kernel (system) time: 25.39 sec,
 
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on row 10 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
