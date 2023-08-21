@@ -86,7 +86,7 @@
 ( 15,  7,  3)             5            5             0.02   Feb 09, 2020 >> [14, 22]
 ( 16,  4,  1)             1            1             0.00   Feb 09, 2020 >> [14, 22]
 ( 16,  4,  2)          >=57         >=57         ~ 4 days                >> >=2.2*10^6 [14, #44 from Table]
-( 16,  6,  2)             3            3             0.04   Feb 09, 2020 >> [14, 22]
+( 16,  6,  2)             3            3             0.03   Aug 20, 2023 >> [14, 22]
 ( 16,  6,  3)         18920        18920            17.71   May 15, 2023 >> [14]
 ( 16,  6,  4)                                                            >> >=111 [14, #76]
 ( 19,  3,  1)      >=312160     >=312160        ~32 h
@@ -94,12 +94,13 @@
 ( 21,  5,  1)             1            1             0.28   Aug 20, 2023
 ( 21,  6,  2)             0            0            26.95   Feb 03, 2023
 ( 21,  7,  3)          3809         3809      23:18:17.24   Feb 23, 2023
-( 22,  7,  2)             0            0             1.13   Feb 03, 2023
+( 22,  7,  2)             0            0             1.00   Aug 20, 2023
 ( 23, 11,  5)          1106         1106            26.78   Jun 07, 2023 >> [18]
 ( 25,  4,  1)                                                            >> 18 [14]  
 ( 25,  5,  1)             1            1             0.11   May 15, 2023 >> [14, 22]
 ( 25,  9,  3)            78           78             8.20   Feb 09, 2020 >> [14]
 ( 28,  7,  2)             8            8      13:28:39.76   Mar 18, 2023
+( 29,  8,  2)             0            0          3:06.97   Aug 20, 2023
 ( 36,  6,  1)             0            0          1:08.41   Feb 17, 2023
 ( 37,  9,  2)             4            4      16:38:23.70   Aug 21, 2023
 --------------------------------------------------------------------------------
@@ -119,7 +120,7 @@ Proc. Natl. Acad. Sci. USA, 3 (1917), pp. 197-199.
 [10] J.J. Harms, C.J. Colbourn, A.V. Ivanov, A census of (10,3,2) block designs without repeated blocks
 Sixteenth Manitoba Conference on Numerical Mathematics and Computing, Congr. Numer., vol. 57, Winnipeg, Man., 1986 (1987), pp. 147-170
 [11] R.Mathon, D.Lomas, A census of 2-(10,3,2) designs, Australas. J. Combin., 5 (1992), pp. 145-158
-[12] P.R.J.Ostergard, Enumeration of 2-(12,3,2) designs, Australas. J. Combin. 22 (2000), pp. 227–231.
+[12] P.R.J.Ostergard, Enumeration of 2-(12,3,2) designs, Australas. J. Combin. 22 (2000), pp. 227-231.
 [13] P.Kaski, P.R.J. Ostergard, The Steiner triple systems of order 19, Math. Comp., 73 (2004), pp. 2075-2092
 [14] R.Mathon, A.Rosa, On 2-(v,k,lambda) designs of small order, C.J. Colbourn, J.H. Dinitz (Eds.),
 Handbook of Combinatorial Designs (second ed.), Chapman & Hall/CRC Press, Boca Raton, FL (2007), pp. 25-58.
@@ -132,9 +133,9 @@ Volume 309, Issue 3, 28 (2009), pp. 515-520.
 https://www.cs.auckland.ac.nz/research/groups/CDMTCS/researchreports/085denny.pdf
 [19] B.D. McKay, "Isomorph-free exhaustive generation", to appear.
 [20] J, Patric. (2000). Enumeration of 2-(12, 3, 2) Designs. 
-[21] Östergård, P.R.J., Kaski, P. Enumeration of 2-(9, 3, ?) Designs and Their Resolutions. Designs, Codes and Cryptography 27, 131–137 (2002). https://doi.org/10.1023/A:1016558720904
+[21] Ostergard, P.R.J., Kaski, P. Enumeration of 2-(9, 3, ?) Designs and Their Resolutions. Designs, Codes and Cryptography 27, 131-137 (2002). https://doi.org/10.1023/A:1016558720904
 [22] Online catalog of t-designs: http://www.maths.qmul.ac.uk/~lsoicher/designtheory.org/database/t-designs/
-[23] Paul C.Denny, Rudolf Mathon, A census of t-(t+8,t+2,4) designs, 2?t?4, Journal of Statistical Planning and Inference Volume 106, Issues 1–2, 1 August 2002, Pages 5-19
+[23] Paul C.Denny, Rudolf Mathon, A census of t-(t+8,t+2,4) designs, 2?t?4, Journal of Statistical Planning and Inference Volume 106, Issues 1-2, 1 August 2002, Pages 5-19
 
 Connor Theorem:
 -(r-k-lambda) <= s[i,j]<= (2*k*lambda + r(r-k-lambda))/r

@@ -1,16 +1,16 @@
-BIBD( 22,  22,  7,  7,  2)
+BIBD( 29,  29,  8,  8,  2)
 
-         0 matrices were constructed in  1.00 sec,
+         0 matrices were constructed in  3:06.97 sec,
          0 matrices were fully constructed.
 
 Processing times are:
-             user_time:  0.32 sec,
-  kernel (system) time:  0.01 sec,
+             user_time:  3:27.42 sec,
+  kernel (system) time:  4.53 sec,
 
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 25 (not waiting to finish mode)
+        20 threads launched on row 6 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
