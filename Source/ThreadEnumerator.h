@@ -88,7 +88,7 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 	if (pMaster->IS_enumerator()) {
 		if (!m_pEnum) {
 		auto *pInSys = pMaster->matrix();
-		InSysPntr pSlaveDesign;
+		InSysPntr pSlaveDesign = NULL;
 		const uint enumFlags = pMaster->enumFlags() | t_matrixOwner;
 		switch (pInSys->objectType()) {
 		case t_objectType::t_BIBD:
@@ -100,8 +100,8 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 				m_pEnum = new CCombBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 		case t_objectType::t_tDesign: {
-				const auto pSlaveTDesign = new C_tDesign<T, S>((const Class2(C_tDesign) *)(pInSys), nRow);
-				m_pEnum = new C_tDesignEnumerator<T, S>(pSlaveTDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
+				pSlaveDesign = new C_tDesign<T, S>((const Class2(C_tDesign) *)(pInSys), nRow);
+				m_pEnum = new C_tDesignEnumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
 			}
 		case t_objectType::t_PBIBD:

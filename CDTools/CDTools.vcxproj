@@ -211,6 +211,7 @@
     <ClCompile Include="..\Source\Matrix.cpp" />
     <ClCompile Include="..\Source\MatrixCanonChecker.cpp" />
     <ClCompile Include="..\Source\PermutStorage.cpp" />
+    <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />

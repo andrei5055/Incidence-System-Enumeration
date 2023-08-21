@@ -15,6 +15,20 @@ FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nR
 	return 0;
 }
 
+FClass2(CBIBD_Enumerator, VariableMappingPntr)::prepareCheckSolutions(size_t nVar) {
+	if (!(enumFlags() & t_symmetrical_t_cond))
+		return NULL;
+
+	const auto λ = lambda();
+	const auto *matrix = this->matrix();
+	if (!rowIntersection()) {
+		m_pRowIntersection = new CIntersection<T, S>(λ + 1, this->rowNumb(), NULL);
+//		m_pRowIntersection->InitIntersection(λ + 1, this->rowNumb(), NULL/*tDesign()->GetNumSet(t_lSet)*/);
+	}
+
+	return rowIntersection()->prepareRowIntersections(matrix, this->currentRowNumb(), λ, λ+1);
+}
+
 FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
@@ -60,7 +74,8 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		}
 	}
 
-	CMatrixCanonChecker::MakeRow(currRowNumb, pSol, false);
+	const auto lastRow = currRowNumb;
+	CMatrixCanonChecker::MakeRow(lastRow, pSol, false);
 
 	// Define intersection of current row with previous one:
 	auto lastRowToCheck = lenStabilizer();
@@ -138,6 +153,33 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 
 	if (pColumnIdx != columns)
 		delete[] pColumnIdx;
+
+	if (retVal && (enumFlags() & t_symmetrical_t_cond)) {
+
+		const auto* pCurrRow = this->matrix()->GetRow(lastRow);
+		// Get indices of the intersection of the i previous rows (pIntersection) 
+		// one of which is the curent last row of the matrix and the other (i-1) correspond to all 
+		// C(currentRowNumb()-1, i-1) combinations of previous currentRowNumb()-1 rows 
+		// ... and the pointer to the number of the intersections (pNumb) we need to check (*pNumb = 1, when t = 3)
+		const size_t* pNumb;
+		auto* pIntersection = rowIntersection()->intersectionParam(&pNumb, lastRow);
+		
+		auto lambda = this->getInSys()->lambda();
+		const uint t = lambda + 1;
+		for (uint i = 2; i < t; i++) {
+			const auto lambdaPrev = lambda;
+			for (auto k = pNumb[i - 2]; k--; pIntersection += lambdaPrev) {
+				size_t val = 0;
+				for (auto j = lambdaPrev; j--;) {
+					if (*(pCurrRow + *(pIntersection + j)))
+						val++;
+				}
+
+				if (val != lambda)
+					return false;
+			}
+		}
+	}
 
 	return retVal;
 }

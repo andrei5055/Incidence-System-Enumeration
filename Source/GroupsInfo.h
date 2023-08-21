@@ -34,7 +34,7 @@ public:
 protected:
 	CC inline void addMatrOfType(ulonglong v, t_design_type t)	{ m_nCounter[+t] += v; }
 private:
-	ulonglong m_nCounter[t_design_type::t_design_type_total];
+	ulonglong m_nCounter[(int)t_design_type::t_design_type_total];
 };
 
 class COrderNumb : public CNumbInfo

@@ -10,7 +10,7 @@ Class2Def(CMatrixData) {
 public:
 	CK CMatrixData()						{ setDataOwner(false); }
 	CK virtual ~CMatrixData()				{ 
-		if (dataOwner()) delete [] m_pData; 
+		releaseData();
 		delete partsInfo();
 	}
 	CC void InitWithData(T nRows, T nCols = 0, S maxElement = 1) {
@@ -55,6 +55,7 @@ public:
 	}
 
 	CC void Init(T nRows, T nCols, S maxElement = 1, S *data = NULL) {
+		releaseData();
 		if (!nRows)
 			return;
 
@@ -71,7 +72,7 @@ public:
 
 	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, T nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
-				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, bool canonFlag = true) const;
+				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, int canonFlag = 1) const;
 	CC virtual S numParts() const				{ return 1; }
 	CC inline auto *partsInfo() const			{ return m_pPartInfo;  }
 	CC inline S* ResetRowPart(T nRow, T idx) const {
@@ -92,13 +93,16 @@ public:
 	CC bool isSimple(bool* pFlag = NULL) const;
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
+	CK inline void releaseData()					{ if (dataOwner()) delete[] m_pData;
+													  m_pData = NULL;
+	                                                }
 	T m_nRows;
 	T m_nCols;
 
 	S m_nMaxElement;
-	bool m_bDataOwner;
+	bool m_bDataOwner = true;
 	size_t m_nLenData;
-	S *m_pData;
+	S *m_pData = NULL;
 	BlockGroupDescr<T> *m_pPartInfo = NULL;
 	mutable S m_nStabExtern;
 #if USE_THREADS

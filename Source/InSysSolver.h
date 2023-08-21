@@ -63,9 +63,9 @@ private:
 	CVariableMapping *m_pAddedVarStack;
 #endif
 
-    const S *m_pVarMinVal;
-	RowSolutionPntr m_pRowSolution;
-	const int m_t;
+    const S *m_pVarMinVal = NULL;
+	RowSolutionPntr m_pRowSolution = NULL;
+	const int m_t = 0;
 };
 
 FClass2(CInSysSolver)::CInSysSolver(size_t len, int t) : CVariableMapping<S>(len), m_t(t)
@@ -255,7 +255,7 @@ FClass2(CInSysSolver, bool)::findDiffIndex(S &lambdaToSplit, S *pResult, int *pM
     const auto *pCurr  = this->getLastMapping();
     S *pCurrVar;
     
-    // Counts total amount of splitted units AFTER pTo and define if it's possible to split one more unit in the same area
+    // Counts total amount of splitted units AFTER pTo and define if it's possible to split one more units in the same area
 
     bool spaceNotFound = true;
     while ((pCurr -= 2) >= pFirst) {

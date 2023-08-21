@@ -303,7 +303,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 	auto pBuffer = nVar <= countof(buffer)? buffer : new S[nVar];
 	// Solution used for last constructed matrix's row:
 	const auto pCurrSolution = pPrevRowSolution->solution(lastRightPartIndex);
-	const auto forcibleLambdaValue = forcibleLambda(nRowPrev, nPart);
+	const auto forcibleLambdaValue = (int)forcibleLambda(nRowPrev, nPart);
 	const auto nLambdas = numLambdas();
 	const auto *pMaxVal = inSysRowEquation()->variableMaxValPntr();
 	bool readyToCheckSolution = false;
@@ -333,7 +333,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 		if (lambdaMin < 0)
 			continue;
 
-		lambdaMin += (int)forcibleLambdaValue;
+		lambdaMin += forcibleLambdaValue;
 
 #if USE_EXRA_EQUATIONS
 		resetExtra();

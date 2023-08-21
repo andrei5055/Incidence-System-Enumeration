@@ -35,7 +35,7 @@ private:
 	size_t m_reportInt = 0;
 	ulonglong m_prevCounter = 0;
 	double m_fRunTime = 0.0f;
-	double m_ProcTime[4];
+	double m_ProcTime[4] = { 0,0,0,0 };
 };
 
 enum class t_reportCriteria {
