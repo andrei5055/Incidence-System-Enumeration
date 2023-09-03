@@ -180,7 +180,7 @@ FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 
 FClass2(CRowSolution, T *)::copySolution(const InSysSolverPntr pSysSolver)
 {
-	auto pSolution = lastSolution();
+	auto *pSolution = lastSolution();
 	if (pSysSolver->isValidSolution(pSolution)) {
 		pSolution = newSolution();
 		memcpy(pSolution, pSolution - solutionLength(), solutionLength() * sizeof(pSolution[0]));

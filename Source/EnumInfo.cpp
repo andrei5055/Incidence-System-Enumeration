@@ -336,18 +336,30 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 		remove(reportFileName());
 }
 
-FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel, const char *pComment) const
+#define SPACE "        "
+size_t out_flag_used(bool flag, const char* pComment, FILE* outFile, const char* pComment2=NULL) {
+	char buff[256];
+	SPRINTF(buff, SPACE"%s was %sused\n", pComment, flag ? "" : "not ");
+	auto len = outString(buff, outFile);
+	if (pComment2) {
+		SPRINTF(buff, "%s", pComment2);
+		len += outString(buff, outFile);
+	}
+
+	return len;
+}
+
+FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, const uint enumInfo, bool printMTlevel, const char *pComment) const
 {
 	FILE *outFile = pOutFile ? *pOutFile : NULL;
 	if (!outFile)
 		return;
 
-#define SPACE "        "
 	char buff[256];
 	size_t outLen = 0;
 	char* new_line = "\n";
 	if (designInfo()->noReplicatedBlocks) {
-		SPRINTF(buff, "\n" SPACE "Only SIMPLE designs were constructed\n");
+		SPRINTF(buff, "\n"  "Only SIMPLE designs were constructed\n");
 		new_line = "";
 		outLen += outString(buff, outFile);
 	}
@@ -363,12 +375,8 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel,
 	const auto nThreads = designInfo()->threadNumb;
 	if (nThreads > 1) {
 		char buffer[32];
-		if (printMTlevel)
-			SPRINTF(buffer, "row %d", multiThreadLevel());
-		else
-			SPRINTF(buffer, "different rows");
-
-		SPRINTF(buff, "%10zd threads launched on %s (%swaiting to finish mode)\n", nThreads, buffer, WAIT_THREADS ? "" : "not ");
+		SPRINTF(buffer, printMTlevel? "row" : "different rows # >=");
+		SPRINTF(buff, "%10zd threads launched on %s %d (%swaiting to finish mode)\n", nThreads, buffer, multiThreadLevel(), WAIT_THREADS ? "" : "not ");
 	} else
 		SPRINTF(buff, SPACE "Single thread mode\n");
 
@@ -378,22 +386,19 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, bool printMTlevel,
 		SPRINTF(buff, SPACE "Solutions obtained by master are %s by the thread%s\n", designInfo()->use_master_sol ? "used" : "copied", nThreads>1? "s" : "");
 		outLen += outString(buff, outFile);
 		if (CANON_ON_GPU) {
-			SPRINTF(buff, SPACE"        Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
+			SPRINTF(buff, SPACE"Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
 			outLen += outString(buff, outFile);
 		}
 	}
 
 	if (designInfo()->find_master_design)
-		SPRINTF(buff, "        Thread master DB was %sused\n", designInfo()->thread_master_DB ? "" : "not ");
+		outLen += out_flag_used(designInfo()->thread_master_DB, "Thread master DB", outFile);
 
-	SPRINTF(buff, "        Canonicity of partial constructed matrix was %sused\n", USE_CANON_GROUP ? "" : "not ");
-	outLen += outString(buff, outFile);
+	outLen += out_flag_used(enumInfo & t_use_3_condition, "3-Condition on the elements", outFile);
+	outLen += out_flag_used(USE_CANON_GROUP, "Canonicity of partial constructed matrix", outFile);
+	outLen += out_flag_used(USE_STRONG_CANONICITY, "Strong canonicity", outFile);
 
-	SPRINTF(buff, "        Strong canonicity was %sused\n", USE_STRONG_CANONICITY ? "" : "not ");
-	outLen += outString(buff, outFile);
-
-	SPRINTF(buff, "        Super strong canonicity was %sused\n\n", USE_STRONG_CANONICITY_A ? "" : "not ");
-	outLen += outString(buff, outFile);
+	outLen += out_flag_used(USE_STRONG_CANONICITY_A, "Super strong canonicity", outFile, "\n");
 	if (pComment) {
 		SPRINTF(buff, "%s\n", pComment);
 		outLen += outString(buff, outFile);

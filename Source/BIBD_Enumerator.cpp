@@ -5,9 +5,23 @@ using namespace std;
 
 template class CBIBD_Enumerator<TDATA_TYPES>;
 
+FClass2(CBIBD_Enumerator)::CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags, int treadIdx, uint nCanonChecker) :
+	Class2(C_InSysEnumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+	setR(getInSys()->GetR(0));
+	const auto k = pBIBD->GetK();
+	C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - k);
+	setUseLambdaCond(k);
+
+	if (enumFlags & (t_use_3_condition | t_symmetrical_t_cond)) {
+		const auto t = (enumFlags & t_symmetrical_t_cond) ? lambda() + 1 : 3;
+		const auto lambdaSet = matrix()->GetNumSet(t_lSet);
+		m_pRowIntersection = new CIntersection<T, S>(t, this->rowNumb(), lambdaSet);
+	}
+}
+
 FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
 {
-	const size_t diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
+	const auto diffWeight = this->getInSys()->GetK() - pOrb->columnWeight();
 	if (diffWeight)
 		return diffWeight == this->rowNumb() - nRow ? 1 : -1;
 
@@ -16,17 +30,12 @@ FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nR
 }
 
 FClass2(CBIBD_Enumerator, VariableMappingPntr)::prepareCheckSolutions(size_t nVar) {
-	if (!(enumFlags() & t_symmetrical_t_cond))
+	if (!rowIntersection())
 		return NULL;
 
 	const auto λ = lambda();
-	const auto *matrix = this->matrix();
-	if (!rowIntersection()) {
-		m_pRowIntersection = new CIntersection<T, S>(λ + 1, this->rowNumb(), NULL);
-//		m_pRowIntersection->InitIntersection(λ + 1, this->rowNumb(), NULL/*tDesign()->GetNumSet(t_lSet)*/);
-	}
-
-	return rowIntersection()->prepareRowIntersections(matrix, this->currentRowNumb(), λ, λ+1);
+	const auto t = (enumFlags() & t_symmetrical_t_cond) ? λ + 1 : 3;
+	return rowIntersection()->prepareRowIntersections(matrix(), this->currentRowNumb(), λ, t);
 }
 
 FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
@@ -87,17 +96,17 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	const auto colNumb = partsInfo? partsInfo->colNumb() : this->colNumb();
 	const auto r = partsInfo ? colNumb * k / rowNumb : this->getR();
 
-	S columns[256], *pColumnIdx = columns;
+	T columns[256], *pColumnIdx = columns;
 	if (lambda > countof(columns))
-		pColumnIdx = new S[lambda];
+		pColumnIdx = new T[lambda];
 
 	// Define "lambda" blocks, which contain both current and previous elements.
 	// When doing that, check the necessary and sufficient conditions
 	// for the intersection of the first (second), previous and current elements
 	bool check_remaining_element = false;
 	bool retVal = true;
-	S idx = 0;
-	S j = 0;
+	T idx = 0;
+	T j = 0;
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
 			if (idx == x0_3) {					// (x0_3+1)-th common block found
@@ -154,34 +163,41 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	if (pColumnIdx != columns)
 		delete[] pColumnIdx;
 
-	if (retVal && (enumFlags() & t_symmetrical_t_cond)) {
+	if (!retVal)
+		return false;
 
+	if (enumFlags() & t_use_3_condition /*t_symmetrical_t_cond*/) {
 		const auto* pCurrRow = this->matrix()->GetRow(lastRow);
 		// Get indices of the intersection of the i previous rows (pIntersection) 
 		// one of which is the curent last row of the matrix and the other (i-1) correspond to all 
-		// C(currentRowNumb()-1, i-1) combinations of previous currentRowNumb()-1 rows 
+		// CurrentRowNumb()-1, i-1) combinations of previous currentRowNumb()-1 rows 
 		// ... and the pointer to the number of the intersections (pNumb) we need to check (*pNumb = 1, when t = 3)
-		const size_t* pNumb;
+		const T* pNumb;
 		auto* pIntersection = rowIntersection()->intersectionParam(&pNumb, lastRow);
 		
-		auto lambda = this->getInSys()->lambda();
-		const uint t = lambda + 1;
-		for (uint i = 2; i < t; i++) {
+		const T t = 3;// lambda + 1;
+		for (T i = 2; i < t; i++) {
 			const auto lambdaPrev = lambda;
 			for (auto k = pNumb[i - 2]; k--; pIntersection += lambdaPrev) {
-				size_t val = 0;
+				T val = 0;
 				for (auto j = lambdaPrev; j--;) {
 					if (*(pCurrRow + *(pIntersection + j)))
 						val++;
 				}
 
-				if (val != lambda)
+				if (val > x0_3) {
+					// Any matrix constructed using this
+					// solution cannot be canonical.
+					FOPEN(f, "aaa.txt", "a");
+					fprintf(f, "Catched!");
+					FCLOSE(f);
 					return false;
+				}
 			}
 		}
 	}
 
-	return retVal;
+	return true;
 }
 
 FClass2(CBIBD_Enumerator, void)::getEnumerationObjectKey(char *pInfo, int len) const {

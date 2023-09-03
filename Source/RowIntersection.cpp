@@ -15,11 +15,11 @@ FClass2(CIntersection, VariableMappingPntr)::prepareRowIntersections(const InSys
 	// Create the set of the indices of block containing last element
 	const auto r = pMatrix->GetR(0);		// TO DO: Need to be modified to support combined t-designs construction
 
-	size_t blockIdx[256];
-	auto ppBlockIdx = r <= countof(blockIdx) ? blockIdx : new size_t[r];
-	size_t idx = 0;
+	T blockIdx[256];
+	auto ppBlockIdx = r <= countof(blockIdx) ? blockIdx : new T[r];
+	T idx = 0;
 	const auto nCol = pMatrix->colNumb();
-	for (size_t j = 0; j < nCol; j++) {
+	for (T j = 0; j < nCol; j++) {
 		if (*(pLastRow + j)) {
 			*(ppBlockIdx + idx++) = j;
 			if (idx == r)
@@ -28,11 +28,11 @@ FClass2(CIntersection, VariableMappingPntr)::prepareRowIntersections(const InSys
 	}
 
 	// Create indices of block containing 0-th and last, 1-st and last etc element.
-	const size_t* pNumb;
+	const T* pNumb;
 	auto* pIntersection = intersectionParam(&pNumb, currRowNumb);
 	for (auto k = pNumb[0]; k--; pCurrRow += nCol, pIntersection += lambda) {
-		size_t i = 0;
-		for (size_t j = 0; j < r; j++) {
+		T i = 0;
+		for (T j = 0; j < r; j++) {
 			if (*(pCurrRow + ppBlockIdx[j])) {
 				*(pIntersection + i) = ppBlockIdx[j];
 				if (++i == lambda)

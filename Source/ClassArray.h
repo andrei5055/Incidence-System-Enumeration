@@ -96,7 +96,7 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 		if (m_pData)
 		{
 			DestructElements(m_pData, m_nSize);
-			delete[] (char*)m_pData;
+			delete[] m_pData;
 			m_pData = NULL;
 		}
 		m_nSize = m_nMaxSize = 0;
@@ -107,7 +107,7 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 #ifdef SIZE_T_MAX
 		assert(nNewSize <= SIZE_T_MAX/sizeof(TYPE));    // no overflow
 #endif
-		m_pData = (TYPE*) new char[nNewSize * sizeof(TYPE)];
+		m_pData = new TYPE[nNewSize];
 		ConstructElements(m_pData, nNewSize);
 		m_nSize = m_nMaxSize = nNewSize;
 	}
@@ -147,7 +147,7 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 #ifdef SIZE_T_MAX
 		assert(nNewMax <= SIZE_T_MAX/sizeof(TYPE)); // no overflow
 #endif
-		TYPE* pNewData = (TYPE*) new char[nNewMax * sizeof(TYPE)];
+		auto * pNewData = new TYPE[nNewMax];
 		
 		// copy new data from old
 		memcpy(pNewData, m_pData, m_nSize * sizeof(TYPE));
@@ -157,7 +157,7 @@ void CClassArray<TYPE, ARG_TYPE>::SetSize(size_t nNewSize, int nGrowBy)
 		ConstructElements(&pNewData[m_nSize], nNewSize-m_nSize);
 		
 		// get rid of old stuff (note: no destructors called)
-		delete[] (char*)m_pData;
+		delete[] m_pData;
 		m_pData = pNewData;
 		m_nSize = nNewSize;
 		m_nMaxSize = nNewMax;
@@ -195,13 +195,13 @@ void CClassArray<TYPE, ARG_TYPE>::FreeExtra()
 		TYPE* pNewData = NULL;
 		if (m_nSize != 0)
 		{
-			pNewData = (TYPE*) new char[m_nSize * sizeof(TYPE)];
+			pNewData = new TYPE[m_nSize];
 			// copy new data from old
 			memcpy(pNewData, m_pData, m_nSize * sizeof(TYPE));
 		}
 		
 		// get rid of old stuff (note: no destructors called)
-		delete[] (char*)m_pData;
+		delete[] m_pData;
 		m_pData = pNewData;
 		m_nMaxSize = m_nSize;
 	}

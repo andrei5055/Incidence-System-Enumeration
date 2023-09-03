@@ -402,7 +402,7 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 #if USE_EXRA_EQUATIONS
 				equSystem()->resetVariables(nVar);
 #endif
-				auto pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
+				auto *pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
 				if (!pResultTmp) {
 					// There are no solution for current lambda from pLambdaSet
 					// Since lambda set is ordered, we will not find solutions for

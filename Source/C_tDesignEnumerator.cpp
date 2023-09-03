@@ -65,7 +65,7 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 	// one of which is the curent last row of the matrix and the other (i-1) correspond to all 
 	// C(currentRowNumb()-1, i-1) combinations of previous currentRowNumb()-1 rows 
 	// ... and the pointer to the number of the intersections (pNumb) we need to check (*pNumb = 1, when t = 3)
-	const size_t *pNumb;
+	const T *pNumb;
 	auto *pIntersection = getIntersectionParam(&pNumb);
 	auto lambda = pLambdaSet->GetAt(0);
     for (uint i = 2; i < t; i++) {
@@ -193,12 +193,12 @@ FClass2(C_tDesignEnumerator, void)::copyInfoFromMaster(const EnumeratorPntr pMas
 		t = this->currentRowNumb() - 1;
 
 	t--;
-	const size_t *pNumb;
+	const T *pNumb;
 	// Note: since currentRowNumb() is different for this and pMaster, we need
 	//   a) call getIntersectionParam differently
 	//   b) call pMaster->getIntersectionParam() last
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
-	PERMUT_ELEMENT_TYPE *pIntersectionTo = getIntersectionParam(&pNumb);
+	T *pIntersectionTo = getIntersectionParam(&pNumb);
 	const auto *pIntersectionFrom = dynamic_cast<const Class2(C_tDesignEnumerator) *>(pMaster)->getIntersectionParam(&pNumb);
 	for (uint i = 0; i < t; i++) {
 		const size_t len = pNumb[i] * pLambdaSet->GetAt(i);

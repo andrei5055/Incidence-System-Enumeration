@@ -21,7 +21,7 @@ public:
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
 	CK virtual bool isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const;
-	PERMUT_ELEMENT_TYPE *getIntersectionParam(const size_t **ppNumb) const {
+	T *getIntersectionParam(const T **ppNumb) const {
 		return intersectionParam(ppNumb, this->currentRowNumb());
 	}
 protected:

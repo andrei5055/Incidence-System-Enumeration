@@ -490,7 +490,10 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				mt_level++;   // perhaps, we will do it on next level.
 		}
 
-		const bool usingThreads = ppThreadEnum && nRow == mt_level;
+		// When mt_level = v - 1, for BIBD pRowSolution->solutionPerm()->GetData() = NULL
+		// and we do have only one possibility to construct v-th row.
+		// There is no need to use threads.
+		const bool usingThreads = ppThreadEnum && nRow == mt_level && pRowSolution->solutionPerm()->GetData();
 		if (usingThreads) {
 			// We are in master enumerator
 			while (pRowSolution) {
@@ -880,7 +883,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		beforeEnumInfoOutput();
 		compareResults(pEnumInfo, lenName, buff);
 		if (pParam->outType & t_Summary)
-			pEnumInfo->outEnumInformation(this->outFilePntr());
+			pEnumInfo->outEnumInformation(this->outFilePntr(), enumFlags());
 
 		this->setEnumInfo(NULL);
 #endif

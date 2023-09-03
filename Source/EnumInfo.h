@@ -118,7 +118,7 @@ public:
 	CK inline void setResType(t_resType resType)			{ m_nResType = resType; }
 	CC inline void resetEnumInfo()							{ init(); resetGroupsInfo(); }
 	static bool compareTime(char *time1, char *time2);
-	void outEnumInformation(FILE** pOutFile, bool printMTlevel = true, const char* pComment = NULL) const;
+	void outEnumInformation(FILE** pOutFile, const uint enumInfo, bool printMTlevel = true, const char* pComment = NULL) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 	void updateCounters(CEnumInfo* p);
 protected:

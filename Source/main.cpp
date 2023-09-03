@@ -232,9 +232,10 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 			}
 		}
 		else {
-			pInSys = new Class2(C_BIBD)(pParam->v, k, 2, lambda[0]);
+			const auto λ = lambda[0];
+			pInSys = new Class2(C_BIBD)(pParam->v, k, 2, λ);
 			const auto r = pInSys->GetNumSet(t_rSet)->GetAt(0);
-			const int maxNumbCommonElement = (2 * k * lambda[0] / r) + (r - k - lambda[0]);
+			const int maxNumbCommonElement = (2 * k * λ / r) + (r - k - λ);
 			if (maxNumbCommonElement < k) {
 				// According the theorem by Connor, maxNumbCommenElement is
 				// the maximal number of common elements for two blocks
@@ -242,8 +243,12 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 				pInSys->setMaxBlockIntrsection(static_cast<T>(maxNumbCommonElement));
 			}
 
-			if (k == r) {
-				enumFlags |= t_symmetrical_t_cond;
+			if (λ > 1) {
+				if (pParam->enumFlags & t_use_3_condition)
+					enumFlags |= t_use_3_condition;
+
+				if ((pParam->enumFlags & t_symmetrical_t_cond) && k == r)
+					enumFlags |= t_symmetrical_t_cond;
 			}
 
 			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
@@ -266,7 +271,7 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	pEnumInfo->setDesignInfo(pParam);
 	if (FirstPath) {
 		FOPEN(outFile, pSummFile, "w");
-		pEnumInfo->outEnumInformation(&outFile, false);
+		pEnumInfo->outEnumInformation(&outFile, pInSysEnum->enumFlags(), false);
 		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
 	}
 
@@ -366,15 +371,41 @@ static int getIntegerParam(const string& str, const char* pKeyWord, T *pValue, s
 	if (pos == string::npos)
 		return 0;		// keyWord was not found
 
-	const bool flag = str[pos] != '=';
-	if (flag) {
-		*pValue = 1;	// the value is determined by the presence of the keyword
+	if (str[pos] != '=') {
+		// the value is determined by the presence of the keyword
+		*pValue = 1;	
 		string tmp = str.substr(pos);
 		ltrim(tmp);
 		if (!tmp.length())
 			return -1;	// there is nothing after keyWords
 	} else
 		*pValue = static_cast<T>(getInteger(str, &pos));
+
+	if (pPos)
+		*pPos = pos;
+
+	return 1;
+}
+
+static int getBooleanParam(const string& str, const char* pKeyWord, uint flag, uint *pEnumFlags, size_t* pPos = nullptr) {
+	size_t pos = find(str, pKeyWord);
+	if (pos == string::npos)
+		return 0;		// keyWord was not found
+
+	if (str[pos] != '=') {
+		// the value is determined by the presence of the keyword
+		*pEnumFlags |= flag;	
+		string tmp = str.substr(pos);
+		ltrim(tmp);
+		if (!tmp.length())
+			return -1;	// there is nothing after keyWords
+	}
+	else {
+		if (getInteger(str, &pos))
+			*pEnumFlags |= flag;
+		else
+			*pEnumFlags &= (-1) ^ flag;
+	}
 
 	if (pPos)
 		*pPos = pos;
@@ -452,6 +483,7 @@ int main(int argc, char * argv[])
 	int use_master_sol = 0;
 	int find_master_design = 0;
 	int find_all_2_decomp = 0;
+	int use_3_element_condition = 0;
 	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
 		size_t pos = line.find("//");
@@ -575,6 +607,8 @@ int main(int argc, char * argv[])
 		getIntegerParam(line, "COMPRESS_MATRICES", &param->m_compress_matrices);
 		getIntegerParam(line, "NO_REPLICATED_BLOCKS", &param->noReplicatedBlocks);
 		getIntegerParam(line, "USE_THREAD_POOL", &param->m_bUseThreadPool);
+		getBooleanParam(line, "USE_SYMMETRICAL_T-CONDITION", t_symmetrical_t_cond, &param->enumFlags);
+		getBooleanParam(line, "USE_3-ELEMENT_CONDITION", t_use_3_condition, &param->enumFlags);
 
 		// Define a job type
 		if (line.find("ENUMERATION") != string::npos)
