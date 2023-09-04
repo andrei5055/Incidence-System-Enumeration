@@ -12,11 +12,18 @@ FClass2(CBIBD_Enumerator)::CBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlag
 	C_InSysEnumerator::setFirstUnforcedRow(pBIBD->rowNumb() - k);
 	setUseLambdaCond(k);
 
+	const auto λ = lambda();
 	if (enumFlags & (t_use_3_condition | t_symmetrical_t_cond)) {
-		const auto t = (enumFlags & t_symmetrical_t_cond) ? lambda() + 1 : 3;
+		const auto t = (enumFlags & t_symmetrical_t_cond) ? λ + 1 : 3;
 		const auto lambdaSet = matrix()->GetNumSet(t_lSet);
 		m_pRowIntersection = new CIntersection<T, S>(t, this->rowNumb(), lambdaSet);
+		// Let's define some numbers which will only be used for x0_3 = 1
+		// number of triplets of elements belonging to 1 or 0 common blocks
+		m_Num_3[1] = λ * (k - 2);
+		m_Num_3[0] = pBIBD->rowNumb() - m_Num_3[1] - 2;
 	}
+	
+	m_bUseFilterFor_3d_RowSolutions = pBIBD->colNumb() == 3 * getR() - 2 * λ;
 }
 
 FClass2(CBIBD_Enumerator, int)::unforcedElement(const CColOrbit<S> *pOrb, int nRow) const
@@ -46,16 +53,30 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		return true;
 
 	auto currRowNumb = this->currentRowNumb();
-	if (currRowNumb <= firtstNonfixedRowNumber())
+	if (currRowNumb < firtstNonfixedRowNumber())
 		return true;
+
+	const auto λ = lambda();
+	if (currRowNumb == firtstNonfixedRowNumber()) {
+		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r - 2*λ + x).
+		if (*pSol == λ && useFilterFor_3d_RowSolutions()) {
+			// If b = 3 * r - 2 * λ, and the solution with first element equal to λ is used 
+			// for row #3, then the element #3 will have (r - 2*λ + 2*x) common blocks with 
+			// any elements constructed in accordance with solution (x, λ-x, λ-x, r - 2*λ + x)
+			// Therefore such solution is only could be combined with the solution with x defined 
+			// by equation: r - 2*λ + 2*x = λ, which has no integer solutions, when r - λ is odd:
+			return (getR() - λ) % 2 == 0;
+			// Note: works for (17, 34, 16, 8, 7)
+		}
+		return true;
+	}
 
 	// For canonical BIBD the number of blocks containing any three elements cannot be
 	// bigger than the number of blocks containing first, second and third elements.
 	// Let's check it
-	const auto lambda = getLambda(paramSet(t_lSet));
 	const auto x0_3 = this->getX0_3();
-	if (lambda == x0_3)     // Intersection of first three rows is maximal
-		return true;		// Nothing to test
+	if (λ == x0_3)     // Intersection of first three rows is maximal
+		return true;   // Nothing to test
 
 	const auto k = this->getInSys()->GetK();
 	auto rowNumb = this->rowNumb();
@@ -85,6 +106,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 
 	const auto lastRow = currRowNumb;
 	CMatrixCanonChecker::MakeRow(lastRow, pSol, false);
+	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
 
 	// Define intersection of current row with previous one:
 	auto lastRowToCheck = lenStabilizer();
@@ -97,10 +119,10 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	const auto r = partsInfo ? colNumb * k / rowNumb : this->getR();
 
 	T columns[256], *pColumnIdx = columns;
-	if (lambda > countof(columns))
-		pColumnIdx = new T[lambda];
+	if (λ > countof(columns))
+		pColumnIdx = new T[λ];
 
-	// Define "lambda" blocks, which contain both current and previous elements.
+	// Define λ blocks, which contain both current and previous elements.
 	// When doing that, check the necessary and sufficient conditions
 	// for the intersection of the first (second), previous and current elements
 	bool check_remaining_element = false;
@@ -109,16 +131,16 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	T j = 0;
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
-			if (idx == x0_3) {					// (x0_3+1)-th common block found
-				if (j < r) {  					//      among the first r blocks of design
-					retVal = false;				// The tested solution can not be used in the canonical matrix
+			if (idx == x0_3) {			// (x0_3+1)-th common block found
+				if (j < r) {  			//      among the first r blocks of design
+					retVal = false;		// The tested solution can not be used in the canonical matrix
 					break;
 				}
 
-				if (j < 2 * r - lambda) {	//      among the blocks, which contain second, but not first element
-					S i = -1;				// Check necessary and sufficient conditions for the
-					while (++i < idx) {     // intersection of second, previous and current elements
-						if (pColumnIdx[i] >= lambda)
+				if (j < 2 * r - λ) {	//      among the blocks, which contain second, but not first element
+					S i = -1;			// Check necessary and sufficient conditions for the
+					while (++i < idx) { // intersection of second, previous and current elements
+						if (pColumnIdx[i] >= λ)
 							break;
 					}
 
@@ -135,7 +157,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 			}
 
 			pColumnIdx[idx++] = j;
-			if (idx == lambda) {
+			if (idx == λ) {
 				check_remaining_element = true;
 				break;
 			}
@@ -149,7 +171,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		do {
 			pCurrRow = pMatrix->GetRow(currRowNumb);
 			auto j = x0_3;
-			for (auto i = lambda; i--;) {
+			for (auto i = λ; i--;) {
 				if (pCurrRow[pColumnIdx[i]]) {
 					if (!j--) {
 						retVal = false;
@@ -175,12 +197,13 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		const T* pNumb;
 		auto* pIntersection = rowIntersection()->intersectionParam(&pNumb, lastRow);
 		
-		const T t = 3;// lambda + 1;
+		T num3[2] = { 0, 0 };
+		const T t = 3;// λ + 1;
 		for (T i = 2; i < t; i++) {
-			const auto lambdaPrev = lambda;
-			for (auto k = pNumb[i - 2]; k--; pIntersection += lambdaPrev) {
+			const auto λ_prev = λ;
+			for (auto k = pNumb[i - 2]; k--; pIntersection += λ_prev) {
 				T val = 0;
-				for (auto j = lambdaPrev; j--;) {
+				for (auto j = λ_prev; j--;) {
 					if (*(pCurrRow + *(pIntersection + j)))
 						val++;
 				}
@@ -193,6 +216,9 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 					FCLOSE(f);
 					return false;
 				}
+
+				if (x0_3 == 1 && ++num3[val] > m_Num_3[val])
+					return false; // It really works: see (17, 68, 16, 4, 3)
 			}
 		}
 	}
