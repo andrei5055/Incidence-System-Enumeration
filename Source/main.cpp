@@ -16,8 +16,9 @@
 using namespace std;
 
 const char *obj_name[] = {
-	"BIBD",					// t_BIBD,			// default
+	"BIBD",					// t_BIBD,			- default
 	"COMBINED_BIBD",		// t_CombinedBIBD,
+	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triples
 	"T-DESIGN",				// t_tDesign,
 	"PBIBD",				// t_PBIBD,
 	"INCIDENCE",            // t_IncidenceSystem,
@@ -31,7 +32,8 @@ t_objectType idx_obj_type[] = {
 	t_objectType::t_BIBD,
 	t_objectType::t_tDesign,
 	t_objectType::t_IncidenceSystem,
-	t_objectType::t_SemiSymmetricGraph
+	t_objectType::t_SemiSymmetricGraph,
+	t_objectType::t_Kirkman_Triples
 };
 
 int find_T_designParam(int v, int k, int lambda)
@@ -421,6 +423,82 @@ void getMasterBIBD_param(const string& line, const size_t lineLength, designPara
 	}
 }
 
+const char* pSummaryFile = "EnumSummary.txt";
+
+bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun)
+{
+	uint iMax = 0;
+	uint lambda = 1;
+	const auto baseLambda = this->lambda()[0];
+	if (objType == t_objectType::t_CombinedBIBD) {
+		find_master_design = find_master;
+		this->use_master_sol = 0;
+	}
+	else {
+		find_master_design = 0;   // This option for CombBIBDs only
+		if (objType == t_objectType::t_BIBD) {
+			const auto vMinus1 = this->v - 1;
+			const auto kMinus1 = this->k - 1;
+			const auto r = vMinus1 * baseLambda / kMinus1;
+			if (r * kMinus1 != vMinus1 * baseLambda) {
+				printf("\nParameters (v, k, lambda) = (%d, %d, %d) cannot be parameters of BIBD.", this->v, this->k, baseLambda);
+				return false;
+			}
+			this->find_all_2_decomp = find_all_2_decomp ? 2 : 0;
+			if (find_all_2_decomp) {
+				while (lambda <= (baseLambda >> 1) && (vMinus1 * lambda / kMinus1) * kMinus1 != vMinus1 * lambda)
+					lambda++;
+
+				if (lambda > (baseLambda >> 1)) {
+					printf("\n BIBD is not a Combined BIBD.");
+					return false;
+				}
+
+				setLambdaStep(lambda);
+				iMax = baseLambda / (2 * lambda);
+			}
+		}
+	}
+
+	const string summaryFile = this->workingDir + pSummaryFile;
+	const char* pSummFile = summaryFile.c_str();
+	std::string outInfo;
+	for (uint i = 0; i <= iMax; i++) {
+		if (i) {
+			// For all 2-part decomposition search only
+			this->objType = t_objectType::t_CombinedBIBD;
+			find_all_2_decomp = this->find_master_design = 1;
+			this->use_master_sol = 0;
+			auto lambdaSet = InterStruct()->lambdaPtr();
+			lambdaSet->resize(0);
+			lambdaSet->push_back(i * lambda);
+			lambdaSet->push_back(baseLambda - i * lambda);
+		}
+		if (!RunOperation<TDATA_TYPES>(this, pSummFile, firstRun, &outInfo))
+			break;
+
+		firstRun = false;
+	}
+
+	if (this->find_all_2_decomp) {
+		output_2_decompInfo<TDATA_TYPES>(this, designDB(1), outInfo, false, pSummFile);
+		delete enumInfo();
+		setEnumInfo(NULL);
+	}
+
+	this->use_master_sol = use_master_sol;
+	for (int i = 0; i < 2; i++) {
+		delete designDB(i);
+		setDesignDB(NULL, i);
+	}
+
+	find_master_design = find_master;
+	logFile = "";
+	setLambdaStep(0);
+	setEmptyLines();
+	return true;
+}
+
 int main(int argc, char * argv[])
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -432,7 +510,6 @@ int main(int argc, char * argv[])
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
 //	_CrtSetBreakAlloc(194);  // Put here the memory allocation number you want to stop at.
 
-	const char *pSummaryFile = "EnumSummary.txt";
 	cudaDeviceReset();
 	/*
 	int nDevices;
@@ -717,6 +794,7 @@ int main(int argc, char * argv[])
 		case t_objectType::t_CombinedBIBD:
 		case t_objectType::t_SemiSymmetricGraph:
 		case t_objectType::t_PBIBD:
+		case t_objectType::t_Kirkman_Triples:
 						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
@@ -735,88 +813,16 @@ int main(int argc, char * argv[])
 		if (param->workingDir != newWorkDir || firstRun)
 			param->workingDir = newWorkDir;
 
-//		if (param->save_restart_info) {
-//		}
+		//		if (param->save_restart_info) {
+		//		}
 
 		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
-			int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath);
+			int InconsistentGraphs(designParam * pParam, const char* pSummaryFileName, bool firstPath);
 			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
 		else {
-			if (objType == t_objectType::t_CombinedBIBD && param->lambda().size() < 2) {
-				printf("\nFor a Combined BIBD, at least 2 lambdas must be defined.");
+			if (!param->LaunchEnumeration(objType, find_master_design, find_all_2_decomp, use_master_sol, firstRun))
 				continue;
-			}
-
-			uint iMax = 0;
-			uint lambda = 1;
-			const auto baseLambda = param->lambda()[0];
-			if (objType == t_objectType::t_CombinedBIBD) {
-				param->find_master_design = find_master_design;
-				param->use_master_sol = 0;
-			}
-			else {
-				param->find_master_design = 0;   // This option for CombBIBDs only
-				if (objType == t_objectType::t_BIBD) {
-					const auto vMinus1 = param->v - 1;
-					const auto kMinus1 = param->k - 1;
-					const auto r = vMinus1 * baseLambda / kMinus1;
-					if (r * kMinus1 != vMinus1 * baseLambda) {
-						printf("\nParameters (v, k, lambda) = (%d, %d, %d) cannot be parameters of BIBD.", param->v, param->k, baseLambda);
-						continue;
-					}
-					param->find_all_2_decomp = find_all_2_decomp ? 2 : 0;
-					if (find_all_2_decomp) {
-						while (lambda <= (baseLambda >> 1) && (vMinus1 * lambda / kMinus1) * kMinus1 != vMinus1 * lambda)
-							lambda++;
-
-						if (lambda > (baseLambda >> 1)) {
-							printf("\n BIBD is not a Combined BIBD.");
-							continue;
-						}
-
-						param->setLambdaStep(lambda);
-						iMax = baseLambda / (2 * lambda);
-					}
-				}
-			}
-
-
-			const string workingDir = param->workingDir + pSummaryFile;
-			const char* pSummFile = workingDir.c_str();
-			std::string outInfo;
-			for (uint i = 0; i <= iMax; i++) {
-				if (i) {
-					// For all 2-part decomposition search only
-					param->objType = t_objectType::t_CombinedBIBD;
-					param->find_all_2_decomp = param->find_master_design = 1;
-					param->use_master_sol = 0;
-					lambdaSet->resize(0);
-					lambdaSet->push_back(i * lambda);
-					lambdaSet->push_back(baseLambda - i * lambda);
-				}
-				if (!RunOperation<TDATA_TYPES>(param, pSummFile, firstRun, &outInfo))
-					break;
-
-				firstRun = false;
-			}
-
-			if (param->find_all_2_decomp) {
-				output_2_decompInfo<TDATA_TYPES>(param, param->designDB(1), outInfo, false, pSummFile);
-				delete param->enumInfo();
-				param->setEnumInfo(NULL);
-			}
-
-			param->use_master_sol = use_master_sol;
-			for (int i = 0; i < 2; i++) {
-				delete param->designDB(i);
-				param->setDesignDB(NULL, i);
-			}
-
-			param->find_master_design = find_master_design;
-			param->logFile = "";
-			param->setLambdaStep(0);
-			param->setEmptyLines();
 		}
 
 		firstRun = false;
@@ -830,6 +836,7 @@ int main(int argc, char * argv[])
 	_CrtDumpMemoryLeaks();
 	return 0;
 }
+
 // To 
 // cuda - memcheck --leak - check full . / CDTools_GPU.exe
 // nvprof CDTools_GPU.exe
