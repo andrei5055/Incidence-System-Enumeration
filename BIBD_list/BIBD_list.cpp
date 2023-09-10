@@ -73,6 +73,7 @@ class opt_descr {
 public:
     const string name;
     check_fn check_func;
+    int stop_check;     // check_func can stop checking remaining options
     report_fn report_func;
     int limits[2];
     int intValue;
@@ -267,7 +268,7 @@ output check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ
 
     auto* pntr = static_cast<int*>(opt.extra_param);
     ++*(pntr + idx);
-    comment += pComment[idx];
+    comment = pComment[idx];
     return output::with_comment;
 }
 
@@ -295,9 +296,16 @@ bool is_simple(const string& comment, bool& flag, int* pVal = nullptr) {
         return false;
     }
 
-    pos = comment.find('S');
-    if (pos != string::npos) {
-        if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!'))) {
+    pos = 0;
+    while (pos = comment.find('S', pos) != string::npos) {
+        const auto flag = comStr[pos + 1] == '-';
+        if (flag) {
+            const auto pos1 = comment.find("ELS-");
+            if (pos1 != string::npos && pos1 + 2 == pos)
+                continue;
+        }
+
+        if (!(flag || (pos > 0 && comStr[pos - 1] == '!'))) {
             if (pVal)
                 *pVal = 1;
 
@@ -376,7 +384,7 @@ output check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int
 
                     int yOut = y;
                     if (λ > m) {
-                        //    In that case there are some nonnegative integer solutions for
+                        //    In that case there are some non-negative integer solutions for
                         // x{0} +         x{y} +         x{y+1} = b - m
                         //              y*x{y} +   (y+1)*x{y+1} = k(r - m)
                         //        y*(y-1)*x{y} * (y+1)*y*x{y+1} = k(k − 1)(λ − m)
@@ -1041,7 +1049,7 @@ output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, strin
     }
 
     auto* pntr = static_cast<int*>(opt.extra_param);
-    ++* (pntr + (num ? 1 : 0));
+    ++*(pntr + (num ? 1 : 0));
     if ((brc_condition == 2 && num) || (brc_condition == 3 && !num))
         return output::nothing;
 
@@ -1050,7 +1058,7 @@ output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, strin
 }
 
 output check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
-    static opt_descr opt_BRC = { "BRC", check_BRC, nullptr, { 1, 1 }, 1, "" };
+    static opt_descr opt_BRC = { "BRC", check_BRC, 0, nullptr, { 1, 1 }, 1, "" };
     if (!opt_BRC.extra_param)
         opt_BRC.extra_param = opt.extra_param;
 
@@ -1069,10 +1077,35 @@ output check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, 
 
 output check_lambda_filter(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
     // Filter for BIBD with b = 3 * r - 2 * λ
-    if (b != 3 * r - 2 * λ)
-        return output::nothing;
+    if (b != 3 * r - 2 * λ || v == b && λ < 3)
+        return opt.intValue? output::nothing : output::no_comment;
 
-    return output::no_comment;
+    auto flag = (r - λ) % 2 != 0;
+    // When flag is true, we can not use λ solution
+//      v = 2*m + 7                 = 2 * k + 1
+//      b = 4 * λ + 6 * λ / (m + 2) = 2 * λ * (2 * k + 1) / (k - 1)
+//      r = 2 * λ + 2 * λ / (m + 2) = 2 * λ * k / (k - 1)
+//      k = m + 3,
+//      λ
+    if (!flag && ((v != 2 * k + 1) || (r != 2 * λ * k / (k - 1)))) {
+        // || b != 2*λ*(2*k+1)/(k-1) we don't need this one, it's thue, because b*k = v*r
+        flag = true;
+    }
+
+    //flag = !((v == 2 * k + 1) && (r == 2 * λ * k / (k - 1)));
+    // && b == 2*λ*(2*k+1)/(k-1) we don't need this one, it's thue, because b*k = v*r   
+
+    if (flag) {
+        if (opt.intValue == 2)
+            return output::nothing;
+    } else 
+        if (opt.intValue == 3)
+            return output::nothing;
+
+    comment = opt.name + (flag? "+" : "-");
+    auto* pntr = static_cast<int*>(opt.extra_param);
+    ++*(pntr + (flag ? 0 : 1));
+    return output::with_comment;
 }
 
 void summary_title(opt_descr& opt, const out_struct& out, int total) {
@@ -1094,19 +1127,24 @@ void report_DPS(opt_descr& opt, const out_struct& out, int total) {
     delete[](int*)opt.extra_param;
 }
 
-void report_results(const char* pComment, const out_struct& out, const int *pntr) {
-    output_func(out, pComment, " were tested on ", *pntr + *(pntr + 1), " sets of parameters: ",
-        *pntr, " positive and ", *(pntr + 1), " negative.");
+void report_results(const char *pComment, const out_struct& out, const opt_descr& opt) {
+    const auto* pntr = static_cast<int*>(opt.extra_param);
+    output_func(out, pComment, " conditions were tested on ", *pntr + *(pntr + 1), 
+        " sets of parameters: ", *pntr, " positive and ", *(pntr + 1), " negative.");
 
     delete[] pntr;
 }
 
 void report_BRC(opt_descr& opt, const out_struct& out, int total) {
-    report_results("Bruck-Ryser-Chowla conditions", out, static_cast<int*>(opt.extra_param));
+    report_results("Bruck-Ryser-Chowla", out, opt);
 }
 
 void report_Residual(opt_descr& opt, const out_struct& out, int total) {
-    report_results("Residual conditions", out, static_cast<int*>(opt.extra_param));
+    report_results("Residual", out, opt);
+}
+
+void report_LambdaFilter(opt_descr& opt, const out_struct& out, int total) {
+    report_results("Lambda-solution", out, opt);
 }
 
 int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,  
@@ -1155,12 +1193,18 @@ int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,
             cout << "\n                     the output will also (respectively, will not) be displayed on the screen.";
             cout << "\n                     By default, the program prints results to the screen, unless -f=\"fileName\" is used";
             cout << "\n";
-            cout << "\n   -brc[=N]        : Bruck-Ryser-Chowla conditions, 0<=N<=3";
+            cout << "\n   -brc[=N]        : Bruck-Ryser-Chowla conditions, tested only on BIBD paramenetrs v = b , -1<=N<=3";
+            cout << "\n                    -1 - do not check"; 
             cout << "\n                     0 - report all, do not suppress non-symmetric BIBD (default)";
             cout << "\n                     1 - report all, suppress non-symmetric BIBD";
-            cout << "\n                     2 - report only existing, suppress non-symmetric BIBD";
-            cout << "\n                     3 - report only nonexisting, suppress non-symmetric BIBD";
-            cout << "\n   -"; 
+            cout << "\n                     2 - report only existing";
+            cout << "\n                     3 - report only nonexisting";
+            cout << "\n   -els[=N]         : Elimination of Lambda-Solution (ELS-) conditions, tested on BIBDs with b=3*r-2*l, -1<=N<=3";
+            cout << "\n                    -1 - do not check (default)";
+            cout << "\n                     0 - report all, do not suppress any parameters";
+            cout << "\n                     1 - report all, but suppress parameters that could not satisfy ELS-condition";
+            cout << "\n                     2 - report only parameters that satisfy the ELS-condition";
+            cout << "\n                     3 - report only parameters that could satisfy but do not satisfy the ELS-condition";
             return -1;
         }
 
@@ -1277,13 +1321,13 @@ int main(int argc, char* argv[])
     const char delimiter[] = { '[', '(', ',', ':', ']', ')' };
     int minVal[5] = { 0, 0, 3, 3, 1 };
     int maxVal[5] = { INT_MAX, INT_MAX, 41, INT_MAX, INT_MAX };
-    opt_descr opts[] = { {"F", nullptr, summary_title, {}, -1, ""},
-                         {"LF", check_lambda_filter, report_Residual, {-1,1}, -1, "", init_Cntr},
-                         {"S", check_Simplicity, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
-                         {"DPS", check_DPS_condition, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
-                         {"SYS", solve_DPS_system, nullptr, {0, 2}, -1, "", init_DPS},
-                         {"BRC", check_BRC, report_BRC, {-1, 3}, 0, "", init_Cntr},
-                         {"O", check_Residual, report_Residual, {-1,1}, 1, "", init_Cntr},
+    opt_descr opts[] = { {"F", nullptr, 0, summary_title, {}, -1, ""},
+                         {"ELS", check_lambda_filter, 1, report_LambdaFilter, {-1,3}, -1, "", init_Cntr},
+                         {"S", check_Simplicity, 0, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
+                         {"DPS", check_DPS_condition, 0, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
+                         {"SYS", solve_DPS_system, 0, nullptr, {0, 2}, -1, "", init_DPS},
+                         {"BRC", check_BRC, 1, report_BRC, {-1, 3}, 0, "", init_Cntr},
+                         {"O", check_Residual, 0, report_Residual, {-1,1}, 1, "", init_Cntr},
                        };
 
     const auto num_opts = sizeof(opts) / sizeof(opts[0]);
@@ -1303,7 +1347,10 @@ int main(int argc, char* argv[])
             continue;
 
         auto *pOpt = used_opt[opt_numb++] = opts + j;
-        const constr_fn constr_func = pOpt->constr_func[0];
+        if (pOpt->stop_check && pOpt->intValue)
+            cntr = 0;  // we will use additional numbering
+
+        const auto constr_func = pOpt->constr_func[0];
         if (constr_func)
             (*constr_func)(*pOpt);
     }
@@ -1357,7 +1404,7 @@ int main(int argc, char* argv[])
 
                 pBuff = buff;
                 if (cntr >= 0)
-                    pBuff += sprintf_s(pBuff, sizeof(buff), "%4d ", ++cntr);
+                    pBuff += sprintf_s(pBuff, sizeof(buff), "%4d:  ", ++cntr);
 
                 sprintf_s(pBuff, sizeof(buff) - (pBuff - buff), "#%4d: %4d %4d %2d %2d %2d  ", total, v, b, r, k, λ);
                 output_func(out, buff, comment);

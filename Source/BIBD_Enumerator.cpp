@@ -58,19 +58,52 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 
 	const auto λ = lambda();
 	if (currRowNumb == firtstNonfixedRowNumber()) {
-		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r - 2*λ + x).
+		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r-2*λ + x).
 		if (*pSol == λ && useFilterFor_3d_RowSolutions()) {
 			// If b = 3 * r - 2 * λ, and the solution with first element equal to λ is used 
 			// for row #3, then the element #3 will have (r - 2*λ + 2*x) common blocks with 
-			// any elements constructed in accordance with solution (x, λ-x, λ-x, r - 2*λ + x)
+			// any elements constructed in accordance with the solution (x, λ-x, λ-x, r - 2*λ + x)
 			// Therefore such solution is only could be combined with the solution with x defined 
 			// by equation: r - 2*λ + 2*x = λ, which has no integer solutions, when r - λ is odd:
 			return (getR() - λ) % 2 == 0;
-			// Note: works for (17, 34, 16, 8, 7)
+			// Notes: works for (17, 34, 16, 8, 7)
+			// 
+			// The only 3rd row solution that can be used with solutions  (λ, 0, 0, r-λ) 
+			// is the solution (x=λ-(r-λ)/2, (r-λ)/2, (r-λ)/2, (r-λ)/2) or (x, λ-x, λ-x, λ-x).
+			// 
+			// It is quite obvious that for the construction of (v-2) remaining rows, we can use only 
+			// one "descendant" of the solution (λ, 0, 0, r-λ). Denote by n the number of "descendants"
+			// of the solutions (x, λ-x, λ-x, λ-x).
+			// 
+			// Using obvious equations to construct the completion of all blocks that are equivalent 
+			// with respect to the first two elements:
+			//    [λ-(r-λ)/2] * n + λ = (k-2)*λ
+			//     [(r-λ)/2] * n = (k - 1)*(r - λ)
+			//     [(r-λ)/2] * n + (r - λ) = k * (r - λ)
+			// 
+			// and standard equations for BIBD parameters:
+			//   v * r = b * k
+			//   r * (k - 1) = λ * (v - 1)
+			//
+			// We see that the parameters of such a BIBD should only be
+			//      v = n + 3
+			//      b = 4 * λ + 12 * λ / n
+			//      r = 2 * λ + 4 * λ / n
+			//      k = 1 + n / 2
+			//      λ
+			//
+			// Since for BIBD k>=3, n>=4 and it should be even. Let's represent n as 
+			// n = 2*m + 4, m>=0. Now we have:
+			//      v = 2*m + 7                 = 2 * k + 1
+			//      b = 4 * λ + 6 * λ / (m + 2) = 2 * λ * (2 * k + 1) / (k - 1)
+			//      r = 2 * λ + 2 * λ / (m + 2) = 2 * λ * k / (k - 1)
+			//      k = m + 3,
+			//      λ
+			// 
 		}
 		return true;
 	}
-
+	
 	// For canonical BIBD the number of blocks containing any three elements cannot be
 	// bigger than the number of blocks containing first, second and third elements.
 	// Let's check it
