@@ -1081,7 +1081,11 @@ output check_lambda_filter(const opt_descr& opt, int v, int b, int r, int k, int
         return opt.intValue? output::nothing : output::no_comment;
 
     auto flag = (r - λ) % 2 != 0;
-    // When flag is true, we can not use λ solution
+#define USE_ADDITIONAL_CONDITIONS  0
+#if USE_ADDITIONAL_CONDITIONS 
+// NOTE: These conditions do not work for BIBDs r <= 41
+// 
+// When flag is true, we can not use λ solution
 //      v = 2*m + 7                 = 2 * k + 1
 //      b = 4 * λ + 6 * λ / (m + 2) = 2 * λ * (2 * k + 1) / (k - 1)
 //      r = 2 * λ + 2 * λ / (m + 2) = 2 * λ * k / (k - 1)
@@ -1092,9 +1096,11 @@ output check_lambda_filter(const opt_descr& opt, int v, int b, int r, int k, int
         flag = true;
     }
 
-    //flag = !((v == 2 * k + 1) && (r == 2 * λ * k / (k - 1)));
-    // && b == 2*λ*(2*k+1)/(k-1) we don't need this one, it's thue, because b*k = v*r   
-
+    if (!flag && k <= 4) {
+        const auto x = 3 * λ - r;
+        flag = (k < 4 ? x : (λ % x)) != 0;
+    }
+#endif
     if (flag) {
         if (opt.intValue == 2)
             return output::nothing;
@@ -1420,6 +1426,13 @@ int main(int argc, char* argv[])
             (*report_func)(opt, out, cntr < 0? total : cntr);
     }
 
+    output_func(out, 
+        "\nDPS: m = M, d = D (y), where\n"
+        "    M is a multiplicity of block;\n"
+        "    D is a difference of the right and left parts of\n"
+        "       P.Dobcsanyi, D.A.Preece, L.H.Soicher inequality:\n"
+        "       m*(k-y)*(k-y-1) <= (y+1)*y*b - 2*y*k*r + k*(k-1)*lambda\n");
+    
     auto runTime = (unsigned long)(clock() - start) / CLOCKS_PER_SEC;
     const auto sec = runTime % 60;
     auto min = (runTime -= sec) / 60;

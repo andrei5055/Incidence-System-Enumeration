@@ -1,0 +1,12 @@
+*.tlog
+*.exe*
+*.obj
+*.iobj
+*.pdb
+*.ipdb
+*.ipch
+*.log
+*.db*
+*.vcxproj.*
+*.json
+.suo
