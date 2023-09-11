@@ -281,7 +281,7 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb() - rowAdj;
 	bool flag = designParams()->thread_master_DB;
-	flag = pMaster ? flag : !flag || !designParams()->threadNumb;
+	flag = pMaster ? flag : !flag || !designParams()->create_commonData();
 	const auto recordLength = (v - 2) * (designParams()->compressMatrices() ? (b + 7) >> 3 : b);
 	setRecordLen(recordLength);
 	setDesignDB(flag ? new CDesignDB(recordLength + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);

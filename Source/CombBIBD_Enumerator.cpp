@@ -169,7 +169,7 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pMaster) {
 	if (m_pCanonChecker ||							// canonicity checker was already constructed
 		!designParams()->find_master_design ||      // no need to find master design OR
-		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
+		!pMaster && designParams()->create_commonData()) // using threads, but now we are in master   
 		return;
 
 	const auto b = matrix()->colNumb();

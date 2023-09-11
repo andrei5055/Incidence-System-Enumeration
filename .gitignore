@@ -10,3 +10,7 @@
 *.vcxproj.*
 *.json
 .suo
+*.idb
+*.ilk
+*.opendb
+slnx.*
