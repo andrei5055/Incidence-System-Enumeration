@@ -351,9 +351,11 @@ FClass2(CBIBD_Enumerator, void)::makeJobTitle(const designParam *pParam, char *b
 {
 	size_t lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
-	len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
+	const auto flag = getInSys()->objectType() != t_objectType::t_Kirkman_Triple;
+	if (flag)
+		len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
 
-	if (pParam->lambdaSizeMax() > lambdaSetSize) {
+	if (flag && pParam->lambdaSizeMax() > lambdaSetSize) {
 		auto maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
 		auto pBuf = buffer + len;
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buffer), ")");

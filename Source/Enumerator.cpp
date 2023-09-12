@@ -88,7 +88,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 		i++;
 	}
 
-	S nVar = ELEMENT_MAX;
+	T nVar = ELEMENT_MAX;
 	const auto firstPart = i;
 	if (prepareToFindRowSolution()) {
 		// Find row solution for all parts of the design
@@ -321,12 +321,108 @@ FClass2(CEnumerator, void)::outputJobTitle() const {
 	outString(jobTitle, this->outFile());
 }
 
+FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
+	const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution, EnumInfoPntr pEnumInfo,
+	uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T* firstPartIdx)
+{
+	const bool multiPartDesign = pCanonParam->numParts > 1;
+	if (multiPartDesign)
+		(*ppRowSolution)->restoreSolutionIndex();  // Andrei: Perhaps for CombBIBD with nPart > 2 we need to do it a more sophisticated way
+
+	pEnumInfo->incrConstrTotal();
+	bool flag = true;
+
+	bool canonMatrix = false;
+	if (!TestCanonicityOnGPU()) {
+		EXIT(-1);
+		canonMatrix = this->TestCanonicity(nRow, pCanonParam, outInfo);
+		if (canonMatrix) {
+			if (procFlag)
+				ConstructedDesignProcessing();
+
+			//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
+			int matrFlags = 0;
+			const auto* pMatrix = matrix();
+			if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, pMaster)) {
+				if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
+					pEnumInfo->setNoReplBlockFlag(false);
+					*pCanonParam->pRowOut = getInSys()->GetK();
+					flag = false;
+				}
+				else {
+					pEnumInfo->updateConstrCounters(matrFlags, this);
+#if !CONSTR_ON_GPU
+					if (this->printMatrix(designParams())) {
+						static std::mutex mtx;
+						mtx.lock();
+						outBlockTitle();
+#if USE_THREADS
+						pMatrix->printOut(this->outFile(), nRow, 0, this);
+#else
+						pMatrix->printOut(this->outFile(), nRow, pEnumInfo->numMatrOfType(t_design_type::t_canonical), this);
+#endif
+						mtx.unlock();
+					}
+#endif
+#if PRINT_SOLUTIONS
+					ccc = 0;
+#endif
+					if (!this->rowMaster())  // We are not in the slave thread
+						REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_matrConstructed);
+				}
+			}
+		}
+		else {
+			OUTPUT_MATRIX(matrix(), outFile(), nRow, pEnumInfo, false);
+			if (!multiPartDesign)  // NOTE: as of today (08/27/2021) "level" is set correctly only when when nPart = 0
+				flag = false;
+		}
+	}
+
+	if (!flag) {
+		if (outInfo & t_saveRowToChange) {
+			const auto level = *pCanonParam->pRowOut;
+			while (--nRow > level)
+				this->reset(nRow);
+		}
+		else
+			--nRow;
+
+		*ppRowSolution = rowStuff(nRow);
+		this->setCurrentRowNumb(nRow);
+	}
+	else {
+		nRow--;
+		if (canonMatrix && multiPartDesign) {
+			auto* pRowSolution = *ppRowSolution = rowStuff(nRow - 1);
+			while (--iFirstPartIdx) {
+				auto pPartRowSolution = pRowSolution + iFirstPartIdx;
+				this->resetUnforcedColOrb(iFirstPartIdx);
+				if (pPartRowSolution->allSolutionChecked())
+					pPartRowSolution->setSolutionIndex(0);
+				else
+					break;
+			}
+			if (iFirstPartIdx) {
+				this->setCurrentRowNumb(--nRow);
+				firstPartIdx[nRow] = iFirstPartIdx;
+				return true;
+			}
+			this->resetUnforcedColOrb(0);
+		}
+
+		*ppRowSolution = NULL;
+	}
+
+	return false;
+}
+
+
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	setDesignParams(pParam);
 	const auto* pInpMaster = pMaster;
 #if !CONSTR_ON_GPU
-	static std::mutex mtx;
 	char buff[256];
 	const auto lenBuffer = countof(buff);
 	auto threadNumb = pParam->threadNumb;
@@ -474,7 +570,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
-		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
 #if RESTART_IMPLEMENTED
@@ -561,90 +656,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 			canonMatrix = true;
 			if (++nRow == nRows) {
-				if (multiPartDesign)
-					pRowSolution->restoreSolutionIndex();  // Andrei: Perhaps for CombBIBD with nPart > 2 we need to do it a more sophisticated way
-
-				pEnumInfo->incrConstrTotal();
-				bool flag = true;
-
-				if (!TestCanonicityOnGPU()) {
-					EXIT(-1);
-					canonMatrix = this->TestCanonicity(nRow, &canonParam, outInfo);
-					if (canonMatrix) {
-						if (procFlag)
-							ConstructedDesignProcessing();
-
-						//	DEBUGGING: How Construct Aut(D): int ddd = canonChecker()->constructGroup();
-						int matrFlags = 0;
-						if (TestFeatures(pEnumInfo, pMatrix, &matrFlags, pMaster)) {
-							if (noReplicatedBlocks() && pEnumInfo->constructedAllNoReplBlockMatrix()) {
-								pEnumInfo->setNoReplBlockFlag(false);
-								level = getInSys()->GetK();
-								flag = false;
-							}
-							else {
-								pEnumInfo->updateConstrCounters(matrFlags, this);
-#if !CONSTR_ON_GPU
-								if (this->printMatrix(pParam)) {
-									mtx.lock();
-									outBlockTitle();
-#if USE_THREADS
-									pMatrix->printOut(this->outFile(), nRow, 0, this);
-#else
-									pMatrix->printOut(this->outFile(), nRow, pEnumInfo->numMatrOfType(t_design_type::t_canonical), this);
-#endif
-									mtx.unlock();
-								}
-#endif
-#if PRINT_SOLUTIONS
-								ccc = 0;
-#endif
-								if (!this->rowMaster())  // We are not in the slave thread
-									REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_matrConstructed);
-							}
-						}
-					}
-					else {
-						OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, false);
-						if (!multiPartDesign)  // NOTE: as of today (08/27/2021) "level" is set correctly only when when nPart = 0
-							flag = false;
-					}
-				}
-
-				if (!flag) {
-					if (outInfo & t_saveRowToChange) {
-						while (--nRow > level)
-							this->reset(nRow);
-					}
-					else
-						--nRow;
-
-					pRowSolution = rowStuff(nRow);
-					this->setCurrentRowNumb(nRow);
-				}
-				else {
-					checkNextPart = multiPartDesign;
-					nRow--;
-					if (canonMatrix && multiPartDesign) {
-						pRowSolution = rowStuff(nRow-1);
-						while (--iFirstPartIdx) {
-							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-							this->resetUnforcedColOrb(iFirstPartIdx);
-							if (pPartRowSolution->allSolutionChecked())
-								pPartRowSolution->setSolutionIndex(0);
-							else
-								break;
-						}
-						if (iFirstPartIdx) {
-							this->setCurrentRowNumb(--nRow);
-							firstPartIdx[nRow] = iFirstPartIdx;
-							continue;
-						}
-						this->resetUnforcedColOrb(0);
-					}
-
-					pRowSolution = NULL;
-				}
+				if (ProcessFullyConstructedMatrix(&canonParam, &pRowSolution, pEnumInfo,
+					outInfo, procFlag, pMaster, iFirstPartIdx, firstPartIdx))
+					continue;
 			}
 			else {
 				this->setCurrentRowNumb(nRow);
@@ -716,7 +730,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 						this->resetUnforcedColOrb(0, nRow);   
 					}
 
-					checkNextPart = multiPartDesign;
 					pRowSolution = NULL;
 				}
 			}

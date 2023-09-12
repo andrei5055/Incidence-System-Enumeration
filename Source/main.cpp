@@ -33,7 +33,7 @@ t_objectType idx_obj_type[] = {
 	t_objectType::t_tDesign,
 	t_objectType::t_IncidenceSystem,
 	t_objectType::t_SemiSymmetricGraph,
-	t_objectType::t_Kirkman_Triples
+	t_objectType::t_Kirkman_Triple
 };
 
 int find_T_designParam(int v, int k, int lambda)
@@ -209,6 +209,7 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	const auto& lambda = pParam->InterStruct()->lambda();
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_objectType::t_SemiSymmetricGraph) {
+			bool kirkmanTriples = false;
 			static t_objectType obj_types[] = { t_objectType::t_PBIBD, t_objectType::t_CombinedBIBD, t_objectType::t_SemiSymmetricGraph };
 			switch (objType) {
 			case t_objectType::t_PBIBD:
@@ -220,8 +221,10 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, k, pParam->r, lambda);
 				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
 				break;
+			case t_objectType::t_Kirkman_Triple: 
+				kirkmanTriples = true;
 			case t_objectType::t_CombinedBIBD:
-				pInSys = new Class2(CCombinedBIBD)(pParam->v, k, lambda);
+				pInSys = new Class2(CCombinedBIBD)(pParam->v, k, kirkmanTriples, lambda);
 				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
 				break;
 			default:
@@ -429,14 +432,18 @@ bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int f
 {
 	uint iMax = 0;
 	uint lambda = 1;
-	const auto baseLambda = this->lambda()[0];
-	if (objType == t_objectType::t_CombinedBIBD) {
+	find_master_design = 0;   // This option for CombBIBDs only
+	const auto baseLambda = objType != t_objectType::t_Kirkman_Triple? this->lambda()[0] : 0;
+	switch (objType) {
+	case t_objectType::t_Kirkman_Triple: 
+		k = 3;
+		InterStruct()->lambdaPtr()->push_back(0);
+		InterStruct()->lambdaPtr()->push_back(r = 1);
+	case t_objectType::t_CombinedBIBD:
 		find_master_design = find_master;
 		this->use_master_sol = 0;
-	}
-	else {
-		find_master_design = 0;   // This option for CombBIBDs only
-		if (objType == t_objectType::t_BIBD) {
+		break;
+	case t_objectType::t_BIBD: {
 			const auto vMinus1 = this->v - 1;
 			const auto kMinus1 = this->k - 1;
 			const auto r = vMinus1 * baseLambda / kMinus1;
@@ -794,7 +801,7 @@ int main(int argc, char * argv[])
 		case t_objectType::t_CombinedBIBD:
 		case t_objectType::t_SemiSymmetricGraph:
 		case t_objectType::t_PBIBD:
-		case t_objectType::t_Kirkman_Triples:
+		case t_objectType::t_Kirkman_Triple:
 						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 

@@ -73,7 +73,7 @@ public:
 	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
 	void printOut(FILE* pFile = NULL, T nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, int canonFlag = 1) const;
-	CC virtual S numParts() const				{ return 1; }
+	CC virtual T numParts() const				{ return 1; }
 	CC inline auto *partsInfo() const			{ return m_pPartInfo;  }
 	CC inline S* ResetRowPart(T nRow, T idx) const {
 		auto *pRow = GetRow(nRow);
@@ -175,13 +175,13 @@ Class2Def(C_InSys) : public Class2(CMatrix)
                                                     		{ GetNumSet(type)->AddElement(value); }
 	CK inline Class1(CVector) *GetNumSet(t_numbSetType t) const	{ return *(m_ppNumbSet + t); }
 	CK inline auto GetT() const								{ return m_t; }
-	CK inline S GetK() const								{ return GetNumSet(t_kSet)->GetAt(0); }
-	CK inline S GetR(S nSuplemRows) const					{ return this->colNumb() * GetK() / (this->rowNumb() - nSuplemRows); }
-	CK inline S lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
+	CK inline T GetK() const								{ return GetNumSet(t_kSet)->GetAt(0); }
+	CK inline T GetR(T nSuplemRows) const					{ return this->colNumb() * GetK() / (this->rowNumb() - nSuplemRows); }
+	CK inline T lambda() const								{ return GetNumSet(t_lSet)->GetAt(0); }
 	CK inline VectorPntr *numbSet() const					{ return m_ppNumbSet; }
 	CK inline void setObjectType(t_objectType type)			{ m_objectType = type; }
-	CK inline t_objectType objectType() const				{ return m_objectType; }
-	virtual S rowNumbExt() const							{ return this->rowNumb(); }
+	CK inline auto objectType() const						{ return m_objectType; }
+	virtual T rowNumbExt() const							{ return this->rowNumb(); }
 	CK inline auto maxBlockIntrsection() const              { return m_maxBlockIntersection; }
 	CK inline void setMaxBlockIntrsection(T value)          { m_maxBlockIntersection = value; }
 protected:
@@ -204,7 +204,7 @@ private:
 	t_objectType m_objectType;
 	VectorPntr *m_ppNumbSet;
 	bool m_bDataOwner;
-	const uchar m_t;
+	const T m_t;
 	T m_maxBlockIntersection;
 };
 
@@ -241,6 +241,7 @@ protected:
 		for (auto lambda : lambdaSet)
 			this->AddValueToNumSet(lambda, t_lSet);
 	}
+//	CK void InitParam(int v, int k, int lambda) {}
 };
 
 Class2Def(CSemiSymmetricGraph) : public Class2(C_PBIBD)
@@ -264,19 +265,19 @@ private:
 	const T m_t;
 };
 
-Class2Def(CCombinedBIBD) : public Class2(C_BIBD)
+Class2Def(CCombinedBIBD) : public Class2(CombDesignBase)
 {
 public:
-	CK CCombinedBIBD(int v, int k, const std::vector<uint>& lambda);
-	CK CCombinedBIBD(const CCombinedBIBD* pMaster, T nRow) : Class2(C_BIBD)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {
+	CK CCombinedBIBD(int v, int k, bool kirkmanTriples, const std::vector<uint>& lambda);
+	CK CCombinedBIBD(const CCombinedBIBD* pMaster, T nRow) : Class2(CombDesignBase)(pMaster, nRow), m_ppParamSet(pMaster->paramSets()) {
 		auto *pPartsInformation = InitPartsInfo(pMaster->numParts());
 		pPartsInformation->CopyPartInfo(pMaster->partsInfo());
 	}
 	CK ~CCombinedBIBD()										{ if (isDataOwner()) this->deleteParamStorage(paramSets(), t_rSet); }
 	CK inline VectorPntr *paramSets() const					{ return m_ppParamSet; }
 	CK inline VectorPntr paramSet(t_numbSetType idx) const	{ return paramSets()[idx]; }
-	virtual S rowNumbExt() const							{ return this->rowNumb() - 1; }
-	CC virtual S numParts() const							{ return static_cast<S>(paramSet(t_lSet)->GetSize()); }
+	virtual T rowNumbExt() const							{ return this->rowNumb() - 1; }
+	CC virtual T numParts() const							{ return static_cast<T>(paramSet(t_lSet)->GetSize()); }
 protected:
 private:
 	VectorPntr *m_ppParamSet;

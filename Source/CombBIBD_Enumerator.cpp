@@ -26,6 +26,9 @@ FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, c
 
 FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {
 	const auto inSys = this->getInSys();
+	if (inSys->objectType() == t_objectType::t_Kirkman_Triple)
+		return SNPRINTF(buffer, lenBuffer, "KirkSys(%" _FRMT", %1"_FRMT ", 1", inSys->rowNumbExt(), inSys->GetK());
+
 	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), inSys->rowNumbExt(), inSys->GetK());
 }
 #endif
@@ -191,13 +194,20 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pM
 	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);
 	m_pCanonChecker->initiateColOrbits(v, 0, NULL, true);
 
-	// Set first two rows and first columns of "master" design
-	// Because they always be the same, it would be better to do it only once
-	// First, we need to define parameter lambda for "master" design
-	const auto lambdaSet = paramSet(t_lSet);
 	T lambda = 0;
-	for (auto j = numParts(); j--;)
-		lambda += lambdaSet->GetAt(j);
+	if (getInSys()->objectType() != t_objectType::t_Kirkman_Triple) {
+		// Set first two rows and first columns of "master" design
+		// Because they always be the same, it would be better to do it only once
+		// First, we need to define parameter lambda for "master" design
+		const auto lambdaSet = paramSet(t_lSet);
+
+		for (auto j = numParts(); j--;)
+			lambda += lambdaSet->GetAt(j);
+	}
+	else {
+		lambda = 1;
+		m_nNum_lambdas = 2; // their values are 0 and 1
+	}
 
 	const auto k = this->getInSys()->GetNumSet(t_kSet)->GetAt(0);
 	const auto r = static_cast<T>(lambda * (v - 1) / (k - 1));

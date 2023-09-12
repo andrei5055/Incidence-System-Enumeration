@@ -169,6 +169,8 @@ private:
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(T *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
+	CK bool ProcessFullyConstructedMatrix(const TestCanonParams<T, S> *pCanonParam, RowSolutionPntr* ppRowSolution, 
+		EnumInfoPntr pEnumInfo, uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T *firstPartIdx);
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread, bool threadFlag) const;
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr, int i = 0)
