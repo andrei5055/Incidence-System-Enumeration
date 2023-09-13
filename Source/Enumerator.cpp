@@ -417,6 +417,87 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 	return false;
 }
 
+FClass2(CEnumerator, bool)::ProcessPartiallyConstructedMatrix(
+	const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution,
+	const EnumeratorPntr* ppInpMaster, bool useCanonGroup, t_threadCode* pTreadCode,
+	bool* pCanonMatrix, T& iFirstPartIdx, T* firstPartIdx)
+{
+	this->setCurrentRowNumb(nRow);
+	for (auto i = numParts(); i-- > firstPartIdx[nRow - 1];) {
+		this->setColOrbitCurr(m_pFirstColOrb[i], i);
+		this->setCurrUnforcedOrbPtr(nRow, i);
+	}
+
+	*pCanonMatrix = !USE_CANON_GROUP ||
+		this->TestCanonicity(nRow, pCanonParam, t_saveNothing, *ppRowSolution);
+	OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, *pCanonMatrix);
+
+	if (*pCanonMatrix) {
+		if (*ppInpMaster) {
+			copyInfoFromMaster(*ppInpMaster);
+#if WAIT_THREADS
+			*ppInpMaster = NULL;
+			*pTreadCode = t_threadRunning;
+#endif
+		}
+
+		if (!useCanonGroup)
+			this->setGroupOrder(1);
+
+		setPrintResultRowNumber(nRow);
+		*ppRowSolution = FindRowSolution(firstPartIdx + nRow - 1);
+#if USE_THREADS && !WAIT_THREADS
+		if (*ppInpMaster && *ppRowSolution) {
+			*ppInpMaster = NULL;
+			*pTreadCode = t_threadRunning;
+		}
+#endif
+		checkUnusedSolutions(*ppRowSolution);
+
+#if SOLUTION_STATISTICS
+		const auto* pRowSolution = **ppRowSolution;
+		if (pRowSolution) {
+			nCntr++;
+			nSol += pRowSolution->numSolutions();
+			nFirst += lastRightPartIndex;
+			if (nMax < pRowSolution->numSolutions())
+				nMax = pRowSolution->numSolutions();
+		}
+#endif
+
+		OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
+	}
+	else {
+		if (pCanonParam->numParts > 1) {
+			// When solution for the first part is not canonical, we don't have
+			// to check all combinations of solutions for remaining parts
+			const auto changeFirstPart = !*pCanonParam->pPartNumb;
+			while (--iFirstPartIdx) {
+				auto pPartRowSolution = *ppRowSolution + iFirstPartIdx;
+				this->resetUnforcedColOrb(iFirstPartIdx, nRow);
+				if (changeFirstPart || pPartRowSolution->allSolutionChecked())
+					pPartRowSolution->setSolutionIndex(0);
+				else
+					break;
+			}
+
+			if (iFirstPartIdx) {
+				// Enumeration of combined designs AND not all solutions for i-th part were tested
+				this->setCurrentRowNumb(--nRow);
+				firstPartIdx[nRow] = iFirstPartIdx;
+				return true;
+			}
+
+			// We will change the first portion of CombBIB. Therefore,
+			// everything which was enforced by this portion should be reset.
+			this->resetUnforcedColOrb(0, nRow);
+		}
+
+		*ppRowSolution = NULL;
+	}
+
+	return false;
+}
 
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
@@ -661,77 +742,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					continue;
 			}
 			else {
-				this->setCurrentRowNumb(nRow);
-				for (auto i = numParts(); i-- > firstPartIdx[nRow-1];) {
-					this->setColOrbitCurr(m_pFirstColOrb[i], i);
-					this->setCurrUnforcedOrbPtr(nRow, i);
-				}
-
-				canonMatrix = !USE_CANON_GROUP || 
-					          this->TestCanonicity(nRow, &canonParam, t_saveNothing, pRowSolution);
-				OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, canonMatrix);
-
-				if (canonMatrix) {
-					if (pInpMaster) {
-						copyInfoFromMaster(pInpMaster);
-#if WAIT_THREADS
-						pInpMaster = NULL;
-						*pTreadCode = t_threadRunning;
-#endif
-					}
-
-					if (!useCanonGroup)
-						this->setGroupOrder(1);
-
-					setPrintResultRowNumber(nRow);
-					pRowSolution = FindRowSolution(firstPartIdx + nRow - 1);
-#if USE_THREADS && !WAIT_THREADS
-					if (pInpMaster && pRowSolution) {
-						pInpMaster = NULL;
-						*pTreadCode = t_threadRunning;
-					}
-#endif
-					checkUnusedSolutions(pRowSolution);
-
-#if SOLUTION_STATISTICS
-					if (pRowSolution) {
-						nCntr++;
-						nSol += pRowSolution->numSolutions();
-						nFirst += lastRightPartIndex;
-						if (nMax < pRowSolution->numSolutions())
-							nMax = pRowSolution->numSolutions();
-					}
-#endif
-
-					OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
-				} else {
-					if (multiPartDesign) {
-						// When solution for the first part is not canonical, we don't have
-						// to check all combinations of solutions for remaining parts
-						const auto changeFirstPart = !*canonParam.pPartNumb;
-						while (--iFirstPartIdx) {
-							auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-							this->resetUnforcedColOrb(iFirstPartIdx, nRow);
-							if (changeFirstPart || pPartRowSolution->allSolutionChecked())
-								pPartRowSolution->setSolutionIndex(0);
-							else
-								break;
-						}
-
-						if (iFirstPartIdx) {
-							// Enumeration of combined designs AND not all solutions for i-th part were tested
-							this->setCurrentRowNumb(--nRow);
-							firstPartIdx[nRow] = iFirstPartIdx;
-							continue;
-						}
-
-						// We will change the first portion of CombBIB. Therefore,
-						// everything which was enforced by this portion should be reset.
-						this->resetUnforcedColOrb(0, nRow);   
-					}
-
-					pRowSolution = NULL;
-				}
+				if (ProcessPartiallyConstructedMatrix(&canonParam, &pRowSolution,
+					&pInpMaster, useCanonGroup, pTreadCode,	&canonMatrix, iFirstPartIdx, firstPartIdx))
+					continue;
 			}
 #if USE_THREADS_ENUM
 		}
