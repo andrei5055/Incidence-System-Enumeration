@@ -16,7 +16,7 @@ public:
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
 protected:
 	CK const char* getObjName() const override			{ return "CBIBD"; }
-	CK const char* getTopLevelDirName() const override 	{ return designParams()->find_master_design? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs"; }
+	CK const char* getTopLevelDirName() const override;
 	CK RowSolutionPntr setFirstRowSolutions() override;
 	CK void CreateForcedRows() override;
 	CK T firtstNonfixedRowNumber() const override		{ return 3; }
@@ -35,6 +35,9 @@ protected:
 	const char* getObjNameFormat() const override		{ return "  %14s:      "; }
 #endif
 	CK bool checkForcibleLambda(T fLambda, T nRows, T numPart) const override {
+		if (blockIdx())
+			return true;   // We don't need to check it for Kirkman Triple Systems
+
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}

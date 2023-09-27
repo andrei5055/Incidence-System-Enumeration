@@ -1,8 +1,6 @@
 #pragma once
 #include "Vector.h"
 
-//template<class T> class CRowSolution;
-
 Class1Def(CColOrbit) {
  public:
 	CC CColOrbit() {

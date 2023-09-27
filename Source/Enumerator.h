@@ -131,7 +131,7 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(T nRow, bool resetSolutions = true);
-	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
+	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, T iFirstPartIdx = 0);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual T firtstNonfixedRowNumber() const			{ return 2; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
@@ -172,7 +172,8 @@ private:
 	CK bool ProcessFullyConstructedMatrix(const TestCanonParams<T, S> *pCanonParam, RowSolutionPntr* ppRowSolution, 
 		EnumInfoPntr pEnumInfo, uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T *firstPartIdx);
 	CK bool ProcessPartiallyConstructedMatrix(const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution, 
-		const EnumeratorPntr* ppInpMaster, bool useCanonGroup, t_threadCode* pTreadCode, bool *pCanonMatrix, T& iFirstPartIdx, T* firstPartIdx);
+		const EnumeratorPntr* ppInpMaster, bool useCanonGroup, t_threadCode* pTreadCode, bool *pCanonMatrix, 
+		T& iFirstPartIdx, T* firstPartIdx);
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread, bool threadFlag) const;
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr, int i = 0)
@@ -195,10 +196,14 @@ private:
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const { return 0; }
 	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
-	CK virtual void setForcibleLambda(T row, T val, T pPart){}
+	CK virtual void setForcibleLambda(T row, T val, T pPart)	{}
+	CK bool CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx);
+	CK void ResetPartInfo(T partIdx, bool resetBlockIntersection = true, T adj = 0);
+	CK bool ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart = false);
 
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
+	void printSolutionState(const RowSolutionPntr pSolution, FILE* file, T nRow, T nPart, bool rejected = true) const;
 #endif
 	CK void initiateRestartInfoUpdate();
 
@@ -226,13 +231,13 @@ private:
 	T nRow;
 	RowSolutionPntr *m_pRow;
 	CSimpleArray<S> *m_pRowEquation;
-	bool m_bUseCanogGroup;
-	designParam *m_pParam;
+	bool m_bUseCanogGroup = false;
+	designParam *m_pParam = NULL;
 	ColOrbPntr* m_pFirstColOrb;
 	T m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 	CDesignDB* m_pDesignDB = NULL;               // DB where the designs are stored
-
+												 // Following members are used only for t_Kirkman_Triples
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif

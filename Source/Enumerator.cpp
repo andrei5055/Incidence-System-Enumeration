@@ -100,17 +100,26 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 			if (nVar == ELEMENT_MAX)
 				break;    // There is no system of equations which could have valid solutions for next row
 
-			if (i < firstPart) {
+			if (i < firstPart /* || !nVar && !i && blockIdx()*/) {
 				i++;
 				continue; // The solutions up to firstPart where already constructed
 			}
-
+			
 			// NOTE: For incidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
 			setPrintResultNumVar(nVar);
 			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
-			if (!pRowSolution || !pRowSolution->numSolutions())
+			if (!pRowSolution)
 				break;
 
+			if (!pRowSolution->numSolutions()) {
+				if (!nVar && !i && blockIdx()) {
+					// Constructing one of the last k elements of the Kirkman Triple System
+					// The solution always exists, but ...
+					pRowSolution->makeDummySolution();
+				}
+				else
+					break;
+			}
 #if PRINT_SOLUTIONS_LEX_ORD
 			if (MAKE_OUTPUT()) {
 				pRowSolution->sortSolutions(1, NULL);
@@ -394,20 +403,9 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 	else {
 		nRow--;
 		if (canonMatrix && multiPartDesign) {
-			auto* pRowSolution = *ppRowSolution = rowStuff(nRow - 1);
-			while (--iFirstPartIdx) {
-				auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-				this->resetUnforcedColOrb(iFirstPartIdx);
-				if (pPartRowSolution->allSolutionChecked())
-					pPartRowSolution->setSolutionIndex(0);
-				else
-					break;
-			}
-			if (iFirstPartIdx) {
-				this->setCurrentRowNumb(--nRow);
-				firstPartIdx[nRow] = iFirstPartIdx;
+			if (ResetPartsInfo(*ppRowSolution = rowStuff(nRow - 1), iFirstPartIdx, firstPartIdx))
 				return true;
-			}
+
 			this->resetUnforcedColOrb(0);
 		}
 
@@ -430,7 +428,7 @@ FClass2(CEnumerator, bool)::ProcessPartiallyConstructedMatrix(
 
 	*pCanonMatrix = !USE_CANON_GROUP ||
 		this->TestCanonicity(nRow, pCanonParam, t_saveNothing, *ppRowSolution);
-	OUTPUT_MATRIX(pMatrix, outFile(), nRow, pEnumInfo, *pCanonMatrix);
+	OUTPUT_MATRIX(matrix(), outFile(), nRow, enumInfo(), *pCanonMatrix);
 
 	if (*pCanonMatrix) {
 		if (*ppInpMaster) {
@@ -471,22 +469,8 @@ FClass2(CEnumerator, bool)::ProcessPartiallyConstructedMatrix(
 		if (pCanonParam->numParts > 1) {
 			// When solution for the first part is not canonical, we don't have
 			// to check all combinations of solutions for remaining parts
-			const auto changeFirstPart = !*pCanonParam->pPartNumb;
-			while (--iFirstPartIdx) {
-				auto pPartRowSolution = *ppRowSolution + iFirstPartIdx;
-				this->resetUnforcedColOrb(iFirstPartIdx, nRow);
-				if (changeFirstPart || pPartRowSolution->allSolutionChecked())
-					pPartRowSolution->setSolutionIndex(0);
-				else
-					break;
-			}
-
-			if (iFirstPartIdx) {
-				// Enumeration of combined designs AND not all solutions for i-th part were tested
-				this->setCurrentRowNumb(--nRow);
-				firstPartIdx[nRow] = iFirstPartIdx;
+			if (ResetPartsInfo(*ppRowSolution, iFirstPartIdx, firstPartIdx, !*pCanonParam->pPartNumb))
 				return true;
-			}
 
 			// We will change the first portion of CombBIB. Therefore,
 			// everything which was enforced by this portion should be reset.
@@ -499,10 +483,77 @@ FClass2(CEnumerator, bool)::ProcessPartiallyConstructedMatrix(
 	return false;
 }
 
+FClass2(CEnumerator, bool)::CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx)
+{
+	const auto r = ((CBIBD_Enumerator<T, S>*)this)->getR();
+	const auto b = matrix()->colNumb();
+	auto* pBlockIdx = blockIdx() + r * (nRow - 1);
+	for (auto i = *pFirstPartIdx; i < numParts(); i++) {
+		if (!i)
+			continue;
+
+		auto pPartRowSolution = pRowSolution + i;
+		bool flg;
+		while (1) {
+			flg = CMatrixCanonChecker::CheckBlockIntersections(nRow, b, pPartRowSolution->currSolution(), pBlockIdx, i);
+			if (flg)
+				break;
+
+			OUTPUT_REJECTED(pRowSolution, outFile(), nRow, i);
+			for (auto j = i; ++j < numParts();)
+				(pRowSolution + j)->setSolutionIndex(0);
+
+			while (pPartRowSolution->allSolutionChecked()) {
+				pPartRowSolution->setSolutionIndex(0);
+				--pPartRowSolution;
+				OUTPUT_TESTING(pRowSolution, outFile(), nRow, i);
+				if (!--i)
+					break;
+
+				ResetBlockIntersections(nRow, i);
+			}
+
+			if (*pFirstPartIdx > i)
+				*pFirstPartIdx = i;
+
+			if (i) {
+				OUTPUT_TESTING(pRowSolution, outFile(), nRow, i);
+				continue;
+			}
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumInfoPntr pEnumInfo, EnumeratorPntr pMaster, t_threadCode* pTreadCode)
 {
 	setDesignParams(pParam);
 	const auto* pInpMaster = pMaster;
+	const auto pMatrix = this->matrix();
+
+	const auto numCol = pMatrix->colNumb();
+	if (pMatrix->objectType() == t_objectType::t_Kirkman_Triple) {
+		const auto len = numCol * numCol;
+		const auto k = pParam->k;
+		if (!commonElemNumber()) {
+			setCommonElemNumber(new uchar[len]);
+			setBlockIdx(new T[numCol * k]); // using v * r = b * k
+		}
+
+		if (!pMaster) {
+			memset(commonElemNumber(), 0, len);
+			auto* pBlockIdx = blockIdx();
+			const auto iMax = pParam->v / k;
+			const auto r = numCol / iMax;
+			for (T i = 0; i < iMax; i++)
+				for (auto j = k; j--; pBlockIdx += r)
+					*pBlockIdx = i;
+		}
+	}
+
 #if !CONSTR_ON_GPU
 	char buff[256];
 	const auto lenBuffer = countof(buff);
@@ -548,7 +599,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		thread_group *pThreadpool = NULL;
 	#endif
 #endif
-	const auto pMatrix = this->matrix();
 
 	const auto firstNonfixedRow = firtstNonfixedRowNumber();
 	// Allocate memory for the orbits of two consecutive rows
@@ -562,7 +612,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		lenStab = pMaster->stabiliserLengthExt();
 		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
 		if (pMaster->getGroupOnParts())
-			updateCanonicityChecker(rowNumb(), colNumb());
+			updateCanonicityChecker(rowNumb(), numCol);
 
 		pRowSolution = rowStuff(nRow);
 		InitGroupOderStorage(pMaster->getGroupOnParts());
@@ -576,6 +626,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			const auto length = numParts() * (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr());
 			const auto from = firstUnforced * numParts();
 			memcpy(forcibleLambdaPntr() + from, pMaster->forcibleLambdaPntr() + from, length);
+		}
+
+		if (commonElemNumber()) {
+			memcpy(commonElemNumber(), pMaster->commonElemNumber(), numCol * numCol);
+			memcpy(blockIdx(), pMaster->blockIdx(), (pParam->v - 1) * pParam->r);
 		}
 	} else {
 		lenStab = nRow = firstNonfixedRow - 2;
@@ -648,6 +703,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	auto *firstPartIdx = new T[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
 	bool canonMatrix = false;
+	bool check_all_solution, blocksOK = true;
+	if (blockIdx())
+		setClassSize(numCol / ((CBIBD_Enumerator<T, S>*)this)->getR());
 
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
@@ -733,18 +791,37 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			}
 
 			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
-			MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
 
-			canonMatrix = true;
-			if (++nRow == nRows) {
-				if (ProcessFullyConstructedMatrix(&canonParam, &pRowSolution, pEnumInfo,
-					outInfo, procFlag, pMaster, iFirstPartIdx, firstPartIdx))
-					continue;
-			}
+			if (blockIdx()) // We construct the Kirkman Triple Systems
+				blocksOK = CheckBlockIntersections(pRowSolution, firstPartIdx + nRow);
+
+			if (blocksOK) {
+				OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
+				MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
+
+				canonMatrix = true;
+				if (++nRow == nRows) {
+					if (ProcessFullyConstructedMatrix(&canonParam, &pRowSolution, pEnumInfo,
+						outInfo, procFlag, pMaster, iFirstPartIdx, firstPartIdx))
+						continue;
+				}
+				else {
+					if (ProcessPartiallyConstructedMatrix(&canonParam, &pRowSolution,
+						&pInpMaster, useCanonGroup, pTreadCode, &canonMatrix, iFirstPartIdx, firstPartIdx))
+						continue;
+				}
+			} 
 			else {
-				if (ProcessPartiallyConstructedMatrix(&canonParam, &pRowSolution,
-					&pInpMaster, useCanonGroup, pTreadCode,	&canonMatrix, iFirstPartIdx, firstPartIdx))
-					continue;
+				// As of today (09/22/2023) we could be here only for Kirkman Triple Systems
+				// We need to change 1 part of Combined Design 
+	//			nRow++;
+				//firstPartIdx[nRow - 1] = 0;
+				//canonMatrix = true;
+				//this->resetUnforcedColOrb(lastPartIdx, nRow--);
+				//nRow--;
+				//check_all_solution = true;
+				iFirstPartIdx = 0;
+				//pRowSolution = NULL;
 			}
 #if USE_THREADS_ENUM
 		}
@@ -765,7 +842,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 					// When we do have (1.b), but firstPartIdx[nRow] == 0, we should proceed as in case (1.a)
 					--nRow;
 					auto lastPartIdx = usingThreads? numParts()-1 : firstPartIdx[nRow];
-					bool check_all_solution = !canonMatrix;
+					check_all_solution = !canonMatrix;
 					if (canonMatrix) {
 						// When there is no solution for some part, the indices
 						// for all remaining parts are equal to 0
@@ -833,13 +910,16 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 				pRowSolution = rowStuff(nRow);
 				auto j = numParts();
-				const auto* ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
+				const auto* ppOrb = colOrbitPntr() + nRow * numCol;
 				const auto partsInfo = pMatrix->partsInfo();
 				while (--j) {
-					auto pPartRowSolution = pRowSolution + j;
-					this->resetUnforcedColOrb(j, nRowNext);    // New code
+					ResetPartInfo(j, true, 1);
 					this->setCurrUnforcedOrbPtr(nRow, j);
-					if (!pPartRowSolution->allSolutionChecked())
+					// We don't need to call CRowSolution::allSolutionChecked()
+					// when blocksOK is false. We already did it in CheckBlockIntersections
+					// and correct index for solution is set
+					auto pPartRowSolution = pRowSolution + j;
+					if (/*blocksOK &&*/ !pPartRowSolution->allSolutionChecked())
 						break;
 
 					setColOrbitCurr(*(ppOrb + partsInfo->getShift(j)), j);
@@ -849,7 +929,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 				if (firstPartIdx[nRow] = j) {
 					this->setCurrentRowNumb(nRow);
-					firstPartIdx[nRow] = 1;
+//					firstPartIdx[nRow] = 1;
 					break;
 				}
 
@@ -859,9 +939,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				}
 
 				rowStuff(nRowNext)->resetSolution();
-				ppOrb = colOrbitPntr() + nRowNext * pMatrix->colNumb();
+				ppOrb = colOrbitPntr() + nRowNext * numCol;
 				setColOrbitCurr(*ppOrb, 0);
-				this->resetUnforcedColOrb(0);   // New code 
+				this->resetUnforcedColOrb(0);
 				this->resetFirstUnforcedRow();
 				this->setCurrentRowNumb(nRow);
 			}
@@ -1017,12 +1097,13 @@ FClass2(CEnumerator, void)::reset(T nRow, bool resetSolutions) {
 	this->resetFirstUnforcedRow();
 }
 
-FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx) {
+FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, T iFirstPartIdx) {
 	flag &= !iFirstPartIdx;   // X0_3 condition should be checked only on first part
 	                          // of CombBIBD or on regular incidence system
 	// Loop over all portions of the solution
 	const auto nRow = currentRowNumb();
 	auto* const pSolutionWereConstructed = getSolutionsWereConstructed(numParts(), nRow + 1);
+	const bool nextColOrbNeeded = nRow + 1 < matrix()->rowNumb();
 	for (auto i = 0; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
@@ -1031,14 +1112,15 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 			// When we are in that function, the solutions for the first part was just changed
 			// It means that we need to check all combinations of solutions for remaining parts
 			m_lastRightPartIndex[i] = pPartRowSolution->numSolutions() - 1;
-		} else
+		}
+		else
 			m_lastRightPartIndex[i] = pPartRowSolution->solutionIndex();
 
 		if (i < iFirstPartIdx)
 			continue;
 
 		const auto pCurrSolution = pPartRowSolution->currSolution();
-		m_pFirstColOrb[i] = CMatrixCanonChecker::MakeRow(nRow, pCurrSolution, true, i);
+		m_pFirstColOrb[i] = CMatrixCanonChecker::MakeRow(nRow, pCurrSolution, nextColOrbNeeded, i);
 
 		if (flag) {
 			flag = false;
@@ -1050,6 +1132,33 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, S i
 	}
 }
 
+FClass2(CEnumerator, void)::ResetPartInfo(T partIdx, bool resetBlockIntersection, T adj)
+{
+	this->resetUnforcedColOrb(partIdx, nRow + adj);
+	if (resetBlockIntersection && blockIdx())
+		ResetBlockIntersections(nRow - 1 + adj, partIdx);
+}
+
+FClass2(CEnumerator, bool)::ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart)
+{
+	while (--iFirstPartIdx) {
+		auto pPartRowSolution = pRowSolution + iFirstPartIdx;
+		ResetPartInfo(iFirstPartIdx, !changeFirstPart);
+		if (changeFirstPart || pPartRowSolution->allSolutionChecked())
+			pPartRowSolution->setSolutionIndex(0);
+		else
+			break;
+	}
+
+	if (iFirstPartIdx) {
+		// Enumeration of combined designs AND not all solutions for i-th part were tested
+		this->setCurrentRowNumb(--nRow);
+		firstPartIdx[nRow] = iFirstPartIdx;
+		return true;
+	}
+
+	return false;
+}
 
 FClass2(CEnumerator, void)::releaseRowStuff(T nRow) {
 	if (nRow < rowMaster()) {
@@ -1478,6 +1587,23 @@ FClass2(CEnumerator, void)::printSolutions(const RowSolutionPntr pSolution, FILE
 	for (auto i = nPartStart; i < nPartEnd; i++)
 		(pSolution + i)->printSolutions(file, markNextUsed, nRow, i, multiPortion);
 
+	MUTEX_UNLOCK(out_mutex);
+}
+
+FClass2(CEnumerator, void)::printSolutionState(
+	const RowSolutionPntr pSolution, FILE* file, T nRow, T nPart, bool rejected) const
+{
+	if (!pSolution)
+		return;
+
+	MUTEX_LOCK(out_mutex);
+	char buffer[2048], *pBuf = buffer;
+	const auto lenBuf = countof(buffer);
+	pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd for part %d %s.", 
+		nRow, (pSolution + nPart)->solutionIndex() + 1, nPart, rejected? "was rejected" : "will be tested");
+	outString(buffer, file);
+	if (nRow == 8 && nPart == 1)// && !(pSolution + nPart)->solutionIndex())
+		nPart = 1;
 	MUTEX_UNLOCK(out_mutex);
 }
 #endif

@@ -110,6 +110,7 @@ public:
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
+	CK inline void makeDummySolution()							{ setNumSolutions(1);}
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
