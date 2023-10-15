@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Enumerator.h"
 #include "RightPartFilter.h"
 
@@ -54,7 +54,7 @@ private:
 																	setFirstUnforcedRow(0);
 																}
 	virtual CVariableMapping<T> *prepareCheckSolutions(size_t n){ return NULL; }
-	CK virtual size_t numLambdas() const						{ return this->paramSet(t_lSet)->GetSize(); }
+	CK virtual T numLambdas() const								{ return static_cast<T>(paramSet(t_lSet)->GetSize()); }
 	CK inline auto rightPartFilter()							{ return m_pRightPartFilter; }
 	CK inline void setForcibleLambdaPntr(T *p)					{ m_pForsibleLambda = p; }
 	CK virtual void setForcibleLambda(T nRow, T val, T nPart)	{ *(forcibleLambdaPntr(nRow) + nPart) = val; }
@@ -111,6 +111,10 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 
 FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 {
+	static int lll = 0; lll++;
+	if (numRow() == 13)
+		lll += 0;
+
 	T nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
 	T equationIdx = ELEMENT_MAX;
@@ -295,12 +299,13 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 	// Because there are no more than nVar/2 of them, we will use
 	this->initSolver(pCurrRowSolution, pRowEquation->variableMinValPntr());
 
-	const auto pLambdaSet = this->paramSet(t_lSet);
+	const auto* pLambdaSet = getInSys()->objectType() != t_objectType::t_Kirkman_Triple?
+		this->paramSet(t_lSet) : NULL;
 	// For all possible right parts of the systems
 	// (which are lexicographically not greater, than the vector, used for the current row)
 	auto pResult = pCurrRowSolution->newSolution();
-	S buffer[256];
-	auto pBuffer = nVar <= countof(buffer)? buffer : new S[nVar];
+	T buffer[256];
+	auto pBuffer = nVar <= countof(buffer)? buffer : new T[nVar];
 	// Solution used for last constructed matrix's row:
 	const auto pCurrSolution = pPrevRowSolution->solution(lastRightPartIndex);
 	const auto forcibleLambdaValue = (int)forcibleLambda(nRowPrev, nPart);
@@ -394,15 +399,16 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::FindSolution(T nVar, T nPart, PERMU
 #endif
 
 			// For all possible values of right part of "lambda" equation
-			for (S i = 0; i < nLambdas; i++) {
-				const int lambdaToSplit = static_cast<int>(this->getLambda(pLambdaSet, i, nPart)) - lambdaMin;
+			for (T i = 0; i < nLambdas; i++) {
+				const auto λ = pLambdaSet ? static_cast<int>(this->getLambda(pLambdaSet, i, nPart)) : i;
+				const int lambdaToSplit = λ - lambdaMin;
 				if (lambdaToSplit < 0)
 					continue;
 
 #if USE_EXRA_EQUATIONS
 				equSystem()->resetVariables(nVar);
 #endif
-				auto *pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit);
+				auto *pResultTmp = this->findAllSolutionsForLambda(pResult, lambdaToSplit, λ);
 				if (!pResultTmp) {
 					// There are no solution for current lambda from pLambdaSet
 					// Since lambda set is ordered, we will not find solutions for

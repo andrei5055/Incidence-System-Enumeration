@@ -1,4 +1,4 @@
-//
+﻿//
 //  RowSolution.h
 //  BIBD_Mac
 //
@@ -81,7 +81,7 @@ public:
 	CK inline void prevSolutionIndex()							{ --m_nSolutionIndex; }
 	CK inline auto allSolutionChecked()                         { return nextSolutionIndex() >= numSolutions(); }
 	CK T *newSolution();
-	CK T *copySolution(const InSysSolverPntr pSysSolver);
+	CK T *copySolution(const InSysSolverPntr pSysSolver, T λ);
 	CK CRowSolution *NextSolution(bool useCanonGroup = false);
 	void removeNoncanonicalSolutions(size_t startIndex);
 	size_t moveNoncanonicalSolutions(const T *pSolution, size_t startIndex, CSolutionStorage *pSolutionStorage = NULL, size_t *pSolIdx = NULL);
@@ -110,6 +110,7 @@ public:
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
+	CK inline void makeDummySolution()							{ setNumSolutions(1);}
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
@@ -178,10 +179,10 @@ FClass2(CRowSolution, RowSolutionPntr)::getSolution() {
 	return this;
 }
 
-FClass2(CRowSolution, T *)::copySolution(const InSysSolverPntr pSysSolver)
+FClass2(CRowSolution, T *)::copySolution(const InSysSolverPntr pSysSolver, T λ)
 {
 	auto *pSolution = lastSolution();
-	if (pSysSolver->isValidSolution(pSolution)) {
+	if (pSysSolver->isValidSolution(pSolution, λ)) {
 		pSolution = newSolution();
 		memcpy(pSolution, pSolution - solutionLength(), solutionLength() * sizeof(pSolution[0]));
 	}

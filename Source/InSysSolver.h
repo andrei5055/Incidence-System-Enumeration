@@ -1,4 +1,4 @@
-//
+﻿//
 //  InSysSolver.h
 //  BIBD_Mac
 //
@@ -25,9 +25,9 @@ Class2Def(CInSysSolver) : public CVariableMapping<S>
 public:
 	CK CInSysSolver(size_t len, int t);
 	CK ~CInSysSolver();
-	CK S *findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST;
-    CK void initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr);
-    CK virtual bool isValidSolution(const S *pSol) const				{ return true; }
+	CK S *findAllSolutionsForLambda(T *pResult, T lambdaToSplit, T λ) CONST;
+    CK void initSolver(RowSolutionPntr pntr, const T *pVarMinValPntr);
+    CK virtual bool isValidSolution(const T *pSol, T λ) const { return true; }
 protected:
     CK inline RowSolutionPntr rowSolution() const						{ return m_pRowSolution; }
 #if USE_EXRA_EQUATIONS
@@ -83,17 +83,17 @@ FClass2(CInSysSolver)::~CInSysSolver()
 #endif
 }
 
-FClass2(CInSysSolver, void)::initSolver(RowSolutionPntr pntr, const S *pVarMinValPntr)
+FClass2(CInSysSolver, void)::initSolver(RowSolutionPntr pntr, const T *pVarMinValPntr)
 {
 	setRowSolution(pntr);
 	setVarMinValPntr(pVarMinValPntr);
 }
 
-FClass2(CInSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSplit) CONST
+FClass2(CInSysSolver, S *)::findAllSolutionsForLambda(T *pResult, T lambdaToSplit, T λ) const
 {
 	// lambdaToSplit - part of current lambda to be splited between lambda-variables
 	if (!lambdaToSplit) {
-		pResult = rowSolution()->copySolution(this);
+		pResult = rowSolution()->copySolution(this, λ);
 		printResults(pResult, lambdaToSplit, 0, -1);
 		return pResult;
 	}
@@ -117,7 +117,7 @@ FClass2(CInSysSolver, S *)::findAllSolutionsForLambda(S *pResult, S lambdaToSpli
 		}
 		else {
 			firstPath = false;
-			pResult = rowSolution()->copySolution(this);
+			pResult = rowSolution()->copySolution(this, λ);
 		}
 
 	} while (findDiffIndex(lambdaToSplit, pResult, &varMapIdx));

@@ -222,8 +222,8 @@ private:
 	T nRow;
 	RowSolutionPntr *m_pRow;
 	CSimpleArray<S> *m_pRowEquation;
-	bool m_bUseCanogGroup;
-	designParam *m_pParam;
+	bool m_bUseCanogGroup = false;
+	designParam *m_pParam = NULL;
 	ColOrbPntr* m_pFirstColOrb;
 	T m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;

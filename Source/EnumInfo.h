@@ -65,10 +65,6 @@ typedef enum {
 	t_CombMasters =         1<<8,
 } t_outputType;
 
-typedef enum {
-	t_noReplicatedBlock = 1 << 1,
-	t_transitiveGroup   = 1 << 2,
-} t_MatrixFlags;
 
 Class2Def(CThreadEnumerator);
 Class2Def(CEnumerator);

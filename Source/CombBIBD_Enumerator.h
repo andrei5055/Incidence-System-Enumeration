@@ -1,11 +1,11 @@
 #pragma once
 #include "BIBD_Enumerator.h"
 
-Class2Def(CCombBIBD_Enumerator) : public Class2(CBIBD_Enumerator)
+Class2Def(CCombBIBD_Enumerator) : public Class2(CombEnumBase)
 {
 public:
 	CCombBIBD_Enumerator(const InSysPntr pBIBD, uint enumFlags = t_enumDefault, int treadIdx = -1, uint nCanonChecker = 0) :
-		Class2(CBIBD_Enumerator)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
+		Class2(CombEnumBase)(pBIBD, enumFlags, treadIdx, nCanonChecker) {
 		setR(getInSys()->GetR(lenStabilizer())); 
 		m_FirstPartSolutionIdx = new PERMUT_ELEMENT_TYPE[rowNumb()];
 		const auto len = rowNumb() * numParts();
@@ -15,8 +15,8 @@ public:
 	~CCombBIBD_Enumerator();
 	const auto *columnPermut() const					{ return m_pColumnPermut; }
 protected:
-	CK const char* getObjName() const override			{ return "CBIBD"; }
-	CK const char* getTopLevelDirName() const override 	{ return designParams()->find_master_design? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs"; }
+	CK const char* getObjName() const override			{ return getInSys()->objectType() == t_objectType::t_Kirkman_Triple ? "k-System" : "CBIBD"; }
+	CK const char* getTopLevelDirName() const override;
 	CK RowSolutionPntr setFirstRowSolutions() override;
 	CK void CreateForcedRows() override;
 	CK T firtstNonfixedRowNumber() const override		{ return 3; }
@@ -25,7 +25,7 @@ protected:
 	CK VectorPntr paramSet(t_numbSetType idx) const override { 
 		return (static_cast<Class2(CCombinedBIBD)*>(this->getInSys()))->paramSet(idx); 
 	}
-	CK size_t numLambdas() const override				{ return 1; }  // Used only in FindSolution which is called separatly for each part
+	CK T numLambdas() const override					{ return m_nNum_lambdas; }  // Used only in FindSolution which is called separatly for each part
 	CK T getLambda(const VectorPntr pLambdaSet, T idx = 0, T numPart = 0) const override { return pLambdaSet->GetAt(numPart); }
 #if !CONSTR_ON_GPU
 	CK int addLambdaInfo(char *buffer, size_t lenBuffer, const char* pFrmt = NULL, size_t *pLambdaSetSize = NULL) const override;
@@ -35,6 +35,9 @@ protected:
 	const char* getObjNameFormat() const override		{ return "  %14s:      "; }
 #endif
 	CK bool checkForcibleLambda(T fLambda, T nRows, T numPart) const override {
+		if (blockIdx())
+			return true;   // We don't need to check it for Kirkman Triple Systems
+
 		const auto lambda = paramSet(t_lSet)->GetAt(numPart);
 		return nRows == 2 ? fLambda == lambda : fLambda <= lambda;
 	}
@@ -76,5 +79,6 @@ private:
 	const char* m_pAdjKeyPrefix;
 	char* m_pAdjKey;
 	size_t m_lenAdjKey;
+	T m_nNum_lambdas = 1;
 };
 

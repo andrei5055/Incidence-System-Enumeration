@@ -71,8 +71,12 @@ public:
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
 	CK void CreateColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
 	CK void CanonizeMatrix();
+protected:
+	CK inline auto* blockIdx() const									{ return m_pBlockIdx; }
 private:
-	EnumInfoPntr m_pEnumInfo;
+
+	EnumInfoPntr m_pEnumInfo = NULL;
+	T* m_pBlockIdx = NULL;                       // Block indices containing each element
 };
 
 #if CANON_ON_GPU

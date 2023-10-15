@@ -94,7 +94,7 @@ public:
 	CC auto enumFlags() const						{ return m_enumFlags; }
 	CC inline T *permRow() const					{ return m_pPermutRow->elementPntr(); }
 	CC inline T *permCol() const					{ return m_pPermutCol->elementPntr(); }
-	CC inline auto permStorage(S nPart) const		{ return permStorage() + nPart; }
+	CC inline auto permStorage(T nPart) const		{ return permStorage() + nPart; }
 	CC inline auto permStorage() const				{ return m_pPermutStorage[0]; }
 	CC inline auto permColStorage() const			{ return m_pPermutStorage[1]; }
 	CC inline auto permRowStorage() const			{ return m_pPermutStorage[2]; }
