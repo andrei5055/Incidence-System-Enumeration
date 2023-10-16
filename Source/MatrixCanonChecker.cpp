@@ -1,6 +1,7 @@
 #include "MatrixCanonChecker.h"
 #include "RowSolution.h"
 
+//template class CEnumInfo<TDATA_TYPES>;
 template class CMatrixCanonChecker<TDATA_TYPES>;
 
 FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
@@ -12,6 +13,8 @@ FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
 FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, bool nextColOrbNeeded, T partIdx) const
 {
 	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
+	if (nextColOrbNeeded)
+		nextColOrbNeeded &= nRow + 1 < matrix()->rowNumb();
 
 	const auto* pColOrbit = this->colOrbit(nRow, partIdx);
 	const auto* pNextRowColOrbit = this->colOrbitIni(nRow + 1, partIdx);

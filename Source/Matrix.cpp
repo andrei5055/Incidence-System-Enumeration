@@ -37,6 +37,9 @@ FClass2(CMatrixData, bool)::isSimple(bool *pFlag) const {
 	return true;
 }
 
+#if PRINT_CURRENT_MATRIX
+static int cntr1;
+#endif
 FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, const CanonicityCheckerPntr pCanonCheck, ulonglong number, int canon) const
 {
 	if (nRow == ELEMENT_MAX)
@@ -54,6 +57,9 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 	if (matrNumber > 0) {
 		auto* pTmp = pBuf;
 		auto len = SNPRINTF(pTmp, lenBuf, "\nMatrix # %3llu", matrNumber);
+		if (matrNumber >= 344914916)
+			matrNumber += 0;
+
 		if (number)
 			len = SNPRINTF(pTmp +=len, lenBuf-=len, ".%llu", number);
 #if TEST
@@ -78,12 +84,11 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 	}
 #if PRINT_CURRENT_MATRIX
 	else {
-		static int cntr;
 		char* pBufTmp = pBuf;
 		pBufTmp += sprintf_s(pBufTmp, lenBuf, "\n");
 		memset(pBufTmp, '=', nCol);
 		pBufTmp += nCol;
-		sprintf_s(pBufTmp, lenBuf - (pBufTmp - pBuf), " # %d\n", ++cntr);
+		sprintf_s(pBufTmp, lenBuf - (pBufTmp - pBuf), " # %d\n", ++cntr1);
 	}
 #endif
 
@@ -104,16 +109,34 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 	while (++i < nMax)
 		*(pSymb + i) = 'A' + i - 10;
 
-	for (S i = 0; i < nRow; i++) {
-		auto pRow = this->GetRow(i);
-		for (auto j = nCol; j--;)
+#define CALC_UNITS  0 //7
+	for (T i = 0; i < nRow; i++) {
+		const auto* pRow = this->GetRow(i);
+#if CALC_UNITS
+		size_t cntr = 0;
+#endif
+		for (auto j = nCol; j--;) {
 			*(pBuf + j) = pSymb[*(pRow + j)];
+#if CALC_UNITS
+			cntr += *(pRow + j);
+#endif
+		}
 
 		SNPRINTF(pBuf + nCol, 2, "\n");
 		if (pFile)
 			fputs(pBuf, pFile);
 		else
 			std::cout << pBuf;
+#if CALC_UNITS
+		if (cntr == CALC_UNITS || !i)
+			continue;
+
+		SNPRINTF(buffer, sizeof(buffer), "Wrong number of units found in row #%d: %zd vs. %d expected\n", i, cntr, CALC_UNITS);
+		if (pFile)
+			fputs(buffer, pFile);
+		else
+			std::cout << buffer;
+#endif
 	}
 
 	if (pBuf != buffer)
@@ -155,19 +178,19 @@ CombinedBIBD()::CCombinedBIBD(int v, int k, bool kirkmanTriples, const std::vect
 	if (!kirkmanTriples) {
 		std::vector<uint> lambdaSet(lambdaInp);
 		std::sort(lambdaSet.begin(), lambdaSet.end(), std::greater<int>());
-	const auto nSubDesigns = lambdaSet.size();
-	auto partsInfo = this->InitPartsInfo(nSubDesigns);
+		const auto nSubDesigns = lambdaSet.size();
+		auto partsInfo = this->InitPartsInfo(nSubDesigns);
 		T shift = 0;
-	for (size_t i = 0; i < nSubDesigns; ++i) {
-		const auto lambdaCurr = lambdaSet[i];
-		const auto r = lambdaCurr * v1 / k1;
-		const auto b = r * v / k;
-		assert(r * k1 == lambdaCurr * v1);
-		m_ppParamSet[t_lSet]->AddElement(lambdaCurr);
-		m_ppParamSet[t_rSet]->AddElement(r);
-		lambda += lambdaCurr;
-		partsInfo->SetPartInfo(i, shift, b);
-		shift += b;
+		for (size_t i = 0; i < nSubDesigns; ++i) {
+			const auto lambdaCurr = lambdaSet[i];
+			const auto r = lambdaCurr * v1 / k1;
+			const auto b = r * v / k;
+			assert(r * k1 == lambdaCurr * v1);
+			m_ppParamSet[t_lSet]->AddElement(lambdaCurr);
+			m_ppParamSet[t_rSet]->AddElement(r);
+			lambda += lambdaCurr;
+			partsInfo->SetPartInfo(i, shift, b);
+			shift += b;
 		}
 	}
 	else {
@@ -187,3 +210,4 @@ CombinedBIBD()::CCombinedBIBD(int v, int k, bool kirkmanTriples, const std::vect
 	Init(v + 1, lambda * v * v1 / (k * k1));
 	InitParam(v, k, lambda);
 }
+

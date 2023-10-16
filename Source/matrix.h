@@ -242,7 +242,6 @@ protected:
 		for (auto lambda : lambdaSet)
 			this->AddValueToNumSet(lambda, t_lSet);
 	}
-//	CK void InitParam(int v, int k, int lambda) {}
 };
 
 Class2Def(CSemiSymmetricGraph) : public Class2(C_PBIBD)

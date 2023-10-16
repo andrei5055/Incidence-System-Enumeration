@@ -149,6 +149,7 @@ FClass2(CEnumInfo, void)::reportProgress(t_reportCriteria reportType, const CGro
 	const ulonglong *pTestNumber;
 	bool reportNeeded = false;
 	const auto currClock = clock();
+	static int rrr = 0; rrr++;
 	switch (reportType) {
 	case t_reportCriteria::t_reportByTime:
 								if (currClock - prevClockReport() < CLOCKS_PER_SEC * 30)

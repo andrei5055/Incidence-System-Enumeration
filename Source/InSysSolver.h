@@ -25,7 +25,7 @@ Class2Def(CInSysSolver) : public CVariableMapping<S>
 public:
 	CK CInSysSolver(size_t len, int t);
 	CK ~CInSysSolver();
-	CK S *findAllSolutionsForLambda(T *pResult, T lambdaToSplit, T λ) CONST;
+	CK S* findAllSolutionsForLambda(T* pResult, T lambdaToSplit, T λ) CONST;
     CK void initSolver(RowSolutionPntr pntr, const T *pVarMinValPntr);
     CK virtual bool isValidSolution(const T *pSol, T λ) const { return true; }
 protected:

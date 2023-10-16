@@ -19,14 +19,28 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete m_pCanonChecker;
 }
 
+FClass2(CCombBIBD_Enumerator, const char*)::getTopLevelDirName() const {
+	if (blockIdx())
+		return designParams()->find_master_design ? "k-systems_MasterInfo" : "k-systems";
+
+	return designParams()->find_master_design ? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs";
+}
+
 #if !CONSTR_ON_GPU
 FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, size_t *pLambdaSetSize) const {
+	if (getInSys()->objectType() == t_objectType::t_Kirkman_Triple)
+		return SNPRINTF(buf, lenBuffer, "1");
+
 	return addLambdaInform(paramSet(t_lSet), buf, lenBuffer, pLambdaSetSize);
 }
 
 FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {
 	const auto inSys = this->getInSys();
-	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), inSys->rowNumbExt(), inSys->GetK());
+	const auto* frmt = inSys->objectType() == t_objectType::t_Kirkman_Triple ?
+						"%s(%2" _FRMT", %1" _FRMT ", 1" : 
+						"%s(%3" _FRMT", %2" _FRMT ", ";
+
+	return SNPRINTF(buffer, lenBuffer, frmt, getObjName(), inSys->rowNumbExt(), inSys->GetK());
 }
 #endif
 
@@ -45,6 +59,9 @@ FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int l
 		getEnumerationObjectKey(m_pAdjKey = pKey, len);
 		m_pAdjKeyPrefix = pKey + len;
 	}
+
+	if (getInSys()->objectType() == t_objectType::t_Kirkman_Triple)
+		return pKey;
 
 	auto* pntr = strstr(pKey, "})");
 	*pntr = '\0';
@@ -167,9 +184,10 @@ FClass2(CCombBIBD_Enumerator, CGroupOnParts<T> *)::makeGroupOnParts(const Canoni
 }
 
 FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pMaster) {
-	if (m_pCanonChecker ||							// canonicity checker was already constructed
-		!designParams()->find_master_design ||      // no need to find master design OR
-		designParams()->threadNumb && !pMaster)     // using threads, but now we are in master
+	const bool kSystem = getInSys()->objectType() == t_objectType::t_Kirkman_Triple;
+	if (m_pCanonChecker ||									// canonicity checker was already constructed
+		!designParams()->find_master_design && !kSystem ||  // no need to find master design OR
+		!pMaster && designParams()->create_commonData())	// using threads, but now we are in master   
 		return;
 
 	const auto b = matrix()->colNumb();
@@ -191,26 +209,34 @@ FClass2(CCombBIBD_Enumerator, void)::CreateAuxiliaryStructures(EnumeratorPntr pM
 	m_pCanonChecker = new CMatrixCanonChecker<TDATA_TYPES>(pOriginalMatrix, t_matrixOwner);
 	m_pCanonChecker->initiateColOrbits(v, 0, NULL, true);
 
-	// Set first two rows and first columns of "master" design
-	// Because they always be the same, it would be better to do it only once
-	// First, we need to define parameter lambda for "master" design
-	const auto lambdaSet = paramSet(t_lSet);
 	T lambda = 0;
-	for (auto j = numParts(); j--;)
-		lambda += lambdaSet->GetAt(j);
+	if (designParams()->find_master_design) {
+		// Set first two rows and first columns of "master" design
+		// Because they always be the same, it would be better to do it only once
+		// First, we need to define parameter lambda for "master" design
+		const auto lambdaSet = paramSet(t_lSet);
 
-	const auto k = this->getInSys()->GetNumSet(t_kSet)->GetAt(0);
-	const auto r = static_cast<T>(lambda * (v - 1) / (k - 1));
-	T solution[] = { r, lambda, static_cast<T>(r - lambda) };
-	m_pCanonChecker->MakeRow(0, solution);
-	m_pCanonChecker->MakeRow(1, solution+1);
-	auto* pRow = pOriginalMatrix->GetRow(1);
-	T i = 1;
-	while (++i < k)
-		*(pRow += b) = 1;
+		for (auto j = numParts(); j--;)
+			lambda += lambdaSet->GetAt(j);
 
-	while (i++ < v)
-		*(pRow += b) = 0;
+		const auto k = this->getInSys()->GetNumSet(t_kSet)->GetAt(0);
+		const auto r = static_cast<T>(lambda * (v - 1) / (k - 1));
+		T solution[] = { r, lambda, static_cast<T>(r - lambda) };
+		m_pCanonChecker->MakeRow(0, solution);
+		m_pCanonChecker->MakeRow(1, solution+1);
+		auto* pRow = pOriginalMatrix->GetRow(1);
+		T i = 1;
+		while (++i < k)
+			*(pRow += b) = 1;
+
+		while (i++ < v)
+			*(pRow += b) = 0;
+	}
+
+	if (kSystem) {
+		lambda = 1;
+		m_nNum_lambdas = 2; // their values are 0 and 1
+	}
 }
 
 FClass2(CCombBIBD_Enumerator, void)::createColumnPermut() {
