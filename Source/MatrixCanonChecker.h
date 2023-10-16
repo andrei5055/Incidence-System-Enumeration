@@ -58,25 +58,34 @@ public:
 	CC CMatrixCanonChecker(const InSysPntr pMatrix, uint enumFlags) :
 		Class2(CMatrixCol)(pMatrix, enumFlags),
 		Class2(CCanonicityChecker)(pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->maxElement() + 1, enumFlags, pMatrix->numParts())
-	{
-		setEnumInfo(NULL);
-	}
+	{}
 
 	CC CMatrixCanonChecker(InSysPntr pMatrix, T rowNumb, T colNumb, S maxElem, bool IS_enum) :
 		Class2(CMatrixCol)(pMatrix, rowNumb, colNumb, maxElem, IS_enum),
-		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{ setEnumInfo(NULL); }
-	CC ~CMatrixCanonChecker()									{ delete enumInfo(); }
+		Class2(CCanonicityChecker)(rowNumb, colNumb, maxElem)	{}
+	CC ~CMatrixCanonChecker();
+
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
 	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
+	CK bool CheckBlockIntersections(T nRow, T b, const T* pRowSolution, T* pBlockIdx, T partIdx = 0);
+
 	CK void CreateColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
 	CK void CanonizeMatrix();
 protected:
+	CK inline auto* commonElemNumber() const							{ return m_pCommonElemNumber; }
 	CK inline auto* blockIdx() const									{ return m_pBlockIdx; }
+	CK inline void setCommonElemNumber(uchar *pntr)						{ m_pCommonElemNumber = pntr; }
+	CK inline void setBlockIdx(T *pntr)									{ m_pBlockIdx = pntr; }
+	CK inline void setClassSize(T nBlocks)                              { m_nClassSize = nBlocks; }
+	CK inline T classSize() const										{ return m_nClassSize; }
+	CK void ResetBlockIntersections(T nRow, T partIdx);
 private:
 
 	EnumInfoPntr m_pEnumInfo = NULL;
+	uchar* m_pCommonElemNumber = NULL;			 // Number of common elements for 2 blocks
 	T* m_pBlockIdx = NULL;                       // Block indices containing each element
+	T m_nClassSize = 0;                          // Number of blocks in one parallel class of k-System
 };
 
 #if CANON_ON_GPU

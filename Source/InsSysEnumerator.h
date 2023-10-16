@@ -111,10 +111,6 @@ FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
 
 FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 {
-	static int lll = 0; lll++;
-	if (numRow() == 13)
-		lll += 0;
-
 	T nVar = 0;
 	// Total number of equations (some of them corresponds to the forcibly constructed columns)
 	T equationIdx = ELEMENT_MAX;

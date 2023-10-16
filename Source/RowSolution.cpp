@@ -334,15 +334,17 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, T nRo
 	const auto lenBuf = countof(buffer);
 	if (markNextUsed) {
 		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex() + 1, numSolutions());
-		const uchar* pCanonFlags = solutionPerm()->canonFlags();
-		if (pCanonFlags) {
-			size_t numSolToCheck = 0;
-			for (size_t i = solutionIndex() + 1; i < numSolutions(); i++) {
-				if (*(pCanonFlags + i) == t_canon_solution)
-					numSolToCheck++;
-			}
+		if (!nPortion) {
+			const uchar* pCanonFlags = solutionPerm()->canonFlags();
+			if (pCanonFlags) {
+				size_t numSolToCheck = 0;
+				for (size_t i = solutionIndex() + 1; i < numSolutions(); i++) {
+					if (*(pCanonFlags + i) == t_canon_solution)
+						numSolToCheck++;
+				}
 
-			pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " (%zd more to check)", numSolToCheck);
+				pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " (%zd more to check)", numSolToCheck);
+			}
 		}
 	}
 	else

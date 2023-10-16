@@ -1,14 +1,17 @@
 #include "MatrixCanonChecker.h"
 #include "RowSolution.h"
 
-//template class CEnumInfo<TDATA_TYPES>;
 template class CMatrixCanonChecker<TDATA_TYPES>;
+
+FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
+	delete enumInfo();
+	delete[] commonElemNumber();
+	delete[] blockIdx();
+}
 
 FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, bool nextColOrbNeeded, T partIdx) const
 {
 	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
-	if (nextColOrbNeeded)
-		nextColOrbNeeded &= nRow + 1 < matrix()->rowNumb();
 
 	const auto* pColOrbit = this->colOrbit(nRow, partIdx);
 	const auto* pNextRowColOrbit = this->colOrbitIni(nRow + 1, partIdx);
@@ -84,6 +87,79 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 		pColOrbitLast->setNext(NULL);
 
 	return pNextRowColOrbitNew;
+}
+
+FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIdx)
+{
+	// Reset the intersections of the current block with blocks
+	// containing the current element
+	const auto b = matrix()->colNumb();
+	const auto lenPart = b / classSize();
+	auto* pBlockIdx = blockIdx() + lenPart * (nRow - 1);
+	const auto nColAbs = *(pBlockIdx + partIdx);
+	auto* pCommonElemNumber = commonElemNumber() + nColAbs * b;
+#define PRINT_INTERSECTIONS PRINT_SOLUTIONS&&PRINT_TO_FILE
+#if PRINT_INTERSECTIONS
+	fprintf(outFile(), "\nRow %d, part %d: Reset intersectios of block %2d with (", nRow, partIdx, nColAbs);
+#endif
+	for (auto i = partIdx; i--;) {
+		auto* pntr = pCommonElemNumber + *(pBlockIdx + i);
+#if PRINT_INTERSECTIONS
+		fprintf(outFile(), "%2d, ", *(pBlockIdx + i));
+		if (!*pntr) {
+			printf("\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
+			fprintf(outFile(), "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
+			fclose(outFile());
+		}
+#endif
+		assert(*pntr != 0);
+		*pntr = 0;
+	}
+#if PRINT_INTERSECTIONS
+	fprintf(outFile(), ")\n");
+#endif
+}
+
+FClass2(CMatrixCanonChecker, bool)::CheckBlockIntersections(
+	T nRow, T b, const T* pRowSolution, T* pBlockIdx, T partIdx)
+{
+	// Function to check the block intersections for Kirkman Triple Systems
+	const auto* pColOrbit = this->colOrbit(nRow, partIdx);
+	const auto colOrbLen = this->colOrbitLen();
+	const auto nColBase = partIdx * classSize();
+
+	const auto* pColOrbitIni = this->colOrbitIni(nRow, partIdx);
+	ColOrbPntr pColOrbitLast = NULL;
+	while (pColOrbit) {
+		if (*pRowSolution++) {
+			ColOrbPntr pNewColOrbit = NULL;
+			// Define the number of columns to start with
+			const auto nColCurr = ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
+			const auto nColAbs = static_cast<T>(nColBase + nColCurr);
+			// Check the intersections of the current block with blocks
+			// containing the current element
+			auto* pCommonElemNumber = commonElemNumber() + nColAbs * b;
+			for (auto i = partIdx; i--;) {
+				auto* pntr = pCommonElemNumber + *(pBlockIdx + i);
+				if (*pntr) {   // corresponding blocks already have one common elements.
+					// Rollback of newly marked intersections.
+					for (auto j = partIdx; --j > i;)
+						*(pCommonElemNumber + *(pBlockIdx + j)) = 0;
+
+					return false;
+				}
+
+				*pntr = 1; // the first intersection of corresponding blocks
+			}
+
+			*(pBlockIdx + partIdx) = nColAbs;
+			break;
+		}
+
+		pColOrbit = pColOrbit->next();
+	}
+
+	return true;
 }
 
 FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColPermut) const {

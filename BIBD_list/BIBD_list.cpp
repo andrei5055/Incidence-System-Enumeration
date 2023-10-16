@@ -23,6 +23,10 @@ using namespace std;
 
 bool is_number(const std::string& s) {
     string::const_iterator it = s.begin();
+    switch (*it) {
+        case '+':
+        case '-': ++it;
+    }
     while (it != s.end() && std::isdigit(*it)) ++it;
     return !s.empty() && it == s.end();
 }
@@ -69,6 +73,7 @@ class opt_descr {
 public:
     const string name;
     check_fn check_func;
+    int stop_check;     // check_func can stop checking remaining options
     report_fn report_func;
     int limits[2];
     int intValue;
@@ -263,7 +268,7 @@ output check_Simplicity(const opt_descr& opt, int v, int b, int r, int k, int λ
 
     auto* pntr = static_cast<int*>(opt.extra_param);
     ++*(pntr + idx);
-    comment += pComment[idx];
+    comment = pComment[idx];
     return output::with_comment;
 }
 
@@ -291,9 +296,16 @@ bool is_simple(const string& comment, bool& flag, int* pVal = nullptr) {
         return false;
     }
 
-    pos = comment.find('S');
-    if (pos != string::npos) {
-        if (!(comStr[pos + 1] == '-' || (pos > 0 && comStr[pos - 1] == '!'))) {
+    pos = 0;
+    while (pos = comment.find('S', pos) != string::npos) {
+        const auto flag = comStr[pos + 1] == '-';
+        if (flag) {
+            const auto pos1 = comment.find("ELS-");
+            if (pos1 != string::npos && pos1 + 2 == pos)
+                continue;
+        }
+
+        if (!(flag || (pos > 0 && comStr[pos - 1] == '!'))) {
             if (pVal)
                 *pVal = 1;
 
@@ -372,7 +384,7 @@ output check_DPS_condition(const opt_descr& opt, int v, int b, int r, int k, int
 
                     int yOut = y;
                     if (λ > m) {
-                        //    In that case there are some nonnegative integer solutions for
+                        //    In that case there are some non-negative integer solutions for
                         // x{0} +         x{y} +         x{y+1} = b - m
                         //              y*x{y} +   (y+1)*x{y+1} = k(r - m)
                         //        y*(y-1)*x{y} * (y+1)*y*x{y+1} = k(k − 1)(λ − m)
@@ -599,7 +611,7 @@ output solve_DPS_system(const opt_descr& opt, int v, int b, int r, int k, int λ
     int rightPart[3];
     int integers[256]; 
     auto len = k + 1;
-    // We will keep left part coefficient only for 3d equation
+    // We will keep left part coefficients only for 3d equation
     int* leftPart = 2 * len < sizeof(integers) / sizeof(integers[0])? integers : new int[2 * len];
     int* solution = leftPart + len;
     memset(leftPart, 0, len * sizeof(leftPart[0]));
@@ -948,7 +960,7 @@ output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, strin
 
     const auto brc_condition = opt.intValue;
     if (v != b)
-        return brc_condition == 2 ? output::nothing : output::no_comment;
+        return brc_condition? output::nothing : output::no_comment;
 
     // Check of Bruck-Ryser-Chowla conditions
     int num = 0;
@@ -1036,17 +1048,17 @@ output check_BRC(const opt_descr& opt, int v, int b, int r, int k, int λ, strin
         }
     }
 
-    if ((!brc_condition && num < 0) || (brc_condition == 2 && !num))
+    auto* pntr = static_cast<int*>(opt.extra_param);
+    ++*(pntr + (num ? 1 : 0));
+    if ((brc_condition == 2 && num) || (brc_condition == 3 && !num))
         return output::nothing;
 
     comment = opt.name + (num ? "-" : "+");
-    auto* pntr = static_cast<int*>(opt.extra_param);
-    ++* (pntr + (num ? 1 : 0));
     return output::with_comment;
 }
 
 output check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
-    static opt_descr opt_BRC = { "BRC", check_BRC, nullptr, { 1, 1 }, 1, "" };
+    static opt_descr opt_BRC = { "BRC", check_BRC, 0, nullptr, { 1, 1 }, 1, "" };
     if (!opt_BRC.extra_param)
         opt_BRC.extra_param = opt.extra_param;
 
@@ -1060,6 +1072,45 @@ output check_Residual(const opt_descr& opt, int v, int b, int r, int k, int λ, 
     else
         comment = "Something wrong with BRC";
 
+    return output::with_comment;
+}
+
+output check_lambda_filter(const opt_descr& opt, int v, int b, int r, int k, int λ, string& comment) {
+    // Filter for BIBD with b = 3 * r - 2 * λ
+    if (b != 3 * r - 2 * λ || v == b && λ < 3)
+        return opt.intValue? output::nothing : output::no_comment;
+
+    auto flag = (r - λ) % 2 != 0;
+#define USE_ADDITIONAL_CONDITIONS  0
+#if USE_ADDITIONAL_CONDITIONS 
+// NOTE: These conditions do not work for BIBDs r <= 41
+// 
+// When flag is true, we can not use λ solution
+//      v = 2*m + 7                 = 2 * k + 1
+//      b = 4 * λ + 6 * λ / (m + 2) = 2 * λ * (2 * k + 1) / (k - 1)
+//      r = 2 * λ + 2 * λ / (m + 2) = 2 * λ * k / (k - 1)
+//      k = m + 3,
+//      λ
+    if (!flag && ((v != 2 * k + 1) || (r != 2 * λ * k / (k - 1)))) {
+        // || b != 2*λ*(2*k+1)/(k-1) we don't need this one, it's thue, because b*k = v*r
+        flag = true;
+    }
+
+    if (!flag && k <= 4) {
+        const auto x = 3 * λ - r;
+        flag = (k < 4 ? x : (λ % x)) != 0;
+    }
+#endif
+    if (flag) {
+        if (opt.intValue == 2)
+            return output::nothing;
+    } else 
+        if (opt.intValue == 3)
+            return output::nothing;
+
+    comment = opt.name + (flag? "+" : "-");
+    auto* pntr = static_cast<int*>(opt.extra_param);
+    ++*(pntr + (flag ? 0 : 1));
     return output::with_comment;
 }
 
@@ -1082,20 +1133,24 @@ void report_DPS(opt_descr& opt, const out_struct& out, int total) {
     delete[](int*)opt.extra_param;
 }
 
-void report_BRC(opt_descr& opt, const out_struct& out, int total) {
-    auto* pntr = static_cast<int*>(opt.extra_param);
-    output_func(out, "Bruck-Ryser-Chowla conditions results: out of ", *pntr + *(pntr + 1), " tests ",
-        *pntr, " positive and ", *(pntr + 1), " negative.");
+void report_results(const char *pComment, const out_struct& out, const opt_descr& opt) {
+    const auto* pntr = static_cast<int*>(opt.extra_param);
+    output_func(out, pComment, " conditions were tested on ", *pntr + *(pntr + 1), 
+        " sets of parameters: ", *pntr, " positive and ", *(pntr + 1), " negative.");
 
-    delete[](int*)opt.extra_param;
+    delete[] pntr;
+}
+
+void report_BRC(opt_descr& opt, const out_struct& out, int total) {
+    report_results("Bruck-Ryser-Chowla", out, opt);
 }
 
 void report_Residual(opt_descr& opt, const out_struct& out, int total) {
-    auto* pntr = static_cast<int*>(opt.extra_param);
-    output_func(out, "Residual condition was tested on ", *pntr + *(pntr + 1), " sets of parameters: ",
-        *pntr, " positive and ", *(pntr + 1), " negative.");
+    report_results("Residual", out, opt);
+}
 
-    delete[](int*)opt.extra_param;
+void report_LambdaFilter(opt_descr& opt, const out_struct& out, int total) {
+    report_results("Lambda-solution", out, opt);
 }
 
 int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,  
@@ -1136,12 +1191,26 @@ int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,
             cout << "\nthe program will provide a separate numbering for the sets of parameters (v,b,r,k,lambda),";
             cout << "\nand for every set it will still indicate its number from \"Handbook\"";
             cout << "\n\n\n";
-            cout << "Description of OPTIONS:   (any options can be specified in lowercase or uppercase letters, but without spaces)";
+            cout << "Description of OPTIONS:";
+            cout << "    Any option can be specified in lowercase or uppercase letters, but without spaces)";
+            cout << "    -opt_name=-1  means that option 'opt_name' will not be used";
+            cout << "\n";
             cout << "\n  -f=[+/-]fileName : Outputting results to \"fileName\".  When one of +/- precedes \"fileName\"";
             cout << "\n                     the output will also (respectively, will not) be displayed on the screen.";
             cout << "\n                     By default, the program prints results to the screen, unless -f=\"fileName\" is used";
             cout << "\n";
-            cout << "\n   -brc[=N]        : Bruck-Ryser-Chowla conditions";
+            cout << "\n   -brc[=N]        : Bruck-Ryser-Chowla conditions, tested only on BIBD paramenetrs v = b , -1<=N<=3";
+            cout << "\n                    -1 - do not check"; 
+            cout << "\n                     0 - report all, do not suppress non-symmetric BIBD (default)";
+            cout << "\n                     1 - report all, suppress non-symmetric BIBD";
+            cout << "\n                     2 - report only existing";
+            cout << "\n                     3 - report only nonexisting";
+            cout << "\n   -els[=N]         : Elimination of Lambda-Solution (ELS-) conditions, tested on BIBDs with b=3*r-2*l, -1<=N<=3";
+            cout << "\n                    -1 - do not check (default)";
+            cout << "\n                     0 - report all, do not suppress any parameters";
+            cout << "\n                     1 - report all, but suppress parameters that could not satisfy ELS-condition";
+            cout << "\n                     2 - report only parameters that satisfy the ELS-condition";
+            cout << "\n                     3 - report only parameters that could satisfy but do not satisfy the ELS-condition";
             return -1;
         }
 
@@ -1230,15 +1299,15 @@ int parsingParameters(int argc, char* argv[], int num_opts, opt_descr* opts,
     return 0;
 }
 
-bool set_comments(const opt_descr* opts, int num_opts, int v, int b, int r, int k, int λ, string& comment) {
+bool set_comments(opt_descr** opts, int num_opts, int v, int b, int r, int k, int λ, string& comment) {
     string tmp;
     for (int j = 1; j < num_opts; j++) {
-        const check_fn check_func = opts[j].check_func;
+        const check_fn check_func = opts[j]->check_func;
         if (!check_func)
             continue;
 
         tmp = comment;
-        switch ((*check_func)(opts[j], v, b, r, k, λ, tmp)) {
+        switch ((*check_func)(*opts[j], v, b, r, k, λ, tmp)) {
             case with_comment:      comment += (comment.empty()? " " : "; ") + tmp;
                                     break;
             case adjust_comments:   comment += tmp;
@@ -1258,12 +1327,13 @@ int main(int argc, char* argv[])
     const char delimiter[] = { '[', '(', ',', ':', ']', ')' };
     int minVal[5] = { 0, 0, 3, 3, 1 };
     int maxVal[5] = { INT_MAX, INT_MAX, 41, INT_MAX, INT_MAX };
-    opt_descr opts[] = { {"F", nullptr, summary_title, {}, -1, ""},
-                         {"S", check_Simplicity, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
-                         {"DPS", check_DPS_condition, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
-                         {"SYS", solve_DPS_system, nullptr, {0, 2}, -1, "", init_DPS},
-                         {"BRC", check_BRC, report_BRC, {-1, 2}, 1, "", init_Cntr},
-                         {"O", check_Residual, report_Residual, {-1,1}, 1, "", init_Cntr},
+    opt_descr opts[] = { {"F", nullptr, 0, summary_title, {}, -1, ""},
+                         {"ELS", check_lambda_filter, 1, report_LambdaFilter, {-1,3}, -1, "", init_Cntr},
+                         {"S", check_Simplicity, 0, report_Simplicity, {-1, 2}, 1, "", init_Cntr},
+                         {"DPS", check_DPS_condition, 0, report_DPS, {-1, 2}, 1, "", init_Cntr}, //  Dobcsanyi, Preecec, Soicherc condition for the equality holding in their inequality
+                         {"SYS", solve_DPS_system, 0, nullptr, {0, 2}, -1, "", init_DPS},
+                         {"BRC", check_BRC, 1, report_BRC, {-1, 3}, 0, "", init_Cntr},
+                         {"O", check_Residual, 0, report_Residual, {-1,1}, 1, "", init_Cntr},
                        };
 
     const auto num_opts = sizeof(opts) / sizeof(opts[0]);
@@ -1275,10 +1345,20 @@ int main(int argc, char* argv[])
     if (parsingParameters(argc, argv, num_opts, opts, param, numParam, minVal, maxVal, &cntr) < 0)
         exit(1);
 
+    auto * used_opt = new opt_descr *[num_opts];
+    int opt_numb = 0;
+    used_opt[opt_numb++] = opts;
     for (int j = 1; j < num_opts; j++) {
-        const constr_fn constr_func = opts[j].constr_func[0];
+        if (opts[j].intValue < 0)
+            continue;
+
+        auto *pOpt = used_opt[opt_numb++] = opts + j;
+        if (pOpt->stop_check && pOpt->intValue)
+            cntr = 0;  // we will use additional numbering
+
+        const auto constr_func = pOpt->constr_func[0];
         if (constr_func)
-            (*constr_func)(opts[j]);
+            (*constr_func)(*pOpt);
     }
 
     FILE* outFile = NULL;
@@ -1325,12 +1405,12 @@ int main(int argc, char* argv[])
                     continue; // j-th parameter is not in the predescribed range
  
                 string comment;
-                if (!set_comments(opts, num_opts, v, b, r, k, λ, comment))
+                if (!set_comments(used_opt, opt_numb, v, b, r, k, λ, comment))
                     continue;
 
                 pBuff = buff;
                 if (cntr >= 0)
-                    pBuff += sprintf_s(pBuff, sizeof(buff), "%4d ", ++cntr);
+                    pBuff += sprintf_s(pBuff, sizeof(buff), "%4d:  ", ++cntr);
 
                 sprintf_s(pBuff, sizeof(buff) - (pBuff - buff), "#%4d: %4d %4d %2d %2d %2d  ", total, v, b, r, k, λ);
                 output_func(out, buff, comment);
@@ -1339,12 +1419,20 @@ int main(int argc, char* argv[])
     }
 
 
-    for (int j = 0; j < num_opts; j++) {
-        const report_fn report_func = opts[j].report_func;
+    for (int j = 0; j < opt_numb; j++) {
+        auto& opt = *used_opt[j];
+        const report_fn report_func = opt.report_func;
         if (report_func)
-            (*report_func)(opts[j], out, cntr < 0? total : cntr);
+            (*report_func)(opt, out, cntr < 0? total : cntr);
     }
 
+    output_func(out, 
+        "\nDPS: m = M, d = D (y), where\n"
+        "    M is a multiplicity of block;\n"
+        "    D is a difference of the right and left parts of\n"
+        "       P.Dobcsanyi, D.A.Preece, L.H.Soicher inequality:\n"
+        "       m*(k-y)*(k-y-1) <= (y+1)*y*b - 2*y*k*r + k*(k-1)*lambda\n");
+    
     auto runTime = (unsigned long)(clock() - start) / CLOCKS_PER_SEC;
     const auto sec = runTime % 60;
     auto min = (runTime -= sec) / 60;
@@ -1357,10 +1445,13 @@ int main(int argc, char* argv[])
     if (outFile)
         fclose(outFile);
 
-    for (int j = 0; j < num_opts; j++) {
-        const auto destr_func = opts[j].constr_func[1];
+    for (int j = 0; j < opt_numb; j++) {
+        auto& opt = *used_opt[j];
+        const auto destr_func = opt.constr_func[1];
         if (destr_func)
-            (*destr_func)(opts[j]);
+            (*destr_func)(opt);
     }
+
+    delete[] used_opt;
 }
 

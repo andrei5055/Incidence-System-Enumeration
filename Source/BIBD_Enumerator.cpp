@@ -58,25 +58,58 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 
 	const auto λ = getLambda(paramSet(t_lSet));
 	if (currRowNumb == firtstNonfixedRowNumber()) {
-		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r - 2*λ + x).
+		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r-2*λ + x).
 		if (*pSol == λ && useFilterFor_3d_RowSolutions()) {
 			// If b = 3 * r - 2 * λ, and the solution with first element equal to λ is used 
 			// for row #3, then the element #3 will have (r - 2*λ + 2*x) common blocks with 
-			// any elements constructed in accordance with solution (x, λ-x, λ-x, r - 2*λ + x)
+			// any elements constructed in accordance with the solution (x, λ-x, λ-x, r - 2*λ + x)
 			// Therefore such solution is only could be combined with the solution with x defined 
 			// by equation: r - 2*λ + 2*x = λ, which has no integer solutions, when r - λ is odd:
 			return (getR() - λ) % 2 == 0;
-			// Note: works for (17, 34, 16, 8, 7)
+			// Notes: works for (17, 34, 16, 8, 7)
+			// 
+			// The only 3rd row solution that can be used with solutions  (λ, 0, 0, r-λ) 
+			// is the solution (x=λ-(r-λ)/2, (r-λ)/2, (r-λ)/2, (r-λ)/2) or (x, λ-x, λ-x, λ-x).
+			// 
+			// It is quite obvious that for the construction of (v-2) remaining rows, we can use only 
+			// one "descendant" of the solution (λ, 0, 0, r-λ). Denote by n the number of "descendants"
+			// of the solutions (x, λ-x, λ-x, λ-x).
+			// 
+			// Using obvious equations to construct the completion of all blocks that are equivalent 
+			// with respect to the first two elements:
+			//    [λ-(r-λ)/2] * n + λ = (k-2)*λ
+			//     [(r-λ)/2] * n = (k - 1)*(r - λ)
+			//     [(r-λ)/2] * n + (r - λ) = k * (r - λ)
+			// 
+			// and standard equations for BIBD parameters:
+			//   v * r = b * k
+			//   r * (k - 1) = λ * (v - 1)
+			//
+			// We see that the parameters of such a BIBD should only be
+			//      v = n + 3
+			//      b = 4 * λ + 12 * λ / n
+			//      r = 2 * λ + 4 * λ / n
+			//      k = 1 + n / 2
+			//      λ
+			//
+			// Since for BIBD k>=3, n>=4 and it should be even. Let's represent n as 
+			// n = 2*m + 4, m>=0. Now we have:
+			//      v = 2*m + 7                 = 2 * k + 1
+			//      b = 4 * λ + 6 * λ / (m + 2) = 2 * λ * (2 * k + 1) / (k - 1)
+			//      r = 2 * λ + 2 * λ / (m + 2) = 2 * λ * k / (k - 1)
+			//      k = m + 3,
+			//      λ
+			// 
 		}
 		return true;
 	}
-
+	
 	// For canonical BIBD the number of blocks containing any three elements cannot be
 	// bigger than the number of blocks containing first, second and third elements.
 	// Let's check it
 	const auto x0_3 = this->getX0_3();
 	if (λ == x0_3)     // Intersection of first three rows is maximal
-		return true;		// Nothing to test
+		return true;   // Nothing to test
 
 	const auto k = this->getInSys()->GetK();
 	auto rowNumb = this->rowNumb();
@@ -122,7 +155,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	if (λ > countof(columns))
 		pColumnIdx = new T[λ];
 
-	// Define "λ" blocks, which contain both current and previous elements.
+	// Define λ blocks, which contain both current and previous elements.
 	// When doing that, check the necessary and sufficient conditions
 	// for the intersection of the first (second), previous and current elements
 	bool check_remaining_element = false;
@@ -131,15 +164,15 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	T j = 0;
 	while (true) {
 		if (pCurrRow[j] && pPrevRow[j]) {
-			if (idx == x0_3) {					// (x0_3+1)-th common block found
-				if (j < r) {  					//      among the first r blocks of design
-					retVal = false;				// The tested solution can not be used in the canonical matrix
+			if (idx == x0_3) {			// (x0_3+1)-th common block found
+				if (j < r) {  			//      among the first r blocks of design
+					retVal = false;		// The tested solution can not be used in the canonical matrix
 					break;
 				}
 
-				if (j < 2 * r - λ) {		//      among the blocks, which contain second, but not first element
-					S i = -1;				// Check necessary and sufficient conditions for the
-					while (++i < idx) {     // intersection of second, previous and current elements
+				if (j < 2 * r - λ) {	//      among the blocks, which contain second, but not first element
+					S i = -1;			// Check necessary and sufficient conditions for the
+					while (++i < idx) { // intersection of second, previous and current elements
 						if (pColumnIdx[i] >= λ)
 							break;
 					}
@@ -198,7 +231,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 		auto* pIntersection = rowIntersection()->intersectionParam(&pNumb, lastRow);
 		
 		T num3[2] = { 0, 0 };
-		const T t = 3;// lambda + 1;
+		const T t = 3;// λ + 1;
 		for (T i = 2; i < t; i++) {
 			const auto λ_prev = λ;
 			for (auto k = pNumb[i - 2]; k--; pIntersection += λ_prev) {
@@ -248,7 +281,7 @@ FClass2(CBIBD_Enumerator, void)::initDesignDB(const EnumeratorPntr pMaster, size
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb() - rowAdj;
 	bool flag = designParams()->thread_master_DB;
-	flag = pMaster ? flag : !flag || !designParams()->threadNumb;
+	flag = pMaster ? flag : !flag || !designParams()->create_commonData();
 	const auto recordLength = (v - 2) * (designParams()->compressMatrices() ? (b + 7) >> 3 : b);
 	setRecordLen(recordLength);
 	setDesignDB(flag ? new CDesignDB(recordLength + LEN_HEADER) : pMaster? pMaster->designDB() : NULL);
@@ -318,9 +351,11 @@ FClass2(CBIBD_Enumerator, void)::makeJobTitle(const designParam *pParam, char *b
 {
 	size_t lambdaSetSize = 0;
 	auto len = getJobTitleInfo(buffer, lenBuffer);
-	len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
+	const auto flag = getInSys()->objectType() != t_objectType::t_Kirkman_Triple;
+	if (flag)
+		len += addLambdaInfo(buffer + len, lenBuffer - len, "%2" _FRMT, &lambdaSetSize);
 
-	if (pParam->lambdaSizeMax() > lambdaSetSize) {
+	if (flag && pParam->lambdaSizeMax() > lambdaSetSize) {
 		auto maxSize = pParam->lambdaSizeMax() - lambdaSetSize;
 		auto pBuf = buffer + len;
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - buffer), ")");

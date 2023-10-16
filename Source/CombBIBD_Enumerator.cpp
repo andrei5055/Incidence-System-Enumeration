@@ -19,28 +19,14 @@ FClass2(CCombBIBD_Enumerator)::~CCombBIBD_Enumerator() {
 	delete m_pCanonChecker;
 }
 
-FClass2(CCombBIBD_Enumerator, const char*)::getTopLevelDirName() const {
-	if (blockIdx())
-		return designParams()->find_master_design ? "k-systems_MasterInfo" : "k-systems";
-
-	return designParams()->find_master_design ? "Combined_BIBDs_MasterInfo" : "Combined_BIBDs";
-}
-
 #if !CONSTR_ON_GPU
 FClass2(CCombBIBD_Enumerator, int)::addLambdaInfo(char *buf, size_t lenBuffer, const char* pFormat, size_t *pLambdaSetSize) const {
-	if (getInSys()->objectType() == t_objectType::t_Kirkman_Triple)
-		return SNPRINTF(buf, lenBuffer, "1");
-
 	return addLambdaInform(paramSet(t_lSet), buf, lenBuffer, pLambdaSetSize);
 }
 
 FClass2(CCombBIBD_Enumerator, int)::getJobTitleInfo(char* buffer, int lenBuffer) const {
 	const auto inSys = this->getInSys();
-	const auto* frmt = inSys->objectType() == t_objectType::t_Kirkman_Triple ?
-						"%s(%2" _FRMT", %1" _FRMT ", 1" : 
-						"%s(%3" _FRMT", %2" _FRMT ", ";
-
-	return SNPRINTF(buffer, lenBuffer, frmt, getObjName(), inSys->rowNumbExt(), inSys->GetK());
+	return SNPRINTF(buffer, lenBuffer, "%s(%3" _FRMT", %2" _FRMT", ", getObjName(), inSys->rowNumbExt(), inSys->GetK());
 }
 #endif
 
@@ -59,9 +45,6 @@ FClass2(CCombBIBD_Enumerator, char*)::getEnumerationObjectKeyA(char* pKey, int l
 		getEnumerationObjectKey(m_pAdjKey = pKey, len);
 		m_pAdjKeyPrefix = pKey + len;
 	}
-
-	if (getInSys()->objectType() == t_objectType::t_Kirkman_Triple)
-		return pKey;
 
 	auto* pntr = strstr(pKey, "})");
 	*pntr = '\0';
