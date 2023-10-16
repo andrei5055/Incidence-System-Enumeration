@@ -169,6 +169,11 @@ private:
 	CK virtual RowSolutionPntr setFirstRowSolutions()		{ return NULL; }
 	CK RowSolutionPntr FindRowSolution(T *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
+	CK bool ProcessFullyConstructedMatrix(const TestCanonParams<T, S> *pCanonParam, RowSolutionPntr* ppRowSolution, 
+		EnumInfoPntr pEnumInfo, uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T *firstPartIdx);
+	CK bool ProcessPartiallyConstructedMatrix(const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution, 
+		const EnumeratorPntr* ppInpMaster, bool useCanonGroup, t_threadCode* pTreadCode, bool *pCanonMatrix, 
+		T& iFirstPartIdx, T* firstPartIdx);
 #if USE_THREADS
 	int threadWaitingLoop(int thrIdx, t_threadCode code, ThreadEnumeratorPntr* threadEnum, size_t nThread, bool threadFlag) const;
 	CK inline void setThreadEnumPool(Class2(CThreadEnumPool)* pntr, int i = 0)
@@ -191,7 +196,7 @@ private:
 	CK virtual PERMUT_ELEMENT_TYPE firstPartSolutionIndex(T nRow) const { return 0; }
 	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
-	CK virtual void setForcibleLambda(T row, T val, T pPart){}
+	CK virtual void setForcibleLambda(T row, T val, T pPart)	{}
 	CK bool CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx);
 	CK void ResetPartInfo(T partIdx, bool resetBlockIntersection = true, T adj = 0);
 	CK bool ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart = false);
@@ -232,7 +237,7 @@ private:
 	T m_nCurrentNumPart;
 	PERMUT_ELEMENT_TYPE* m_lastRightPartIndex;
 	CDesignDB* m_pDesignDB = NULL;               // DB where the designs are stored
-
+												 // Following members are used only for t_Kirkman_Triples
 #if CANON_ON_GPU
 	GPU_CanonChecker *m_pGPU_CanonChecker;
 #endif

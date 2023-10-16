@@ -131,7 +131,7 @@ protected:
 	CK inline void setUseCanonGroup(bool val)				{ m_bUseCanogGroup = val; }
 	CK inline bool useCanonGroup() const					{ return m_bUseCanogGroup; }
 	virtual void reset(T nRow, bool resetSolutions = true);
-	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, T iFirstPartIdx = 0);
+	CK void MakeRow(RowSolutionPntr pRowSolution, bool flag, S iFirstPartIdx = 0);
 	CK virtual void CreateForcedRows()						{ this->setCurrentRowNumb(0); }
 	CK virtual T firtstNonfixedRowNumber() const			{ return 2; }
 	CK virtual bool fileExists(const char *path, bool file = true) const;
@@ -192,13 +192,9 @@ private:
 	CK inline uchar *getSolutionsWereConstructed(T nParts, T rowNumb) const {
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	CK virtual void setForcibleLambda(T row, T val, T pPart){}
-	CK bool CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx);
-	CK void ResetPartInfo(T partIdx, bool resetBlockIntersection = true, T adj = 0);
-	CK bool ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart = false);
 
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
-	void printSolutionState(const RowSolutionPntr pSolution, FILE* file, T nRow, T nPart, bool rejected = true) const;
 #endif
 	CK void initiateRestartInfoUpdate();
 
