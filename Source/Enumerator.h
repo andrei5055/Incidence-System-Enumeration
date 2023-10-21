@@ -170,7 +170,7 @@ private:
 	CK RowSolutionPntr FindRowSolution(T *pPartNumb);
 	CK virtual T MakeSystem(T numPart) = 0;
 	CK bool ProcessFullyConstructedMatrix(const TestCanonParams<T, S> *pCanonParam, RowSolutionPntr* ppRowSolution, 
-		EnumInfoPntr pEnumInfo, uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T *firstPartIdx);
+		EnumInfoPntr pEnumInfo, uint outInfo, bool procFlag, bool* pCanonMatrix, EnumeratorPntr pMaster, T& iFirstPartIdx, T *firstPartIdx);
 	CK bool ProcessPartiallyConstructedMatrix(const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution, 
 		const EnumeratorPntr* ppInpMaster, bool useCanonGroup, t_threadCode* pTreadCode, bool *pCanonMatrix, 
 		T& iFirstPartIdx, T* firstPartIdx);

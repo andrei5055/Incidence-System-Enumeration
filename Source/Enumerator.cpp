@@ -331,7 +331,7 @@ FClass2(CEnumerator, void)::outputJobTitle() const {
 
 FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 	const TestCanonParams<T, S>* pCanonParam, RowSolutionPntr* ppRowSolution, EnumInfoPntr pEnumInfo,
-	uint outInfo, bool procFlag, EnumeratorPntr pMaster, T& iFirstPartIdx, T* firstPartIdx)
+	uint outInfo, bool procFlag, bool* pCanonMatrix, EnumeratorPntr pMaster, T& iFirstPartIdx, T* firstPartIdx)
 {
 	const bool multiPartDesign = pCanonParam->numParts > 1;
 	if (multiPartDesign)
@@ -340,11 +340,11 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 	pEnumInfo->incrConstrTotal();
 	bool flag = true;
 
-	bool canonMatrix = false;
+	*pCanonMatrix = false;
 	if (!TestCanonicityOnGPU()) {
 		EXIT(-1);
-		canonMatrix = this->TestCanonicity(nRow, pCanonParam, outInfo);
-		if (canonMatrix) {
+		*pCanonMatrix = this->TestCanonicity(nRow, pCanonParam, outInfo);
+		if (*pCanonMatrix) {
 			if (procFlag)
 				ConstructedDesignProcessing();
 
@@ -401,7 +401,7 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 	}
 	else {
 		nRow--;
-		if (canonMatrix && multiPartDesign) {
+		if (*pCanonMatrix && multiPartDesign) {
 			if (ResetPartsInfo(*ppRowSolution = rowStuff(nRow - 1), iFirstPartIdx, firstPartIdx))
 				return true;
 
@@ -554,7 +554,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	}
 
 #if !CONSTR_ON_GPU
-	static std::mutex mtx;
 	char buff[256];
 	const auto lenBuffer = countof(buff);
 	auto threadNumb = pParam->threadNumb;
@@ -612,7 +611,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 		lenStab = pMaster->stabiliserLengthExt();
 		this->setCurrentRowNumb(nRow = pMaster->currentRowNumb());
 		if (pMaster->getGroupOnParts())
-			updateCanonicityChecker(rowNumb(), colNumb());
+			updateCanonicityChecker(rowNumb(), numCol);
 
 		pRowSolution = rowStuff(nRow);
 		InitGroupOderStorage(pMaster->getGroupOnParts());
@@ -703,10 +702,12 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	auto *firstPartIdx = new T[nRows];
 	memset(firstPartIdx, 0, nRows * sizeof(*firstPartIdx));
 	bool canonMatrix = false;
+	bool check_all_solution, blocksOK = true;
+	if (blockIdx())
+		setClassSize(numCol / ((CBIBD_Enumerator<T, S>*)this)->getR());
 
 	while (pRowSolution) {
 		const bool useCanonGroup = USE_CANON_GROUP && nRow > 0;
-		bool checkNextPart = false;
 		auto iFirstPartIdx = numParts();
 #if USE_THREADS_ENUM
 #if RESTART_IMPLEMENTED
@@ -800,7 +801,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			canonMatrix = true;
 			if (++nRow == nRows) {
 					if (ProcessFullyConstructedMatrix(&canonParam, &pRowSolution, pEnumInfo,
-						outInfo, procFlag, pMaster, iFirstPartIdx, firstPartIdx))
+					outInfo, procFlag, &canonMatrix, pMaster, iFirstPartIdx, firstPartIdx))
 						continue;
 							}
 							else {
@@ -908,12 +909,15 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 				pRowSolution = rowStuff(nRow);
 				auto j = numParts();
-				const auto* ppOrb = colOrbitPntr() + nRow * pMatrix->colNumb();
+				const auto* ppOrb = colOrbitPntr() + nRow * numCol;
 				const auto partsInfo = pMatrix->partsInfo();
 				while (--j) {
-					auto pPartRowSolution = pRowSolution + j;
-					this->resetUnforcedColOrb(j, nRowNext);    // New code
+					ResetPartInfo(j, true, 1);
 					this->setCurrUnforcedOrbPtr(nRow, j);
+					// We don't need to call CRowSolution::allSolutionChecked()
+					// when blocksOK is false. We already did it in CheckBlockIntersections
+					// and correct index for solution is set
+					auto pPartRowSolution = pRowSolution + j;
 					if (!pPartRowSolution->allSolutionChecked())
 						break;
 
@@ -934,7 +938,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				}
 
 				rowStuff(nRowNext)->resetSolution();
-				ppOrb = colOrbitPntr() + nRowNext * pMatrix->colNumb();
+				ppOrb = colOrbitPntr() + nRowNext * numCol;
 				setColOrbitCurr(*ppOrb, 0);
 				this->resetUnforcedColOrb(0);   // New code 
 				this->resetFirstUnforcedRow();
