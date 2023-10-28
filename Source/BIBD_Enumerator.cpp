@@ -45,18 +45,18 @@ FClass2(CBIBD_Enumerator, VariableMappingPntr)::prepareCheckSolutions(size_t nVa
 	return rowIntersection()->prepareRowIntersections(matrix(), this->currentRowNumb(), λ, t);
 }
 
-FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol) const
+FClass2(CBIBD_Enumerator, bool)::isValidSolution(const T* pSol, T λ) const
 {
 	// Check if solution is valid (for elimination of invalid solutions)
-	// As of today (08/31/2021) we do it only for regular BIBDs OR first part of Combined BIBDs
-	if (currentNumPart())
+	// As of today (08/31/2021) we do it only for regular BIBDs OR first part of Combined BIBDs,
+	// which are NOT k-systems
+	if (currentNumPart() || blockIdx())
 		return true;
 
 	auto currRowNumb = this->currentRowNumb();
 	if (currRowNumb < firtstNonfixedRowNumber())
 		return true;
 
-	const auto λ = getLambda(paramSet(t_lSet));
 	if (currRowNumb == firtstNonfixedRowNumber()) {
 		// All solutions for 3-rd row coud be descrided as (x, λ-x, λ-x, r-2*λ + x).
 		if (*pSol == λ && useFilterFor_3d_RowSolutions()) {
@@ -138,7 +138,10 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 	}
 
 	const auto lastRow = currRowNumb;
-	CMatrixCanonChecker::MakeRow(lastRow, pSol, false);
+	const auto rowCleanFlag = numParts() > 1
+		? t_MatrixFlags::t_resetEntireRow
+		: t_MatrixFlags::t_default_flag;
+	CMatrixCanonChecker::MakeRow(lastRow, pSol, rowCleanFlag);
 	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
 
 	// Define intersection of current row with previous one:
@@ -177,7 +180,7 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE* pSol
 							break;
 					}
 
-					if (i == idx || pColumnIdx[i] >= r) {// All blocks are amongth first λ block OR [r+1,...2*r-λ]
+					if (i == idx || pColumnIdx[i] >= r) {// All blocks are amongth first lambda block OR [r+1,...2*r-lambda]
 						retVal = false;       // The tested solution can not be used in the canonical matrix
 						break;
 					}

@@ -1,4 +1,4 @@
-#include "C_tDesignEnumerator.h"
+﻿#include "C_tDesignEnumerator.h"
 #include "IntersectionStorage.h"
 #include "VariableMapping.h"
 
@@ -44,7 +44,7 @@ FClass2(C_tDesignEnumerator, void)::makeJobTitle(const designParam *pParam, char
 }
 #endif
 
-FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const
+FClass2(C_tDesignEnumerator, bool)::isValidSolution(const T *pSol, T λ) const
 {
 #if USE_EXRA_EQUATIONS == 0
 	// Check if solution is valid (for elimination of invalid solutions)
@@ -56,7 +56,7 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const VECTOR_ELEMENT_TYPE *p
 	if (t >= nRow + 2)
 		t = nRow + 1;
 
-	CMatrixCanonChecker::MakeRow(nRow, pSol, false);
+	CMatrixCanonChecker::MakeRow(nRow, pSol, t_MatrixFlags::t_default_flag);
 	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
 
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);

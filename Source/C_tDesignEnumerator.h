@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "BIBD_Enumerator.h"
 
 typedef struct {
@@ -20,7 +20,7 @@ public:
 #if !CONSTR_ON_GPU
 	virtual void makeJobTitle(const designParam *pParam, char *buffer, int lenBuffer, const char *comment = "") const;
 #endif
-	CK virtual bool isValidSolution(const VECTOR_ELEMENT_TYPE *pSol) const;
+	CK bool isValidSolution(const T *pSol, T λ) const override;
 	T *getIntersectionParam(const T **ppNumb) const {
 		return intersectionParam(ppNumb, this->currentRowNumb());
 	}

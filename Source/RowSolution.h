@@ -93,7 +93,7 @@ public:
 	CK inline auto solutionLength() const						{ return m_Length; }
 	CK inline void setSolutionLength(T length)					{ setRecordLength((m_Length = length)*sizeof(T)); }
 	CK CRowSolution *getSolution();
-	CK bool findFirstValidSolution(const S *pMax, const S *pMin = NULL);
+	CK bool findFirstValidSolution(const T *pMax, const T *pMin = NULL);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin);
 	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
 	CK inline auto numRemainingSolutions() const				{ return numSolutions() - solutionIndex(); }
@@ -202,7 +202,7 @@ FClass2(CRowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	return NULL;
 }
 
-FClass2(CRowSolution, bool)::findFirstValidSolution(const S *pMax, const S *pMin) {
+FClass2(CRowSolution, bool)::findFirstValidSolution(const T *pMax, const T *pMin) {
 #if USE_PERM
 	const auto pFirst = firstSolution();
 	const auto nSolutions = numSolutions();
