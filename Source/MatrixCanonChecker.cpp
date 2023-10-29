@@ -10,11 +10,10 @@ FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
 	delete[] blockIdx();
 }
 
-FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, bool nextColOrbNeeded, T partIdx) const
+FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, uint clean_flags, T partIdx) const
 {
-	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx);
-	if (nextColOrbNeeded)
-		nextColOrbNeeded &= nRow + 1 < matrix()->rowNumb();
+	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx, clean_flags);
+	bool const nextColOrbNeeded = nRow + 1 < matrix()->rowNumb();
 
 	const auto* pColOrbit = this->colOrbit(nRow, partIdx);
 	const auto* pNextRowColOrbit = this->colOrbitIni(nRow + 1, partIdx);

@@ -142,8 +142,9 @@ FClass2(CBIBD_Enumerator, bool)::isValidSolution(const T* pSol, T λ) const
 		? t_MatrixFlags::t_resetEntireRow
 		: t_MatrixFlags::t_default_flag;
 	CMatrixCanonChecker::MakeRow(lastRow, pSol, rowCleanFlag);
+#if PRINT_MATRIX_ON_VALIDATION
 	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
-
+#endif
 	// Define intersection of current row with previous one:
 	auto lastRowToCheck = lenStabilizer();
 	rowNumb -= lenStabilizer();

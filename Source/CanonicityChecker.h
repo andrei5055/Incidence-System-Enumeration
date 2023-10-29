@@ -283,7 +283,10 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	const auto colOrbLen = pEnum->colOrbitLen();
 	const auto* pPartInfo = pMatr->partsInfo();
 	const auto nonCombinedDesign = numParts == 1;
+	
+	// Reset permutation counters, if used
 	PREPARE_PERM_OUT(permColStorage());
+	PREPARE_PERM_OUT(permRowStorage());
 
 	bool calcGroupOrder = true;
 	bool retVal = true;
@@ -338,7 +341,9 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				break;
 
 		try_permut:
+#if 0  // Activate to keep/print tested permutations  
 			OUT_PERM(permRowStorage(), permRows, nRowMax);
+#endif
 			OUTPUT_PERMUTATION(permColStorage(), pEnum->outFile(), pOrbits, numRow());
 
 			// Loop for all remaining matrix's rows

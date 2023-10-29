@@ -384,7 +384,7 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, T nRo
 		printRow(file, pPerm);
 
 	const VECTOR_ELEMENT_TYPE *pSolution = firstSolution();
-	for (unsigned int i = 0; i < solutionLength(); i++)
+	for (T i = 0; i < solutionLength(); i++)
 		printRow(file, pPerm, pSolution + i);
 }
 #endif

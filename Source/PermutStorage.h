@@ -190,7 +190,7 @@ PermutStorage(size_t)::constructGroup()
 	// Loop for all permutations except the trivial one
 	resetGroupCntr();
 	auto lastIdx = nPerm;
-	S *pTmpPerm = NULL;
+	T *pTmpPerm = NULL;
 	for (size_t i = 1; i < nPerm; i++) {
 		// Construct all degrees of current permutations
 		auto tmpPermIdx = i;
@@ -256,7 +256,9 @@ PermutStorage(T *)::multiplyPermutations(size_t firstPermIdx, size_t secondPermI
 	// we need to access the permuts by their indices here
 	const auto *pFirst = getPermutByIndex(firstPermIdx);
 	const auto *pSecond = getPermutByIndex(secondPermIdx);
+#if 0
 	printPerm(pFirst, false, 0);
+#endif
 	// Do multiplication of two permutations here:
 	for (auto k = lenPerm(); k--;)
 		*(pMultRes + k) = *(pFirst + *(pSecond + k));

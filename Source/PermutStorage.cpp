@@ -46,7 +46,7 @@ PermutStorage(void)::orderPermutations(size_t *pPermPerm)
 }
 
 #if OUT_PERMUTATION
-PermutStorage(void)::printPerm(const S* pPerm, bool savePerm, int add, S permLen) const {
+PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen) const {
 	if (!pPerm)
 		return;
 
@@ -66,7 +66,7 @@ PermutStorage(void)::printPerm(const S* pPerm, bool savePerm, int add, S permLen
 	else
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "====> ");
 
-	for (S i = 0; i < permLen; i++)
+	for (T i = 0; i < permLen; i++)
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "%3d", pPerm[i]);
 
 	printf("%s\n", buf);

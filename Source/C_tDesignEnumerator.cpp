@@ -57,8 +57,9 @@ FClass2(C_tDesignEnumerator, bool)::isValidSolution(const T *pSol, T λ) const
 		t = nRow + 1;
 
 	CMatrixCanonChecker::MakeRow(nRow, pSol, t_MatrixFlags::t_default_flag);
+#if PRINT_MATRIX_ON_VALIDATION
 	OUTPUT_MATRIX(matrix(), outFile(), currentRowNumb() + 1, enumInfo(), -1);
-
+#endif
 	const auto *pLambdaSet = tDesign()->GetNumSet(t_lSet);
 	const auto *pCurrRow = this->matrix()->GetRow(nRow);
 	// Get indices of the intersection of the i previous rows (pIntersection) 

@@ -67,7 +67,7 @@ public:
 
 	CC inline void setEnumInfo(EnumInfoPntr pEnumInfo)			{ m_pEnumInfo = pEnumInfo; }
 	CC inline EnumInfoPntr enumInfo() const						{ return m_pEnumInfo; }
-	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, bool nextColOrbNeeded = true, T partIdx = 0) const;
+	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, uint clean_flags = t_MatrixFlags::t_getNextColOrb, T partIdx = 0) const;
 	CK bool CheckBlockIntersections(T nRow, T b, const T* pRowSolution, T* pBlockIdx, T partIdx = 0);
 
 	CK void CreateColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
