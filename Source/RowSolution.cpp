@@ -276,12 +276,13 @@ FClass2(CRowSolution, void)::sortSolutions(bool doSorting, PermutStoragePntr pPe
 		// When we use threads, we cannot use qsort, since in our implementation
 		// qsort will use global variables - pntrSolution and sizeSolution
 		Sort(numSolutions(), pPerm);
+		if (pPermStorage) {
+			sortSolutionsByGroup(pPermStorage);
+			return;
+		}
 	}
 
-	if (doSorting && pPermStorage)
-		sortSolutionsByGroup(pPermStorage);
-	else
-		memset(pCanonFlags, 1, numSolutions());
+	memset(pCanonFlags, 1, numSolutions());
 }
 
 #if PRINT_SOLUTIONS
@@ -325,15 +326,33 @@ FClass2(CRowSolution, size_t)::setSolutionFlags(char *buffer, size_t lenBuf, siz
 	return solIdx;
 }
 
+FClass2(CRowSolution, void)::outPortionInfo(char *buffer, char* pBuf, size_t lenBuf, FILE* file, T nPortion, bool addPortionNumb) const
+{
+	lenBuf -= pBuf - buffer;
+	if (addPortionNumb || nPortion)
+		SNPRINTF(pBuf, lenBuf, " for portion %d\n", nPortion);
+	else
+		SNPRINTF(pBuf, lenBuf, "\n");
+
+	outString(buffer, file);
+}
+
 FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, T nRow, T nPortion, bool addPortionNumb) const
 {
-	if (!solutionLength() || !numSolutions())
-        return;
-    
-	char buffer[2048], *pBuf = buffer;
+	if (!numSolutions())
+		return;
+
+	char buffer[2048], * pBuf = buffer;
 	const auto lenBuf = countof(buffer);
+	pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: ", nRow);
+	if (!solutionLength()) {
+		pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "will be forcibly constructed");
+		outPortionInfo(buffer, pBuf, lenBuf, file, nPortion, addPortionNumb);
+		return;
+	}
+    
 	if (markNextUsed) {
-		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd out of %zd will be used", nRow, solutionIndex() + 1, numSolutions());
+		pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "the solution # %zd out of %zd will be used", solutionIndex() + 1, numSolutions());
 		const uchar* pCanonFlags = solutionPerm()->canonFlags();
 		if (pCanonFlags) {
 			size_t numSolToCheck = 0;
@@ -346,15 +365,10 @@ FClass2(CRowSolution, void)::printSolutions(FILE *file, bool markNextUsed, T nRo
 		}
 	}
 	else
-		pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: %zd solution%s constructed", nRow, numSolutions(), numSolutions() > 1? "s were" : " was");
+		pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "%zd solution%s constructed", numSolutions(), numSolutions() > 1? "s were" : " was");
 
 
-	if (addPortionNumb || nPortion)
-		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), " for portion %d\n", nPortion);
-	else
-		SNPRINTF(pBuf, lenBuf - (pBuf - buffer), "\n");
-
-	outString(buffer, file);
+	outPortionInfo(buffer, pBuf, lenBuf, file, nPortion, addPortionNumb);
 
 	if (numSolutions() >= sizeof(buffer) / 2)
 		return;   // The buffer is not large enough for output

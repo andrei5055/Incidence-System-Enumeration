@@ -47,6 +47,9 @@ PermutStorage(void)::orderPermutations(size_t *pPermPerm)
 
 #if OUT_PERMUTATION
 PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen) const {
+	if (ccc <= CHECK_CCC)
+		return;
+
 	if (!pPerm)
 		return;
 

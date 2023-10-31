@@ -260,8 +260,20 @@ PermutStorage(T *)::multiplyPermutations(size_t firstPermIdx, size_t secondPermI
 	printPerm(pFirst, false, 0);
 #endif
 	// Do multiplication of two permutations here:
+#if 0
+	// During group construction the trivial permutation is also constructed 
+	// and it's not the first one.
+	// This is an unsuccesseful attempt to fix that. 
+	bool trivial_perm = true;
+	for (auto k = lenPerm(); k--;)
+		trivial_perm = k == (*(pMultRes + k) = *(pFirst + *(pSecond + k)));
+
+	if (trivial_perm)
+		return pMultRes;
+#else
 	for (auto k = lenPerm(); k--;)
 		*(pMultRes + k) = *(pFirst + *(pSecond + k));
+#endif
 
 	// Compare with the previously constructed permutations
 	for (auto i = *pToIdx; i--;) {

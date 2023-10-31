@@ -789,22 +789,22 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				REPORT_PROGRESS(pEnumInfo, t_reportCriteria::t_reportByTime);
 			}
 
-			OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
-
-			if (blockIdx()) // We construct the Kirkman Triple Systems
+			if (blockIdx()) { // We construct the Kirkman Triple Systems
+				OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
 				blocksOK = CheckBlockIntersections(pRowSolution, firstPartIdx + nRow);
+			}
 
 			if (blocksOK) {
 				OUTPUT_SOLUTION(pRowSolution, outFile(), nRow, true, 0, numParts());
-			MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
+				MakeRow(pRowSolution, nRow == firstNonfixedRow, firstPartIdx[nRow]);
 
-			canonMatrix = true;
-			if (++nRow == nRows) {
+				canonMatrix = true;
+				if (++nRow == nRows) {
 					if (ProcessFullyConstructedMatrix(&canonParam, &pRowSolution, pEnumInfo,
-					outInfo, procFlag, &canonMatrix, pMaster, iFirstPartIdx, firstPartIdx))
+						outInfo, procFlag, &canonMatrix, pMaster, iFirstPartIdx, firstPartIdx))
 						continue;
-							}
-							else {
+				}
+				else {
 					if (ProcessPartiallyConstructedMatrix(&canonParam, &pRowSolution,
 						&pInpMaster, useCanonGroup, pTreadCode, &canonMatrix, iFirstPartIdx, firstPartIdx))
 							continue;
@@ -1045,15 +1045,17 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 			if (buffer) {
 				resType = t_resType::t_resWorse;
 				pParam->betterResults = betterResults;
-				// Create the name of the file with the current results
-				if (betterResults) {
-					remove(buff);			// Remove file with previous results
-					if (rename(newResult.c_str(), buff)) // Rename file
-						cout << "Cannot rename file `" << newResult << "' to '" << std::string(buff) << "'.";
-					resType = t_resType::t_resBetter;
-				}
-				else {
-					remove(newResult.c_str());
+				if (pParam->enumFlags & t_EnumeratorFlags::t_update_results) {
+					// Create the name of the file with the current results
+					if (betterResults) {
+						remove(buff);			// Remove file with previous results
+						if (rename(newResult.c_str(), buff)) // Rename file
+							cout << "Cannot rename file `" << newResult << "' to '" << std::string(buff) << "'.";
+						resType = t_resType::t_resBetter;
+					}
+					else {
+						remove(newResult.c_str());
+					}
 				}
 			}
 

@@ -111,16 +111,15 @@ public:
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
 	CK inline void makeDummySolution()							{ setNumSolutions(1);}
+	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
 	CK inline void setNumSolutions(size_t val)					{ m_nNumSolutions = val; }
-public:
-	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
-private:
 	CK inline PERMUT_ELEMENT_TYPE variantIndex(PERMUT_ELEMENT_TYPE i) const	{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(i) : i; }
 #if PRINT_SOLUTIONS
 	void printRow(FILE *file = NULL, PERMUT_ELEMENT_TYPE *pPerm = NULL, const S *pSol = NULL) const;
+	void outPortionInfo(char *buffer, char* pBuf, size_t lenBuf, FILE* file, T nPortion, bool addPortionNumb) const;
 	size_t setSolutionFlags(char *buffer, size_t lenBuf, size_t solIdx) const;
 #endif
 	CK inline PERMUT_ELEMENT_TYPE *initSorting(uchar **pntr = NULL){ return solutionPerm()->initSorting(numSolutions(), pntr); }

@@ -693,6 +693,7 @@ int main(int argc, char * argv[])
 		getIntegerParam(line, "USE_THREAD_POOL", &param->m_bUseThreadPool);
 		getBooleanParam(line, "USE_SYMMETRICAL_T-CONDITION", t_symmetrical_t_cond, &param->enumFlags);
 		getBooleanParam(line, "USE_3-ELEMENT_CONDITION", t_use_3_condition, &param->enumFlags);
+		getBooleanParam(line, "UPDATE_RESULTS", t_update_results, &param->enumFlags);
 
 		// Define a job type
 		if (line.find("ENUMERATION") != string::npos)

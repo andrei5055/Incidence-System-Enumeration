@@ -273,6 +273,8 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 			delete[] pColGroupIdx;
 	}
 
+	// For BIBDs when we construct system for last row (nRowToBuild=1), nVar > 0 
+	// iff at least one column orbits was splitted by currently used solution.
 	return nVar;
 }
 
