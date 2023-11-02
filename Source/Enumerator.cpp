@@ -46,6 +46,7 @@
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
 size_t ccc = 0;
 bool startPrinting = START_PRINTING_AFTER <= 0;
+int printAll = 0;
 #endif
 
 template class CEnumerator<TDATA_TYPES>;
@@ -360,7 +361,7 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 				else {
 					pEnumInfo->updateConstrCounters(matrFlags, this);
 #if !CONSTR_ON_GPU
-					if (this->printMatrix(designParams())) {
+					if (printAll || this->printMatrix(designParams())) {
 						static std::mutex mtx;
 						mtx.lock();
 						outBlockTitle();

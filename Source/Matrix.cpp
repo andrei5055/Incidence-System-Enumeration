@@ -57,11 +57,15 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 	if (matrNumber > 0) {
 		auto* pTmp = pBuf;
 		auto len = SNPRINTF(pTmp, lenBuf, "\nMatrix # %3llu", matrNumber);
-		if (matrNumber >= 344914916)
+		if (matrNumber >= 19) {
+			printAll = 1;
 			matrNumber += 0;
-
-		if (number)
-			len = SNPRINTF(pTmp +=len, lenBuf-=len, ".%llu", number);
+		}
+		if (number) {
+			len = SNPRINTF(pTmp += len, lenBuf -= len, ".%llu", number);
+			if (number == 8010) // 8009 for bad
+				number += 0;
+		}
 #if TEST
 		else
 			startPrinting = matrNumber >= START_PRINTING_AFTER;
