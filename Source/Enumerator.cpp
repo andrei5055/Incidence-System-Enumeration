@@ -361,7 +361,7 @@ FClass2(CEnumerator, bool)::ProcessFullyConstructedMatrix(
 				else {
 					pEnumInfo->updateConstrCounters(matrFlags, this);
 #if !CONSTR_ON_GPU
-					if (printAll || this->printMatrix(designParams())) {
+					if (this->printMatrix(designParams())) {
 						static std::mutex mtx;
 						mtx.lock();
 						outBlockTitle();

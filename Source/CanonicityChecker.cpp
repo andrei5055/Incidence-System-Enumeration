@@ -425,6 +425,10 @@ CanonicityChecker(bool)::groupIsTransitive() const
 
 CanonicityChecker(bool)::printMatrix(const designParam *pParam) const
 {
+#if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
+	if (printAll)
+		return true;
+#endif
 	const auto outType = pParam->outType;
 	return	outType & t_AllObject ||
 			  outType & t_Transitive && groupIsTransitive() ||
