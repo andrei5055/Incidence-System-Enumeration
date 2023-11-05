@@ -100,6 +100,23 @@ FClass2(CRowSolution, size_t)::findSolution(const T *pSolution, size_t i, size_t
 	return i;
 }
 
+FClass2(CRowSolution, void)::copyToLimitBuffer(const T* pMax, const T* pMin, bool saveValues) {
+	if (saveValues) {
+		if (m_lenBuffer < solutionLength()) {
+			delete[] m_pLimitBuffer;
+			m_pLimitMaxPtr = m_pLimitBuffer = new T[2 * solutionLength()];
+		}
+		const auto len = solutionLength() * sizeof(T);
+		memcpy(m_pLimitBuffer, pMax, len);
+		m_pLimitMinPtr = m_pLimitBuffer + solutionLength();
+		memcpy(m_pLimitBuffer + solutionLength(), pMin, len);
+	}
+	else {
+		m_pLimitMaxPtr = pMax;
+		m_pLimitMinPtr = pMin;
+	}
+}
+
 static size_t findStartingIndex(size_t from, const uchar *pCanonFlags)
 {
 	while (from-- > 0 && !*(pCanonFlags + from));

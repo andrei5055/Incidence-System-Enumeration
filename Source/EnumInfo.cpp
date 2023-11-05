@@ -372,7 +372,8 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, const uint enumInf
 	outLen += outString(buff, outFile);
 
 	const auto nThreads = designInfo()->threadNumb;
-	if (nThreads > 1) {
+	const bool usingThreads = multiThreadLevel() < designInfo()->v;
+	if (nThreads > 1 && usingThreads) {
 		char buffer[32];
 		SPRINTF(buffer, printMTlevel? "row" : "different rows # >=");
 		SPRINTF(buff, "%10zd threads launched on %s %d (%swaiting to finish mode)\n", nThreads, buffer, multiThreadLevel(), WAIT_THREADS ? "" : "not ");
@@ -382,8 +383,10 @@ FClass2(CEnumInfo, void)::outEnumInformation(FILE **pOutFile, const uint enumInf
 	outLen += outString(buff, outFile);
 
 	if (nThreads >= 1) {
-		SPRINTF(buff, SPACE "Solutions obtained by master are %s by the thread%s\n", designInfo()->use_master_sol ? "used" : "copied", nThreads>1? "s" : "");
-		outLen += outString(buff, outFile);
+		if (usingThreads) {
+			SPRINTF(buff, SPACE "Solutions obtained by master are %s by the thread%s\n", designInfo()->use_master_sol ? "used" : "copied", nThreads > 1 ? "s" : "");
+			outLen += outString(buff, outFile);
+		}
 		if (CANON_ON_GPU) {
 			SPRINTF(buff, SPACE"Canonicity was tested on GPU by %zd checkers (%d for each thread)\n", NUM_GPU_WORKERS * nThreads, NUM_GPU_WORKERS);
 			outLen += outString(buff, outFile);

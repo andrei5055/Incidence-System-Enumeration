@@ -54,7 +54,11 @@ private:
 
 #if OUT_PERMUTATION
 	mutable int m_cntr = 0;
+	static FILE* m_pFile;
+
+	auto outFile() const								{ return m_pFile;}
 public:
+	void static setOutFile(FILE* pFile)					{ m_pFile = pFile; }
 	void resetGroupCntr()								{ if (this) m_cntr = 0; }
 	void printPerm(const T* pPerm, bool savePerm = false, int add = 1, T permLen = 0) const;
 

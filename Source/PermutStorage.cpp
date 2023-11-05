@@ -46,8 +46,10 @@ PermutStorage(void)::orderPermutations(size_t *pPermPerm)
 }
 
 #if OUT_PERMUTATION
+FILE* CPermutStorage<TDATA_TYPES>::m_pFile;
+
 PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen) const {
-	if (ccc <= CHECK_CCC)
+	if (ccc < CHECK_CCC)
 		return;
 
 	if (!pPerm)
@@ -61,7 +63,7 @@ PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen
 		permLen = lenPerm();
 
 	char buf[256];
-	const auto lenBuffer = 3 * permLen + 7;
+	const auto lenBuffer = 3 * permLen + 8;
 	char* pBuffer = lenBuffer < sizeof(buf) ? buf : new char[lenBuffer];
 	char* pBuf = pBuffer;
 	if (this)
@@ -72,7 +74,8 @@ PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen
 	for (T i = 0; i < permLen; i++)
 		pBuf += SNPRINTF(pBuf, lenBuffer - (pBuf - pBuffer), "%3d", pPerm[i]);
 
-	printf("%s\n", buf);
+	strcpy_s(pBuf, lenBuffer - (pBuf - pBuffer), "\n");
+	outString(pBuffer, outFile());
 	if (pBuffer != buf)
 		delete[] pBuf;
 }

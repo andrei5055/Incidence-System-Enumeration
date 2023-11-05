@@ -46,7 +46,7 @@
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
 size_t ccc = 0;
 bool startPrinting = START_PRINTING_AFTER <= 0;
-int printAll = 0;
+int printAll = 1;
 #endif
 
 template class CEnumerator<TDATA_TYPES>;
@@ -83,42 +83,56 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 	auto i = *pPartNumb;
 	if (i) {
 		// Only for combined designs
-		// Check if the solutions for current row were already constructed before for previous parts
+		for (auto j = i; j < numParts; j++)
+			pSolutionWereConstructed[j] = 0;
+
+		// Check if the solutions for previous parts  
+		// of the current row have already been built
 		while (i-- && !pSolutionWereConstructed[i]);
 		i++;
 	}
 
 	T nVar = ELEMENT_MAX;
 	const auto firstPart = i;
+	i = 0;
 	if (prepareToFindRowSolution()) {
+		RowSolutionPntr pRowSolution;
 		// Find row solution for all parts of the design
 		while (true) {
-			if (pSolutionWereConstructed && i >= firstPart)
-				pSolutionWereConstructed[i] = 0;
+			if (/*true ||*/ i >= firstPart) {
+				nVar = MakeSystem(i);
+				if (nVar == ELEMENT_MAX)
+					break;    // There is no system of equations which could have valid solutions for next row
 
-			nVar = MakeSystem(i);
-			if (nVar == ELEMENT_MAX)
-				break;    // There is no system of equations which could have valid solutions for next row
-
-			if (i < firstPart) {
-				i++;
-				continue; // The solutions up to firstPart where already constructed
-			}
-
-			// NOTE: For incidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
-			setPrintResultNumVar(nVar);
-			RowSolutionPntr pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
-			if (!pRowSolution)
-				break;
-
-			if (!pRowSolution->numSolutions()) {
-				if (!nVar && !i && blockIdx()) {
-					// Constructing one of the last k elements of the Kirkman Triple System
-					// The solution always exists, but ...
-					pRowSolution->makeDummySolution();
+				if (i < firstPart) {
+					i++;
+					continue; // The solutions up to firstPart where already constructed
 				}
-				else
+
+				// NOTE: For incidence system nVar could be 0 for last row, when on current row none of the orbits was splitted into two parts
+				setPrintResultNumVar(nVar);
+				pRowSolution = FindSolution(nVar, i, m_lastRightPartIndex[i]);
+				if (!pRowSolution)
 					break;
+
+
+				if (!pRowSolution->numSolutions()) {
+					if (!nVar && !i && blockIdx()) {
+						// Constructing one of the last k elements of the Kirkman Triple System
+						// The solution always exists, but ...
+						pRowSolution->makeDummySolution();
+					}
+					else
+						break;
+				}
+
+				copyLimits(pRowSolution, numParts > 1);
+			}
+			else {
+				// NOTE: If we would save min, max values for variables 
+				// we would not need to call MakeSystem for current part.
+				pRowSolution = this->rowStuff(nRow, i);
+				pRowSolution->resetSolutionIndex();
 			}
 #if PRINT_SOLUTIONS_LEX_ORD
 			if (MAKE_OUTPUT()) {
@@ -576,6 +590,9 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			return false;
 
 		outputJobTitle();
+#if OUT_PERMUTATION
+		CPermutStorage<TDATA_TYPES>::setOutFile(outFile());
+#endif
 	} else
 		this->setOutFile(NULL);
 
@@ -1044,15 +1061,13 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 		std::string newResult(buff);
 		if (compareResults(buff, lenName, buffer ? &betterResults : NULL)) {
 			if (buffer) {
-				resType = t_resType::t_resWorse;
-				pParam->betterResults = betterResults;
+				resType = betterResults? t_resType::t_resBetter : t_resType::t_resWorse;
 				if (pParam->enumFlags & t_EnumeratorFlags::t_update_results) {
 					// Create the name of the file with the current results
 					if (betterResults) {
 						remove(buff);			// Remove file with previous results
 						if (rename(newResult.c_str(), buff)) // Rename file
 							cout << "Cannot rename file `" << newResult << "' to '" << std::string(buff) << "'.";
-						resType = t_resType::t_resBetter;
 					}
 					else {
 						remove(newResult.c_str());

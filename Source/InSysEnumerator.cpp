@@ -156,3 +156,8 @@ FClass2(C_InSysEnumerator, void)::ConstructColumnPermutation(const MatrixDataPnt
 	CanonizeByColumns(&transformedMatr, this->permColStorage()->allocateMemoryForPermut(colNumb));
 	this->permColStorage()->setLenPerm(colNumb);
 }
+
+FClass2(C_InSysEnumerator, void)::copyLimits(RowSolutionPntr pRowSolution, bool saveValues) const {
+
+	pRowSolution->copyToLimitBuffer(inSysRowEquation()->variableMaxLimitPntr(), GetData(), saveValues);
+}

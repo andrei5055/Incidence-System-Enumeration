@@ -200,7 +200,7 @@ private:
 	CK bool CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx);
 	CK void ResetPartInfo(T partIdx, bool resetBlockIntersection = true, T adj = 0);
 	CK bool ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart = false);
-
+	CK virtual void copyLimits(RowSolutionPntr pRowSolution, bool saveValues) const {}
 #if PRINT_SOLUTIONS
 	void printSolutions(const RowSolutionPntr pRowSolution, FILE* file, T nRow, bool markNextUsed, T nPartStart, T nPartEnd) const;
 	void printSolutionState(const RowSolutionPntr pSolution, FILE* file, T nRow, T nPart, bool rejected = true) const;

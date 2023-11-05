@@ -63,16 +63,18 @@ public:
 	CArrayOfCanonFlags *m_CanonFlgs;
 };
 
-Class2Def(CRowSolution) : public CVector<S>, CSorter<unsigned char>
+Class2Def(CRowSolution) : public CVector<T>, CSorter<unsigned char>
 {
 public:
 	CK CRowSolution(T length = 0, size_t nVect = 1, CArrayOfVectorElements *pCoord = NULL) :
-		                                                        CVector<S>(length * nVect, pCoord),
+		                                                        CVector<T>(length * nVect, pCoord),
 																CSorter(length * sizeof(T)) {
 																	setSolutionPerm(NULL);
 																	InitSolutions(length, nVect, pCoord);
 																}
-	CK ~CRowSolution()											{ delete solutionPerm(); }
+	CK ~CRowSolution()											{ delete solutionPerm();
+																  delete [] m_pLimitBuffer;
+																}
 	CRowSolution& operator = (const CRowSolution& src);
 	CK inline const auto *firstSolution() const					{ return this->GetData(); }
 	CK inline const auto *solution(PERMUT_ELEMENT_TYPE i) const	{ return firstSolution() + variantIndex(i) * solutionLength(); }
@@ -93,7 +95,7 @@ public:
 	CK inline auto solutionLength() const						{ return m_Length; }
 	CK inline void setSolutionLength(T length)					{ setRecordLength((m_Length = length)*sizeof(T)); }
 	CK CRowSolution *getSolution();
-	CK bool findFirstValidSolution(const T *pMax, const T *pMin = NULL);
+	CK bool findFirstValidSolution(bool useMinValues = true);
 	CK bool checkChoosenSolution(const CColOrbit<S> *pColOrbit, T nRowToBuild, T kMin);
 	CK void sortSolutions(bool doSorting, PermutStoragePntr pPermStorage);
 	CK inline auto numRemainingSolutions() const				{ return numSolutions() - solutionIndex(); }
@@ -112,6 +114,7 @@ public:
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
 	CK inline void makeDummySolution()							{ setNumSolutions(1);}
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
+	CK void copyToLimitBuffer(const T* pMax, const T* pMin, bool saveValues);
 private:
 	CK void sortSolutionsByGroup(PermutStoragePntr pPermutStorage);
 	CK inline void setSolutionPerm(CSolutionPerm *perm)			{ m_pSolutionPerm = perm; }
@@ -133,6 +136,12 @@ private:
 	PERMUT_ELEMENT_TYPE m_nSavedSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;
 	size_t m_nLenSolOrb;
+	
+	T *m_pLimitBuffer = NULL;     // A buffer for storing the minimum and maximum values 
+	                              // of the elements of the vectors of the solution set.
+	size_t m_lenBuffer = 0;
+	const T *m_pLimitMaxPtr = NULL;
+	const T *m_pLimitMinPtr = NULL;
 };
 
 #define USE_PERM    1   // Should be 1. Version for 0 has a bug
@@ -201,16 +210,18 @@ FClass2(CRowSolution, RowSolutionPntr)::NextSolution(bool useCanonGroup) {
 	return NULL;
 }
 
-FClass2(CRowSolution, bool)::findFirstValidSolution(const T *pMax, const T *pMin) {
+FClass2(CRowSolution, bool)::findFirstValidSolution(bool useMinValues) {
 #if USE_PERM
 	const auto pFirst = firstSolution();
 	const auto nSolutions = numSolutions();
 	auto *pPerm = solutionPerm();
+	const T* pMax = m_pLimitMaxPtr;
+	const T* pMin = useMinValues? m_pLimitMinPtr : NULL;
 	PERMUT_ELEMENT_TYPE n, idx = 0;
 	for (auto i = solutionLength(); i--;) {
 		// Current min and max values we have to test
 		const auto minVal = pMin ? *(pMin + i) : 1;
-		const S currentVal = *(pFirst + pPerm->GetAt(idx) * solutionLength() + i);
+		const T currentVal = *(pFirst + pPerm->GetAt(idx) * solutionLength() + i);
 		if (currentVal >= minVal) {
 			const auto maxVal = *(pMax + i);
 			// No need to check minVal anymore
@@ -318,9 +329,9 @@ FClass2(CRowSolution, void)::sortSolutionsByGroup(PermutStoragePntr pPermStorage
 	// Suppose that all solutions are not canonical
 	memset(pCanonFlags, 0, numSolutions() * sizeof(pCanonFlags[0]));
 
-	S buffer[256];
+	T buffer[256];
 	const auto lenMem = solutionLength() << 1;
-	auto *pMem = lenMem <= countof(buffer) ? buffer : new S[lenMem];
+	auto *pMem = lenMem <= countof(buffer) ? buffer : new T[lenMem];
 	size_t canonIdx[256];
 	auto pCanonIdx = numSolutions() <= countof(canonIdx) ? canonIdx : new size_t[numSolutions()];
 	int nCanon = 0;

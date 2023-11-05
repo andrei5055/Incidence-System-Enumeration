@@ -35,7 +35,7 @@ protected:
 	CK virtual bool check_X0_3(T nPart) const					{ return false; }
 	CK virtual bool checkRightParts(T nRow)						{ return false; }
 	CK virtual bool useAsRightPart(CRowSolution<TDATA_TYPES> *pRowSol, PERMUT_ELEMENT_TYPE idx)		{ return true;  }
-
+	CK void copyLimits(RowSolutionPntr pRowSolution, bool saveValues) const override;
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -95,7 +95,7 @@ FClass2(C_InSysEnumerator, bool)::checkSolutions(RowSolutionPntr pSolution, PERM
 	if (!pSolution->numSolutions())
 		return false;
 
-	return pSolution->findFirstValidSolution(inSysRowEquation()->variableMaxValPntr());
+	return pSolution->findFirstValidSolution(false);
 }
 
 FClass2(C_InSysEnumerator, RowSolutionPntr)::setFirstRowSolutions() {
@@ -463,7 +463,7 @@ FClass2(C_InSysEnumerator, void)::addForciblyConstructedColOrbit(CColOrbit<S> *p
 FClass2(C_InSysEnumerator, void)::setVariableLimit(T nVar, T len, T nRowToBuild, T currentK, T weightDeficit)
 {
 	// Minimal value for the nVar-th element which could be used as a first valid candidate for next row
-	this->SetAt(nVar, static_cast<S>((weightDeficit * len + nRowToBuild - 1) / nRowToBuild));
+	this->SetAt(nVar, static_cast<T>((weightDeficit * len + nRowToBuild - 1) / nRowToBuild));
 	inSysRowEquation()->setVariableMaxLimit(nVar, len);
 
 	if (noReplicatedBlocks() && (lambdaCond(currentK) || weightDeficit == 1))

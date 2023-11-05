@@ -416,7 +416,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 						}
 
 						if (pPartNumb)
-							*pPartNumb = usingGroupOnBlocks? -1 : nPart;
+							*pPartNumb = -1; // usingGroupOnBlocks ? -1 : nPart;
 
 						if (pIndxPerms != idxPerm)
 							delete[] pIndxPerms;
