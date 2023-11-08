@@ -63,7 +63,7 @@ PermutStorage(void)::printPerm(const T* pPerm, bool savePerm, int add, T permLen
 		permLen = lenPerm();
 
 	char buf[256];
-	const auto lenBuffer = 3 * permLen + 8;
+	const auto lenBuffer = 3 * permLen + 9;
 	char* pBuffer = lenBuffer < sizeof(buf) ? buf : new char[lenBuffer];
 	char* pBuf = pBuffer;
 	if (this)

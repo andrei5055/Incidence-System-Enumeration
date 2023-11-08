@@ -46,7 +46,7 @@
 #if PRINT_SOLUTIONS || PRINT_CURRENT_MATRIX
 size_t ccc = 0;
 bool startPrinting = START_PRINTING_AFTER <= 0;
-int printAll = 1;
+int printAll = 0;
 #endif
 
 template class CEnumerator<TDATA_TYPES>;
@@ -99,7 +99,8 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 		RowSolutionPntr pRowSolution;
 		// Find row solution for all parts of the design
 		while (true) {
-			if (/*true ||*/ i >= firstPart) {
+			const auto doSorting = i >= firstPart;
+			if (/*true ||*/ doSorting) {
 				nVar = MakeSystem(i);
 				if (nVar == ELEMENT_MAX)
 					break;    // There is no system of equations which could have valid solutions for next row
@@ -141,7 +142,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 			}
 #endif
 
-			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i]))
+			if (!checkSolutions(pRowSolution, i, m_lastRightPartIndex[i], doSorting))
 				break;
 
 			if (pSolutionWereConstructed)
