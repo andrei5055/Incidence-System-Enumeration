@@ -112,7 +112,9 @@ public:
 	inline void setLenOrbitOfSolution(size_t len)               { m_nLenSolOrb = len; }
 	CK inline void saveSolutionIndex()							{ m_nSavedSolutionIndex = solutionIndex(); }
 	CK inline void restoreSolutionIndex()						{ setSolutionIndex(m_nSavedSolutionIndex); }
-	CK inline void makeDummySolution()							{ setNumSolutions(1);}
+	CK inline void saveNumSolutions()							{ m_nNumSolutionsSaved = m_nNumSolutions; }
+	CK inline void restoreNumSolutions()						{ m_nNumSolutions = m_nNumSolutionsSaved; }
+	CK inline void makeDummySolution()							{ setNumSolutions(1); }
 	CK inline PERMUT_ELEMENT_TYPE variantIndex() const			{ return solutionPerm()->GetData() ? solutionPerm()->GetAt(solutionIndex()) : solutionIndex(); }
 	CK void copyToLimitBuffer(const T* pMax, const T* pMin, bool saveValues);
 private:
@@ -132,6 +134,7 @@ private:
 
 	T m_Length;
 	size_t m_nNumSolutions;
+	size_t m_nNumSolutionsSaved;
 	PERMUT_ELEMENT_TYPE m_nSolutionIndex;
 	PERMUT_ELEMENT_TYPE m_nSavedSolutionIndex;
 	CSolutionPerm *m_pSolutionPerm;

@@ -127,6 +127,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 						break;
 				}
 
+				pRowSolution->saveNumSolutions();
 				copyLimits(pRowSolution, numParts > 1);
 			}
 			else {
@@ -134,6 +135,7 @@ FClass2(CEnumerator, RowSolutionPntr)::FindRowSolution(T *pPartNumb)
 				// we would not need to call MakeSystem for current part.
 				pRowSolution = this->rowStuff(nRow, i);
 				pRowSolution->resetSolutionIndex();
+				pRowSolution->restoreNumSolutions();
 			}
 #if PRINT_SOLUTIONS_LEX_ORD
 			if (MAKE_OUTPUT()) {
