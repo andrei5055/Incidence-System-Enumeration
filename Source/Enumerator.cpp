@@ -504,18 +504,12 @@ FClass2(CEnumerator, bool)::CheckBlockIntersections(RowSolutionPntr pRowSolution
 {
 	const auto r = ((CBIBD_Enumerator<T, S>*)this)->getR();
 	const auto b = matrix()->colNumb();
-	auto* pBlockIdx = blockIdx() + r * (nRow - 1);
-	for (auto i = *pFirstPartIdx; i < numParts(); i++) {
-		if (!i)
-			continue;
-
+	const auto rowNumb = nRow - 1;
+	auto* pBlockIdx = blockIdx() + r * rowNumb;
+	auto* pPartIdx = partIdx() + rowNumb;
+	for (auto i = *pPartIdx; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
-		bool flg;
-		while (1) {
-			flg = CMatrixCanonChecker::CheckBlockIntersections(nRow, b, pPartRowSolution->currSolution(), pBlockIdx, i);
-			if (flg)
-				break;
-
+		while (!CMatrixCanonChecker::CheckBlockIntersections(nRow, b, pPartRowSolution->currSolution(), pBlockIdx, i)) {
 			OUTPUT_REJECTED(pRowSolution, outFile(), nRow, i);
 			for (auto j = i; ++j < numParts();)
 				(pRowSolution + j)->setSolutionIndex(0);
@@ -524,8 +518,10 @@ FClass2(CEnumerator, bool)::CheckBlockIntersections(RowSolutionPntr pRowSolution
 				pPartRowSolution->setSolutionIndex(0);
 				--pPartRowSolution;
 				OUTPUT_TESTING(pRowSolution, outFile(), nRow, i);
-				if (!--i)
-					break;
+				if (!--i) {
+					*pPartIdx = 1;
+					return false;
+				}
 
 				ResetBlockIntersections(nRow, i);
 			}
@@ -533,15 +529,11 @@ FClass2(CEnumerator, bool)::CheckBlockIntersections(RowSolutionPntr pRowSolution
 			if (*pFirstPartIdx > i)
 				*pFirstPartIdx = i;
 
-			if (i) {
-				OUTPUT_TESTING(pRowSolution, outFile(), nRow, i);
-				continue;
-			}
-
-			return false;
+			OUTPUT_TESTING(pRowSolution, outFile(), nRow, i);
 		}
 	}
 
+	*pPartIdx = numParts();
 	return true;
 }
 
@@ -554,16 +546,19 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 	const auto numCol = pMatrix->colNumb();
 	if (pMatrix->objectType() == t_objectType::t_Kirkman_Triple) {
 		const auto len = numCol * numCol;
+		const auto v = pParam->v;
 		const auto k = pParam->k;
 		if (!commonElemNumber()) {
 			setCommonElemNumber(new uchar[len]);
 			setBlockIdx(new T[numCol * k]); // using v * r = b * k
+			setPartIdx(new T[v]);
 		}
 
 		if (!pMaster) {
 			memset(commonElemNumber(), 0, len);
+			memset(partIdx(), 0, v * sizeof(*partIdx()));
 			auto* pBlockIdx = blockIdx();
-			const auto iMax = pParam->v / k;
+			const auto iMax = v / k;
 			const auto r = numCol / iMax;
 			for (T i = 0; i < iMax; i++)
 				for (auto j = k; j--; pBlockIdx += r)
@@ -1123,7 +1118,9 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, T i
 	// Loop over all portions of the solution
 	const auto nRow = currentRowNumb();
 	auto* const pSolutionWereConstructed = getSolutionsWereConstructed(numParts(), nRow + 1);
-	const bool nextColOrbNeeded = nRow + 1 < matrix()->rowNumb();
+	const auto nextColOrbNeeded = nRow + 1 < matrix()->rowNumb()
+		? t_MatrixFlags::t_getNextColOrb
+		: t_MatrixFlags::t_default_flag;
 	for (auto i = 0; i < numParts(); i++) {
 		auto pPartRowSolution = pRowSolution + i;
 		// We need to get lastRightPartIndex here and use later because 
@@ -1152,18 +1149,24 @@ FClass2(CEnumerator, void)::MakeRow(RowSolutionPntr pRowSolution, bool flag, T i
 	}
 }
 
-FClass2(CEnumerator, void)::ResetPartInfo(T partIdx, bool resetBlockIntersection, T adj)
+FClass2(CEnumerator, void)::ResetPartInfo(T rowNumb, T partIdx, bool resetBlockIntersection)
 {
-	this->resetUnforcedColOrb(partIdx, nRow + adj);
+	this->resetUnforcedColOrb(partIdx, rowNumb);
 	if (resetBlockIntersection && blockIdx())
-		ResetBlockIntersections(nRow - 1 + adj, partIdx);
+		ResetBlockIntersections(rowNumb - 1, partIdx);
+
+	const auto* pMatrix = this->matrix();
+	const auto* ppOrb = colOrbitPntr() + pMatrix->colNumb() * (rowNumb - 1);
+    const auto partsInfo = pMatrix->partsInfo();
+	setColOrbitCurr(*(ppOrb + partsInfo->getShift(partIdx)), partIdx);
+//	this->resetUnforcedColOrb(j);  // New Code
 }
 
 FClass2(CEnumerator, bool)::ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart)
 {
 	while (--iFirstPartIdx) {
 		auto pPartRowSolution = pRowSolution + iFirstPartIdx;
-		ResetPartInfo(iFirstPartIdx, !changeFirstPart);
+		ResetPartInfo(nRow, iFirstPartIdx, !changeFirstPart);
 		if (changeFirstPart || pPartRowSolution->allSolutionChecked())
 			pPartRowSolution->setSolutionIndex(0);
 		else

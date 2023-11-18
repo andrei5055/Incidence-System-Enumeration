@@ -198,7 +198,7 @@ private:
 		return nParts > 1  && rowNumb < matrix()->rowNumb()? m_bSolutionsWereConstructed + rowNumb * nParts : NULL; }
 	CK virtual void setForcibleLambda(T row, T val, T pPart){}
 	CK bool CheckBlockIntersections(RowSolutionPntr pRowSolution, T* pFirstPartIdx);
-	CK void ResetPartInfo(T partIdx, bool resetBlockIntersection = true, T adj = 0);
+	CK void ResetPartInfo(T rowNumb, T partIdx, bool resetBlockIntersection = true);
 	CK bool ResetPartsInfo(RowSolutionPntr pRowSolution, T& iFirstPartIdx, T* firstPartIdx, bool changeFirstPart = false);
 	CK virtual void copyLimits(RowSolutionPntr pRowSolution, bool saveValues) const {}
 #if PRINT_SOLUTIONS

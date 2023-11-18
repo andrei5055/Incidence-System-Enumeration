@@ -75,8 +75,10 @@ public:
 protected:
 	CK inline auto* commonElemNumber() const							{ return m_pCommonElemNumber; }
 	CK inline auto* blockIdx() const									{ return m_pBlockIdx; }
+	CK inline auto* partIdx() const										{ return m_pPartIdx; }
 	CK inline void setCommonElemNumber(uchar *pntr)						{ m_pCommonElemNumber = pntr; }
 	CK inline void setBlockIdx(T *pntr)									{ m_pBlockIdx = pntr; }
+	CK inline void setPartIdx(T *pntr)									{ m_pPartIdx = pntr; }
 	CK inline void setClassSize(T nBlocks)                              { m_nClassSize = nBlocks; }
 	CK inline T classSize() const										{ return m_nClassSize; }
 	CK void ResetBlockIntersections(T nRow, T partIdx);
@@ -85,6 +87,7 @@ private:
 	EnumInfoPntr m_pEnumInfo = NULL;
 	uchar* m_pCommonElemNumber = NULL;			 // Number of common elements for 2 blocks
 	T* m_pBlockIdx = NULL;                       // Block indices containing each element
+	T* m_pPartIdx = NULL;                        // Part indices which to store the information for block intercestion updates 
 	T m_nClassSize = 0;                          // Number of blocks in one parallel class of k-System
 };
 

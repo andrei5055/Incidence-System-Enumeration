@@ -8,12 +8,12 @@ FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
 	delete enumInfo();
 	delete[] commonElemNumber();
 	delete[] blockIdx();
+	delete[] partIdx();
 }
 
 FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution, uint clean_flags, T partIdx) const
 {
 	auto* pRow = this->matrix()->ResetRowPart(nRow, partIdx, clean_flags);
-	bool const nextColOrbNeeded = nRow + 1 < matrix()->rowNumb();
 
 	const auto* pColOrbit = this->colOrbit(nRow, partIdx);
 	const auto* pNextRowColOrbit = this->colOrbitIni(nRow + 1, partIdx);
@@ -23,6 +23,7 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 	const auto maxElement = rank - 1;
 	const auto* pColOrbitIni = this->colOrbitIni(nRow, partIdx);
 
+	const bool nextColOrbNeeded = clean_flags & t_getNextColOrb;
 	ColOrbPntr pNextRowColOrbitNew = NULL;
 	ColOrbPntr pColOrbitLast = NULL;
 	while (pColOrbit) {
@@ -90,35 +91,46 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 
 	return pNextRowColOrbitNew;
 }
-
-FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIdx)
-{
+static size_t cntr = 0;
+FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex) {
 	// Reset the intersections of the current block with blocks
 	// containing the current element
 	const auto b = matrix()->colNumb();
 	const auto lenPart = b / classSize();
-	auto* pBlockIdx = blockIdx() + lenPart * (nRow - 1);
-	const auto nColAbs = *(pBlockIdx + partIdx);
+	auto* pBlockIdx = blockIdx() + lenPart * (--nRow);
+	const auto nColAbs = *(pBlockIdx + partIndex);
 	auto* pCommonElemNumber = commonElemNumber() + nColAbs * b;
+	if (*(partIdx() + nRow) > partIndex)
+		*(partIdx() + nRow) = partIndex;
 #define PRINT_INTERSECTIONS PRINT_SOLUTIONS&&PRINT_TO_FILE
 #if PRINT_INTERSECTIONS
-	fprintf(outFile(), "\nRow %d, part %d: Reset intersectios of block %2d with (", nRow, partIdx, nColAbs);
+#define START_PRINTING 0 //42000000
+	fprintf(outFile(), "\nRow %d, part %d: Reset intersectios of block %2d with (", nRow, partIndex, nColAbs);
+	if (++cntr >= START_PRINTING) {
+		fprintf(outFile(), "\nRow %d, part %d: Reset intersections of block %2d with (", nRow + 1, partIndex, nColAbs);
+		if (cntr >= 345439) //345411)
+			cntr += 0;
+	}
 #endif
-	for (auto i = partIdx; i--;) {
+	for (auto i = partIndex; i--;) {
 		auto* pntr = pCommonElemNumber + *(pBlockIdx + i);
 #if PRINT_INTERSECTIONS
+		if (cntr >= START_PRINTING)
 		fprintf(outFile(), "%2d, ", *(pBlockIdx + i));
 		if (!*pntr) {
 			printf("\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
+			if (cntr >= START_PRINTING) {
 			fprintf(outFile(), "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
 			fclose(outFile());
+		}
 		}
 #endif
 		assert(*pntr != 0);
 		*pntr = 0;
 	}
 #if PRINT_INTERSECTIONS
-	fprintf(outFile(), ")\n");
+	if (cntr >= START_PRINTING)
+		fprintf(outFile(), ")  cntr = %zd  ccc = %zd\n", cntr, ccc);
 #endif
 }
 
@@ -134,7 +146,6 @@ FClass2(CMatrixCanonChecker, bool)::CheckBlockIntersections(
 	ColOrbPntr pColOrbitLast = NULL;
 	while (pColOrbit) {
 		if (*pRowSolution++) {
-			ColOrbPntr pNewColOrbit = NULL;
 			// Define the number of columns to start with
 			const auto nColCurr = ((char*)pColOrbit - (char*)pColOrbitIni) / colOrbLen;
 			const auto nColAbs = static_cast<T>(nColBase + nColCurr);
@@ -155,6 +166,16 @@ FClass2(CMatrixCanonChecker, bool)::CheckBlockIntersections(
 			}
 
 			*(pBlockIdx + partIdx) = nColAbs;
+			/*
+			static int css;
+			if (cntr > START_PRINTING) {
+				css++;
+				pCommonElemNumber = commonElemNumber() + 29 * b;
+				fprintf(outFile(), "\ncss = %d: BlInt[29, 20] = %d", css, *(pCommonElemNumber + 20));
+				fprintf(outFile(), "\ncss = %d:  (%d, %d)", css, *(pBlockIdx + 4), *(pBlockIdx + 5));
+				if (css == 561037)
+					css += 0;
+			} */
 			break;
 		}
 
