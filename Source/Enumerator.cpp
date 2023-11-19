@@ -836,7 +836,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				//nRow--;
 				//check_all_solution = true;
 				iFirstPartIdx = 0;
-				//pRowSolution = NULL;
+				pRowSolution = NULL;
 			}
 #if USE_THREADS_ENUM
 		}

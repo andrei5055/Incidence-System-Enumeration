@@ -105,7 +105,6 @@ FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex)
 #define PRINT_INTERSECTIONS PRINT_SOLUTIONS&&PRINT_TO_FILE
 #if PRINT_INTERSECTIONS
 #define START_PRINTING 0 //42000000
-	fprintf(outFile(), "\nRow %d, part %d: Reset intersectios of block %2d with (", nRow, partIndex, nColAbs);
 	if (++cntr >= START_PRINTING) {
 		fprintf(outFile(), "\nRow %d, part %d: Reset intersections of block %2d with (", nRow + 1, partIndex, nColAbs);
 		if (cntr >= 345439) //345411)
@@ -116,13 +115,13 @@ FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex)
 		auto* pntr = pCommonElemNumber + *(pBlockIdx + i);
 #if PRINT_INTERSECTIONS
 		if (cntr >= START_PRINTING)
-		fprintf(outFile(), "%2d, ", *(pBlockIdx + i));
+			fprintf(outFile(), "%2d, ", *(pBlockIdx + i));
 		if (!*pntr) {
 			printf("\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
 			if (cntr >= START_PRINTING) {
-			fprintf(outFile(), "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
-			fclose(outFile());
-		}
+				fprintf(outFile(), "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
+				fclose(outFile());
+			}
 		}
 #endif
 		assert(*pntr != 0);
