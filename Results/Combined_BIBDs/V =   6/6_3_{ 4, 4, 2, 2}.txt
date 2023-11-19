@@ -23,15 +23,21 @@ CBIBD(  6,  3, { 4, 4, 2, 2})
     _____________________________________________________________
         Total:              604            2    113      2
 
-       604 matrices were constructed in  0.19 sec,
+       604 matrices were constructed in  0.20 sec,
        113 of them are transitive on the rows.
          2 matrices have no replicated blocks,
          2 of them are transitive on the rows.
-      1578 matrices were fully constructed.
+      1685 matrices were fully constructed.
+
+Processing times are:
+             user_time:  0.06 sec,
+  kernel (system) time:  0.00 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
         Single thread mode
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

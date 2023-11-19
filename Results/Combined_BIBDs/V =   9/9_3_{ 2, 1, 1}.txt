@@ -2,43 +2,48 @@ CBIBD(  9,  3, { 2, 1, 1})
 
         |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
     _____________________________________________________________
-             1          2752447      1151263      0      0
-             1*2          10472         3891      0      0
-             2             4363          775      0      0
-             2*2            596           84      0      0
-             3              545          212      0      0
-             3*2             69           31      0      0
-             4               31            1      0      0
-             4*2             34            4      0      0
-             6               16            4      0      0
-             6*2             16            5      0      0
-             8                1            0      0      0
+             1          3933382      1579809      0      0
+             1*2          13935         4991      0      0
+             2             4987         1013      0      0
+             2*2            660          122      0      0
+             3              825          334      0      0
+             3*2             99           39      0      0
+             4               34            4      0      0
+             4*2             35            5      0      0
+             6               18            6      0      0
+             6*2             18            7      0      0
+             8                2            1      0      0
              8*2              5            2      0      0
-             9               17            4     17      4
-             9*2              7            3      7      3
+             9               30           17     30     17
+             9*2              8            4      8      4
             12                2            0      0      0
             12*2              4            0      0      0
             16                1            0      0      0
             16*2              5            0      0      0
-            18                4            2      4      2
-            18*2              2            1      2      1
+            18                5            3      5      3
+            18*2              4            3      4      3
             54                3            0      3      0
             54*2              2            0      2      0
            108*2              1            0      1      0
            432*2              1            0      1      0
     _____________________________________________________________
-        Total:          2768644      1156282     37     10
+        Total:          3954066      1586360     54     27
 
-   2768644 matrices were constructed in  2:51.29 sec,
-        37 of them are transitive on the rows.
-   1156282 matrices have no replicated blocks,
-        10 of them are transitive on the rows.
-   4608862 matrices were fully constructed.
+   3954066 matrices were constructed in 23:14.66 sec,
+        54 of them are transitive on the rows.
+   1586360 matrices have no replicated blocks,
+        27 of them are transitive on the rows.
+   7212600 matrices were fully constructed.
+
+Processing times are:
+             user_time: 12:47.37 sec,
+  kernel (system) time:  6.45 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 6 (not waiting to finish mode)
-        Solutions obtained by master are copied by the threads
+        Single thread mode
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

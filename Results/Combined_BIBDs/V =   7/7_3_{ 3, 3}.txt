@@ -2,15 +2,15 @@ CBIBD(  7,  3, { 3, 3})
 
         |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
     _____________________________________________________________
-             1             1571            0      0      0
-             1*2             17            0      0      0
-             2              147            0      0      0
-             2*2              4            1      0      0
-             3              117            0      0      0
+             1             2001            0      0      0
+             1*2             19            0      0      0
+             2              191            0      0      0
+             2*2              5            1      0      0
+             3              131            0      0      0
              3*2              5            0      0      0
              4               25            0      0      0
              4*2              7            0      0      0
-             6               11            0      0      0
+             6               15            0      0      0
              6*2              2            0      0      0
              8                6            0      0      0
              8*2              1            0      0      0
@@ -24,18 +24,24 @@ CBIBD(  7,  3, { 3, 3})
            144*2              1            0      0      0
            168*2              1            0      1      0
     _____________________________________________________________
-        Total:             1937            2      7      1
+        Total:             2432            2      7      1
 
-      1937 matrices were constructed in  0.20 sec,
+      2432 matrices were constructed in  0.29 sec,
          7 of them are transitive on the rows.
          2 matrices have no replicated blocks,
          1 of them is transitive on the rows.
-      4345 matrices were fully constructed.
+      5909 matrices were fully constructed.
+
+Processing times are:
+             user_time:  0.43 sec,
+  kernel (system) time:  0.00 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on different rows # >= 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

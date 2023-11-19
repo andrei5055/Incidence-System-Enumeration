@@ -91,7 +91,12 @@ FClass2(CMatrixCanonChecker, ColOrbPntr)::MakeRow(T nRow, const T *pRowSolution,
 
 	return pNextRowColOrbitNew;
 }
+
+#define PRINT_INTERSECTIONS PRINT_SOLUTIONS
+#if PRINT_INTERSECTIONS
 static size_t cntr = 0;
+#endif
+
 FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex) {
 	// Reset the intersections of the current block with blocks
 	// containing the current element
@@ -102,11 +107,13 @@ FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex)
 	auto* pCommonElemNumber = commonElemNumber() + nColAbs * b;
 	if (*(partIdx() + nRow) > partIndex)
 		*(partIdx() + nRow) = partIndex;
-#define PRINT_INTERSECTIONS PRINT_SOLUTIONS&&PRINT_TO_FILE
+
 #if PRINT_INTERSECTIONS
 #define START_PRINTING 0 //42000000
+	char buf[256];
 	if (++cntr >= START_PRINTING) {
-		fprintf(outFile(), "\nRow %d, part %d: Reset intersections of block %2d with (", nRow + 1, partIndex, nColAbs);
+		sprintf_s(buf, "\nRow %d, part %d: Reset intersections of block %2d with (", nRow + 1, partIndex, nColAbs);
+		outString(buf, outFile());
 		if (cntr >= 345439) //345411)
 			cntr += 0;
 	}
@@ -114,22 +121,24 @@ FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex)
 	for (auto i = partIndex; i--;) {
 		auto* pntr = pCommonElemNumber + *(pBlockIdx + i);
 #if PRINT_INTERSECTIONS
-		if (cntr >= START_PRINTING)
-			fprintf(outFile(), "%2d, ", *(pBlockIdx + i));
+		if (cntr >= START_PRINTING) {
+			sprintf_s(buf, "%2d, ", *(pBlockIdx + i));
+			outString(buf, outFile());
+		}
 		if (!*pntr) {
-			printf("\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
-			if (cntr >= START_PRINTING) {
-				fprintf(outFile(), "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
-				fclose(outFile());
-			}
+			sprintf_s(buf, "\n\n!!! PROBLEM:  nRow = %d  nColAbs = %d  nJ = %d\n\n", nRow, nColAbs, *(pBlockIdx + i));
+			outString(buf, outFile());
+			fclose(outFile());
 		}
 #endif
 		assert(*pntr != 0);
 		*pntr = 0;
 	}
 #if PRINT_INTERSECTIONS
-	if (cntr >= START_PRINTING)
-		fprintf(outFile(), ")  cntr = %zd  ccc = %zd\n", cntr, ccc);
+	if (cntr >= START_PRINTING) {
+		sprintf_s(buf, ")  cntr = %zd  ccc = %zd\n", cntr, ccc);
+		outString(buf, outFile());
+	}
 #endif
 }
 

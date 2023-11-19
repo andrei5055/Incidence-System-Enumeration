@@ -2,34 +2,39 @@ CBIBD(  9,  3, { 3, 1})
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1       15558387       207444      0      0
-             2          14282          749      0      0
-             3           1508          140      0      0
-             4             69            5      0      0
-             6            108           12      0      0
+             1       18452319       249521      0      0
+             2          15916          843      0      0
+             3           1838          166      0      0
+             4             84            7      0      0
+             6            116           14      0      0
              8              7            2      0      0
-             9             22            5     22      5
-            12              8            0      0      0
+             9             24            5     24      5
+            12              9            0      0      0
             16              4            0      0      0
-            18             10            3     10      3
+            18             12            5     12      5
             27              1            1      1      1
             48              1            0      0      0
             54              5            1      5      1
            108              1            0      1      0
            432              1            0      1      0
     ___________________________________________________________
-        Total:       15574414       208362     40     10
+        Total:       18470338       250565     44     12
 
-  15574414 matrices were constructed in  8:09.02 sec,
-        40 of them are transitive on the rows.
-    208362 matrices have no replicated blocks,
-        10 of them are transitive on the rows.
-  29903475 matrices were fully constructed.
+  18470338 matrices were constructed in 50:17.68 sec,
+        44 of them are transitive on the rows.
+    250565 matrices have no replicated blocks,
+        12 of them are transitive on the rows.
+  36085731 matrices were fully constructed.
+
+Processing times are:
+             user_time: 26:22.26 sec,
+  kernel (system) time: 10.64 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        20 threads launched on row 5 (not waiting to finish mode)
-        Solutions obtained by master are copied by the threads
+        Single thread mode
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

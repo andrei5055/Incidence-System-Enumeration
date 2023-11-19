@@ -847,7 +847,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				// We just finished with all solutions tested by the threads.
 				rowStuff(nRow)->restoreSolutionIndex();
 			} else
-			if (!pRowSolution) {
+			if (!pRowSolution && blocksOK) {
 				if (iFirstPartIdx) {
 					// We can reach this point by three different paths:
 					// 1. We are not using threads AND
@@ -928,7 +928,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				const auto* ppOrb = colOrbitPntr() + nRow * numCol;
 				const auto partsInfo = pMatrix->partsInfo();
 				while (--j) {
-					ResetPartInfo(j, true, 1);
+					ResetPartInfo(nRowNext, j, true);
 					this->setCurrUnforcedOrbPtr(nRow, j);
 					// We don't need to call CRowSolution::allSolutionChecked()
 					// when blocksOK is false. We already did it in CheckBlockIntersections

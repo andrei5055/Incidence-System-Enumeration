@@ -2,19 +2,19 @@ CBIBD(  7,  3, { 4, 4})
 
         |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
     _____________________________________________________________
-             1           107070            0      0      0
-             1*2             95            0      0      0
-             2             2212            0      0      0
-             2*2             38            0      0      0
-             3              919            0      0      0
+             1           159203            0      0      0
+             1*2            116            0      0      0
+             2             3135            0      0      0
+             2*2             41            0      0      0
+             3             1133            0      0      0
              3*2             15            0      0      0
-             4              263            0      0      0
+             4              290            0      0      0
              4*2             24            0      0      0
-             6               55            0      0      0
+             6               74            0      0      0
              6*2              5            0      0      0
-             8               51            0      0      0
+             8               54            0      0      0
              8*2              8            0      0      0
-            12               31            0      0      0
+            12               35            0      0      0
             12*2              8            0      0      0
             16                3            0      0      0
             16*2              2            0      0      0
@@ -27,18 +27,24 @@ CBIBD(  7,  3, { 4, 4})
            168                1            0      1      0
            168*2              2            1      2      1
     _____________________________________________________________
-        Total:           110837            2     13      1
+        Total:           164184            2     13      1
 
-    110837 matrices were constructed in  6.81 sec,
+    164184 matrices were constructed in 18.50 sec,
         13 of them are transitive on the rows.
          2 matrices have no replicated blocks,
          1 of them is transitive on the rows.
-    249279 matrices were fully constructed.
+    368242 matrices were fully constructed.
+
+Processing times are:
+             user_time: 19.14 sec,
+  kernel (system) time:  0.00 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on different rows # >= 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

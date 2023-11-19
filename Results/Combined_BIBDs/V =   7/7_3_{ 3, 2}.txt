@@ -2,11 +2,11 @@ CBIBD(  7,  3, { 3, 2})
 
         |Aut(D)|          Nd:           Ns:   Ndt:   Nst:
     ___________________________________________________________
-             1            338            1      0      0
-             2             79            2      0      0
-             3             87            2      0      0
-             4             25            0      0      0
-             6             14            1      0      0
+             1            375            1      0      0
+             2             96            2      0      0
+             3             91            2      0      0
+             4             27            0      0      0
+             6             18            1      0      0
              8              8            0      0      0
             12              8            0      0      0
             16              1            0      0      0
@@ -15,18 +15,24 @@ CBIBD(  7,  3, { 3, 2})
             42              1            1      1      1
            168              1            0      1      0
     ___________________________________________________________
-        Total:            576            7      8      1
+        Total:            640            7      8      1
 
-       576 matrices were constructed in  0.13 sec,
+       640 matrices were constructed in  0.04 sec,
          8 of them are transitive on the rows.
          7 matrices have no replicated blocks,
          1 of them is transitive on the rows.
-      1045 matrices were fully constructed.
+      1278 matrices were fully constructed.
+
+Processing times are:
+             user_time:  0.04 sec,
+  kernel (system) time:  0.00 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        15 threads launched on row 4 (not waiting to finish mode)
+        20 threads launched on different rows # >= 3 (not waiting to finish mode)
         Solutions obtained by master are copied by the threads
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used

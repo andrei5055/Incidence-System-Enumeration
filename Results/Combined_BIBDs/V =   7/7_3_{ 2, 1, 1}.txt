@@ -3,7 +3,7 @@ CBIBD(  7,  3, { 2, 1, 1})
         |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
     _____________________________________________________________
              1               19            8      0      0
-             1*2              7            1      0      0
+             1*2              8            1      0      0
              2                5            0      0      0
              2*2              3            0      0      0
              3               17            7      0      0
@@ -22,17 +22,23 @@ CBIBD(  7,  3, { 2, 1, 1})
             24*2              4            0      0      0
            168*2              1            0      1      0
     _____________________________________________________________
-        Total:               88           20      5      2
+        Total:               89           20      5      2
 
-        88 matrices were constructed in  0.01 sec,
+        89 matrices were constructed in  0.01 sec,
          5 of them are transitive on the rows.
         20 matrices have no replicated blocks,
          2 of them are transitive on the rows.
-       187 matrices were fully constructed.
+       195 matrices were fully constructed.
+
+Processing times are:
+             user_time:  0.01 sec,
+  kernel (system) time:  0.00 sec,
+
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
         Single thread mode
+        3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used
         Super strong canonicity was not used
