@@ -20,20 +20,21 @@ CBIBD(  9,  3, { 3, 1})
     ___________________________________________________________
         Total:       18470338       250565     44     12
 
-  18470338 matrices were constructed in 50:17.68 sec,
+  18470338 matrices were constructed in 18:08.53 sec,
         44 of them are transitive on the rows.
     250565 matrices have no replicated blocks,
         12 of them are transitive on the rows.
-  36085731 matrices were fully constructed.
+  37847841 matrices were fully constructed.
 
 Processing times are:
-             user_time: 26:22.26 sec,
-  kernel (system) time: 10.64 sec,
+             user_time: 59:46.45 sec,
+  kernel (system) time: 23.76 sec,
 
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        Single thread mode
+        20 threads launched on different rows # >= 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

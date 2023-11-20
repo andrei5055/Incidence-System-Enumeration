@@ -2,8 +2,8 @@ CBIBD(  9,  3, { 2, 1, 1})
 
         |Aut(D)|            Nd:           Ns:   Ndt:   Nst:
     _____________________________________________________________
-             1          3933382      1579809      0      0
-             1*2          13935         4991      0      0
+             1          3933386      1579809      0      0
+             1*2          13937         4991      0      0
              2             4987         1013      0      0
              2*2            660          122      0      0
              3              825          334      0      0
@@ -27,22 +27,23 @@ CBIBD(  9,  3, { 2, 1, 1})
            108*2              1            0      1      0
            432*2              1            0      1      0
     _____________________________________________________________
-        Total:          3954066      1586360     54     27
+        Total:          3954072      1586360     54     27
 
-   3954066 matrices were constructed in 23:14.66 sec,
+   3954072 matrices were constructed in  9:07.30 sec,
         54 of them are transitive on the rows.
    1586360 matrices have no replicated blocks,
         27 of them are transitive on the rows.
-   7212600 matrices were fully constructed.
+   7571607 matrices were fully constructed.
 
 Processing times are:
-             user_time: 12:47.37 sec,
-  kernel (system) time:  6.45 sec,
+             user_time: 32:53.00 sec,
+  kernel (system) time: 12.00 sec,
 
 
         Using 64-bit program with no Assembly
         Main data storage format: "unsigned char"
-        Single thread mode
+        20 threads launched on different rows # >= 4 (not waiting to finish mode)
+        Solutions obtained by master are copied by the threads
         3-Condition on the elements was not used
         Canonicity of partial constructed matrix was used
         Strong canonicity was not used

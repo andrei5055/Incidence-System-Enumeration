@@ -26,14 +26,14 @@ CBIBD(  7,  3, { 2, 2, 2})
     _____________________________________________________________
         Total:             2672           36      6      1
 
-      2672 matrices were constructed in  1.74 sec,
+      2672 matrices were constructed in  1.69 sec,
          6 of them are transitive on the rows.
         36 matrices have no replicated blocks,
          1 of them is transitive on the rows.
-      9943 matrices were fully constructed.
+     10225 matrices were fully constructed.
 
 Processing times are:
-             user_time:  0.75 sec,
+             user_time:  1.93 sec,
   kernel (system) time:  0.00 sec,
 
 

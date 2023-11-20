@@ -18,15 +18,15 @@ CBIBD(  7,  3, { 6, 4})
     ___________________________________________________________
         Total:       11516899            0     43      0
 
-  11516899 matrices were constructed in 11:30.31 sec,
+  11516899 matrices were constructed in 10:04.82 sec,
         43 of them are transitive on the rows.
          0 matrices have no replicated blocks,
          0 of them are transitive on the rows.
   24126306 matrices were fully constructed.
 
 Processing times are:
-             user_time: 23:43.23 sec,
-  kernel (system) time:  3.06 sec,
+             user_time: 22:02.89 sec,
+  kernel (system) time:  8.64 sec,
 
 
         Using 64-bit program with no Assembly
