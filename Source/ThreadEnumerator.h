@@ -95,6 +95,7 @@ FClass2(CThreadEnumerator, void)::setupThreadForBIBD(const EnumeratorPntr pMaste
 			    pSlaveDesign = new C_BIBD<T, S>((const C_BIBD<T, S> *)(pInSys), nRow);
 				m_pEnum = new CBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);
 				break;
+		case t_objectType::t_Kirkman_Triple:
 		case t_objectType::t_CombinedBIBD:
 				pSlaveDesign = new CCombinedBIBD<T, S>((const Class2(CCombinedBIBD) *)(pInSys), nRow);
 				m_pEnum = new CCombBIBD_Enumerator<T, S>(pSlaveDesign, enumFlags, threadIdx, NUM_GPU_WORKERS);

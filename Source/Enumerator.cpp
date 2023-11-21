@@ -564,6 +564,11 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 				for (auto j = k; j--; pBlockIdx += r)
 					*pBlockIdx = i;
 		}
+		else {
+			memcpy(commonElemNumber(), pMaster->commonElemNumber(), numCol * numCol);
+			memcpy(blockIdx(), pMaster->blockIdx(), numCol * k);
+			memcpy(partIdx(), pMaster->partIdx(), v * sizeof(*partIdx()));
+		}
 	}
 
 #if !CONSTR_ON_GPU
@@ -641,11 +646,6 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			const auto length = numParts() * (nRows - firstUnforced) * sizeof(*forcibleLambdaPntr());
 			const auto from = firstUnforced * numParts();
 			memcpy(forcibleLambdaPntr() + from, pMaster->forcibleLambdaPntr() + from, length);
-		}
-
-		if (commonElemNumber()) {
-			memcpy(commonElemNumber(), pMaster->commonElemNumber(), numCol * numCol);
-			memcpy(blockIdx(), pMaster->blockIdx(), (pParam->v - 1) * pParam->r);
 		}
 	} else {
 		lenStab = nRow = firstNonfixedRow - 2;
@@ -1625,8 +1625,8 @@ FClass2(CEnumerator, void)::printSolutionState(
 	pBuf += SNPRINTF(pBuf, lenBuf, "\nRow #%2d: the solution # %zd for part %d %s.", 
 		nRow, (pSolution + nPart)->solutionIndex() + 1, nPart, rejected? "was rejected" : "will be tested");
 	outString(buffer, file);
-	if (nRow == 8 && nPart == 1)// && !(pSolution + nPart)->solutionIndex())
-		nPart = 1;
+	if (nRow == 7 && nPart == 3 && (pSolution + nPart)->solutionIndex() == 2)
+		nPart = 3;
 	MUTEX_UNLOCK(out_mutex);
 }
 #endif
