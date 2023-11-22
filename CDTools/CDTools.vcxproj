@@ -187,6 +187,7 @@
     <ClInclude Include="..\Source\RowSolution.h" />
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
+    <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
     <ClInclude Include="..\Source\Vector.h" />
@@ -213,6 +214,9 @@
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
+    <ClCompile Include="..\Source\TripleSys\check1.cpp" />
+    <ClCompile Include="..\Source\TripleSys\Support.cpp" />
+    <ClCompile Include="..\Source\TripleSys\TripleSys.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />
   </ItemGroup>
