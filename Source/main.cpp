@@ -5,6 +5,7 @@
 #include "C_tDesignEnumerator.h"
 #include "CombBIBD_Enumerator.h"
 #include "IG_Enumerator.h"
+#include "TripleSys/TripleSys.h"
 
 #include <fstream>
 #include <string>      // for getline
@@ -19,6 +20,7 @@ const char *obj_name[] = {
 	"BIBD",					// t_BIBD,			- default
 	"COMBINED_BIBD",		// t_CombinedBIBD,
 	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triples
+	"TRIPLE_SYSTEM",        // t_TripleSystem - construction by Leo's program
 	"T-DESIGN",				// t_tDesign,
 	"PBIBD",				// t_PBIBD,
 	"INCIDENCE",            // t_IncidenceSystem,
@@ -33,7 +35,8 @@ t_objectType idx_obj_type[] = {
 	t_objectType::t_tDesign,
 	t_objectType::t_IncidenceSystem,
 	t_objectType::t_SemiSymmetricGraph,
-	t_objectType::t_Kirkman_Triple
+	t_objectType::t_Kirkman_Triple,
+	t_objectType::t_TripleSystem,
 };
 
 int find_T_designParam(int v, int k, int lambda)
@@ -257,7 +260,8 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 			}
 
 			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
-			objType = t_objectType::t_BIBD;
+			if (objType != t_objectType::t_TripleSystem)
+				objType = t_objectType::t_BIBD;
 		}
 	}
 	else {
@@ -288,13 +292,22 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	}
 
 	try {
-		if (pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, pEnumInfo)) {
-			pEnumInfo->reportResult(buffer, countof(buffer));
-			outString(buffer, pSummFile);
-			cout << '\r' << buffer;
+		bool retVal = false;
+		if (objType != t_objectType::t_TripleSystem) {
+			retVal = pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, pEnumInfo);
+			if (retVal) {
+				pEnumInfo->reportResult(buffer, countof(buffer));
+				outString(buffer, pSummFile);
+				cout << '\r' << buffer;
+			}
 		}
 		else {
-			cout << "Some problem was found during the enumeration\n";
+			alldata sys;
+			retVal = sys.Run(pParam->v);
+		}
+
+		if (!retVal) {
+			cout << "\rSome problem was found during the enumeration\n";
 			pInSysEnum->closeFile();
 		}
 	}
@@ -433,12 +446,25 @@ bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int f
 	uint iMax = 0;
 	uint lambda = 1;
 	find_master_design = 0;   // This option for CombBIBDs only
+	auto lambdaSet = InterStruct()->lambdaPtr();
 	const auto baseLambda = objType != t_objectType::t_Kirkman_Triple? this->lambda()[0] : 0;
 	switch (objType) {
-	case t_objectType::t_Kirkman_Triple: 
-		k = 3;
-		InterStruct()->lambdaPtr()->push_back(0);
-		InterStruct()->lambdaPtr()->push_back(r = 1);
+	case t_objectType::t_TripleSystem:
+	case t_objectType::t_Kirkman_Triple:
+		if (this->v % 6 != 3) {
+			printf("\nNumber of elements for Kirkman triple system should be equal to 3(mod 6)");
+			printf("\nNow it is set to %d", this->v);
+			return false;
+		}
+ 
+		this->k = 3;
+		if (objType == t_objectType::t_TripleSystem) {
+			lambdaSet->push_back(1);
+			break;
+		}
+	
+		lambdaSet->push_back(0);
+		lambdaSet->push_back(r = 1);
 	case t_objectType::t_CombinedBIBD:
 		find_master_design = find_master;
 		this->use_master_sol = 0;
@@ -476,7 +502,6 @@ bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int f
 			this->objType = t_objectType::t_CombinedBIBD;
 			find_all_2_decomp = this->find_master_design = 1;
 			this->use_master_sol = 0;
-			auto lambdaSet = InterStruct()->lambdaPtr();
 			lambdaSet->resize(0);
 			lambdaSet->push_back(i * lambda);
 			lambdaSet->push_back(baseLambda - i * lambda);
@@ -493,12 +518,12 @@ bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int f
 		setEnumInfo(NULL);
 	}
 
-	this->use_master_sol = use_master_sol;
 	for (int i = 0; i < 2; i++) {
 		delete designDB(i);
 		setDesignDB(NULL, i);
 	}
 
+	this->use_master_sol = use_master_sol;
 	find_master_design = find_master;
 	logFile = "";
 	setLambdaStep(0);
@@ -803,6 +828,7 @@ int main(int argc, char * argv[])
 		case t_objectType::t_SemiSymmetricGraph:
 		case t_objectType::t_PBIBD:
 		case t_objectType::t_Kirkman_Triple:
+		case t_objectType::t_TripleSystem:
 						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
