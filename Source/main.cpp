@@ -302,8 +302,8 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 			}
 		}
 		else {
-			alldata sys;
-			retVal = sys.Run(pParam->v);
+			alldata sys(pParam->v);
+			retVal = sys.Run();
 		}
 
 		if (!retVal) {
@@ -447,7 +447,14 @@ bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int f
 	uint lambda = 1;
 	find_master_design = 0;   // This option for CombBIBDs only
 	auto lambdaSet = InterStruct()->lambdaPtr();
-	const auto baseLambda = objType != t_objectType::t_Kirkman_Triple? this->lambda()[0] : 0;
+	uint baseLambda = 0;
+	switch (objType) {
+	case t_objectType::t_Kirkman_Triple:
+	case t_objectType::t_TripleSystem:
+		break;
+	default: baseLambda = this->lambda()[0];
+	}
+
 	switch (objType) {
 	case t_objectType::t_TripleSystem:
 	case t_objectType::t_Kirkman_Triple:

@@ -215,6 +215,14 @@
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
     <ClCompile Include="..\Source\TripleSys\check1.cpp" />
+    <ClCompile Include="..\Source\TripleSys\checkLinks.cpp" />
+    <ClCompile Include="..\Source\TripleSys\checkLinks27.cpp" />
+    <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp" />
+    <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp" />
+    <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />
+    <ClCompile Include="..\Source\TripleSys\printStat.cpp" />
+    <ClCompile Include="..\Source\TripleSys\printTable.cpp" />
+    <ClCompile Include="..\Source\TripleSys\processLastSix.cpp" />
     <ClCompile Include="..\Source\TripleSys\Support.cpp" />
     <ClCompile Include="..\Source\TripleSys\TripleSys.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />

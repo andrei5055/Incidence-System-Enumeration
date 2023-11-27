@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\k-systems">
+      <UniqueIdentifier>{f2e3fcdb-f5a0-466f-8f3c-f135d92a51f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Source\CanonicityChecker.h">
@@ -183,13 +186,37 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\check1.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\Support.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\TripleSys.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkLinks.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkLinks27.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\initStartValues.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\printStat.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\printTable.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\processLastSix.cpp">
+      <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
