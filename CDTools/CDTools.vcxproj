@@ -146,8 +146,10 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>X64;WIN;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;"c:\NVIDIA GPU Computing Toolkit\v9.1\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalHeaderUnitDependencies>
+      </AdditionalHeaderUnitDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -187,6 +189,7 @@
     <ClInclude Include="..\Source\RowSolution.h" />
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
+    <ClInclude Include="..\Source\TripleSys\CanonicityChecker.h" />
     <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
@@ -214,13 +217,11 @@
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
-    <ClCompile Include="..\Source\TripleSys\check1.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinks.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinks27.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp" />
     <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp" />
     <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />
-    <ClCompile Include="..\Source\TripleSys\printStat.cpp" />
     <ClCompile Include="..\Source\TripleSys\printTable.cpp" />
     <ClCompile Include="..\Source\TripleSys\processLastSix.cpp" />
     <ClCompile Include="..\Source\TripleSys\Support.cpp" />

@@ -4,12 +4,10 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 1
-#define UseCheckLinks 1
-#define PrintGroupStat 0
+#define UseCheckLinks 0
 #define PrintLinksStat 0
 #define PrintLinksStatTime 0 /* requered ~50% more cpu */
 #define PrintNVminmax 0
-#define UseBitmask 0
 #define UseLastSixAsGroup 1 /* Value 1 makes it 6 times faster */
 #define UseLastSix (GroupSize == 3 && nPlayers > 9 && UseLastSixAsGroup != 0)
 #define nPlayers (nPlayers0/GroupSize*GroupSize)
@@ -79,6 +77,8 @@ private:
 #endif
 };
 
+template<typename T, typename S> class CCanonicityChecker;
+
 class alldata : private SizeParam {
 public:
 	alldata(int numPlayers, int groupSize=GroupSize, bool useCheckLinks=UseCheckLinks);
@@ -100,13 +100,8 @@ private:
 	int getNextPlayer();
 	void initCurrentDay();
 	bool setLinksAndDevCounts(char* p, int ip, char iset);
-	void setStat();
-	void printStat() const;
 	void setCheckLinks();
 
-#if UseBitmask
-	int bmask;
-#endif
 	char* maxResult;
 	int maxDays;
 	int maxDaysPlayers;
@@ -125,8 +120,8 @@ private:
 	const int m_np2;
 	const int m_np3;
 	const int m_nGroups;
-	unsigned char* bg = NULL;
 	CChecklLink *m_pCheckLink = NULL;
+	CCanonicityChecker<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
 };
 
 int getLastSixIndex(alldata* s);
@@ -136,7 +131,7 @@ void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int 
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 void initPrevDayProcess(alldata* s);
 int processLastSix(alldata* s);
-int check1(const char *result, int ncolumns);
+
 int compareMatrix(const char *result, int ncolumns, char* transition);
 
 

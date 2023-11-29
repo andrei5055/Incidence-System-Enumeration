@@ -9,6 +9,12 @@
 #include "Enumerator.h"
 
 template class CCanonicityChecker<TDATA_TYPES>;
+CanonicityChecker(bool)::CheckCanonicity(const T* result, int nlines) const
+{
+	// return true  - continue, 
+	//        false - stop (calculate new matrix)
+	return true;
+}
 
 CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem)
 {

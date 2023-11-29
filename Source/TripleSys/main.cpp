@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <windows.h>
 #include "TripleSys.h"
 
 int main()
@@ -26,6 +27,8 @@ int main()
 
 	sys.initStartValues(ivc);// can be used to start from previous result
 	sys.Run();
+	PlaySound(L"SystemAsterisk", NULL, SND_SYNC);
+
 	return 0;
 }
 /*

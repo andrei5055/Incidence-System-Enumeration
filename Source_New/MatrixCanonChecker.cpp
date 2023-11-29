@@ -103,7 +103,7 @@ FClass2(CMatrixCanonChecker, void)::ResetBlockIntersections(T nRow, T partIndex)
 		*(partIdx() + nRow) = partIndex;
 #define PRINT_INTERSECTIONS (PRINT_SOLUTIONS && PRINT_TO_FILE)
 #if PRINT_INTERSECTIONS
-#define START_PRINTING 42000000
+#define START_PRINTING 0 //42000000
 	if (++cntr >= START_PRINTING) {
 		fprintf(outFile(), "\nRow %d, part %d: Reset intersections of block %2d with (", nRow + 1, partIndex, nColAbs);
 		if (cntr >= 345439) //345411)

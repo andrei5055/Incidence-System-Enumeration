@@ -86,7 +86,7 @@ private:
 
 Class2Def(CCanonicityChecker) : public CGroupOrder<T>, public CRank {
 public:
-	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, S numParts = 1);
+	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, T numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem);
 	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo = t_saveNothing, RowSolutionPntr pRowSolution = NULL);
@@ -103,6 +103,7 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
+	bool CheckCanonicity(const T* result, int nLines) const;
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -174,7 +175,7 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 };
 
-CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, S numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
+CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, T numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
