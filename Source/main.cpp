@@ -259,9 +259,10 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 					enumFlags |= t_symmetrical_t_cond;
 			}
 
-			pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
-			if (objType != t_objectType::t_TripleSystem)
+			if (objType != t_objectType::t_TripleSystem) {
+				pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
 				objType = t_objectType::t_BIBD;
+			}
 		}
 	}
 	else {
@@ -273,22 +274,24 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	pInSys->setObjectType(objType);
 
 	char buff[256] = {}, buffer[256] = {};
-	MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
-	cout << buff;
-
 	auto* pEnumInfo = new CInsSysEnumInfo<TDATA_TYPES>(buff);
-	pEnumInfo->setDesignInfo(pParam);
-	if (FirstPath) {
-		FOPEN(outFile, pSummFile, "w");
-		pEnumInfo->outEnumInformation(&outFile, pInSysEnum->enumFlags(), false);
-		outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
-	}
-
 	const bool resetMTlevel = pParam->MT_level() == 0;
-	if (resetMTlevel) {
-		// The row number, on which the threads will be launched was not defined.
-		// Let's do it here by other parameters
-		pParam->set_MT_level(pInSysEnum->define_MT_level(pParam));
+	if (pInSysEnum) {
+		MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
+		cout << buff;
+
+		pEnumInfo->setDesignInfo(pParam);
+		if (FirstPath) {
+			FOPEN(outFile, pSummFile, "w");
+			pEnumInfo->outEnumInformation(&outFile, pInSysEnum->enumFlags(), false);
+			outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
+		}
+
+		if (resetMTlevel) {
+			// The row number, on which the threads will be launched was not defined.
+			// Let's do it here by other parameters
+			pParam->set_MT_level(pInSysEnum->define_MT_level(pParam));
+		}
 	}
 
 	try {

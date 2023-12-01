@@ -21,7 +21,7 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinks) :
 	if (groupSize == 3 && useCheckLinks)
 		m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
 
-	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers);
+	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, 3);
 	Init();
 }
 

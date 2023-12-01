@@ -8,6 +8,7 @@
 
 #ifndef __BIBD_Mac__CanonicityChecker__
 #define __BIBD_Mac__CanonicityChecker__
+#endif
 #pragma once
 
 #include "DataTypes.h"
@@ -86,7 +87,7 @@ private:
 
 Class2Def(CCanonicityChecker) : public CGroupOrder<T>, public CRank {
 public:
-	CC CCanonicityChecker(T nRow, T nCol, int rank = 2, uint enumFlags = t_enumDefault, T numParts = 1);
+	CC CCanonicityChecker(T nRow, T nCol, T rank = 2, uint enumFlags = t_enumDefault, T numParts = 1);
 	CC ~CCanonicityChecker();
 	void InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem);
 	CC bool TestCanonicity(T nRowMax, const TestCanonParams<T, S> *pCanonParam, uint outInfo = t_saveNothing, RowSolutionPntr pRowSolution = NULL);
@@ -103,7 +104,7 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
-	bool CheckCanonicity(const T* result, int nLines) const;
+	bool CheckCanonicity(const T* result, int nLines);
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -124,6 +125,7 @@ protected:
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
+	CC T nextPermutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
@@ -147,6 +149,19 @@ private:
 #else
 #define check_permut(permut, len_perm)
 #endif
+	inline bool copyTuple(const T *res, T *p_players, T inc = 0) {
+		p_players[res[0]] = inc;
+		for (T j = 1; j < rank(); j++) {
+			const auto diff = (int)res[j - 1] - res[j];
+			assert(diff);
+			if (diff > 0)
+				return false;
+
+			p_players[res[j]] = j + inc;
+		}
+		return true;
+	}
+
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -173,16 +188,20 @@ private:
 	const T m_numParts;
 	CGroupOnParts<T>* m_pGroupOnParts = NULL;
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
+	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
+	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
+//	const T m_lenGroup = 3;            // Number of players in the group
 };
 
-CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, int rank, uint enumFlags, T numParts) : CRank(nRow, rank), m_enumFlags(enumFlags), m_numParts(numParts)
+CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 
+	CRank(nRow, rank), m_numElem(nCol), m_enumFlags(enumFlags), m_numParts(numParts)
 {
 	m_pPermutRow = new CPermut(nRow);
 	m_pPermutCol = new CPermut(nCol);
 	setColIndex(new T[2 * nCol]);
 	m_pCounter = new CCounter<int>(rank);
 	m_nColNumbStorage = new CColNumbStorage *[rank];
-	for (int i = rank; i--;)
+	for (auto i = rank; i--;)
 		m_nColNumbStorage[i] = new CColNumbStorage(nCol);
 
 	m_pImprovedSol = new T[(rank - 1) * nCol];
@@ -321,7 +340,6 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	}
 
 	size_t startIndex = 0;
-#endif
 	T* permColumn = pCanonParam->pPermCol;
 	auto pOrbits = orbits();
 	while (true) {

@@ -3,7 +3,7 @@
 using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
-#define LoopsMax 1
+#define LoopsMax 100
 #define UseCheckLinks 0
 #define PrintLinksStat 0
 #define PrintLinksStatTime 0 /* requered ~50% more cpu */

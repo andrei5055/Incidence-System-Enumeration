@@ -9,12 +9,6 @@
 #include "Enumerator.h"
 
 template class CCanonicityChecker<TDATA_TYPES>;
-CanonicityChecker(bool)::CheckCanonicity(const T* result, int nlines) const
-{
-	// return true  - continue, 
-	//        false - stop (calculate new matrix)
-	return true;
-}
 
 CanonicityChecker(void)::InitCanonicityChecker(T nRow, T nCol, int rank, char *pMem)
 {
@@ -465,6 +459,220 @@ CanonicityChecker(T)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrb
 		pColOrbit = pColOrbit->next();
 	}
 	return idx;
+}
+
+CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenStab) {
+	// Function generates next permutation for the k-system 
+	// Find non-increasing suffix
+	const auto nRow = numRow();
+	T temp, i, j;
+
+	// Check if the algorithm, used immediately after 
+	// some non-trivial automorphism was found
+	const auto IDX_MAX = ELEMENT_MAX - 1;
+	if (idx == IDX_MAX && perm[stabilizerLength()] == nRow - 1)
+		idx = ELEMENT_MAX;
+
+	if (idx == IDX_MAX) {
+		// Firts call after some automorphism was found
+		temp = perm[idx = i = stabilizerLength()];
+		for (j = nRow; --j > temp;)
+			perm[j] = j;
+
+		for (auto k = j++; k-- > i;)
+			perm[k + 1] = k;
+	}
+	else {
+		if (idx >= IDX_MAX) {
+			j = i = nRow;
+			while (--i > 0 && perm[i - 1] >= perm[i]);
+
+			if (i == lenStab)
+				return ELEMENT_MAX;
+
+			// Find successor to pivot
+			temp = perm[--i];
+			while (perm[--j] <= temp);
+		}
+		else {
+			temp = perm[j = i = idx];
+			while (++j < nRow && perm[j] <= temp);
+			if (j >= nRow) {
+				revert(perm, nRow, i);
+				return nextPermutation(perm, pOrbits);
+			}
+		}
+	}
+
+	if (stabilizerLength() == i) {
+		bool flag = false;
+		auto k = j, tmp = perm[j];
+		if (idx >= IDX_MAX) {
+			while (k > i && *(pOrbits + perm[k]) != perm[k])
+				k--;
+
+			if (k != j) {
+				if (!k)
+					return ELEMENT_MAX;
+
+				flag = k == i;
+				tmp = perm[k--];
+				while (++k < j)
+					perm[k] = perm[k + 1];
+			}
+		}
+		else {
+			while (k < nRow && *(pOrbits + perm[k]) != perm[k])
+				k++;
+
+			if (k != j) {
+				flag = k == nRow;
+				if (flag) {
+					if (!i)
+						return ELEMENT_MAX;
+
+					// Re-establish trivial permutation
+					k = idx - 1;
+					while (++k < j)
+						perm[k] = k;
+				}
+				else {
+					tmp = perm[k++];
+					while (--k > j)
+						perm[k] = perm[k - 1];
+				}
+			}
+		}
+
+		perm[j] = tmp;
+		if (flag) {
+			j = idx >= ELEMENT_MAX - 1 ? nRow - 1 : i;
+			temp = perm[--i];
+			setStabilizerLength(i);
+		}
+	}
+
+	perm[i] = perm[j];
+	perm[j] = temp;
+	if (idx >= ELEMENT_MAX - 1) {
+		if (stabilizerLength() > i)
+			setStabilizerLength(i);
+
+		revert(perm, nRow, i);
+	}
+
+	return i;
+}
+
+
+CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
+	// return true  - continue, 
+	//        false - stop (calculate new matrix)
+	const auto lenStab = stabiliserLengthExt();
+/*
+	const auto* pEnum = pCanonParam->pEnum;
+	auto* pPartNumb = pCanonParam->pPartNumb;
+	auto* pRowOut = pCanonParam->pRowOut;
+	const auto* pGroupOnParts = pCanonParam->pGroupOnParts;
+	// Construct trivial permutations for rows and columns
+	const auto rowPermut = outInfo & t_saveRowPermutations;
+	const auto* pMatr = pCanonParam->pMatrix;
+	const auto* pMatrPerm = pMatr;
+	const auto numParts = pCanonParam->numParts;
+	bool check_trivial_row_perm = pCanonParam->pPermCol != NULL;
+	auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
+
+	const auto colOrbLen = pEnum->colOrbitLen();
+	const auto* pPartInfo = pMatr->partsInfo();
+	const auto nonCombinedDesign = numParts == 1;
+
+	// Reset permutation counters, if used
+	PREPARE_PERM_OUT(permColStorage());
+	PREPARE_PERM_OUT(permRowStorage());
+
+	bool calcGroupOrder = true;
+	bool retVal = true;
+	bool usingGroupOnBlocks = false;
+
+	size_t numGroups = 0;
+	T startingRowNumb = pCanonParam->startingRowNumb;
+	size_t idxPerm[16] = {};	// to keep the indices of currently used permutation
+	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
+
+	T idxPartSrc[16] = {};		// to keep the initial (source) indices of the parts
+	T* pPartSrc = numParts <= countof(idxPartSrc) ? idxPartSrc : new T[numParts];
+	for (auto i = numParts; i--;)
+		pPartSrc[i] = i;
+
+	const S* pCurrSolution;
+	size_t solutionSize;
+	if (pRowSolution) {
+		// Because the position of current solution (pRowSolution->solutionIndex()) 
+		// can be changed, take pointer here
+		pCurrSolution = pRowSolution->currSolution();
+		solutionSize = pRowSolution->solutionLength();
+#if USE_STRONG_CANONICITY
+		solutionStorage()->clear();
+		pRowSolution->setLenOrbitOfSolution(0);
+#endif
+	}
+*/
+	size_t startIndex = 0;
+	T* permColumn = NULL;
+	auto pOrbits = orbits();
+	const auto* res = result;
+	T buff[100];
+	T *p_players = m_numElem <= countof(buff) ? buff : new T[m_numElem];
+	const auto lenGroup = rank();
+	const auto numGroup = m_numElem / lenGroup;
+	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
+		if (res[0])
+			return false;
+
+		if (!copyTuple(res, p_players))
+			return false;
+
+		T inc = 0;
+		for (auto j = numGroup; --j;) {
+			if (!copyTuple(res += lenGroup, p_players, inc+=lenGroup))
+				return false;
+
+			// Comparing first elements of the groups
+			if (p_players[*res] < p_players[*(res-lenGroup)])
+				return false;
+		}
+
+		continue;   // temporary
+		T* permPlayers = NULL;
+		permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
+
+		T nElem = ELEMENT_MAX;
+/*
+		if (check_trivial_row_perm) {
+			nRow = startingRowNumb;
+			goto try_permut;
+		}
+		*/
+		while (true) {
+
+//		next_permut:
+			nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
+			if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+				break;
+
+			for (T iDay = 0; iDay < nDays;  iDay++) {
+				const auto* pDayRes = result + iDay * m_numElem;
+				for (; nElem < m_numElem; nElem++) {
+					// const auto* pRow = pMatr->GetRow(nElem);
+				}
+			}
+		}
+	}
+
+	if (p_players != buff)
+		delete[] p_players;
+
+	return true;
 }
 
 size_t outString(const char *str, FILE *file)
