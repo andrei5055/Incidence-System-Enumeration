@@ -29,7 +29,8 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns, in
 }
 void printTable(char const* name, const char *c, int nl, int nc, int ns, int np, bool makeString)
 {
-	printf("%s:\n", name);
+	if (strlen(name) != 0)
+		printf("%s:\n", name);
 	for (int j = 0; j < nl; j++)
 	{
 		if (makeString) printf(" \" ");

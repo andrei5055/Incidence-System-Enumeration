@@ -3,12 +3,9 @@
 
 bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, char *vo)
 {
-	char t[nPlayers];
 	if (nv <= 0)
 		return true;
-	if (ind == unset)  
-		memcpy(t, v, nv);
-	else if (nv == 2)
+	if (nv == 2 && ind != unset)
 	{
 		switch (ind) {
 		case 0:
@@ -32,6 +29,10 @@ bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, cha
 		}
 		return false;
 	}
+	char t[100]; // malloc required additional ~50% cpu
+	//char* t = (char*)malloc(nv);
+	if (ind == unset)
+		memcpy(t, v, nv);
 	else if (ind == 0)
 		memcpy(t, v + 1, nv);
 	else
@@ -40,16 +41,17 @@ bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, cha
 		if (nv > ind)
 		    memcpy(t + ind, v + ind + 1, nv - ind);
 	}
-	nv -= 2;
 	const char *ct0 = c + t[0] * m_numPlayers;
-	for (int i = 0; i <= nv; i++)
+	for (int i = 1; i < nv; i++)
 	{
-		if (ct0[t[i+1]] == unset && checkLinksV(c, t + 1, nv, i, vo + 2))
+		if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
 		{
 			*vo = t[0];
-			*(vo + 1) = t[i+1];
+			*(vo + 1) = t[i];
+			//free(t);
 			return true;
 		}
 	}
+	//free(t);
 	return false;
 }

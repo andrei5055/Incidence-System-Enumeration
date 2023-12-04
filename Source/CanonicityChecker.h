@@ -161,7 +161,7 @@ private:
 		}
 		return true;
 	}
-
+	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -190,7 +190,6 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
 	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
-//	const T m_lenGroup = 3;            // Number of players in the group
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 

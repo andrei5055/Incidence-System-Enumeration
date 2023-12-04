@@ -23,7 +23,7 @@ int main()
 #else
 	const char* ivc = "";
 #endif
-	std::cout << "TripleSys3\n";
+	std::cout << "TripleSys 8.1\n";
 
 	sys.initStartValues(ivc);// can be used to start from previous result
 	sys.Run();

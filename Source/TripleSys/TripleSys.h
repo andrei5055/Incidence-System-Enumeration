@@ -1,12 +1,13 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 15
+#define nPlayers0 9
 #define GroupSize 3
-#define LoopsMax 100
-#define UseCheckLinks 0
+#define LoopsMax 2
+#define UseCheckLinksV 0
+#define UseCheckLinksH 0
 #define PrintLinksStat 0
-#define PrintLinksStatTime 0 /* requered ~50% more cpu */
+#define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
 #define PrintNVminmax 0
 #define UseLastSixAsGroup 1 /* Value 1 makes it 6 times faster */
 #define UseLastSix (GroupSize == 3 && nPlayers > 9 && UseLastSixAsGroup != 0)
@@ -52,8 +53,10 @@ public:
 	~CChecklLink();
 	bool checkLinks(char *c, int id, bool printLinksStatTime = false);
 	bool checkLinks27(char *c, int id);
+	bool checkLinksH(const char* c, const char* v, int nv, int ind1, int ind2, char* vo, double* counter = NULL);
 private:
-	bool checkLinksV(const char* c, const char* v, int nv, int ind, char* vo);
+	bool checkLinksV(const char* links, const char* v, int nv, int ind, char* vo);
+	void reportCheckLinksData();
 
 	double cnt = 0;
 	double tmtotal = 0.0;
@@ -66,8 +69,10 @@ private:
 	double *tmfalse = NULL;
 	double *tmok = NULL;
 	char *faults = NULL;
-	char *cb = NULL;
+	char *m_pLinksCopy = NULL;
 	char *m_co = NULL;
+	char *m_v = NULL;
+	char *m_vo = NULL;
 #if PrintNVminmax
 	char *nvmn = NULL;
 	char *nvmx = NULL;
@@ -81,7 +86,7 @@ template<typename T, typename S> class CCanonicityChecker;
 
 class alldata : private SizeParam {
 public:
-	alldata(int numPlayers, int groupSize=GroupSize, bool useCheckLinks=UseCheckLinks);
+	alldata(int numPlayers, int groupSize=GroupSize, bool useCheckLinksV = UseCheckLinksV, bool useCheckLinksH = UseCheckLinksH);
 
 	~alldata();
 	bool Run();
@@ -90,36 +95,40 @@ private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
 	inline auto numDays() const					{ return m_numDays; }
-	void initPrevDayProcess();
+	bool initPrevDay();
 	inline auto *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	inline auto *links(int nPlayer = 0) const	{ return m_pLinks + nPlayer * m_numPlayers; }
 	int getLastSixIndex(const char* resDay);
-	void getLastSix(char* v);
+	void getUnselected(char* v, int nv);
 	int processLastSix();
 	void getPrevPlayer();
 	int getNextPlayer();
 	void initCurrentDay();
-	bool setLinksAndDevCounts(char* p, int ip, char iset);
+	bool setLinksForOnePlayer(char* p, int ip, char iset);
 	void setCheckLinks();
+	bool processOneDay();
 
 	char* maxResult;
 	int maxDays;
 	int maxDaysPlayers;
 	int nLoops;
-	bool noResult;
+	bool noMoreResults;
 	char* m_pResults;
 	char* m_pLinks;
 	char* selPlayers;
 	char* tmpPlayers;
 	char* indexPlayer;
 	char* index6;
+	char* m_h = NULL;
+	char* m_ho = NULL;
 	int  iPlayer, iDay;
-	int  iPrevResult;
+	bool bPrevResult;
 	size_t m_nLenResults;
 
 	const int m_np2;
-	const int m_np3;
 	const int m_nGroups;
+	const bool m_bCheckLinkV;
+	const bool m_bCheckLinkH;
 	CChecklLink *m_pCheckLink = NULL;
 	CCanonicityChecker<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
 };
@@ -129,7 +138,7 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns, in
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
-void initPrevDayProcess(alldata* s);
+void initPrevDay(alldata* s);
 int processLastSix(alldata* s);
 
 int compareMatrix(const char *result, int ncolumns, char* transition);

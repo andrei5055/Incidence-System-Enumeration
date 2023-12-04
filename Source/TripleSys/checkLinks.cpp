@@ -13,7 +13,10 @@ CChecklLink::CChecklLink(int numDays, int numPlayers) :
 	initArray(&faults, len);
 	initArray(&tmfalse, len);
 	initArray(&tmok, len);
-	initArray(&cb, numPlayers * numPlayers);
+	initArray(&m_pLinksCopy, numPlayers * numPlayers);
+	initArray(&m_v, numPlayers);
+	initArray(&m_vo, numPlayers);
+
 #if PrintNVminmax
 	initArray(&nvmn, len, (char)99);
 	initArray(&nvmx, len, (char)(-1));
@@ -25,7 +28,9 @@ CChecklLink::~CChecklLink() {
 	delete[] faults;
 	delete[] tmfalse;
 	delete[] tmok;
-	delete[] cb;
+	delete[] m_pLinksCopy;
+	delete[] m_v;
+	delete[] m_vo;
 #if PrintNVminmax
 	delete[] nvmn;
 	delete[] nvmx;
@@ -42,60 +47,25 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 }
 #endif
 
-
-bool CChecklLink::checkLinks(char *c, int id, bool printLinksStatTime)
+bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 {
 #define cntm 10000000
 	std::chrono::steady_clock::time_point start0, start;
 	bool ret = true;
-
-//	if (m_numPlayers == 27)
-//		return checkLinks27(c, id);
 	const auto len = m_numPlayers * m_numPlayers;
-	memcpy(cb, c, len);
+
+	/* c001 - see all references to c001 */
+	if (m_numPlayers == 15 && id < 3)
+		return true;
+	if (m_numPlayers == 21 && id < 7)
+		return true;
+	/* c001 end */
+
+	memcpy(m_pLinksCopy, pLinks, len);
 
 	if ((icnt % cntm) == 0)
 	{
-		if (cnt != 0.0)
-		{
-			if (PrintLinksStat)
-			{
-				printf("\nTotal calls to 'checkLinks'=%.0fM, 'False' returns=%.2f%%, 'OK' returns=%.2f%%\n",
-					cnt / 1000000, cntErr * 100.0 / cnt, cntOk * 100 / cnt);
-				/**
-				printTable("'False' returns per player per day (% of total calls)", counts[0],
-					m_numDays, m_numPlayers, 0, 0, false, 100.0 / cnt);
-				if (printLinksStatTime)
-				{
-					printf("\nTotal time for 'checkLinks'=%.0fsec, 'False' returns time=%.2f%%, 'OK' returns time=%.2f%% \n",
-						tmtotal / 1000000, tmtotalFalse * 100.0 / tmtotal, tmtotalOk * 100.0 / tmtotal);
-					printTable("'False checkLinks' times per player per day (% of total time)",
-						tmfalse[0], m_numDays, m_numPlayers, 0, 0, false, 100.0 / tmtotal);
-					printTable("'OK' checkLinks' times per player per day (% of total time)",
-						tmok[0], m_numDays, m_numPlayers, 0, 0, false, 100.0 / tmtotal);
-				}
-				**/
-				printTableColor("'LinksCheck': 1-Fault, 2-OK, 3-Mix",
-					faults, m_numDays, m_numPlayers, 0, 0, false);
-			}
-
-#if PrintNVminmax
-			printTable("nv min", nvmn, m_numDays, m_numPlayers);
-			printTable("nv max", nvmx, m_numDays, m_numPlayers);
-			icnt = 0;
-#endif
-		}
-		/**
-		cnt = 0;
-		cntErr = 0;
-		tmtotal = 0;
-		tmtotalFalse = 0;
-		tmtotalOk = 0;
-		memset(faults[0], 0, sizeof(faults));
-		memset(counts[0], 0, sizeof(counts));
-		memset(tmfalse[0], 0, sizeof(tmfalse));
-		memset(tmfalse[0], 0, sizeof(tmok));
-		**/
+		reportCheckLinksData();
 	}
 
 	cnt++;
@@ -104,67 +74,57 @@ bool CChecklLink::checkLinks(char *c, int id, bool printLinksStatTime)
 	if (printLinksStatTime)
 		start0 = std::chrono::high_resolution_clock::now();
 
-	char vBuffer[100];
-	char *v = m_numPlayers <= sizeof(vBuffer) / 2 ? vBuffer : new char[2 * m_numPlayers];
-	char *vo = v + m_numPlayers;
 	const auto idx = id * m_numPlayers;
 	auto *faults_id = faults + idx;
 	auto* counts_id = counts + idx;
 	for (int i0 = 0; i0 < m_numPlayers; i0++)
 	{
-		//i = i0;
+		//int i = i0;
 		int i = (i0 + 5) % m_numPlayers;
-		auto *ci = c + i * m_numPlayers;
+		auto *ci = m_pLinksCopy + i * m_numPlayers;
 		if (printLinksStatTime)
 			start = std::chrono::high_resolution_clock::now();
 
-		char* lnk = c + i * m_numPlayers;
-		int nv = 0, ns = 0;
+		int nv = 0;
 
 		for (int j = 0; j < m_numPlayers; j++)
 		{
-			if (lnk[j] == unset && i != j)
-				v[nv++] = j;
+			if (ci[j] == unset && i != j)
+				m_v[nv++] = j;
 		}
 		if (nv == 0)
 			continue;
 
-		if (nv >= (m_numDays - 1) * 2) // this check make it faster
+		if (nv >= (m_numDays - 1) * 2) // this check makes it faster
 			continue;
 
-		//if (i0 < 3 && nv / 2 < m_numDays - id - 1)
-		//	goto fltPlayer;
-		///continue;
 		if ((nv % 2) != 0)
 		{
 			//continue;
+			printf("nv=%d i=%d\n", nv, i);
+			printTable("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
 			abort();
 		}
-		//memset(vo, unset, sizeof(vo));
-		if (nv < 0)
-			goto okplayer;
 
-		if (checkLinksV(c, v, nv, -1, vo))
+		if (checkLinksV(m_pLinksCopy, m_v, nv, -1, m_vo))
 		{
 			int idd = 0;
 			for (int n = 0; n < nv; n += 2)
 			{
-				const auto a = vo[n];
-				const auto b = vo[n + 1];
+				const auto a = m_vo[n];
+				const auto b = m_vo[n + 1];
 
 				if (a == unset || b == unset)
 					abort();
-				auto* ca = c + a * m_numPlayers;
+				auto* ca = m_pLinksCopy + a * m_numPlayers;
 				if (ci[a] != unset || ci[b] != unset || ca[b] != unset)
 					abort();
-				idd = -2;//m_numDays - nv / 2 + n;
+				idd = -2;// m_numDays - nv / 2 + n;
 
-				auto* cb = c + b * m_numPlayers;
+				auto* cb = m_pLinksCopy + b * m_numPlayers;
 				ci[a] = ca[i] = idd;
 				ci[b] = cb[i] = idd;
-				/**/
 				cb[a] = ca[b] = idd;
-				/**/
 			}
 			goto okplayer;
 		}
@@ -200,14 +160,12 @@ bool CChecklLink::checkLinks(char *c, int id, bool printLinksStatTime)
 		/**/
 		if (id > 33)
 		{
-			printTable("Links", c, m_numPlayers, m_numPlayers);
-			convertLinksToResult(c);
+			printTable("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
+			convertLinksToResult(m_pLinksCopy);
 			printTable("result", m_co, m_numDays, m_numPlayers);
 		}
 		/**/
 	}
-
-	memcpy(c, cb, len);
 
 	if (printLinksStatTime)
 	{
@@ -215,9 +173,6 @@ bool CChecklLink::checkLinks(char *c, int id, bool printLinksStatTime)
 		long long microseconds0 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed0).count();
 		tmtotal += (double)microseconds0;
 	}
-
-	if (v != vBuffer)
-		delete[] v;
 
 	return ret;
 }

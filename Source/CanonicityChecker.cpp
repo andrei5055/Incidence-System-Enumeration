@@ -565,6 +565,21 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 }
 
 
+CanonicityChecker(bool)::rollBack(T *p_dayRes, T *p_dayIsUsed, int &j, int nDays) const
+{
+	while (j > 1) { // Do we need to go to previous day?
+		p_dayIsUsed[p_dayRes[--j]] = 0;
+		if (++p_dayRes[j] < nDays) {
+			j--;
+			return true;
+		}
+
+		p_dayRes[j] = 0;
+	}
+
+	return false;
+}
+
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 	// return true  - continue, 
 	//        false - stop (calculate new matrix)
@@ -617,31 +632,78 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 #endif
 	}
 */
+	static int cntr = 0;
 	size_t startIndex = 0;
 	T* permColumn = NULL;
 	auto pOrbits = orbits();
 	const auto* res = result;
+	const auto lenMemory = m_numElem + 2 * nDays;
 	T buff[100];
-	T *p_players = m_numElem <= countof(buff) ? buff : new T[m_numElem];
+	T *p_players = lenMemory <= countof(buff) ? buff : new T[lenMemory];
+	T *p_dayRes = p_players + m_numElem;
+	T *p_dayIsUsed = p_dayRes + nDays;
+
 	const auto lenGroup = rank();
 	const auto numGroup = m_numElem / lenGroup;
 	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
-		if (res[0])
-			return false;
-
-		if (!copyTuple(res, p_players))
+		if (res[0] || !copyTuple(res, p_players))
 			return false;
 
 		T inc = 0;
 		for (auto j = numGroup; --j;) {
-			if (!copyTuple(res += lenGroup, p_players, inc+=lenGroup))
-				return false;
-
-			// Comparing first elements of the groups
-			if (p_players[*res] < p_players[*(res-lenGroup)])
+			if (!copyTuple(res += lenGroup, p_players, inc+=lenGroup) ||
+				p_players[*res] < p_players[*(res - lenGroup)]) // Comparing first elements of the groups
 				return false;
 		}
 
+		// Check canonicity of the codes for the other days
+		memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
+		p_dayIsUsed[p_dayRes[0] = iDay] = 1;
+        int j = 0;
+		T k;
+		while (true) {
+			while (++j < nDays) {
+				cntr++;
+				// Looking for the first unused day
+				k = p_dayRes[j];
+				while (k < nDays && p_dayIsUsed[k])
+					k++;
+
+				if (k == nDays) // Unable to find unused day.
+					break;
+
+				p_dayIsUsed[p_dayRes[j] = k] = 1;
+				const auto *resDayPerm = result + k * m_numElem;
+				const auto *resDay = result + j * m_numElem;
+				int diff = 0;
+				T t = -1;
+				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
+				if (t < m_numElem) {
+					if (diff < 0)
+						return false;
+					else
+						break;
+				}
+			}
+
+			if (rollBack(p_dayRes, p_dayIsUsed, j, nDays))
+				continue;
+//			else
+
+/*
+			if (j > 1) { // Do we need to go to previous day?
+				p_dayIsUsed[p_dayRes[--j]] = 0;
+				p_dayRes[j--]++;
+				continue;
+			}
+*/
+			if (true || k == nDays) {// Unable to find unused day.
+				break;   // there is no previous day for which a different choice can be made 
+			}
+			// automorphism found
+		}
+
+		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
 		T* permPlayers = NULL;
 		permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);

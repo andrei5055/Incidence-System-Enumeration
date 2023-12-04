@@ -215,5 +215,17 @@
     <ClCompile Include="..\Source\TripleSys\processLastSix.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\processOneDay.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

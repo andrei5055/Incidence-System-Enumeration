@@ -11,9 +11,9 @@
 			if ((vt[0] == v0) && (vt[1] == v1) && (vt[2] == v2) && (vt[3] == v3) && (vt[4] == v4) && (vt[5] == v5)) \
 			    return cs
 
-void alldata::getLastSix(char* v)
+void alldata::getUnselected(char* v, int nv)
 {
-	int j = 6;
+	int j = nv;
 	for (int i = m_numPlayers; --i >= 0;)
 	{
 		if (selPlayers[i] == unset)
@@ -68,7 +68,7 @@ int alldata::processLastSix()
 		return m_numPlayers;
 	else if (c < 0)
 		abort();
-	getLastSix(v);
+	getUnselected(v, 6);
 	cact = -1;
 	while (c <= 10)
 	{
@@ -95,7 +95,7 @@ int alldata::processLastSix()
 		sl(r[3], r[4]);
 		sl(r[3], r[5]);
 		sl(r[4], r[5]);
-		if (!m_pCheckLink || m_pCheckLink->checkLinks(links(), iDay))
+		if (!m_bCheckLinkV || m_pCheckLink->checkLinks(links(), iDay))
 			break;
 		ul(r[0], r[1]);
 		ul(r[0], r[2]);
