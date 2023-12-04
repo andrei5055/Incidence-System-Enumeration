@@ -656,6 +656,18 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 				return false;
 		}
 
+		if (lenGroup >= 3) {
+			// Ordering last two elements of each 
+			auto *res = p_players;
+			for (auto j = numGroup; j--; res += lenGroup) {
+				if (res[1] > res[2]) {  // TODO: Write code for lenGroup > 3
+					const auto tmp = res[1];
+					res[1] = res[2];
+					res[2] = tmp;
+				}
+			}
+		}
+
 		// Check canonicity of the codes for the other days
 		memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
 		p_dayIsUsed[p_dayRes[0] = iDay] = 1;
@@ -677,7 +689,8 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 				const auto *resDay = result + j * m_numElem;
 				int diff = 0;
 				T t = -1;
-				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
+				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]))
+					;
 				if (t < m_numElem) {
 					if (diff < 0)
 						return false;

@@ -38,6 +38,7 @@ alldata::~alldata() {
 	delete[] m_h;
 	delete[] m_ho;
 	delete m_pCheckLink;
+	delete m_pCheckCanon;
 }
 
 void alldata::Init() {
