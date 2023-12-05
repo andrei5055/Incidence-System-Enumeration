@@ -30,11 +30,11 @@ int alldata::getNextPlayer()
 				return m_numPlayers;
 			}
 		}
-		else if (iDay == 3)
+/*		else if (iDay == 3)
 		{
 			if (iPlayer == 2 && iPlayerNumber <= result(iDay - 1)[iPlayer])
 				iPlayerNumber = result(iDay - 1)[iPlayer] + 1;
-		}
+		} */
 		if (iPlayer < 7)
 		{
 			if (m0 == 0) // iDay != 0

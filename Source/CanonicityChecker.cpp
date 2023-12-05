@@ -332,7 +332,7 @@ CanonicityChecker(int)::checkColOrbit(T orbLen, T nColCurr, const S *pRow, const
 	}
 
 	// Reorder columns
-	S i = nColCurr;
+	T i = nColCurr;
 	for (auto j = rank(); j--;) {
 		const auto pStorage = colNumbStorage()[j];
 		for (auto k = pStorage->numb(); k--;)
@@ -411,7 +411,7 @@ CanonicityChecker(void)::outputAutomorphismInfo(FILE *file, const MatrixDataPntr
 
 CanonicityChecker(bool)::groupIsTransitive() const
 { 
-	S nFixedRows = lenStabilizer();
+	auto nFixedRows = lenStabilizer();
 	if (groupOrder() % (numRow() - nFixedRows))
 		return false;
 
@@ -689,8 +689,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 				const auto *resDay = result + j * m_numElem;
 				int diff = 0;
 				T t = -1;
-				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]))
-					;
+				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
 				if (t < m_numElem) {
 					if (diff < 0)
 						return false;
@@ -699,20 +698,13 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 				}
 			}
 
-			if (rollBack(p_dayRes, p_dayIsUsed, j, nDays))
-				continue;
-//			else
+			if (k == nDays) {// Unable to find unused day.
+				k = nDays;
+			}
 
-/*
-			if (j > 1) { // Do we need to go to previous day?
-				p_dayIsUsed[p_dayRes[--j]] = 0;
-				p_dayRes[j--]++;
-				continue;
-			}
-*/
-			if (true || k == nDays) {// Unable to find unused day.
+			if (!rollBack(p_dayRes, p_dayIsUsed, j, nDays))
 				break;   // there is no previous day for which a different choice can be made 
-			}
+
 			// automorphism found
 		}
 
