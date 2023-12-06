@@ -220,6 +220,8 @@
     <ClCompile Include="..\Source\TripleSys\checkLinks27.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp" />
+    <ClCompile Include="..\Source\TripleSys\checkPlayer1.cpp" />
+    <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp" />
     <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp" />
     <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp" />
     <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />

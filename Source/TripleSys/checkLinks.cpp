@@ -54,10 +54,10 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	bool ret = true;
 	const auto len = m_numPlayers * m_numPlayers;
 
-	/* c001 - see all references to c001 */
+	/* c001 - see all references to c001 **/
 	if (m_numPlayers == 15 && id < 3)
 		return true;
-	if (m_numPlayers == 21 && id < 7)
+	if (m_numPlayers == 21 && id < 1)
 		return true;
 	/* c001 end */
 
@@ -108,6 +108,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 
 		if (checkLinksV(m_pLinksCopy, m_v, nv, -1, m_vo))
 		{
+			goto okplayer;
 			int idd = 0;
 			for (int n = 0; n < nv; n += 2)
 			{
@@ -156,6 +157,8 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	}
 	if (ret)
 	{
+		if (id == 6)
+			id = id;
 		cntOk++;
 		/**/
 		if (id > 33)

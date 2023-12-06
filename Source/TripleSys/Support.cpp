@@ -3,38 +3,59 @@
 #include "TripleSys.h"
 
 
-void alldata::initCurrentDay()
+bool alldata::initCurrentDay()
 {
 	iPlayer = 0;
 	memset(indexPlayer, 0, m_numPlayers);
 	memset(selPlayers, unset, m_numPlayers);
 	memset(tmpPlayers, unset, m_numPlayers);
 
-	return;
+	//return true;
 
 	if (m_bCheckLinkH)
 	{
-		static int mx = -1;
-		double c = 0.0;
-		//if (mx != iDay)
+		int np = UseLastSix ? m_numPlayers - 6 : m_numPlayers;
+		//int np = m_numPlayers;
+		for (int i = 0; i < m_numPlayers; i++)
+			m_h[i] = i;
+		if (iDay == 0)
 		{
-			mx = iDay;
-			for (int i = 0; i < m_numPlayers; i++)
-				m_h[i] = i;
-			if (iDay == 0)
+			memcpy(m_ho, m_h, np);
+		}
+		else if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, unset, m_ho))
+		{
+			bPrevResult = true;
+			//printf("day=%d\n", iDay);
+			//printTable("no result", result(iDay), 1, np);
+			return false;
+		}
+#if 1
+		memcpy(indexPlayer, m_ho, np);
+		if (UseLastSix)
+			index6[iDay] = 0; // getLastSixIndex(indexPlayer);
+		iPlayer = 0;
+#else
+		memcpy(tmpPlayers, m_ho, np);
+		for (int i = 0; i < np; i++)
+		{
+			selPlayers[tmpPlayers[i]] = i;
+			if (!setLinksForOnePlayer(tmpPlayers, i, 1))
 			{
-				memcpy(m_ho, m_h, m_numPlayers);
-			}
-			else if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, unset, unset, m_ho))
-			{
-				bPrevResult = true;
-				initPrevDay();
-				//printf("day=%d\n", iDay);
-				//printTable("no result", result(iDay), 1, m_numPlayers);
-				return;
+				printf("initCurrentDay: value of %d (for day %d position %d) already defined in links table\n",
+					tmpPlayers[i], iDay, i);
+
+				memcpy(result(iDay), tmpPlayers, m_numPlayers);
+				printTable("current result", result(0), m_numDays, m_numPlayers);
+				printTable("links", links(0), m_numPlayers, m_numPlayers);
+				abort();
 			}
 		}
+		if (UseLastSix)
+			index6[iDay] = 0; //getLastSixIndex(tmpPlayers);
+		iPlayer = np;
+#endif
 	}
+	return true;
 }
 
 
@@ -94,14 +115,10 @@ bool alldata::initPrevDay()
 		iPlayer = m_numPlayers - GroupSize * 2;
 		indexPlayer[iPlayer] = index6[iDay]; // only one of six indices used, last 5 values of array indexPlayers not used
 	}
-	else
+	else if (m_numPlayers > GroupSize)
 		iPlayer = m_numPlayers - GroupSize - 1;
-
-	if (iPlayer < 0)
-	{
-		iDay = -1;
-		return false;
-	}
+	else
+		iPlayer = m_numPlayers - 1;
 
 	int ind = indexPlayer[iPlayer];
 	if (ind < 0)
@@ -121,87 +138,18 @@ bool alldata::initPrevDay()
 			indexPlayer[j] = 0;
 		}
 	}
-	if (UseLastSix && iPlayer == m_numPlayers - 6)
+	if (UseLastSix)
 		index6[iDay] = ind + 1;
 	indexPlayer[iPlayer] = ind + 1;
-	return true;
-}
-
-bool alldata::initStartValues(const char* ivcb, bool printStartValues)
-{
-	char* iv = m_co; // We can use existing array m_co
-	int v;
-	int ind = 0;
-	int id = iDay = 0;
-	memset(iv, unset, m_nLenResults);
-
-	for (ind = 0; ; ind++)
-	{
-		while (*ivcb == ' ' || *ivcb == '\n')
-		{
-			if (*ivcb++ == '\n')
-			{
-				if (id >= m_numDays - 1)
-					goto doneInit;
-				ind = 0;
-				id++;
-			}
-		}
-
-		if (sscanf_s(ivcb, "%d", &v) != 1)
-			break;
-		if (ind >= m_numPlayers)
-		{
-			ind = 0;
-			if (++id >= m_numDays)
-				break;
-		}
-		*(iv + id * m_numPlayers + ind) = (char)v;
-		while ((*ivcb >= '0' && *ivcb <= '9') || *ivcb == '-')
-			ivcb++;
-	}
-doneInit:
-	if (ind <= 0 && id <= 0)
-		return false;
-
-	char* iv_id = iv;
-	auto* res = result(0);
-	for (int i = 0; i < id; i++, iv_id += m_numPlayers, res += m_numPlayers)
-	{
-		iDay = i;
-		for (int j = 0; j < m_numPlayers; j++)
-		{
-			const auto ivId = iv_id[j];
-			if (ivId == unset)
-			{
-				printf("Init: value for day %d position %d not defined\n", i, j);
-				printTable("Initial result", result(0), m_numDays, m_numPlayers);
-				exit(0);
-			}
-
-			*(res + j) = ivId;
-			if (!setLinksForOnePlayer(res, j, 1))
-			{
-				printf("Init: value of %d (for day %d position %d) already defined in links table\n",
-					ivId, i, j);
-				printTable("Initial result", result(0), m_numDays, m_numPlayers);
-				exit(0);
-			}
-		}
-		index6[i] = getLastSixIndex(res);
-	}
-
-	iDay = id;
-	if (printStartValues) {
-		printTable("Result", result(), numDays(), numPlayers());
-		printTable("Links", links(0), numPlayers(), numPlayers());
-	}
 	return true;
 }
 
 void alldata::getPrevPlayer()
 {
 	if (iPlayer >= m_numPlayers)
+		abort();
+
+	if (UseLastSix && iPlayer > m_numPlayers - 6)
 		abort();
 
 	indexPlayer[iPlayer] = 0;
@@ -217,9 +165,6 @@ void alldata::getPrevPlayer()
 		selPlayers[iPlayerNumber] = unset;
 		//checkbmask(selPlayers, bmask);
 		tmpPlayers[iPlayer] = unset;
-
-		if (UseLastSix && iPlayer >= m_numPlayers - 6)
-			abort();
 
 		if (iPlayer >= m_numPlayers - GroupSize || iPlayerNumber >= m_numPlayers)
 		{

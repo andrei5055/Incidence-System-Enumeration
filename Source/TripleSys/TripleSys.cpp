@@ -64,20 +64,20 @@ bool alldata::Run() {
 			}
 			if (bPrevResult)
 			{
-				/**
+				/**/
 				if (nLoops == 1)
 				{
-					printf("%d \n", iDay);
+					//printf("%d ", iDay);
 
-					printTable("", result(), m_numDays, m_numPlayers);
+					//printTable("", result(), m_numDays, m_numPlayers);
 					//printTable("Links", links(), m_numPlayers, m_numPlayers);
-				}**/
+				}/**/
 
 				if (!initPrevDay())
 					continue;
 			}
-			else
-			    initCurrentDay();
+			else if (!initCurrentDay())
+				continue;
 
 			if (!processOneDay())
 			{
@@ -102,9 +102,7 @@ bool alldata::Run() {
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay + 1))
 				{
 					// get new matrix
-					iDay++;
 					bPrevResult = true;
-					continue;
 				}
 			}
 			iDay++;
@@ -114,6 +112,7 @@ bool alldata::Run() {
 		if (noMoreResults)
 		{
 			printf("no more results\n");
+			printTable("Links", links(), m_numPlayers, m_numPlayers);
 			break;
 		}
 		if (iDay < m_numDays)

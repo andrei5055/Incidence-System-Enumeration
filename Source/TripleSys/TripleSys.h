@@ -3,9 +3,10 @@
 using namespace std;
 #define nPlayers0 9
 #define GroupSize 3
-#define LoopsMax 2
+#define LoopsMax 20
 #define UseCheckLinksV 0
 #define UseCheckLinksH 0
+
 #define PrintLinksStat 0
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
 #define PrintNVminmax 0
@@ -53,7 +54,7 @@ public:
 	~CChecklLink();
 	bool checkLinks(char *c, int id, bool printLinksStatTime = false);
 	bool checkLinks27(char *c, int id);
-	bool checkLinksH(const char* c, const char* v, int nv, int ind1, int ind2, char* vo, double* counter = NULL);
+	bool checkLinksH(const char* c, const char* v, int nv, int nvo, int ind1, int ind2, char* vo, double* counter = NULL);
 private:
 	bool checkLinksV(const char* links, const char* v, int nv, int ind, char* vo);
 	void reportCheckLinksData();
@@ -103,10 +104,12 @@ private:
 	int processLastSix();
 	void getPrevPlayer();
 	int getNextPlayer();
-	void initCurrentDay();
+	bool initCurrentDay();
 	bool setLinksForOnePlayer(char* p, int ip, char iset);
 	void setCheckLinks();
 	bool processOneDay();
+	int checkPlayer1(int iPlayerNumber);
+	int checkPlayer3(int iPlayerNumber, int lastPlayer);
 
 	char* maxResult;
 	int maxDays;

@@ -647,11 +647,10 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 	const auto lenStab = stabiliserLengthExt();
 	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
 	T nElem = ELEMENT_MAX;
-	return true;
 
-	//memcpy(m_kSystem, result, m_numElem * nDays);
+	memcpy(m_kSystem, result, m_numElem * nDays);
 	while (true) {
-		const auto* res = result;// m_kSystem;
+		const auto* res = m_kSystem;
 		for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
 			if (res[0] || !copyTuple(res, p_players))
 				return false;
@@ -718,10 +717,57 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 			p_dayIsUsed[iDay] = 0;
 		}
 
-		break;   // temporary
+		//break;   // temporary
 		nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
 		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
 			break;
+
+		auto *resultPerm = m_kSystem;
+		res = result;
+		for (int iDay = 1; iDay < nDays; iDay++) {
+			resultPerm += m_numElem;
+			res += m_numElem;
+			for (auto j = m_numElem; j--;)
+				resultPerm[j] = res[permPlayers[j]];
+
+			// Ordering triples inside the day
+			auto* resPerm = resultPerm;
+			for (auto j = 0; j < m_numElem; j += 3, resPerm += 3) {
+				const auto tmp0 = resPerm[0];
+				const auto tmp1 = resPerm[1];
+				const auto tmp2 = resPerm[2];
+				if (tmp2 > tmp1) {
+					if (tmp0 > tmp1) {
+						resPerm[0] = tmp1;
+						if (tmp2 < tmp0) {
+							resPerm[1] = tmp2;
+							resPerm[2] = tmp0;
+						} else
+							resPerm[1] = tmp0;
+					}
+				}
+				else {
+					if (tmp2 > tmp0) {
+						resPerm[1] = tmp2;
+						resPerm[2] = tmp1;
+					}
+					else {
+						resPerm[j] = tmp2;
+						if (tmp0 < tmp1) {
+							resPerm[1] = tmp0;
+							resPerm[2] = tmp1;
+						}
+						else
+							resPerm[2] = tmp0;
+					}
+				}
+			}
+
+			// Checking if the newrly constructed "day" is in our previous list of days
+//			for (T jDay = 1; jDay < nDays; j++) {
+//				if (
+//			}
+		}  
 	}
 
 	return true;

@@ -1,9 +1,9 @@
 #include "TripleSys.h"
 #include <iostream>
 
-bool CChecklLink::checkLinksH(const char* c, const char* v, int nv, int ind1, int ind2, char* vo, double* counter)
+bool CChecklLink::checkLinksH(const char* c, const char* v, int nv, int nvo, int ind1, int ind2, char* vo, double* counter)
 {
-	if (nv <= 0)
+	if (nvo <= 0)
 	{
 		if (counter != NULL)
 		{
@@ -28,7 +28,9 @@ bool CChecklLink::checkLinksH(const char* c, const char* v, int nv, int ind1, in
 		if (nv >= ind2)
 		    memcpy(t + ind2 - 1, v + ind2 + 1, nv - ind2 + 1);
 	}
+
 	const char* ct0 = c + t[0] * m_numPlayers;
+
 	for (int i = 1; i < nv - 1; i++)
 	{
 		//if (t[0] == 0 && i >= 7 && i <= 10 && m_numPlayers == 21)
@@ -42,7 +44,7 @@ bool CChecklLink::checkLinksH(const char* c, const char* v, int nv, int ind1, in
 				//    j = j;
 				if (ct0[t[j]] == unset &&
 					cti[t[j]] == unset &&
-					checkLinksH(c, t + 1, nv - 3, i - 1, j - 1, vo + 3, counter))
+					checkLinksH(c, t + 1, nv - 3, nvo - 3, i - 1, j - 1, vo + 3, counter))
 				{
 					*vo = t[0];
 					*(vo + 1) = t[i];

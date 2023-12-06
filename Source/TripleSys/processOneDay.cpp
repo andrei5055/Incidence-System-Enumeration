@@ -30,11 +30,11 @@ bool alldata::processOneDay()
 		}
 		//if (iDay == 3)
 		//	printf("%d p=%d v=%d\n", iDay, iPlayer, iPlayerNumber);
+		if (iPlayer + 1 < m_numPlayers && iPlayerNumber != indexPlayer[iPlayer])
+			indexPlayer[iPlayer + 1] = 0;
 		indexPlayer[iPlayer] = iPlayerNumber;
 		tmpPlayers[iPlayer] = iPlayerNumber;
-		if ((iPlayer + 1) < m_numPlayers)
-			indexPlayer[(iPlayer + 1)] = 0;
-		selPlayers[iPlayerNumber] = iPlayer;
+		selPlayers[iPlayerNumber] = iPlayer; // check values of selPlayers only for equal or not to unset (-1)
 		iPlayer++;
 	}
 	//if (iDay == 3)
