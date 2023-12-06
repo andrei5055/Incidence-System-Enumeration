@@ -56,7 +56,6 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 	const auto len = nRow * sizeof(*pRow);
 	memcpy(*pPermRows = pRow, m_pTrivialPermutCol, len);
 	memcpy(pOrbits, m_pTrivialPermutCol, len);
-
 	if (!pPermCol) {
 		memcpy(pCol, m_pTrivialPermutCol, numCol() * sizeof(*pCol));
 
@@ -583,7 +582,6 @@ CanonicityChecker(bool)::rollBack(T *p_dayRes, T *p_dayIsUsed, int &j, int nDays
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 	// return true  - continue, 
 	//        false - stop (calculate new matrix)
-	const auto lenStab = stabiliserLengthExt();
 /*
 	const auto* pEnum = pCanonParam->pEnum;
 	auto* pPartNumb = pCanonParam->pPartNumb;
@@ -634,110 +632,131 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 */
 	static int cntr = 0;
 	size_t startIndex = 0;
-	T* permColumn = NULL;
-	auto pOrbits = orbits();
-	const auto* res = result;
-	const auto lenMemory = m_numElem + 2 * nDays;
-	T buff[100];
-	T *p_players = lenMemory <= countof(buff) ? buff : new T[lenMemory];
+
+	T *p_players = m_pPlayers;
 	T *p_dayRes = p_players + m_numElem;
 	T *p_dayIsUsed = p_dayRes + nDays;
 
 	const auto lenGroup = rank();
 	const auto numGroup = m_numElem / lenGroup;
-	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
-		if (res[0] || !copyTuple(res, p_players))
-			return false;
 
-		T inc = 0;
-		for (auto j = numGroup; --j;) {
-			if (!copyTuple(res += lenGroup, p_players, inc+=lenGroup) ||
-				p_players[*res] < p_players[*(res - lenGroup)]) // Comparing first elements of the groups
+	T* permPlayers = NULL;
+	T buff[100];
+	T* permColumn = NULL;
+	auto* pOrbits = buff;
+	const auto lenStab = stabiliserLengthExt();
+	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
+	T nElem = ELEMENT_MAX;
+	return true;
+
+	//memcpy(m_kSystem, result, m_numElem * nDays);
+	while (true) {
+		const auto* res = result;// m_kSystem;
+		for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
+			if (res[0] || !copyTuple(res, p_players))
 				return false;
-		}
 
-		if (lenGroup >= 3) {
-			// Ordering last two elements of each 
-			auto *res = p_players;
-			for (auto j = numGroup; j--; res += lenGroup) {
-				if (res[1] > res[2]) {  // TODO: Write code for lenGroup > 3
-					const auto tmp = res[1];
-					res[1] = res[2];
-					res[2] = tmp;
+			T inc = 0;
+			for (auto j = numGroup; --j;) {
+				if (!copyTuple(res += lenGroup, p_players, inc += lenGroup) ||
+					p_players[*res] < p_players[*(res - lenGroup)]) // Comparing first elements of the groups
+					return false;
+			}
+
+			if (lenGroup >= 3) {
+				// Ordering last two elements of each 
+				auto* res = p_players;
+				for (auto j = numGroup; j--; res += lenGroup) {
+					if (res[1] > res[2]) {  // TODO: Write code for lenGroup > 3
+						const auto tmp = res[1];
+						res[1] = res[2];
+						res[2] = tmp;
+					}
 				}
 			}
-		}
 
-		// Check canonicity of the codes for the other days
-		memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
-		p_dayIsUsed[p_dayRes[0] = iDay] = 1;
-        int j = 0;
-		T k;
-		while (true) {
-			while (++j < nDays) {
-				cntr++;
-				// Looking for the first unused day
-				k = p_dayRes[j];
-				while (k < nDays && p_dayIsUsed[k])
-					k++;
+			// Check canonicity of the codes for the other days
+			memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
+			p_dayIsUsed[p_dayRes[0] = iDay] = 1;
+			int j = 0;
+			T k;
+			while (true) {
+				while (++j < nDays) {
+					cntr++;
+					// Looking for the first unused day
+					k = p_dayRes[j];
+					while (k < nDays && p_dayIsUsed[k])
+						k++;
 
-				if (k == nDays) // Unable to find unused day.
-					break;
-
-				p_dayIsUsed[p_dayRes[j] = k] = 1;
-				const auto *resDayPerm = result + k * m_numElem;
-				const auto *resDay = result + j * m_numElem;
-				int diff = 0;
-				T t = -1;
-				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
-				if (t < m_numElem) {
-					if (diff < 0)
-						return false;
-					else
+					if (k == nDays) // Unable to find unused day.
 						break;
+
+					p_dayIsUsed[p_dayRes[j] = k] = 1;
+					const auto* resDayPerm = result + k * m_numElem;
+					const auto* resDay = result + j * m_numElem;
+					int diff = 0;
+					T t = -1;
+					while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
+					if (t < m_numElem) {
+						if (diff < 0)
+							return false;
+						else
+							break;
+					}
 				}
-			}
-
-			if (k == nDays) {// Unable to find unused day.
-				k = nDays;
-			}
-
-			if (!rollBack(p_dayRes, p_dayIsUsed, j, nDays))
-				break;   // there is no previous day for which a different choice can be made 
-
-			// automorphism found
-		}
-
-		p_dayIsUsed[iDay] = 0;
-		continue;   // temporary
-		T* permPlayers = NULL;
-		permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
-
-		T nElem = ELEMENT_MAX;
 /*
-		if (check_trivial_row_perm) {
-			nRow = startingRowNumb;
-			goto try_permut;
-		}
-		*/
-		while (true) {
-
-//		next_permut:
-			nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
-			if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
-				break;
-
-			for (T iDay = 0; iDay < nDays;  iDay++) {
-				const auto* pDayRes = result + iDay * m_numElem;
-				for (; nElem < m_numElem; nElem++) {
-					// const auto* pRow = pMatr->GetRow(nElem);
+				if (j == nDays) {
+					// automorphism found
+					if (!CheckPlayerPermutation())
+						return false;
 				}
+*/
+				if (!rollBack(p_dayRes, p_dayIsUsed, j, nDays))
+					break;   // there is no previous day for which a different choice can be made 
 			}
+
+			p_dayIsUsed[iDay] = 0;
 		}
+
+		break;   // temporary
+		nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
+		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+			break;
 	}
 
-	if (p_players != buff)
-		delete[] p_players;
+	return true;
+}
+
+CanonicityChecker(bool)::CheckPlayerPermutation()
+{
+	T* permPlayers = NULL;
+	T* permColumn = NULL;
+	auto *pOrbits = orbits();
+	const auto lenStab = stabiliserLengthExt();
+	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
+
+	T nElem = ELEMENT_MAX;
+	/*
+			if (check_trivial_row_perm) {
+				nRow = startingRowNumb;
+				goto try_permut;
+			}
+			*/
+	while (true) {
+
+		//		next_permut:
+		nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
+		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+			break;
+/*
+		for (T iDay = 0; iDay < nDays; iDay++) {
+			const auto* pDayRes = result + iDay * m_numElem;
+			for (; nElem < m_numElem; nElem++) {
+				// const auto* pRow = pMatr->GetRow(nElem);
+			}
+		} */
+		return true;
+	}
 
 	return true;
 }

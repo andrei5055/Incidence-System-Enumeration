@@ -162,6 +162,7 @@ private:
 		return true;
 	}
 	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
+	bool CheckPlayerPermutation();
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -190,12 +191,14 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
 	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
+	T *m_pPlayers = NULL;
+	T *m_kSystem = NULL;
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 
 	CRank(nRow, rank), m_numElem(nCol), m_enumFlags(enumFlags), m_numParts(numParts)
 {
-	m_pPermutRow = new CPermut(nRow);
+	m_pPermutRow = new CPermut(enumFlags & t_EnumeratorFlags::t_kSystems? nCol : nRow);
 	m_pPermutCol = new CPermut(nCol);
 	setColIndex(new T[2 * nCol]);
 	m_pCounter = new CCounter<int>(rank);
@@ -239,6 +242,11 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, 
 	m_pTrivialPermutCol = new T[nCol];
 	for (auto i = nCol; i--;)
 		m_pTrivialPermutCol[i] = i;
+
+	if (enumFlags & t_EnumeratorFlags::t_kSystems) {
+		m_pPlayers = new T[m_numElem + 2 * nRow];
+		m_kSystem = new T[m_numElem * nRow];
+	}
 }
 
 CanonicityChecker()::~CCanonicityChecker()
@@ -257,6 +265,8 @@ CanonicityChecker()::~CCanonicityChecker()
 	delete[] improvedSolution();
 	delete[] m_pObits[0][0];
 	delete[] m_pTrivialPermutCol;
+	delete[] m_pPlayers;
+	delete[] m_kSystem;
 	if (getGroupOnParts() && getGroupOnParts()->owner() == this)
 		delete getGroupOnParts();
 #if USE_STRONG_CANONICITY

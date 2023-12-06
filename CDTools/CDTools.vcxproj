@@ -189,7 +189,6 @@
     <ClInclude Include="..\Source\RowSolution.h" />
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
-    <ClInclude Include="..\Source\TripleSys\CanonicityChecker.h" />
     <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />

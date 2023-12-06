@@ -114,9 +114,6 @@
     <ClInclude Include="..\Source\CanonicityChecker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\TripleSys\CanonicityChecker.h">
-      <Filter>Source Files\k-systems</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\CanonicityChecker.cpp">

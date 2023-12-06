@@ -23,7 +23,7 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_ho = new char[m_numPlayers];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
 
-	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
+	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
 	Init();
 }
 
