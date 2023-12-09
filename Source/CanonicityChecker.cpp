@@ -551,6 +551,9 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 		}
 	}
 
+	if (!(perm[j] % 3) && i < j) {
+		i = i;
+	}
 	perm[i] = perm[j];
 	perm[j] = temp;
 	if (idx >= ELEMENT_MAX - 1) {
@@ -559,7 +562,8 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 
 		revert(perm, nRow, i);
 	}
-
+	// 0 1 2 3 4 5 6 7 8 
+	// 0 1 2 3 5 8 4 6 7
 	return i;
 }
 
@@ -577,6 +581,69 @@ CanonicityChecker(bool)::rollBack(T *p_dayRes, T *p_dayIsUsed, int &j, int nDays
 	}
 
 	return false;
+}
+
+CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T nDays) {
+	// Convert results for permutation of players
+	bool checkPerm = false;
+	auto* resultPerm = m_kSystem;
+	T* p_dayIsUsed = m_pDayRes;
+	memset(p_dayIsUsed, 0, nDays * sizeof(*p_dayIsUsed));
+	const T* res = result;
+	for (int iDay = 1; iDay < nDays; iDay++) {
+		resultPerm += m_numElem;
+		res += m_numElem;
+		for (auto j = m_numElem; j--;)
+			resultPerm[j] = res[permPlayers[j]];
+
+		// Ordering triples inside the day
+		auto* resPerm = resultPerm;
+		for (auto j = 0; j < m_numElem; j += 3, resPerm += 3) {
+			const auto tmp0 = resPerm[0];
+			const auto tmp1 = resPerm[1];
+			const auto tmp2 = resPerm[2];
+			if (tmp2 > tmp1) {
+				if (tmp0 > tmp1) {
+					resPerm[0] = tmp1;
+					if (tmp2 < tmp0) {
+						resPerm[1] = tmp2;
+						resPerm[2] = tmp0;
+					}
+					else
+						resPerm[1] = tmp0;
+				}
+			}
+			else {
+				if (tmp2 > tmp0) {
+					resPerm[1] = tmp2;
+					resPerm[2] = tmp1;
+				}
+				else {
+					resPerm[j] = tmp2;
+					if (tmp0 < tmp1) {
+						resPerm[1] = tmp0;
+						resPerm[2] = tmp1;
+					}
+					else
+						resPerm[2] = tmp0;
+				}
+			}
+		}
+
+		if (!checkPerm) {
+			// Checking if the newrly constructed "day" is in our previous list of days
+			auto j = nDays;
+			while (--j && (p_dayIsUsed[j] ||
+				memcmp(resultPerm, result + j * m_numElem, m_numElem)));
+
+			if (j)
+				p_dayIsUsed[j] = 1;
+			else
+				checkPerm = true;  // We need to check the newly constructed permutation of the players
+		}
+	}
+
+	return checkPerm;
 }
 
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
@@ -633,17 +700,16 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 	static int cntr = 0;
 	size_t startIndex = 0;
 
-	T *p_players = m_pPlayers;
-	T *p_dayRes = p_players + m_numElem;
-	T *p_dayIsUsed = p_dayRes + nDays;
+	T* p_dayRes = m_pDayRes;
+	T* p_dayIsUsed = p_dayRes + nDays;
+	T* p_players = p_dayIsUsed + nDays;
+	T* pOrbits = p_players + m_numElem;
 
 	const auto lenGroup = rank();
 	const auto numGroup = m_numElem / lenGroup;
 
 	T* permPlayers = NULL;
-	T buff[100];
 	T* permColumn = NULL;
-	auto* pOrbits = buff;
 	const auto lenStab = stabiliserLengthExt();
 	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
 	T nElem = ELEMENT_MAX;
@@ -675,6 +741,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 			}
 
 			// Check canonicity of the codes for the other days
+			// Initiating both arrays p_dayRes and p_dayIsUsed
 			memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
 			p_dayIsUsed[p_dayRes[0] = iDay] = 1;
 			int j = 0;
@@ -703,13 +770,10 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 							break;
 					}
 				}
-/*
-				if (j == nDays) {
-					// automorphism found
-					if (!CheckPlayerPermutation())
-						return false;
-				}
-*/
+
+				if (j == nDays && nElem != ELEMENT_MAX) // automorphism found				
+					addAutomorphism(m_numElem, permPlayers, pOrbits);
+
 				if (!rollBack(p_dayRes, p_dayIsUsed, j, nDays))
 					break;   // there is no previous day for which a different choice can be made 
 			}
@@ -718,58 +782,26 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 		}
 
 		//break;   // temporary
-		nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
-		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+		bool checkPermut = false;
+		int cntr = 1;
+		while (true) {
+			nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
+			if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+				break;
+			//continue;
+			cntr++;
+		//	if (checkPermut = PermutResults(result, permPlayers, nDays))
+		//		break;
+
+			// Under the action of the current permutation of players, the set of
+			// days is the same as before - an automorphism has been discovered
+			addAutomorphism(nElem = m_numElem, permPlayers, pOrbits);
+		}
+
+		if (!checkPermut)
 			break;
-
-		auto *resultPerm = m_kSystem;
-		res = result;
-		for (int iDay = 1; iDay < nDays; iDay++) {
-			resultPerm += m_numElem;
-			res += m_numElem;
-			for (auto j = m_numElem; j--;)
-				resultPerm[j] = res[permPlayers[j]];
-
-			// Ordering triples inside the day
-			auto* resPerm = resultPerm;
-			for (auto j = 0; j < m_numElem; j += 3, resPerm += 3) {
-				const auto tmp0 = resPerm[0];
-				const auto tmp1 = resPerm[1];
-				const auto tmp2 = resPerm[2];
-				if (tmp2 > tmp1) {
-					if (tmp0 > tmp1) {
-						resPerm[0] = tmp1;
-						if (tmp2 < tmp0) {
-							resPerm[1] = tmp2;
-							resPerm[2] = tmp0;
-						} else
-							resPerm[1] = tmp0;
-					}
-				}
-				else {
-					if (tmp2 > tmp0) {
-						resPerm[1] = tmp2;
-						resPerm[2] = tmp1;
-					}
-					else {
-						resPerm[j] = tmp2;
-						if (tmp0 < tmp1) {
-							resPerm[1] = tmp0;
-							resPerm[2] = tmp1;
-						}
-						else
-							resPerm[2] = tmp0;
-					}
-				}
-			}
-
-			// Checking if the newrly constructed "day" is in our previous list of days
-//			for (T jDay = 1; jDay < nDays; j++) {
-//				if (
-//			}
-		}  
 	}
-
+	//  (0 3, 6) (1, 2, 4)
 	return true;
 }
 

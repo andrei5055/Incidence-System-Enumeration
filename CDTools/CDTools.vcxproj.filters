@@ -224,5 +224,11 @@
     <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkPlayer1.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
