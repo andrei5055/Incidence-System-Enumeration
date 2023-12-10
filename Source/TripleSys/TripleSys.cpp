@@ -3,7 +3,11 @@
 
 #include <iostream>
 #include "TripleSys.h"
-#include "../CanonicityChecker.h"
+#ifdef CD_TOOLS
+   #include "../CanonicityChecker.h"
+#else
+   #include "CanonicityChecker.h"
+#endif
 
 alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useCheckLinksH) :
 		SizeParam((numPlayers - 1) / (groupSize - 1), numPlayers, groupSize),
@@ -23,7 +27,12 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_ho = new char[m_numPlayers];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
 
+#ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
+#else
+	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
+#endif
+
 	Init();
 }
 

@@ -103,7 +103,6 @@ CanonicityChecker(T)::next_permutation(T *perm, const T *pOrbits, T idx, T lenSt
 
 	// Check if the algorithm, used immediately after 
 	// some non-trivial automorphism was found
-	const auto IDX_MAX = ELEMENT_MAX - 1;
 	if (idx == IDX_MAX && perm[stabilizerLength()] == nRow - 1)
 		idx = ELEMENT_MAX;
 
@@ -176,7 +175,7 @@ CanonicityChecker(T)::next_permutation(T *perm, const T *pOrbits, T idx, T lenSt
         
         perm[j] = tmp;
         if (flag) {
-            j = idx >= ELEMENT_MAX - 1? nRow - 1 : i;
+            j = idx >= IDX_MAX? nRow - 1 : i;
             temp = perm[--i];
             setStabilizerLength(i);
         }
@@ -184,7 +183,7 @@ CanonicityChecker(T)::next_permutation(T *perm, const T *pOrbits, T idx, T lenSt
     
     perm[i] = perm[j];
     perm[j] = temp;
-    if (idx >= ELEMENT_MAX - 1) {
+    if (idx >= IDX_MAX) {
  		if (stabilizerLength() > i)
 			setStabilizerLength(i);
 
@@ -460,22 +459,21 @@ CanonicityChecker(T)::constructColIndex(const ColOrbPntr pColOrbit, const ColOrb
 	return idx;
 }
 
-CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenStab) {
+CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T nElem, T idx, T lenStab) {
 	// Function generates next permutation for the k-system 
 	// Find non-increasing suffix
-	const auto nRow = numRow();
+	//const auto nRow = numRow();
 	T temp, i, j;
 
 	// Check if the algorithm, used immediately after 
 	// some non-trivial automorphism was found
-	const auto IDX_MAX = ELEMENT_MAX - 1;
-	if (idx == IDX_MAX && perm[stabilizerLength()] == nRow - 1)
+	if (idx == IDX_MAX && perm[stabilizerLength()] == nElem - 1)
 		idx = ELEMENT_MAX;
 
 	if (idx == IDX_MAX) {
 		// Firts call after some automorphism was found
 		temp = perm[idx = i = stabilizerLength()];
-		for (j = nRow; --j > temp;)
+		for (j = nElem; --j > temp;)
 			perm[j] = j;
 
 		for (auto k = j++; k-- > i;)
@@ -483,11 +481,11 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 	}
 	else {
 		if (idx >= IDX_MAX) {
-			j = i = nRow;
+			j = i = nElem;
 			while (--i > 0 && perm[i - 1] >= perm[i]);
 
 			if (i == lenStab)
-				return ELEMENT_MAX;
+				return ELEMENT_MAX;  // no more permutations
 
 			// Find successor to pivot
 			temp = perm[--i];
@@ -495,10 +493,12 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 		}
 		else {
 			temp = perm[j = i = idx];
-			while (++j < nRow && perm[j] <= temp);
-			if (j >= nRow) {
-				revert(perm, nRow, i);
-				return nextPermutation(perm, pOrbits);
+			while (++j < nElem && perm[j] <= temp);
+			if (j >= nElem) {
+				if (nElem > i - 2)
+					revert(perm, nElem, i);
+
+				return nextPermutation(perm, pOrbits, nElem);
 			}
 		}
 	}
@@ -521,11 +521,11 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 			}
 		}
 		else {
-			while (k < nRow && *(pOrbits + perm[k]) != perm[k])
+			while (k < nElem && *(pOrbits + perm[k]) != perm[k])
 				k++;
 
 			if (k != j) {
-				flag = k == nRow;
+				flag = k == nElem;
 				if (flag) {
 					if (!i)
 						return ELEMENT_MAX;
@@ -545,7 +545,7 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 
 		perm[j] = tmp;
 		if (flag) {
-			j = idx >= ELEMENT_MAX - 1 ? nRow - 1 : i;
+			j = idx >= IDX_MAX ? nElem - 1 : i;
 			temp = perm[--i];
 			setStabilizerLength(i);
 		}
@@ -556,11 +556,12 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T idx, T lenSta
 	}
 	perm[i] = perm[j];
 	perm[j] = temp;
-	if (idx >= ELEMENT_MAX - 1) {
+	if (idx >= IDX_MAX - 1) {
 		if (stabilizerLength() > i)
 			setStabilizerLength(i);
 
-		revert(perm, nRow, i);
+		if (nElem > i - 2)
+			revert(perm, nElem, i);
 	}
 	// 0 1 2 3 4 5 6 7 8 
 	// 0 1 2 3 5 8 4 6 7
@@ -713,6 +714,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 	const auto lenStab = stabiliserLengthExt();
 	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
 	T nElem = ELEMENT_MAX;
+	T idx = ELEMENT_MAX;
 
 	memcpy(m_kSystem, result, m_numElem * nDays);
 	while (true) {
@@ -785,11 +787,12 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
 		bool checkPermut = false;
 		int cntr = 1;
 		while (true) {
-			nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
+			nElem = nextPermutation(permPlayers, pOrbits, m_numElem, idx, lenStab);
 			if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
 				break;
 			//continue;
 			cntr++;
+//			continue;
 		//	if (checkPermut = PermutResults(result, permPlayers, nDays))
 		//		break;
 

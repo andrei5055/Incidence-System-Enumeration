@@ -20,6 +20,7 @@
 
 #define CPermut				CSimpleArray<S>
 #define CColNumbStorage		CContainer<S>
+#define IDX_MAX				(ELEMENT_MAX - 1)
 
 typedef enum {
 	t_saveNothing			= 0,
@@ -125,7 +126,7 @@ protected:
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
-	CC T nextPermutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
+	CC T nextPermutation(T *perm, const T *pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
@@ -513,7 +514,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 			}
 
 			addAutomorphism(nRowMax, permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
-			nRow = ELEMENT_MAX - 1;
+			nRow = IDX_MAX;
 		}
 
 		if (rowPermut && calcGroupOrder)

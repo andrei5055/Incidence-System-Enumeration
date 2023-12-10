@@ -12,10 +12,11 @@
 
 Class2Def(CCanonicityChecker) {
 public:
-	CCanonicityChecker(T nRow, T nCol);
-	bool CheckCanonicity(const T* result, int nLines);
+	CCanonicityChecker(T nRow, T nCol, T groupSize=GroupSize)
+		: m_numElem(nCol), m_groupSise(groupSize) {}
+	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
 private:
-	inline T rank() const					{ return GroupSize; }
+	inline T groupSize() const				{ return m_groupSise; }
 	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
 	const auto *orbits() const				{ return m_pObits; }
@@ -25,13 +26,20 @@ private:
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_pObits[2][2];
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
-									   // (it is equal nCol for combinatorial designs or number of players for k-system) 
+									   // (it is equal nCol for combinatorial designs or number of players for k-system)
+	const T m_groupSise;
 };
 
-CanonicityChecker()::CCanonicityChecker(T nRow, T nCol) : m_numElem(nCol) {
-}
-
-CanonicityChecker(bool)::CheckCanonicity(const T * result, int nDays) {
+CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
+	// Input parameters:
+	//    result - pointer to a sequence of lists, each containing "m_numElem" players
+	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
+	//    nDays  - number of days (or lists, mentioned above)
+	//    bResult (optional) - pointer to the array of (m_numElem + nDays) elements,
+	//             when it's not NULL and the "result" is not a canonical one, then
+	//             this array will contain the permutations of
+	//             (a) players (as its first "m_numElem" elements)
+	//             (b) days (starting with (bResult+m_numElem)'s element)    
 	//return true;
 	/*
 	"     0   1   2    3   4   5    6   7   8 \n"
@@ -60,7 +68,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T * result, int nDays) {
 	T* p_dayRes = p_players + m_numElem;
 	T* p_dayIsUsed = p_dayRes + nDays;
 
-	const auto lenGroup = rank();
+	const auto lenGroup = groupSize();
 	const auto numGroup = m_numElem / lenGroup;
 	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
 		if (res[0] || !copyTuple(res, p_players))
@@ -106,8 +114,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T * result, int nDays) {
 				const auto* resDay = result + j * m_numElem;
 				int diff = 0;
 				T t = -1;
-				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]))
-					;
+				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
 				if (t < m_numElem) {
 					if (diff < 0)
 						return false;
@@ -172,7 +179,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T * result, int nDays) {
 
 CanonicityChecker(bool)::copyTuple(const T* res, T* p_players, T inc) const {
 	p_players[res[0]] = inc;
-	for (T j = 1; j < rank(); j++) {
+	for (T j = 1; j < groupSize(); j++) {
 		const auto diff = (int)res[j - 1] - res[j];
 		assert(diff);
 		if (diff > 0)
