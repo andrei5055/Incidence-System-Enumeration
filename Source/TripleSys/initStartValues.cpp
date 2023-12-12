@@ -70,7 +70,7 @@ doneInit:
 	memcpy(maxResult, result(0), m_nLenResults);
 	if (printStartValues) {
 		printTable("Result", result(), numDays(), numPlayers());
-		printTable("Links", links(0), numPlayers(), numPlayers());
+		printTableColor("Links", links(0), numPlayers(), numPlayers());
 	}
 	return true;
 }

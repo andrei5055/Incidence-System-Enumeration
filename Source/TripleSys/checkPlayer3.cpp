@@ -11,96 +11,45 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	char* l0 = links(i0);
 	char* l1 = links(i1);
 	char day = iDay;
-	for (; iPlayerNumber < lastPlayer; iPlayerNumber++)
-	{
-		if (selPlayers[iPlayerNumber] != unset)
-			continue;
 
-		/**  3 4 5 7 <= x1 < x2 < ... < xd **/
-//			if (!m_bCheckLinkV) // with m_bCheckLinkV equal true we canot check days because they are not sorted
+	if (l0[iPlayerNumber] != unset)
+		return -1;
+	char* li = links(iPlayerNumber);
+	if (m0 == 2)
+	{
+		if (l1[iPlayerNumber] != unset)
+			return -1;
+		l1[iPlayerNumber] = li[i1] = day;
+	}
+	l0[iPlayerNumber] = li[i0] = day;
+	if (m0 == 2)
+	{
+		bool bV = true, bH = true;
+		if (iPlayer > m_numPlayers / 2 && m_bCheckLinkH)
 		{
-			if (iPlayer == 1 && iDay > 0)
+			int nUnselected = m_numPlayers - iPlayer - 1;
+			if (nUnselected > 0 && iDay > 2)
 			{
-				if (iDay >= 4)
-				{
-					if (iPlayerNumber < 7)
-						iPlayerNumber = 7;
-					if (iPlayerNumber <= result(iDay - 1)[1])
-						iPlayerNumber = result(iDay - 1)[1];
-				}
-				else
-				{
-					if (iPlayerNumber <= iDay + 2)
-						iPlayerNumber = iDay + 2;
-					else
-						return m_numPlayers;
-				}
-			}
-			/** p7 > p4 in the Second day
-			4 <= z1 <= 11, 5 <= z2 <= 14,
-			and if z1 <= 8, then z2 <= 11 **/
-			if (iDay == 1)
-			{
-				if (iPlayer == 4)
-				{
-					if (iPlayerNumber < 4)
-						iPlayerNumber = 4;
-					if (iPlayerNumber > 11)
-						return m_numPlayers;
-				}
-				else if (iPlayer == 7)
-				{
-					if (iPlayerNumber <= tmpPlayers[4])
-						iPlayerNumber = tmpPlayers[4] + 1;
-					if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
-						return m_numPlayers;
-					if (iPlayerNumber > 14)
-						return m_numPlayers;
-				}
-			}
-			if (selPlayers[iPlayerNumber] != unset)
-				continue;
-		}
-		if (l0[iPlayerNumber] != unset)
-			continue;
-		char* li = links(iPlayerNumber);
-		if (m0 == 2)
-		{
-			if (l1[iPlayerNumber] != unset)
-				continue;
-			l1[iPlayerNumber] = li[i1] = day;
-		}
-		l0[iPlayerNumber] = li[i0] = day;
-		if (m0 == 2)
-		{
-			bool bV = true, bH = true;
-			if (iPlayer > m_numPlayers / 2 && m_bCheckLinkH)
-			{
-				int nUnselected = m_numPlayers - iPlayer - 1;
-				if (nUnselected > 0 && iDay > 2)
-				{
-					selPlayers[iPlayerNumber] = iPlayer;
-					tmpPlayers[iPlayer] = iPlayerNumber;
-					getUnselected(m_h, nUnselected);
-					bH = m_pCheckLink->checkLinksH(links(), m_h, nUnselected, nUnselected, unset, unset, m_ho);
-				}
-			}
-			if (m_bCheckLinkV && bH == true)
-			{
-				bV = m_pCheckLink->checkLinks(links(), iDay);
-			}
-			if (!bH)
-				bH = bH;
-			if (!bH || !bV)
-			{
-				selPlayers[iPlayerNumber] = unset;
-				tmpPlayers[iPlayer] = unset;
-				li[i0] = li[i1] = unset;
-				l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
-				continue;
+				selPlayers[iPlayerNumber] = iPlayer;
+				tmpPlayers[iPlayer] = iPlayerNumber;
+				getUnselected(m_h, nUnselected);
+				bH = m_pCheckLink->checkLinksH(links(), m_h, nUnselected, nUnselected, unset, unset, m_ho);
 			}
 		}
-		break;
+		if (m_bCheckLinkV && bH == true)
+		{
+			bV = m_pCheckLink->checkLinks(links(), iDay);
+		}
+		if (!bH)
+			bH = bH;
+		if (!bH || !bV)
+		{
+			selPlayers[iPlayerNumber] = unset;
+			tmpPlayers[iPlayer] = unset;
+			li[i0] = li[i1] = unset;
+			l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
+			return -1;
+		}
 	}
 	return iPlayerNumber;
 }

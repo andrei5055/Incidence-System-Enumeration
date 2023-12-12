@@ -4,25 +4,30 @@
 int alldata::getNextPlayer()
 {
 	int iPlayerNumber = indexPlayer[iPlayer];
+	int iRet;
 	int m0 = iPlayer % GroupSize;
-	int m1 = m0 == 0 ? GroupSize : 1;
-	if ((iPlayerNumber = checkPlayer1(iPlayerNumber)) >= m_numPlayers)
-		return m_numPlayers;
-
-	if (m0 != 0)
+	for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
 	{
-		if (m_groupSize == 3)
-		{
-			if ((iPlayerNumber = checkPlayer3(iPlayerNumber, m_numPlayers)) >= m_numPlayers)
-				return m_numPlayers;
-		}
-		else
-		{
-			for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
-			{
-				if (selPlayers[iPlayerNumber] != unset)
-					continue;
+		if (selPlayers[iPlayerNumber] != unset)
+			continue;
 
+		if ((iPlayerNumber = checkPlayer1(iPlayerNumber)) >= m_numPlayers)
+			return m_numPlayers;
+
+		if (selPlayers[iPlayerNumber] != unset)
+			continue;
+
+		if (m0 != 0)
+		{
+			if (m_groupSize == 3)
+			{
+				if ((iRet = checkPlayer3(iPlayerNumber, m_numPlayers)) >= m_numPlayers)
+					return m_numPlayers;
+				if (iRet >= 0)
+					return iRet;
+			}
+			else
+			{
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				if (setLinksForOnePlayer(tmpPlayers, iPlayer, 1))
 				{
@@ -31,7 +36,8 @@ int alldata::getNextPlayer()
 				tmpPlayers[iPlayer] = unset;
 			}
 		}
+		else
+			break;
 	}
-
 	return iPlayerNumber;
 }

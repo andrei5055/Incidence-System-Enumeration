@@ -21,6 +21,9 @@ bool alldata::processOneDay()
 		}
 		else
 			iPlayerNumber = getNextPlayer();
+		
+		if (iPlayerNumber == 16)
+			iDay = iDay;
 
 		if (iPlayerNumber >= m_numPlayers)
 		{

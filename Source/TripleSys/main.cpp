@@ -10,7 +10,8 @@ int main()
 #if nPlayers == 15
 	const char* ivc = "";
 #elif nPlayers == 21        
-	const char* ivc = "";
+	const char* ivc = ""
+		;
 #elif nPlayers == 27
 	const char* ivc = ""
 		/**/
@@ -35,7 +36,7 @@ int main()
 	std::cout << "TripleSys 8.1\n";
 
 	sys.initStartValues(ivc);// can be used to start from previous result
-	sys.Run();
+	sys.Run(ImproveResults);
 	PlaySound(L"SystemAsterisk", NULL, SND_SYNC);
 
 	return 0;

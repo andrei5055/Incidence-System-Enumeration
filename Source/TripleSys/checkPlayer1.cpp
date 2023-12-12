@@ -6,64 +6,152 @@ int alldata::checkPlayer1(int iPlayerNumber)
 	int m0 = iPlayer % GroupSize;
 	int m1 = m0 == 0 ? GroupSize : 1;
 	int ifixedPlayer = -1;
-	if (iDay == 0)
-	{
-		if (iPlayerNumber > iPlayer)
-			return m_numPlayers;
-			iPlayerNumber = iPlayer;
-	}
-	else if (GroupSize == 3)
-	{
-		if (iPlayer == 1) // iDay != 0
-		{
-			if (iPlayerNumber <= result(iDay - 1)[iPlayer])
-				iPlayerNumber = result(iDay - 1)[iPlayer] + 1;
-		}
-		//	if (!m_bCheckLinkV) // with m_bCheckLinkV equal true we canot check days because they are not sorted
-		{
-			if (iDay == 1)
-			{
-				if (iPlayer > 0 && iPlayer < 3)
-				{
-					ifixedPlayer = iPlayer * 3;
-					if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
-					{
-						if (links(0)[ifixedPlayer] == unset)
-							return ifixedPlayer;
-					}
-					return m_numPlayers;
-				}
-			}/**
-			else if (iDay == 3)
-			{
-				if (iPlayer == 2 && iPlayerNumber <= result(iDay - 1)[iPlayer])
-					iPlayerNumber = result(iDay - 1)[iPlayer] + 1;
-			}*/
-
-		}
-		if (iPlayer < 7)
-		{
-			if (m0 == 0) // iDay != 0
-			{
-				ifixedPlayer = iPlayer / 3;
-				if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
-					return ifixedPlayer;
-				return m_numPlayers;
-			}
-		}
-	}
-	if (iPlayer >= m1)
-	{
-		// the following 2 lines makes signinficant change in speed
-		if (iPlayerNumber <= tmpPlayers[iPlayer - m1])
-			iPlayerNumber = tmpPlayers[iPlayer - m1] + 1;
-	}
-
 	if (m0 == 0)
 	{
 		//new
 		if (iPlayerNumber > iPlayer)
 			return m_numPlayers;
+	}
+	if (iDay <= 0)
+	{
+		if (iPlayerNumber > iPlayer)
+			return m_numPlayers;
+		return iPlayer;
+	}
+	// iDay > 0
+	if (iPlayer == 0)
+	{
+		// AI statement #4 (part 1)
+		if (iPlayerNumber != 0 || selPlayers[0] != unset)
+			return m_numPlayers;
+		return 0;
+	}
+	if (iPlayer >= m1)
+	{
+		// AI statement #1 and #2 (for all groups)
+		if (iPlayerNumber <= tmpPlayers[iPlayer - m1])
+			iPlayerNumber = tmpPlayers[iPlayer - m1] + 1;
+	}
+	if (GroupSize == 3)
+	{
+		if (iPlayer < 7 && m0 == 0)
+		{
+			// AI statement #4 (part 2)
+			ifixedPlayer = iPlayer / 3;
+			if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+				return ifixedPlayer;
+			return m_numPlayers;
+		}
+		//	if (!m_bCheckLinkV) // with m_bCheckLinkV equal true we canot check days because they are not sorted
+		{
+			if (iPlayer == 1)
+			{
+				// AI statement #6
+				if (iDay >= 4)
+				{
+					if (iPlayerNumber < 7)
+						iPlayerNumber = 7;  // not happend
+					if (iPlayerNumber <= result(iDay - 1)[1])
+						iPlayerNumber = result(iDay - 1)[1];
+				}
+				else
+				{
+					if (iPlayerNumber <= iDay + 2)
+						iPlayerNumber = iDay + 2;
+					else
+						return m_numPlayers;
+				}
+			}
+			else if (iDay == 1)
+			{
+				// AI statement #4 (part)
+				switch (iPlayer) 
+				{
+					case 2:
+					{
+						ifixedPlayer = 6;
+						if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+						{
+							if (links(0)[ifixedPlayer] == unset)
+								return ifixedPlayer;
+						}
+						return m_numPlayers;
+					}
+					case 4:
+					{
+						if (iPlayerNumber < 4)
+							iPlayerNumber = 4;
+						if (iPlayerNumber > 11)
+							return m_numPlayers;
+						break;
+					}
+					case 7:
+					{
+						// AI statement #7 
+						if (iPlayerNumber <= tmpPlayers[4])
+							iPlayerNumber = tmpPlayers[4] + 1;
+						if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
+							return m_numPlayers;
+						if (iPlayerNumber > 14)
+							return m_numPlayers; // not happed
+						break;
+					}
+					case 8:
+					{
+						if (tmpPlayers[7] == 5 && tmpPlayers[4] == 4 && iPlayerNumber <= tmpPlayers[5])
+						{
+							// AI statement #10
+							iPlayerNumber = tmpPlayers[5] + 1;
+						}
+						/** covered in case 7
+						if (iPlayerNumber <= tmpPlayers[4])
+							iPlayerNumber = tmpPlayers[4] + 1; // not happend **/
+						if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
+							return m_numPlayers;
+						if (iPlayerNumber > 14)
+							return m_numPlayers;
+						break;
+					}
+					case 9:
+					{
+						if (tmpPlayers[4] == 4 && tmpPlayers[7] != 5)
+						{
+							// AI statement #9 part 1
+							ifixedPlayer = 5; // not happend
+							if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+								return ifixedPlayer; // not happend
+							return m_numPlayers; // not happend
+						}
+						break;
+					}
+					case 12:
+					{
+						if (tmpPlayers[9] == 4)
+						{
+							// AI statement #9 part 2    
+							ifixedPlayer = 5;   
+							if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+								return ifixedPlayer;
+							return m_numPlayers;
+						}
+						break;
+					}
+					case 13:
+					{
+						if (tmpPlayers[12] == 5 && tmpPlayers[9] == 4 && iPlayerNumber <= tmpPlayers[10])
+						{
+							// AI statement #11 ???
+							iPlayerNumber = tmpPlayers[10] + 1; // not happend
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if (m0 == 0 && (!UseLastSix || iPlayer < m_numPlayers - 6))
+	{
 		int firstNotSel = 0;
 		for (int i = 0; i < m_numPlayers; i++)
 		{
@@ -74,12 +162,12 @@ int alldata::checkPlayer1(int iPlayerNumber)
 			}
 		}
 		if (iPlayerNumber > firstNotSel)
-			return m_numPlayers;
+			return m_numPlayers; // happen for 21
 		else
-			iPlayerNumber = firstNotSel;
+			iPlayerNumber = firstNotSel; // happend for 21
 		//new
 		if (iPlayerNumber > iPlayer)
-			return m_numPlayers;
+			return m_numPlayers; // not happen if at the end
 	}
 	return iPlayerNumber;
 }

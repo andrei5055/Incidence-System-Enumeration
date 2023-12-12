@@ -12,21 +12,23 @@
 
 Class2Def(CCanonicityChecker) {
 public:
-	CCanonicityChecker(T nRow, T nCol, T groupSize=GroupSize)
-		: m_numElem(nCol), m_groupSise(groupSize) {}
+	CCanonicityChecker(T nRow, T nCol, T groupSize = GroupSize)
+		: m_numElem(nCol), m_groupSise(groupSize) {
+		m_pDayRes = new T[2 * (m_numElem + nRow)];
+	}
+	~CCanonicityChecker()					{ delete[] m_pDayRes; }
 	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
 private:
 	inline T groupSize() const				{ return m_groupSise; }
 	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
-	const auto *orbits() const				{ return m_pObits; }
 	bool copyTuple(const T* res, T* p_players, T inc = 0) const;
 	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
-	T* m_pObits[2][2];
-	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
-									   // (it is equal nCol for combinatorial designs or number of players for k-system)
+	T* m_pDayRes = NULL;
+	const T m_numElem;			// The number of elements that will be the same for all partially constructed objects
+								// (it is equal nCol for combinatorial designs or number of players for k-system)
 	const T m_groupSise;
 };
 
@@ -35,11 +37,13 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
 	//    nDays  - number of days (or lists, mentioned above)
+	// Output parameter:
 	//    bResult (optional) - pointer to the array of (m_numElem + nDays) elements,
 	//             when it's not NULL and the "result" is not a canonical one, then
 	//             this array will contain the permutations of
 	//             (a) players (as its first "m_numElem" elements)
-	//             (b) days (starting with (bResult+m_numElem)'s element)    
+	//             (b) days (starting with (bResult+m_numElem)'s element)
+	//    
 	//return true;
 	/*
 	"     0   1   2    3   4   5    6   7   8 \n"
@@ -60,13 +64,12 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 	static int cntr = 0;
 	size_t startIndex = 0;
 	T* permColumn = NULL;
-	auto *pOrbits = orbits();
 	const auto* res = result;
 	const auto lenMemory = m_numElem + 2 * nDays;
-	T buff[100];
-	T* p_players = lenMemory <= countof(buff) ? buff : new T[lenMemory];
-	T* p_dayRes = p_players + m_numElem;
+	T* p_dayRes = m_pDayRes;
 	T* p_dayIsUsed = p_dayRes + nDays;
+	T* p_players = p_dayIsUsed + nDays;
+	T* pOrbits = p_players + m_numElem;
 
 	const auto lenGroup = groupSize();
 	const auto numGroup = m_numElem / lenGroup;
@@ -80,6 +83,9 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 				p_players[*res] < p_players[*(res - lenGroup)]) // Comparing first elements of the groups
 				return false;
 		}
+
+		if (bResult)
+			memcpy(bResult, p_players, m_numElem * sizeof(*bResult));
 
 		if (lenGroup >= 3) {
 			// Ordering last two elements of each 
@@ -114,12 +120,22 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 				const auto* resDay = result + j * m_numElem;
 				int diff = 0;
 				T t = -1;
-				while (++t < m_numElem && !(diff = (int)p_players[resDayPerm[t]] - resDay[t]));
+				while (++t < m_numElem && !(diff = (int)resDayPerm[p_players[t]] - resDay[t]));
 				if (t < m_numElem) {
-					if (diff < 0)
-						return false;
-					else
+					if (diff >= 0)
 						break;
+
+					if (bResult) {
+						//memcpy(bResult, p_players, m_numElem * sizeof(*bResult));
+						// Adding all unused days to the array.
+						T k = -1;
+						while (++j < nDays) {
+							while (p_dayIsUsed[++k]);
+							p_dayRes[j] = k;
+						}
+						memcpy(bResult + m_numElem, p_dayRes, nDays * sizeof(*bResult));
+					}
+					return false;
 				}
 			}
 
@@ -143,6 +159,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
 #if 0
+		// Not ready yet
 		T* permPlayers = NULL;
 		permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
 
@@ -170,9 +187,57 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 #endif
 	}
 
-	if (p_players != buff)
-		delete[] p_players;
+#if 0
+	// Not ready yet
+	for (auto j = nDays; --j;) {
+		// Check the possibility of modifying the last triple of the j-th day by the conversion 
+		// i ==> (m_numPlayers - i - 1) to get the first triple of 1-st day: (0, 3, 6).  
+		const auto* pntr = result + m_numElem * (j + 1) - 1;
+		if (*pntr != (m_numElem - 1) || *(pntr - 1) != (m_numElem - 4) || *(pntr - 2) != (m_numElem - 7))
+			continue; // It didn't happen on day j.
 
+		// Try the same conversion on a full set of players and reorder new triples of the day j.
+		pntr -= 3;
+		const auto val = m_numElem - 1;
+		const auto iLast = m_numElem - 3;
+		for (T i = 0; i < iLast; i++)
+			p_players[i] = val - *pntr--;
+
+		const auto retVal = memcmp(p_players, result + m_numElem + 3, iLast * sizeof(*p_players)) >= 1;
+		if (!retVal && bResult) {
+			auto i = m_numElem;
+			while (i--)
+				bResult[i] = i;//  val - i;
+
+			bResult[m_numElem] = 0;// j;
+			bResult[m_numElem + 1] = j;//0;
+			T k = 0;
+			for (T i = 2; i < nDays; i++) {
+				if (++k == j)
+					k++;
+				bResult[m_numElem + i] = k;
+			}	
+		}
+		/*  val - i (0, j)
+		 "    0  1  2    3  4  5    6  7  8    9 10 11   12 13 14 \n"
+		 "    0  3  6    1  7 12    2  8  9    4 10 14    5 11 13 \n"
+		 "    0  4  7    1  3  8    2 10 13    5  9 14    6 11 12 \n"
+		 "    0  5  8    1  4 11    2  7 14    3 10 12    6  9 13 \n"
+		 "    0  9 12    1  5 10    2  4  6    3  7 13    8 11 14 \n"
+Improved Result #1: val - i (0, j)
+		"   14 13 12   11 10  9    8  7  6    5  4  3    2  1  0 \n"
+        "   14  5  2   13  9  4   12 10  8   11  7  1    6  3  0 \n"
+Improved Result #1: i (0, j)
+ "    0  1  2    3  4  5    6  7  8    9 10 11   12 13 14 \n"
+ "    0  9 12    1  5 10    2  4  6    3  7 13    8 11 14 \n"
+ "    0  3  6    1  7 12    2  8  9    4 10 14    5 11 13 \n"
+ "    0  4  7    1  3  8    2 10 13    5  9 14    6 11 12 \n"
+ "    0  5  8    1  4 11    2  7 14    3 10 12    6  9 13 \n"
+
+ */
+		return retVal;
+	}
+#endif
 	return true;
 #endif
 }

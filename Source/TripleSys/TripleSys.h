@@ -1,17 +1,20 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 9
+#define nPlayers0 15
 #define GroupSize 3
-#define LoopsMax 20
+#define LoopsMax 20000
+#define ImproveResults 1	   // Use 0 or 1 (option 2 is not ready yet)
+#define PrintImprovedResults 0
+#define ImprovedResultFile ""  // Name of output file with the improved results, "" - no file output.
 #define UseCheckLinksV 0
 #define UseCheckLinksH 0
 
-#define PrintLinksStat 0
+#define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
 #define PrintNVminmax 0
-#define UseLastSixAsGroup 1 /* Value 1 makes it 6 times faster */
-#define UseLastSix (GroupSize == 3 && nPlayers > 9 && UseLastSixAsGroup != 0)
+#define UseLastSixAsGroup 0
+#define UseLastSix (GroupSize == 3 && nPlayers > 15 && UseLastSixAsGroup != 0)
 #define nPlayers (nPlayers0/GroupSize*GroupSize)
 #define nGroups (nPlayers / GroupSize)
 #define unset ((char)(-1))
@@ -90,7 +93,7 @@ public:
 	alldata(int numPlayers, int groupSize=GroupSize, bool useCheckLinksV = UseCheckLinksV, bool useCheckLinksH = UseCheckLinksH);
 
 	~alldata();
-	bool Run();
+	bool Run(int improveResult=0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 private:
 	void Init();
@@ -105,11 +108,12 @@ private:
 	void getPrevPlayer();
 	int getNextPlayer();
 	bool initCurrentDay();
-	bool setLinksForOnePlayer(char* p, int ip, char iset);
+	bool setLinksForOnePlayer(const char* p, int ip, char iset) const;
 	void setCheckLinks();
 	bool processOneDay();
 	int checkPlayer1(int iPlayerNumber);
 	int checkPlayer3(int iPlayerNumber, int lastPlayer);
+	void outputResults(int iDay, int cntr = 0, const unsigned char* pPlayers=NULL) const;
 
 	char* maxResult;
 	int maxDays;
@@ -137,7 +141,7 @@ private:
 };
 
 int getLastSixIndex(alldata* s);
-void printTableColor(char const* name, const char *c, int nl, int nc, int ns, int np = GroupSize, bool makeString = false);
+void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);

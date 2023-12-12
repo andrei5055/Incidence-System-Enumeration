@@ -102,7 +102,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		{
 			//continue;
 			printf("nv=%d i=%d\n", nv, i);
-			printTable("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
+			printTableColor("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
 			abort();
 		}
 
@@ -163,7 +163,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		/**/
 		if (id > 33)
 		{
-			printTable("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
+			printTableColor("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
 			convertLinksToResult(m_pLinksCopy);
 			printTable("result", m_co, m_numDays, m_numPlayers);
 		}

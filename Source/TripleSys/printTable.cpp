@@ -12,12 +12,11 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns, in
 			char v = c[j * nc + i];
 			if (np > 0 && (i % np) == 0)
 				printf(" ");
-			if (v == 1)
-				printfRed(" %3d", v);
-			else if (v == 2)
-				printfGreen(" %3d", v);
-			else if(v == 3)
-				printfYellow(" %3d", v);
+			if (v >= 0 && v < 67)
+			{
+				printf("\x1b[38;5;%dm %3d", 28 + v * 3, v);
+				printf("\x1b[0m");
+			}
 			else
 				printf(" %3d", v);
 		}

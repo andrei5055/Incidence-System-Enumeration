@@ -135,6 +135,7 @@
     <ClCompile Include="checkLinks.cpp" />
     <ClCompile Include="checkLinksH.cpp" />
     <ClCompile Include="checkLinksV.cpp" />
+    <ClCompile Include="checkPlayer.cpp" />
     <ClCompile Include="checkPlayer1.cpp" />
     <ClCompile Include="checkPlayer3.cpp" />
     <ClCompile Include="convertLinksToResult.cpp" />

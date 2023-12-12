@@ -96,7 +96,20 @@ int alldata::processLastSix()
 		sl(r[3], r[5]);
 		sl(r[4], r[5]);
 		if (!m_bCheckLinkV || m_pCheckLink->checkLinks(links(), iDay))
-			break;
+		{
+			/** needed only for n=15
+			int i;
+			for (i = 0; i < 6; i++)
+			{
+				iPlayer = ip + i;
+				int iRet = checkPlayer1(r[i]);
+				if (iRet != r[i])
+					break;
+			}
+			iPlayer = ip;
+			if (i == 6)**/  // needed only for n=15
+				break;
+		}
 		ul(r[0], r[1]);
 		ul(r[0], r[2]);
 		ul(r[1], r[2]);

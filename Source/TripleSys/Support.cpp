@@ -22,12 +22,19 @@ bool alldata::initCurrentDay()
 		{
 			memcpy(m_ho, m_h, np);
 		}
-		else if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, unset, m_ho))
-		{
-			bPrevResult = true;
-			//printf("day=%d\n", iDay);
-			//printTable("no result", result(iDay), 1, np);
-			return false;
+		else
+		{/**
+			double cnt = 0;
+			m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay-1)[1], m_ho, &cnt);
+			printf("d = % d n = % .0f\n", iDay, cnt);
+			**/
+			if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
+			{
+				bPrevResult = true;
+				//printf("day=%d\n", iDay);
+				//printTable("no result", result(iDay), 1, np);
+				return false;
+			}
 		}
 #if 1
 		memcpy(indexPlayer, m_ho, np);
@@ -59,7 +66,7 @@ bool alldata::initCurrentDay()
 }
 
 
-bool alldata::setLinksForOnePlayer(char* p, int ip, char iset)
+bool alldata::setLinksForOnePlayer(const char* p, int ip, char iset) const
 {
 	const int i = ip % GroupSize;
 	if (i == 0)
@@ -94,7 +101,7 @@ bool alldata::initPrevDay()
 
 	if (m_bCheckLinkV)
 	{
-		if (iDay < 0)
+		if (iDay < 1) //0)
 			return false;
 	}
 	else
