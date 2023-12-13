@@ -4,9 +4,9 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 20000
-#define ImproveResults 1	   // Use 0 or 1 (option 2 is not ready yet)
-#define PrintImprovedResults 0
-#define ImprovedResultFile ""  // Name of output file with the improved results, "" - no file output.
+#define ImproveResults 0	   // Use 0 or 1 (option 2 is not ready yet)
+#define PrintImprovedResults 1
+#define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
 #define UseCheckLinksV 0
 #define UseCheckLinksH 0
 
@@ -149,5 +149,8 @@ void initPrevDay(alldata* s);
 int processLastSix(alldata* s);
 
 int compareMatrix(const char *result, int ncolumns, char* transition);
+
+template<typename T>
+void groupOrdering(T *resPerm, T numElem, T groupSize=GroupSize);
 
 

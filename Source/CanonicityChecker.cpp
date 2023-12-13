@@ -620,7 +620,7 @@ CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T 
 					resPerm[2] = tmp1;
 				}
 				else {
-					resPerm[j] = tmp2;
+					resPerm[0] = tmp2;
 					if (tmp0 < tmp1) {
 						resPerm[1] = tmp0;
 						resPerm[2] = tmp1;

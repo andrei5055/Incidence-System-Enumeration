@@ -78,10 +78,10 @@ void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDay
 		sprintf_s(buffer, "Initial Result #%d:\n", ++cntr_init);
 		_printf(f, buffer);
 		for (int j = 0; j <= iDay; j++) {
-			const auto* pRes = result() + j * m_numPlayers;
+			const auto* pRes = result() + j * numPlayers();
 			char* pBuf = buffer;
 			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \"");
-			for (int i = 0; i < m_numPlayers; i++) {
+			for (int i = 0; i < numPlayers(); i++) {
 				if (!(i % m_groupSize))
 					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "  %3d", *pRes++);
 				else
@@ -94,15 +94,16 @@ void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDay
 	else {
 		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
 		_printf(f, buffer);
-		const auto* pDayPerm = pPlayersDayPerm + m_numPlayers;
+		pPlayersDayPerm += numPlayers() * numDays();
+		const auto* pDayPerm = pPlayersDayPerm + 2 * numPlayers();
 		bool flag = true;
-		for (int j = 0; j <= iDay; j++) {
+		for (int j = 0; j <= 1/*iDay*/; j++) {
 			const int day = pDayPerm[j];
-			const auto* pPlayers = pPlayersDayPerm;
-			const auto *pRes = result() + day * m_numPlayers;
+			const auto* pPlayers = pPlayersDayPerm + (j? numPlayers() : 0);
+			const auto *pRes = result() + day * numPlayers();
 			char* pBuf = buffer;
 			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \"");
-			for (int i = 0; i < m_numPlayers; i++) {
+			for (int i = 0; i < numPlayers(); i++) {
 				flag &= j != 0 || pRes[*pPlayers] == i;
 				if (!(i % m_groupSize))
 					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "  %3d", pRes[*pPlayers++]);
@@ -129,7 +130,7 @@ bool alldata::Run(int improveResult) {
 	//          >1 - try to improve the “results” as much as possible.
 	clock_t iTime = clock();
 	unsigned char* bResults = NULL;
-	const auto lenResult = m_numDays * (m_numPlayers + m_numDays);
+	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
 	if (improveResult)
 		bResults = new unsigned char[(improveResult > 1? 2 : 1) * lenResult];
 
@@ -207,7 +208,7 @@ Initial Result:
 				static int fff = 0; fff++;
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
 				{
-					if (PrintImprovedResults || improveResult > 1) {
+					if (improveResult > 1 || improveResult && PrintImprovedResults) {
 						int cntr = 0;
 						auto* bRes1 = bResults;
 						auto* bRes2 = bResults + lenResult;
@@ -270,6 +271,59 @@ Initial Result:
 
 	delete[] bResults;
 	return true;
+}
+
+template<typename T>
+void groupOrdering(T *resPerm, T numElem, T groupSize)
+{
+	switch (groupSize) {
+	case 2: 			
+		// Ordering groups of pairs. 
+		for (auto j = numElem; j--; resPerm += 2) {
+			if (resPerm[0] > resPerm[1]) {
+				const auto tmp = resPerm[0];
+				resPerm[0] = resPerm[1];
+				resPerm[1] = tmp;
+			}
+		}
+		return;
+	case 3:
+		// Ordering groups of triples.
+		for (auto j = 0; j < numElem; j += 3, resPerm += 3) {
+			const auto tmp0 = resPerm[0];
+			const auto tmp1 = resPerm[1];
+			const auto tmp2 = resPerm[2];
+			if (tmp2 > tmp1) {
+				if (tmp0 > tmp1) {
+					resPerm[0] = tmp1;
+					if (tmp2 < tmp0) {
+						resPerm[1] = tmp2;
+						resPerm[2] = tmp0;
+					}
+					else
+						resPerm[1] = tmp0;
+				}
+			}
+			else {
+				if (tmp2 > tmp0) {
+					resPerm[1] = tmp2;
+					resPerm[2] = tmp1;
+				}
+				else {
+					resPerm[0] = tmp2;
+					if (tmp0 < tmp1) {
+						resPerm[1] = tmp0;
+						resPerm[2] = tmp1;
+					}
+					else
+						resPerm[2] = tmp0;
+				}
+			}
+		}
+		return;
+	}
+
+	assert(false); // Not implemented for given groupSize
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
