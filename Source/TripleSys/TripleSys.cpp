@@ -64,18 +64,19 @@ void _printf(FILE* f, const char* format, const char* pStr = NULL) {
 	printf(format, pStr);
 }
 
+static unsigned int canon_cntr = -1; // Counter of CanonicityChecker::CheckCanonicity calls
+
 void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDayPerm) const
 {
-	static unsigned int cntr_init;
 	char buffer[256];
 	const auto lenBuf = sizeof(buffer);
 	
 	FILE* f = NULL;
 	if (strlen(ImprovedResultFile))
-		fopen_s(&f, ImprovedResultFile, cntr_init? "a" : "w");
+		fopen_s(&f, ImprovedResultFile, canon_cntr? "a" : "w");
 
 	if (!cntr) {
-		sprintf_s(buffer, "Initial Result #%d:\n", ++cntr_init);
+		sprintf_s(buffer, "Initial Result #%d:\n", canon_cntr);
 		_printf(f, buffer);
 		for (int j = 0; j <= iDay; j++) {
 			const auto* pRes = result() + j * numPlayers();
@@ -97,7 +98,10 @@ void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDay
 		pPlayersDayPerm += numPlayers() * numDays();
 		const auto* pDayPerm = pPlayersDayPerm + 2 * numPlayers();
 		bool flag = true;
-		for (int j = 0; j <= 1/*iDay*/; j++) {
+		if (USE_2_ROW_CANON)
+			iDay = 1;
+
+		for (int j = 0; j <= iDay; j++) {
 			const int day = pDayPerm[j];
 			const auto* pPlayers = pPlayersDayPerm + (j? numPlayers() : 0);
 			const auto *pRes = result() + day * numPlayers();
@@ -111,7 +115,8 @@ void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDay
 					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "%3d", pRes[*pPlayers++]);
 			}
 
-			_printf(f, "%s \\n\"\n", buffer);
+			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \\n\":  day =%2d\n", day);
+			_printf(f, buffer);
 		}
 
 		assert(flag);
@@ -205,7 +210,6 @@ Initial Result:
 				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
 				*/
 #endif
-				static int fff = 0; fff++;
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
 				{
 					if (improveResult > 1 || improveResult && PrintImprovedResults) {

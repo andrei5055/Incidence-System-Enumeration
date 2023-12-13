@@ -4,9 +4,10 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 20000
-#define ImproveResults 0	   // Use 0 or 1 (option 2 is not ready yet)
+#define ImproveResults 1	   // Use 0 or 1 (option 2 is not ready yet)
 #define PrintImprovedResults 1
 #define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
+#define USE_2_ROW_CANON 0      // Canonizer will use only 2 rows     
 #define UseCheckLinksV 0
 #define UseCheckLinksH 0
 

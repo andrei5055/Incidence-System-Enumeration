@@ -35,6 +35,7 @@ private:
 };
 
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
+	extern unsigned int canon_cntr;  canon_cntr++;
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
@@ -63,7 +64,6 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 		return true;
 #else
 	const auto lenStab = stabiliserLengthExt();
-	static int cntr = 0;
 	size_t startIndex = 0;
 	T* permColumn = NULL;
 	const auto* res = result;
@@ -102,7 +102,6 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 		T k;
 		while (true) {
 			while (++j < nDays) {
-				cntr++;
 				// Looking for the first unused day
 				k = p_dayRes[j];
 				while (k < nDays && p_dayIsUsed[k])
@@ -112,9 +111,8 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 					break;
 
 				p_dayIsUsed[p_dayRes[j] = k] = 1;
-				if (k && j) continue;    // TEMPORARY
+				if (USE_2_ROW_CANON && k && j) continue;    // TEMPORARY
 					
-
 				const auto* resDayPerm = result + k * m_numElem;
 				const auto* resDay = result + j * m_numElem;
 				int diff = 0;
@@ -189,7 +187,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 #endif
 	}
 
-#if 1
+#if 0
 	// Not ready yet
 	for (auto j = nDays; --j;) {
 		// Check the possibility of modifying the last triple of the j-th day by the conversion 
