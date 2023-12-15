@@ -5,12 +5,12 @@ using namespace std;
 #define GroupSize 3
 #define LoopsMax 20000
 #define ImproveResults 1		// Use 0 or 1 (option 2 is not ready yet)
-#define ResultFile		NULL //   "bbb.txt" // Name of output file with the results, "" - no file output.
+#define ResultFile		   "bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
 #define USE_2_ROW_CANON 1		// Canonizer will use only 2 rows     
-#define UseCheckLinksV 0
-#define UseCheckLinksH 0
+#define UseCheckLinksV 1
+#define UseCheckLinksH 1
 
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
@@ -24,7 +24,8 @@ using namespace std;
 #define printfGreen(fmt, v) printf("\x1b[1;32m" fmt "\x1b[0m", v)
 #define printfYellow(fmt, v) printf("\x1b[1;33m" fmt "\x1b[0m", v)
 
-#define FOPEN(x, y, z)	  	 FILE *x; fopen_s(&x, y, z)
+#define FOPEN(x, y, z)	  	 FILE *x = NULL; \
+                             if (y && strlen(y)) fopen_s(&x, y, z)
 #define SPRINTF(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
 #define FCLOSE(f)			 if (f) fclose(f)
 
@@ -119,7 +120,7 @@ private:
 	bool processOneDay();
 	int checkPlayer1(int iPlayerNumber);
 	int checkPlayer3(int iPlayerNumber, int lastPlayer);
-	void outputResults(int iDay, int cntr = 0, const unsigned char* pPlayers=NULL) const;
+	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
 
 	char* maxResult;
 	int maxDays;
@@ -137,6 +138,7 @@ private:
 	int  iPlayer, iDay;
 	bool bPrevResult;
 	size_t m_nLenResults;
+	size_t m_nCanonCalls = -1;   // Counter of CanonicityChecker::CheckCanonicity calls
 
 	const int m_np2;
 	const int m_nGroups;

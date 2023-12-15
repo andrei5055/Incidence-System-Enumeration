@@ -22,10 +22,7 @@ template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 {
 	char buffer[512], *pBuf = buffer;
-	FILE* f = NULL;
-	if (fileName && strlen(fileName))
-		fopen_s(&f, fileName, m_cntr? "a" : "w");
-
+	FOPEN(f, fileName, m_cntr ? "a" : "w");
 	const auto* endLine = m_makeString ? " \\n\"\n" : "\n";
 	if (outCntr)
 		m_cntr++;

@@ -40,7 +40,6 @@ private:
 };
 
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
-	extern unsigned int canon_cntr;  canon_cntr++;
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
@@ -106,12 +105,6 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 		p_dayIsUsed[p_dayRes[0] = iDay] = 1;
 		if (iDay) {
 			// Do this only when day 0 changed its place.
-			if (pDest) {
-				// Saving a permutation of players that will be  
-				// used to reconstruct groups of the first day.
-				memcpy(pDest += m_lenResult, p_players, m_numElem * sizeof(*pDest));
-			}
-
 			groupOrdering(p_players, m_numElem, lenGroup);
 
 			p_dayIsUsed[p_dayRes[1] = 0] = 1;
@@ -136,10 +129,8 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 
 				p_dayIsUsed[p_dayRes[j] = k] = 1;
 				if (!checkDay_1(result, p_players, k, j, pDest, p_dayRes, p_dayIsUsed)) {
-//					assert(USE_2_ROW_CANON && (!k || !j));
 					return false;
 				} else {
-//					assert(USE_2_ROW_CANON && (!k || !j));
 					break;
 				}
 			}
@@ -273,9 +264,10 @@ CanonicityChecker(bool)::checkDay_1(const T *result, const T *p_players, T k, T 
 		return true;
 
 	if (pDest) {
-		// Saving a permutation of players that will be used to  
-		// reconstruct groups of all days, except the first one.
+		// Saving two first days:
+		memcpy(pDest, result, m_numElem * sizeof(*pDest));
 		memcpy(pDest += m_numElem, p_players, m_numElem * sizeof(*pDest));
+
 		// Adding all unused days to the array.
 		k = -1;
 		while (++j < numDays()) {

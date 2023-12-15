@@ -67,63 +67,38 @@ void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
 		printf(format, pStr);
 }
 
-static unsigned int canon_cntr = -1; // Counter of CanonicityChecker::CheckCanonicity calls
-
-void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDayPerm) const
+void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) const
 {
 	char buffer[256];
 	const bool toScreen = PrintImprovedResults > 1;
-	FILE* f = NULL;
-	if (strlen(ImprovedResultFile))
-		fopen_s(&f, ImprovedResultFile, canon_cntr? "a" : "w");
+	FOPEN(f, ImprovedResultFile, m_nCanonCalls ? "a" : "w");
 
-	if (!cntr) {
-		sprintf_s(buffer, "Initial Result #%d:\n", canon_cntr);
-		_printf(f, toScreen, buffer);
-		for (int j = 0; j <= iDay; j++) {
-			const auto* pRes = result() + j * numPlayers();
-			char* pBuf = buffer;
-			SPRINTF(pBuf, buffer, " \"");
-			for (int i = 0; i < numPlayers(); i++) {
-				if (!(i % m_groupSize))
-					SPRINTF(pBuf, buffer, "  %3d", *pRes++);
-				else
-					SPRINTF(pBuf, buffer, "%3d", *pRes++);
-			}
-
-			_printf(f, toScreen, "%s \\n\"\n", buffer);
-		}
-	}
-	else {
+	const unsigned char* pDayPerm = NULL;
+	if (cntr) {
+		pDayPerm = pResult + 2 * numPlayers();
 		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
-		_printf(f, toScreen, buffer);
-		pPlayersDayPerm += numPlayers() * numDays();
-		const auto* pDayPerm = pPlayersDayPerm + 2 * numPlayers();
-		bool flag = true;
 		if (USE_2_ROW_CANON)
 			iDay = 1;
+	} else
+		sprintf_s(buffer, "Initial Result #%zd:\n", m_nCanonCalls);
 
-		for (int j = 0; j <= iDay; j++) {
-			const int day = pDayPerm[j];
-			const auto* pPlayers = pPlayersDayPerm + (j? numPlayers() : 0);
-			const auto *pRes = result() + day * numPlayers();
-			char* pBuf = buffer;
-			SPRINTF(pBuf, buffer, " \"");
-			for (int i = 0; i < numPlayers(); i++) {
-				flag &= j != 0 || pRes[*pPlayers] == i;
-				if (!(i % m_groupSize))
-					SPRINTF(pBuf, buffer, "  %3d", pRes[*pPlayers++]);
-				else
-					SPRINTF(pBuf, buffer, "%3d", pRes[*pPlayers++]);
-			}
-
-			SPRINTF(pBuf, buffer, " \\n\":  day =%2d\n", day);
-			_printf(f, toScreen, buffer);
+	_printf(f, toScreen, buffer);
+	for (int j = 0; j <= iDay; j++) {
+		char* pBuf = buffer;
+		SPRINTF(pBuf, buffer, " \"");
+		for (int i = 0; i < numPlayers(); i++) {
+			if (!(i % m_groupSize))
+				SPRINTF(pBuf, buffer, "  %3d", *pResult++);
+			else
+				SPRINTF(pBuf, buffer, "%3d", *pResult++);
 		}
 
-		if (!flag)
-			_printf(f, toScreen, "PROBLEM WITH THE FIRST ROW\n");
-		assert(flag);
+		if (cntr)
+			SPRINTF(pBuf, buffer, " \\n\":  day =%2d\n", pDayPerm[j]);
+		else
+			SPRINTF(pBuf, buffer, " \\n\"\n");
+
+		_printf(f, toScreen, buffer);
 	}
 
 	FCLOSE(f);
@@ -221,6 +196,7 @@ Initial Result:
 /*				const auto flag = false; //result(0)[19] == 9 && result(0)[20] == 12;
 				if (flag)
 					improveResult = 1; */
+				m_nCanonCalls++;
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
 				{
 					if (improveResult > 1 || improveResult && PrintImprovedResults) {
@@ -231,10 +207,10 @@ Initial Result:
 							if (PrintImprovedResults) {
 								if (!cntr) {
 									// Output of initial results
-									outputResults(iDay);
+									outputResults(iDay, (unsigned char*)result());
 								}
 
-								outputResults(iDay, ++cntr, bRes1);
+								outputResults(iDay, bRes1, ++cntr);
 							}
 
 							if (true || improveResult == 1) // Not ready yet
@@ -244,6 +220,7 @@ Initial Result:
 							auto* bRes = bRes1;
 							bRes1 = bRes2;
 							bRes2 = bRes;
+							m_nCanonCalls++;
 						} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay+1, bRes1));
 					}
 
