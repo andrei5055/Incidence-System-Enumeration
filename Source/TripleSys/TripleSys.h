@@ -4,10 +4,11 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 20000
-#define ImproveResults 1	   // Use 0 or 1 (option 2 is not ready yet)
-#define PrintImprovedResults 1
+#define ImproveResults 1		// Use 0 or 1 (option 2 is not ready yet)
+#define ResultFile		NULL //   "bbb.txt" // Name of output file with the results, "" - no file output.
+#define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
-#define USE_2_ROW_CANON 0      // Canonizer will use only 2 rows     
+#define USE_2_ROW_CANON 1		// Canonizer will use only 2 rows     
 #define UseCheckLinksV 0
 #define UseCheckLinksH 0
 
@@ -22,6 +23,10 @@ using namespace std;
 #define printfRed(fmt, v) printf("\x1b[1;31m" fmt "\x1b[0m", v)
 #define printfGreen(fmt, v) printf("\x1b[1;32m" fmt "\x1b[0m", v)
 #define printfYellow(fmt, v) printf("\x1b[1;33m" fmt "\x1b[0m", v)
+
+#define FOPEN(x, y, z)	  	 FILE *x; fopen_s(&x, y, z)
+#define SPRINTF(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
+#define FCLOSE(f)			 if (f) fclose(f)
 
 template<typename T>void initArray(T** pPntr, int len, T val = 0) {
 	auto *ptr = *pPntr = new T[len];
@@ -141,7 +146,9 @@ private:
 	CCanonicityChecker<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
 };
 
+
 int getLastSixIndex(alldata* s);
+void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
 void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);

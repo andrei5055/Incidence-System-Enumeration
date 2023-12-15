@@ -151,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CanonicityChecker.h" />
+    <ClInclude Include="Table.h" />
     <ClInclude Include="TripleSys.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

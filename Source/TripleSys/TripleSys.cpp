@@ -1,5 +1,7 @@
 #include <iostream>
 #include "TripleSys.h"
+#include "Table.h"
+
 #ifdef CD_TOOLS
    #include "../CanonicityChecker.h"
 #else
@@ -57,11 +59,12 @@ void alldata::Init() {
 	bPrevResult = false; // can be false, or true to go to prev day
 }
 
-void _printf(FILE* f, const char* format, const char* pStr = NULL) {
+void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
 	if (f)
 		fprintf(f, format, pStr);
 
-	printf(format, pStr);
+	if (toScreen)
+		printf(format, pStr);
 }
 
 static unsigned int canon_cntr = -1; // Counter of CanonicityChecker::CheckCanonicity calls
@@ -69,32 +72,31 @@ static unsigned int canon_cntr = -1; // Counter of CanonicityChecker::CheckCanon
 void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDayPerm) const
 {
 	char buffer[256];
-	const auto lenBuf = sizeof(buffer);
-	
+	const bool toScreen = PrintImprovedResults > 1;
 	FILE* f = NULL;
 	if (strlen(ImprovedResultFile))
 		fopen_s(&f, ImprovedResultFile, canon_cntr? "a" : "w");
 
 	if (!cntr) {
 		sprintf_s(buffer, "Initial Result #%d:\n", canon_cntr);
-		_printf(f, buffer);
+		_printf(f, toScreen, buffer);
 		for (int j = 0; j <= iDay; j++) {
 			const auto* pRes = result() + j * numPlayers();
 			char* pBuf = buffer;
-			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \"");
+			SPRINTF(pBuf, buffer, " \"");
 			for (int i = 0; i < numPlayers(); i++) {
 				if (!(i % m_groupSize))
-					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "  %3d", *pRes++);
+					SPRINTF(pBuf, buffer, "  %3d", *pRes++);
 				else
-					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "%3d", *pRes++);
+					SPRINTF(pBuf, buffer, "%3d", *pRes++);
 			}
 
-			_printf(f, "%s \\n\"\n", buffer);
+			_printf(f, toScreen, "%s \\n\"\n", buffer);
 		}
 	}
 	else {
 		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
-		_printf(f, buffer);
+		_printf(f, toScreen, buffer);
 		pPlayersDayPerm += numPlayers() * numDays();
 		const auto* pDayPerm = pPlayersDayPerm + 2 * numPlayers();
 		bool flag = true;
@@ -106,24 +108,25 @@ void alldata::outputResults(int iDay, int cntr, const unsigned char *pPlayersDay
 			const auto* pPlayers = pPlayersDayPerm + (j? numPlayers() : 0);
 			const auto *pRes = result() + day * numPlayers();
 			char* pBuf = buffer;
-			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \"");
+			SPRINTF(pBuf, buffer, " \"");
 			for (int i = 0; i < numPlayers(); i++) {
 				flag &= j != 0 || pRes[*pPlayers] == i;
 				if (!(i % m_groupSize))
-					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "  %3d", pRes[*pPlayers++]);
+					SPRINTF(pBuf, buffer, "  %3d", pRes[*pPlayers++]);
 				else
-					pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), "%3d", pRes[*pPlayers++]);
+					SPRINTF(pBuf, buffer, "%3d", pRes[*pPlayers++]);
 			}
 
-			pBuf += sprintf_s(pBuf, lenBuf - (pBuf - buffer), " \\n\":  day =%2d\n", day);
-			_printf(f, buffer);
+			SPRINTF(pBuf, buffer, " \\n\":  day =%2d\n", day);
+			_printf(f, toScreen, buffer);
 		}
 
+		if (!flag)
+			_printf(f, toScreen, "PROBLEM WITH THE FIRST ROW\n");
 		assert(flag);
 	}
 
-	if (f)
-		fclose(f);
+	FCLOSE(f);
 }
 
 bool alldata::Run(int improveResult) {
@@ -136,8 +139,13 @@ bool alldata::Run(int improveResult) {
 	clock_t iTime = clock();
 	unsigned char* bResults = NULL;
 	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
+#if 1
 	if (improveResult)
 		bResults = new unsigned char[(improveResult > 1? 2 : 1) * lenResult];
+#else
+	bResults = new unsigned char[2 * lenResult];
+#endif
+	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
 
 	while (nLoops < LoopsMax)
 	{
@@ -177,7 +185,7 @@ bool alldata::Run(int improveResult) {
 			{
 				/**/
 				printf("day %d  Time = %d\n", iDay, clock() - iTime);
-				printTable("Result", result(), m_numDays, m_numPlayers, 0, GroupSize, true);
+				Result.printTable(result());
 				//printTable("Links", links[0], m_numPlayers, m_numPlayers);
 				/**/
 				maxDays = iDay;
@@ -210,6 +218,9 @@ Initial Result:
 				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
 				*/
 #endif
+/*				const auto flag = false; //result(0)[19] == 9 && result(0)[20] == 12;
+				if (flag)
+					improveResult = 1; */
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
 				{
 					if (improveResult > 1 || improveResult && PrintImprovedResults) {
@@ -256,7 +267,7 @@ Initial Result:
 		//report result
 		printf("Result %d, Time = %d\n", nLoops, clock() - iTime);
 		//printTable("Links", links(), m_numPlayers, m_numPlayers);
-		printTable("Result table", result(), m_numDays, m_numPlayers, 0, GroupSize, true);
+		Result.printTable(result(), true, ResultFile);
 		if (nLoops >= LoopsMax)
 			break;
 		bPrevResult = true;
