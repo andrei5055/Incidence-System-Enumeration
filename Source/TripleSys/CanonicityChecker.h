@@ -15,18 +15,30 @@ public:
 	CCanonicityChecker(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numDaysMax(nRow), m_lenResult(nCol * nRow), m_groupSise(groupSize) {
 		m_pDayRes = new T[2 * (m_numElem + nRow)];
+		m_tmpBuffer = new T[m_numElem + nRow];
+		m_pResutMemory = new T[m_numElem * (nRow - 2)];
 	}
-	~CCanonicityChecker()					{ delete[] m_pDayRes; }
+	~CCanonicityChecker()					{ delete[] m_pDayRes; 
+											  delete [] getTmpBuffer();
+											  delete[] resultMemory();
+	}
 	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
 private:
-	inline T groupSize() const				{ return m_groupSise; }
+	inline auto groupSize() const			{ return m_groupSise; }
 	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
 	bool copyTuple(const T* res, T* p_players, T inc = 0) const;
 	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
 	inline void setNumDays(T nDays)			{ m_numDays = nDays; }
-	inline auto numDays() const				{ return m_numDays;}
-	bool checkDay_1(const T* result, const T* p_players, T k, T j, T* pDest, T* p_dayRes, const T* p_dayIsUsed) const;
+	inline auto numDays() const				{ return m_numDays; }
+	inline void setResultOut(T* pntr)		{ m_pResultOut = pntr; }
+	inline auto resultOut() const			{ return m_pResultOut; }
+	inline T* getTmpBuffer() const			{ return m_tmpBuffer; }
+	inline T* resultMemory() const			{ return m_pResutMemory;  }
+	bool checkDay_1(const T* result, const T* p_players, T k, T j, T* p_dayRes, const T* p_dayIsUsed) const;
+	bool checkDay(const T* res, T iDay, T numGroup) const;
+	void orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const;
+	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_pDayRes = NULL;
@@ -36,7 +48,9 @@ private:
 	const T m_groupSise;
 	unsigned int m_lenResult;
 	T m_numDays;
-	int a = 0;
+	T* m_pResultOut;
+	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
+	T* m_pResutMemory = NULL;	// Memory allocated to improve results
 };
 
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
@@ -51,24 +65,8 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 	//             (a) players (as its first "m_numElem" elements)
 	//             (b) days (starting with (bResult+m_numElem)'s element)
 	//    
-	//return true;
-	/*
-	"     0   1   2    3   4   5    6   7   8 \n"
-	"     0   3   6    1   4   8    2   5   7 \n"
-	*/
-#if 0
-		// return true  - continue, 
-		//        false - stop (calculate new matrix)
-		static bool ones = false;
-		if (nLines > 5 && !ones)
-		{
-			ones = true;
-			//return false;
-		}
-		return true;
-#else
+
 	const auto lenStab = stabiliserLengthExt();
-	size_t startIndex = 0;
 	T* permColumn = NULL;
 	const auto* res = result;
 	const auto lenMemory = m_numElem + 2 * nDays;
@@ -77,21 +75,24 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 	T* p_players = p_dayIsUsed + nDays;
 	T* pOrbits = p_players + m_numElem;
 
+	setResultOut(bResult);
 	if (bResult)
 		setNumDays(nDays);
-	
-	if (result[19] == 9 && result[20] == 12)
-		nDays = nDays;
+
 	const auto lenGroup = groupSize();
 	const auto numGroup = m_numElem / lenGroup;
-	a++;
-	if (a >= 1031348)
-		a += 0;
-
 	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
 		auto *pDest = bResult;
-		if (res[0] || !copyTuple(res, p_players))
+		if (res[0] || !copyTuple(res, p_players)) {
+/*			T* pDest = resultOut();
+			if (pDest) { //???
+				memcpy(pDest, result, (iDay + 1) * m_numElem * sizeof(*pDest));
+				elemOrdering(pDest += iDay * m_numElem, m_numElem, groupSize());
+				memcpy(pDest += m_numElem, result + m_numElem * (iDay + 1), (numDays() - iDay) * m_numElem * sizeof(*pDest));
+			}
+			*/
 			return false;
+		}
 
 		T inc = 0;
 		for (auto j = numGroup; --j;) {
@@ -105,11 +106,49 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 		p_dayIsUsed[p_dayRes[0] = iDay] = 1;
 		if (iDay) {
 			// Do this only when day 0 changed its place.
-			groupOrdering(p_players, m_numElem, lenGroup);
-
 			p_dayIsUsed[p_dayRes[1] = 0] = 1;
-			if (!checkDay_1(result, p_players, 0, 1, pDest, p_dayRes, p_dayIsUsed))
+			elemOrdering(p_players, m_numElem, lenGroup);
+			const auto retVal = checkDay_1(result, p_players, 0, 1, p_dayRes, p_dayIsUsed);
+			if (nDays == 2)
+				return retVal; // In this case there is nothing more to do than has already been done
+
+			if (!retVal) {
+				if (!bResult) 
+					return false;
+			}
+
+			// Renumbering of players according to permutaion of days: (0, iDay).
+			auto *pPerm = result + iDay * m_numElem;
+			for (auto j = m_numElem; j--;)
+				pOrbits[pPerm[j]] = j;
+
+
+			auto *pDest = bResult ? bResult : resultMemory();
+
+			// Renumbering the set of players in the groups for all days except 0 and iDay.
+			auto *pOut = pDest + 2 * m_numElem;
+			auto *pIn = result;
+			for (int j = 1; j < nDays; j++) {
+				pIn += m_numElem;
+				if (j == iDay)
+					continue;   // Skip day which is already used as 0's one. 
+
+				for (T i = 0; i < m_numElem; i++)
+					pOut[i] = pOrbits[pIn[i]];
+
+				pOut += m_numElem;
+			}
+
+			orderigRemainingDays(2, 0, numGroup, pDest);
+			if (!retVal)
 				return false;
+		}
+		else {
+			// Check all remaining days for canonicity
+			for (int j = 1; j < nDays; j++) {
+				if (!checkDay(result, j, numGroup))
+					return false;
+			}
 		}
 
 		if (USE_2_ROW_CANON)
@@ -128,7 +167,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 					break;
 
 				p_dayIsUsed[p_dayRes[j] = k] = 1;
-				if (!checkDay_1(result, p_players, k, j, pDest, p_dayRes, p_dayIsUsed)) {
+				if (!checkDay_1(result, p_players, k, j, p_dayRes, p_dayIsUsed)) {
 					return false;
 				} else {
 					break;
@@ -222,7 +261,6 @@ Improved Result #1: i (0, j)
 	}
 #endif
 	return true;
-#endif
 }
 
 CanonicityChecker(bool)::copyTuple(const T* res, T* p_players, T inc) const {
@@ -253,7 +291,7 @@ CanonicityChecker(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays
 	return false;
 }
 
-CanonicityChecker(bool)::checkDay_1(const T *result, const T *p_players, T k, T j, T* pDest, T *p_dayRes, const T *p_dayIsUsed) const
+CanonicityChecker(bool)::checkDay_1(const T *result, const T *p_players, T k, T j, T *p_dayRes, const T *p_dayIsUsed) const
 {
 	const auto* resDayPerm = result + k * m_numElem;
 	const auto* resDay = result + j * m_numElem;
@@ -263,10 +301,11 @@ CanonicityChecker(bool)::checkDay_1(const T *result, const T *p_players, T k, T 
 	if (t >= m_numElem || diff >= 0)
 		return true;
 
+	T* pDest = resultOut();
 	if (pDest) {
 		// Saving two first days:
 		memcpy(pDest, result, m_numElem * sizeof(*pDest));
-		memcpy(pDest += m_numElem, p_players, m_numElem * sizeof(*pDest));
+		memcpy(pDest + m_numElem, p_players, m_numElem * sizeof(*pDest));
 
 		// Adding all unused days to the array.
 		k = -1;
@@ -274,8 +313,101 @@ CanonicityChecker(bool)::checkDay_1(const T *result, const T *p_players, T k, T 
 			while (p_dayIsUsed[++k]);
 			p_dayRes[j] = k;
 		}
-		memcpy(pDest += m_numElem, p_dayRes, numDays() * sizeof(*pDest));
+		memcpy(pDest + numDays() * m_numElem, p_dayRes, numDays() * sizeof(*pDest));
 	}
 
 	return false;
 }
+
+CanonicityChecker(bool)::checkDay(const T* result, T iDay, T numGroup) const {
+	const auto* res = result + iDay * m_numElem;
+	const auto* resEnd = res;
+	T j = 0;
+	for (; j < numGroup; j++) {
+		resEnd += groupSize();
+		while (++res < resEnd && *(res - 1) < *res);
+
+		if (res < resEnd)
+			break;
+
+		// Check ordering of the first elements of the groups
+		if (j && *(res - groupSize()) < *(res - 2 * groupSize()))
+			break;
+	}
+
+	if (j == numGroup)
+		return true;
+
+	T* pDest = resultOut();
+	if (pDest) {
+		// Copying all days to the output
+		const auto allElements = numDays() * m_numElem;
+		memcpy(pDest, result, allElements * sizeof(*pDest));
+		pDest += allElements;
+		for (auto i = m_numElem; i--;)
+			*(pDest + i) = i;
+
+		orderigRemainingDays(iDay, j, numGroup, pDest);
+	}
+
+	return false;
+}
+
+CanonicityChecker(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const
+{
+	// Function will reorder all elements in the groups except 
+	//     - all groups of the first daysOK days
+	//     - first groupsOK of the (daysOK+1)-th day 
+	// and after that will reorder
+	//     - the new groups inside coressponding day
+	//     - all days in accordance with the second element of the first new group of the day. 
+
+	const auto nElemOK = daysOK * m_numElem + groupsOK * groupSize();
+	// Ordering all remaining groups of the elements
+	elemOrdering(pDest + nElemOK, numDays() * m_numElem - nElemOK, groupSize());
+
+	// Ordering groups by their first elements
+	T i = daysOK;
+	pDest += i * m_numElem;
+	while (i++ < numDays()) {
+		groupOrdering(pDest, numGroup, getTmpBuffer(), groupSize());
+		pDest += m_numElem;
+	}
+
+	if (daysOK + 1 < numDays()) {
+		// Ordering days by the first two elements of their first group
+		groupOrdering<T>(pDest, numGroup, getTmpBuffer(), numGroup * groupSize(), 1);
+	}
+}
+
+CanonicityChecker(bool)::permutPlayers4Day(const T* p_players, const T* res, T numGroup, T* resDayOut) const {
+	// Function re-arranges players on a given day
+	const auto* resEnd = res;
+	for (T j = 0; j < numGroup; j++) {
+		resEnd += groupSize();
+		while (++res < resEnd) {
+			const auto diff = (int)*(res - 1) - *res;
+			if (diff > 0)
+				return false;
+		}
+
+		if (j) {
+			if (*(res - 1) < *(res - groupSize() - 1))
+				return false;
+		}
+		//	void groupOrdering(T * resPerm, T numElem, T groupSize)
+
+/*
+		for (T j = 0; j < groupSize(); j++, res++) {
+			const auto diff = (int)*(res - 1) - *res;
+			assert(diff);
+			if (diff > 0)
+				return false;
+
+			p_players[res[j]] = j + inc;
+		}
+		*/
+	}
+	return true;
+}
+

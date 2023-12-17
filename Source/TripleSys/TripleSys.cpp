@@ -75,9 +75,9 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 
 	const unsigned char* pDayPerm = NULL;
 	if (cntr) {
-		pDayPerm = pResult + 2 * numPlayers();
+		pDayPerm = pResult + (iDay+1) * numPlayers();
 		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
-		if (USE_2_ROW_CANON)
+		if (false && USE_2_ROW_CANON)
 			iDay = 1;
 	} else
 		sprintf_s(buffer, "Initial Result #%zd:\n", m_nCanonCalls);
@@ -266,49 +266,50 @@ Initial Result:
 }
 
 template<typename T>
-void groupOrdering(T *resPerm, T numElem, T groupSize)
+void elemOrdering(T *pElems, size_t numElem, size_t groupSize)
 {
+	// Ordering elements in the groups od size groupSize 
 	switch (groupSize) {
 	case 2: 			
 		// Ordering groups of pairs. 
-		for (auto j = numElem; j--; resPerm += 2) {
-			if (resPerm[0] > resPerm[1]) {
-				const auto tmp = resPerm[0];
-				resPerm[0] = resPerm[1];
-				resPerm[1] = tmp;
+		for (auto j = numElem; j--; pElems += 2) {
+			if (pElems[0] > pElems[1]) {
+				const auto tmp = pElems[0];
+				pElems[0] = pElems[1];
+				pElems[1] = tmp;
 			}
 		}
 		return;
 	case 3:
 		// Ordering groups of triples.
-		for (auto j = 0; j < numElem; j += 3, resPerm += 3) {
-			const auto tmp0 = resPerm[0];
-			const auto tmp1 = resPerm[1];
-			const auto tmp2 = resPerm[2];
+		for (auto j = 0; j < numElem; j += 3, pElems += 3) {
+			const auto tmp0 = pElems[0];
+			const auto tmp1 = pElems[1];
+			const auto tmp2 = pElems[2];
 			if (tmp2 > tmp1) {
 				if (tmp0 > tmp1) {
-					resPerm[0] = tmp1;
+					pElems[0] = tmp1;
 					if (tmp2 < tmp0) {
-						resPerm[1] = tmp2;
-						resPerm[2] = tmp0;
+						pElems[1] = tmp2;
+						pElems[2] = tmp0;
 					}
 					else
-						resPerm[1] = tmp0;
+						pElems[1] = tmp0;
 				}
 			}
 			else {
 				if (tmp2 > tmp0) {
-					resPerm[1] = tmp2;
-					resPerm[2] = tmp1;
+					pElems[1] = tmp2;
+					pElems[2] = tmp1;
 				}
 				else {
-					resPerm[0] = tmp2;
+					pElems[0] = tmp2;
 					if (tmp0 < tmp1) {
-						resPerm[1] = tmp0;
-						resPerm[2] = tmp1;
+						pElems[1] = tmp0;
+						pElems[2] = tmp1;
 					}
 					else
-						resPerm[2] = tmp0;
+						pElems[2] = tmp0;
 				}
 			}
 		}
@@ -316,6 +317,32 @@ void groupOrdering(T *resPerm, T numElem, T groupSize)
 	}
 
 	assert(false); // Not implemented for given groupSize
+}
+
+template<typename T>
+void groupOrdering(T* pElems, size_t numGroup, T *buffer, size_t groupSize, T adj) {
+	// adj - adjustment of pointers used when comparing values.
+	//    0 for comparing groups within a day 
+	//    1 for comparing days
+	const auto len = groupSize * sizeof(*pElems);
+	const auto iMax = numGroup * groupSize;
+	for (size_t i = 0; i < iMax; i += groupSize) {
+		auto bestIdx = i;
+		auto bestVal = *(pElems + i + adj);
+		for (size_t j = i + groupSize; j < iMax; j += groupSize) {
+			const auto curVal = *(pElems + j + adj);
+			if (bestVal > curVal) {
+				bestVal = curVal;
+				bestIdx = j;
+			}
+		}
+
+		if (bestIdx != i) {
+			memcpy(buffer, pElems + i, len);
+			memcpy(pElems + i, pElems + bestIdx, len);
+			memcpy(pElems + bestIdx, buffer, len);
+		}
+	}
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

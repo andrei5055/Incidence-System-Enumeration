@@ -160,7 +160,8 @@ int processLastSix(alldata* s);
 
 int compareMatrix(const char *result, int ncolumns, char* transition);
 
-template<typename T>
-void groupOrdering(T *resPerm, T numElem, T groupSize=GroupSize);
+
+template<typename T> void elemOrdering(T* resPerm, size_t numElem, size_t groupSize = GroupSize);
+template<typename T> void groupOrdering(T *resPerm, size_t numElem, T* buffer, size_t groupSize=GroupSize, T adj = 0);
 
 
