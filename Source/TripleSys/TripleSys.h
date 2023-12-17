@@ -4,11 +4,11 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 20000
-#define ImproveResults 1		// Use 0 or 1 (option 2 is not ready yet)
+#define ImproveResults 0		// Use 0 or 1 (option 2 is not ready yet)
 #define ResultFile		   "bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
-#define USE_2_ROW_CANON 1		// Canonizer will use only 2 rows     
+#define USE_2_ROW_CANON 0		// Canonizer will use only 2 rows     
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
 
@@ -26,7 +26,7 @@ using namespace std;
 
 #define FOPEN(x, y, z)	  	 FILE *x = NULL; \
                              if (y && strlen(y)) fopen_s(&x, y, z)
-#define SPRINTF(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
+#define SPRINTFD(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
 #define FCLOSE(f)			 if (f) fclose(f)
 
 template<typename T>void initArray(T** pPntr, int len, T val = 0) {
@@ -162,6 +162,6 @@ int compareMatrix(const char *result, int ncolumns, char* transition);
 
 
 template<typename T> void elemOrdering(T* resPerm, size_t numElem, size_t groupSize = GroupSize);
-template<typename T> void groupOrdering(T *resPerm, size_t numElem, T* buffer, size_t groupSize=GroupSize, T adj = 0);
+template<typename T> void groupOrdering(T *resPerm, size_t numElem, T* buffer, size_t groupSize=GroupSize, T* pDayIdx = NULL);
 
 

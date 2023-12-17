@@ -15,6 +15,7 @@ private:
 	const int m_np;
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
+public:
 	int m_cntr = 0;
 };
 
@@ -29,27 +30,27 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	if (m_name && strlen(m_name) != 0) {
 		if (outCntr && m_bOutCntr)
-			SPRINTF(pBuf, buffer, "%s %d:\n", m_name, m_cntr);
+			SPRINTFD(pBuf, buffer, "%s %d:\n", m_name, m_cntr);
 		else
-			SPRINTF(pBuf, buffer, "%s:\n", m_name);
+			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}
 
 	for (int j = 0; j < m_nl; j++)
 	{
-		if (m_makeString) SPRINTF(pBuf, buffer, " \" ");
+		if (m_makeString) SPRINTFD(pBuf, buffer, " \" ");
 		for (int i = 0; i < m_nc; i++, c++)
 		{
 			if (m_np > 0 && (i % m_np) == 0)
-				SPRINTF(pBuf, buffer, " ");
+				SPRINTFD(pBuf, buffer, " ");
 			if (*c == -1 && !fileName)
 				printfGreen(" %3d", *c);
 			else
-				SPRINTF(pBuf, buffer, " %3d", *c);
+				SPRINTFD(pBuf, buffer, " %3d", *c);
 		}
 		if (j + 1 >= m_nl || m_ns <= 0 || ((j + 1) % m_ns) == 0)
-			SPRINTF(pBuf, buffer, endLine);
+			SPRINTFD(pBuf, buffer, endLine);
 		else
-			SPRINTF(pBuf, buffer, " ");
+			SPRINTFD(pBuf, buffer, " ");
 
 		_printf(f, true, pBuf = buffer);
 	}

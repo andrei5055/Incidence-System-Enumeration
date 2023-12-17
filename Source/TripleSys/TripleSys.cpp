@@ -71,32 +71,30 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 {
 	char buffer[256];
 	const bool toScreen = PrintImprovedResults > 1;
-	FOPEN(f, ImprovedResultFile, m_nCanonCalls ? "a" : "w");
+	FOPEN(f, ImprovedResultFile, m_nCanonCalls || cntr ? "a" : "w");
 
 	const unsigned char* pDayPerm = NULL;
 	if (cntr) {
 		pDayPerm = pResult + (iDay+1) * numPlayers();
 		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
-		if (false && USE_2_ROW_CANON)
-			iDay = 1;
 	} else
 		sprintf_s(buffer, "Initial Result #%zd:\n", m_nCanonCalls);
 
 	_printf(f, toScreen, buffer);
 	for (int j = 0; j <= iDay; j++) {
 		char* pBuf = buffer;
-		SPRINTF(pBuf, buffer, " \"");
+		SPRINTFD(pBuf, buffer, " \"");
 		for (int i = 0; i < numPlayers(); i++) {
 			if (!(i % m_groupSize))
-				SPRINTF(pBuf, buffer, "  %3d", *pResult++);
+				SPRINTFD(pBuf, buffer, "  %3d", *pResult++);
 			else
-				SPRINTF(pBuf, buffer, "%3d", *pResult++);
+				SPRINTFD(pBuf, buffer, "%3d", *pResult++);
 		}
 
 		if (cntr)
-			SPRINTF(pBuf, buffer, " \\n\":  day =%2d\n", pDayPerm[j]);
+			SPRINTFD(pBuf, buffer, " \\n\":  day =%2d\n", pDayPerm[j]);
 		else
-			SPRINTF(pBuf, buffer, " \\n\"\n");
+			SPRINTFD(pBuf, buffer, " \\n\"\n");
 
 		_printf(f, toScreen, buffer);
 	}
@@ -193,10 +191,13 @@ Initial Result:
 				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
 				*/
 #endif
-/*				const auto flag = false; //result(0)[19] == 9 && result(0)[20] == 12;
-				if (flag)
-					improveResult = 1; */
 				m_nCanonCalls++;
+#if 0
+				if (Result.m_cntr >= 147) {
+					improveResult = 1;
+					bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
+				}
+#endif
 				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
 				{
 					if (improveResult > 1 || improveResult && PrintImprovedResults) {
@@ -320,10 +321,11 @@ void elemOrdering(T *pElems, size_t numElem, size_t groupSize)
 }
 
 template<typename T>
-void groupOrdering(T* pElems, size_t numGroup, T *buffer, size_t groupSize, T adj) {
+void groupOrdering(T* pElems, size_t numGroup, T *buffer, size_t groupSize, T *pDays) {
 	// adj - adjustment of pointers used when comparing values.
 	//    0 for comparing groups within a day 
 	//    1 for comparing days
+	T adj = pDays ? 1 : 0;
 	const auto len = groupSize * sizeof(*pElems);
 	const auto iMax = numGroup * groupSize;
 	for (size_t i = 0; i < iMax; i += groupSize) {
@@ -341,6 +343,14 @@ void groupOrdering(T* pElems, size_t numGroup, T *buffer, size_t groupSize, T ad
 			memcpy(buffer, pElems + i, len);
 			memcpy(pElems + i, pElems + bestIdx, len);
 			memcpy(pElems + bestIdx, buffer, len);
+			if (pDays) {
+				// Rearranging day indices
+				const auto i1 = i / groupSize;
+				const auto i2 = bestIdx / groupSize;
+				const auto tmp = pDays[i1];
+				pDays[i1] = pDays[i2];
+				pDays[i2] = tmp;
+			}
 		}
 	}
 }
