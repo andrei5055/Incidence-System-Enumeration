@@ -105,7 +105,7 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
-	bool CheckCanonicity(const T* result, int nLines);
+	bool CheckCanonicity(const T* result, int nLines, T *bResult = NULL);
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}

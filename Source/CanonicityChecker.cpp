@@ -647,7 +647,7 @@ CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T 
 	return checkPerm;
 }
 
-CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays) {
+CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult) {
 	// return true  - continue, 
 	//        false - stop (calculate new matrix)
 /*
