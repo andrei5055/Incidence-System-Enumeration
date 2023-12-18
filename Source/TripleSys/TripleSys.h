@@ -4,10 +4,10 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 20000
-#define ImproveResults 0		// Use 0 or 1 (option 2 is not ready yet)
-#define ResultFile		   "bbb.txt" // Name of output file with the results, "" - no file output.
+#define ImproveResults 2		// Use 0 or 1 (option 2 is not ready yet)
+#define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
-#define ImprovedResultFile "aaa.txt"  // Name of output file with the improved results, "" - no file output.
+#define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
 #define USE_2_ROW_CANON 0		// Canonizer will use only 2 rows     
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1

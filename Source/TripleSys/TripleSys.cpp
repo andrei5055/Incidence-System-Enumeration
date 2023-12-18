@@ -191,8 +191,12 @@ Initial Result:
 				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
 				*/
 #endif
+
 				m_nCanonCalls++;
 #if 0
+				if (m_nCanonCalls == 740)
+					m_nCanonCalls += 0;
+
 				if (Result.m_cntr >= 147) {
 					improveResult = 1;
 					bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
@@ -214,14 +218,13 @@ Initial Result:
 								outputResults(iDay, bRes1, ++cntr);
 							}
 
-							if (true || improveResult == 1) // Not ready yet
+							if (improveResult == 1) // Not ready yet
 								break;
 
 							// Swap the the best results buffers
 							auto* bRes = bRes1;
 							bRes1 = bRes2;
 							bRes2 = bRes;
-							m_nCanonCalls++;
 						} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay+1, bRes1));
 					}
 
@@ -269,11 +272,12 @@ Initial Result:
 template<typename T>
 void elemOrdering(T *pElems, size_t numElem, size_t groupSize)
 {
-	// Ordering elements in the groups od size groupSize 
+	// Ordering elements in the groups od size groupSize
+	auto j = numElem + groupSize;
 	switch (groupSize) {
 	case 2: 			
-		// Ordering groups of pairs. 
-		for (auto j = numElem; j--; pElems += 2) {
+		// Ordering groups of pairs.
+		for (; j -= 2; pElems += 2) {
 			if (pElems[0] > pElems[1]) {
 				const auto tmp = pElems[0];
 				pElems[0] = pElems[1];
@@ -283,7 +287,7 @@ void elemOrdering(T *pElems, size_t numElem, size_t groupSize)
 		return;
 	case 3:
 		// Ordering groups of triples.
-		for (auto j = 0; j < numElem; j += 3, pElems += 3) {
+		for (; j -= 3; pElems += 3) {
 			const auto tmp0 = pElems[0];
 			const auto tmp1 = pElems[1];
 			const auto tmp2 = pElems[2];
