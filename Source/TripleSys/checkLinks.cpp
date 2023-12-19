@@ -54,12 +54,12 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	bool ret = true;
 	const auto len = m_numPlayers * m_numPlayers;
 
-	/* c001 - see all references to c001 **/
 	if (m_numPlayers == 15 && id < 3)
 		return true;
-	if (m_numPlayers == 21 && id < 1)
+	else if (m_numPlayers == 21 && id < 1)
 		return true;
-	/* c001 end */
+	else if (m_numPlayers == 27 && id < 2)
+		return true;
 
 	memcpy(m_pLinksCopy, pLinks, len);
 
@@ -101,14 +101,16 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		if ((nv % 2) != 0)
 		{
 			//continue;
-			printf("nv=%d i=%d\n", nv, i);
+			printf("CheckLinks: error in links table: nv=%d for i=%d\n", nv, i);
 			printTableColor("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
 			abort();
 		}
 
 		if (checkLinksV(m_pLinksCopy, m_v, nv, -1, m_vo))
 		{
+#if UseSS == 0
 			goto okplayer;
+#endif
 			int idd = 0;
 			for (int n = 0; n < nv; n += 2)
 			{
@@ -163,9 +165,9 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		/**/
 		if (id > 33)
 		{
-			printTableColor("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
+			printTableColor("CheckLinks Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
 			convertLinksToResult(m_pLinksCopy);
-			printTable("result", m_co, m_numDays, m_numPlayers);
+			printTable("CheckLinks Result", m_co, m_numDays, m_numPlayers);
 		}
 		/**/
 	}

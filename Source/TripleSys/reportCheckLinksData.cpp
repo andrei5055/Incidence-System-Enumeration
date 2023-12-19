@@ -22,8 +22,10 @@ void CChecklLink::reportCheckLinksData()
 					tmok[0], m_numDays, m_numPlayers, 0, 0, false, 100.0 / tmtotal);
 			}
 			**/
-			printTableColor("'LinksCheck': 1-Fault, 2-OK, 3-Mix",
+			printTableColor("CheckLinks: 1-Fault, 2-OK, 3-Mix",
 				faults, m_numDays, m_numPlayers, 0, 0, false);
+			//printTableColor("CheckLinks Links",
+			//	m_pLinksCopy, m_numPlayers, m_numPlayers, 0, 0, false);
 		}
 
 #if PrintNVminmax
@@ -32,15 +34,18 @@ void CChecklLink::reportCheckLinksData()
 		icnt = 0;
 #endif
 	}
-	/**
+	/**/
 	cnt = 0;
+	cntOk = 0;
 	cntErr = 0;
 	tmtotal = 0;
 	tmtotalFalse = 0;
 	tmtotalOk = 0;
-	memset(faults[0], 0, sizeof(faults));
-	memset(counts[0], 0, sizeof(counts));
-	memset(tmfalse[0], 0, sizeof(tmfalse));
-	memset(tmfalse[0], 0, sizeof(tmok));
-	**/
+	const auto len = m_numDays * m_numPlayers;
+	const auto dlen = len * sizeof(double);
+	memset(faults, 0, len);
+	memset(counts, 0, dlen);
+	memset(tmfalse, 0, dlen);
+	memset(tmfalse, 0, dlen);
+	/**/
 }

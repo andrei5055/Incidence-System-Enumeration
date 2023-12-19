@@ -27,7 +27,7 @@ private:
 	inline auto groupSize() const			{ return m_groupSise; }
 	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
-	bool copyTuple(const T* res, T inc = 0) const;
+	bool copyTuple(const T* res, T inc = 0, bool doCheck = true) const;
 	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
 	inline void setNumDays(T nDays)			{ m_lenResult = (m_numDays = nDays) * m_numElem; }
 	inline auto numDays() const				{ return m_numDays; }
@@ -79,6 +79,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 	const auto numGroup = m_numElem / lenGroup;
 	auto* pDest = bResult ? bResult : resultMemory();
 	auto* res = result;
+	bool copyTuplesOK = true;
 	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
 		if (res[0] || !copyTuple(res)) {
 			/*			T* pDest = resultOut();
@@ -88,14 +89,23 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult)
 							memcpy(pDest += m_numElem, result + m_numElem * (iDay + 1), (numDays() - iDay) * m_numElem * sizeof(*pDest));
 						}
 						*/
-			return false;
+			copyTuplesOK = false;
 		}
 
-		T inc = 0;
-		for (auto j = numGroup; --j;) {
-			if (!copyTuple(res += lenGroup, inc += lenGroup) ||
-				m_players[*res] < m_players[*(res - lenGroup)]) // Comparing first elements of the groups
-				return false;
+		if (copyTuplesOK) {
+			T inc = 0;
+			for (auto j = numGroup; --j;) {
+				if (!copyTuple(res += lenGroup, inc += lenGroup) ||
+					m_players[*res] < m_players[*(res - lenGroup)]) // Comparing first elements of the groups
+					copyTuplesOK = false;
+			}
+		}
+
+		if (!copyTuplesOK) {
+			return false;
+			// Some problems found when we had tr
+			res = result + iDay * m_numElem;
+	//		for (auto )
 		}
 
 		// Check canonicity of the codes for the other days
@@ -261,15 +271,16 @@ Improved Result #1: i (0, j)
 	return true;
 }
 
-CanonicityChecker(bool)::copyTuple(const T* res, T inc) const {
-	m_players[res[0]] = inc;
+CanonicityChecker(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
+	T prev;
+	m_players[prev = res[0]] = inc;
 	for (T j = 1; j < groupSize(); j++) {
-		const auto diff = (int)res[j - 1] - res[j];
-		assert(diff);
-		if (diff > 0)
+		const auto next = res[j];
+		assert(prev != next);
+		if (doCheck && prev > next)
 			return false;
 
-		m_players[res[j]] = j + inc;
+		m_players[prev = next] = j + inc;
 	}
 	return true;
 }

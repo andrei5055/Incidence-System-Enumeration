@@ -25,6 +25,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	if (m0 == 2)
 	{
 		bool bV = true, bH = true;
+#if UseSS == 0
 		if (iPlayer > m_numPlayers / 2 && m_bCheckLinkH)
 		{
 			int nUnselected = m_numPlayers - iPlayer - 1;
@@ -36,12 +37,11 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				bH = m_pCheckLink->checkLinksH(links(), m_h, nUnselected, nUnselected, unset, unset, m_ho);
 			}
 		}
+#endif
 		if (m_bCheckLinkV && bH == true)
 		{
 			bV = m_pCheckLink->checkLinks(links(), iDay);
 		}
-		if (!bH)
-			bH = bH;
 		if (!bH || !bV)
 		{
 			selPlayers[iPlayerNumber] = unset;

@@ -51,8 +51,6 @@ bool CChecklLink::checkLinksH(const char* c, const char* v, int nv, int nvo, int
 			const char* cti = c + ti * m_numPlayers;
 			for (int j = i + 1; j < nv; j++)
 			{
-				//if (t[0] == 0 && t[i] == 11 && t[j] == 13)
-				//    j = j;
 				char tj = t[j];
 				if (ct0[tj] == unset &&
 					cti[tj] == unset &&

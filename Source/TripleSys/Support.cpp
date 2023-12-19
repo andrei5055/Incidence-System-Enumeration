@@ -10,7 +10,7 @@ bool alldata::initCurrentDay()
 	memset(selPlayers, unset, m_numPlayers);
 	memset(tmpPlayers, unset, m_numPlayers);
 
-	//return true;
+#if UseSS == 0
 
 	if (m_bCheckLinkH)
 	{
@@ -52,8 +52,8 @@ bool alldata::initCurrentDay()
 					tmpPlayers[i], iDay, i);
 
 				memcpy(result(iDay), tmpPlayers, m_numPlayers);
-				printTable("current result", result(0), m_numDays, m_numPlayers);
-				printTable("links", links(0), m_numPlayers, m_numPlayers);
+				printTable("Current Result", result(0), m_numDays, m_numPlayers);
+				printTable("Current Links", links(0), m_numPlayers, m_numPlayers);
 				abort();
 			}
 		}
@@ -62,6 +62,7 @@ bool alldata::initCurrentDay()
 		iPlayer = np;
 #endif
 	}
+#endif // UseSS
 	return true;
 }
 

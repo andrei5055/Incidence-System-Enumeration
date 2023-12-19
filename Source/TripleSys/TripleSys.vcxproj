@@ -146,6 +146,7 @@
     <ClCompile Include="processLastSix.cpp" />
     <ClCompile Include="processOneDay.cpp" />
     <ClCompile Include="reportCheckLinksData.cpp" />
+    <ClCompile Include="sortLinks.cpp" />
     <ClCompile Include="Support.cpp" />
     <ClCompile Include="TripleSys.cpp" />
   </ItemGroup>

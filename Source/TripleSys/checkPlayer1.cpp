@@ -34,6 +34,13 @@ int alldata::checkPlayer1(int iPlayerNumber)
 	}
 	if (GroupSize == 3)
 	{
+		if (iPlayer == 1)
+		{
+			//new
+			if (iPlayerNumber > m_numPlayers - m_numDays + iDay - 3) //for n=15 in last day player#1 cant be max 11, for 21 - 17
+				return m_numPlayers;
+		}
+#if UseSS == 0
 		if (iPlayer < 7 && m0 == 0)
 		{
 			// AI statement #4 (part 2)
@@ -42,7 +49,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 				return ifixedPlayer;
 			return m_numPlayers;
 		}
-		//	if (!m_bCheckLinkV) // with m_bCheckLinkV equal true we canot check days because they are not sorted
+//#if UseSS == 0
 		{
 			if (iPlayer == 1)
 			{
@@ -61,9 +68,15 @@ int alldata::checkPlayer1(int iPlayerNumber)
 					else
 						return m_numPlayers;
 				}
+				//new
+				if (iPlayerNumber > m_numPlayers - m_numDays + iDay - 3) //for n=15 in last day player#1 cant be max 11, for 21 - 17
+					return m_numPlayers;
 			}
 			else if (iDay == 1)
 			{
+				//if player[1, 4] == 4 ==> player[1, 5] <= player[0, { 5 }]
+				if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
+					return m_numPlayers;
 				// AI statement #4 (part)
 				switch (iPlayer) 
 				{
@@ -106,8 +119,8 @@ int alldata::checkPlayer1(int iPlayerNumber)
 						/** covered in case 7
 						if (iPlayerNumber <= tmpPlayers[4])
 							iPlayerNumber = tmpPlayers[4] + 1; // not happend **/
-						if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
-							return m_numPlayers;
+						//if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
+						//	return m_numPlayers;
 						if (iPlayerNumber > 14)
 							return m_numPlayers;
 						break;
@@ -148,6 +161,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 				}
 			}
 		}
+#endif
 	}
 
 	if (m0 == 0 && (!UseLastSix || iPlayer < m_numPlayers - 6))

@@ -1,5 +1,7 @@
 #include <iostream>
 #include "TripleSys.h"
+#include <iostream>
+#include "TripleSys.h"
 #include "Table.h"
 
 #ifdef CD_TOOLS
@@ -71,17 +73,20 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 {
 	char buffer[256];
 	const bool toScreen = PrintImprovedResults > 1;
-	FOPEN(f, ImprovedResultFile, m_nCanonCalls || cntr ? "a" : "w");
+	FOPEN(f, ImprovedResultFile, canonCalls(1) || cntr? "a" : "w");
 
+	iDay++;
 	const unsigned char* pDayPerm = NULL;
 	if (cntr) {
-		pDayPerm = pResult + (iDay+1) * numPlayers();
-		sprintf_s(buffer, "Improved Result #%d:\n", cntr);
-	} else
-		sprintf_s(buffer, "Initial Result #%zd:\n", m_nCanonCalls);
+		pDayPerm = pResult + iDay * numPlayers();
+		sprintf_s(buffer, "Improved Result #%d for %d day:\n", cntr, iDay);
+	}
+	else {
+		sprintf_s(buffer, "Initial Result #%zd:\n", canonCalls(0));
+	}
 
 	_printf(f, toScreen, buffer);
-	for (int j = 0; j <= iDay; j++) {
+	for (int j = 0; j < iDay; j++) {
 		char* pBuf = buffer;
 		SPRINTFD(pBuf, buffer, " \"");
 		for (int i = 0; i < numPlayers(); i++) {
@@ -109,9 +114,11 @@ bool alldata::Run(int improveResult) {
 	//		   !=0 - m_pCheckCanon will return the permutations of the sets of players 
 	//               and days that improve given "results";
 	//          >1 - try to improve the “results” as much as possible.
-	clock_t iTime = clock();
+	clock_t rTime, iTime = clock();
 	unsigned char* bResults = NULL;
 	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
+
+	rTime = iTime;
 #if 1
 	if (improveResult)
 		bResults = new unsigned char[(improveResult > 1? 2 : 1) * lenResult];
@@ -154,16 +161,19 @@ bool alldata::Run(int improveResult) {
 
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
 
-			if (maxDays < iDay)
+			if (maxDays < iDay || clock() - rTime > ReportInterval)
 			{
 				/**/
-				printf("day %d  Time = %d\n", iDay, clock() - iTime);
+				rTime = clock();
+				printf("current result report(%d): days = %d  Time = %d\n", (rTime - iTime) / ReportInterval, iDay + 1, rTime - iTime);
 				Result.printTable(result());
 				//printTable("Links", links[0], m_numPlayers, m_numPlayers);
 				/**/
 				maxDays = iDay;
 				memcpy(maxResult, result(0), m_nLenResults);
+				sortLinks();
 			}
+#if UseSS == 0
 			if (iDay > 0)
 			{
 #if 0
@@ -191,11 +201,10 @@ Initial Result:
 				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
 				*/
 #endif
-
-				m_nCanonCalls++;
+				addCanonCall(0);
 #if 0
-				if (m_nCanonCalls == 740)
-					m_nCanonCalls += 0;
+				if (canonCalls(0) == 740)
+					canonCalls(1);
 
 				if (Result.m_cntr >= 147) {
 					improveResult = 1;
@@ -212,26 +221,50 @@ Initial Result:
 							if (PrintImprovedResults) {
 								if (!cntr) {
 									// Output of initial results
+									addCanonCall(1);
 									outputResults(iDay, (unsigned char*)result());
 								}
 
 								outputResults(iDay, bRes1, ++cntr);
 							}
 
-							if (improveResult == 1) // Not ready yet
+							if (improveResult == 1)
 								break;
 
 							// Swap the the best results buffers
 							auto* bRes = bRes1;
 							bRes1 = bRes2;
 							bRes2 = bRes;
+							addCanonCall(0);
 						} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay+1, bRes1));
+						/**
+						//if (iDay + 1 == m_numDays)
+						{
+							printTable("Result", result(0), iDay + 1, m_numPlayers, 0, 3, true);
+							printTable("Result improved", (const char*)bRes1, iDay + 1, m_numPlayers, 0, 3, true);
+							memcpy(result(0), bRes1, m_numPlayers * (iDay + 1));
+							memset(links(0), unset, m_numPlayers * m_numPlayers);
+							for (int j = 0; j <= iDay; j++)
+							{
+								char* c = links(j);
+								for (int i = 0; i < m_numPlayers; i = i + 3)
+								{
+									if (!setLinksForOnePlayer(result(j), i + 1, 1) ||
+										!setLinksForOnePlayer(result(j), i + 2, 1))
+										abort();
+								}
+							}
+						}
+						**/
 					}
 
+					{
 					// get new matrix
 					bPrevResult = true;
 				}
 			}
+			}
+#endif
 			iDay++;
 		}
 

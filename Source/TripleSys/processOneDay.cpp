@@ -7,8 +7,8 @@ bool alldata::processOneDay()
 		//if (iDay == 3)
 		//	printf("%d p=%d\n", iDay, iPlayer);
 
-		//if (iDay == 3 && iPlayer == 1)
-		//	iDay = iDay;
+		if (iDay == 9 && iPlayer == 20)
+			iDay = iDay;
 		int iPlayerNumber = 0;
 		if (iPlayer < 0)
 			return false;
@@ -22,9 +22,6 @@ bool alldata::processOneDay()
 		else
 			iPlayerNumber = getNextPlayer();
 		
-		if (iPlayerNumber == 16)
-			iDay = iDay;
-
 		if (iPlayerNumber >= m_numPlayers)
 		{
 			//printf("d=%d p=%d go back\n", iDay, iPlayer);
