@@ -231,4 +231,9 @@
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Source\TripleSys\PlayerCond.html">
+      <Filter>Source Files\k-systems</Filter>
+    </None>
+  </ItemGroup>
 </Project>
