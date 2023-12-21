@@ -49,7 +49,6 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 
 bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 {
-#define cntm 10000000
 	std::chrono::steady_clock::time_point start0, start;
 	bool ret = true;
 	const auto len = m_numPlayers * m_numPlayers;
@@ -63,13 +62,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 
 	memcpy(m_pLinksCopy, pLinks, len);
 
-	if ((icnt % cntm) == 0)
-	{
-		reportCheckLinksData();
-	}
-
 	cnt++;
-	icnt++;
 
 	if (printLinksStatTime)
 		start0 = std::chrono::high_resolution_clock::now();

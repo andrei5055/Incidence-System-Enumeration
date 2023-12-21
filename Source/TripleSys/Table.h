@@ -1,5 +1,39 @@
 
 template<typename T>
+void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString, bool toScreen, int cntr=-1, const unsigned char* pDayPerm=NULL) {
+	char buffer[512];
+	const auto* endLine = makeString ? " \"\n" : "\n";
+	for (int j = 0; j < nl; j++) {
+		char* pBuf = buffer;
+		SPRINTFD(pBuf, buffer, " \"");
+		for (int i = 0; i < nc; i++, c++) {
+			if (np && !(i % np))
+				SPRINTFD(pBuf, buffer, " ");
+
+			if (*c == -1 && !f)
+				printfGreen(" %3d", *c);
+			else
+				SPRINTFD(pBuf, buffer, " %3d", *c);
+		}
+
+		if (cntr < 0) {
+			if (j + 1 >= nl || ns <= 0 || ((j + 1) % ns) == 0)
+				SPRINTFD(pBuf, buffer, endLine);
+			else
+				SPRINTFD(pBuf, buffer, " ");
+		}
+		else {
+			if (cntr)
+				SPRINTFD(pBuf, buffer, "\":  day =%2d\n", pDayPerm[j]);
+			else
+				SPRINTFD(pBuf, buffer, "\"\n");
+		}
+
+		_printf(f, toScreen, buffer);
+	}
+}
+
+template<typename T>
 class Table {
 public:
 	Table(char const *name, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, bool outCntr = false) :
@@ -24,7 +58,7 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 {
 	char buffer[512], *pBuf = buffer;
 	FOPEN(f, fileName, m_cntr ? "a" : "w");
-	const auto* endLine = m_makeString ? " \\n\"\n" : "\n";
+	const auto* endLine = m_makeString ? " \"\n" : "\n";
 	if (outCntr)
 		m_cntr++;
 
@@ -35,25 +69,8 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}
 
-	for (int j = 0; j < m_nl; j++)
-	{
-		if (m_makeString) SPRINTFD(pBuf, buffer, " \" ");
-		for (int i = 0; i < m_nc; i++, c++)
-		{
-			if (m_np > 0 && (i % m_np) == 0)
-				SPRINTFD(pBuf, buffer, " ");
-			if (*c == -1 && !fileName)
-				printfGreen(" %3d", *c);
-			else
-				SPRINTFD(pBuf, buffer, " %3d", *c);
-		}
-		if (j + 1 >= m_nl || m_ns <= 0 || ((j + 1) % m_ns) == 0)
-			SPRINTFD(pBuf, buffer, endLine);
-		else
-			SPRINTFD(pBuf, buffer, " ");
-
-		_printf(f, true, pBuf = buffer);
-	}
+	_printf(f, true, buffer);
+	outMatrix(c, m_nl, m_nc, m_np, m_ns, f, m_makeString, true);
 	FCLOSE(f);
 }
 

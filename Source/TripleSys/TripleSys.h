@@ -1,17 +1,17 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 21
+#define nPlayers0 15
 #define GroupSize 3
-#define LoopsMax 2
-#define ImproveResults 2		// Use 0 or 1 (option 2 is not ready yet)
+#define LoopsMax 30000
+#define ImproveResults 0	// Use 0 or 1 (option 2 is not ready yet)
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
 #define USE_2_ROW_CANON 0		// Canonizer will use only 2 rows     
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
-#define ReportInterval   1000000000
+#define ReportInterval   120000
 
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
@@ -70,9 +70,9 @@ public:
 	bool checkLinks(char *c, int id, bool printLinksStatTime = false);
 	bool checkLinks27(char *c, int id);
 	bool checkLinksH(const char* c, const char* v, int nv, int nvo, int ind1, int ind2, char* vo, double* counter = NULL);
+	void reportCheckLinksData();
 private:
 	bool checkLinksV(const char* links, const char* v, int nv, int ind, char* vo);
-	void reportCheckLinksData();
 
 	double cnt = 0;
 	double tmtotal = 0.0;
@@ -80,7 +80,6 @@ private:
 	double tmtotalOk = 0;
 	double cntErr = 0;
 	double cntOk = 0;
-	int icnt = 0;
 	double *counts = NULL;
 	double *tmfalse = NULL;
 	double *tmok = NULL;

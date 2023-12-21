@@ -217,7 +217,6 @@
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinks.cpp" />
-    <ClCompile Include="..\Source\TripleSys\checkLinks27.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkPlayer1.cpp" />
@@ -229,6 +228,7 @@
     <ClCompile Include="..\Source\TripleSys\processLastSix.cpp" />
     <ClCompile Include="..\Source\TripleSys\processOneDay.cpp" />
     <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp" />
+    <ClCompile Include="..\Source\TripleSys\sortLinks.cpp" />
     <ClCompile Include="..\Source\TripleSys\Support.cpp" />
     <ClCompile Include="..\Source\TripleSys\TripleSys.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />

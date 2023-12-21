@@ -1,7 +1,5 @@
 #include <iostream>
 #include "TripleSys.h"
-#include <iostream>
-#include "TripleSys.h"
 #include "Table.h"
 
 #ifdef CD_TOOLS
@@ -86,24 +84,7 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 	}
 
 	_printf(f, toScreen, buffer);
-	for (int j = 0; j < iDay; j++) {
-		char* pBuf = buffer;
-		SPRINTFD(pBuf, buffer, " \"");
-		for (int i = 0; i < numPlayers(); i++) {
-			if (!(i % m_groupSize))
-				SPRINTFD(pBuf, buffer, "  %3d", *pResult++);
-			else
-				SPRINTFD(pBuf, buffer, "%3d", *pResult++);
-		}
-
-		if (cntr)
-			SPRINTFD(pBuf, buffer, " \\n\":  day =%2d\n", pDayPerm[j]);
-		else
-			SPRINTFD(pBuf, buffer, " \\n\"\n");
-
-		_printf(f, toScreen, buffer);
-	}
-
+	outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
 	FCLOSE(f);
 }
 
@@ -164,6 +145,7 @@ bool alldata::Run(int improveResult) {
 			if (maxDays < iDay || clock() - rTime > ReportInterval)
 			{
 				/**/
+				m_pCheckLink->reportCheckLinksData();
 				rTime = clock();
 				printf("current result report(%d): days = %d  Time = %d\n", (rTime - iTime) / ReportInterval, iDay + 1, rTime - iTime);
 				Result.printTable(result());
@@ -202,11 +184,11 @@ Initial Result:
 				*/
 #endif
 				addCanonCall(0);
-#if 0
+#if 1
 				if (canonCalls(0) == 740)
 					canonCalls(1);
 
-				if (Result.m_cntr >= 147) {
+				if (Result.m_cntr == 2385) {
 					improveResult = 1;
 					bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
 				}
@@ -257,12 +239,12 @@ Initial Result:
 						}
 						**/
 					}
-
+					//else
 					{
-					// get new matrix
-					bPrevResult = true;
+						// get new matrix
+						bPrevResult = true;
+					}
 				}
-			}
 			}
 #endif
 			iDay++;

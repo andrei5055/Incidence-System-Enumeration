@@ -4,6 +4,8 @@
 int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 {
 	int m0 = iPlayer % GroupSize;
+	if (m0 == 0)
+		abort();
 	int m1 = m0 == 0 ? GroupSize : 1;
 
 	char i0 = iPlayer > 0 ? tmpPlayers[iPlayer - 1] : 0;
@@ -14,6 +16,15 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 
 	if (l0[iPlayerNumber] != unset)
 		return -1;
+	if (iPlayer == 1)
+	{
+		// AI statement #15
+		for (int i = 0; i < iPlayerNumber; i++)
+		{
+			if (i != i0 && l0[i] == unset)
+				return m_numPlayers;
+		}
+	}
 	char* li = links(iPlayerNumber);
 	if (m0 == 2)
 	{

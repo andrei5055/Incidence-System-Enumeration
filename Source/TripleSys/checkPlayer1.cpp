@@ -59,7 +59,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 					if (iPlayerNumber < 7)
 						iPlayerNumber = 7;  // not happend
 					if (iPlayerNumber <= result(iDay - 1)[1])
-						iPlayerNumber = result(iDay - 1)[1];
+						iPlayerNumber = result(iDay - 1)[1] + 1;
 				}
 				else
 				{
@@ -74,9 +74,12 @@ int alldata::checkPlayer1(int iPlayerNumber)
 			}
 			else if (iDay == 1)
 			{
+#define FLAG    3
+#if FLAG == 1 || FLAG == 3
 				//if player[1, 4] == 4 ==> player[1, 5] <= player[0, { 5 }]
 				if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
 					return m_numPlayers;
+#endif
 				// AI statement #4 (part)
 				switch (iPlayer) 
 				{
@@ -98,6 +101,22 @@ int alldata::checkPlayer1(int iPlayerNumber)
 							return m_numPlayers;
 						break;
 					}
+#if FLAG == 2 || FLAG == 3
+					case 5:
+					{
+						// AI statement #14
+						if (tmpPlayers[4] == 4)
+						{
+							if (iPlayerNumber <= 7)
+								return 7;
+							else if (iPlayerNumber <= 9)
+								return 9; // good for n=9?
+							else
+								return m_numPlayers;
+						}
+						break;
+					}
+#endif
 					case 7:
 					{
 						// AI statement #7 

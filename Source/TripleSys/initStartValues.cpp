@@ -5,7 +5,7 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 {
 	char* iv = m_co; // We can use existing array m_co
 	int v;
-	int ind = 0;
+	int ind = 0, lastInd = 0;
 	int id = iDay = 0;
 	memset(iv, unset, m_nLenResults);
 
@@ -31,6 +31,7 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 				break;
 		}
 		*(iv + id * m_numPlayers + ind) = (char)v;
+		lastInd = ind;
 		while ((*ivcb >= '0' && *ivcb <= '9') || *ivcb == '-')
 			ivcb++;
 	}
@@ -38,6 +39,14 @@ doneInit:
 	if (ind <= 0 && id <= 0)
 		return false;
 
+	if (lastInd == m_numPlayers - 1)
+		id++;
+	else
+	{
+		printf("Init: values for day %d positions %d-%d not defined\n", id, lastInd + 1, m_numPlayers - 1);
+		printTable("Initial result", result(0), m_numDays, m_numPlayers);
+		exit(0);
+	}
 	char* iv_id = iv;
 	auto* res = result(0);
 	for (int i = 0; i < id; i++, iv_id += m_numPlayers, res += m_numPlayers)
