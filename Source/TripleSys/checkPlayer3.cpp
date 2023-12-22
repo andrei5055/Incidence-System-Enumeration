@@ -15,21 +15,23 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	char day = iDay;
 
 	if (l0[iPlayerNumber] != unset)
-		return -1;
+		return ++iPlayerNumber;
+#if UseSS == 0
 	if (iPlayer == 1)
 	{
 		// AI statement #15
-		for (int i = 0; i < iPlayerNumber; i++)
+		for (int i = 1; i < iPlayerNumber; i++)
 		{
-			if (i != i0 && l0[i] == unset)
+			if (l0[i] == unset)
 				return m_numPlayers;
 		}
 	}
+#endif
 	char* li = links(iPlayerNumber);
 	if (m0 == 2)
 	{
 		if (l1[iPlayerNumber] != unset)
-			return -1;
+			return ++iPlayerNumber;
 		l1[iPlayerNumber] = li[i1] = day;
 	}
 	l0[iPlayerNumber] = li[i0] = day;
@@ -59,7 +61,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			tmpPlayers[iPlayer] = unset;
 			li[i0] = li[i1] = unset;
 			l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
-			return -1;
+			return ++iPlayerNumber;
 		}
 	}
 	return iPlayerNumber;

@@ -114,6 +114,9 @@
     <ClInclude Include="..\Source\CanonicityChecker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Source\TripleSys\CheckCanon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\CanonicityChecker.cpp">
@@ -228,6 +231,12 @@
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\sortLinks.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\CheckCanon.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>

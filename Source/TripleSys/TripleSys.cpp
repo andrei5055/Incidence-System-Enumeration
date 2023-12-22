@@ -5,7 +5,7 @@
 #ifdef CD_TOOLS
    #include "../CanonicityChecker.h"
 #else
-   #include "CanonicityChecker.h"
+   #include "CheckCanon.h"
 #endif
 
 alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useCheckLinksH) :
@@ -29,7 +29,7 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 #ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
 #else
-	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
+	m_pCheckCanon = new CCheckerCanon<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
 #endif
 
 	Init();
@@ -108,6 +108,31 @@ bool alldata::Run(int improveResult) {
 #endif
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
 
+	if (iDay == m_numDays)
+	{
+		unsigned char* bRes1 = NULL;
+		const auto bResults_1 = new unsigned char[2 * lenResult];
+		iDay = iDay - 1;
+		if (improveMatrix(2, bResults_1, lenResult, &bRes1))
+		{
+			printTable("Result improved", (const char*)bRes1, iDay + 1, m_numPlayers, 0, 3, true);
+			memcpy(result(0), bRes1, m_numPlayers * (iDay + 1));
+			memset(links(0), unset, m_numPlayers * m_numPlayers);
+			for (int j = 0; j <= iDay; j++)
+			{
+				char* c = links(j);
+				for (int i = 0; i < m_numPlayers; i = i + 3)
+				{
+					if (!setLinksForOnePlayer(result(j), i + 1, 1) ||
+						!setLinksForOnePlayer(result(j), i + 2, 1))
+						abort();
+				}
+			}
+		}
+		delete[] bResults_1;
+		iDay = iDay + 1;
+	}
+
 	while (nLoops < LoopsMax)
 	{
 		while (iDay < m_numDays || bPrevResult)
@@ -119,15 +144,6 @@ bool alldata::Run(int improveResult) {
 			}
 			if (bPrevResult)
 			{
-				/**/
-				if (nLoops == 1)
-				{
-					//printf("%d ", iDay);
-
-					//printTable("", result(), m_numDays, m_numPlayers);
-					//printTable("Links", links(), m_numPlayers, m_numPlayers);
-				}/**/
-
 				if (!initPrevDay())
 					continue;
 			}
@@ -158,93 +174,7 @@ bool alldata::Run(int improveResult) {
 #if UseSS == 0
 			if (iDay > 0)
 			{
-#if 0
-				for (int j = 2; j <= iDay; j++) {
-					const auto* pntr = result() + m_numPlayers * (j+1) - 1;
-					if (*pntr == 14 && (*(pntr - 1) == 11 && *(pntr - 2) == 8))
-						nLoops += 0;
-				}
-/*
-NOt a canonical one:
-Initial Result:
-
-	0  1  2    3  4  5    6  7  8    9 10 11   12 13 14
-	0  3  6    1  7 12    2  8  9    4 10 14    5 11 13
-	0  4  7    1  3  8    2 10 13    5  9 14    6 11 12
-	0  5  8    1  4 11    2  7 14    3 10 12    6  9 13
-	0  9 12    1  5 10    2  4  6    3  7 13    8 11 14
-*/
-				/*
-				Initial Result :
-				"    0  1  2    3  4  5    6  7  8    9 10 11   12 13 14 \n"
-				"    0  3  6    1  4 12    2  7  9    5 10 14    8 11 13 \n"
-				Improved Result #1:
-				"    0  1  2    3  4  5    6  7  8    9 10 11   12 14 13 \n"
-				"    0  3  6    1  4  9    2  7 12    8 10 13    5 11 14 \n"
-				*/
-#endif
-				addCanonCall(0);
-#if 1
-				if (canonCalls(0) == 740)
-					canonCalls(1);
-
-				if (Result.m_cntr == 2385) {
-					improveResult = 1;
-					bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
-				}
-#endif
-				if (!m_pCheckCanon->CheckCanonicity((unsigned char *)result(), iDay+1, bResults))
-				{
-					if (improveResult > 1 || improveResult && PrintImprovedResults) {
-						int cntr = 0;
-						auto* bRes1 = bResults;
-						auto* bRes2 = bResults + lenResult;
-						do {
-							if (PrintImprovedResults) {
-								if (!cntr) {
-									// Output of initial results
-									addCanonCall(1);
-									outputResults(iDay, (unsigned char*)result());
-								}
-
-								outputResults(iDay, bRes1, ++cntr);
-							}
-
-							if (improveResult == 1)
-								break;
-
-							// Swap the the best results buffers
-							auto* bRes = bRes1;
-							bRes1 = bRes2;
-							bRes2 = bRes;
-							addCanonCall(0);
-						} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay+1, bRes1));
-						/**
-						//if (iDay + 1 == m_numDays)
-						{
-							printTable("Result", result(0), iDay + 1, m_numPlayers, 0, 3, true);
-							printTable("Result improved", (const char*)bRes1, iDay + 1, m_numPlayers, 0, 3, true);
-							memcpy(result(0), bRes1, m_numPlayers * (iDay + 1));
-							memset(links(0), unset, m_numPlayers * m_numPlayers);
-							for (int j = 0; j <= iDay; j++)
-							{
-								char* c = links(j);
-								for (int i = 0; i < m_numPlayers; i = i + 3)
-								{
-									if (!setLinksForOnePlayer(result(j), i + 1, 1) ||
-										!setLinksForOnePlayer(result(j), i + 2, 1))
-										abort();
-								}
-							}
-						}
-						**/
-					}
-					//else
-					{
-						// get new matrix
-						bPrevResult = true;
-					}
-				}
+				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
 			}
 #endif
 			iDay++;
@@ -282,96 +212,6 @@ Initial Result:
 
 	delete[] bResults;
 	return true;
-}
-
-template<typename T>
-void elemOrdering(T *pElems, size_t numElem, size_t groupSize)
-{
-	// Ordering elements in the groups od size groupSize
-	auto j = numElem + groupSize;
-	switch (groupSize) {
-	case 2: 			
-		// Ordering groups of pairs.
-		for (; j -= 2; pElems += 2) {
-			if (pElems[0] > pElems[1]) {
-				const auto tmp = pElems[0];
-				pElems[0] = pElems[1];
-				pElems[1] = tmp;
-			}
-		}
-		return;
-	case 3:
-		// Ordering groups of triples.
-		for (; j -= 3; pElems += 3) {
-			const auto tmp0 = pElems[0];
-			const auto tmp1 = pElems[1];
-			const auto tmp2 = pElems[2];
-			if (tmp2 > tmp1) {
-				if (tmp0 > tmp1) {
-					pElems[0] = tmp1;
-					if (tmp2 < tmp0) {
-						pElems[1] = tmp2;
-						pElems[2] = tmp0;
-					}
-					else
-						pElems[1] = tmp0;
-				}
-			}
-			else {
-				if (tmp2 > tmp0) {
-					pElems[1] = tmp2;
-					pElems[2] = tmp1;
-				}
-				else {
-					pElems[0] = tmp2;
-					if (tmp0 < tmp1) {
-						pElems[1] = tmp0;
-						pElems[2] = tmp1;
-					}
-					else
-						pElems[2] = tmp0;
-				}
-			}
-		}
-		return;
-	}
-
-	assert(false); // Not implemented for given groupSize
-}
-
-template<typename T>
-void groupOrdering(T* pElems, size_t numGroup, T *buffer, size_t groupSize, T *pDays) {
-	// adj - adjustment of pointers used when comparing values.
-	//    0 for comparing groups within a day 
-	//    1 for comparing days
-	T adj = pDays ? 1 : 0;
-	const auto len = groupSize * sizeof(*pElems);
-	const auto iMax = numGroup * groupSize;
-	for (size_t i = 0; i < iMax; i += groupSize) {
-		auto bestIdx = i;
-		auto bestVal = *(pElems + i + adj);
-		for (size_t j = i + groupSize; j < iMax; j += groupSize) {
-			const auto curVal = *(pElems + j + adj);
-			if (bestVal > curVal) {
-				bestVal = curVal;
-				bestIdx = j;
-			}
-		}
-
-		if (bestIdx != i) {
-			memcpy(buffer, pElems + i, len);
-			memcpy(pElems + i, pElems + bestIdx, len);
-			memcpy(pElems + bestIdx, buffer, len);
-			if (pDays) {
-				// Rearranging day indices
-				const auto i1 = i / groupSize;
-				const auto i2 = bestIdx / groupSize;
-				const auto tmp = pDays[i1];
-				pDays[i1] = pDays[i2];
-				pDays[i2] = tmp;
-			}
-		}
-	}
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

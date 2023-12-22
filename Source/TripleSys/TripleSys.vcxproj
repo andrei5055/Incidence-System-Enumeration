@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CheckCanon.cpp" />
     <ClCompile Include="checkLinks.cpp" />
     <ClCompile Include="checkLinksH.cpp" />
     <ClCompile Include="checkLinksV.cpp" />
@@ -140,6 +141,7 @@
     <ClCompile Include="checkPlayer3.cpp" />
     <ClCompile Include="convertLinksToResult.cpp" />
     <ClCompile Include="getNextPlayer.cpp" />
+    <ClCompile Include="improveMatrix.cpp" />
     <ClCompile Include="initStartValues.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="printTable.cpp" />
@@ -151,7 +153,7 @@
     <ClCompile Include="TripleSys.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CanonicityChecker.h" />
+    <ClInclude Include="CheckCanon.h" />
     <ClInclude Include="Table.h" />
     <ClInclude Include="TripleSys.h" />
   </ItemGroup>

@@ -568,22 +568,7 @@ CanonicityChecker(T)::nextPermutation(T *perm, const T *pOrbits, T nElem, T idx,
 	return i;
 }
 
-
-CanonicityChecker(bool)::rollBack(T *p_dayRes, T *p_dayIsUsed, int &j, int nDays) const
-{
-	while (j > 1) { // Do we need to go to previous day?
-		p_dayIsUsed[p_dayRes[--j]] = 0;
-		if (++p_dayRes[j] < nDays) {
-			j--;
-			return true;
-		}
-
-		p_dayRes[j] = 0;
-	}
-
-	return false;
-}
-
+#if 0
 CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T nDays) {
 	// Convert results for permutation of players
 	bool checkPerm = false;
@@ -646,6 +631,7 @@ CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T 
 
 	return checkPerm;
 }
+#endif
 
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult) {
 	// return true  - continue, 
@@ -698,50 +684,10 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult)
 #endif
 	}
 */
-	static int cntr = 0;
-	size_t startIndex = 0;
 
-	T* p_dayRes = m_pDayRes;
-	T* p_dayIsUsed = p_dayRes + nDays;
-	T* p_players = p_dayIsUsed + nDays;
-	T* pOrbits = p_players + m_numElem;
 
-	const auto lenGroup = rank();
-	const auto numGroup = m_numElem / lenGroup;
-
-	T* permPlayers = NULL;
-	T* permColumn = NULL;
-	const auto lenStab = stabiliserLengthExt();
-	permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
-	T nElem = ELEMENT_MAX;
-	T idx = ELEMENT_MAX;
-
-	memcpy(m_kSystem, result, m_numElem * nDays);
-	while (true) {
-		const auto* res = m_kSystem;
-		for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
-			if (res[0] || !copyTuple(res, p_players))
-				return false;
-
-			T inc = 0;
-			for (auto j = numGroup; --j;) {
-				if (!copyTuple(res += lenGroup, p_players, inc += lenGroup) ||
-					p_players[*res] < p_players[*(res - lenGroup)]) // Comparing first elements of the groups
-					return false;
-			}
-
-			if (lenGroup >= 3) {
-				// Ordering last two elements of each 
-				auto* res = p_players;
-				for (auto j = numGroup; j--; res += lenGroup) {
-					if (res[1] > res[2]) {  // TODO: Write code for lenGroup > 3
-						const auto tmp = res[1];
-						res[1] = res[2];
-						res[2] = tmp;
-					}
-				}
-			}
-
+	m_pCheckerKSystemCanon->CheckCanonicity(result, nDays, bResult);
+#if 0
 			// Check canonicity of the codes for the other days
 			// Initiating both arrays p_dayRes and p_dayIsUsed
 			memset(p_dayRes, 0, 2 * nDays * sizeof(*p_dayRes));
@@ -804,6 +750,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult)
 		if (!checkPermut)
 			break;
 	}
+#endif
 	//  (0 3, 6) (1, 2, 4)
 	return true;
 }

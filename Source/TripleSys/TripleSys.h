@@ -1,14 +1,13 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 15
+#define nPlayers0 21
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 0	// Use 0 or 1 (option 2 is not ready yet)
+#define ImproveResults 0	// Use 0 or 1 option 2" 
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
-#define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
+#define PrintImprovedResults 2	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
-#define USE_2_ROW_CANON 0		// Canonizer will use only 2 rows     
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
 #define ReportInterval   120000
@@ -97,7 +96,14 @@ private:
 #endif
 };
 
-template<typename T, typename S> class CCanonicityChecker;
+#ifdef CD_TOOLS
+#define CheckCanon CCanonicityChecker
+#else
+#define CheckCanon CCheckerCanon
+#endif
+
+template<typename T, typename S> class CheckCanon;
+
 
 class alldata : private SizeParam {
 public:
@@ -106,6 +112,7 @@ public:
 	~alldata();
 	bool Run(int improveResult=0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
+	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
@@ -153,7 +160,7 @@ private:
 	const bool m_bCheckLinkV;
 	const bool m_bCheckLinkH;
 	CChecklLink *m_pCheckLink = NULL;
-	CCanonicityChecker<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
+	CheckCanon<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
 };
 
 
@@ -167,9 +174,5 @@ void initPrevDay(alldata* s);
 int processLastSix(alldata* s);
 
 int compareMatrix(const char *result, int ncolumns, char* transition);
-
-
-template<typename T> void elemOrdering(T* resPerm, size_t numElem, size_t groupSize = GroupSize);
-template<typename T> void groupOrdering(T *resPerm, size_t numElem, T* buffer, size_t groupSize=GroupSize, T* pDayIdx = NULL);
 
 

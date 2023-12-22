@@ -79,6 +79,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -104,7 +105,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>X64;WIN;WIN32;CD_TOOLS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;"c:\NVIDIA GPU Computing Toolkit\v9.1\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source\TripleSys;"c:\NVIDIA GPU Computing Toolkit\v9.1\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -146,7 +147,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>X64;WIN;WIN32;CD_TOOLS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source\TripleSys;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalHeaderUnitDependencies>
       </AdditionalHeaderUnitDependencies>
@@ -189,6 +190,7 @@
     <ClInclude Include="..\Source\RowSolution.h" />
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
+    <ClInclude Include="..\Source\TripleSys\CheckCanon.h" />
     <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
@@ -216,6 +218,7 @@
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
+    <ClCompile Include="..\Source\TripleSys\CheckCanon.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinks.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp" />
@@ -223,6 +226,7 @@
     <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp" />
     <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp" />
     <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp" />
+    <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp" />
     <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />
     <ClCompile Include="..\Source\TripleSys\printTable.cpp" />
     <ClCompile Include="..\Source\TripleSys\processLastSix.cpp" />

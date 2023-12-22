@@ -45,7 +45,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 		{
 			// AI statement #4 (part 2)
 			ifixedPlayer = iPlayer / 3;
-			if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+			if (ifixedPlayer >= iPlayerNumber)
 				return ifixedPlayer;
 			return m_numPlayers;
 		}
@@ -74,11 +74,17 @@ int alldata::checkPlayer1(int iPlayerNumber)
 			}
 			else if (iDay == 1)
 			{
-#define FLAG    3
-#if FLAG == 1 || FLAG == 3
+#if 0
+				{
+					static char exp[] = { 0,   3,   6,    1,   4,   9,   2,   7,  12,    5,  10,  13,    8,  11,  14 };
+					if (memcmp(exp, tmpPlayers, 14) == 0)
+						iPlayer = iPlayer;
+				}
+#endif
+#if 1
 				//if player[1, 4] == 4 ==> player[1, 5] <= player[0, { 5 }]
 				if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
-					return m_numPlayers;
+					return 6;
 #endif
 				// AI statement #4 (part)
 				switch (iPlayer) 
@@ -88,8 +94,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 						ifixedPlayer = 6;
 						if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
 						{
-							if (links(0)[ifixedPlayer] == unset)
-								return ifixedPlayer;
+							return ifixedPlayer;
 						}
 						return m_numPlayers;
 					}
@@ -101,9 +106,9 @@ int alldata::checkPlayer1(int iPlayerNumber)
 							return m_numPlayers;
 						break;
 					}
-#if FLAG == 2 || FLAG == 3
 					case 5:
 					{
+#if 1
 						// AI statement #14
 						if (tmpPlayers[4] == 4)
 						{
@@ -114,9 +119,9 @@ int alldata::checkPlayer1(int iPlayerNumber)
 							else
 								return m_numPlayers;
 						}
+#endif
 						break;
 					}
-#endif
 					case 7:
 					{
 						// AI statement #7 

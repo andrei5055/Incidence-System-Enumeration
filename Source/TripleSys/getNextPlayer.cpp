@@ -11,11 +11,14 @@ int alldata::getNextPlayer()
 		if (selPlayers[iPlayerNumber] != unset)
 			continue;
 
-		if ((iPlayerNumber = checkPlayer1(iPlayerNumber)) >= m_numPlayers)
+		if ((iRet = checkPlayer1(iPlayerNumber)) >= m_numPlayers)
 			return m_numPlayers;
 
-		if (selPlayers[iPlayerNumber] != unset)
+		if (iPlayerNumber != iRet)
+		{
+			iPlayerNumber = iRet - 1;
 			continue;
+		}
 
 		if (m0 != 0)
 		{
@@ -23,8 +26,10 @@ int alldata::getNextPlayer()
 			{
 				if ((iRet = checkPlayer3(iPlayerNumber, m_numPlayers)) >= m_numPlayers)
 					return m_numPlayers;
-				if (iRet >= 0)
-					return iRet;
+				if (iPlayerNumber == iRet)
+					break;
+				iPlayerNumber = iRet - 1;
+				continue;
 			}
 			else
 			{
@@ -34,6 +39,7 @@ int alldata::getNextPlayer()
 					break;
 				}
 				tmpPlayers[iPlayer] = unset;
+				continue;
 			}
 		}
 		else

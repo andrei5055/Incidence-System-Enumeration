@@ -1,61 +1,100 @@
-#pragma once
+
 #include <assert.h>
+#include "CheckCanon.h"
 
-#define TFunc2(x, ...)          template<typename T, typename S> __VA_ARGS__ x
-#define Class2(x)               x<T,S>
-#define Class2Def(x)            TFunc2(x, class)
-#define FClass2(x, ...)			TFunc2(Class2(x), __VA_ARGS__)
-#define CanonicityChecker(...)	FClass2(CCanonicityChecker, __VA_ARGS__)
+template class CCheckerCanon<unsigned char, unsigned char>;
 
-#define countof(x)     sizeof(x)/sizeof(x[0])
-
-
-Class2Def(CCanonicityChecker) {
-public:
-	CCanonicityChecker(T nRow, T nCol, T groupSize = GroupSize)
-		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), m_groupSise(groupSize) {
-		m_players = new T[2 * m_numElem];
-		m_tmpBuffer = new T[m_numElem + nRow];
-		m_pResutMemory = new T[(m_numElem + 1) * nRow];
+template<typename T>
+void elemOrdering(T* pElems, size_t numElem, size_t groupSize)
+{
+	// Ordering elements in the groups od size groupSize
+	auto j = numElem + groupSize;
+	switch (groupSize) {
+	case 2:
+		// Ordering groups of pairs.
+		for (; j -= 2; pElems += 2) {
+			if (pElems[0] > pElems[1]) {
+				const auto tmp = pElems[0];
+				pElems[0] = pElems[1];
+				pElems[1] = tmp;
+			}
+		}
+		return;
+	case 3:
+		// Ordering groups of triples.
+		for (; j -= 3; pElems += 3) {
+			const auto tmp0 = pElems[0];
+			const auto tmp1 = pElems[1];
+			const auto tmp2 = pElems[2];
+			if (tmp2 > tmp1) {
+				if (tmp0 > tmp1) {
+					pElems[0] = tmp1;
+					if (tmp2 < tmp0) {
+						pElems[1] = tmp2;
+						pElems[2] = tmp0;
+					}
+					else
+						pElems[1] = tmp0;
+				}
+			}
+			else {
+				if (tmp2 > tmp0) {
+					pElems[1] = tmp2;
+					pElems[2] = tmp1;
+				}
+				else {
+					pElems[0] = tmp2;
+					if (tmp0 < tmp1) {
+						pElems[1] = tmp0;
+						pElems[2] = tmp1;
+					}
+					else
+						pElems[2] = tmp0;
+				}
+			}
+		}
+		return;
 	}
-	~CCanonicityChecker()					{ delete[] m_players;
-											  delete [] getTmpBuffer();
-											  delete[] resultMemory();
+
+	assert(false); // Not implemented for given groupSize
+}
+
+template<typename T>
+void groupOrdering(T* pElems, size_t numGroup, T* buffer, size_t groupSize = GroupSize, T* pDays = NULL) {
+	// adj - adjustment of pointers used when comparing values.
+	//    0 for comparing groups within a day 
+	//    1 for comparing days
+	T adj = pDays ? 1 : 0;
+	const auto len = groupSize * sizeof(*pElems);
+	const auto iMax = numGroup * groupSize;
+	for (size_t i = 0; i < iMax; i += groupSize) {
+		auto bestIdx = i;
+		auto bestVal = *(pElems + i + adj);
+		for (size_t j = i + groupSize; j < iMax; j += groupSize) {
+			const auto curVal = *(pElems + j + adj);
+			if (bestVal > curVal) {
+				bestVal = curVal;
+				bestIdx = j;
+			}
+		}
+
+		if (bestIdx != i) {
+			memcpy(buffer, pElems + i, len);
+			memcpy(pElems + i, pElems + bestIdx, len);
+			memcpy(pElems + bestIdx, buffer, len);
+			if (pDays) {
+				// Rearranging day indices
+				const auto i1 = i / groupSize;
+				const auto i2 = bestIdx / groupSize;
+				const auto tmp = pDays[i1];
+				pDays[i1] = pDays[i2];
+				pDays[i2] = tmp;
+			}
+		}
 	}
-	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
-private:
-	inline auto groupSize() const			{ return m_groupSise; }
-	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
-	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
-	bool copyTuple(const T* res, T inc = 0, bool doCheck = true) const;
-	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
-	inline void setNumDays(T nDays)			{ m_lenResult = (m_numDays = nDays) * m_numElem; }
-	inline auto numDays() const				{ return m_numDays; }
-	inline void setResultOut(T* pntr)		{ m_pResultOut = pntr; }
-	inline auto resultOut() const			{ return m_pResultOut; }
-	inline auto getTmpBuffer() const		{ return m_tmpBuffer; }
-	inline auto resultMemory() const		{ return m_pResutMemory;  }
-	inline auto lenResult()	const			{ return m_lenResult; }
-	int checkDay_1(const T* result, int iDay, T *pDest) const;
-	bool checkDay(const T* res, T iDay, T numGroup) const;
-	void orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const;
-	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
+}
 
-	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
-	T* m_players = NULL;
-	const T m_numElem;			// The number of elements that will be the same for all partially constructed objects
-								// (it is equal nCol for combinatorial designs or number of players for k-system)
-	const T m_numElem2;			// This is twice the number of elements. 
-	const T m_numDaysMax;
-	const T m_groupSise;
-	size_t m_lenResult;
-	T m_numDays;
-	T* m_pResultOut;
-	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
-	T* m_pResutMemory = NULL;	// Memory allocated to improve results
-};
-
-CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
+CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
@@ -271,7 +310,7 @@ Improved Result #1: i (0, j)
 	return true;
 }
 
-CanonicityChecker(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
+CheckerCanon(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
 	T prev;
 	m_players[prev = res[0]] = inc;
 	for (T j = 1; j < groupSize(); j++) {
@@ -285,7 +324,7 @@ CanonicityChecker(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
 	return true;
 }
 
-CanonicityChecker(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const
+CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const
 {
 	while (j > 1) { // Do we need to go to previous day?
 		p_dayIsUsed[p_dayRes[--j]] = 0;
@@ -300,7 +339,7 @@ CanonicityChecker(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays
 	return false;
 }
 
-CanonicityChecker(int)::checkDay_1(const T *result, int iDay, T* pDest) const {
+CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) const {
 	// iDay index if the day which replaced the day 0
 	const auto* resDay = result + m_numElem;
 	int diff = 0;
@@ -326,7 +365,7 @@ CanonicityChecker(int)::checkDay_1(const T *result, int iDay, T* pDest) const {
 	return diff;
 }
 
-CanonicityChecker(bool)::checkDay(const T* result, T iDay, T numGroup) const {
+CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup) const {
 	const auto* res = result + iDay * m_numElem;
 	const auto* resEnd = res;
 	T j = 0;
@@ -359,7 +398,7 @@ CanonicityChecker(bool)::checkDay(const T* result, T iDay, T numGroup) const {
 	return false;
 }
 
-CanonicityChecker(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const {
+CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const {
 	// Function will reorder all elements in the groups except 
 	//     - all groups of the first daysOK days
 	//     - first groupsOK of the (daysOK+1)-th day 
@@ -383,11 +422,11 @@ CanonicityChecker(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, 
 	const auto daysToOrder = numDays() - daysOK;
 	if (daysToOrder) {
 		// Ordering days by the first two elements of their first group
-		groupOrdering<T>(pDest + lenOK, daysToOrder, getTmpBuffer(), m_numElem, pDest + lenResult() + daysOK);
+		groupOrdering(pDest + lenOK, daysToOrder, getTmpBuffer(), m_numElem, pDest + lenResult() + daysOK);
 	}
 }
 
-CanonicityChecker(bool)::permutPlayers4Day(const T* p_players, const T* res, T numGroup, T* resDayOut) const {
+CheckerCanon(bool)::permutPlayers4Day(const T* p_players, const T* res, T numGroup, T* resDayOut) const {
 	// Function re-arranges players on a given day
 	const auto* resEnd = res;
 	for (T j = 0; j < numGroup; j++) {

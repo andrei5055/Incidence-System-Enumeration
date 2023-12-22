@@ -15,6 +15,8 @@
 #include "PermutStorage.h"
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
+#include "CheckCanon.h"
+
 
 #define CHECK_PERMUTS		0 // Check permutations used for combined BIBD enumeration
 
@@ -150,21 +152,8 @@ private:
 #else
 #define check_permut(permut, len_perm)
 #endif
-	inline bool copyTuple(const T *res, T *p_players, T inc = 0) {
-		p_players[res[0]] = inc;
-		for (T j = 1; j < rank(); j++) {
-			const auto diff = (int)res[j - 1] - res[j];
-			assert(diff);
-			if (diff > 0)
-				return false;
-
-			p_players[res[j]] = j + inc;
-		}
-		return true;
-	}
-	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
 	bool CheckPlayerPermutation();
-	bool PermutResults(const T* res, const T* permPlayers, T nDays);
+//	bool PermutResults(const T* res, const T* permPlayers, T nDays);
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }
@@ -193,8 +182,7 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
 	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
-	T *m_pDayRes = NULL;
-	T *m_kSystem = NULL;
+	CCheckerCanon<TDATA_TYPES> *m_pCheckerKSystemCanon = NULL;
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 
@@ -245,9 +233,10 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, 
 	for (auto i = nCol; i--;)
 		m_pTrivialPermutCol[i] = i;
 
-	if (enumFlags & t_EnumeratorFlags::t_kSystems) {
-		m_pDayRes = new T[2 * (m_numElem + nRow)];
-		m_kSystem = new T[m_numElem * nRow];
+	if (enumFlags & t_EnumeratorFlags::t_kSystems &&
+		(!m_pCheckerKSystemCanon || m_pCheckerKSystemCanon->numDays() != nRow)) {
+		delete m_pCheckerKSystemCanon;
+		m_pCheckerKSystemCanon = new CCheckerCanon<unsigned char, unsigned char>(nRow, m_numElem, 3);
 	}
 }
 
@@ -267,10 +256,10 @@ CanonicityChecker()::~CCanonicityChecker()
 	delete[] improvedSolution();
 	delete[] m_pObits[0][0];
 	delete[] m_pTrivialPermutCol;
-	delete[] m_pDayRes;
-	delete[] m_kSystem;
 	if (getGroupOnParts() && getGroupOnParts()->owner() == this)
 		delete getGroupOnParts();
+
+	delete m_pCheckerKSystemCanon;
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif
