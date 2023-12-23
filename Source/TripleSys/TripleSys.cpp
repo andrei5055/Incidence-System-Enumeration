@@ -84,7 +84,14 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 	}
 
 	_printf(f, toScreen, buffer);
-	outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
+	if (cntr && m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainTxt)) {
+		sprintf_s(buffer, m_pCheckCanon->comment());
+		_printf(f, toScreen, buffer);
+	} 
+	
+	if (!cntr || m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr))
+		outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
+
 	FCLOSE(f);
 }
 

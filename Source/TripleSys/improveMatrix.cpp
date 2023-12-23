@@ -15,11 +15,18 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 	if (m_pCheckCanon->CheckCanonicity((unsigned char*)result(), iDay + 1, bResults))
 		return false;
 	
+	if (!m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr)) {
+		if (pbRes1)
+			*pbRes1 = NULL;
+
+		return true;  // The matrix is NOT canonical, but further improvement is impossible.
+	}
+
 	if (improveResult > 1 || improveResult && PrintImprovedResults) {
 		int cntr = 0;
 		auto* bRes1 = bResults;
 		auto* bRes2 = bResults + lenResult;
-		do {
+		while (true) {
 			if (PrintImprovedResults) {
 				if (!cntr) {
 					// Output of initial results
@@ -31,18 +38,24 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 			}
 
 			if (improveResult == 1)
-				break;
+				break;   // No need OR impossible to go deeper.
 
 			// Swap the the best results buffers
 			auto* bRes = bRes1;
 			bRes1 = bRes2;
 			bRes2 = bRes;
 			addCanonCall(0);
-		} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay + 1, bRes1));
+			if (m_pCheckCanon->CheckCanonicity(bRes2, iDay + 1, bRes1))
+				break; // Current bRes2 result is canonical
+
+			if (!m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr))
+				break;  // Further improvement is impossible
+		}
 
 		if (pbRes1)
-		    *pbRes1 = improveResult == 1? bRes1 : bRes2;
+		    *pbRes1 = improveResult == 1? bRes1 : bRes2; // Best improved result
 	}
+
 	return true;
 }
 

@@ -2,6 +2,12 @@
 #include <assert.h>
 #include "CheckCanon.h"
 
+static const char* reason[] = {
+		"Reason unknown",
+		"ordering problem",
+		"only players 4 or 9 can be in position [1,4]"
+};
+
 template class CCheckerCanon<unsigned char, unsigned char>;
 
 template<typename T>
@@ -107,7 +113,10 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	//             (b) days (starting with (bResult+m_numElem)'s element)
 	//    
 
+	static char specialReason[256];
+
 	T* pOrbits = m_players + m_numElem;
+	T numReason;
 
 	setResultOut(bResult);
 	setNumDays(nDays);
@@ -191,8 +200,9 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		else {
 			// Check all remaining days for canonicity.
 			for (int j = 1; j < nDays; j++) {
-				if (!checkDay(result, j, numGroup))
-					return false;
+				if (!checkDay(result, j, numGroup, &numReason)) {
+					return reportTxtError(bResult, reason[numReason], NULL, j);
+				}
 			}
 		}
 	}
@@ -339,8 +349,17 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 	return false;
 }
 
-CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) const {
+CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 	// iDay index if the day which replaced the day 0
+#if	(UsePos_1_4_condition & 2)
+	if (m_players[4] != 4 && m_players[4] != 9) {
+		// Adding 2 day indices
+		auto pDays = pDest + lenResult();
+		*pDays = iDay;
+		*(pDays + 1) = 0;
+		return reportTxtError(pDest, reason[1], pDays, 2);
+	}
+#endif
 	const auto* resDay = result + m_numElem;
 	int diff = 0;
 	T t = -1;
@@ -365,7 +384,7 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) const {
 	return diff;
 }
 
-CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup) const {
+CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason) const {
 	const auto* res = result + iDay * m_numElem;
 	const auto* resEnd = res;
 	T j = 0;
@@ -381,6 +400,16 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup) const {
 			break;
 	}
 
+#if	(UsePos_1_4_condition & 1)
+	if (iDay == 1) {
+		res = result + m_numElem;
+		if (res[4] != 4 && res[4] != 9) {
+			*pNumReason = 2;
+			return false;
+		}
+	}
+#endif
+
 	if (j == numGroup)
 		return true;
 
@@ -395,6 +424,7 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup) const {
 		orderigRemainingDays(iDay, j, numGroup, pDest);
 	}
 
+	*pNumReason = 1;
 	return false;
 }
 
@@ -455,5 +485,35 @@ CheckerCanon(bool)::permutPlayers4Day(const T* p_players, const T* res, T numGro
 		*/
 	}
 	return true;
+}
+
+CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T nDay) {
+	// For pDays 1= NULL, nDay is the number of days defined in pDays
+	// Otherwise nDay is a day numbed OR indefined (-1)
+	if (!bBuffer)
+		return false;
+
+	// Caller expects to get explanations or better result
+	addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
+	const auto len = commentBufferLength();
+	const auto copyLen = strlen(pReason) + 1;
+	memcpy_s(comment(), len - 1, pReason, copyLen);
+	if (!pDays && nDay == -1) // Do we need to add some day related information to the comment? 
+		return false;         // No, we don't   
+
+	// Adding day related information 
+	auto pBuffer = comment() + copyLen;
+	auto* pBuff = pBuffer;
+	pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ". The problem was detected for day");
+	if (pDays) {
+		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "s: (");
+		for (int i = 0; i < nDay; i++)
+			pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "%d", pDays[i]);
+			
+		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ").");
+	} else
+		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), " %d", nDay);
+
+	return false;
 }
 
