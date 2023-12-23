@@ -58,7 +58,7 @@ private:
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
 	int checkDay_1(const T* result, int iDay, T *pDest);
-	bool checkDay(const T* res, T iDay, T numGroup, T* pNumReason) const;
+	bool checkDay(const T* res, T iDay, T numGroup, T* pNumReason);
 	void orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);

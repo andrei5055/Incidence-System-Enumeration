@@ -4,11 +4,11 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 0	// Use 0 or 1 option 2" 
+#define ImproveResults 1	// Use 0 or 1 option 2" 
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
-#define UsePos_1_4_condition 2
+#define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
 #define ReportInterval   120000
@@ -26,10 +26,14 @@ using namespace std;
 #define printfGreen(fmt, v) printf("\x1b[1;32m" fmt "\x1b[0m", v)
 #define printfYellow(fmt, v) printf("\x1b[1;33m" fmt "\x1b[0m", v)
 
-#define FOPEN(x, y, z)	  	 FILE *x = NULL; \
-                             if (y && strlen(y)) fopen_s(&x, y, z)
+
+#define FOPEN_W(x, y, z, w)	 FILE *x = w; \
+                             if (!x && y && strlen(y)) fopen_s(&x, y, z)
+#define FOPEN(x, y, z)	  	  FOPEN_W(x, y, z, NULL)
 #define SPRINTFD(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
-#define FCLOSE(f)			 if (f) fclose(f)
+#define FCLOSE_W(f, w)		 if (f != w) fclose(f)
+#define FCLOSE(f)			 FCLOSE_W(f, NULL)
+
 
 template<typename T>void initArray(T** pPntr, int len, T val = 0) {
 	auto *ptr = *pPntr = new T[len];
@@ -162,6 +166,7 @@ private:
 	const bool m_bCheckLinkH;
 	CChecklLink *m_pCheckLink = NULL;
 	CheckCanon<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
+	FILE* m_file = NULL;    // File for output of improved matrices.
 };
 
 

@@ -33,6 +33,8 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 #endif
 
 	Init();
+	FOPEN(f, ImprovedResultFile, "w");
+	m_file = f;
 }
 
 alldata::~alldata() {
@@ -47,6 +49,7 @@ alldata::~alldata() {
 	delete[] m_ho;
 	delete m_pCheckLink;
 	delete m_pCheckCanon;
+	FCLOSE(m_file);
 }
 
 void alldata::Init() {
@@ -71,7 +74,7 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 {
 	char buffer[256];
 	const bool toScreen = PrintImprovedResults > 1;
-	FOPEN(f, ImprovedResultFile, canonCalls(1) || cntr? "a" : "w");
+	FOPEN_W(f, ImprovedResultFile, canonCalls(1) || cntr? "a" : "w", m_file);
 
 	iDay++;
 	const unsigned char* pDayPerm = NULL;
@@ -95,7 +98,7 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 	if (flag)
 		outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
 
-	FCLOSE(f);
+	FCLOSE_W(f, m_file);
 }
 
 bool alldata::Run(int improveResult) {

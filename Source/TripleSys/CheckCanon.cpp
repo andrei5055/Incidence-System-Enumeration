@@ -4,16 +4,24 @@
 typedef enum {
 	t_reasonUnknown,
 	t_ordering,
-	t_playrPosition_1_4
+	t_playrPosition_1_4,
+	t_NotThatPlayerInPosition_1_4,
 } t_RejectionRreason;
 
 static const char* reason[] = {
 		"Reason unknown",
 		"Ordering problem",
-		"Only players 4 or 9 can be in position [1,4]"
+		"Only players 4 or 9 can be in position [1,4]",
+		"Current player cannot be at position [1, 4]",
 };
 
 template class CCheckerCanon<unsigned char, unsigned char>;
+
+template<typename T>
+void renumberPlayers(T* pntr, size_t i, size_t iLast) {
+	for (; i < iLast; i++)
+		pntr[i] = pntr[pntr[i]];
+}
 
 template<typename T>
 void elemOrdering(T* pElems, size_t numElem, size_t groupSize)
@@ -364,10 +372,6 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 #if	(UsePos_1_4_condition & 2)
 	if (m_players[4] != 4 && m_players[4] != 9) {
 		diff = -9999;
-		// Adding 2 day indices
-		auto pDays = pDest + lenResult();
-		*pDays = iDay;
-		*(pDays + 1) = 0;
 	}
 #endif
 
@@ -384,9 +388,13 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 
 		// Adding 2 day indices
 		*(pDest += lenResult()) = iDay;
-		*++pDest;
-		if (diff == -9999)
-			reportTxtError(pDest, reason[t_RejectionRreason::t_playrPosition_1_4], pDest-1, 2);
+		*++pDest = 0;
+		if (diff < 0) {
+			if (diff == -9999)
+				reportTxtError(pDest - 1, reason[t_RejectionRreason::t_playrPosition_1_4], pDest - 1, 2);
+			else
+				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+		}
 
 		// Adding all unused days to the array.
 		int j = 0;
@@ -399,7 +407,8 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 	return diff;
 }
 
-CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason) const {
+
+CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason) {
 	const auto* res = result + iDay * m_numElem;
 	const auto* resEnd = res;
 	T j = 0;
@@ -418,10 +427,38 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 #if	(UsePos_1_4_condition & 1)
 	if (iDay == 1) {
 		res = result + m_numElem;
+		if (res[4] == 8) {
+			T* pDest = resultOut();
+			if (pDest) {
+				memcpy(pDest, result, lenResult() * sizeof(*pDest));
+				pDest[7] = 8;
+				pDest[8] = 7;
+				const auto numElem_2 = 2 * m_numElem;
+				renumberPlayers(pDest, m_numElem, numElem_2);
+				groupOrdering(pDest + m_numElem, numGroup, getTmpBuffer(), groupSize());
+
+				const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
+				if (diff < 0) {
+					addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+					*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+					*(pDest + lenResult()) = 0;
+					*(pDest + lenResult() + 1) = 1;
+					orderigRemainingDays(2, 0, numGroup, pDest);
+					memcpy(pDest, result, m_numElem * sizeof(*pDest));
+			
+					return false;
+				}
+
+				assert(false);
+			}
+		}
+
+			/*
 		if (res[4] != 4 && res[4] != 9) {
 			*pNumReason = t_RejectionRreason::t_playrPosition_1_4;
 			return false;
-		}
+		} */
 	}
 #endif
 
@@ -435,7 +472,7 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 		pDest += lenResult();
 		for (auto i = m_numElem; i--;)
 			*(pDest + i) = i;
-
+		// Unfinished code....
 		orderigRemainingDays(iDay, j, numGroup, pDest);
 	}
 
