@@ -75,21 +75,24 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 
 	iDay++;
 	const unsigned char* pDayPerm = NULL;
-	if (cntr) {
-		pDayPerm = pResult + iDay * numPlayers();
-		sprintf_s(buffer, "Improved Result #%d for %d day:\n", cntr, iDay);
+	auto flag = true;
+	if (cntr) {	
+		flag = m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr);
+		if (flag) {
+			pDayPerm = pResult + iDay * numPlayers();
+			sprintf_s(buffer, "Improved Result #%d for %d days:\n", cntr, iDay);
+			_printf(f, toScreen, buffer);
+		}
+
+		if (m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainTxt))
+			_printf(f, toScreen, "%s\n", m_pCheckCanon->comment());
 	}
 	else {
 		sprintf_s(buffer, "Initial Result #%zd:\n", canonCalls(0));
+		_printf(f, toScreen, buffer);
 	}
 
-	_printf(f, toScreen, buffer);
-	if (cntr && m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainTxt)) {
-		sprintf_s(buffer, m_pCheckCanon->comment());
-		_printf(f, toScreen, buffer);
-	} 
-	
-	if (!cntr || m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr))
+	if (flag)
 		outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
 
 	FCLOSE(f);

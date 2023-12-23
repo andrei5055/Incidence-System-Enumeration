@@ -31,7 +31,6 @@ public:
 		m_players = new T[2 * m_numElem];
 		m_tmpBuffer = new T[m_numElem + nRow];
 		m_pResutMemory = new T[(m_numElem + 1) * nRow];
-		resetImprovedResultFlag();
 		initCommentBuffer(256);
 	}
 	~CCheckerCanon()						{ delete[] m_players;

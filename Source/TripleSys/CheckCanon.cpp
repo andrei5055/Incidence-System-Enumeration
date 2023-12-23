@@ -1,11 +1,16 @@
 
 #include <assert.h>
 #include "CheckCanon.h"
+typedef enum {
+	t_reasonUnknown,
+	t_ordering,
+	t_playrPosition_1_4
+} t_RejectionRreason;
 
 static const char* reason[] = {
 		"Reason unknown",
-		"ordering problem",
-		"only players 4 or 9 can be in position [1,4]"
+		"Ordering problem",
+		"Only players 4 or 9 can be in position [1,4]"
 };
 
 template class CCheckerCanon<unsigned char, unsigned char>;
@@ -120,6 +125,8 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 
 	setResultOut(bResult);
 	setNumDays(nDays);
+	resetImprovedResultFlag();
+
 	auto result2 = result + m_numElem2; 
 	const auto lenCmp = (lenResult() - m_numElem2) * sizeof(*result);
 
@@ -194,8 +201,10 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			orderigRemainingDays(2, 0, numGroup, pDest);
 
 			// Comparing all remaining days		
-			if (retVal < 0 || USE_2_ROW_CANON == 0 && memcmp(pDest + m_numElem2, result2, lenCmp) < 0)
+			if (retVal < 0 || USE_2_ROW_CANON == 0 && memcmp(pDest + m_numElem2, result2, lenCmp) < 0) {
+				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 				return false;
+			}
 		}
 		else {
 			// Check all remaining days for canonicity.
@@ -351,27 +360,33 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 
 CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 	// iDay index if the day which replaced the day 0
+	int diff = 0;
 #if	(UsePos_1_4_condition & 2)
 	if (m_players[4] != 4 && m_players[4] != 9) {
+		diff = -9999;
 		// Adding 2 day indices
 		auto pDays = pDest + lenResult();
 		*pDays = iDay;
 		*(pDays + 1) = 0;
-		return reportTxtError(pDest, reason[1], pDays, 2);
 	}
 #endif
-	const auto* resDay = result + m_numElem;
-	int diff = 0;
-	T t = -1;
-	while (++t < m_numElem && !(diff = (int)m_players[t] - resDay[t]));
+
+	if (!diff) {
+		T t = -1;
+		const auto* resDay = result + m_numElem;
+		while (++t < m_numElem && !(diff = (int)m_players[t] - resDay[t]));
+	}
 
 	if (!diff && numDays() > 2 || diff < 0 && resultOut()) {
 		// Saving two first days:
 		memcpy(pDest, result, m_numElem * sizeof(*pDest));
 		memcpy(pDest + m_numElem, m_players, m_numElem * sizeof(*pDest));
 
+		// Adding 2 day indices
 		*(pDest += lenResult()) = iDay;
-		*++pDest = 0;
+		*++pDest;
+		if (diff == -9999)
+			reportTxtError(pDest, reason[t_RejectionRreason::t_playrPosition_1_4], pDest-1, 2);
 
 		// Adding all unused days to the array.
 		int j = 0;
@@ -404,7 +419,7 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 	if (iDay == 1) {
 		res = result + m_numElem;
 		if (res[4] != 4 && res[4] != 9) {
-			*pNumReason = 2;
+			*pNumReason = t_RejectionRreason::t_playrPosition_1_4;
 			return false;
 		}
 	}
@@ -424,7 +439,7 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 		orderigRemainingDays(iDay, j, numGroup, pDest);
 	}
 
-	*pNumReason = 1;
+	*pNumReason = t_RejectionRreason::t_ordering;
 	return false;
 }
 
@@ -496,7 +511,7 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T 
 	// Caller expects to get explanations or better result
 	addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
 	const auto len = commentBufferLength();
-	const auto copyLen = strlen(pReason) + 1;
+	const auto copyLen = strlen(pReason);
 	memcpy_s(comment(), len - 1, pReason, copyLen);
 	if (!pDays && nDay == -1) // Do we need to add some day related information to the comment? 
 		return false;         // No, we don't   
@@ -505,10 +520,10 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T 
 	auto pBuffer = comment() + copyLen;
 	auto* pBuff = pBuffer;
 	pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ". The problem was detected for day");
-	if (pDays) {
-		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "s: (");
-		for (int i = 0; i < nDay; i++)
-			pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "%d", pDays[i]);
+	if (pDays && nDay > 1) {
+		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "s: (%d", pDays[0]);
+		for (int i = 1; i < nDay; i++)
+			pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ", %d", pDays[i]);
 			
 		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ").");
 	} else
