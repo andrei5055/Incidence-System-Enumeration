@@ -27,7 +27,8 @@ typedef enum {
 Class2Def(CCheckerCanon) {
 public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
-		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), m_groupSise(groupSize) {
+		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
+		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize) {
 		m_players = new T[2 * m_numElem];
 		m_tmpBuffer = new T[m_numElem + nRow];
 		m_pResutMemory = new T[(m_numElem + 1) * nRow];
@@ -57,14 +58,16 @@ private:
 	inline auto lenResult()	const			{ return m_lenResult; }
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
+	inline auto numGroups() const			{ return m_numGroups;}
 	int checkDay_1(const T* result, int iDay, T *pDest);
-	bool checkDay(const T* res, T iDay, T numGroup, T* pNumReason);
-	void orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const;
+	bool checkDay(const T* res, T iDay, T* pNumReason);
+	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
+	bool checkPosition1_4(const T* result, const T* players, T playerID, T *pNumReason = NULL);
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
@@ -73,6 +76,7 @@ private:
 	const T m_numElem2;			// This is twice the number of elements. 
 	const T m_numDaysMax;
 	const T m_groupSise;
+	const T m_numGroups;
 	size_t m_lenResult;
 	T m_numDays;
 	T* m_pResultOut;

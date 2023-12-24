@@ -206,7 +206,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 				pOut += m_numElem;
 			}
 
-			orderigRemainingDays(2, 0, numGroup, pDest);
+			orderigRemainingDays(2, 0, pDest);
 
 			// Comparing all remaining days		
 			if (retVal < 0 || USE_2_ROW_CANON == 0 && memcmp(pDest + m_numElem2, result2, lenCmp) < 0) {
@@ -217,7 +217,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		else {
 			// Check all remaining days for canonicity.
 			for (int j = 1; j < nDays; j++) {
-				if (!checkDay(result, j, numGroup, &numReason)) {
+				if (!checkDay(result, j, &numReason)) {
 					return reportTxtError(bResult, reason[numReason], NULL, j);
 				}
 			}
@@ -366,18 +366,56 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 	return false;
 }
 
+CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T playerID, T *pNumReason) {
+	if (players[4] == playerID) {
+		T* pDest = resultOut();
+		if (pDest) {
+			const auto numElem_2 = 2 * m_numElem;
+			memcpy(pDest, result, lenResult() * sizeof(*pDest));
+			pDest[7] = playerID;
+			pDest[playerID] = 7;
+			renumberPlayers(pDest, m_numElem, numElem_2);
+			groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
+
+			const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
+			if (diff < 0) {
+				if (pNumReason) {
+					addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+					*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+					*(pDest + lenResult()) = 0;
+					*(pDest + lenResult() + 1) = 1;
+					orderigRemainingDays(2, 0, pDest);
+					memcpy(pDest, result, m_numElem * sizeof(*pDest));
+				}
+			}
+			else {
+				assert(false);  // We should not be here
+			}
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
 CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
+	const auto* resDay = result + m_numElem;
 #if	(UsePos_1_4_condition & 2)
+	//if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
+	if (!checkPosition1_4(result, m_players, 8)
+	/*
 	if (m_players[4] != 4 && m_players[4] != 9) {
 		diff = -9999;
 	}
+	*/
 #endif
 
 	if (!diff) {
 		T t = -1;
-		const auto* resDay = result + m_numElem;
 		while (++t < m_numElem && !(diff = (int)m_players[t] - resDay[t]));
 	}
 
@@ -408,11 +446,11 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 }
 
 
-CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason) {
+CheckerCanon(bool)::checkDay(const T* result, T iDay, T *pNumReason) {
 	const auto* res = result + iDay * m_numElem;
 	const auto* resEnd = res;
 	T j = 0;
-	for (; j < numGroup; j++) {
+	for (; j < numGroups(); j++) {
 		resEnd += groupSize();
 		while (++res < resEnd && *(res - 1) < *res);
 
@@ -427,33 +465,8 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 #if	(UsePos_1_4_condition & 1)
 	if (iDay == 1) {
 		res = result + m_numElem;
-		if (res[4] == 8) {
-			T* pDest = resultOut();
-			if (pDest) {
-				memcpy(pDest, result, lenResult() * sizeof(*pDest));
-				pDest[7] = 8;
-				pDest[8] = 7;
-				const auto numElem_2 = 2 * m_numElem;
-				renumberPlayers(pDest, m_numElem, numElem_2);
-				groupOrdering(pDest + m_numElem, numGroup, getTmpBuffer(), groupSize());
-
-				const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
-				if (diff < 0) {
-					addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
-					*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
-					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
-					*(pDest + lenResult()) = 0;
-					*(pDest + lenResult() + 1) = 1;
-					orderigRemainingDays(2, 0, numGroup, pDest);
-					memcpy(pDest, result, m_numElem * sizeof(*pDest));
-			
-					return false;
-				}
-
-				assert(false);
-			}
-		}
-
+		if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
+			return false;
 			/*
 		if (res[4] != 4 && res[4] != 9) {
 			*pNumReason = t_RejectionRreason::t_playrPosition_1_4;
@@ -462,7 +475,7 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 	}
 #endif
 
-	if (j == numGroup)
+	if (j == numGroups())
 		return true;
 
 	T* pDest = resultOut();
@@ -473,14 +486,14 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T numGroup, T *pNumReason)
 		for (auto i = m_numElem; i--;)
 			*(pDest + i) = i;
 		// Unfinished code....
-		orderigRemainingDays(iDay, j, numGroup, pDest);
+		orderigRemainingDays(iDay, j, pDest);
 	}
 
 	*pNumReason = t_RejectionRreason::t_ordering;
 	return false;
 }
 
-CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pDest) const {
+CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const {
 	// Function will reorder all elements in the groups except 
 	//     - all groups of the first daysOK days
 	//     - first groupsOK of the (daysOK+1)-th day 
@@ -497,7 +510,7 @@ CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T numGroup, T *pD
 	T i = daysOK;
 	auto pntr = pDest + lenOK;
 	while (i++ < numDays()) {
-		groupOrdering(pntr, numGroup, getTmpBuffer(), groupSize());
+		groupOrdering(pntr, numGroups(), getTmpBuffer(), groupSize());
 		pntr += m_numElem;
 	}
 
