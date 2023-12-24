@@ -562,13 +562,13 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T 
 	addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
 	const auto len = commentBufferLength();
 	const auto copyLen = strlen(pReason);
-	memcpy_s(comment(), len - 1, pReason, copyLen);
+	auto pBuffer = comment();
+	memcpy_s(pBuffer, len, pReason, copyLen);
 	if (!pDays && nDay == -1) // Do we need to add some day related information to the comment? 
 		return false;         // No, we don't   
 
 	// Adding day related information 
-	auto pBuffer = comment() + copyLen;
-	auto* pBuff = pBuffer;
+	auto* pBuff = pBuffer + copyLen;
 	pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ". The problem was detected for day");
 	if (pDays && nDay > 1) {
 		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "s: (%d", pDays[0]);

@@ -33,7 +33,7 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 #endif
 
 	Init();
-	FOPEN(f, ImprovedResultFile, "w");
+	FOPEN_F(f, ImprovedResultFile, "w");
 	m_file = f;
 }
 
@@ -49,7 +49,7 @@ alldata::~alldata() {
 	delete[] m_ho;
 	delete m_pCheckLink;
 	delete m_pCheckCanon;
-	FCLOSE(m_file);
+	FCLOSE_F(m_file);
 }
 
 void alldata::Init() {

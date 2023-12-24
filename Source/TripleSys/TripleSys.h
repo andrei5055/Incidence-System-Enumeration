@@ -29,10 +29,10 @@ using namespace std;
 
 #define FOPEN_W(x, y, z, w)	 FILE *x = w; \
                              if (!x && y && strlen(y)) fopen_s(&x, y, z)
-#define FOPEN(x, y, z)	  	  FOPEN_W(x, y, z, NULL)
+#define FOPEN_F(x, y, z)	 FOPEN_W(x, y, z, NULL)
 #define SPRINTFD(x, y, ...)	 x += sprintf_s(x, sizeof(y) - (x - y), __VA_ARGS__)
 #define FCLOSE_W(f, w)		 if (f != w) fclose(f)
-#define FCLOSE(f)			 FCLOSE_W(f, NULL)
+#define FCLOSE_F(f)			 FCLOSE_W(f, NULL)
 
 
 template<typename T>void initArray(T** pPntr, int len, T val = 0) {

@@ -57,7 +57,7 @@ template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 {
 	char buffer[512], *pBuf = buffer;
-	FOPEN(f, fileName, m_cntr ? "a" : "w");
+	FOPEN_F(f, fileName, m_cntr ? "a" : "w");
 	const auto* endLine = m_makeString ? " \"\n" : "\n";
 	if (outCntr)
 		m_cntr++;
@@ -71,6 +71,6 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	_printf(f, true, buffer);
 	outMatrix(c, m_nl, m_nc, m_np, m_ns, f, m_makeString, true);
-	FCLOSE(f);
+	FCLOSE_F(f);
 }
 
