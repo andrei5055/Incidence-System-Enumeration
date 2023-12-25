@@ -633,6 +633,7 @@ CanonicityChecker(bool)::PermutResults(const T *result, const T* permPlayers, T 
 }
 #endif
 
+#if 0
 CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult) {
 	// return true  - continue, 
 	//        false - stop (calculate new matrix)
@@ -754,6 +755,7 @@ CanonicityChecker(bool)::CheckCanonicity(const T *result, int nDays, T* bResult)
 	//  (0 3, 6) (1, 2, 4)
 	return true;
 }
+#endif
 
 CanonicityChecker(bool)::CheckPlayerPermutation()
 {
