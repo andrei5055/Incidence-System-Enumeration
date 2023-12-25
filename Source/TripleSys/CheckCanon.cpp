@@ -4,7 +4,7 @@
 typedef enum {
 	t_reasonUnknown,
 	t_ordering,
-	t_playrPosition_1_4,
+	t_playerPosition_1_4,
 	t_NotThatPlayerInPosition_1_4,
 } t_RejectionRreason;
 
@@ -372,38 +372,53 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 	return false;
 }
 
+CheckerCanon(bool)::explainRejection(const T *result, const T* players, T playerPrevID, T playerNewID)
+{
+	auto* pDest = resultOut();
+	if (!pDest)
+		return false;              // we don't need explanation for rejection
+
+	memcpy(pDest, result, m_numElem * sizeof(*pDest));
+	memcpy(pDest + m_numElem, players, m_numElem * sizeof(*pDest));
+	pDest[pDest[playerPrevID] = playerNewID] = playerPrevID;
+
+	const auto numElem_2 = 2 * m_numElem;
+	renumberPlayers(pDest, m_numElem, numElem_2);
+	groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
+	const auto diff = memcmp(pDest + m_numElem, players, m_numElem);
+	assert(diff < 0);
+
+	if (result + m_numElem == players || numDays() == 2) {
+		addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+		memcpy(pDest + numElem_2, result + numElem_2, (lenResult() - numElem_2) * sizeof(*pDest));
+		renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+
+		*(pDest + lenResult()) = 0;
+		*(pDest + lenResult() + 1) = 1;
+		orderigRemainingDays(2, 0, pDest);
+		memcpy(pDest, result, m_numElem * sizeof(*pDest));
+	}
+	return false;
+}
+
 CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T playerID, T *pNumReason) {
-	if (players[4] == playerID) {
-		auto* pDest = resultOut();
-		if (pDest) {
-			memcpy(pDest, result, m_numElem * sizeof(*pDest));
-			memcpy(pDest + m_numElem, players, m_numElem * sizeof(*pDest));
-			pDest[7] = playerID;
-			pDest[playerID] = 7;
+	// Statement 7: In canonical matrix z1 < z2
+	//    0  1  2    3  4  5    6  7  8 ....
+	//    0  3  6    1 z1 * 2   z2 *
+	//if (players[4] > player[7])
 
-			const auto numElem_2 = 2 * m_numElem;
-			renumberPlayers(pDest, m_numElem, numElem_2);
-			groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
-			const auto diff = memcmp(pDest + m_numElem, players, m_numElem);
-			if (diff < 0) {
-				*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
-				if (result + m_numElem == players || numDays() == 2) {
-					addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
-					memcpy(pDest + numElem_2, result + numElem_2, (lenResult() - numElem_2) * sizeof(*pDest));
-					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
+	// which will improve the matrix code, if player subst[i] is at position [1, 2]
+	static T subst[] = { 8, 7,10, 9,11, 9 };   
+	// aaa_3118.txt     subst = { 8, 7 }   file for UsePos_1_4_condition = 1
+	// aaa_3118++.txt	subst = { 8, 7,10, 9,11, 9 };
 
-					*(pDest + lenResult()) = 0;
-					*(pDest + lenResult() + 1) = 1;
-					orderigRemainingDays(2, 0, pDest);
-					memcpy(pDest, result, m_numElem * sizeof(*pDest));
-				}
-			}
-			else {
-				assert(false);  // We should not be here
-			}
+	for (int i = 0; i < countof(subst); i += 2) {
+		const auto playerID = subst[i];
+		if (players[4] == playerID) {  // player is on position #4 of day #1
+			*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+			return explainRejection(result, players, playerID, subst[i + 1]);
 		}
-
-		return false;
 	}
 
 	return true;
@@ -414,17 +429,20 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest, T* pNumReason
 	int diff = 0;
 	const auto* resDay = result + m_numElem;
 #if	(UsePos_1_4_condition & 2)
-	if (false && !checkPosition1_4(result, m_players, 8, pNumReason)){
+#if UsePos_1_4_condition && ImproveResults
+	if (!checkPosition1_4(result, m_players, 8, pNumReason)){
 		diff = -9999;
 		if (numDays() == 2)
 			return diff;
 	}
-	//if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
-	/*
+#else
 	if (m_players[4] != 4 && m_players[4] != 9) {
 		diff = -9999;
+		return diff;
 	}
-	*/
+	if (m_players[4] > m_players[7])
+		return -1;
+#endif
 #endif
 
 	if (!diff) {
@@ -482,13 +500,15 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T *pNumReason) {
 #if	(UsePos_1_4_condition & 1)
 	if (iDay == 1) {
 		res = result + m_numElem;
+#if UsePos_1_4_condition && ImproveResults
 		if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
 			return false;
-			/*
+#else
 		if (res[4] != 4 && res[4] != 9) {
-			*pNumReason = t_RejectionRreason::t_playrPosition_1_4;
+			*pNumReason = t_RejectionRreason::t_playerPosition_1_4;
 			return false;
-		} */
+		}
+#endif
 	}
 #endif
 

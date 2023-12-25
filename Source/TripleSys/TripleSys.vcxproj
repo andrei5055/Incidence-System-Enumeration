@@ -157,6 +157,9 @@
     <ClInclude Include="Table.h" />
     <ClInclude Include="TripleSys.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PlayerCond_Eng.html" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

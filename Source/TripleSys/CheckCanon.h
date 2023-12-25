@@ -68,6 +68,7 @@ private:
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
 	bool checkPosition1_4(const T* result, const T* players, T playerID, T *pNumReason = NULL);
+	bool explainRejection(const T* result, const T* players, T playerPrevID, T playerNewID);
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
