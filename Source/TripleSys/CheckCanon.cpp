@@ -177,7 +177,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			elemOrdering(m_players, m_numElem, lenGroup);
 			groupOrdering(m_players, numGroup, getTmpBuffer(), lenGroup);
 
-			const auto retVal = checkDay_1(result, iDay, pDest);
+			const auto retVal = checkDay_1(result, iDay, pDest, &numReason);
 			if (nDays == 2)
 				return retVal >= 0; // In this case there is nothing more to do than has already been done.
 
@@ -210,6 +210,12 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 
 			// Comparing all remaining days		
 			if (retVal < 0 || USE_2_ROW_CANON == 0 && memcmp(pDest + m_numElem2, result2, lenCmp) < 0) {
+				if (retVal == -9999) {
+					const auto numElem_2 = 2 * m_numElem;
+					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+					memcpy(pDest, result, m_numElem * sizeof(*pDest));
+				}
+
 				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 				return false;
 			}
@@ -368,21 +374,24 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 
 CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T playerID, T *pNumReason) {
 	if (players[4] == playerID) {
-		T* pDest = resultOut();
+		auto* pDest = resultOut();
 		if (pDest) {
-			const auto numElem_2 = 2 * m_numElem;
-			memcpy(pDest, result, lenResult() * sizeof(*pDest));
+			memcpy(pDest, result, m_numElem * sizeof(*pDest));
+			memcpy(pDest + m_numElem, players, m_numElem * sizeof(*pDest));
 			pDest[7] = playerID;
 			pDest[playerID] = 7;
+
+			const auto numElem_2 = 2 * m_numElem;
 			renumberPlayers(pDest, m_numElem, numElem_2);
 			groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
-
-			const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
+			const auto diff = memcmp(pDest + m_numElem, players, m_numElem);
 			if (diff < 0) {
-				if (pNumReason) {
+				*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+				if (result + m_numElem == players || numDays() == 2) {
 					addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
-					*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+					memcpy(pDest + numElem_2, result + numElem_2, (lenResult() - numElem_2) * sizeof(*pDest));
 					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+
 					*(pDest + lenResult()) = 0;
 					*(pDest + lenResult() + 1) = 1;
 					orderigRemainingDays(2, 0, pDest);
@@ -400,13 +409,17 @@ CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T player
 	return true;
 }
 
-CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
+CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest, T* pNumReason) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
 	const auto* resDay = result + m_numElem;
 #if	(UsePos_1_4_condition & 2)
+	if (false && !checkPosition1_4(result, m_players, 8, pNumReason)){
+		diff = -9999;
+		if (numDays() == 2)
+			return diff;
+	}
 	//if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
-	if (!checkPosition1_4(result, m_players, 8)
 	/*
 	if (m_players[4] != 4 && m_players[4] != 9) {
 		diff = -9999;
@@ -420,17 +433,21 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest) {
 	}
 
 	if (!diff && numDays() > 2 || diff < 0 && resultOut()) {
-		// Saving two first days:
-		memcpy(pDest, result, m_numElem * sizeof(*pDest));
-		memcpy(pDest + m_numElem, m_players, m_numElem * sizeof(*pDest));
+		if (diff != -9999) {
+			// Saving two first days:
+			memcpy(pDest, result, m_numElem * sizeof(*pDest));
+			memcpy(pDest + m_numElem, m_players, m_numElem * sizeof(*pDest));
+		}
 
 		// Adding 2 day indices
 		*(pDest += lenResult()) = iDay;
 		*++pDest = 0;
 		if (diff < 0) {
 			if (diff == -9999)
-				reportTxtError(pDest - 1, reason[t_RejectionRreason::t_playrPosition_1_4], pDest - 1, 2);
-			else
+				reportTxtError(pDest - 1, reason[*pNumReason], pDest - 1, 2);
+			// Andrei: When these 2 lines are commented out the AND numDays()==2
+			// improved matrix is not printed 
+			else  
 				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 		}
 

@@ -59,7 +59,7 @@ private:
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
 	inline auto numGroups() const			{ return m_numGroups;}
-	int checkDay_1(const T* result, int iDay, T *pDest);
+	int checkDay_1(const T* result, int iDay, T *pDest, T* pNumReason);
 	bool checkDay(const T* res, T iDay, T* pNumReason);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
