@@ -50,7 +50,12 @@ private:
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
 	bool copyTuple(const T* res, T inc = 0, bool doCheck = true) const;
 	bool rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) const;
-	inline void setNumDays(T nDays)			{ m_lenResult = (m_numDays = nDays) * m_numElem; }
+	inline auto setStudiedMatrix(const T* pntr, T nDays) {
+		m_pStudiedMatrix = pntr;
+		m_lenResult = (m_numDays = nDays) * m_numElem;
+	}
+	inline auto studiedMatrix() const		{ return m_pStudiedMatrix; }
+	inline auto getMatrixRow(T nRow) const  { return studiedMatrix() + nRow * m_numElem; }
 	inline void setResultOut(T* pntr)		{ m_pResultOut = pntr; }
 	inline auto resultOut() const			{ return m_pResultOut; }
 	inline auto getTmpBuffer() const		{ return m_tmpBuffer; }
@@ -59,16 +64,17 @@ private:
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
 	inline auto numGroups() const			{ return m_numGroups;}
-	int checkDay_1(const T* result, int iDay, T *pDest, T* pNumReason);
-	bool checkDay(const T* res, T iDay, T* pNumReason);
+	int checkDay_1(int iDay, T *pDest, T* pNumReason);
+	bool checkDay(T iDay, T* pNumReason);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
-	bool checkPosition1_4(const T* result, const T* players, T playerID, T *pNumReason = NULL);
-	bool explainRejection(const T* result, const T* players, T playerPrevID, T playerNewID);
+	bool checkOrderingForDay(T nDay) const;
+	bool checkPosition1_4(const T* players, T *pNumReason = NULL);
+	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0);
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
@@ -80,6 +86,7 @@ private:
 	const T m_numGroups;
 	size_t m_lenResult;
 	T m_numDays;
+	const T* m_pStudiedMatrix = NULL;
 	T* m_pResultOut;
 	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
 	T* m_pResutMemory = NULL;	// Memory allocated to improve results

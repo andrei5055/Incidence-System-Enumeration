@@ -6,6 +6,7 @@ typedef enum {
 	t_ordering,
 	t_playerPosition_1_4,
 	t_NotThatPlayerInPosition_1_4,
+	t_Statement_7,
 } t_RejectionRreason;
 
 static const char* reason[] = {
@@ -13,6 +14,7 @@ static const char* reason[] = {
 		"Ordering problem",
 		"Only players 4 or 9 can be in position [1,4]",
 		"Current player cannot be at position [1, 4]",
+		"Player# in [1, 4] should be less than [1, 7]"
 };
 
 template class CCheckerCanon<unsigned char, unsigned char>;
@@ -132,7 +134,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	T numReason;
 
 	setResultOut(bResult);
-	setNumDays(nDays);
+	setStudiedMatrix(result, nDays);
 	resetImprovedResultFlag();
 
 	auto result2 = result + m_numElem2; 
@@ -141,33 +143,11 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	const auto lenGroup = groupSize();
 	const auto numGroup = m_numElem / lenGroup;
 	auto* pDest = bResult ? bResult : resultMemory();
-	auto* res = result;
-	bool copyTuplesOK = true;
-	for (int iDay = 0; iDay < nDays; iDay++, res += lenGroup) {
-		if (res[0] || !copyTuple(res)) {
-			/*			T* pDest = resultOut();
-						if (pDest) { //???
-							memcpy(pDest, result, (iDay + 1) * m_numElem * sizeof(*pDest));
-							elemOrdering(pDest += iDay * m_numElem, m_numElem, groupSize());
-							memcpy(pDest += m_numElem, result + m_numElem * (iDay + 1), (numDays() - iDay) * m_numElem * sizeof(*pDest));
-						}
-						*/
-			copyTuplesOK = false;
-		}
-
-		if (copyTuplesOK) {
-			T inc = 0;
-			for (auto j = numGroup; --j;) {
-				if (!copyTuple(res += lenGroup, inc += lenGroup) ||
-					m_players[*res] < m_players[*(res - lenGroup)]) // Comparing first elements of the groups
-					copyTuplesOK = false;
-			}
-		}
-
-		if (!copyTuplesOK) {
+	for (int iDay = 0; iDay < nDays; iDay++) {
+		if (!checkOrderingForDay(iDay)) {
 			return false;
 			// Some problems found when we had tr
-			res = result + iDay * m_numElem;
+			//res = result + iDay * m_numElem;
 	//		for (auto )
 		}
 
@@ -177,7 +157,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			elemOrdering(m_players, m_numElem, lenGroup);
 			groupOrdering(m_players, numGroup, getTmpBuffer(), lenGroup);
 
-			const auto retVal = checkDay_1(result, iDay, pDest, &numReason);
+			const auto retVal = checkDay_1(iDay, pDest, &numReason);
 			if (nDays == 2)
 				return retVal >= 0; // In this case there is nothing more to do than has already been done.
 
@@ -223,7 +203,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		else {
 			// Check all remaining days for canonicity.
 			for (int j = 1; j < nDays; j++) {
-				if (!checkDay(result, j, &numReason)) {
+				if (!checkDay(j, &numReason)) {
 					return reportTxtError(bResult, reason[numReason], NULL, j);
 				}
 			}
@@ -247,7 +227,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 					break;
 
 				p_dayIsUsed[p_dayRes[j] = k] = 1;
-				if (!checkDay_1(result, p_players, k, j, p_dayRes, p_dayIsUsed)) {
+				if (!checkDay_1(p_players, k, j, p_dayRes, p_dayIsUsed)) {
 					return false;
 				} else {
 					break;
@@ -372,12 +352,43 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 	return false;
 }
 
-CheckerCanon(bool)::explainRejection(const T *result, const T* players, T playerPrevID, T playerNewID)
+
+CheckerCanon(bool)::checkOrderingForDay(T nDay) const
+{
+	auto res = studiedMatrix() + nDay * m_numElem;
+	bool copyTuplesOK = true;
+	if (res[0] || !copyTuple(res)) {
+		/*			T* pDest = resultOut();
+					if (pDest) { //???
+						memcpy(pDest, result, (iDay + 1) * m_numElem * sizeof(*pDest));
+						elemOrdering(pDest += iDay * m_numElem, m_numElem, groupSize());
+						memcpy(pDest += m_numElem, result + m_numElem * (iDay + 1), (numDays() - iDay) * m_numElem * sizeof(*pDest));
+					}
+					*/
+		copyTuplesOK = false;
+	}
+
+	if (copyTuplesOK) {
+		const auto lenGroup = groupSize();
+		const auto numGroup = m_numElem / lenGroup;
+		T inc = 0;
+		for (auto j = numGroup; --j;) {
+			if (!copyTuple(res += lenGroup, inc += lenGroup) ||
+				m_players[*res] < m_players[*(res - lenGroup)]) // Comparing first elements of the groups
+				copyTuplesOK = false;
+		}
+	}
+
+	return copyTuplesOK;
+}
+
+CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID)
 {
 	auto* pDest = resultOut();
 	if (!pDest)
 		return false;              // we don't need explanation for rejection
 
+	const T* result = studiedMatrix();
 	memcpy(pDest, result, m_numElem * sizeof(*pDest));
 	memcpy(pDest + m_numElem, players, m_numElem * sizeof(*pDest));
 	pDest[pDest[playerPrevID] = playerNewID] = playerPrevID;
@@ -393,19 +404,22 @@ CheckerCanon(bool)::explainRejection(const T *result, const T* players, T player
 		memcpy(pDest + numElem_2, result + numElem_2, (lenResult() - numElem_2) * sizeof(*pDest));
 		renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
 
-		*(pDest + lenResult()) = 0;
-		*(pDest + lenResult() + 1) = 1;
 		orderigRemainingDays(2, 0, pDest);
 		memcpy(pDest, result, m_numElem * sizeof(*pDest));
+		*(pDest + 1) = 1 - (*(pDest += lenResult()) = firstDayID);
 	}
+
 	return false;
 }
 
-CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T playerID, T *pNumReason) {
+CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 	// Statement 7: In canonical matrix z1 < z2
 	//    0  1  2    3  4  5    6  7  8 ....
-	//    0  3  6    1 z1 * 2   z2 *
-	//if (players[4] > player[7])
+	//    0  3  6    1 z1  *    2 z2 *
+	if (players[4] > players[7]) {
+		*pNumReason = t_RejectionRreason::t_Statement_7;
+		return explainRejection(players, 1, 2);
+	}
 
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
@@ -417,20 +431,36 @@ CheckerCanon(bool)::checkPosition1_4(const T* result, const T *players, T player
 		const auto playerID = subst[i];
 		if (players[4] == playerID) {  // player is on position #4 of day #1
 			*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
-			return explainRejection(result, players, playerID, subst[i + 1]);
+			return explainRejection(players, playerID, subst[i + 1]);
 		}
+	}
+
+	if (players[4] == 7) {
+		if (!resultOut())
+			return false;              // we don't need explanation for rejection
+
+		*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4;
+		if (players == studiedMatrix() + m_numElem) {
+			// Do this only when day 0 did not changed its place.
+			checkOrderingForDay(1);
+			elemOrdering(m_players, m_numElem, groupSize());
+			groupOrdering(m_players, m_numElem / groupSize(), getTmpBuffer(), groupSize());
+			return explainRejection(m_players, 1, 2, 1);
+		}
+		return false;
 	}
 
 	return true;
 }
 
-CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest, T* pNumReason) {
+CheckerCanon(int)::checkDay_1(int iDay, T* pDest, T* pNumReason) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
+	const auto result = studiedMatrix();
 	const auto* resDay = result + m_numElem;
 #if	(UsePos_1_4_condition & 2)
 #if UsePos_1_4_condition && ImproveResults
-	if (!checkPosition1_4(result, m_players, 8, pNumReason)){
+	if (!checkPosition1_4(m_players, pNumReason)){
 		diff = -9999;
 		if (numDays() == 2)
 			return diff;
@@ -481,8 +511,8 @@ CheckerCanon(int)::checkDay_1(const T *result, int iDay, T* pDest, T* pNumReason
 }
 
 
-CheckerCanon(bool)::checkDay(const T* result, T iDay, T *pNumReason) {
-	const auto* res = result + iDay * m_numElem;
+CheckerCanon(bool)::checkDay(T iDay, T *pNumReason) {
+	const auto* res = getMatrixRow(iDay);
 	const auto* resEnd = res;
 	T j = 0;
 	for (; j < numGroups(); j++) {
@@ -497,11 +527,12 @@ CheckerCanon(bool)::checkDay(const T* result, T iDay, T *pNumReason) {
 			break;
 	}
 
+	const T* result = studiedMatrix();
 #if	(UsePos_1_4_condition & 1)
 	if (iDay == 1) {
 		res = result + m_numElem;
 #if UsePos_1_4_condition && ImproveResults
-		if (!checkPosition1_4(result, result + m_numElem, 8, pNumReason))
+		if (!checkPosition1_4(result + m_numElem, pNumReason))
 			return false;
 #else
 		if (res[4] != 4 && res[4] != 9) {
