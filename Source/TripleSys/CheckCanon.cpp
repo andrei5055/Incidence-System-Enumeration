@@ -137,7 +137,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	setStudiedMatrix(result, nDays);
 	resetImprovedResultFlag();
 
-	auto result2 = result + m_numElem2; 
+	auto result2 = getMatrixRow(2);
 	const auto lenCmp = (lenResult() - m_numElem2) * sizeof(*result);
 
 	const auto lenGroup = groupSize();
@@ -168,13 +168,13 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 				return false;  // The result has improved, but we don't need to know how.
 
 			// Renumbering of players according to permutaion of days: (0, iDay).
-			auto* pPerm = result + iDay * m_numElem;
+			auto* pPerm = getMatrixRow(iDay);
 			for (auto j = m_numElem; j--;)
 				pOrbits[pPerm[j]] = j;
 
 			// Renumbering the set of players in the groups for all days except 0 and iDay.
 			auto* pOut = pDest + 2 * m_numElem;
-			auto* pIn = result;
+			auto* pIn = studiedMatrix();
 			for (int j = 1; j < nDays; j++) {
 				pIn += m_numElem;
 				if (j == iDay)
@@ -186,16 +186,16 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 				pOut += m_numElem;
 			}
 
+			if (retVal == -9999) {
+				const auto numElem_2 = 2 * m_numElem;
+				renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
+				memcpy(pDest, studiedMatrix(), m_numElem * sizeof(*pDest));
+			}
+
 			orderigRemainingDays(2, 0, pDest);
 
 			// Comparing all remaining days		
 			if (retVal < 0 || USE_2_ROW_CANON == 0 && memcmp(pDest + m_numElem2, result2, lenCmp) < 0) {
-				if (retVal == -9999) {
-					const auto numElem_2 = 2 * m_numElem;
-					renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
-					memcpy(pDest, result, m_numElem * sizeof(*pDest));
-				}
-
 				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 				return false;
 			}
@@ -426,6 +426,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 	static T subst[] = { 8, 7,10, 9,11, 9 };   
 	// aaa_3118.txt     subst = { 8, 7 }   file for UsePos_1_4_condition = 1
 	// aaa_3118++.txt	subst = { 8, 7,10, 9,11, 9 };
+	// aaa_2469.txt     using everything from this method, but only for UsePos_1_4_condition = 1
 
 	for (int i = 0; i < countof(subst); i += 2) {
 		const auto playerID = subst[i];
@@ -512,8 +513,9 @@ CheckerCanon(int)::checkDay_1(int iDay, T* pDest, T* pNumReason) {
 
 
 CheckerCanon(bool)::checkDay(T iDay, T *pNumReason) {
-	const auto* res = getMatrixRow(iDay);
-	const auto* resEnd = res;
+	auto pMatrixRow = getMatrixRow(iDay);
+	auto res(pMatrixRow);
+	auto resEnd = res;
 	T j = 0;
 	for (; j < numGroups(); j++) {
 		resEnd += groupSize();
@@ -532,10 +534,10 @@ CheckerCanon(bool)::checkDay(T iDay, T *pNumReason) {
 	if (iDay == 1) {
 		res = result + m_numElem;
 #if UsePos_1_4_condition && ImproveResults
-		if (!checkPosition1_4(result + m_numElem, pNumReason))
+		if (!checkPosition1_4(pMatrixRow, pNumReason))
 			return false;
 #else
-		if (res[4] != 4 && res[4] != 9) {
+		if (pMatrixRow[4] != 4 && pMatrixRow[4] != 9) {
 			*pNumReason = t_RejectionRreason::t_playerPosition_1_4;
 			return false;
 		}
@@ -583,7 +585,7 @@ CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const {
 	}
 
 	const auto daysToOrder = numDays() - daysOK;
-	if (daysToOrder) {
+	if (daysToOrder > 1) {
 		// Ordering days by the first two elements of their first group
 		groupOrdering(pDest + lenOK, daysToOrder, getTmpBuffer(), m_numElem, pDest + lenResult() + daysOK);
 	}
