@@ -382,8 +382,7 @@ CheckerCanon(bool)::checkOrderingForDay(T nDay) const
 	return copyTuplesOK;
 }
 
-CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID)
-{
+CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID) {
 	auto* pDest = resultOut();
 	if (!pDest)
 		return false;              // we don't need explanation for rejection
@@ -396,7 +395,7 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	const auto numElem_2 = 2 * m_numElem;
 	renumberPlayers(pDest, m_numElem, numElem_2);
 	groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
-	const auto diff = memcmp(pDest + m_numElem, players, m_numElem);
+	const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
 	assert(diff < 0);
 
 	if (result + m_numElem == players || numDays() == 2) {
@@ -421,6 +420,10 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 		return explainRejection(players, 1, 2);
 	}
 
+#if	(UsePos_1_4_condition & 2)
+	if (players != studiedMatrix() + m_numElem)
+		return true;
+#endif
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
 	static T subst[] = { 8, 7,10, 9,11, 9 };   
