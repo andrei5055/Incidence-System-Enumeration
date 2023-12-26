@@ -388,14 +388,14 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 		return false;              // we don't need explanation for rejection
 
 	const T* result = studiedMatrix();
-	memcpy(pDest, result, m_numElem * sizeof(*pDest));
-	memcpy(pDest + m_numElem, players, m_numElem * sizeof(*pDest));
+	memcpy(pDest, result, lenRow());
+	memcpy(pDest + m_numElem, players, lenRow());
 	pDest[pDest[playerPrevID] = playerNewID] = playerPrevID;
 
 	const auto numElem_2 = 2 * m_numElem;
 	renumberPlayers(pDest, m_numElem, numElem_2);
 	groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
-	const auto diff = memcmp(pDest + m_numElem, result + m_numElem, m_numElem);
+	const auto diff = memcmp(pDest + m_numElem, result + m_numElem, lenRow());
 	assert(diff < 0);
 
 	if (result + m_numElem == players || numDays() == 2) {
@@ -404,7 +404,7 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 		renumberPlayers(pDest, numElem_2, lenResult() - numElem_2);
 
 		orderigRemainingDays(2, 0, pDest);
-		memcpy(pDest, result, m_numElem * sizeof(*pDest));
+		memcpy(pDest, result, lenRow());
 		*(pDest + 1) = 1 - (*(pDest += lenResult()) = firstDayID);
 	}
 
@@ -487,8 +487,8 @@ CheckerCanon(int)::checkDay_1(int iDay, T* pDest, T* pNumReason) {
 	if (!diff && numDays() > 2 || diff < 0 && resultOut()) {
 		if (diff != -9999) {
 			// Saving two first days:
-			memcpy(pDest, result, m_numElem * sizeof(*pDest));
-			memcpy(pDest + m_numElem, m_players, m_numElem * sizeof(*pDest));
+			memcpy(pDest, result, lenRow());
+			memcpy(pDest + m_numElem, m_players, lenRow());
 		}
 
 		// Adding 2 day indices

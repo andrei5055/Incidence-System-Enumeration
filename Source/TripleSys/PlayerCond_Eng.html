@@ -270,13 +270,15 @@
     Поскольку (1  4  C) < (1  7  *).
 
 
-    (This could be some new )
-    "    0   1   2    3   4   5    6   7   8    9  10  11   12  13  14"
-    "    0   3   6    1   4   9    2   7  12    5  10  14    8  11  13"
-    "    0            1            2
-    "        3            4                     5
-    "            6                     7                     8
-    "                         9                    10               11
-    "                                     12           13        14
+    <br />Statement 18: For any group size s > 1, any n > 0 and any pairs (0<=i < j< s) in canonical matrix
+    the position of player P(s,n,i) in the second day is less than the position of player P(s,n,j) in the same day.
+
+    <br />Proof:  Suppose that it's not true for some s > 1 and n > 0 and some pair (i1,j1), such that (0<=i1 < j1< s).
+    Since for any group size s > 1 and any n > 0 the playerId of any i-th player of n-th group is defined as (s*n+i),
+    this means that on the second day the number (s*n+i1) is located to the right of the number (s*n+j1).
+    But it contrudicts to the canonicity of the matrix, because we can use the permutation that will swap players
+    P(s,n,i1) and P(s,n,j1) and leave all other players in their places. After reordering the elements from the n-th 
+    group on the first day, the first row of the matrix will be the same, and the second row will be lexicographically smaller.
+
 </body>
 </html>

@@ -28,7 +28,7 @@ Class2Def(CCheckerCanon) {
 public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
-		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize) {
+		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
 		m_players = new T[2 * m_numElem];
 		m_tmpBuffer = new T[m_numElem + nRow];
 		m_pResutMemory = new T[(m_numElem + 1) * nRow];
@@ -64,6 +64,7 @@ private:
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
 	inline auto numGroups() const			{ return m_numGroups;}
+	inline auto lenRow() const				{ return m_lenRow; }
 	int checkDay_1(int iDay, T *pDest, T* pNumReason);
 	bool checkDay(T iDay, T* pNumReason);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
@@ -84,6 +85,7 @@ private:
 	const T m_numDaysMax;
 	const T m_groupSise;
 	const T m_numGroups;
+	const size_t m_lenRow;
 	size_t m_lenResult;
 	T m_numDays;
 	const T* m_pStudiedMatrix = NULL;

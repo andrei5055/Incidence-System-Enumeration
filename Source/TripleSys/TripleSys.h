@@ -4,7 +4,7 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 1	// Use 0 or 1 option 2" 
+#define ImproveResults 0	// Use 0 or 1 option 2" 
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
