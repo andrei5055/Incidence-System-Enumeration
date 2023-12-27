@@ -110,11 +110,11 @@ bool alldata::Run(int improveResult) {
 	//		   !=0 - m_pCheckCanon will return the permutations of the sets of players 
 	//               and days that improve given "results";
 	//          >1 - try to improve the “results” as much as possible.
-	clock_t rTime, iTime = clock();
+	clock_t rTime, mTime, iTime = clock();
 	unsigned char* bResults = NULL;
 	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
 
-	rTime = iTime;
+	rTime = mTime = iTime;
 #if 1
 	if (improveResult)
 		bResults = new unsigned char[(improveResult > 1? 2 : 1) * lenResult];
@@ -150,6 +150,7 @@ bool alldata::Run(int improveResult) {
 
 	while (nLoops < LoopsMax)
 	{
+		mTime = clock();
 		while (iDay < m_numDays || bPrevResult)
 		{
 			if (iDay < 0)
@@ -173,15 +174,17 @@ bool alldata::Run(int improveResult) {
 
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
 
-			if (maxDays < iDay || clock() - rTime > ReportInterval)
+			clock_t cTime = clock();
+			if (maxDays < iDay || cTime - rTime > ReportInterval)
 			{
 				/**/
 				m_pCheckLink->reportCheckLinksData();
-				rTime = clock();
-				printf("current result report(%d): days = %d  Time = %d\n", (rTime - iTime) / ReportInterval, iDay + 1, rTime - iTime);
+				printf("Current result for matrix %d: days=%d, build time=%d, time since start=%d\n", 
+					nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
 				Result.printTable(result());
 				//printTable("Links", links[0], m_numPlayers, m_numPlayers);
 				/**/
+				rTime = cTime;
 				maxDays = iDay;
 				memcpy(maxResult, result(0), m_nLenResults);
 				sortLinks();
@@ -206,7 +209,8 @@ bool alldata::Run(int improveResult) {
 		if (iDay < m_numDays)
 			abort();
 		//report result
-		printf("Result %d, Time = %d\n", nLoops, clock() - iTime);
+		clock_t cTime = clock();
+		printf("Result %d: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
 		//printTable("Links", links(), m_numPlayers, m_numPlayers);
 		Result.printTable(result(), true, ResultFile);
 		if (nLoops >= LoopsMax)

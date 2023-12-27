@@ -15,7 +15,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	char day = iDay;
 
 	if (l0[iPlayerNumber] != unset)
-		return ++iPlayerNumber;
+		return iPlayerNumber + 1;
 #if UseSS == 0
 	if (iPlayer == 1)
 	{
@@ -31,7 +31,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	if (m0 == 2)
 	{
 		if (l1[iPlayerNumber] != unset)
-			return ++iPlayerNumber;
+			return iPlayerNumber + 1;
 		l1[iPlayerNumber] = li[i1] = day;
 	}
 	l0[iPlayerNumber] = li[i0] = day;
@@ -61,7 +61,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			tmpPlayers[iPlayer] = unset;
 			li[i0] = li[i1] = unset;
 			l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
-			return ++iPlayerNumber;
+			return iPlayerNumber + 1;
 		}
 	}
 	return iPlayerNumber;

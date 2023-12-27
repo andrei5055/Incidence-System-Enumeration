@@ -427,11 +427,13 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 	// Statement 7: In canonical matrix z1 < z2
 	//    0  1  2    3  4  5    6  7  8 ....
 	//    0  3  6    1 z1  *    2 z2 *
+#if USE_STATEMENT_7
 	if (players[4] > players[7]) {
 		*pNumReason = t_RejectionRreason::t_Statement_7;
 		return explainRejection(players, 1, 2);
 	}
-
+#endif
+#if USE_STATEMENT_18
 	// Statement 18: For any group size s > 1, any n > 0 and any pairs (0<=i < j< s) in canonical matrix the position
 	// of player P(s, n, i) in the second day is less than the position of player P(s, n, j) in the same day.
 	//
@@ -465,13 +467,15 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 		*pNumReason = t_RejectionRreason::t_Statement_18;
 		return explainRejection(players, i - groupSize(), i, 0, pNewOrder);
 	}
-
+#endif
 #if	(UsePos_1_4_condition & 2)
 	if (players != studiedMatrix() + m_numElem)
 		return true;
 #endif
+#if USE_STATEMENT_17
 	// Statement 17: Only the players 4 or 9 could be in position[1, 4].
 	// 
+#if USE_STATEMENT_18 == 0
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
 	static T subst[] = { 8, 7,10, 9,11, 9 };   
@@ -486,7 +490,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 			return explainRejection(players, playerID, subst[i + 1]);
 		}
 	}
-
+#endif
 	if (players[4] == 7) {
 		if (!resultOut())
 			return false;              // we don't need explanation for rejection
@@ -501,7 +505,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 		}
 		return false;
 	}
-
+#endif
 	return true;
 }
 

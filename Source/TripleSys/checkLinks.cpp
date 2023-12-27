@@ -70,11 +70,13 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	const auto idx = id * m_numPlayers;
 	auto *faults_id = faults + idx;
 	auto* counts_id = counts + idx;
+#if UseSS == 0
 	for (int i0 = 0; i0 < m_numPlayers; i0++)
 	{
-#if UseSS == 0
 		int i = (i0 + 5) % m_numPlayers;
 #else
+	for (int i0 = 0; i0 < 8; i0++)
+	{
 		int i = i0;
 #endif
 		auto *ci = m_pLinksCopy + i * m_numPlayers;

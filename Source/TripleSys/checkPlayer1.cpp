@@ -22,7 +22,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 	if (iPlayer == 0)
 	{
 		// AI statement #4 (part 1)
-		if (iPlayerNumber != 0 || selPlayers[0] != unset)
+		if (iPlayerNumber != 0)
 			return m_numPlayers;
 		return 0;
 	}
@@ -92,12 +92,13 @@ int alldata::checkPlayer1(int iPlayerNumber)
 					case 2:
 					{
 						ifixedPlayer = 6;
-						if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+						if (ifixedPlayer >= iPlayerNumber)
 						{
 							return ifixedPlayer;
 						}
 						return m_numPlayers;
 					}
+#if 0
 					case 4:
 					{
 						if (iPlayerNumber < 4)
@@ -106,6 +107,16 @@ int alldata::checkPlayer1(int iPlayerNumber)
 							return m_numPlayers;
 						break;
 					}
+#else
+					case 4:
+					{
+						if (iPlayerNumber <= 4)
+							return 4;
+						if (iPlayerNumber <= 9)
+							return 9;
+						return m_numPlayers;
+					}
+#endif
 					case 5:
 					{
 #if 1
@@ -155,7 +166,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 						{
 							// AI statement #9 part 1
 							ifixedPlayer = 5; // not happend
-							if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+							if (ifixedPlayer >= iPlayerNumber)
 								return ifixedPlayer; // not happend
 							return m_numPlayers; // not happend
 						}
@@ -167,7 +178,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 						{
 							// AI statement #9 part 2    
 							ifixedPlayer = 5;   
-							if (ifixedPlayer >= iPlayerNumber && selPlayers[ifixedPlayer] == unset)
+							if (ifixedPlayer >= iPlayerNumber)
 								return ifixedPlayer;
 							return m_numPlayers;
 						}

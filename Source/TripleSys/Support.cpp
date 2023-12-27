@@ -36,31 +36,46 @@ bool alldata::initCurrentDay()
 				return false;
 			}
 		}
-#if 1
-		memcpy(indexPlayer, m_ho, np);
-		if (UseLastSix)
-			index6[iDay] = 0; // getLastSixIndex(indexPlayer);
-		iPlayer = 0;
-#else
-		memcpy(tmpPlayers, m_ho, np);
-		for (int i = 0; i < np; i++)
-		{
-			selPlayers[tmpPlayers[i]] = i;
-			if (!setLinksForOnePlayer(tmpPlayers, i, 1))
-			{
-				printf("initCurrentDay: value of %d (for day %d position %d) already defined in links table\n",
-					tmpPlayers[i], iDay, i);
 
-				memcpy(result(iDay), tmpPlayers, m_numPlayers);
-				printTable("Current Result", result(0), m_numDays, m_numPlayers);
-				printTable("Current Links", links(0), m_numPlayers, m_numPlayers);
-				abort();
+		memcpy(result(iDay), m_ho, np);
+		auto* const pRes = result(iDay);
+		memcpy(indexPlayer, pRes, m_numPlayers);
+		memcpy(tmpPlayers, pRes, m_numPlayers);
+
+		if (UseLastSix)
+		{
+			iPlayer = m_numPlayers - GroupSize * 2;
+			indexPlayer[iPlayer] = index6[iDay] = 0; // only one of six indices used, last 5 values of array indexPlayers not used
+		}
+		else if (m_numPlayers > GroupSize)
+			iPlayer = m_numPlayers - GroupSize - 1;
+		else
+			iPlayer = m_numPlayers - 1;
+   
+		memset(selPlayers, unset, m_numPlayers);
+
+		for (int j = 0; j < m_numPlayers; j++)
+		{
+			int k = tmpPlayers[j];
+			if (j < iPlayer)
+			{
+				if (!setLinksForOnePlayer(pRes, j, 1))
+				{
+					if (iDay == 0)
+					{
+						bPrevResult = true;
+						return false;
+					}
+					abort();
+				}
+				selPlayers[k] = j;
+			}
+			else
+			{
+				tmpPlayers[j] = selPlayers[k] = unset;
+				indexPlayer[j] = 0;
 			}
 		}
-		if (UseLastSix)
-			index6[iDay] = 0; //getLastSixIndex(tmpPlayers);
-		iPlayer = np;
-#endif
 	}
 #endif // UseSS
 	return true;
