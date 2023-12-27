@@ -9,11 +9,11 @@
 #endif
 
 alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useCheckLinksH) :
-		SizeParam((numPlayers - 1) / (groupSize - 1), numPlayers, groupSize),
-		m_np2(numPlayers * numPlayers),
-		m_nGroups(numPlayers / groupSize),
-		m_bCheckLinkV(groupSize == 3 && useCheckLinksV),
-		m_bCheckLinkH(groupSize == 3 && useCheckLinksH) {
+	SizeParam((numPlayers - 1) / (groupSize - 1), numPlayers, groupSize),
+	m_np2(numPlayers * numPlayers),
+	m_nGroups(numPlayers / groupSize),
+	m_bCheckLinkV(groupSize == 3 && useCheckLinksV),
+	m_bCheckLinkH(groupSize == 3 && useCheckLinksH) {
 	m_nLenResults = m_numDays * numPlayers;
 	maxResult = new char[m_nLenResults];
 	m_pResults = new char[m_nLenResults];
@@ -33,8 +33,10 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 #endif
 
 	Init();
-	FOPEN_F(f, ImprovedResultFile, "w");
-	m_file = f;
+	if (!strchr(ImprovedResultFile, '_')) {
+		FOPEN_F(f, ImprovedResultFile, "w");
+		m_file = f;
+	}
 }
 
 alldata::~alldata() {

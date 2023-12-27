@@ -7,6 +7,7 @@ typedef enum {
 	t_playerPosition_1_4,
 	t_NotThatPlayerInPosition_1_4,
 	t_Statement_7,
+	t_Statement_18,
 } t_RejectionRreason;
 
 static const char* reason[] = {
@@ -14,7 +15,8 @@ static const char* reason[] = {
 		"Ordering problem",
 		"Only players 4 or 9 can be in position [1,4]",
 		"Current player cannot be at position [1, 4]",
-		"Player# in [1, 4] should be less than [1, 7]"
+		"Player# in [1, 4] should be less than [1, 7]",
+		"Wrong order of players",
 };
 
 template class CCheckerCanon<unsigned char, unsigned char>;
@@ -26,8 +28,7 @@ void renumberPlayers(T* pntr, size_t i, size_t iLast) {
 }
 
 template<typename T>
-void elemOrdering(T* pElems, size_t numElem, size_t groupSize)
-{
+void elemOrdering(T* pElems, size_t numElem, size_t groupSize) {
 	// Ordering elements in the groups od size groupSize
 	auto j = numElem + groupSize;
 	switch (groupSize) {
@@ -155,7 +156,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		if (iDay) {
 			// Do this only when day 0 changed its place.
 			elemOrdering(m_players, m_numElem, lenGroup);
-			groupOrdering(m_players, numGroup, getTmpBuffer(), lenGroup);
+			groupOrdering(m_players, numGroup, tmpBuffer(), lenGroup);
 
 			const auto retVal = checkDay_1(iDay, pDest, &numReason);
 			if (nDays == 2)
@@ -382,19 +383,30 @@ CheckerCanon(bool)::checkOrderingForDay(T nDay) const
 	return copyTuplesOK;
 }
 
-CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID) {
+CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID, const T* pNewOrder) {
 	auto* pDest = resultOut();
 	if (!pDest)
 		return false;              // we don't need explanation for rejection
 
+	// Create a conversion table.
 	const T* result = studiedMatrix();
 	memcpy(pDest, result, lenRow());
-	memcpy(pDest + m_numElem, players, lenRow());
-	pDest[pDest[playerPrevID] = playerNewID] = playerPrevID;
+	if (pNewOrder) {
+		assert(result != pNewOrder);
+		T i = 1;
+		while (playerPrevID < playerNewID) {
+			pDest[pNewOrder[i]] = playerPrevID++;
+			i += 2;
+		}
+	}
+	else
+		pDest[pDest[playerPrevID] = playerNewID] = playerPrevID;
 
+	// Make a conversion with just created table.
 	const auto numElem_2 = 2 * m_numElem;
+	memcpy(pDest + m_numElem, players, lenRow());
 	renumberPlayers(pDest, m_numElem, numElem_2);
-	groupOrdering(pDest + m_numElem, numGroups(), getTmpBuffer(), groupSize());
+	groupOrdering(pDest + m_numElem, numGroups(), tmpBuffer(), groupSize());
 	const auto diff = memcmp(pDest + m_numElem, result + m_numElem, lenRow());
 	assert(diff < 0);
 
@@ -420,10 +432,46 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 		return explainRejection(players, 1, 2);
 	}
 
+	// Statement 18: For any group size s > 1, any n > 0 and any pairs (0<=i < j< s) in canonical matrix the position
+	// of player P(s, n, i) in the second day is less than the position of player P(s, n, j) in the same day.
+	//
+	// Create a pReorder table of with groupSize() following pairs: (player_position, player_ID)
+	T idx; 
+	auto pNewOrder = resultMemory();
+	pNewOrder[idx = 0] = 0;  // Player number 0 is alwais on position [1,0]
+	bool flag = false;
+	T i = 1;
+	for (; i < numElem(); i++) {
+		T j = 0; 
+		while (players[++j] != i);
+
+		if (i % groupSize()) {
+			if (j < pNewOrder[idx])
+				flag = true; // problem found
+			idx += 2;
+		}
+		else {
+			if (flag)
+				break;		// problem on prervious group was found
+			idx = 0;
+		}
+
+		pNewOrder[idx] = j;
+		pNewOrder[idx+1] = i;
+	}
+	
+	if (flag) {
+		groupOrdering(pNewOrder, groupSize(), tmpBuffer(), 2);
+		*pNumReason = t_RejectionRreason::t_Statement_18;
+		return explainRejection(players, i - groupSize(), i, 0, pNewOrder);
+	}
+
 #if	(UsePos_1_4_condition & 2)
 	if (players != studiedMatrix() + m_numElem)
 		return true;
 #endif
+	// Statement 17: Only the players 4 or 9 could be in position[1, 4].
+	// 
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
 	static T subst[] = { 8, 7,10, 9,11, 9 };   
@@ -448,7 +496,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason) {
 			// Do this only when day 0 did not changed its place.
 			checkOrderingForDay(1);
 			elemOrdering(m_players, m_numElem, groupSize());
-			groupOrdering(m_players, m_numElem / groupSize(), getTmpBuffer(), groupSize());
+			groupOrdering(m_players, m_numElem / groupSize(), tmpBuffer(), groupSize());
 			return explainRejection(m_players, 1, 2, 1);
 		}
 		return false;
@@ -532,29 +580,19 @@ CheckerCanon(bool)::checkDay(T iDay, T *pNumReason) {
 			break;
 	}
 
-	const T* result = studiedMatrix();
+
 #if	(UsePos_1_4_condition & 1)
-	if (iDay == 1) {
-		res = result + m_numElem;
-#if UsePos_1_4_condition && ImproveResults
-		if (!checkPosition1_4(pMatrixRow, pNumReason))
-			return false;
-#else
-		if (pMatrixRow[4] != 4 && pMatrixRow[4] != 9) {
-			*pNumReason = t_RejectionRreason::t_playerPosition_1_4;
-			return false;
-		}
-#endif
-	}
+	if (iDay == 1 && !checkPosition1_4(pMatrixRow, pNumReason))
+		return false;
 #endif
 
 	if (j == numGroups())
 		return true;
-
+;
 	T* pDest = resultOut();
 	if (pDest) {
 		// Copying all days to the output
-		memcpy(pDest, result, lenResult() * sizeof(*pDest));
+		memcpy(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 		pDest += lenResult();
 		for (auto i = m_numElem; i--;)
 			*(pDest + i) = i;
@@ -583,14 +621,14 @@ CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const {
 	T i = daysOK;
 	auto pntr = pDest + lenOK;
 	while (i++ < numDays()) {
-		groupOrdering(pntr, numGroups(), getTmpBuffer(), groupSize());
+		groupOrdering(pntr, numGroups(), tmpBuffer(), groupSize());
 		pntr += m_numElem;
 	}
 
 	const auto daysToOrder = numDays() - daysOK;
 	if (daysToOrder > 1) {
 		// Ordering days by the first two elements of their first group
-		groupOrdering(pDest + lenOK, daysToOrder, getTmpBuffer(), m_numElem, pDest + lenResult() + daysOK);
+		groupOrdering(pDest + lenOK, daysToOrder, tmpBuffer(), m_numElem, pDest + lenResult() + daysOK);
 	}
 }
 

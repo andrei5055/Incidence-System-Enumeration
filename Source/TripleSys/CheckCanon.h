@@ -31,11 +31,11 @@ public:
 		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
 		m_players = new T[2 * m_numElem];
 		m_tmpBuffer = new T[m_numElem + nRow];
-		m_pResutMemory = new T[(m_numElem + 1) * nRow];
+		m_pResultMemory = new T[(m_numElem + 1) * nRow];
 		initCommentBuffer(256);
 	}
 	~CCheckerCanon()						{ delete[] m_players;
-											  delete [] getTmpBuffer();
+											  delete [] tmpBuffer();
 											  delete[] resultMemory();
 											  resetComments();
 	}
@@ -45,6 +45,7 @@ public:
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
 											  return (flag & m_bResultFlag) == flag; }
 private:
+	inline auto numElem() const				{ return m_numElem; }
 	inline auto groupSize() const			{ return m_groupSise; }
 	auto stabiliserLengthExt() const		{ return m_nStabExtern; }
 	void setStabiliserLengthExt(T len)		{ m_nStabExtern = len; }
@@ -58,8 +59,8 @@ private:
 	inline auto getMatrixRow(T nRow) const  { return studiedMatrix() + nRow * m_numElem; }
 	inline void setResultOut(T* pntr)		{ m_pResultOut = pntr; }
 	inline auto resultOut() const			{ return m_pResultOut; }
-	inline auto getTmpBuffer() const		{ return m_tmpBuffer; }
-	inline auto resultMemory() const		{ return m_pResutMemory;  }
+	inline auto tmpBuffer() const			{ return m_tmpBuffer; }
+	inline auto resultMemory() const		{ return m_pResultMemory;  }
 	inline auto lenResult()	const			{ return m_lenResult; }
 	inline void resetImprovedResultFlag()   { m_bResultFlag = t_bResultFlags::t_notReady; }
 	inline void addImproveResultFlags(t_bResultFlags flags) { m_bResultFlag |= flags;  }
@@ -75,7 +76,7 @@ private:
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
 	bool checkOrderingForDay(T nDay) const;
 	bool checkPosition1_4(const T* players, T *pNumReason = NULL);
-	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0);
+	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, const T* pNewOrder = NULL);
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
@@ -91,7 +92,7 @@ private:
 	const T* m_pStudiedMatrix = NULL;
 	T* m_pResultOut;
 	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
-	T* m_pResutMemory = NULL;	// Memory allocated to improve results
+	T* m_pResultMemory = NULL;	// Memory allocated to improve results
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
 	char *m_pComment = NULL;

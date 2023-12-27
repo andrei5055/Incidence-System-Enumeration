@@ -230,7 +230,7 @@
     n>0       for any m  player[n,3*m]== min (которого нет в столбцах 0<= i < 3m)
 
 
-    <br />Statement 17: В позиции [1,4] может стоять только игрок 4 или 9.
+    <br />Statement 17: Only the players 4 or 9 could be in position [1,4].
 
     <br />Proof: Согласно утверждению 7, если игрок #4 в первый день не стоит на 4-й позиции, то там стоит игрок с номером >=7,
     а оба игрока ## 4 и 5 будут младшиим в своих тройках, а из-за упорядоченности троек их тройки будут начинаться,
@@ -276,8 +276,8 @@
     <br />Proof:  Suppose that it's not true for some s > 1 and n > 0 and some pair (i1,j1), such that (0<=i1 < j1< s).
     Since for any group size s > 1 and any n > 0 the playerId of any i-th player of n-th group is defined as (s*n+i),
     this means that on the second day the number (s*n+i1) is located to the right of the number (s*n+j1).
-    But it contrudicts to the canonicity of the matrix, because we can use the permutation that will swap players
-    P(s,n,i1) and P(s,n,j1) and leave all other players in their places. After reordering the elements from the n-th 
+    But it contradicts the canonicity of the matrix, because we can use the permutation that will swap players
+    P(s,n,i1) and P(s,n,j1) and leave all other players in their places. After reordering the elements from the n-th
     group on the first day, the first row of the matrix will be the same, and the second row will be lexicographically smaller.
 
 </body>
