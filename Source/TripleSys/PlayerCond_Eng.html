@@ -241,7 +241,7 @@
     В позиции [1,4] не может стоять:
     (a) 8, поскольку, поменяв 7 и 8 местами, мы увеличим код 2-й строки;
     (b) 10, 11, поскольку поменяв 9, соответственно, с 10 или 11 местами, мы увеличим код 2-й строки;
-    Там не может стоять также никакое число больше никакое число больше 11. Поскольку тройку, (A, B, C)
+    Там не может стоять также никакое число больше 11. Поскольку тройку, (A, B, C)
     где могло бы стоять такое число можно переставить с тройкой (9, 10, 11) и оно попадет либо на место 9,
     либо на место 10 или 11, что в любом случае уменьшает код матрицы.
 
@@ -270,8 +270,8 @@
     Поскольку (1  4  C) < (1  7  *).
 
 
-    <br />Statement 18: For any group size s > 1, any n > 0 and any pairs (0<=i < j< s) in canonical matrix
-    the position of player P(s,n,i) in the second day is less than the position of player P(s,n,j) in the same day.
+    <br />Statement 18: For any group size s > 1, any n > 0 and any pairs (0<=i < j< s) in second raw 
+    of canonical matrix the position of player P(s,n,i) is less than the position of player P(s,n,j).
 
     <br />Proof:  Suppose that it's not true for some s > 1 and n > 0 and some pair (i1,j1), such that (0<=i1 < j1< s).
     Since for any group size s > 1 and any n > 0 the playerId of any i-th player of n-th group is defined as (s*n+i),
@@ -280,5 +280,6 @@
     P(s,n,i1) and P(s,n,j1) and leave all other players in their places. After reordering the elements from the n-th
     group on the first day, the first row of the matrix will be the same, and the second row will be lexicographically smaller.
 
+    <br />Statement 19: 
 </body>
 </html>
