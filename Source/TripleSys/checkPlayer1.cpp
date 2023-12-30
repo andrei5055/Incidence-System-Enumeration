@@ -194,6 +194,15 @@ int alldata::checkPlayer1(int iPlayerNumber)
 						break;
 					}
 				}
+				/**/
+				// AI statement #18 (for group size == 3)
+				if ((iPlayerNumber % 3) == 2)
+				{
+					if (selPlayers[iPlayerNumber - 2] == unset || selPlayers[iPlayerNumber - 1] == unset ||
+						selPlayers[iPlayerNumber - 2] >= selPlayers[iPlayerNumber - 1])
+						return iPlayerNumber + 1;
+				}
+				/**/
 			}
 		}
 #endif
@@ -217,6 +226,12 @@ int alldata::checkPlayer1(int iPlayerNumber)
 		//new
 		if (iPlayerNumber > iPlayer)
 			return m_numPlayers; // not happen if at the end
+		//new 2
+		if (GroupSize == 3)
+		{
+			if (iPlayerNumber > m_numPlayers - 6 - (m_numPlayers - iPlayer) / 3)
+				return m_numPlayers; // not happen if at the end
+		}
 	}
 	return iPlayerNumber;
 }

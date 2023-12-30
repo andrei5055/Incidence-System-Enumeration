@@ -21,7 +21,7 @@ int main()
 		;
 #elif nPlayers == 21 
 	const char* ivc = ""     
-#if 0
+#if 1
 		//Result 4: matrix build time = 3073325, time since start = 19594383 (m2 second run)
 		"    0   1   2    3   4   5    6   7   8    9  10  11   12  13  14   15  16  17   18  19  20 "
 		"    0   3   8    1   9  12    2  10  13    4  11  15    5  14  18    6  16  19    7  17  20 "

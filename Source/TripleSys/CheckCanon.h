@@ -66,7 +66,7 @@ private:
 	inline auto lenRow() const				{ return m_lenRow; }
 	inline auto destMemory() const			{ return m_pDestMemory; }
 	int checkDay_1(int iDay, T* pNumReason);
-	bool checkDay(T iDay, T* pNumReason);
+	bool checkDay(T iDay, T* pNumReason, T * pNumPlayer);
 	int checkDayCode(int diff, T* pNumReason, T iDay = 1);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
@@ -74,10 +74,11 @@ private:
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
+	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
-	bool checkRemainingDays(T iDay, int retVal = -1);
-	bool checkPosition1_4(const T* players, T *pNumReason = NULL);
-	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, const T* pNewOrder = NULL);
+	bool checkRemainingDays(T iDay, int retVal = -1, bool recordByMatrixRow = false);
+	bool checkPosition1_4(const T* players, T *pNumReason, T *pNumPlayer = NULL);
+	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	void sortTuples() const;
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)

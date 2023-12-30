@@ -1,13 +1,13 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 15
+#define nPlayers0 21
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 0	// Use 0 or 1 option 2" 
+#define ImproveResults 1	// Use 0 or 1 option 2" 
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
-#define ImprovedResultFile "../aaa.txt"  // Name of output file with the improved results, "" - no file output.
+#define ImprovedResultFile "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
@@ -79,7 +79,7 @@ public:
 	~CChecklLink();
 	bool checkLinks(char *c, int id, bool printLinksStatTime = false);
 	bool checkLinks27(char *c, int id);
-	bool checkLinksH(const char* c, const char* v, int nv, int nvo, int ind1, int ind2, char* vo, double* counter = NULL);
+	bool checkLinksH(const char* c, char* st, char *s, int ipos, const char* v, int nv, int nvo, int ind1, int ind2, char* vo, double* counter = NULL);
 	void reportCheckLinksData();
 private:
 	bool checkLinksV(const char* links, const char* v, int nv, int ind, char* vo);

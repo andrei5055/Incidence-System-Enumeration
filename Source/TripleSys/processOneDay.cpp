@@ -4,8 +4,21 @@ bool alldata::processOneDay()
 {   // returns: false - go to prev day, true - day processed
 	while (iPlayer < m_numPlayers)
 	{
-		//if (iDay == 3)
+#if 0
+			static char c[] = { 0,   3,   6,    1,   4,   7,    2,   5 };
+			if (iDay == 1 && iPlayer == 7)
+			{
+				if (memcmp(tmpPlayers, c, 7) == 0)
+				{
+					iDay = iDay;
+				}
+				else
+				{
+					iDay = iDay;
+				}
+			}
 		//	printf("%d p=%d\n", iDay, iPlayer);
+#endif
 
 		int iPlayerNumber = 0;
 		if (iPlayer < 0)

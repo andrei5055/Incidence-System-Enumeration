@@ -12,7 +12,7 @@ bool alldata::initCurrentDay()
 
 #if UseSS == 0
 
-	if (m_bCheckLinkH)
+	if (m_bCheckLinkH && iDay > 1)
 	{
 		int np = UseLastSix ? m_numPlayers - 6 : m_numPlayers;
 		//int np = m_numPlayers;
@@ -28,15 +28,21 @@ bool alldata::initCurrentDay()
 			m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay-1)[1], m_ho, &cnt);
 			printf("d = % d n = % .0f\n", iDay, cnt);
 			**/
-			if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
+			memset(selPlayers, unset, m_numPlayers);
+			char* s = iDay == 1 ? selPlayers : NULL;
+			if (!m_pCheckLink->checkLinksH(links(), NULL, s, 0, m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
 			{
 				bPrevResult = true;
-				//printf("day=%d\n", iDay);
-				//printTable("no result", result(iDay), 1, np);
+#if 0
+				if (iDay == 2)
+				{
+					printf("day=%d\n", iDay);
+					printTable("no H result", m_ho, 1, np);
+				}
+#endif
 				return false;
 			}
 		}
-
 		memcpy(result(iDay), m_ho, np);
 		auto* const pRes = result(iDay);
 		memcpy(indexPlayer, pRes, m_numPlayers);
@@ -51,8 +57,6 @@ bool alldata::initCurrentDay()
 			iPlayer = m_numPlayers - GroupSize - 1;
 		else
 			iPlayer = m_numPlayers - 1;
-   
-		memset(selPlayers, unset, m_numPlayers);
 
 		for (int j = 0; j < m_numPlayers; j++)
 		{
@@ -148,17 +152,22 @@ bool alldata::initPrevDay()
 		abort();
 	else
 	{
-		memset(selPlayers, 1, m_numPlayers);
-
-		for (int j = iPlayer; j < m_numPlayers; j++)
+		for (int j = 0; j < m_numPlayers; j++)
 		{
 			if (*(pRes + j) < 0)
 				abort();
-			if (!setLinksForOnePlayer(pRes, j, unset))
-				abort();
 			int k = tmpPlayers[j];
-			tmpPlayers[j] = selPlayers[k] = unset;
-			indexPlayer[j] = 0;
+			if (j < iPlayer)
+			{
+				selPlayers[k] = j;
+			}
+			else
+			{
+				if (!setLinksForOnePlayer(pRes, j, unset))
+					abort();
+				tmpPlayers[j] = selPlayers[k] = unset;
+				indexPlayer[j] = 0;
+			}
 		}
 	}
 	if (UseLastSix)

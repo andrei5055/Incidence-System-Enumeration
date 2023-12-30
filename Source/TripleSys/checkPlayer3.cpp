@@ -47,7 +47,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				selPlayers[iPlayerNumber] = iPlayer;
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				getUnselected(m_h, nUnselected);
-				bH = m_pCheckLink->checkLinksH(links(), m_h, nUnselected, nUnselected, unset, unset, m_ho);
+				bH = m_pCheckLink->checkLinksH(links(), NULL, NULL, 0, m_h, nUnselected, nUnselected, unset, unset, m_ho);
 			}
 		}
 #endif
