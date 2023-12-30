@@ -15,7 +15,7 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 		{
 			if (*ivcb++ == '\n')
 			{
-				if (id >= m_numDays)
+				if (id + 1 >= m_numDays)
 					goto doneInit;
 				ind = 0;
 				id++;
@@ -27,8 +27,12 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 		if (ind >= m_numPlayers)
 		{
 			ind = 0;
-			if (++id >= m_numDays)
-				break;
+			if (id + 1 >= m_numDays)
+			{
+				printf("Init: too many input values, data ignored after pos=%d, day=%d\n", m_numPlayers - 1, id);
+				goto doneInit;
+			}
+			id++;
 		}
 		*(iv + id * m_numPlayers + ind) = (char)v;
 		lastInd = ind;

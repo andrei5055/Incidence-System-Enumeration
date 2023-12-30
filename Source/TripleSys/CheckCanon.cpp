@@ -498,7 +498,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 		return false;
 	}
 #endif
-#if 1
+#if USE_STATEMENT_19
 	// Swaping group 0 of day 1 with the other groups
 	auto pntr = getMatrixRow(1);
 	auto pntrFrom = pntr;

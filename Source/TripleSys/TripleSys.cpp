@@ -138,9 +138,18 @@ bool alldata::Run(int improveResult) {
 				char* c = links(j);
 				for (int i = 0; i < m_numPlayers; i = i + 3)
 				{
-					if (!setLinksForOnePlayer(result(j), i + 1, 1) ||
-						!setLinksForOnePlayer(result(j), i + 2, 1))
+					if (!setLinksForOnePlayer(result(j), i + 1, 1))
+					{
+						printf("Init: pair %d:%d for day=%d is incorrect or already defined\n", result(j)[i], result(j)[i + 1], j);
 						abort();
+					}
+
+					if (!setLinksForOnePlayer(result(j), i + 2, 1))
+					{
+						printf("Init: pair %d:%d or %d:%d for day=%d is incorrect or already defined\n", 
+							result(j)[i], result(j)[i + 2], result(j)[i + 1], result(j)[i + 2], j);
+							abort();
+					}
 				}
 			}
 		}

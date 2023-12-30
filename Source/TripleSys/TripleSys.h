@@ -18,6 +18,7 @@ using namespace std;
 #define USE_STATEMENT_17  1    // Only the players 4 or 9 could be in position[1, 4].
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
+#define USE_STATEMENT_19  1
 
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */

@@ -66,7 +66,7 @@ bool CChecklLink::checkLinksH(const char* c, char *st, char *s, int ipos, const 
 					ct0[tj] == unset &&
 					cti[tj] == unset)
 				{
-					if (sel != NULL)
+					if (s != NULL)
 					{
 						sel[t0] = ipos;
 						sel[ti] = ipos + 1;
@@ -91,7 +91,7 @@ bool CChecklLink::checkLinksH(const char* c, char *st, char *s, int ipos, const 
 							return true;
 						}
 					}
-					if (sel != NULL)
+					if (s != NULL)
 					{
 						sel[t0] = unset;
 						sel[ti] = unset;
