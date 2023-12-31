@@ -11,11 +11,12 @@
 
 bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char **pbRes1)
 {
+	const auto nDays = iDay + 1;
+	const auto inputMatrix = (unsigned char*)result();
 	addCanonCall(0);
-	if (m_pCheckCanon->CheckCanonicity((unsigned char*)result(), iDay + 1, bResults))
+	if (m_pCheckCanon->CheckCanonicity(inputMatrix, nDays, bResults))
 		return false;
 
-	improveResult = 2;
 	const int improveResultMax = 3;
 	if (improveResult > 1 || improveResult && PrintImprovedResults) {
 		int cntr = 0;
@@ -29,10 +30,10 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 				if (!cntr) {
 					// Output of initial results
 					addCanonCall(1);
-					outputResults(iDay, (unsigned char*)result());
+					outputResults(nDays, inputMatrix);
 				}
 
-				outputResults(iDay, bRes1, ++cntr);
+				outputResults(nDays, bRes1, ++cntr);
 			}
 
 			if (improveResult == 1 || !flag || ++improveResult > improveResultMax)
@@ -43,12 +44,15 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 			bRes1 = bRes2;
 			bRes3 = bRes2 = bRes;
 			addCanonCall(0);
-		} while (!m_pCheckCanon->CheckCanonicity(bRes2, iDay + 1, bRes1));
+		} while (!m_pCheckCanon->CheckCanonicity(bRes2, nDays, bRes1));
 
-		if (pbRes1) {
-			*pbRes1 = improveResult == 1 ? (flag ? bRes1 : NULL) 
-				    : flag ? bRes1 : bRes3; // Best improved result
-		}
+		const auto bestResult = improveResult == 1 ? (flag ? bRes1 : NULL)
+								: flag ? bRes1 : bRes3; // Best improved result
+		if (pbRes1)
+			*pbRes1 = bestResult;
+
+		if (CHECK_PERMUTATIONS)
+			m_pCheckCanon->CheckPermutations(inputMatrix, bestResult, nDays);
 	}
 
 	return true;

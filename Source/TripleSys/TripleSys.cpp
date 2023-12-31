@@ -78,7 +78,6 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 	const bool toScreen = PrintImprovedResults > 1;
 	FOPEN_W(f, ImprovedResultFile, canonCalls(1) || cntr? "a" : "w", m_file);
 
-	iDay++;
 	const unsigned char* pDayPerm = NULL;
 	auto flag = true;
 	if (cntr) {	
@@ -132,25 +131,11 @@ bool alldata::Run(int improveResult) {
 		{
 			printTable("Result improved", (const char*)bRes1, iDay + 1, m_numPlayers, 0, 3, true);
 			memcpy(result(0), bRes1, m_numPlayers * (iDay + 1));
-			memset(links(0), unset, m_numPlayers * m_numPlayers);
-			for (int j = 0; j <= iDay; j++)
+			int errLine = 0, errGroup = 0, dubLine = 0;
+			if (!CheckMatrix(result(0), iDay + 1, m_numPlayers, true, &errLine, &errGroup, &dubLine))
 			{
-				char* c = links(j);
-				for (int i = 0; i < m_numPlayers; i = i + 3)
-				{
-					if (!setLinksForOnePlayer(result(j), i + 1, 1))
-					{
-						printf("Init: pair %d:%d for day=%d is incorrect or already defined\n", result(j)[i], result(j)[i + 1], j);
-						abort();
-					}
-
-					if (!setLinksForOnePlayer(result(j), i + 2, 1))
-					{
-						printf("Init: pair %d:%d or %d:%d for day=%d is incorrect or already defined\n", 
-							result(j)[i], result(j)[i + 2], result(j)[i + 1], result(j)[i + 2], j);
-							abort();
-					}
-				}
+				printf("Dublicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
+				abort();
 			}
 		}
 		delete[] bResults_1;

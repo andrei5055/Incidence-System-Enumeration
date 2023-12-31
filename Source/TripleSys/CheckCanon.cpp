@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include "CheckCanon.h"
+
 typedef enum {
 	t_reasonUnknown,
 	t_ordering,
@@ -21,7 +22,7 @@ static const char* reason[] = {
 		"Rejected by Statement 19"
 };
 
-template class CCheckerCanon<unsigned char, unsigned char>;
+template class CCheckerCanon<SIZE_TYPE, SIZE_TYPE>;
 
 template<typename T>
 void renumberPlayers(T* pntr, size_t i, size_t iLast) {
@@ -764,5 +765,136 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T 
 		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), " %d", nDay);
 
 	return false;
+}
+
+CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
+	// Function generates next permutation for the k-system 
+	// Find non-increasing suffix
+	//const auto nRow = numRow();
+	const auto stabLenght = CGroupOrder<T>::stabilizerLength();
+	T temp, j, i = stabLenght;
+
+	// Check if the algorithm, used immediately after 
+	// some non-trivial automorphism was found
+	if (idx == IDX_MAX && perm[i] == nElem - 1)
+		idx = ELEMENT_MAX;
+
+	if (idx == IDX_MAX) {
+		// Firts call after some automorphism was found
+		temp = perm[idx = i];
+		for (j = nElem; --j > temp;)
+			perm[j] = j;
+
+		for (auto k = j++; k-- > i;)
+			perm[k + 1] = k;
+	}
+	else {
+		if (idx >= IDX_MAX) {
+			j = i = nElem;
+			while (--i > 0 && perm[i - 1] >= perm[i]);
+
+			if (i == lenStab)
+				return ELEMENT_MAX;  // no more permutations
+
+			// Find successor to pivot
+			temp = perm[--i];
+			while (perm[--j] <= temp);
+		}
+		else {
+			temp = perm[j = i = idx];
+			while (++j < nElem && perm[j] <= temp);
+			if (j >= nElem) {
+				if (nElem > i - 2)
+					revert(perm, nElem, i);
+
+				return nextPermutation(perm, pOrbits, nElem);
+			}
+		}
+	}
+
+	if (stabLenght == i) {
+		bool flag = false;
+		auto k = j, tmp = perm[j];
+		if (idx >= IDX_MAX) {
+			while (k > i && *(pOrbits + perm[k]) != perm[k])
+				k--;
+
+			if (k != j) {
+				if (!k)
+					return ELEMENT_MAX;
+
+				flag = k == i;
+				tmp = perm[k--];
+				while (++k < j)
+					perm[k] = perm[k + 1];
+			}
+		}
+		else {
+			while (k < nElem && *(pOrbits + perm[k]) != perm[k])
+				k++;
+
+			if (k != j) {
+				flag = k == nElem;
+				if (flag) {
+					if (!i)
+						return ELEMENT_MAX;
+
+					// Re-establish trivial permutation
+					k = idx - 1;
+					while (++k < j)
+						perm[k] = k;
+				}
+				else {
+					tmp = perm[k++];
+					while (--k > j)
+						perm[k] = perm[k - 1];
+				}
+			}
+		}
+
+		perm[j] = tmp;
+		if (flag) {
+			j = idx >= IDX_MAX ? nElem - 1 : i;
+			temp = perm[--i];
+			CGroupOrder<T>::setStabilizerLength(i);
+		}
+	}
+
+	if (!(perm[j] % 3) && i < j) {
+		i = i;
+	}
+	perm[i] = perm[j];
+	perm[j] = temp;
+	if (idx >= IDX_MAX - 1) {
+		if (CGroupOrder<T>::stabilizerLength() > i)
+			CGroupOrder<T>::setStabilizerLength(i);
+
+		if (nElem > i - 2)
+			revert(perm, nElem, i);
+	}
+
+	return i;
+}
+
+bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
+
+CheckerCanon(void)::CheckPermutations(const T* result, const T* pMatrix, int nRows) {
+/*	bool checkPermut = false;
+	int cntr = 1;
+	while (true) {
+		nElem = nextPermutation(permPlayers, pOrbits, m_numElem, idx, lenStab);
+		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+			break;
+		//continue;
+		cntr++;
+		//			continue;
+				//	if (checkPermut = PermutResults(result, permPlayers, nDays))
+				//		break;
+
+					// Under the action of the current permutation of players, the set of
+					// days is the same as before - an automorphism has been discovered
+		//addAutomorphism(nElem = m_numElem, permPlayers, pOrbits);
+	}
+	*/
 }
 
