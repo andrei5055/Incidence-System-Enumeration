@@ -5,6 +5,7 @@
 typedef enum {
 	t_reasonUnknown,
 	t_ordering,
+	t_changing_day_0,
 	t_playerPosition_1_4,
 	t_NotThatPlayerInPosition_1_4,
 	t_Statement_7,
@@ -15,6 +16,7 @@ typedef enum {
 static const char* reason[] = {
 		"Reason unknown",
 		"Ordering problem",
+		"Increasing code by changing day 0",
 		"Only players 4 or 9 can be in position [1,4]",
 		"Player #%d cannot be at position [1, 4]",
 		"Player# in [1, 4] should be less than [1, 7]",
@@ -174,8 +176,8 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			if (retVal < 0 && !bResult)
 				return false;  // The result has improved, but we don't need to know how.
 
-			if (!checkRemainingDays(iDay, retVal))
-				return false;
+			if (!checkRemainingDays(iDay, retVal, true)) 
+				return reportTxtError(bResult, reason[t_RejectionRreason::t_changing_day_0], NULL, iDay);
 		}
 		else {
 			// Check all remaining days for canonicity.
@@ -493,7 +495,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 			// Do this only when day 0 did not changed its place.
 			// As described in Statement 17, swap
 			checkOrderingForDay(1); // days 0 and 1
-			checkRemainingDays(1, -1);
+			checkRemainingDays(1, -1, true);
 			return explainRejection(m_players, 1, 2, 1, true);
 		}
 		return false;
@@ -876,17 +878,50 @@ CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T le
 	return i;
 }
 
-bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
+CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRows) {
+	T* permPlayers = m_players;
+	memcpy(permPlayers, result, lenRow());
+	auto pOrbits = new T [numElem()];
+	memcpy(permPlayers, result, lenRow());
+	memcpy(pOrbits, result, lenRow());
+	bool checkPermut = false;
+	int errLine, errGroup, dubLine;
+	size_t cntr = 1;
+	size_t counter[2] = { 0 };
+	char* pMatrixOut = (char*)(pMatrix);
+	char *pDayPerm = pMatrixOut + nRows * numElem();
+	T nRow = 0;
+	T lenStab = 0;
+	T idx = ELEMENT_MAX;
+	printf(" I am going to the loop:\n");
 
-CheckerCanon(void)::CheckPermutations(const T* result, const T* pMatrix, int nRows) {
-/*	bool checkPermut = false;
-	int cntr = 1;
 	while (true) {
-		nElem = nextPermutation(permPlayers, pOrbits, m_numElem, idx, lenStab);
-		if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
+		if (_CheckMatrix(pMatrixOut, nRows, numElem(), true, &errLine, &errGroup, &dubLine)) {
+			counter[0]++;
+			char buffer[256];
+			auto pntr = buffer;
+			for (T j = 0; j < numElem(); j++)
+				pntr += sprintf_s(pntr, 256 - (pntr - buffer), "%3d", permPlayers[j]);
+
+			pntr += sprintf_s(pntr, 256 - (pntr - buffer), "\n");
+			printf(buffer);
+		}
+		else
+			counter[1]++;
+
+		const auto nElem = nextPermutation(permPlayers, pOrbits, numElem(), idx, lenStab);
+		if (nElem == ELEMENT_MAX /* || nElem < CGroupOrder<T>::lenStabilizer()*/)
 			break;
-		//continue;
+
 		cntr++;
+		break;
+		auto pntrTo = (char *)pMatrix + numElem();
+		for (T i = 2; i < nRows; i++) {
+			memcpy(pntrTo += numElem(), result + numElem() * pDayPerm[i], lenRow());
+			for (T j = 0; j < numElem(); j++)
+				pntrTo[j] = permPlayers[pntrTo[j]];
+		}
+
 		//			continue;
 				//	if (checkPermut = PermutResults(result, permPlayers, nDays))
 				//		break;
@@ -895,6 +930,9 @@ CheckerCanon(void)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 					// days is the same as before - an automorphism has been discovered
 		//addAutomorphism(nElem = m_numElem, permPlayers, pOrbits);
 	}
-	*/
+
+	printf("Good and Bad counters are %zd - %zd\n", counter[0], counter[1]);
+	delete[] pOrbits;
+	return counter[1] == 0;
 }
 

@@ -102,6 +102,13 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 	FCLOSE_W(f, m_file);
 }
 
+void alldata::outputError() const {
+	extern char lastError[];
+	FOPEN_W(f, ImprovedResultFile, "a", m_file);
+	_printf(f, false, lastError);
+	FCLOSE_W(f, m_file);
+}
+
 bool alldata::Run(int improveResult) {
 	// Input parameter:
 	//      improveResult: 
@@ -126,20 +133,18 @@ bool alldata::Run(int improveResult) {
 	{
 		unsigned char* bRes1 = NULL;
 		const auto bResults_1 = new unsigned char[2 * lenResult];
-		iDay = iDay - 1;
 		if (improveMatrix(2, bResults_1, lenResult, &bRes1))
 		{
-			printTable("Result improved", (const char*)bRes1, iDay + 1, m_numPlayers, 0, 3, true);
-			memcpy(result(0), bRes1, m_numPlayers * (iDay + 1));
+			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, 3, true);
+			memcpy(result(0), bRes1, m_numPlayers * iDay);
 			int errLine = 0, errGroup = 0, dubLine = 0;
-			if (!CheckMatrix(result(0), iDay + 1, m_numPlayers, true, &errLine, &errGroup, &dubLine))
+			if (!CheckMatrix(result(0), iDay, m_numPlayers, true, &errLine, &errGroup, &dubLine))
 			{
 				printf("Dublicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
 				abort();
 			}
 		}
 		delete[] bResults_1;
-		iDay = iDay + 1;
 	}
 
 	while (nLoops < LoopsMax)
@@ -183,13 +188,13 @@ bool alldata::Run(int improveResult) {
 				memcpy(maxResult, result(0), m_nLenResults);
 				sortLinks();
 			}
+			iDay++;
 #if UseSS == 0
-			if (iDay > 0)
+			if (iDay > 1)
 			{
 				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
 			}
 #endif
-			iDay++;
 		}
 
 		if (noMoreResults)

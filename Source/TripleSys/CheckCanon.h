@@ -7,7 +7,6 @@
 #define TFunc2(x, ...)          template<typename T, typename S> __VA_ARGS__ x
 #define Class2(x)               x<T,S>
 #define Class2Def(x)            TFunc2(x, class)
-//#define Class1Def(x)            template<typename T> class x
 #define FClass2(x, ...)			TFunc2(Class2(x), __VA_ARGS__)
 
 #define SIZE_TYPE				unsigned char
@@ -20,6 +19,7 @@
 #else
 #include "../DataTypes.h"
 #include "GroupOrder.h"
+bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
 #endif
 
 #define IDX_MAX					(ELEMENT_MAX - 1)
@@ -53,7 +53,7 @@ public:
 											  resetComments();
 											}
 	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
-	void CheckPermutations(const T* result, const T* pMatrix, int nRows);
+	bool CheckPermutations(const T* result, const T* pMatrix, int nRows);
 	inline auto numDays() const				{ return m_numDays; }
 	inline auto comment() const				{ return m_pComment; }
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {

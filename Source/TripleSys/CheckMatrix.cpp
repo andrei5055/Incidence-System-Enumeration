@@ -1,6 +1,8 @@
 #include <iostream>
 #include "TripleSys.h"
 
+char lastError[256];
+
 bool checkMatrix1(char* lnks, int ln, int nc, const char* matrix, int i1, int i2, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
 	const char* c = matrix + ln * nc;
@@ -15,8 +17,10 @@ bool checkMatrix1(char* lnks, int ln, int nc, const char* matrix, int i1, int i2
 	char dLine = lnks[a * nc + b];
 	if (dLine != unset)
 	{
+		sprintf_s(lastError, "CheckMatrix: matrix pair (%d %d) in group %d on line %d already defined in line %d\n", a, b, i1 / 3, ln, dLine);
 		if (printError)
-			printf("CheckMatrix: matrix pair (%d %d) in group %d on line %d already defined in line %d\n", a, b, i1 / 3, ln, dLine);
+			printf(lastError);
+
 		*errLine = ln;
 		*errGroup = i1 / 3;
 		*dubLine = dLine;

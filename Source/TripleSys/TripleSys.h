@@ -4,7 +4,7 @@ using namespace std;
 #define nPlayers0 21
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 0	// Use 0 or 1 option 2" 
+#define ImproveResults 1	// Use 0 or 1 option 2" 
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
@@ -19,7 +19,8 @@ using namespace std;
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_STATEMENT_19  1
-#define CHECK_PERMUTATIONS	1	
+#define CHECK_PERMUTATIONS	1
+#define IMPROVE_RESULT_MAX  3
 
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
@@ -145,6 +146,7 @@ private:
 	int checkPlayer1(int iPlayerNumber);
 	int checkPlayer3(int iPlayerNumber, int lastPlayer);
 	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
+	void outputError() const;
     void sortLinks();
 	bool CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errDay, int* errGroup, int* dubLine);
 
@@ -185,6 +187,7 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
+bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
 void initPrevDay(alldata* s);
 int processLastSix(alldata* s);
 

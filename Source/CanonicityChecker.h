@@ -16,6 +16,7 @@
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
 #include "CheckCanon.h"
+#include "GroupOrder.h"
 
 
 #define CHECK_PERMUTS		0 // Check permutations used for combined BIBD enumeration
@@ -48,45 +49,6 @@ struct TestCanonParams {
 	T startingRowNumb;                   // starting row for the loop in TestCanonicity (used when pPermCol != NULL)
 };
 
-Class1Def(CGroupOrder) {
-public:
-	CC inline auto groupOrder() const			{ return this? m_nGroupOrder : 1; }
-	CC inline void setGroupOrder(size_t val)	{ m_nGroupOrder = val; }
-protected:
-	CC void updateGroupOrder(const S numRow, const S *pOrb) {
-		size_t len = 1;
-		auto idx = stabilizerLengthAut();
-		while (++idx < numRow) {
-			if (*(pOrb + idx) == stabilizerLengthAut())
-				len++;
-		}
-
-		setGroupOrder(len * groupOrder());
-	}
-	CC S udpdateStabLength(const S *permut, S lenPerm, const S *pOrb, bool calcOrder, bool rowPermut) {
-		S idx = 0;
-		while (idx == permut[idx])
-			idx++;
-
-		if (calcOrder) {
-			if (rowPermut && stabilizerLengthAut() > idx)
-				updateGroupOrder(lenPerm, pOrb);
-
-			setStabilizerLengthAut(idx);
-		}
-
-		setStabilizerLength(idx);
-		return idx;
-	}
-	CC inline void setStabilizerLength(S len)	{ m_nStabLength = len; }
-	CC inline auto stabilizerLength() const		{ return m_nStabLength; }
-	CC inline void setStabilizerLengthAut(S l)	{ m_nStabLengthAut = l; }
-	CC inline auto stabilizerLengthAut() const	{ return m_nStabLengthAut; }
-private:
-	S m_nStabLength;
-	S m_nStabLengthAut;
-	size_t m_nGroupOrder;
-};
 
 Class2Def(CCanonicityChecker) : public CGroupOrder<T>, public CRank {
 public:
@@ -109,6 +71,9 @@ public:
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
 	inline bool CheckCanonicity(const T* result, int nLines, T* bResult = NULL) {
 		return m_pCheckerKSystemCanon->CheckCanonicity(result, nLines, bResult);
+	}
+	inline bool CheckPermutations(const T* inputMatrix, const T* bestResult, int nRows) {
+		return m_pCheckerKSystemCanon->CheckPermutations(inputMatrix, bestResult, nRows);
 	}
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
 		return m_pCheckerKSystemCanon->improvedResultIsReady(flag);
@@ -146,9 +111,7 @@ private:
 	CC inline auto counter() const					{ return m_pCounter; }
 	CC inline void setColIndex(T *p)				{ m_pColIndex = p; }
 	CC inline auto colIndex() const					{ return m_pColIndex; }
-	CC inline void revert(T *perm, T j, T i) const {
-		while (++i < --j) perm[i] ^= (perm[j] ^= (perm[i] ^= perm[j]));	
-	}
+
 	CC T constructColIndex(const ColOrbPntr pColOrbit, const ColOrbPntr pColOrbitIni, size_t colOrbLen, T shift = 0) const;
 	CC inline void setPermStorage(PermutStoragePntr p, int idx = 0)	{ m_pPermutStorage[idx] = p; }
 	CC T rowToChange(T nRow) const;
@@ -334,7 +297,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	for (auto i = numParts; i--;)
 		pPartSrc[i] = i;
 
-	const S* pCurrSolution;
+	const T* pCurrSolution;
 	size_t solutionSize;
 	if (pRowSolution) {
 		// Because the position of current solution (pRowSolution->solutionIndex()) 

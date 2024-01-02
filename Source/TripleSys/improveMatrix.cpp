@@ -11,13 +11,14 @@
 
 bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char **pbRes1)
 {
-	const auto nDays = iDay + 1;
+	const auto nDays = iDay;
 	const auto inputMatrix = (unsigned char*)result();
 	addCanonCall(0);
 	if (m_pCheckCanon->CheckCanonicity(inputMatrix, nDays, bResults))
 		return false;
 
-	const int improveResultMax = 3;
+	//improveResult = 1;
+	const int improveResultMax = IMPROVE_RESULT_MAX;
 	if (improveResult > 1 || improveResult && PrintImprovedResults) {
 		int cntr = 0;
 		auto* bRes1 = bResults;
@@ -39,6 +40,11 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 			if (improveResult == 1 || !flag || ++improveResult > improveResultMax)
 				break;   // No need OR further improvement is impossible
 
+#if CHECK_PERMUTATIONS
+			int errLine, errGroup, dubLine;
+			if (!_CheckMatrix((char *)bRes1, nDays, numPlayers(), true, &errLine, &errGroup, &dubLine))
+				outputError();
+#endif
 			// Swap the the best results buffers
 			auto* bRes = bRes1;
 			bRes1 = bRes2;
@@ -51,8 +57,12 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 		if (pbRes1)
 			*pbRes1 = bestResult;
 
-		if (CHECK_PERMUTATIONS)
-			m_pCheckCanon->CheckPermutations(inputMatrix, bestResult, nDays);
+#if CHECK_PERMUTATIONS
+		if (!m_pCheckCanon->CheckPermutations(inputMatrix, bestResult, nDays)) {
+			outputError();
+			abort();
+		}
+#endif
 	}
 
 	return true;
