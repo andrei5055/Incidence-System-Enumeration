@@ -53,7 +53,8 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 		} while (!m_pCheckCanon->CheckCanonicity(bRes2, nDays, bRes1));
 
 		const auto bestResult = improveResult == 1 ? (flag ? bRes1 : NULL)
-								: flag ? bRes1 : bRes3; // Best improved result
+								: improveResult > improveResultMax? (flag? bRes1 : bRes3)
+								: bRes3; // Best improved result
 		if (pbRes1)
 			*pbRes1 = bestResult;
 

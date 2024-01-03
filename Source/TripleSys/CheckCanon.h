@@ -92,7 +92,7 @@ private:
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
-	bool checkRemainingDays(T iDay, int retVal = -1, bool recordByMatrixRow = false);
+	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
 	bool checkPosition1_4(const T* players, T *pNumReason, T *pNumPlayer = NULL);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	void sortTuples() const;

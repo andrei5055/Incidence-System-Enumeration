@@ -1,10 +1,12 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 21
+#define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 30000
-#define ImproveResults 1	// Use 0 or 1 option 2" 
+#define ImproveResults 1		// 0 - with no explanation of the matrix rejection reason
+                                // 1 - reason of rejection will be explained
+								// 2 - imrove matrix as much as possible
 #define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
@@ -19,11 +21,12 @@ using namespace std;
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_STATEMENT_19  1
-#define CHECK_PERMUTATIONS	1
-#define IMPROVE_RESULT_MAX  3
+#define CHECK_PERMUTATIONS	0
+#define IMPROVE_RESULT_MAX  1000 // Maximal number of attempts to improve matrix 
+								 // (works only with 
 
 #define PrintLinksStat 1
-#define PrintLinksStatTime 0 /* 1 - requered ~50% more cpu */
+#define PrintLinksStatTime 0 /* 1 - ~50% more cpu required */
 #define PrintNVminmax 0
 #define UseLastSixAsGroup 0
 #define UseLastSix (GroupSize == 3 && nPlayers > 15 && UseLastSixAsGroup != 0)
