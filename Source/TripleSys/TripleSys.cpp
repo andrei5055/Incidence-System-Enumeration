@@ -133,6 +133,7 @@ bool alldata::Run(int improveResult) {
 	{
 		unsigned char* bRes1 = NULL;
 		const auto bResults_1 = new unsigned char[2 * lenResult];
+		m_pCheckCanon->setPreordered(false);
 		if (improveMatrix(2, bResults_1, lenResult, &bRes1))
 		{
 			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, 3, true);

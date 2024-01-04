@@ -58,6 +58,7 @@ public:
 	inline auto comment() const				{ return m_pComment; }
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
 											  return (flag & m_bResultFlag) == flag; }
+	inline void setPreordered(bool v = true) { m_bPreordered = v; }
 private:
 	inline auto numElem() const				{ return m_numElem; }
 	inline auto groupSize() const			{ return m_groupSise; }
@@ -90,12 +91,15 @@ private:
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
+	inline auto preordered() const			{ return m_bPreordered; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
 	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
 	bool checkPosition1_4(const T* players, T *pNumReason, T *pNumPlayer = NULL);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
+	bool orderingMatrix(T nDays, T numGroups, T* pNumReason, bool expected = true, bool invert = false);
 	void sortTuples() const;
+
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)
 			m_players[pTuples[j]] = j;
@@ -123,6 +127,7 @@ private:
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
 	char *m_pComment = NULL;
+	bool m_bPreordered = true;
 };
 
 
