@@ -232,70 +232,52 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 
 		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
-
-		// Not ready yet
-		T* permPlayers = NULL;
-		permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, permColumn);
-
-		T nElem = ELEMENT_MAX;
-		/*
-				if (check_trivial_row_perm) {
-					nRow = startingRowNumb;
-					goto try_permut;
-				}
-				*/
-		while (true) {
-
-			//		next_permut:
-			nElem = nextPermutation(permPlayers, pOrbits, nElem, lenStab);
-			if (nElem == ELEMENT_MAX || nElem < lenStabilizer())
-				break;
-
-			for (T iDay = 0; iDay < nDays; iDay++) {
-				const auto* pDayRes = result + iDay * m_numElem;
-				for (; nElem < m_numElem; nElem++) {
-					// const auto* pRow = pMatr->GetRow(nElem);
-				}
-			}
-		}
-	}
 #endif
-
 #if 0
 	// Not ready yet
-	for (auto j = nDays; --j;) {
-		// Check the possibility of modifying the last triple of the j-th day by the conversion 
-		// i ==> (m_numPlayers - i - 1) to get the first triple of 1-st day: (0, 3, 6).  
-		const auto* pntr = result + m_numElem * (j + 1) - 1;
-		if (*pntr != (m_numElem - 1) || *(pntr - 1) != (m_numElem - 4) || *(pntr - 2) != (m_numElem - 7))
-			continue; // It didn't happen on day j.
+	T* permPlayers = m_players;
+	T* pOrbits = m_players + m_numElem;
+	T lenStab = 0;
+//	const auto permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, NULL/*permColumn*/);
+	
+	const auto numElem = 9;//m_numElem;  // nDays
+	CGroupOrder<T>::setStabilizerLength(numElem - 1);
+	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 
-		// Try the same conversion on a full set of players and reorder new triples of the day j.
-		pntr -= 3;
-		const auto val = m_numElem - 1;
-		const auto iLast = m_numElem - 3;
-		for (T i = 0; i < iLast; i++)
-			p_players[i] = val - *pntr--;
+	// Copying trivial permutation
+	const auto len = numElem * sizeof(T);
+	memcpy(permPlayers, result, len);
+	memcpy(pOrbits, result, len);
 
-		const auto retVal = memcmp(p_players, result + m_numElem + 3, iLast * sizeof(*p_players)) >= 1;
-		if (!retVal && bResult) {
-			auto i = m_numElem;
-			while (i--)
-				bResult[i] = i;//  val - i;
+	size_t counter = 1;
+	T nElem = numElem;
+	T idx = ELEMENT_MAX;
+	while (true) {
 
-			bResult[m_numElem] = 0;// j;
-			bResult[m_numElem + 1] = j;//0;
-			T k = 0;
-			for (T i = 2; i < nDays; i++) {
-				if (++k == j)
-					k++;
-				bResult[m_numElem + i] = k;
-			}	
+		//		next_permut:
+		nElem = nextPermutation(permPlayers, pOrbits, numElem, idx, lenStab);
+		if (nElem == ELEMENT_MAX /**/ || nElem < CGroupOrder<T>::stabilizerLength())
+			break;
+		counter++;
+#if 0
+		char buffer[256], *ptr = buffer;
+		SPRINTFD(ptr, buffer, "%5zd:", counter);
+		for (T i = 0; i < numElem; i++)
+			SPRINTFD(ptr, buffer, " %3d", permPlayers[i]);
+
+		printf("%s\n", buffer);
+#endif
+/*
+		for (T iDay = 0; iDay < nDays; iDay++) {
+			const auto* pDayRes = result + iDay * m_numElem;
+			for (; nElem < m_numElem; nElem++) {
+				// const auto* pRow = pMatr->GetRow(nElem);
+			}
 		}
-
-		return retVal;
+		*/
 	}
 #endif
+
 	return true;
 }
 
@@ -445,13 +427,10 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	// Statement 17: Only the players 4 or 9 could be in position[1, 4].
 	// 
 #if USE_STATEMENT_18 == 0
+	// When USE_STATEMENT_18 != 0, these cases are covered
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
 	static T subst[] = { 8, 7,10, 9,11, 9 };
-	// aaa_3118.txt     subst = { 8, 7 }   file for UsePos_1_4_condition = 1
-	// aaa_3118++.txt	subst = { 8, 7,10, 9,11, 9 };
-	// aaa_2469.txt     using everything from this method, but only for UsePos_1_4_condition = 1
-
 	for (int i = 0; i < countof(subst); i += 2) {
 		const auto playerID = subst[i];
 		if (players[4] == playerID) {  // player is on position #4 of day #1
@@ -509,7 +488,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	}
 #else
 	// For some reason, using a symmetrical group acting on players #0 - #2
-	// does not add any new rejections for numPlayers 15 or 21.
+	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
 	T permPlayers[3], orbits[3];
 	memcpy(permPlayers, getMatrixRow(0), lenGroup);

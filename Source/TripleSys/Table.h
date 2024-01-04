@@ -71,6 +71,37 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	_printf(f, true, buffer);
 	outMatrix(c, m_nl, m_nc, m_np, m_ns, f, m_makeString, true);
+#if 1
+	// Output of a vector with the i-th coordinate equal to the number  
+	// of appearances of the i-th player first player in the group.
+	if (m_cntr) {
+		auto buf = new unsigned char [m_nc];
+		memset(buf, 0, m_nc * sizeof(*buf));
+		auto pntr = c;
+		for (T i = 0; i < m_nl; i++, pntr += m_nc) {
+			for (T j = 0; j < m_nc; j += m_np)
+				buf[pntr[j]]++;
+		}
+
+		static char idx[256] = { '\0' };
+		pBuf = idx;
+		if (idx[0] == '\0') {
+			for (T i = 0; i < m_nc; i++)
+				SPRINTFD(pBuf, idx, " %2d:", i);
+
+			SPRINTFD(pBuf, idx, "\n");
+		}
+
+		pBuf = buffer;
+		for (T i = 0; i < m_nc; i++)
+			SPRINTFD(pBuf, buffer, " %3d", buf[i]);
+
+		delete[] buf;
+		SPRINTFD(pBuf, buffer, "\n");
+		_printf(f, false, idx);
+		_printf(f, false, buffer);
+	}
+#endif
 	FCLOSE_F(f);
 }
 
