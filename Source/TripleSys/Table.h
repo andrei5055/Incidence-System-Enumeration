@@ -53,6 +53,10 @@ public:
 	int m_cntr = 0;
 };
 
+static size_t nMatr = 0;
+static size_t nMatrMax = 0;
+unsigned char *pMatrixStorage = NULL;
+
 template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 {
@@ -77,10 +81,38 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 	if (m_cntr) {
 		auto buf = new unsigned char [m_nc];
 		memset(buf, 0, m_nc * sizeof(*buf));
+		const auto lenMatr = m_nl * nGroups;
+		auto matrix = new unsigned char[lenMatr];
 		auto pntr = c;
 		for (T i = 0; i < m_nl; i++, pntr += m_nc) {
-			for (T j = 0; j < m_nc; j += m_np)
-				buf[pntr[j]]++;
+			auto pMatrixRow = matrix + nGroups * i;
+			for (T j = 0; j < nGroups; j++)
+				buf[pMatrixRow[j] = pntr[j*m_np]]++;
+		}
+
+		for (size_t i = 0; i < nMatr; i++) {
+			if (memcmp(matrix, pMatrixStorage + lenMatr * i, lenMatr))
+				continue;
+
+			delete[] matrix;
+			matrix = NULL;
+			break;
+		}
+
+		if (matrix) {
+			// New matrix found
+			if (nMatr == nMatrMax) {
+				auto pTmp = pMatrixStorage;
+				nMatrMax = 2 * (nMatrMax + 1);
+				pMatrixStorage = new unsigned char[nMatrMax * lenMatr];
+				if (pTmp) {
+					memcpy(pMatrixStorage, pTmp, nMatr * lenMatr);
+					delete[] pTmp;
+				}
+			}
+
+			memcpy(pMatrixStorage + nMatr++ * lenMatr, matrix, lenMatr);
+			delete[] matrix;
 		}
 
 		static char idx[256] = { '\0' };
@@ -100,6 +132,25 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 		SPRINTFD(pBuf, buffer, "\n");
 		_printf(f, false, idx);
 		_printf(f, false, buffer);
+
+		if (m_nc == 15 && m_cntr == 101) {
+			auto pntr = pMatrixStorage;
+			for (size_t i = 0; i < nMatr; i++, pntr += lenMatr) {
+				pBuf = buffer;
+				SPRINTFD(pBuf, buffer, "\nMatrix #%zd\n", i);
+				auto ptr = pntr;
+				for (T i1 = 0; i1 < m_nl; i1++, ptr += nGroups) {
+					for (T j = 0; j < nGroups; j++)
+						SPRINTFD(pBuf, buffer, " %3d", ptr[j]);
+					SPRINTFD(pBuf, buffer, "\n");
+				}
+
+				_printf(f, false, buffer);
+			}
+
+			delete[] pMatrixStorage;
+			nMatr = nMatrMax = 0;
+		}
 	}
 #endif
 	FCLOSE_F(f);

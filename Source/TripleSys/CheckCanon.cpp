@@ -141,7 +141,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	//             (b) days (starting with (bResult+m_numElem)'s element)
 	//    
 
-	T numReason;
+	T numReason = t_RejectionRreason::t_reasonUnknown;
 
 	setResultOut(bResult);
 	setStudiedMatrix(result, nDays);
@@ -184,6 +184,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		else {
 			// Check all remaining days for canonicity.
 			T playerNumb = -1;
+
 			for (int j = 1; j < nDays; j++) {
 				if (!checkDay(j, &numReason, &playerNumb)) {
 					if (!bResult)
@@ -235,12 +236,11 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 #endif
 #if 0
 	// Not ready yet
-	T* permPlayers = m_players;
+	T* permPlayers = playersPermutation();
 	T* pOrbits = m_players + m_numElem;
 	T lenStab = 0;
-//	const auto permColumn = init(m_numElem, 0, false, pOrbits, &permPlayers, false, NULL/*permColumn*/);
 	
-	const auto numElem = 9;//m_numElem;  // nDays
+	const auto numElem = m_numElem;  // nDays
 	CGroupOrder<T>::setStabilizerLength(numElem - 1);
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 
@@ -250,31 +250,31 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	memcpy(pOrbits, result, len);
 
 	size_t counter = 1;
+	size_t ctr = 1;
 	T nElem = numElem;
 	T idx = ELEMENT_MAX;
 	while (true) {
-
-		//		next_permut:
 		nElem = nextPermutation(permPlayers, pOrbits, numElem, idx, lenStab);
-		if (nElem == ELEMENT_MAX /**/ || nElem < CGroupOrder<T>::stabilizerLength())
+		if (nElem == ELEMENT_MAX || nElem < CGroupOrder<T>::stabilizerLength())
 			break;
+
 		counter++;
 #if 0
-		char buffer[256], *ptr = buffer;
+		char buffer[256], * ptr = buffer;
 		SPRINTFD(ptr, buffer, "%5zd:", counter);
 		for (T i = 0; i < numElem; i++)
 			SPRINTFD(ptr, buffer, " %3d", permPlayers[i]);
 
 		printf("%s\n", buffer);
 #endif
-/*
-		for (T iDay = 0; iDay < nDays; iDay++) {
-			const auto* pDayRes = result + iDay * m_numElem;
-			for (; nElem < m_numElem; nElem++) {
-				// const auto* pRow = pMatr->GetRow(nElem);
-			}
+		const auto diff = orderingMatrix(0, 0, NULL, false, false, permPlayers);
+		if (diff < 0)
+			return false;
+		
+		if (!diff) {
+			// Automorphism found
+			ctr++;
 		}
-		*/
 	}
 #endif
 
@@ -637,7 +637,7 @@ CheckerCanon(int)::checkDay_1(int iDay, T* pNumReason) {
 	return checkDayCode(diff, pNumReason, iDay);
 }
 
-CheckerCanon(bool)::orderingMatrix(T nDays, T numGroups, T* pNumReason, bool expected, bool invert) {
+CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, T* pNumReason, bool expected, bool invert, const T* permPlayer) {
 	T* pDest = resultOut();
 	if (!pDest)
 		pDest = resultMemory();
@@ -649,9 +649,13 @@ CheckerCanon(bool)::orderingMatrix(T nDays, T numGroups, T* pNumReason, bool exp
 		const auto j = numElem() - 1;
 		for (auto i = numElem(); i--;)
 			pTmp[i] = j - i;
-		
+
+		permPlayer = pTmp;
+	}
+
+	if (permPlayer) {
 		for (auto i = lenResult(); i--;)
-			pDest[i] = pTmp[pDest[i]];
+			pDest[i] = permPlayer[pDest[i]];
 	}
 
 	auto pDays = pDest + lenResult();
@@ -661,13 +665,15 @@ CheckerCanon(bool)::orderingMatrix(T nDays, T numGroups, T* pNumReason, bool exp
 	orderigRemainingDays(nDays, numGroups, pDest);
 	const auto diff = memcmp(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 	if (diff < 0) {
-		*pNumReason = invert? t_RejectionRreason::t_invertOrdering : t_RejectionRreason::t_ordering;
-		addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
-		return false;
+		if (pNumReason) {
+			*pNumReason = invert ? t_RejectionRreason::t_invertOrdering : t_RejectionRreason::t_ordering;
+			addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+		}
+		return diff;
 	}
 
 	assert(expected || diff >= 0);
-	return true;
+	return diff;
 }
 
 CheckerCanon(bool)::checkDay(T iDay, T *pNumReason, T* pNumPlayer) {
@@ -679,14 +685,14 @@ CheckerCanon(bool)::checkDay(T iDay, T *pNumReason, T* pNumPlayer) {
 			assert(pDest);  // When matrices are not preordered, 
 				            // we expect to have an external buffer
 			setPreordered(true);
-			if (!orderingMatrix(0, 0, pNumReason, false))
+			if (orderingMatrix(0, 0, pNumReason, false) < 0)
 				return false;
 		}
 
 		if (!checkPosition1_4(pMatrixRow, pNumReason, pNumPlayer))
 			return false;
 
-		if (!orderingMatrix(0, 0, pNumReason, false, true))
+		if (orderingMatrix(0, 0, pNumReason, false, true) < 0)
 			return false;
 	}
 #endif
@@ -712,7 +718,7 @@ CheckerCanon(bool)::checkDay(T iDay, T *pNumReason, T* pNumPlayer) {
 	if (!pDest)
 		return false;
 
-	return orderingMatrix(iDay, j, pNumReason);
+	return orderingMatrix(iDay, j, pNumReason) < 0;
 }
 
 CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const {

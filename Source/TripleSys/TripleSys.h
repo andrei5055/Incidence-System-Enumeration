@@ -1,7 +1,7 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 15
+#define nPlayers0 9
 #define GroupSize 3
 #define LoopsMax 30000
 #define ImproveResults 1		// 0 - with no explanation of the matrix rejection reason;
