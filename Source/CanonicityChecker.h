@@ -81,6 +81,9 @@ public:
 	inline char* comment() const {
 		return m_pCheckerKSystemCanon->comment();
 	}
+	inline void setPreordered(bool flag) {
+		m_pCheckerKSystemCanon->setPreordered(flag);
+	}
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -117,14 +120,13 @@ private:
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
 		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize);
-	CC void UpdateOrbits(const T *permut, const T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
+//	CC void UpdateOrbits(const T *permut, const T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
 #if CHECK_PERMUTS
 	CC void check_permut(const T* permut, T len_perm) const;
 #else
 #define check_permut(permut, len_perm)
 #endif
-	bool CheckPlayerPermutation();
-//	bool PermutResults(const T* res, const T* permPlayers, T nDays);
+
 #if USE_STRONG_CANONICITY
 	inline void setSolutionStorage(CSolutionStorage *p) { m_pSolutionStorage = p; }
 	inline CSolutionStorage *solutionStorage() const { return m_pSolutionStorage; }

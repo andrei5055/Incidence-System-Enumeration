@@ -42,9 +42,10 @@ public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
 		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
-		m_players = new T[3 * m_numElem];
-		m_tmpBuffer = new T[m_numElem + nRow];
-		m_pResultMemory = new T[(m_numElem + 1) * nRow];
+		m_players = new T[4 * nCol];
+		m_tmpBuffer = new T[nCol + nRow];
+		m_pResultMemory = new T[(nCol + 1) * nRow];
+		m_pOrbits = (m_pPermutation = m_players + 2 * nCol) + nCol;
 		initCommentBuffer(256);
 	}
 	~CCheckerCanon()						{ delete[] m_players;
@@ -99,7 +100,9 @@ private:
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	int orderingMatrix(T nDays, T numGroups, T* pNumReason, bool expected = true, bool invert = false, const T* permPlayer = NULL);
 	void sortTuples() const;
-	inline auto playersPermutation() const	{ return m_players + 2 * m_numElem;}
+	inline auto permutation() const			{ return m_pPermutation; }
+	inline auto oprbits() const				{ return m_pOrbits; }
+	bool checkWithGroup(const T* result, T numElem);
 
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)
@@ -124,7 +127,8 @@ private:
 	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
 	T* m_pResultMemory = NULL;	// Memory allocated to improve results
 	T* m_pDestMemory = NULL;	// Memory for recorded matrix (equal to bResults OR resultMemory())
-
+	T* m_pPermutation = NULL;
+	T* m_pOrbits = NULL;
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
 	char *m_pComment = NULL;

@@ -234,27 +234,35 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
 #endif
-#if 0
+#if 1
+		return checkWithGroup(result, m_numElem);
+#else
+	return true;
+#endif
+}
+
+CheckerCanon(bool)::checkWithGroup(const T* result, T numElem)
+{
 	// Not ready yet
-	T* permPlayers = playersPermutation();
-	T* pOrbits = m_players + m_numElem;
+	T* permut = permutation();
 	T lenStab = 0;
-	
-	const auto numElem = m_numElem;  // nDays
+
 	CGroupOrder<T>::setStabilizerLength(numElem - 1);
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
-	memcpy(permPlayers, result, len);
-	memcpy(pOrbits, result, len);
+	memcpy(permut, result, len);
+	memcpy(oprbits(), result, len);
 
+	const auto calcGroupOrder = false;
+	const auto rowPermut = false;
 	size_t counter = 1;
 	size_t ctr = 1;
 	T nElem = numElem;
 	T idx = ELEMENT_MAX;
 	while (true) {
-		nElem = nextPermutation(permPlayers, pOrbits, numElem, idx, lenStab);
+		nElem = nextPermutation(permut, oprbits(), numElem, idx, lenStab);
 		if (nElem == ELEMENT_MAX || nElem < CGroupOrder<T>::stabilizerLength())
 			break;
 
@@ -263,20 +271,20 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		char buffer[256], * ptr = buffer;
 		SPRINTFD(ptr, buffer, "%5zd:", counter);
 		for (T i = 0; i < numElem; i++)
-			SPRINTFD(ptr, buffer, " %3d", permPlayers[i]);
+			SPRINTFD(ptr, buffer, " %3d", permut[i]);
 
 		printf("%s\n", buffer);
 #endif
-		const auto diff = orderingMatrix(0, 0, NULL, false, false, permPlayers);
+		const auto diff = orderingMatrix(0, 0, NULL, false, false, permut);
 		if (diff < 0)
 			return false;
-		
+
 		if (!diff) {
 			// Automorphism found
 			ctr++;
+			CGroupOrder<T>::UpdateOrbits(permut, numElem, oprbits(), rowPermut, calcGroupOrder);
 		}
 	}
-#endif
 
 	return true;
 }
@@ -368,6 +376,38 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 
 	return false;
 }
+
+#if 0
+CheckerCanon(bool)::checkPermutationOfFirstDaygroups()
+{
+	T permPlayers[3], orbits[3];
+	memcpy(permPlayers, getMatrixRow(0), lenGroup);
+	memcpy(orbits, permPlayers, lenGroup);
+	memcpy(pTmp, pntr, lenRow());
+	while (true) {
+		const auto nElem = nextPermutation(permPlayers, orbits, groupSize(), idx, 0);
+		if (nElem == ELEMENT_MAX /* || nElem < CGroupOrder<T>::lenStabilizer()*/)
+			break;
+
+		for (T i = 0; i < 3; i++)
+			memcpy(pTmp + i * groupSize(), pntr + permPlayers[i] * groupSize(), lenGroup);
+
+		recordTuples(pTmp);
+		sortTuples();
+
+		const int diff = checkDayCode(0, NULL, 1);
+		if (diff < 0) {
+			if (!resultOut())
+				return false;       // we don't need explanation for rejection
+
+			*pNumReason = t_RejectionRreason::t_Statement_19;
+			*pNumPlayer = i;		// the number of the group used
+			memcpy(m_players, pTmp, lenRow());
+			return checkRemainingDays(1, diff, m_players);
+		}
+	}
+}
+#endif
 
 CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPlayer) {
 	// Statement 7: In canonical matrix z1 < z2

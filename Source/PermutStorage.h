@@ -24,7 +24,6 @@ public:
 	CK inline auto numPerm() const					{ return lenMemUsed() / lenPerm(); }
 	CC T *allocateMemoryForPermut(T lenPermut);
 	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
-	CC void UpdateOrbits(const T *permut, T lenPerm, T *pOrbits, T idx = 0) const;
 	T *CreateOrbits(const PermutStoragePntr pPermColumn, const  MatrixDataPntr pMatrix, T *pRowOrbits = NULL, T *pColOrbits = NULL, int firstpermIdx = 1) const;
 	CC inline bool isEmpty() const					{ return !lenMemUsed(); }
 protected:
@@ -334,26 +333,6 @@ PermutStorage(size_t)::findSolutionIndex(const T *pFirst, size_t idx, T *pMem, s
 	return pCanonIdx[i];
 }
 
-PermutStorage(void)::UpdateOrbits(const T* permut, T lenPerm, T* pOrb, T idx) const {
-	// Update orbits of elements
-	do {
-		auto i = *(pOrb + idx);
-		auto j = *(pOrb + permut[idx]);
-		if (j == i)
-			continue;
-
-		if (j < i) {
-			i ^= j;
-			i ^= j ^= i;
-		}
-
-		for (auto k = lenPerm; k--;) {
-			if (*(pOrb + k) == j)
-				*(pOrb + k) = i;
-		}
-	} while (++idx < lenPerm);
-}
-
 PermutStorage(void)::outputAutomorphismInfo(FILE* file, const T* pRowOrbits,
 	const  PermutStoragePntr pPermColumn, const T* pColOrbits, const MatrixDataPntr pMatrix, bool outPermut) const {
 	const auto nRows = lenPerm();
@@ -470,8 +449,8 @@ PermutStorage(T *)::CreateOrbits(const  Class2(CPermutStorage)* pPermColumn,
 			memcpy(pColOrbitsTmp += nCols, pColOrbits, nCols * sizeof(S));
 		}
 
-		UpdateOrbits(pRowPermut, nRows, pRowOrbitsTmp);
-		UpdateOrbits(pPermColumn->getPermutByIndex(i), nCols, pColOrbitsTmp);
+		Update_Orbits(pRowPermut, nRows, pRowOrbitsTmp);
+		Update_Orbits(pPermColumn->getPermutByIndex(i), nCols, pColOrbitsTmp);
 	}
 
 	return pRowOrbits;

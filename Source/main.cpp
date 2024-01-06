@@ -274,12 +274,17 @@ bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, st
 	pInSys->setObjectType(objType);
 
 	char buff[256] = {}, buffer[256] = {};
+	if (pInSysEnum)
+		MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
+	else {
+		const auto name = obj_name[static_cast<int>(t_objectType::t_TripleSystem)];
+		sprintf_s(buff, "%s(%d)", name, pParam->v);
+	}
+	cout << buff;
+
 	auto* pEnumInfo = new CInsSysEnumInfo<TDATA_TYPES>(buff);
 	const bool resetMTlevel = pParam->MT_level() == 0;
 	if (pInSysEnum) {
-		MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
-		cout << buff;
-
 		pEnumInfo->setDesignInfo(pParam);
 		if (FirstPath) {
 			FOPEN(outFile, pSummFile, "w");
