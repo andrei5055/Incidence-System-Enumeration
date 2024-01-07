@@ -104,7 +104,6 @@ protected:
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
-	CC T nextPermutation(T *perm, const T *pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
@@ -314,6 +313,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 	size_t startIndex = 0;
 	T* permColumn = pCanonParam->pPermCol;
+	const auto len_stab = lenStabilizer();
 	auto pOrbits = orbits();
 	while (true) {
 #ifndef USE_CUDA
@@ -329,7 +329,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 
 		next_permut:
 			nRow = next_permutation(permRows, pOrbits, nRow, lenStab);
-			if (nRow == ELEMENT_MAX || nRow < lenStabilizer())
+			if (nRow == ELEMENT_MAX || nRow < len_stab)
 				break;
 
 		try_permut:

@@ -102,7 +102,7 @@ private:
 	void sortTuples() const;
 	inline auto permutation() const			{ return m_pPermutation; }
 	inline auto oprbits() const				{ return m_pOrbits; }
-	bool checkWithGroup(const T* result, T numElem);
+	bool checkWithGroup(const T* result, T numElem/*, int (*func)(CCheckerCanon<T>, const T*)*/);
 
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)

@@ -234,16 +234,21 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
 #endif
-#if 1
+#if 0
+		if (m_numDays != m_numDaysMax)
+			return true;
+
+		static int ccc = 0;
+		if (!ccc++)
+			return true;
+
 		return checkWithGroup(result, m_numElem);
 #else
 	return true;
 #endif
 }
 
-CheckerCanon(bool)::checkWithGroup(const T* result, T numElem)
-{
-	// Not ready yet
+CheckerCanon(bool)::checkWithGroup(const T* result, T numElem/*, int (*func)(CCheckerCanon<T>, const T*)*/) {
 	T* permut = permutation();
 	T lenStab = 0;
 
@@ -263,7 +268,7 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem)
 	T idx = ELEMENT_MAX;
 	while (true) {
 		nElem = nextPermutation(permut, oprbits(), numElem, idx, lenStab);
-		if (nElem == ELEMENT_MAX || nElem < CGroupOrder<T>::stabilizerLength())
+		if (nElem == ELEMENT_MAX)
 			break;
 
 		counter++;
@@ -386,7 +391,7 @@ CheckerCanon(bool)::checkPermutationOfFirstDaygroups()
 	memcpy(pTmp, pntr, lenRow());
 	while (true) {
 		const auto nElem = nextPermutation(permPlayers, orbits, groupSize(), idx, 0);
-		if (nElem == ELEMENT_MAX /* || nElem < CGroupOrder<T>::lenStabilizer()*/)
+		if (nElem == ELEMENT_MAX)
 			break;
 
 		for (T i = 0; i < 3; i++)
@@ -475,7 +480,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 		const auto playerID = subst[i];
 		if (players[4] == playerID) {  // player is on position #4 of day #1
 			*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4
-			*pNumPlayer = subst[i];
+				* pNumPlayer = subst[i];
 			return explainRejection(players, playerID, subst[i + 1]);
 		}
 	}
@@ -502,7 +507,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	auto pntr = getMatrixRow(1);
 	const auto lenGroup = groupSize() * sizeof(T);
 	auto pTmp = m_players + m_numElem;
-#if 1
+#if 0
 	auto pntrFrom = pntr;
 	auto pntrTo = pTmp;
 	// NOTE: There is no point in replacing group #0 of the first day with the group # > groupSize() 
@@ -536,7 +541,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	memcpy(pTmp, pntr, lenRow());
 	while (true) {
 		const auto nElem = nextPermutation(permPlayers, orbits, groupSize(), idx, 0);
-		if (nElem == ELEMENT_MAX /* || nElem < CGroupOrder<T>::lenStabilizer()*/)
+		if (nElem == ELEMENT_MAX)
 			break;
 
 		for (T i = 0; i < 3; i++)
@@ -560,6 +565,12 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 #endif
 	return true;
 }
+
+/*
+{
+	CheckerCanon(bool)::checkWithGroup(const T* result, T numElem)
+}
+*/
 
 CheckerCanon(void)::createDaySequence(T iDay) const {
 	// Adding all unused days to the array.
@@ -991,7 +1002,7 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 			counter[1]++;
 
 		const auto nElem = nextPermutation(permPlayers, pOrbits, numElem(), idx, lenStab);
-		if (nElem == ELEMENT_MAX /* || nElem < CGroupOrder<T>::lenStabilizer()*/)
+		if (nElem == ELEMENT_MAX)
 			break;
 
 		cntr++;
