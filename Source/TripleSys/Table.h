@@ -75,7 +75,7 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	_printf(f, true, buffer);
 	outMatrix(c, m_nl, m_nc, m_np, m_ns, f, m_makeString, true);
-#if 1
+#if OUTPUT_VECTOR_STAT
 	// Output of a vector with the i-th coordinate equal to the number  
 	// of appearances of the i-th player first player in the group.
 	if (m_cntr) {

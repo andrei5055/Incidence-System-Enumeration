@@ -1,29 +1,24 @@
 #pragma once
-
-#ifndef CD_TOOLS
 #include "TripleSys.h"
 
-
-#define TFunc2(x, ...)          template<typename T, typename S> __VA_ARGS__ x
-#define Class2(x)               x<T,S>
-#define Class2Def(x)            TFunc2(x, class)
-#define FClass2(x, ...)			TFunc2(Class2(x), __VA_ARGS__)
-
+#ifndef CD_TOOLS
 #define SIZE_TYPE				unsigned char
 #define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
-
-#define countof(x)     sizeof(x)/sizeof(x[0])
 #define CC
-
-#include "GroupOrder.h"
 #else
 #include "../DataTypes.h"
-#include "GroupOrder.h"
 bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
 #endif
 
+#include "GroupOrder.h"
+
+#define TFunc1_(x, ...)			template<typename T> __VA_ARGS__ x
+#define Class1_(x)              x<T>
+#define Class1Def_(x)           TFunc1_(x, class)
+#define FClass1_(x, ...)		TFunc1_(Class1_(x), __VA_ARGS__)
+
 #define IDX_MAX					(ELEMENT_MAX - 1)
-#define CheckerCanon(...)		FClass2(CCheckerCanon, __VA_ARGS__)
+#define CheckerCanon(...)		FClass1_(CCheckerCanon, __VA_ARGS__)
 
 typedef enum {
 	t_notReady			 = 0,
@@ -37,7 +32,7 @@ inline void revert(T* perm, T j, T i) {
 	while (++i < --j) perm[i] ^= (perm[j] ^= (perm[i] ^= perm[j]));
 }
 
-Class2Def(CCheckerCanon) : public CGroupOrder<T> {
+Class1Def_(CCheckerCanon) : public Class1_(CGroupOrder) {
 public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 

@@ -154,7 +154,7 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
 	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
-	CCheckerCanon<TDATA_TYPES> *m_pCheckerKSystemCanon = NULL;
+	CCheckerCanon<SIZE_TYPE> *m_pCheckerKSystemCanon = NULL;
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 
@@ -208,7 +208,7 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, 
 	if (enumFlags & t_EnumeratorFlags::t_kSystems &&
 		(!m_pCheckerKSystemCanon || m_pCheckerKSystemCanon->numDays() != nRow)) {
 		delete m_pCheckerKSystemCanon;
-		m_pCheckerKSystemCanon = new CCheckerCanon<unsigned char, unsigned char>(nRow, m_numElem, 3);
+		m_pCheckerKSystemCanon = new CCheckerCanon<unsigned char>(nRow, m_numElem, 3);
 	}
 }
 

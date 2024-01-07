@@ -29,7 +29,8 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 #ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
 #else
-	m_pCheckCanon = new CCheckerCanon<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
+	//m_pCheckCanon = new CCheckerCanon<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
+	m_pCheckCanon = new CCheckerCanon<unsigned char>(m_numDays, numPlayers, groupSize);
 #endif
 
 	Init();

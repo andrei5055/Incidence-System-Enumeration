@@ -26,7 +26,7 @@ static const char* reason[] = {
 		"Rejected by generalization of Statement 19 for the group #%d of day 1",
 };
 
-template class CCheckerCanon<SIZE_TYPE, SIZE_TYPE>;
+template class CCheckerCanon<SIZE_TYPE>;
 
 template<typename T>
 void renumberPlayers(T* pntr, size_t i, size_t iLast) {
@@ -476,7 +476,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	// List of simple player substitutions (subst[i] <---> subst[i+1], for i%2 == 0) 
 	// which will improve the matrix code, if player subst[i] is at position [1, 2]
 	static T subst[] = { 8, 7,10, 9,11, 9 };
-	for (int i = 0; i < countof(subst); i += 2) {
+	for (int i = 0; i < sizeof(subst) / sizeof(subst[0]); i += 2) {
 		const auto playerID = subst[i];
 		if (players[4] == playerID) {  // player is on position #4 of day #1
 			*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4
@@ -507,7 +507,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T *pNumReason, T* pNumPla
 	auto pntr = getMatrixRow(1);
 	const auto lenGroup = groupSize() * sizeof(T);
 	auto pTmp = m_players + m_numElem;
-#if 0
+#if 1
 	auto pntrFrom = pntr;
 	auto pntrTo = pTmp;
 	// NOTE: There is no point in replacing group #0 of the first day with the group # > groupSize() 

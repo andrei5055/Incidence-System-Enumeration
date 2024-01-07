@@ -23,7 +23,8 @@ using namespace std;
 #define USE_STATEMENT_19  1
 #define CHECK_PERMUTATIONS	0
 #define IMPROVE_RESULT_MAX  1000 // Maximal number of attempts to improve matrix 
-								 // (works only with 
+								 // (works only with ImproveResults=2)
+#define OUTPUT_VECTOR_STAT	0    // Output of some statistics for constructed matrices
 
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - ~50% more cpu required */
@@ -114,13 +115,12 @@ private:
 };
 
 #ifdef CD_TOOLS
-#define CheckCanon CCanonicityChecker
+template<typename T, typename S> class CCanonicityChecker;
+#define CheckCanon CCanonicityChecker<unsigned __int8, unsigned __int8>
 #else
-#define CheckCanon CCheckerCanon
+template<typename T> class CCheckerCanon;
+#define CheckCanon CCheckerCanon<unsigned __int8>
 #endif
-
-template<typename T, typename S> class CheckCanon;
-
 
 class alldata : private SizeParam {
 public:
@@ -179,7 +179,7 @@ private:
 	const bool m_bCheckLinkV;
 	const bool m_bCheckLinkH;
 	CChecklLink *m_pCheckLink = NULL;
-	CheckCanon<unsigned __int8, unsigned __int8> *m_pCheckCanon = NULL;
+	CheckCanon *m_pCheckCanon = NULL;
 	FILE* m_file = NULL;    // File for output of improved matrices.
 };
 
