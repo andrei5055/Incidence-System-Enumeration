@@ -234,13 +234,13 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		p_dayIsUsed[iDay] = 0;
 		continue;   // temporary
 #endif
-#if 0
+#if 1
 		if (m_numDays != m_numDaysMax)
 			return true;
 
-		static int ccc = 0;
-		if (!ccc++)
-			return true;
+		//static int ccc = 0;
+		//if (!ccc++)
+			//return true;
 
 		return checkWithGroup(result, m_numElem);
 #else
@@ -254,31 +254,34 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem/*, int (*func)(CCh
 
 	CGroupOrder<T>::setStabilizerLength(numElem - 1);
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
+	CGroupOrder<T>::setGroupOrder(1);
 
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
 	memcpy(permut, result, len);
 	memcpy(oprbits(), result, len);
 
-	const auto calcGroupOrder = false;
-	const auto rowPermut = false;
+	const auto calcGroupOrder = numDays() == m_numDaysMax;
+	const auto rowPermut = calcGroupOrder;
+
 	size_t counter = 1;
 	size_t ctr = 1;
-	T nElem = numElem;
+	T nElem = ELEMENT_MAX;//numElem;
 	T idx = ELEMENT_MAX;
+	FOPEN_F(f, "../ccc.txt", "w");
 	while (true) {
-		nElem = nextPermutation(permut, oprbits(), numElem, idx, lenStab);
+		nElem = nextPermutation(permut, oprbits(), numElem, nElem, lenStab);
 		if (nElem == ELEMENT_MAX)
 			break;
 
 		counter++;
-#if 0
-		char buffer[256], * ptr = buffer;
+#if 1
+		char buffer[256], *ptr = buffer;
 		SPRINTFD(ptr, buffer, "%5zd:", counter);
 		for (T i = 0; i < numElem; i++)
 			SPRINTFD(ptr, buffer, " %3d", permut[i]);
 
-		printf("%s\n", buffer);
+		_printf(f, false, "%s\n", buffer);
 #endif
 		const auto diff = orderingMatrix(0, 0, NULL, false, false, permut);
 		if (diff < 0)
@@ -288,9 +291,22 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem/*, int (*func)(CCh
 			// Automorphism found
 			ctr++;
 			CGroupOrder<T>::UpdateOrbits(permut, numElem, oprbits(), rowPermut, calcGroupOrder);
+			ptr = buffer;
+			SPRINTFD(ptr, buffer, "==>%2zd:", ctr);
+			for (T i = 0; i < numElem; i++)
+				SPRINTFD(ptr, buffer, " %3d", oprbits()[i]);
+
+			_printf(f, false, "%s\n", buffer);
+			nElem = IDX_MAX;
 		}
+		else
+			nElem = numElem;
 	}
 
+	if (rowPermut && calcGroupOrder)
+		CGroupOrder<T>::updateGroupOrder(numElem, oprbits());
+
+	FCLOSE_F(f);
 	return true;
 }
 

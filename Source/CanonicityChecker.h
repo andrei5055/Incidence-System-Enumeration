@@ -468,7 +468,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				// So we don't need to continue try different permutations of rows, because if for some permutation of
 				// the rows we would find non-canonicity, we would find it earlier without doing permutation of parts.
 				if (rowPermut) {
-					// We are checking completely constructed matrix with the nontrivial gpoup action on its parts.
+					// We are checking completely constructed matrix with the nontrivial group action on its parts.
 					incGroupOrder();
 				}
 
