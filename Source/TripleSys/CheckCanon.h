@@ -7,7 +7,6 @@
 #define CC
 #else
 #include "../DataTypes.h"
-bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
 #endif
 
 #include "GroupOrder.h"
@@ -82,7 +81,6 @@ private:
 	bool checkDay(T iDay, T * pNumPlayer);
 	int checkDayCode(int diff, T iDay = 1);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
-	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
@@ -99,7 +97,7 @@ private:
 	void sortTuples() const;
 	inline auto permutation() const			{ return m_pPermutation; }
 	inline auto oprbits() const				{ return m_pOrbits; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer);
+	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer, bool firstDayChanged = false);
 	bool checkWithGroup(const T* result, T numElem, int (CCheckerCanon<T>::*func)(const T*, T));
 	int checkPermutationOnGroups(const T* permGroups, T numElem);
 	int orderingMatrix(const T* permut, T numElem)     {
