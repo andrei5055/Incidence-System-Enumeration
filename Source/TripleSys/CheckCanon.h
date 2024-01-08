@@ -97,8 +97,12 @@ private:
 	void sortTuples() const;
 	inline auto permutation() const			{ return m_pPermutation; }
 	inline auto oprbits() const				{ return m_pOrbits; }
-	bool checkWithGroup(const T* result, T numElem/*, int (*func)(CCheckerCanon<T>, const T*)*/);
-
+	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumReason, T* pNumPlayer);
+	bool checkWithGroup(const T* result, T numElem, int (CCheckerCanon<T>::*func)(const T*, T));
+	int checkPermutationOnGroups(const T* permGroups, T numElem);
+	int orderingMatrix(const T* permut, T numElem)     {
+		return orderingMatrix(0, 0, NULL, false, false, permut);
+	}
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)
 			m_players[pTuples[j]] = j;
