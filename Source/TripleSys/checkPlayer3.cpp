@@ -37,7 +37,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	l0[iPlayerNumber] = li[i0] = day;
 	if (m0 == 2)
 	{
-		bool bV = true, bH = true;
+		bool bV = true, bH = true, bHdone = false;
 #if UseSS == 0
 		if (iPlayer > m_numPlayers / 2 && m_bCheckLinkH)
 		{
@@ -47,7 +47,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				selPlayers[iPlayerNumber] = iPlayer;
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				getUnselected(m_h, nUnselected);
-				bH = m_pCheckLink->checkLinksH(links(), NULL, NULL, 0, m_h, nUnselected, nUnselected, unset, unset, m_ho);
+				bHdone = bH = m_pCheckLink->checkLinksH(links(), NULL, NULL, 0, m_h, nUnselected, nUnselected, unset, unset, m_ho);
 			}
 		}
 #endif
@@ -62,6 +62,34 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			li[i0] = li[i1] = unset;
 			l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
 			return iPlayerNumber + 1;
+		}
+		if (bHdone)
+		{
+			for (int i = iPlayer + 1, j = 0; i < m_numPlayers; i++, j++)
+			{
+				char v = m_ho[j];
+				if (!setLinksForOnePlayer(tmpPlayers, i, v))
+					abort();
+				indexPlayer[i] = v;
+				if ((i % 3) == 2)
+				{
+					if (m_bCheckLinkV && bH == true)
+					{
+						if (!m_pCheckLink->checkLinks(links(), iDay))
+						{
+							if (!unsetLinksForOnePlayer(tmpPlayers, i))
+								abort();
+							tmpPlayers[i] = unset;
+							iPlayer = i;
+							return -1;
+						}
+					}
+				}
+
+				selPlayers[v] = i;
+			}
+			iPlayer = m_numPlayers;
+			return -1;
 		}
 	}
 	return iPlayerNumber;

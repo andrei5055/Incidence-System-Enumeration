@@ -28,17 +28,25 @@ int alldata::getNextPlayer()
 					return m_numPlayers;
 				if (iPlayerNumber == iRet)
 					break;
+				if (iRet < 0)
+				{
+					if (iPlayer < m_numPlayers)
+					{
+						m0 = iPlayer % GroupSize;
+						iPlayerNumber = indexPlayer[iPlayer];
+						continue;
+					}
+					return iRet;
+				}
 				iPlayerNumber = iRet - 1;
 				continue;
 			}
 			else
 			{
-				tmpPlayers[iPlayer] = iPlayerNumber;
-				if (setLinksForOnePlayer(tmpPlayers, iPlayer, 1))
+				if (setLinksForOnePlayer(tmpPlayers, iPlayer, (char)iPlayerNumber))
 				{
 					break;
 				}
-				tmpPlayers[iPlayer] = unset;
 				continue;
 			}
 		}

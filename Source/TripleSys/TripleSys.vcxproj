@@ -137,7 +137,6 @@
     <ClCompile Include="checkLinksH.cpp" />
     <ClCompile Include="checkLinksV.cpp" />
     <ClCompile Include="CheckMatrix.cpp" />
-    <ClCompile Include="checkPlayer.cpp" />
     <ClCompile Include="checkPlayer1.cpp" />
     <ClCompile Include="checkPlayer3.cpp" />
     <ClCompile Include="convertLinksToResult.cpp" />
@@ -145,7 +144,6 @@
     <ClCompile Include="improveMatrix.cpp" />
     <ClCompile Include="initStartValues.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PlayerPermutation.cpp" />
     <ClCompile Include="printTable.cpp" />
     <ClCompile Include="processLastSix.cpp" />
     <ClCompile Include="processOneDay.cpp" />

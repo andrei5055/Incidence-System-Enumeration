@@ -21,7 +21,6 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	tmpPlayers = new char[m_numPlayers];
 	indexPlayer = new char[m_numPlayers];
 	m_pLinks = new char[m_np2];
-	index6 = new char[m_numDays];
 	m_h = new char[m_numPlayers];
 	m_ho = new char[m_numPlayers];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
@@ -47,7 +46,6 @@ alldata::~alldata() {
 	delete[] tmpPlayers;
 	delete[] indexPlayer;
 	delete[] m_pLinks;
-	delete[] index6;
 	delete[] m_h;
 	delete[] m_ho;
 	delete m_pCheckLink;
@@ -138,19 +136,22 @@ bool alldata::Run(int improveResult) {
 		if (improveMatrix(2, bResults_1, lenResult, &bRes1))
 		{
 			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, 3, true);
-			memcpy(result(0), bRes1, m_numPlayers * iDay);
+			memcpy(result(0), bRes1, m_nLenResults);
 			int errLine = 0, errGroup = 0, dubLine = 0;
-			if (!CheckMatrix(result(0), iDay, m_numPlayers, true, &errLine, &errGroup, &dubLine))
+			if (!_CheckMatrix(result(0), iDay, m_numPlayers, links(0), true, &errLine, &errGroup, &dubLine))
 			{
 				printf("Dublicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
 				abort();
 			}
+			printTableColor("Links improved", links(0), numPlayers(), numPlayers());
 		}
 		delete[] bResults_1;
+		m_pCheckCanon->setPreordered(true);
 	}
 
 	while (nLoops < LoopsMax)
 	{
+		clock_t dTime = clock();
 		mTime = clock();
 		while (iDay < m_numDays || bPrevResult)
 		{
@@ -161,6 +162,18 @@ bool alldata::Run(int improveResult) {
 			}
 			if (bPrevResult)
 			{
+				if (0)//clock() - dTime > 120000)
+				{
+					int errLine, errGroup, dubLine;
+					dTime = clock();
+					iDay = 3;
+					if (!_CheckMatrix(result(0), iDay, m_numPlayers, links(), true, &errLine, &errGroup, &dubLine))
+						abort();
+					//printTable("Links truncated", links(), m_numPlayers, m_numPlayers);
+					convertLinksToResult(links());
+					memcpy(result(0), m_co, m_nLenResults);
+					printTable("Result truncated", result(0), iDay, m_numPlayers, 0, 3, true);
+				}
 				if (!initPrevDay())
 					continue;
 			}

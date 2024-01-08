@@ -12,7 +12,7 @@ void SizeParam::convertLinksToResult(const char *ci)
 	{
 		int m = 0;
 
-		memset(co, unset, m_numPlayers);
+		memset(co, 0, m_numPlayers);
 		auto* cj = c;
 		const auto gs_1 = m_groupSize - 1;
 		for (int j = 0; j < m_numPlayers; j++, cj += m_numPlayers)

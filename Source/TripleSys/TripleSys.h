@@ -29,8 +29,6 @@ using namespace std;
 #define PrintLinksStat 1
 #define PrintLinksStatTime 0 /* 1 - ~50% more cpu required */
 #define PrintNVminmax 0
-#define UseLastSixAsGroup 0
-#define UseLastSix (GroupSize == 3 && nPlayers > 15 && UseLastSixAsGroup != 0)
 #define UseSS 0
 #define nPlayers (nPlayers0/GroupSize*GroupSize)
 #define nGroups (nPlayers / GroupSize)
@@ -137,13 +135,12 @@ private:
 	bool initPrevDay();
 	inline auto *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	inline auto *links(int nPlayer = 0) const	{ return m_pLinks + nPlayer * m_numPlayers; }
-	int getLastSixIndex(const char* resDay);
 	void getUnselected(char* v, int nv);
-	int processLastSix();
 	void getPrevPlayer();
 	int getNextPlayer();
 	bool initCurrentDay();
-	bool setLinksForOnePlayer(const char* p, int ip, char iset) const;
+	bool setLinksForOnePlayer(char* p, int ip, char v) const;
+	bool unsetLinksForOnePlayer(char* p, int ip) const;
 	void setCheckLinks();
 	bool processOneDay();
 	int checkPlayer1(int iPlayerNumber);
@@ -167,7 +164,6 @@ private:
 	char* selPlayers;
 	char* tmpPlayers;
 	char* indexPlayer;
-	char* index6;
 	char* m_h = NULL;
 	char* m_ho = NULL;
 	int  iPlayer, iDay;
@@ -190,7 +186,7 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
-bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine);
+bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
 void initPrevDay(alldata* s);
 int processLastSix(alldata* s);
 

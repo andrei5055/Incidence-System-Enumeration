@@ -14,8 +14,7 @@ bool alldata::initCurrentDay()
 
 	if (m_bCheckLinkH && iDay > 1)
 	{
-		int np = UseLastSix ? m_numPlayers - 6 : m_numPlayers;
-		//int np = m_numPlayers;
+		int np = m_numPlayers;
 		for (int i = 0; i < m_numPlayers; i++)
 			m_h[i] = i;
 		if (iDay == 0)
@@ -23,61 +22,28 @@ bool alldata::initCurrentDay()
 			memcpy(m_ho, m_h, np);
 		}
 		else
-		{/**
-			double cnt = 0;
-			m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay-1)[1], m_ho, &cnt);
-			printf("d = % d n = % .0f\n", iDay, cnt);
-			**/
-			memset(selPlayers, unset, m_numPlayers);
+		{
 			char* s = iDay == 1 ? selPlayers : NULL;
 			if (!m_pCheckLink->checkLinksH(links(), NULL, s, 0, m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
 			{
 				bPrevResult = true;
-#if 0
-				if (iDay == 2)
-				{
-					printf("day=%d\n", iDay);
-					printTable("no H result", m_ho, 1, np);
-				}
-#endif
 				return false;
 			}
 		}
-		memcpy(result(iDay), m_ho, np);
-		auto* const pRes = result(iDay);
-		memcpy(indexPlayer, pRes, m_numPlayers);
-		memcpy(tmpPlayers, pRes, m_numPlayers);
-
-		if (UseLastSix)
-		{
-			iPlayer = m_numPlayers - GroupSize * 2;
-			indexPlayer[iPlayer] = index6[iDay] = 0; // only one of six indices used, last 5 values of array indexPlayers not used
-		}
-		else if (m_numPlayers > GroupSize)
-			iPlayer = m_numPlayers - GroupSize - 1;
-		else
-			iPlayer = m_numPlayers - 1;
+		memcpy(tmpPlayers, m_ho, np);
+		iPlayer = m_numPlayers;
 
 		for (int j = 0; j < m_numPlayers; j++)
 		{
-			int k = tmpPlayers[j];
-			if (j < iPlayer)
+			char k = tmpPlayers[j];
+			if (!setLinksForOnePlayer(tmpPlayers, j, k))
 			{
-				if (!setLinksForOnePlayer(pRes, j, 1))
+				if (iDay == 0)
 				{
-					if (iDay == 0)
-					{
-						bPrevResult = true;
-						return false;
-					}
-					abort();
+					bPrevResult = true;
+					return false;
 				}
-				selPlayers[k] = j;
-			}
-			else
-			{
-				tmpPlayers[j] = selPlayers[k] = unset;
-				indexPlayer[j] = 0;
+				abort();
 			}
 		}
 	}
@@ -86,32 +52,43 @@ bool alldata::initCurrentDay()
 }
 
 
-bool alldata::setLinksForOnePlayer(const char* p, int ip, char iset) const
+bool alldata::setLinksForOnePlayer(char* p, int ip, char v) const
 {
 	const int i = ip % GroupSize;
-	if (i == 0)
-		return true;
-	char bset = iset == 1 ? iDay : unset;
-	char i1 = p[ip];
-	auto* linkPtr = links(i1);
-	if (bset != unset)
+	if (i != 0)
 	{
+		char bset = iDay;
+		auto* linkPtr = links(v);
 		for (int j = 1; j <= i; j++)
 		{
 			char i2 = p[ip - j];
 			if (linkPtr[i2] != unset)
 				return false;
-
+		}
+		for (int j = 1; j <= i; j++)
+		{
+			const char i2 = p[ip - j];
+			linkPtr[i2] = *(links(i2) + v) = bset;
 		}
 	}
-	for (int j = 1; j <= i; j++)
-	{
-		const char i2 = p[ip - j];
-		linkPtr[i2] = *(links(i2) + i1) = bset;
-	}
+	p[ip] = v;
 	return true;
 }
 
+bool alldata::unsetLinksForOnePlayer(char* p, int ip) const
+{
+	const int i = ip % GroupSize;
+	if (i == 0)
+		return true;
+	char i1 = p[ip];
+	auto* linkPtr = links(i1);
+	for (int j = 1; j <= i; j++)
+	{
+		const char i2 = p[ip - j];
+		linkPtr[i2] = *(links(i2) + i1) = unset;
+	}
+	return true;
+}
 bool alldata::initPrevDay()
 {
 	if (iDay >= 0 && iDay < m_numDays)
@@ -137,12 +114,7 @@ bool alldata::initPrevDay()
 	memcpy(indexPlayer, pRes, m_numPlayers);
 	memcpy(tmpPlayers, pRes, m_numPlayers);
 
-	if (UseLastSix)
-	{
-		iPlayer = m_numPlayers - GroupSize * 2;
-		indexPlayer[iPlayer] = index6[iDay]; // only one of six indices used, last 5 values of array indexPlayers not used
-	}
-	else if (m_numPlayers > GroupSize)
+	if (m_numPlayers > GroupSize)
 		iPlayer = m_numPlayers - GroupSize - 1;
 	else
 		iPlayer = m_numPlayers - 1;
@@ -163,15 +135,13 @@ bool alldata::initPrevDay()
 			}
 			else
 			{
-				if (!setLinksForOnePlayer(pRes, j, unset))
+				if (!unsetLinksForOnePlayer(pRes, j))
 					abort();
 				tmpPlayers[j] = selPlayers[k] = unset;
 				indexPlayer[j] = 0;
 			}
 		}
 	}
-	if (UseLastSix)
-		index6[iDay] = ind + 1;
 	indexPlayer[iPlayer] = ind + 1;
 	return true;
 }
@@ -181,22 +151,13 @@ void alldata::getPrevPlayer()
 	if (iPlayer >= m_numPlayers)
 		abort();
 
-	if (UseLastSix && iPlayer > m_numPlayers - 6)
-		abort();
-
 	indexPlayer[iPlayer] = 0;
 	while (--iPlayer >= 0)
 	{
-		int iPlayerNumber;
-		if (!setLinksForOnePlayer(tmpPlayers, iPlayer, unset))
+		int iPlayerNumber = tmpPlayers[iPlayer];
+		if (!unsetLinksForOnePlayer(tmpPlayers, iPlayer))
 			abort();
-		if (tmpPlayers[iPlayer] < 0 || tmpPlayers[iPlayer] >= m_numPlayers)
-			abort();
-		iPlayerNumber = tmpPlayers[iPlayer];
-		//checkbmask(selPlayers, bmask);
-		selPlayers[iPlayerNumber] = unset;
-		//checkbmask(selPlayers, bmask);
-		tmpPlayers[iPlayer] = unset;
+		tmpPlayers[iPlayer] = selPlayers[iPlayerNumber] = unset;
 
 		if (iPlayer >= m_numPlayers - GroupSize || iPlayerNumber >= m_numPlayers)
 		{

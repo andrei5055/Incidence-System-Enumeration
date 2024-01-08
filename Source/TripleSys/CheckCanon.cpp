@@ -238,7 +238,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	continue;   // temporary
 #endif
 
-#if 1
+#if 0
 	if (m_numDays != m_numDaysMax)
 		return true;
 
@@ -977,10 +977,11 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 	T nRow = 0;
 	T lenStab = 0;
 	T idx = ELEMENT_MAX;
+	char lnks[21 * 21];
 	printf(" I am going to the loop:\n");
 
 	while (true) {
-		if (_CheckMatrix(pMatrixOut, nRows, numElem(), true, &errLine, &errGroup, &dubLine)) {
+		if (_CheckMatrix(pMatrixOut, nRows, numElem(), lnks, true, &errLine, &errGroup, &dubLine)) {
 			counter[0]++;
 			char buffer[256];
 			auto pntr = buffer;

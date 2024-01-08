@@ -208,7 +208,7 @@ int alldata::checkPlayer1(int iPlayerNumber)
 #endif
 	}
 
-	if (m0 == 0 && (!UseLastSix || iPlayer < m_numPlayers - 6))
+	if (m0 == 0)
 	{
 		int firstNotSel = 0;
 		for (int i = 0; i < m_numPlayers; i++)
@@ -219,6 +219,10 @@ int alldata::checkPlayer1(int iPlayerNumber)
 				break;
 			}
 		}
+		// new 3
+		if (iPlayerNumber < iPlayer / 3)
+			iPlayerNumber = iPlayer / 3; // not happen
+
 		if (iPlayerNumber > firstNotSel)
 			return m_numPlayers; // happen for 21
 		else

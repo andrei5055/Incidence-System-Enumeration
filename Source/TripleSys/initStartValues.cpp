@@ -66,16 +66,13 @@ doneInit:
 				exit(0);
 			}
 
-			*(res + j) = ivId;
-			if (!setLinksForOnePlayer(res, j, 1))
+			if (!setLinksForOnePlayer(res, j, ivId))
 			{
-				printf("Init: value of %d (for day %d position %d) already defined in links table\n",
-					ivId, i, j);
+				printf("Init: value of %d (for day %d position %d) already defined in links table\n", ivId, i, j);
 				printTable("Initial result", result(0), m_numDays, m_numPlayers);
 				exit(0);
 			}
 		}
-		index6[i] = getLastSixIndex(res);
 	}
 	
 	iDay = id;

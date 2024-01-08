@@ -29,11 +29,9 @@ bool checkMatrix1(char* lnks, int ln, int nc, const char* matrix, int i1, int i2
 	lnks[a * nc + b] = lnks[b * nc + a] = ln;
 	return true;
 }
-bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine)
+bool _CheckMatrix(const char* matrix, int nl, int nc, char *lnks, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	char lnks[21*21];
-
-	if (nl < 0 || nl > 10 || (nc != 15 && nc != 21) || nl * nc > sizeof(lnks))
+	if (nl < 0 || nl > 10 || (nc != 15 && nc != 21))
 	{
 		printf("CheckMatrix: incorrect parameters (nlines=%d ncolumns=%d), job aborted\n", nl, nc);
 		abort();
@@ -57,5 +55,5 @@ bool _CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errL
 }
 bool alldata::CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	return _CheckMatrix(matrix, nl, nc, printError, errLine, errGroup, dubLine);
+	return _CheckMatrix(matrix, nl, nc, links(), printError, errLine, errGroup, dubLine);
 }

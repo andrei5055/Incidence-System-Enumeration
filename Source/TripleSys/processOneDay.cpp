@@ -20,18 +20,10 @@ bool alldata::processOneDay()
 		//	printf("%d p=%d\n", iDay, iPlayer);
 #endif
 
-		int iPlayerNumber = 0;
 		if (iPlayer < 0)
 			return false;
 
-		if (UseLastSix && iPlayer == m_numPlayers - 6)
-		{
-			iPlayerNumber = processLastSix();
-			if (iPlayer == m_numPlayers)
-				break;
-		}
-		else
-			iPlayerNumber = getNextPlayer();
+		int iPlayerNumber = getNextPlayer();
 		
 		if (iPlayerNumber >= m_numPlayers)
 		{
@@ -39,14 +31,22 @@ bool alldata::processOneDay()
 			getPrevPlayer();
 			continue;
 		}
-		//if (iDay == 3)
-		//	printf("%d p=%d v=%d\n", iDay, iPlayer, iPlayerNumber);
-		if (iPlayer + 1 < m_numPlayers && iPlayerNumber != indexPlayer[iPlayer])
-			indexPlayer[iPlayer + 1] = 0;
-		indexPlayer[iPlayer] = iPlayerNumber;
-		tmpPlayers[iPlayer] = iPlayerNumber;
-		selPlayers[iPlayerNumber] = iPlayer; // check values of selPlayers only for equal or not to unset (-1)
-		iPlayer++;
+		else if (iPlayerNumber >= 0)
+		{
+			//if (iDay == 3)
+			//	printf("%d p=%d v=%d\n", iDay, iPlayer, iPlayerNumber);
+			if (iPlayer + 1 < m_numPlayers && iPlayerNumber != indexPlayer[iPlayer])
+				indexPlayer[iPlayer + 1] = 0;
+			indexPlayer[iPlayer] = iPlayerNumber;
+			tmpPlayers[iPlayer] = iPlayerNumber;
+			selPlayers[iPlayerNumber] = iPlayer; // check values of selPlayers only for equal or not to unset (-1)
+			iPlayer++;
+		}
+		else
+		{
+			iPlayer = m_numPlayers;
+			return true;
+		}
 	}
 	//if (iDay == 3)
 	//	printf("return d=%d p=%d\n", iDay, iPlayer);
