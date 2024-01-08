@@ -78,9 +78,9 @@ private:
 	inline auto numGroups() const			{ return m_numGroups;}
 	inline auto lenRow() const				{ return m_lenRow; }
 	inline auto destMemory() const			{ return m_pDestMemory; }
-	int checkDay_1(int iDay, T* pNumReason);
-	bool checkDay(T iDay, T* pNumReason, T * pNumPlayer);
-	int checkDayCode(int diff, T* pNumReason, T iDay = 1);
+	int checkDay_1(int iDay);
+	bool checkDay(T iDay, T * pNumPlayer);
+	int checkDayCode(int diff, T iDay = 1);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool permutPlayers4Day(const T* p_players, const T* resDayIn, T numGroup, T* resDayOut) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
@@ -88,20 +88,22 @@ private:
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
 	inline auto preordered() const			{ return m_bPreordered; }
+	inline void setNumReason(T numReason)	{ m_numReason = numReason; }
+	inline auto numReason() const			{ return m_numReason; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
 	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
-	bool checkPosition1_4(const T* players, T *pNumReason, T *pNumPlayer = NULL);
+	bool checkPosition1_4(const T* players, T *pNumPlayer = NULL);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
-	int orderingMatrix(T nDays, T numGroups, T* pNumReason, bool expected = true, bool invert = false, const T* permPlayer = NULL);
+	int orderingMatrix(T nDays, T numGroups, bool expected = true, bool invert = false, const T* permPlayer = NULL);
 	void sortTuples() const;
 	inline auto permutation() const			{ return m_pPermutation; }
 	inline auto oprbits() const				{ return m_pOrbits; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumReason, T* pNumPlayer);
+	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer);
 	bool checkWithGroup(const T* result, T numElem, int (CCheckerCanon<T>::*func)(const T*, T));
 	int checkPermutationOnGroups(const T* permGroups, T numElem);
 	int orderingMatrix(const T* permut, T numElem)     {
-		return orderingMatrix(0, 0, NULL, false, false, permut);
+		return orderingMatrix(0, 0, false, false, permut);
 	}
 	inline void recordTuples(const T* pTuples) const {
 		for (T j = 0; j < numElem(); j++)
@@ -118,6 +120,8 @@ private:
 	const T m_numDaysMax;
 	const T m_groupSise;
 	const T m_numGroups;
+	T m_numReason;
+
 	const size_t m_lenRow;
 	size_t m_lenResult;
 	T m_numDays;
