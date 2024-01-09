@@ -36,10 +36,11 @@ public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
 		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
-		m_players = new T[4 * nCol];
+		m_players = new T[5 * nCol];
 		m_tmpBuffer = new T[nCol + nRow];
 		m_pResultMemory = new T[(nCol + 1) * nRow];
 		m_pOrbits = (m_pPermutation = m_players + 2 * nCol) + nCol;
+		m_tmpBuffer1 = m_pOrbits + nCol;
 		initCommentBuffer(256);
 	}
 	~CCheckerCanon()						{ delete[] m_players;
@@ -79,7 +80,7 @@ private:
 	inline auto destMemory() const			{ return m_pDestMemory; }
 	int checkDay_1(int iDay);
 	bool checkDay(T iDay, T * pNumPlayer);
-	int checkDayCode(int diff, T iDay = 1);
+	int checkDayCode(int diff, T iDay, const T* secontRow);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
@@ -94,18 +95,20 @@ private:
 	bool checkPosition1_4(const T* players, T *pNumPlayer = NULL);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	int orderingMatrix(T nDays, T numGroups, bool expected = true, bool invert = false, const T* permPlayer = NULL);
-	void sortTuples() const;
+	void sortTuples(T *players) const;
 	inline auto permutation() const			{ return m_pPermutation; }
 	inline auto oprbits() const				{ return m_pOrbits; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer, bool firstDayChanged = false);
-	bool checkWithGroup(const T* result, T numElem, int (CCheckerCanon<T>::*func)(const T*, T));
-	int checkPermutationOnGroups(const T* permGroups, T numElem);
+	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
+	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
+	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer, const T* pCurrentRow = NULL);
+	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
+	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int orderingMatrix(const T* permut, T numElem)     {
 		return orderingMatrix(0, 0, false, false, permut);
 	}
-	inline void recordTuples(const T* pTuples) const {
+	inline void recordTuples(const T* pTuples, T *pPlayers) const {
 		for (T j = 0; j < numElem(); j++)
-			m_players[pTuples[j]] = j;
+			pPlayers[pTuples[j]] = j;
 	}
 
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
@@ -125,11 +128,14 @@ private:
 	T m_numDays;
 	const T* m_pStudiedMatrix = NULL;
 	T* m_pResultOut;
-	T* m_tmpBuffer = NULL;		// Buffer uswd for groups and days ordering
+	T* m_tmpBuffer = NULL;		// Buffer to be used for groups and days ordering
+	T* m_tmpBuffer1 = NULL;     // Buffer to be used in ordering by groups
 	T* m_pResultMemory = NULL;	// Memory allocated to improve results
 	T* m_pDestMemory = NULL;	// Memory for recorded matrix (equal to bResults OR resultMemory())
 	T* m_pPermutation = NULL;
 	T* m_pOrbits = NULL;
+	const T* m_pTrivialPerm;
+
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
 	char *m_pComment = NULL;

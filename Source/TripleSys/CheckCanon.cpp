@@ -125,9 +125,9 @@ void groupOrdering(T* pElems, size_t numGroup, T* buffer, size_t groupSize = Gro
 	}
 }
 
-CheckerCanon(void)::sortTuples() const {
-	elemOrdering(m_players, m_numElem, groupSize());
-	groupOrdering(m_players, numGroups(), tmpBuffer(), groupSize());
+CheckerCanon(void)::sortTuples(T *players) const {
+	elemOrdering(players, m_numElem, groupSize());
+	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
 
 CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
@@ -147,6 +147,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 
 	setResultOut(bResult);
 	setStudiedMatrix(result, nDays);
+	setTrivialPerm(result);
 	resetImprovedResultFlag();
 
 	m_pDestMemory = bResult ? bResult : resultMemory();
@@ -169,7 +170,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		// Check canonicity of the codes for the other days
 		if (iDay) {
 			// Do this only when day 0 changed its place.
-			sortTuples();
+			sortTuples(m_players);
 			const auto retVal = checkDay_1(iDay);
 			if (nDays == 2)
 				return retVal >= 0; // In this case there is nothing more to do than has already been done.
@@ -206,7 +207,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		}
 	}
 
-#if 1
+#if 0
 	if (m_numDays != m_numDaysMax)
 		return true;
 
@@ -220,7 +221,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 #endif
 }
 
-CheckerCanon(bool)::checkWithGroup(const T* result, T numElem, int (CCheckerCanon<T>::*func)(const T*, T)) {
+CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow) {
 	T* permut = permutation();
 	T lenStab = 0;
 
@@ -230,14 +231,14 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem, int (CCheckerCano
 
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
-	memcpy(permut, result, len);
-	memcpy(oprbits(), result, len);
+	memcpy(permut, trivialPerm(), len);
+	memcpy(oprbits(), trivialPerm(), len);
 
 	const auto calcGroupOrder = numDays() == m_numDaysMax && numElem == this->numElem();
 	const auto rowPermut = calcGroupOrder;
 
 	T nElem = ELEMENT_MAX;
-#define PRINT_PERMUT 1
+#define PRINT_PERMUT 0
 #if PRINT_PERMUT || PRINT_PERMUT_
 	char buffer[256], * ptr;
 	size_t ctr = 1;
@@ -247,6 +248,7 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem, int (CCheckerCano
 
 	FOPEN_F(f, "../ccc.txt", "w");
 #endif
+	int lll = 0;
 	while (true) {
 		nElem = nextPermutation(permut, oprbits(), numElem, nElem, lenStab);
 		if (nElem == ELEMENT_MAX)
@@ -260,7 +262,8 @@ CheckerCanon(bool)::checkWithGroup(const T* result, T numElem, int (CCheckerCano
 
 		_printf(f, false, "%s\n", buffer);
 #endif
-		const auto diff = (this->*func)(permut, numElem);
+		lll++;
+		const auto diff = (this->*func)(permut, numElem, pCurrentRow);
 		if (diff < 0)
 			return false;
 
@@ -399,16 +402,21 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	return false;
 }
 
-CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer, bool firstDayChanged)
+CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, T* pNumPlayer, const T* pCurrentRow)
 {
+	static int ccc; ccc++;
+	if (ccc == 21744)
+		ccc += 0;
 	auto pTmp = m_players + m_numElem;
-	memcpy(pTmp, (firstDayChanged? m_players : getMatrixRow(1)), lenRow());
-	if (!checkWithGroup(getMatrixRow(0), numGroups, &CCheckerCanon<T>::checkPermutationOnGroups)) {
+	if (numGroup < numGroups())
+		memcpy(pTmp, pCurrentRow, lenRow());
+
+	if (!checkWithGroup(numGroup, &CCheckerCanon<T>::checkPermutationOnGroups, pCurrentRow)) {
 		if (!resultOut())
 			return false;			// we don't need explanation for rejection
 
 		setNumReason(t_RejectionRreason::t_Statement_19_G);
-		*pNumPlayer = numGroups;	// the number of the group used
+		*pNumPlayer = numGroup;	// the number of the groups used
 		memcpy(m_players, pTmp, lenRow());
 		return checkRemainingDays(1, -1, m_players);
 	}
@@ -416,17 +424,17 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlaye
 	return true;
 }
 
-CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem)
+CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const T* pCurrentRow)
 {
+	static int ddd; ddd++;
 	auto pTmp = m_players + m_numElem;
-	auto pntr = getMatrixRow(1);
 	const auto lenGroup = groupSize() * sizeof(*pTmp);
 	for (T i = 0; i < numElem; i++)
-		memcpy(pTmp + i * groupSize(), pntr + permGroup[i] * groupSize(), lenGroup);
+		memcpy(pTmp + i * groupSize(), pCurrentRow + permGroup[i] * groupSize(), lenGroup);
 
-	recordTuples(pTmp);
-	sortTuples();
-	return checkDayCode(0, 1);
+	recordTuples(pTmp, m_tmpBuffer1); // ???
+	sortTuples(m_tmpBuffer1);
+	return checkDayCode(0, 1, m_tmpBuffer1);
 }
 
 CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
@@ -532,10 +540,10 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 		memcpy(pTmp, pntr, lenRow());
 		memcpy(pTmp, pntrFrom += groupSize(), lenGroup);
 		memcpy(pntrTo += groupSize(), pntr, lenGroup);
-		recordTuples(pTmp);
-		sortTuples();
+		recordTuples(pTmp, m_pPlayers);
+		sortTuples(m_pPlayers);
 
-		const int diff = checkDayCode(0, 1);
+		const int diff = checkDayCode(0, 1, m_players);
 		if (diff < 0) {
 			if (!resultOut())
 				return false;       // we don't need explanation for rejection
@@ -551,7 +559,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 	// For some reason, using a symmetrical group acting on players #0 - #2
 	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
-	return checkPermutationOfFirstDayGroups(3, pNumPlayer);
+	return checkPermutationOfFirstDayGroups(3, pNumPlayer, getMatrixRow(1));
 #endif
 #endif
 }
@@ -568,16 +576,16 @@ CheckerCanon(void)::createDaySequence(T iDay) const {
 	}
 }
 
-CheckerCanon(int)::checkDayCode(int diff, T iDay) {
+CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow) {
 	if (!diff)
-		diff = memcmp(m_players, studiedMatrix() + m_numElem, lenRow());
+		diff = memcmp(secontRow, studiedMatrix() + m_numElem, lenRow());
 
 	if (!diff && numDays() > 2 || diff < 0 && resultOut()) {
 		T* pDest = destMemory();
 		if (diff != -9999) {
 			// Saving two first days:
 			memcpy(pDest, studiedMatrix(), lenRow());
-			memcpy(pDest + m_numElem, m_players, lenRow());
+			memcpy(pDest + m_numElem, secontRow, lenRow());
 		}
 
 		if (diff < 0) {
@@ -669,14 +677,14 @@ CheckerCanon(int)::checkDay_1(int iDay) {
 		return -1;
 #endif
 #endif
-	diff = checkDayCode(diff, iDay);
+	diff = checkDayCode(diff, iDay, m_players);
 	if (diff < 0)
 		return -1;
-/*
+#if 0
 	T numPlayer;
-	if (!checkPermutationOfFirstDayGroups(numGroups(), &numPlayer, true))
+	if (!checkPermutationOfFirstDayGroups(numGroups(), &numPlayer, m_players))
 		return -1;
-*/
+#endif
 	return diff;
 }
 
