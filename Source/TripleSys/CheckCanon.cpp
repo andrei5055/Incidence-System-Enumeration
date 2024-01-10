@@ -186,17 +186,16 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		}
 		else {
 			// Check all remaining days for canonicity.
-			T playerNumb = -1;
-
+			setReasonParam(-1);
 			for (int j = 1; j < nDays; j++) {
-				if (!checkDay(j, &playerNumb)) {
+				if (!checkDay(j)) {
 					if (!bResult)
 						return false;
 
 					char buffer[256];
 					auto pReason = reason[numReason()];
-					if (playerNumb != -1) {
-						sprintf_s(buffer, pReason, playerNumb);
+					if (reasonParam() != -1) {
+						sprintf_s(buffer, pReason, reasonParam());
 						pReason = buffer;
 					}
 
@@ -402,7 +401,7 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	return false;
 }
 
-CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, T* pNumPlayer, const T* pCurrentRow)
+CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow)
 {
 	static int ccc; ccc++;
 	if (ccc == 21744)
@@ -416,7 +415,7 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, T* pNumPlayer
 			return false;			// we don't need explanation for rejection
 
 		setNumReason(t_RejectionRreason::t_Statement_19_G);
-		*pNumPlayer = numGroup;	// the number of the groups used
+		setReasonParam(numGroup);	// the number of the groups used
 		memcpy(m_players, pTmp, lenRow());
 		return checkRemainingDays(1, -1, m_players);
 	}
@@ -437,7 +436,7 @@ CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const
 	return checkDayCode(0, 1, m_tmpBuffer1);
 }
 
-CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
+CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	// Statement 7: In canonical matrix z1 < z2
 	//    0  1  2    3  4  5    6  7  8 ....
 	//    0  3  6    1 z1  *    2 z2 *
@@ -480,9 +479,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 		groupOrdering(pNewOrder, groupSize(), tmpBuffer(), 2);
 		setNumReason(t_RejectionRreason::t_Statement_18);
 		const auto playerPrevID = i - groupSize();
-		if (pNumPlayer)
-			*pNumPlayer = playerPrevID;
-
+		setReasonParam(playerPrevID);
 		return explainRejection(players, playerPrevID, i, 0, false, pNewOrder);
 	}
 #endif
@@ -502,8 +499,8 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 	for (int i = 0; i < sizeof(subst) / sizeof(subst[0]); i += 2) {
 		const auto playerID = subst[i];
 		if (players[4] == playerID) {  // player is on position #4 of day #1
-			*pNumReason = t_RejectionRreason::t_NotThatPlayerInPosition_1_4
-				* pNumPlayer = subst[i];
+			setNumReason(t_RejectionRreason::t_NotThatPlayerInPosition_1_4);
+			setReasonParam(subst[i]);
 			return explainRejection(players, playerID, subst[i + 1]);
 		}
 	}
@@ -513,7 +510,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 			return false;              // we don't need explanation for rejection
 
 		setNumReason(t_RejectionRreason::t_NotThatPlayerInPosition_1_4);
-		*pNumPlayer = 7;
+		setReasonParam(7);
 
 		if (players == studiedMatrix() + m_numElem) {
 			// Do this only when day 0 did not changed its place.
@@ -529,7 +526,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 	// Swaping group #0 of day 1 with all other groups
 	auto pntr = getMatrixRow(1);
 	const auto lenGroup = groupSize() * sizeof(T);
-#if 0
+#if 0   // Both of these options work and result in similar rejection of matrices.
 	auto pTmp = m_players + m_numElem;
 	auto pntrFrom = pntr;
 	auto pntrTo = pTmp;
@@ -540,8 +537,8 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 		memcpy(pTmp, pntr, lenRow());
 		memcpy(pTmp, pntrFrom += groupSize(), lenGroup);
 		memcpy(pntrTo += groupSize(), pntr, lenGroup);
-		recordTuples(pTmp, m_pPlayers);
-		sortTuples(m_pPlayers);
+		recordTuples(pTmp, m_players);
+		sortTuples(m_players);
 
 		const int diff = checkDayCode(0, 1, m_players);
 		if (diff < 0) {
@@ -549,7 +546,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 				return false;       // we don't need explanation for rejection
 
 			setNumReason(t_RejectionRreason::t_Statement_19);
-			*pNumPlayer = i;		// the number of the group used
+			setReasonParam(i);		// the number of the group used
 			memcpy(m_players, pTmp, lenRow());
 			return checkRemainingDays(1, diff, m_players);
 		}
@@ -559,7 +556,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players, T* pNumPlayer) {
 	// For some reason, using a symmetrical group acting on players #0 - #2
 	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
-	return checkPermutationOfFirstDayGroups(3, pNumPlayer, getMatrixRow(1));
+	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1));
 #endif
 #endif
 }
@@ -681,8 +678,7 @@ CheckerCanon(int)::checkDay_1(int iDay) {
 	if (diff < 0)
 		return -1;
 #if 0
-	T numPlayer;
-	if (!checkPermutationOfFirstDayGroups(numGroups(), &numPlayer, m_players))
+	if (!checkPermutationOfFirstDayGroups(numGroups(), m_players))
 		return -1;
 #endif
 	return diff;
@@ -725,7 +721,7 @@ CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool inve
 	return diff;
 }
 
-CheckerCanon(bool)::checkDay(T iDay, T* pNumPlayer) {
+CheckerCanon(bool)::checkDay(T iDay) {
 	auto pMatrixRow = getMatrixRow(iDay);
 	T* pDest = resultOut();
 #if	(UsePos_1_4_condition & 1)
@@ -738,7 +734,7 @@ CheckerCanon(bool)::checkDay(T iDay, T* pNumPlayer) {
 				return false;
 		}
 
-		if (!checkPosition1_4(pMatrixRow, pNumPlayer))
+		if (!checkPosition1_4(pMatrixRow))
 			return false;
 
 		if (orderingMatrix(0, 0, false, true) < 0)

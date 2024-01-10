@@ -79,7 +79,7 @@ private:
 	inline auto lenRow() const				{ return m_lenRow; }
 	inline auto destMemory() const			{ return m_pDestMemory; }
 	int checkDay_1(int iDay);
-	bool checkDay(T iDay, T * pNumPlayer);
+	bool checkDay(T iDay);
 	int checkDayCode(int diff, T iDay, const T* secontRow);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
 	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
@@ -89,10 +89,12 @@ private:
 	inline auto preordered() const			{ return m_bPreordered; }
 	inline void setNumReason(T numReason)	{ m_numReason = numReason; }
 	inline auto numReason() const			{ return m_numReason; }
+	inline void setReasonParam(T val)       { m_nReasonParam = val; }
+	inline auto reasonParam() const			{ return m_nReasonParam; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
 	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
-	bool checkPosition1_4(const T* players, T *pNumPlayer = NULL);
+	bool checkPosition1_4(const T* players);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	int orderingMatrix(T nDays, T numGroups, bool expected = true, bool invert = false, const T* permPlayer = NULL);
 	void sortTuples(T *players) const;
@@ -100,7 +102,7 @@ private:
 	inline auto oprbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, T* pNumPlayer, const T* pCurrentRow = NULL);
+	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow = NULL);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int orderingMatrix(const T* permut, T numElem)     {
@@ -122,6 +124,7 @@ private:
 	const T m_groupSise;
 	const T m_numGroups;
 	T m_numReason;
+	T m_nReasonParam;
 
 	const size_t m_lenRow;
 	size_t m_lenResult;
