@@ -7,6 +7,7 @@ typedef enum {
 	t_ordering,
 	t_invertOrdering,
 	t_changing_day_0,
+	t_changing_day_0_group,
 	t_playerPosition_1_4,
 	t_NotThatPlayerInPosition_1_4,
 	t_Statement_7,
@@ -19,7 +20,8 @@ static const char* reason[] = {
 		"Reason unknown",
 		"Ordering problem",
 		"Inverted matrix has smaller code",
-		"Increasing code by changing day 0",
+		"Improving code by changing day 0",
+		"Improving code by changing day 0 and using group",
 		"Only players 4 or 9 can be in position [1,4]",
 		"Player #%d cannot be at position [1, 4]",
 		"Player# in [1, 4] should be less than [1, 7]",
@@ -170,19 +172,72 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		// Check canonicity of the codes for the other days
 		if (iDay) {
 			// Do this only when day 0 changed its place.
-			sortTuples(m_players);
-			const auto retVal = checkDay_1(iDay);
-			if (nDays == 2)
-				return retVal >= 0; // In this case there is nothing more to do than has already been done.
+			static int ccc; ccc++;
+			T minVal, maxVal = groupSize();
+			while (true) {
+				sortTuples(m_players);
+				const auto retVal = checkDay_1(iDay);
+				if (nDays == 2)
+					return retVal >= 0; // In this case there is nothing more to do than has already been done.
 
-			if (retVal > 0)
-				continue;
+				if (retVal < 0 && !bResult)
+					return false;  // The result has improved, but we don't need to know how.
 
-			if (retVal < 0 && !bResult)
-				return false;  // The result has improved, but we don't need to know how.
+				if (retVal <= 0 && !checkRemainingDays(iDay, retVal))
+					return reportTxtError(bResult, reason[numReason()], NULL, iDay);
 
-			if (!checkRemainingDays(iDay, retVal))
-				return reportTxtError(bResult, reason[t_RejectionRreason::t_changing_day_0], NULL, iDay);
+				if ((minVal = maxVal) == numElem())
+					break;
+				
+				// Starting working with the next group
+				maxVal += groupSize();
+				auto pRow = getMatrixRow(iDay);
+				auto pRowLast = pRow + numElem();
+				// Find groups with the elements in the inteval [minVal, maxVal)
+				auto tmp = playersPerm(1);
+				auto tmpTo = tmp;
+				auto tmpTo1 = tmp + groupSize() * groupSize();
+				auto idx = 0;
+				static int d; d += 1;
+				while (true) {
+					T elem;
+					auto* pTo = &tmpTo1;
+					auto k = 0;  groupSize();
+					for (; k < groupSize(); k++) {
+						elem = pRow[k];
+						if (elem >= maxVal)
+							break;
+						if (elem >= minVal) {
+							pTo = &tmpTo;
+							break;
+						}
+					}
+
+					// Copying this group to the beginning OR to the end of the array
+					memcpy(*pTo, pRow, groupSize() * sizeof(*tmpTo));
+					if (*pTo == tmpTo) {
+						// Group with one of the elements we are looking for is found
+						// Let's put it first
+						if (k) {
+							tmpTo[k] = tmpTo[0];
+							tmpTo[0] = elem;
+						}
+
+						if (++idx >= groupSize()) {
+							// Copying remaining groups
+							pRow += groupSize();
+							memcpy(tmpTo1, pRow, (pRowLast - pRow) * sizeof(*tmpTo1));
+							break;
+						}
+					}
+					*pTo += groupSize();
+					pRow += groupSize();
+				}
+
+				// Recording the set of players:
+				for (T j = 0; j < numElem(); j++)
+					m_players[tmp[j]] = j;
+			}
 		}
 		else {
 			// Check all remaining days for canonicity.
@@ -343,7 +398,7 @@ CheckerCanon(bool)::rollBack(T* p_dayRes, T* p_dayIsUsed, int& j, int nDays) con
 }
 
 CheckerCanon(bool)::checkOrderingForDay(T nDay) const {
-	auto res = studiedMatrix() + nDay * m_numElem;
+	auto res = getMatrixRow(nDay);
 	if (res[0] || !copyTuple(res))
 		return false;
 
@@ -401,12 +456,9 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	return false;
 }
 
-CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow)
+CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow, bool useRecording)
 {
-	static int ccc; ccc++;
-	if (ccc == 21744)
-		ccc += 0;
-	auto pTmp = m_players + m_numElem;
+	auto pTmp = playersPerm(1);
 	if (numGroup < numGroups())
 		memcpy(pTmp, pCurrentRow, lenRow());
 
@@ -416,8 +468,17 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCur
 
 		setNumReason(t_RejectionRreason::t_Statement_19_G);
 		setReasonParam(numGroup);	// the number of the groups used
-		memcpy(m_players, pTmp, lenRow());
-		return checkRemainingDays(1, -1, m_players);
+		if (useRecording) {
+			// Recording to the initial player numbers
+			auto pOrbits = oprbits();
+			for (auto j = m_numElem; j--;)
+				pOrbits[pCurrentRow[j]] = j;
+
+			for (T i = 0; i < m_numElem; i++)
+				pTmp[i] = pOrbits[pTmp[i]];
+		}
+
+		return checkRemainingDays(1, -1, pTmp);
 	}
 
 	return true;
@@ -425,13 +486,12 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCur
 
 CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const T* pCurrentRow)
 {
-	static int ddd; ddd++;
-	auto pTmp = m_players + m_numElem;
+	auto pTmp = playersPerm(1);
 	const auto lenGroup = groupSize() * sizeof(*pTmp);
 	for (T i = 0; i < numElem; i++)
 		memcpy(pTmp + i * groupSize(), pCurrentRow + permGroup[i] * groupSize(), lenGroup);
 
-	recordTuples(pTmp, m_tmpBuffer1); // ???
+	recordTuples(pTmp, m_tmpBuffer1);
 	sortTuples(m_tmpBuffer1);
 	return checkDayCode(0, 1, m_tmpBuffer1);
 }
@@ -517,7 +577,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 			// As described in Statement 17, swap
 			checkOrderingForDay(1); // days 0 and 1
 			checkRemainingDays(1, -1);
-			return explainRejection(m_players, 1, 2, 1, true);
+			return explainRejection(players, 1, 2, 1, true);
 		}
 		return false;
 	}
@@ -526,29 +586,29 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	// Swaping group #0 of day 1 with all other groups
 	auto pntr = getMatrixRow(1);
 	const auto lenGroup = groupSize() * sizeof(T);
-#if 0   // Both of these options work and result in similar rejection of matrices.
-	auto pTmp = m_players + m_numElem;
+#if 1   // Both of these options work and result in similar rejection of matrices.
+	auto pTmp = playersPerm(1);
 	auto pntrFrom = pntr;
 	auto pntrTo = pTmp;
 	// NOTE: There is no point in replacing group #0 of the first day with the group # > groupSize() 
 	// and leaving at least one of the groups #1, #2, ...groupSize()-1 on their places. 
 	// In this case, we will not get the right leading group (which is (0, 3, 6) for triples) on the first day.
+	auto pSecondRow = playersPerm(2);
 	for (T i = 1; i < groupSize(); i++) {
 		memcpy(pTmp, pntr, lenRow());
 		memcpy(pTmp, pntrFrom += groupSize(), lenGroup);
 		memcpy(pntrTo += groupSize(), pntr, lenGroup);
-		recordTuples(pTmp, m_players);
-		sortTuples(m_players);
+		recordTuples(pTmp, pSecondRow);
+		sortTuples(pSecondRow);
 
-		const int diff = checkDayCode(0, 1, m_players);
+		const int diff = checkDayCode(0, 1, pSecondRow);
 		if (diff < 0) {
 			if (!resultOut())
 				return false;       // we don't need explanation for rejection
 
 			setNumReason(t_RejectionRreason::t_Statement_19);
 			setReasonParam(i);		// the number of the group used
-			memcpy(m_players, pTmp, lenRow());
-			return checkRemainingDays(1, diff, m_players);
+			return checkRemainingDays(1, diff, pTmp);
 		}
 	}
 	return true;
@@ -565,8 +625,7 @@ CheckerCanon(void)::createDaySequence(T iDay) const {
 	// Adding all unused days to the array.
 	auto pDest = destMemory() + lenResult();
 	*pDest++ = iDay;
-	*pDest = 0;
-	int j = 0;
+	auto j = *pDest = 0;
 	while (++j < numDays()) {
 		if (j != iDay)
 			*++pDest = j;
@@ -592,8 +651,6 @@ CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow) {
 				*++pDest = 0;
 				reportTxtError(pDest - 1, reason[numReason()], pDest - 1, 2);
 			}
-			// Andrei: When these 2 lines are commented out the AND numDays()==2
-			// improved matrix is not printed 
 			else
 				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 		}
@@ -608,7 +665,6 @@ CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow) {
 CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 	// A function to record the remaining days and check them when the code for 
 	// the first two days was built exactly the same as in the input matrix.
-	// 
 	const auto numElem_2 = 2 * m_numElem;
 	auto* pDest = destMemory();
 	if (iDay) {
@@ -616,7 +672,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 		if (!pPerm)
 			pPerm = getMatrixRow(iDay);
 
-		T* pOrbits = m_players + m_numElem;
+		auto* pOrbits = playersPerm(1);
 		for (auto j = m_numElem; j--;)
 			pOrbits[pPerm[j]] = j;
 
@@ -658,6 +714,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 CheckerCanon(int)::checkDay_1(int iDay) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
+	setNumReason(t_changing_day_0);
 #if	(UsePos_1_4_condition & 2)
 #if UsePos_1_4_condition && ImproveResults
 	if (!checkPosition1_4(m_players)){
@@ -677,9 +734,11 @@ CheckerCanon(int)::checkDay_1(int iDay) {
 	diff = checkDayCode(diff, iDay, m_players);
 	if (diff < 0)
 		return -1;
-#if 0
-	if (!checkPermutationOfFirstDayGroups(numGroups(), m_players))
+#if 1
+	if (!checkPermutationOfFirstDayGroups(groupSize(), m_players, true)) {
+		setNumReason(t_changing_day_0_group);
 		return -1;
+	}
 #endif
 	return diff;
 }
@@ -692,7 +751,7 @@ CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool inve
 	memcpy(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 	if (invert) {
 		// Transformation: player #i new number is: numElem() - 1 - i
-		auto pTmp = m_players + m_numElem;
+		auto pTmp = playersPerm(1);
 		const auto j = numElem() - 1;
 		for (auto i = numElem(); i--;)
 			pTmp[i] = j - i;

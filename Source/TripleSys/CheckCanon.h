@@ -102,7 +102,8 @@ private:
 	inline auto oprbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow = NULL);
+	inline auto playersPerm(int idx) const  { return m_players + idx * m_numElem; }
+	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int orderingMatrix(const T* permut, T numElem)     {
