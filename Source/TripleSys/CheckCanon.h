@@ -78,7 +78,7 @@ private:
 	inline auto numGroups() const			{ return m_numGroups;}
 	inline auto lenRow() const				{ return m_lenRow; }
 	inline auto destMemory() const			{ return m_pDestMemory; }
-	bool checkDay_1(int iDay);
+	bool checkDay_1(T iDay);
 	bool checkDay(T iDay);
 	int checkDayCode(int diff, T iDay, const T* secontRow);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
@@ -91,6 +91,8 @@ private:
 	inline auto numReason() const			{ return m_numReason; }
 	inline void setReasonParam(T val)       { m_nReasonParam = val; }
 	inline auto reasonParam() const			{ return m_nReasonParam; }
+	inline void setDayNumb(T iDay)          { m_nDay = iDay; }
+	inline auto dayNumb() const				{ return m_nDay; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
 	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
@@ -115,6 +117,7 @@ private:
 	}
 
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
+	T initNextGroupForProcessing(T maxVal, const T* pRow) const;
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
@@ -124,6 +127,7 @@ private:
 	const T m_numDaysMax;
 	const T m_groupSise;
 	const T m_numGroups;
+	T m_nDay;
 	T m_numReason;
 	T m_nReasonParam;
 
