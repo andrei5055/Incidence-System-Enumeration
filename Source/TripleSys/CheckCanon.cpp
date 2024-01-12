@@ -172,19 +172,11 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		// Check canonicity of the codes for the other days
 		if (iDay) {
 			// Do this only when day 0 changed its place.
-			static int ccc; ccc++;
 			T minVal, maxVal = groupSize();
 			while (true) {
 				sortTuples(m_players);
-				const auto retVal = checkDay_1(iDay);
-				if (nDays == 2)
-					return retVal >= 0; // In this case there is nothing more to do than has already been done.
-
-				if (retVal < 0 && !bResult)
-					return false;  // The result has improved, but we don't need to know how.
-
-				if (retVal <= 0 && !checkRemainingDays(iDay, retVal))
-					return reportTxtError(bResult, reason[numReason()], NULL, iDay);
+				if (!checkDay_1(iDay))
+					return false;
 
 				if ((minVal = maxVal) == numElem())
 					break;
@@ -198,7 +190,6 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 				auto tmpTo = tmp;
 				auto tmpTo1 = tmp + groupSize() * groupSize();
 				auto idx = 0;
-				static int d; d += 1;
 				while (true) {
 					T elem;
 					auto* pTo = &tmpTo1;
@@ -711,7 +702,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 	return false;
 }
 
-CheckerCanon(int)::checkDay_1(int iDay) {
+CheckerCanon(bool)::checkDay_1(int iDay) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
 	setNumReason(t_changing_day_0);
@@ -732,15 +723,23 @@ CheckerCanon(int)::checkDay_1(int iDay) {
 #endif
 #endif
 	diff = checkDayCode(diff, iDay, m_players);
-	if (diff < 0)
-		return -1;
-#if 1
-	if (!checkPermutationOfFirstDayGroups(groupSize(), m_players, true)) {
-		setNumReason(t_changing_day_0_group);
-		return -1;
+	if (diff == 0 && !checkRemainingDays(iDay, 0))
+		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
+
+	if (diff < 0) {
+		if (!resultOut())
+			return false;
+
+		checkRemainingDays(iDay, -1);
+		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 	}
-#endif
-	return diff;
+
+	if (!checkPermutationOfFirstDayGroups(groupSize(), m_players, true)) {
+		checkRemainingDays(iDay, -1);
+		return reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay);
+	}
+
+	return true;
 }
 
 CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool invert, const T* permPlayer) {
