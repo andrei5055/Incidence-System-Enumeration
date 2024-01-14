@@ -152,6 +152,9 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	setTrivialPerm(result);
 	resetImprovedResultFlag();
 
+	T leadingPlayers[5];
+	assert(groupSize() < countof(leadingPlayers));
+
 	m_pDestMemory = bResult ? bResult : resultMemory();
 	if (bResult)
 		createDaySequence();
@@ -173,18 +176,39 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		if (iDay) {
 			// Do this only when day 0 changed its place.
 			setDayNumb(iDay);
-			T maxVal = groupSize();
 			auto pRow = getMatrixRow(iDay);
+			T maxVal;		
+			memcpy(leadingPlayers, trivialPerm(), (maxVal = groupSize()) * sizeof(leadingPlayers[0]));
+			auto pPlayerPerm = playersPerm(5);
+			memcpy(pPlayerPerm, pRow, lenRow());// groupSize()* groupSize() * sizeof(T));
+
+			// Loop over different groups of the first day 
 			while (true) {
-				sortTuples(m_players);
-				if (!checkDay_1(iDay))
-					return false;
+				// Loop for switching leading players in the first groups
+				T placeIdx = 0;
+				while (true) {
+					sortTuples(m_players);
+					if (!checkDay_1(iDay)) {
+						if (placeIdx) {
+							FOPEN_F(f, ImprovedResultFile, "a");
+							fprintf(f, "Got it! nDays = %d\n", nDays);
+							FCLOSE_F(f);
+						}
+
+						return false;
+					}
+
+					if (placeIdx == ELEMENT_MAX)
+						break;
+
+					placeIdx = switchLeadingPlayersOfGroups(placeIdx, pPlayerPerm, leadingPlayers);
+				}
 
 				if (maxVal == numElem())
 					break;
 
 				// Starting working with the next group
-				maxVal = initNextGroupForProcessing(maxVal, pRow);
+				maxVal = initNextSetOfGroups(maxVal, pRow, pPlayerPerm, leadingPlayers);
 			}
 		}
 		else {
@@ -223,20 +247,32 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 #endif
 }
 
-CheckerCanon(T)::initNextGroupForProcessing(T maxVal, const T* pRow) const
-{
+CheckerCanon(T)::switchLeadingPlayersOfGroups(T placeIdx, T * playerPerm, const T* pLeaders) const {
+	static T leaderPlace[] = { 0, 2, 1, 1, 0, 2, 2, 1, 0, 1, 2, 0, 2, 0, 1 };
+	auto pFrom = leaderPlace + placeIdx;
+	for (T i = 0; i < groupSize(); i++)
+		playerPerm[i * groupSize()] = pLeaders[pFrom[i]];
+
+	// Recording the set of players:
+	for (T j = 0; j < numElem(); j++)
+		m_players[playerPerm[j]] = j;
+
+	return (placeIdx += 3) < countof(leaderPlace) ? placeIdx : ELEMENT_MAX;
+}
+
+
+CheckerCanon(T)::initNextSetOfGroups(T maxVal, const T* pRow, T *playerPerm, T *pLeaders) const {
 	const auto minVal = maxVal;
 	maxVal += groupSize();
 	auto pRowLast = pRow + numElem();
 	// Find groups with the elements in the inteval [minVal, maxVal)
-	auto tmp = playersPerm(1);
-	auto tmpTo = tmp;
-	auto tmpTo1 = tmp + groupSize() * groupSize();
+	auto tmpTo = playerPerm;
+	auto tmpTo1 = playerPerm + groupSize() * groupSize();
 	auto idx = 0;
 	while (true) {
 		T elem;
 		auto* pTo = &tmpTo1;
-		auto k = 0;  groupSize();
+		auto k = 0;
 		for (; k < groupSize(); k++) {
 			elem = pRow[k];
 			if (elem >= maxVal)
@@ -256,6 +292,8 @@ CheckerCanon(T)::initNextGroupForProcessing(T maxVal, const T* pRow) const
 				tmpTo[k] = tmpTo[0];
 				tmpTo[0] = elem;
 			}
+							
+			*pLeaders++ = elem; // Saving leading player
 
 			if (++idx >= groupSize()) {
 				// Copying remaining groups
@@ -270,7 +308,7 @@ CheckerCanon(T)::initNextGroupForProcessing(T maxVal, const T* pRow) const
 
 	// Recording the set of players:
 	for (T j = 0; j < numElem(); j++)
-		m_players[tmp[j]] = j;
+		m_players[playerPerm[j]] = j;
 
 	return maxVal;
 }

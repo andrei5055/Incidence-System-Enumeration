@@ -5,6 +5,7 @@
 #define SIZE_TYPE				unsigned char
 #define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
 #define CC
+#define countof(x)  (sizeof(x)/sizeof(x[0]))
 #else
 #include "../DataTypes.h"
 #endif
@@ -36,7 +37,7 @@ public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
 		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
-		m_players = new T[5 * nCol];
+		m_players = new T[6 * nCol];
 		m_tmpBuffer = new T[nCol + nRow];
 		m_pResultMemory = new T[(nCol + 1) * nRow];
 		m_pOrbits = (m_pPermutation = m_players + 2 * nCol) + nCol;
@@ -117,7 +118,8 @@ private:
 	}
 
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
-	T initNextGroupForProcessing(T maxVal, const T* pRow) const;
+	T initNextSetOfGroups(T maxVal, const T* pRow, T* playerPerm, T* pLeaders) const;
+	T switchLeadingPlayersOfGroups(T placeIdx, T* playerPerm, const T* pLeaders) const;
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
