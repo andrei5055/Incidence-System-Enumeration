@@ -73,7 +73,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				indexPlayer[i] = v;
 				if ((i % 3) == 2)
 				{
-					if (m_bCheckLinkV && bH == true)
+					if (m_bCheckLinkV)
 					{
 						if (!m_pCheckLink->checkLinks(links(), iDay))
 						{

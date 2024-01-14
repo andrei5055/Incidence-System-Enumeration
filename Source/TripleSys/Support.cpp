@@ -31,6 +31,7 @@ bool alldata::initCurrentDay()
 			}
 		}
 		memcpy(tmpPlayers, m_ho, np);
+		memcpy(indexPlayer, m_ho, np);
 		iPlayer = m_numPlayers;
 
 		for (int j = 0; j < m_numPlayers; j++)
@@ -45,6 +46,7 @@ bool alldata::initCurrentDay()
 				}
 				abort();
 			}
+			selPlayers[k] = j;
 		}
 	}
 #endif // UseSS

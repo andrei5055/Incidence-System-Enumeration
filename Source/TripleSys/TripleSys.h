@@ -1,19 +1,21 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 21
+#define nPlayers0 15
 #define GroupSize 3
-#define LoopsMax 30000
-#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
+#define LoopsMax 200000000000.
+#define ImproveResults 2		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
-#define ResultFile		   "../bbb.txt" // Name of output file with the results, "" - no file output.
-#define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
-#define ImprovedResultFile "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
+#define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.
+#define PrintImprovedResults 0	// Set this value to >= 2 if you want to see improved results on screen.
+#define ImprovedResultFile      "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
-#define ReportInterval   120000
+#define ReportInterval   1200000
+
+#define CalcOnlyNFirstLines 0
 
 // Conditions to be tested on day 1:
 #define USE_STATEMENT_7   1    // players[4] < players[7]  
@@ -157,7 +159,7 @@ private:
 	char* maxResult;
 	int maxDays;
 	int maxDaysPlayers;
-	int nLoops;
+	double nLoops;
 	bool noMoreResults;
 	char* m_pResults;
 	char* m_pLinks;
@@ -180,6 +182,7 @@ private:
 };
 
 
+bool s2k(const char* s, char* lnk, int nr, int nc);
 int getLastSixIndex(alldata* s);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
 void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);

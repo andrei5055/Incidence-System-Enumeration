@@ -122,11 +122,24 @@ bool alldata::Run(int improveResult) {
 	rTime = mTime = iTime;
 #if 1
 	if (improveResult)
-		bResults = new unsigned char[(improveResult > 1? 2 : 1) * lenResult];
+		bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
 #else
 	bResults = new unsigned char[2 * lenResult];
 #endif
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
+
+#if 1
+	char* lnk = new char[m_numPlayers * m_numPlayers];
+	bool r = s2k(NULL, lnk, m_numPlayers, m_numDays * m_nGroups);
+	if (1)// (r)
+	{
+		printTableColor("Links", lnk, m_numPlayers, m_numPlayers);
+		convertLinksToResult(lnk);
+		printTable("Result from link", m_co, m_numDays, m_numPlayers);
+	}
+	delete[] lnk;
+	exit(0);
+#endif
 
 	if (iDay == m_numDays)
 	{
@@ -148,12 +161,12 @@ bool alldata::Run(int improveResult) {
 		delete[] bResults_1;
 		m_pCheckCanon->setPreordered(true);
 	}
-
+	const auto numDaysAdj = CalcOnlyNFirstLines != 0 ? CalcOnlyNFirstLines : m_numDays;
 	while (nLoops < LoopsMax)
 	{
 		clock_t dTime = clock();
 		mTime = clock();
-		while (iDay < m_numDays || bPrevResult)
+		while (iDay < numDaysAdj || bPrevResult)
 		{
 			if (iDay < 0)
 			{
@@ -162,18 +175,6 @@ bool alldata::Run(int improveResult) {
 			}
 			if (bPrevResult)
 			{
-				if (0)//clock() - dTime > 120000)
-				{
-					int errLine, errGroup, dubLine;
-					dTime = clock();
-					iDay = 3;
-					if (!_CheckMatrix(result(0), iDay, m_numPlayers, links(), true, &errLine, &errGroup, &dubLine))
-						abort();
-					//printTable("Links truncated", links(), m_numPlayers, m_numPlayers);
-					convertLinksToResult(links());
-					memcpy(result(0), m_co, m_nLenResults);
-					printTable("Result truncated", result(0), iDay, m_numPlayers, 0, 3, true);
-				}
 				if (!initPrevDay())
 					continue;
 			}
@@ -191,13 +192,15 @@ bool alldata::Run(int improveResult) {
 			clock_t cTime = clock();
 			if (maxDays < iDay || cTime - rTime > ReportInterval)
 			{
-				/**/
-				m_pCheckLink->reportCheckLinksData();
-				printf("Current result for matrix %d: days=%d, build time=%d, time since start=%d\n", 
-					nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
-				Result.printTable(result());
-				//printTable("Links", links[0], m_numPlayers, m_numPlayers);
-				/**/
+				if (1)//CalcOnlyNFirstLines == 0)
+				{
+					m_pCheckLink->reportCheckLinksData();
+					printf("Current result for matrix %.0f: rows=%d, build time=%d, time since start=%d\n",
+						nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
+					//Result.printTable(result());
+					printTable("Current result", result(), iDay + 1, m_numPlayers, 0, 3, true);
+					//printTable("Links", links[0], m_numPlayers, m_numPlayers);
+				}
 				rTime = cTime;
 				maxDays = iDay;
 				memcpy(maxResult, result(0), m_nLenResults);
@@ -214,25 +217,35 @@ bool alldata::Run(int improveResult) {
 
 		if (noMoreResults)
 		{
+			memcpy(result(0), maxResult, m_nLenResults);
 			printf("no more results\n");
-			printTableColor("Links", links(), m_numPlayers, m_numPlayers);
 			break;
 		}
-
+		if (CalcOnlyNFirstLines > 0)
+			memcpy(maxResult, result(0), m_nLenResults);
 		nLoops++;
-		if (iDay < m_numDays)
+		if (iDay < numDaysAdj)
 			abort();
-		//report result
-		clock_t cTime = clock();
-		printf("Result %d: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
-		//printTable("Links", links(), m_numPlayers, m_numPlayers);
-		Result.printTable(result(), true, ResultFile);
-		if (nLoops >= LoopsMax)
-			break;
+		if (CalcOnlyNFirstLines == 0 || nLoops >= LoopsMax)
+		{
+			//report result
+			clock_t cTime = clock();
+			printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+			//printTable("Links", links(), m_numPlayers, m_numPlayers);
+			Result.printTable(result(), true, ResultFile);
+		}
 		bPrevResult = true;
 	}
-	printf("\nA total of %d %d-configurations were built.\n", nLoops, GroupSize);
+	printf("\nA total of %.0f %d-configurations were built.\n", nLoops, GroupSize);
 	printf("Total time = %d ms\n", clock() - iTime);
+	if (CalcOnlyNFirstLines > 0 && nLoops < LoopsMax)
+	{
+		clock_t cTime = clock();
+		printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+		//printTable("Links", links(), m_numPlayers, m_numPlayers);
+		printTable("Last result", result(), m_numDays, m_numPlayers, 0, 3, true);
+	}
+
 	if (nLoops == 1)
 	{
 		if (memcmp(maxResult, result(), m_nLenResults) != 0)

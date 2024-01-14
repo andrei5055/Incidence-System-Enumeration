@@ -110,9 +110,10 @@ int alldata::checkPlayer1(int iPlayerNumber)
 #else
 					case 4:
 					{
+						// ai 17
 						if (iPlayerNumber <= 4)
 							return 4;
-						if (iPlayerNumber <= 9)
+						if (m_numPlayers > 9 && iPlayerNumber <= 9)
 							return 9;
 						return m_numPlayers;
 					}
@@ -142,6 +143,12 @@ int alldata::checkPlayer1(int iPlayerNumber)
 							return m_numPlayers;
 						if (iPlayerNumber > 14)
 							return m_numPlayers; // not happed
+						// ai 19
+						if (tmpPlayers[4] != 4)
+						{
+							if (iPlayerNumber <= 12)
+								iPlayerNumber = 12;
+						}
 						break;
 					}
 					case 8:
@@ -162,12 +169,20 @@ int alldata::checkPlayer1(int iPlayerNumber)
 					}
 					case 9:
 					{
-						if (tmpPlayers[4] == 4 && tmpPlayers[7] != 5)
+						// AI statement #8 
+						if (tmpPlayers[4] != 4)
 						{
-							// AI statement #9 part 1
-							ifixedPlayer = 5; // not happend
-							if (ifixedPlayer >= iPlayerNumber)
-								return ifixedPlayer; // not happend
+							if (iPlayerNumber <= 4)
+								return 4;
+							else
+								return m_numPlayers;
+						}
+
+						// AI statement #9 part a
+						else if (tmpPlayers[7] != 5)
+						{
+							if (iPlayerNumber <= 5)
+								return 5; // not happend
 							return m_numPlayers; // not happend
 						}
 						break;
@@ -176,10 +191,9 @@ int alldata::checkPlayer1(int iPlayerNumber)
 					{
 						if (tmpPlayers[9] == 4)
 						{
-							// AI statement #9 part 2    
-							ifixedPlayer = 5;   
-							if (ifixedPlayer >= iPlayerNumber)
-								return ifixedPlayer;
+							// AI statement #9 part b
+							if (iPlayerNumber <= 5)
+								return 5;
 							return m_numPlayers;
 						}
 						break;

@@ -55,7 +55,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 
 	if (m_numPlayers == 15 && id < 3)
 		return true;
-	else if (m_numPlayers == 21 && id < 1)
+	else if (m_numPlayers == 21 && id < 5) //1)
 		return true;
 	else if (m_numPlayers == 27 && id < 2)
 		return true;
