@@ -183,6 +183,9 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			memcpy(pPlayerPerm, pRow, lenRow());// groupSize()* groupSize() * sizeof(T));
 
 			// Loop over different groups of the first day 
+			static int ddd = 0; ddd++;
+			if (ddd == 12)
+				ddd += 0;
 			while (true) {
 				// Loop for switching leading players in the first groups
 				T placeIdx = 0;
@@ -248,15 +251,12 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 }
 
 CheckerCanon(T)::switchLeadingPlayersOfGroups(T placeIdx, T * playerPerm, const T* pLeaders) const {
-	static T leaderPlace[] = { 0, 2, 1, 1, 0, 2, 2, 1, 0, 1, 2, 0, 2, 0, 1 };
+	static T leaderPlace[] = { 0, 2, 1, 1, 0, 2, 2, 1, 0, 1, 2, 0, 2, 0, 1 }; // for now S(3) hardcoded
 	auto pFrom = leaderPlace + placeIdx;
 	for (T i = 0; i < groupSize(); i++)
 		playerPerm[i * groupSize()] = pLeaders[pFrom[i]];
 
-	// Recording the set of players:
-	for (T j = 0; j < numElem(); j++)
-		m_players[playerPerm[j]] = j;
-
+	recordTuples(playerPerm, m_players);
 	return (placeIdx += 3) < countof(leaderPlace) ? placeIdx : ELEMENT_MAX;
 }
 
@@ -265,7 +265,7 @@ CheckerCanon(T)::initNextSetOfGroups(T maxVal, const T* pRow, T *playerPerm, T *
 	const auto minVal = maxVal;
 	maxVal += groupSize();
 	auto pRowLast = pRow + numElem();
-	// Find groups with the elements in the inteval [minVal, maxVal)
+	// Find groups with the elements in the interval [minVal, maxVal)
 	auto tmpTo = playerPerm;
 	auto tmpTo1 = playerPerm + groupSize() * groupSize();
 	auto idx = 0;
@@ -306,10 +306,7 @@ CheckerCanon(T)::initNextSetOfGroups(T maxVal, const T* pRow, T *playerPerm, T *
 		pRow += groupSize();
 	}
 
-	// Recording the set of players:
-	for (T j = 0; j < numElem(); j++)
-		m_players[playerPerm[j]] = j;
-
+	recordTuples(playerPerm, m_players);
 	return maxVal;
 }
 
@@ -619,10 +616,10 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 
 		if (players == studiedMatrix() + m_numElem) {
 			// Do this only when day 0 did not changed its place.
-			// As described in Statement 17, swap
-			checkOrderingForDay(1); // days 0 and 1
+			// As described in Statement 17, swap days 0 and 1
+			recordTuples(players, m_players);
 			checkRemainingDays(1, -1);
-			return explainRejection(players, 1, 2, 1, true);
+			return explainRejection(m_players, 1, 2, 1, true);
 		}
 		return false;
 	}
@@ -717,9 +714,8 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 		if (!pPerm)
 			pPerm = getMatrixRow(iDay);
 
-		auto* pOrbits = playersPerm(1);
-		for (auto j = m_numElem; j--;)
-			pOrbits[pPerm[j]] = j;
+		auto* pOrbits = playersPerm(2);
+		recordTuples(pPerm, pOrbits);
 
 		// Renumbering the set of players in the groups for all days except 0 and iDay.
 		auto* pOut = pDest + 2 * m_numElem;
@@ -775,7 +771,11 @@ CheckerCanon(bool)::checkDay_1(T iDay) {
 		return -1;
 #endif
 #endif
+	static int cntr; cntr++;
+	if (cntr == 326)
+		cntr += 0;
 	diff = checkDayCode(diff, iDay, m_players);
+
 	if (diff == 0 && !checkRemainingDays(iDay, 0))
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
@@ -786,7 +786,7 @@ CheckerCanon(bool)::checkDay_1(T iDay) {
 		checkRemainingDays(iDay, -1);
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 	}
-
+#if 0
 	if (!checkPermutationOfFirstDayGroups(groupSize(), m_players, true)) {
 		if (!resultOut())
 			return false;
@@ -794,7 +794,7 @@ CheckerCanon(bool)::checkDay_1(T iDay) {
 		checkRemainingDays(iDay, -1);
 		return reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay);
 	}
-
+#endif
 	return true;
 }
 

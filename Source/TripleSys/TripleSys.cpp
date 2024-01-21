@@ -128,7 +128,7 @@ bool alldata::Run(int improveResult) {
 #endif
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
 
-#if 1
+#if 0
 	char* lnk = new char[m_numPlayers * m_numPlayers];
 	bool r = s2k(NULL, lnk, m_numPlayers, m_numDays * m_nGroups);
 	if (1)// (r)

@@ -8,7 +8,7 @@ using namespace std;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
 #define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.
-#define PrintImprovedResults 0	// Set this value to >= 2 if you want to see improved results on screen.
+#define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile      "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
@@ -23,7 +23,7 @@ using namespace std;
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_STATEMENT_19  1
-#define CHECK_PERMUTATIONS	0
+#define CHECK_PERMUTATIONS	1
 #define IMPROVE_RESULT_MAX  1000 // Maximal number of attempts to improve matrix 
 								 // (works only with ImproveResults=2)
 #define OUTPUT_VECTOR_STAT	0    // Output of some statistics for constructed matrices
