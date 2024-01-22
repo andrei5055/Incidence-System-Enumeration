@@ -4,7 +4,7 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 200000000000.
-#define ImproveResults 2		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
 #define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.

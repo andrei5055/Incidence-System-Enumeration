@@ -79,7 +79,7 @@ private:
 	inline auto numGroups() const			{ return m_numGroups;}
 	inline auto lenRow() const				{ return m_lenRow; }
 	inline auto destMemory() const			{ return m_pDestMemory; }
-	bool checkDay_1(T iDay);
+	bool checkDay_1(T iDay, const T* pPlayerPerm);
 	bool checkDay(T iDay);
 	int checkDayCode(int diff, T iDay, const T* secontRow);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;

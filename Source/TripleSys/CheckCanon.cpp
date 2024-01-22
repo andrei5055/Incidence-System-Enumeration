@@ -183,15 +183,12 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			memcpy(pPlayerPerm, pRow, lenRow());// groupSize()* groupSize() * sizeof(T));
 
 			// Loop over different groups of the first day 
-			static int ddd = 0; ddd++;
-			if (ddd == 12)
-				ddd += 0;
 			while (true) {
 				// Loop for switching leading players in the first groups
 				T placeIdx = 0;
 				while (true) {
 					sortTuples(m_players);
-					if (!checkDay_1(iDay)) {
+					if (!checkDay_1(iDay, pPlayerPerm)) {
 						if (placeIdx) {
 							FOPEN_F(f, ImprovedResultFile, "a");
 							fprintf(f, "Got it! nDays = %d\n", nDays);
@@ -201,7 +198,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 						return false;
 					}
 
-					if (placeIdx == ELEMENT_MAX)
+					if (true || placeIdx == ELEMENT_MAX)
 						break;
 
 					placeIdx = switchLeadingPlayersOfGroups(placeIdx, pPlayerPerm, leadingPlayers);
@@ -752,7 +749,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 	return false;
 }
 
-CheckerCanon(bool)::checkDay_1(T iDay) {
+CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
 #if	(UsePos_1_4_condition & 2)
@@ -771,19 +768,16 @@ CheckerCanon(bool)::checkDay_1(T iDay) {
 		return -1;
 #endif
 #endif
-	static int cntr; cntr++;
-	if (cntr == 326)
-		cntr += 0;
 	diff = checkDayCode(diff, iDay, m_players);
 
-	if (diff == 0 && !checkRemainingDays(iDay, 0))
+	if (diff == 0 && !checkRemainingDays(iDay, 0, pPlayerPerm))
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
 	if (diff < 0) {
 		if (!resultOut())
 			return false;
 
-		checkRemainingDays(iDay, -1);
+		checkRemainingDays(iDay, -1, pPlayerPerm);
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 	}
 #if 0
@@ -791,7 +785,7 @@ CheckerCanon(bool)::checkDay_1(T iDay) {
 		if (!resultOut())
 			return false;
 
-		checkRemainingDays(iDay, -1);
+		checkRemainingDays(iDay, -1, pPlayerPerm);
 		return reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay);
 	}
 #endif
