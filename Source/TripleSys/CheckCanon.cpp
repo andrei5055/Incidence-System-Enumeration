@@ -152,23 +152,39 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	setTrivialPerm(result);
 	resetImprovedResultFlag();
 
-	T leadingPlayers[5];
-	assert(groupSize() < countof(leadingPlayers));
-
 	m_pDestMemory = bResult ? bResult : resultMemory();
 	if (bResult)
 		createDaySequence();
 
-	for (T iDay = 0; iDay < nDays; iDay++) {
+	if (!checkCanonicity())
+		return false;
+
+#if 0
+if (m_numDays != m_numDaysMax)
+return true;
+
+static int ccc = 0;
+//if (!ccc++)
+//	return true;
+
+return checkWithGroup(result, m_numElem, &CCheckerCanon<T>::orderingMatrix);
+#else
+return true;
+#endif
+}
+
+CheckerCanon(bool)::checkCanonicity() {
+	T leadingPlayers[5];
+	for (T iDay = 0; iDay < numDays(); iDay++) {
 		if (!checkOrderingForDay(iDay)) {
-			if (!bResult)
+			if (!resultOut())
 				return false;
 
 			// Make a trivial permutations for set of days from preconstructed (1, 0, 2, 3, 4, ...)
 			auto pDest = destMemory() + lenResult();
 			*pDest = 0;
 			*++pDest = 1;
-			reportTxtError(bResult, reason[t_RejectionRreason::t_ordering], NULL, iDay);
+			reportTxtError(resultOut(), reason[t_RejectionRreason::t_ordering], NULL, iDay);
 			return checkRemainingDays(iDay);
 		}
 
@@ -177,32 +193,16 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 			// Do this only when day 0 changed its place.
 			setDayNumb(iDay);
 			auto pRow = getMatrixRow(iDay);
-			T maxVal;		
+			T maxVal;
 			memcpy(leadingPlayers, trivialPerm(), (maxVal = groupSize()) * sizeof(leadingPlayers[0]));
 			auto pPlayerPerm = playersPerm(5);
-			memcpy(pPlayerPerm, pRow, lenRow());// groupSize()* groupSize() * sizeof(T));
+			memcpy(pPlayerPerm, pRow, lenRow());
 
 			// Loop over different groups of the first day 
 			while (true) {
-				// Loop for switching leading players in the first groups
-				T placeIdx = 0;
-				while (true) {
-					sortTuples(m_players);
-					if (!checkDay_1(iDay, pPlayerPerm)) {
-						if (placeIdx) {
-							FOPEN_F(f, ImprovedResultFile, "a");
-							fprintf(f, "Got it! nDays = %d\n", nDays);
-							FCLOSE_F(f);
-						}
-
-						return false;
-					}
-
-					if (true || placeIdx == ELEMENT_MAX)
-						break;
-
-					placeIdx = switchLeadingPlayersOfGroups(placeIdx, pPlayerPerm, leadingPlayers);
-				}
+				sortTuples(m_players);
+				if (!checkDay_1(iDay, pPlayerPerm))
+					return false;
 
 				if (maxVal == numElem())
 					break;
@@ -213,38 +213,28 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 		}
 		else {
 			// Check all remaining days for canonicity.
+			char buffer[256];
 			setReasonParam(-1);
-			for (int j = 1; j < nDays; j++) {
-				if (!checkDay(j)) {
-					if (!bResult)
-						return false;
+			for (int j = 1; j < numDays(); j++) {
+				if (checkDay(j))
+					continue;
 
-					char buffer[256];
-					auto pReason = reason[numReason()];
-					if (reasonParam() != -1) {
-						sprintf_s(buffer, pReason, reasonParam());
-						pReason = buffer;
-					}
+				if (!resultOut())
+					return false;
 
-					const auto dayToBlame = numReason() == t_RejectionRreason::t_invertOrdering ? nDays - 1 : j;
-					return reportTxtError(bResult, pReason, NULL, dayToBlame);
+				auto pReason = reason[numReason()];
+				if (reasonParam() != -1) {
+					sprintf_s(buffer, pReason, reasonParam());
+					pReason = buffer;
 				}
+
+				const auto dayToBlame = numReason() == t_RejectionRreason::t_invertOrdering ? numDays() - 1 : j;
+				return reportTxtError(resultOut(), pReason, NULL, dayToBlame);
 			}
 		}
 	}
 
-#if 0
-	if (m_numDays != m_numDaysMax)
-		return true;
-
-	static int ccc = 0;
-	//if (!ccc++)
-	//	return true;
-
-	return checkWithGroup(result, m_numElem, &CCheckerCanon<T>::orderingMatrix);
-#else
 	return true;
-#endif
 }
 
 CheckerCanon(T)::switchLeadingPlayersOfGroups(T placeIdx, T * playerPerm, const T* pLeaders) const {
@@ -769,26 +759,20 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 #endif
 #endif
 	diff = checkDayCode(diff, iDay, m_players);
+	if (diff < 0 && !resultOut())
+		return false;
 
-	if (diff == 0 && !checkRemainingDays(iDay, 0, pPlayerPerm))
+	if (diff <= 0 && !checkRemainingDays(iDay, diff, pPlayerPerm))
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
-	if (diff < 0) {
-		if (!resultOut())
-			return false;
-
-		checkRemainingDays(iDay, -1, pPlayerPerm);
-		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
-	}
-#if 0
-	if (!checkPermutationOfFirstDayGroups(groupSize(), m_players, true)) {
+	if (!checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm, true)) {
 		if (!resultOut())
 			return false;
 
 		checkRemainingDays(iDay, -1, pPlayerPerm);
 		return reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay);
 	}
-#endif
+
 	return true;
 }
 

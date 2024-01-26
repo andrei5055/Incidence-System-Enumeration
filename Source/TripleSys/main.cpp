@@ -5,6 +5,7 @@
 
 int main()
 {
+//	_CrtSetBreakAlloc(187);  // Put here the memory allocation number you want to stop at.
 	alldata sys(nPlayers);
 	const char* ivc = ""
 #if nPlayers == 9
@@ -15,7 +16,7 @@ int main()
 		"    0   5   7    1   3   8    2   4   6 "
 #endif
 #elif nPlayers == 15
-#if 1
+#if 0
  "    0   1   2    3   4   5    6   7   8    9  10  11   12  13  14 "
  "    0   3   6    1   9  12    2  10  13    4   7  11    5   8  14 "
  "    0   4   9    1   7  13    2   6  14    3   8  10    5  11  12 "

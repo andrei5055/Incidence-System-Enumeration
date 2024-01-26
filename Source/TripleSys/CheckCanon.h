@@ -120,6 +120,7 @@ private:
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	T initNextSetOfGroups(T maxVal, const T* pRow, T* playerPerm, T* pLeaders) const;
 	T switchLeadingPlayersOfGroups(T placeIdx, T* playerPerm, const T* pLeaders) const;
+	bool checkCanonicity();
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
