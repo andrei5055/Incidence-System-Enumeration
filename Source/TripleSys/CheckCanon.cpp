@@ -159,18 +159,67 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	if (!checkCanonicity())
 		return false;
 
+	return checkWithGroup(numGroups(), &CCheckerCanon<T>::checkReorderedGroups, result);
 #if 0
-if (m_numDays != m_numDaysMax)
-return true;
+	if (m_numDays != m_numDaysMax)
+		return true;
 
-static int ccc = 0;
-//if (!ccc++)
-//	return true;
+	static int ccc = 0;
+	//if (!ccc++)
+	//	return true;
 
-return checkWithGroup(result, m_numElem, &CCheckerCanon<T>::orderingMatrix);
+	return checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result);
 #else
-return true;
+	return true;
 #endif
+}
+
+CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr) {
+	// Construct a permutation of players corresponding to the permutations of the groups of the first day. 
+	auto pPlayers = playersPerm(1);
+	const auto len = groupSize() * sizeof(*pPlayers);
+	auto i = nElem;
+	while (i--) {
+		memcpy(pPlayers + i * groupSize(), pMatr + permut[i] * groupSize(), len);
+	}
+
+	auto pntrTo = destMemory();
+	auto pntrFrom = pMatr;
+	for (T iDay = 1; iDay < numDays(); iDay++) {
+		pntrTo += numElem();
+		pntrFrom += numElem();
+		recodePlayers(pPlayers, pntrFrom, pntrTo);
+	}
+
+	orderigRemainingDays(1, 0, destMemory());
+	const int diff = memcmp(destMemory() + numElem(), pMatr + numElem(), lenRow() * (numDays() - 1));
+	if (diff < 0 && resultOut()) {
+		memcpy(destMemory(), pMatr, lenRow());
+		addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+		const auto len = commentBufferLength();
+		auto pBuffer = comment();
+		SPRINTFS(pBuffer, comment(), len, "Reordering of players:\n");
+		for (T i = 0; i < nElem; i++) {
+			if (i == permut[i])
+				continue;
+
+			int idx = permut[i];
+			SPRINTFS(pBuffer, comment(), len, " (");
+			for (int k = 0; k < 2; k++) {
+				idx *= groupSize();
+				for (T j = 0; j < groupSize(); j++)
+					SPRINTFS(pBuffer, comment(), len, "%2d,", idx + j);
+
+				pBuffer--;
+				SPRINTFS(pBuffer, comment(), len, k? ")" : ") ==> (");
+				idx = i;
+			}
+		}
+
+		addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
+	}
+
+	return diff;
 }
 
 CheckerCanon(bool)::checkCanonicity() {
@@ -308,7 +357,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
 	memcpy(permut, trivialPerm(), len);
-	memcpy(oprbits(), trivialPerm(), len);
+	memcpy(orbits(), trivialPerm(), len);
 
 	const auto calcGroupOrder = numDays() == m_numDaysMax && numElem == this->numElem();
 	const auto rowPermut = calcGroupOrder;
@@ -324,9 +373,8 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 	FOPEN_F(f, "../ccc.txt", "w");
 #endif
-	int lll = 0;
 	while (true) {
-		nElem = nextPermutation(permut, oprbits(), numElem, nElem, lenStab);
+		nElem = nextPermutation(permut, orbits(), numElem, nElem, lenStab);
 		if (nElem == ELEMENT_MAX)
 			break;
 
@@ -338,7 +386,6 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 		_printf(f, false, "%s\n", buffer);
 #endif
-		lll++;
 		const auto diff = (this->*func)(permut, numElem, pCurrentRow);
 		if (diff < 0)
 			return false;
@@ -346,7 +393,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 		if (!diff) {
 			// Automorphism found
 
-			CGroupOrder<T>::UpdateOrbits(permut, numElem, oprbits(), rowPermut, calcGroupOrder);
+			CGroupOrder<T>::UpdateOrbits(permut, numElem, orbits(), rowPermut, calcGroupOrder);
 #if PRINT_PERMUT
 			if (calcGroupOrder) {
 				FOPEN_F(f, "../ccc.txt", ctr > 1 ? "a" : "w");
@@ -359,7 +406,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 				ptr = buffer;
 				SPRINTFD(ptr, buffer, "%4zd:", ++ctr);
 				for (T i = 0; i < numElem; i++)
-					SPRINTFD(ptr, buffer, " %3d", oprbits()[i]);
+					SPRINTFD(ptr, buffer, " %3d", orbits()[i]);
 
 				_printf(f, false, "%s\n", buffer);
 				sprintf_s(buffer, "|Aut(G)| = %zd\n", CGroupOrder<T>::groupOrder());
@@ -374,7 +421,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	}
 
 	if (rowPermut && calcGroupOrder)
-		CGroupOrder<T>::updateGroupOrder(numElem, oprbits());
+		CGroupOrder<T>::updateGroupOrder(numElem, orbits());
 
 #if PRINT_PERMUT_
 	FCLOSE_F(f);
@@ -492,12 +539,11 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCur
 		setReasonParam(numGroup);	// the number of the groups used
 		if (useRecording) {
 			// Recording to the initial player numbers
-			auto pOrbits = oprbits();
+			auto pOrbits = orbits();
 			for (auto j = m_numElem; j--;)
 				pOrbits[pCurrentRow[j]] = j;
 
-			for (T i = 0; i < m_numElem; i++)
-				pTmp[i] = pOrbits[pTmp[i]];
+			recodePlayers(pOrbits, pTmp, pTmp);
 		}
 
 		return checkRemainingDays(1, -1, pTmp);
@@ -712,9 +758,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 			if (j == iDay)
 				continue;   // Skip day which is already used as 0's one. 
 
-			for (T i = 0; i < m_numElem; i++)
-				pOut[i] = pOrbits[pIn[i]];
-
+			recodePlayers(pOrbits, pIn, pOut);
 			pOut += m_numElem;
 		}
 
@@ -792,10 +836,8 @@ CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool inve
 		permPlayer = pTmp;
 	}
 
-	if (permPlayer) {
-		for (auto i = lenResult(); i--;)
-			pDest[i] = permPlayer[pDest[i]];
-	}
+	if (permPlayer)
+		recodePlayers(permPlayer, pDest, pDest, lenResult());
 
 	auto pDays = pDest + lenResult();
 	for (auto j = numDays(); j--; )
@@ -1063,11 +1105,10 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 
 		cntr++;
 		break;
-		auto pntrTo = (char *)pMatrix + numElem();
+		auto pntrTo = (T *)pMatrix + numElem();
 		for (T i = 2; i < nRows; i++) {
 			memcpy(pntrTo += numElem(), result + numElem() * pDayPerm[i], lenRow());
-			for (T j = 0; j < numElem(); j++)
-				pntrTo[j] = permPlayers[pntrTo[j]];
+			recodePlayers(permPlayers, pntrTo, pntrTo);
 		}
 
 		//			continue;

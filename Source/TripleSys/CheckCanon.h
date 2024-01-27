@@ -102,19 +102,24 @@ private:
 	int orderingMatrix(T nDays, T numGroups, bool expected = true, bool invert = false, const T* permPlayer = NULL);
 	void sortTuples(T *players) const;
 	inline auto permutation() const			{ return m_pPermutation; }
-	inline auto oprbits() const				{ return m_pOrbits; }
+	inline auto orbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
 	inline auto playersPerm(int idx) const  { return m_players + idx * m_numElem; }
 	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
-	int orderingMatrix(const T* permut, T numElem)     {
+	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
+	int orderingMatrix(const T* permut, T numElem, const T*pDummy)     {
 		return orderingMatrix(0, 0, false, false, permut);
 	}
 	inline void recordTuples(const T* pTuples, T *pPlayers) const {
 		for (T j = 0; j < numElem(); j++)
 			pPlayers[pTuples[j]] = j;
+	}
+	inline void recodePlayers(const T* pNewNumb, const T* pIn, T* pOut, size_t nElem = 0) {
+		for (auto i = nElem? nElem : numElem(); i--;)
+			pOut[i] = pNewNumb[pIn[i]];
 	}
 
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
