@@ -184,10 +184,13 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 	}
 
 	auto pntrTo = destMemory();
+	auto pDays = destMemory() + numDays() * numElem();
+	*pDays = 0;
 	auto pntrFrom = pMatr;
 	for (T iDay = 1; iDay < numDays(); iDay++) {
 		pntrTo += numElem();
 		pntrFrom += numElem();
+		*(pDays + iDay) = iDay;
 		recodePlayers(pPlayers, pntrFrom, pntrTo);
 	}
 
