@@ -132,12 +132,14 @@ CheckerCanon(void)::sortTuples(T *players) const {
 	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
 
-CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
+CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, int *pGrpNumb, T *bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
 	//    nDays  - number of days (or lists, mentioned above)
 	// Output parameter:
+	//    pGrpNumb - pointer to the group number of the last row which needed to be change 
+	//               if the return value of that method is false;  
 	//    bResult (optional) - pointer to the array of (m_numElem + nDays) elements,
 	//             when it's not NULL and the "result" is not a canonical one, then
 	//             this array will contain the permutations of
@@ -146,7 +148,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	//    
 
 	setNumReason(t_RejectionRreason::t_reasonUnknown);
-
+	*pGrpNumb = numGroups() * nDays - 2;
 	setResultOut(bResult);
 	setStudiedMatrix(result, nDays);
 	setTrivialPerm(result);
@@ -159,7 +161,10 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, T *bResult) {
 	if (!checkCanonicity())
 		return false;
 
-	return checkWithGroup(numGroups(), &CCheckerCanon<T>::checkReorderedGroups, result);
+	if (!checkWithGroup(numGroups(), &CCheckerCanon<T>::checkReorderedGroups, result)) {
+		*pGrpNumb = groupIndex();
+		return false;
+	}
 #if 0
 	if (m_numDays != m_numDaysMax)
 		return true;
@@ -196,30 +201,46 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 
 	orderigRemainingDays(1, 0, destMemory());
 	const int diff = memcmp(destMemory() + numElem(), pMatr + numElem(), lenRow() * (numDays() - 1));
-	if (diff < 0 && resultOut()) {
-		memcpy(destMemory(), pMatr, lenRow());
-		addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
-		const auto len = commentBufferLength();
-		auto pBuffer = comment();
-		SPRINTFS(pBuffer, comment(), len, "Reordering of players:\n");
-		for (T i = 0; i < nElem; i++) {
-			if (i == permut[i])
-				continue;
+	if (diff < 0) {
+		auto pRes = destMemory();
+		auto pInput = pMatr;
+		int grIdx = 1;
+		while (!memcmp(pRes += numElem(), pInput += numElem(), lenRow()))
+			grIdx++;
 
-			int idx = permut[i];
-			SPRINTFS(pBuffer, comment(), len, " (");
-			for (int k = 0; k < 2; k++) {
-				idx *= groupSize();
-				for (T j = 0; j < groupSize(); j++)
-					SPRINTFS(pBuffer, comment(), len, "%2d,", idx + j);
-
-				pBuffer--;
-				SPRINTFS(pBuffer, comment(), len, k? ")" : ") ==> (");
-				idx = i;
-			}
+		grIdx *= numGroups();
+		while (!memcmp(pRes, pInput, groupSize() * sizeof(*pRes))) {
+			pInput += groupSize();
+			pInput += groupSize();
+			grIdx++;
 		}
 
-		addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
+		setGroupIndex(grIdx);
+		if (resultOut()) {
+			memcpy(destMemory(), pMatr, lenRow());
+			addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
+			const auto len = commentBufferLength();
+			auto pBuffer = comment();
+			SPRINTFS(pBuffer, comment(), len, "Reordering of players:\n");
+			for (T i = 0; i < nElem; i++) {
+				if (i == permut[i])
+					continue;
+
+				int idx = permut[i];
+				SPRINTFS(pBuffer, comment(), len, " (");
+				for (int k = 0; k < 2; k++) {
+					idx *= groupSize();
+					for (T j = 0; j < groupSize(); j++)
+						SPRINTFS(pBuffer, comment(), len, "%2d,", idx + j);
+
+					pBuffer--;
+					SPRINTFS(pBuffer, comment(), len, k ? ")" : ") ==> (");
+					idx = i;
+				}
+			}
+
+			addImproveResultFlags(t_bResultFlags::t_readyToExplainTxt);
+		}
 	}
 
 	return diff;

@@ -4,7 +4,7 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 200000000000.
-#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 1		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
 #define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.
@@ -170,6 +170,7 @@ private:
 	char* m_h = NULL;
 	char* m_ho = NULL;
 	int  iPlayer, iDay;
+	int m_groupIndex;     // Index of the group to change if the matrix is not canonical.
 	bool bPrevResult;
 	size_t m_nLenResults;
 

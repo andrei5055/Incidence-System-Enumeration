@@ -14,10 +14,10 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 	const auto nDays = iDay;
 	const auto inputMatrix = (unsigned char*)result();
 	addCanonCall(0);
-	if (m_pCheckCanon->CheckCanonicity(inputMatrix, nDays, bResults))
+
+	if (m_pCheckCanon->CheckCanonicity(inputMatrix, nDays, &m_groupIndex, bResults))
 		return false;
 
-	//improveResult = 1;
 	const int improveResultMax = IMPROVE_RESULT_MAX;
 	if (improveResult > 1 || improveResult && PrintImprovedResults) {
 		int cntr = 0;
@@ -51,7 +51,7 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 			bRes1 = bRes2;
 			bRes3 = bRes2 = bRes;
 			addCanonCall(0);
-		} while (!m_pCheckCanon->CheckCanonicity(bRes2, nDays, bRes1));
+		} while (!m_pCheckCanon->CheckCanonicity(bRes2, nDays, &m_groupIndex, bRes1));
 
 		const auto bestResult = improveResult == 1 ? (flag ? bRes1 : NULL)
 								: improveResult > improveResultMax? (flag? bRes1 : bRes3)

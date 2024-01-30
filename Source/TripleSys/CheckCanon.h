@@ -49,7 +49,7 @@ public:
 											  delete[] resultMemory();
 											  resetComments();
 											}
-	bool CheckCanonicity(const T* result, int nLines, T *bResult=NULL);
+	bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T *bResult=NULL);
 	bool CheckPermutations(const T* result, const T* pMatrix, int nRows);
 	inline auto numDays() const				{ return m_numDays; }
 	inline auto comment() const				{ return m_pComment; }
@@ -126,6 +126,8 @@ private:
 	T initNextSetOfGroups(T maxVal, const T* pRow, T* playerPerm, T* pLeaders) const;
 	T switchLeadingPlayersOfGroups(T placeIdx, T* playerPerm, const T* pLeaders) const;
 	bool checkCanonicity();
+	inline void setGroupIndex(int val)				{ m_nGrpIdx = val; }
+	inline auto groupIndex() const					{ return m_nGrpIdx; }
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
@@ -156,6 +158,7 @@ private:
 	int m_nCommentBufferLength = 0;
 	char *m_pComment = NULL;
 	bool m_bPreordered = true;
+	int m_nGrpIdx;
 };
 
 
