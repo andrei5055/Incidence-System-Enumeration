@@ -212,9 +212,6 @@
     <ClCompile Include="..\Source\TripleSys\printTable.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\processLastSix.cpp">
-      <Filter>Source Files\k-systems</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
@@ -233,9 +230,6 @@
     <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\sortLinks.cpp">
-      <Filter>Source Files\k-systems</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
@@ -243,6 +237,9 @@
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\CheckMatrix.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\getUnselected.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>
