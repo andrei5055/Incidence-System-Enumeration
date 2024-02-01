@@ -17,12 +17,12 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_nLenResults = m_numDays * numPlayers;
 	maxResult = new char[m_nLenResults];
 	m_pResults = new char[m_nLenResults];
-	selPlayers = new char[m_numPlayers];
-	tmpPlayers = new char[m_numPlayers];
-	indexPlayer = new char[m_numPlayers];
+	selPlayers = new char[5 * m_numPlayers];
+	tmpPlayers = selPlayers + m_numPlayers;
+	indexPlayer = tmpPlayers + m_numPlayers;
+	m_h = indexPlayer + m_numPlayers;
+	m_ho = m_h + m_numPlayers;
 	m_pLinks = new char[m_np2];
-	m_h = new char[m_numPlayers];
-	m_ho = new char[m_numPlayers];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
 
 #ifdef CD_TOOLS
@@ -43,11 +43,7 @@ alldata::~alldata() {
 	delete[] maxResult;
 	delete[] m_pResults;
 	delete[] selPlayers;
-	delete[] tmpPlayers;
-	delete[] indexPlayer;
 	delete[] m_pLinks;
-	delete[] m_h;
-	delete[] m_ho;
 	delete m_pCheckLink;
 	delete m_pCheckCanon;
 	FCLOSE_F(m_file);
@@ -127,20 +123,6 @@ bool alldata::Run(int improveResult) {
 	bResults = new unsigned char[2 * lenResult];
 #endif
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
-
-#if 0
-	char* lnk = new char[m_numPlayers * m_numPlayers];
-	bool r = s2k(NULL, lnk, m_numPlayers, m_numDays * m_nGroups);
-	if (1)// (r)
-	{
-		printTableColor("Links", lnk, m_numPlayers, m_numPlayers);
-		convertLinksToResult(lnk);
-		printTable("Result from link", m_co, m_numDays, m_numPlayers);
-	}
-	delete[] lnk;
-	exit(0);
-#endif
-
 	if (iDay == m_numDays)
 	{
 		unsigned char* bRes1 = NULL;
@@ -180,7 +162,7 @@ bool alldata::Run(int improveResult) {
 			}
 			else if (!initCurrentDay())
 				continue;
-
+ProcessOneDay:
 			if (!processOneDay())
 			{
 				bPrevResult = true;
@@ -204,13 +186,36 @@ bool alldata::Run(int improveResult) {
 				rTime = cTime;
 				maxDays = iDay;
 				memcpy(maxResult, result(0), m_nLenResults);
-				sortLinks();
 			}
 			iDay++;
 #if UseSS == 0
 			if (iDay > 1)
 			{
 				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
+#if 1
+				if (bPrevResult)
+				{
+					if (m_groupIndex / m_nGroups < iDay - 1)
+						printf("*** More then one day back request ignored\n");
+					else if (m_groupIndex >= iDay * m_nGroups)
+					{
+						printf("*** More then current day 'back' request\n");
+						abort();
+					}
+					else
+					{
+						if (iDay == m_numDays && m_groupIndex > (iDay - 1) * m_nGroups - 2)
+							m_groupIndex = (iDay - 1) * m_nGroups - 2;
+						iDay--;
+						bPrevResult = false;
+						while(iDay * m_numPlayers + iPlayer >= (m_groupIndex + 1) * m_groupSize)
+						{
+							getPrevPlayer();
+						}
+						goto ProcessOneDay;
+					}
+				}
+#endif
 			}
 #endif
 		}
@@ -251,7 +256,7 @@ bool alldata::Run(int improveResult) {
 		if (memcmp(maxResult, result(), m_nLenResults) != 0)
 			printTable("'Maximum days' Result", maxResult, m_numDays, m_numPlayers);
 		printTableColor("Links", links(), m_numPlayers, m_numPlayers);
-		convertLinksToResult(links());
+		convertLinksToResult(links(), m_co, m_numPlayers, m_groupSize);
 		if (memcmp(m_co, result(), m_nLenResults) != 0)
 			printTable("Result from link (different than result)", m_co, m_numDays, m_numPlayers);
 	}

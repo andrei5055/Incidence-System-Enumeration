@@ -1,5 +1,4 @@
 
-#include <assert.h>
 #include "CheckCanon.h"
 
 typedef enum {
@@ -268,10 +267,10 @@ CheckerCanon(bool)::checkCanonicity() {
 			auto pRow = getMatrixRow(iDay);
 			T maxVal;
 			memcpy(leadingPlayers, trivialPerm(), (maxVal = groupSize()) * sizeof(leadingPlayers[0]));
-			auto pPlayerPerm = playersPerm(5);
+			auto pPlayerPerm = playersPerm(3);
 			memcpy(pPlayerPerm, pRow, lenRow());
 
-			// Loop over different groups of the first day 
+			// Loop over different groups of the first day
 			while (true) {
 				sortTuples(m_players);
 				if (!checkDay_1(iDay, pPlayerPerm))
@@ -549,10 +548,10 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	return false;
 }
 
-CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow, bool useRecording)
+CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow, bool useRecording, bool useCurrentRow)
 {
 	auto pTmp = playersPerm(1);
-	if (numGroup < numGroups())
+	if (useCurrentRow)
 		memcpy(pTmp, pCurrentRow, lenRow());
 
 	if (!checkWithGroup(numGroup, &CCheckerCanon<T>::checkPermutationOnGroups, pCurrentRow)) {
@@ -589,7 +588,7 @@ CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const
 	if (retVal)
 		return retVal;
 
-	if (!checkRemainingDays(dayNumb(), 0))
+	if (!checkRemainingDays(dayNumb(), 0, pCurrentRow))
 		return -1;
 
 	return 0;
@@ -715,7 +714,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	// For some reason, using a symmetrical group acting on players #0 - #2
 	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
-	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1));
+	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1), false, false);
 #endif
 #endif
 }

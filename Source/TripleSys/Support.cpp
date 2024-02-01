@@ -14,7 +14,7 @@ bool alldata::initCurrentDay()
 
 	if (m_bCheckLinkH && iDay > 1)
 	{
-		int np = m_numPlayers;
+		const int np = m_numPlayers;
 		for (int i = 0; i < m_numPlayers; i++)
 			m_h[i] = i;
 		if (iDay == 0)
@@ -150,10 +150,10 @@ bool alldata::initPrevDay()
 
 void alldata::getPrevPlayer()
 {
-	if (iPlayer >= m_numPlayers)
+	if (iPlayer > m_numPlayers)
 		abort();
-
-	indexPlayer[iPlayer] = 0;
+	if (iPlayer < m_numPlayers)
+	    indexPlayer[iPlayer] = 0;
 	while (--iPlayer >= 0)
 	{
 		int iPlayerNumber = tmpPlayers[iPlayer];

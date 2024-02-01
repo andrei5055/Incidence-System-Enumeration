@@ -141,15 +141,13 @@
     <ClCompile Include="checkPlayer3.cpp" />
     <ClCompile Include="convertLinksToResult.cpp" />
     <ClCompile Include="getNextPlayer.cpp" />
+    <ClCompile Include="getUnselected.cpp" />
     <ClCompile Include="improveMatrix.cpp" />
     <ClCompile Include="initStartValues.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="printTable.cpp" />
-    <ClCompile Include="processLastSix.cpp" />
     <ClCompile Include="processOneDay.cpp" />
     <ClCompile Include="reportCheckLinksData.cpp" />
-    <ClCompile Include="s2k.cpp" />
-    <ClCompile Include="sortLinks.cpp" />
     <ClCompile Include="Support.cpp" />
     <ClCompile Include="TripleSys.cpp" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 #include "TripleSys.h"
 
 #ifndef CD_TOOLS
@@ -37,15 +38,15 @@ public:
 	CCheckerCanon(T nRow, T nCol, T groupSize = GroupSize)
 		: m_numElem(nCol), m_numElem2(2 * nCol), m_numDaysMax(nRow), 
 		  m_groupSise(groupSize), m_numGroups(nCol/ groupSize), m_lenRow(m_numElem*sizeof(T)) {
-		m_players = new T[6 * nCol];
+		m_players = new T[7 * nCol];
 		m_tmpBuffer = new T[nCol + nRow];
 		m_pResultMemory = new T[(nCol + 1) * nRow];
-		m_pOrbits = (m_pPermutation = m_players + 2 * nCol) + nCol;
+		m_pOrbits = (m_pPermutation = m_players + 4 * nCol) + nCol;
 		m_tmpBuffer1 = m_pOrbits + nCol;
 		initCommentBuffer(256);
 	}
 	~CCheckerCanon()						{ delete[] m_players;
-											  delete [] tmpBuffer();
+											  delete[] tmpBuffer();
 											  delete[] resultMemory();
 											  resetComments();
 											}
@@ -105,8 +106,8 @@ private:
 	inline auto orbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
-	inline auto playersPerm(int idx) const  { return m_players + idx * m_numElem; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false);
+	inline auto playersPerm(int idx) const  { assert(idx < 4); return m_players + idx * m_numElem; }
+	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false, bool useCurrentRow = true);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);

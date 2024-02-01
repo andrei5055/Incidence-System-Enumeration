@@ -4,7 +4,7 @@ using namespace std;
 #define nPlayers0 15
 #define GroupSize 3
 #define LoopsMax 200000000000.
-#define ImproveResults 1		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
 #define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.
@@ -71,7 +71,6 @@ protected:
 		delete[] m_lo;
 		delete[] m_pBuf;
 	}
-	void convertLinksToResult(const char *ci);
 
 	const int m_numDays;
 	const int m_numPlayers;
@@ -183,18 +182,12 @@ private:
 	FILE* m_file = NULL;    // File for output of improved matrices.
 };
 
-
-bool s2k(const char* s, char* lnk, int nr, int nc);
-int getLastSixIndex(alldata* s);
+void convertLinksToResult(const char* ci, char* res, int np, int gs);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
 void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
-void initPrevDay(alldata* s);
-int processLastSix(alldata* s);
-
-int compareMatrix(const char *result, int ncolumns, char* transition);
 
 

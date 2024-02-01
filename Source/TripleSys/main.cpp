@@ -1,15 +1,15 @@
 
 #include <iostream>
-#include <windows.h>
+//#include <windows.h>
 #include "TripleSys.h"
 
 int main()
 {
-//	_CrtSetBreakAlloc(183);  // Put here the memory allocation number you want to stop at.
+//	_CrtSetBreakAlloc(174);  // Put here the memory allocation number you want to stop at.
 	alldata sys(nPlayers);
 	const char* ivc = ""
 #if nPlayers == 9
-#if 1
+#if 0
 		"    0   1   2    3   4   5    6   7   8 "
 		"    0   3   6    1   4   7    2   5   8 "
 		"    0   4   8    1   5   6    2   3   7 "
@@ -26,7 +26,7 @@ int main()
  "    0  11  14    1   4   8    2   5   7    3   9  13    6  10  12 "
 #endif
 #elif nPlayers == 21
-#if 1
+#if 0
 		"   0   1   2    3   4   5    6   7   8    9  10  11   12  13  14   15  16  17   18  19  20 "
 		"   0   3   6    1   4   7    2  12  15    5   9  13    8  14  18   10  16  19   11  17  20 "
 		"   0   4   9    1   5  20    2  14  16    3   7  17    6  11  15    8  13  19   10  12  18 "
@@ -162,8 +162,8 @@ int main()
 
 	sys.initStartValues(ivc);// can be used to start from previous result
 	sys.Run(ImproveResults);
-	PlaySound(L"SystemAsterisk", NULL, SND_SYNC);
-
+	cout << "\7" << endl;
+	//PlaySound(L"SystemAsterisk", NULL, SND_SYNC);
 	return 0;
 }
 /*

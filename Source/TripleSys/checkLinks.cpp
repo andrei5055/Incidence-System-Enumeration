@@ -164,7 +164,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		if (id > 33)
 		{
 			printTableColor("CheckLinks Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
-			convertLinksToResult(m_pLinksCopy);
+			convertLinksToResult(m_pLinksCopy, m_co, m_numPlayers, m_groupSize);
 			printTable("CheckLinks Result", m_co, m_numDays, m_numPlayers);
 		}
 		/**/

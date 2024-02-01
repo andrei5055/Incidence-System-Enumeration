@@ -7,6 +7,11 @@ bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, cha
 		return true;
 	if (nv == 2 && ind != unset)
 	{
+		if (vo + 1 - m_vo >= m_numPlayers)
+		{
+			printf("vo + 1 - m_vo=%d\n", (int)(vo + 1 - m_vo));
+			abort();
+		}
 		switch (ind) {
 		case 0:
 			if (c[v[1] * m_numPlayers + v[2]] != unset)
@@ -46,6 +51,8 @@ bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, cha
 	{
 		if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
 		{
+			if (vo + 1 - m_vo >= m_numPlayers)
+				abort();
 			*vo = t[0];
 			*(vo + 1) = t[i];
 			//free(t);
