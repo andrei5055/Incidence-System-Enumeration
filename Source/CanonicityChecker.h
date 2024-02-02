@@ -69,8 +69,8 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
-	inline bool CheckCanonicity(const T* result, int nLines, T* bResult = NULL) {
-		return m_pCheckerKSystemCanon->CheckCanonicity(result, nLines, bResult);
+	inline bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T* bResult = NULL) {
+		return m_pCheckerKSystemCanon->CheckCanonicity(result, nLines, pGrpNumb, bResult);
 	}
 	inline bool CheckPermutations(const T* inputMatrix, const T* bestResult, int nRows) {
 		return m_pCheckerKSystemCanon->CheckPermutations(inputMatrix, bestResult, nRows);
