@@ -131,7 +131,7 @@ CheckerCanon(void)::sortTuples(T *players) const {
 	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
 
-CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, int *pGrpNumb, T *bResult) {
+CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
 	//             for each day, players are divided into groups, each of which contains "n"m_groupSise" players
@@ -164,6 +164,7 @@ CheckerCanon(bool)::CheckCanonicity(const T *result, int nDays, int *pGrpNumb, T
 		*pGrpNumb = groupIndex();
 		return false;
 	}
+
 #if 0
 	if (m_numDays != m_numDaysMax)
 		return true;
@@ -203,18 +204,33 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 	if (diff < 0) {
 		auto pRes = destMemory();
 		auto pInput = pMatr;
-		int grIdx = 1;
-		while (!memcmp(pRes += numElem(), pInput += numElem(), lenRow()))
-			grIdx++;
 
-		grIdx *= numGroups();
-		while (!memcmp(pRes, pInput, groupSize() * sizeof(*pRes))) {
-			pInput += groupSize();
-			pInput += groupSize();
-			grIdx++;
+		int dayIdx = 1;
+		auto len = lenRow();
+		while (!memcmp(pRes += numElem(), pInput += numElem(), len))
+			dayIdx++;
+
+		// If the set of days was reordered, we need to adjust grpIdx 
+		const auto pDayIdx = destMemory() + numElem() * numDays();
+		for (T i = 1; i < dayIdx; i++) {
+			if (dayIdx < pDayIdx[i])
+				dayIdx = pDayIdx[i];
 		}
 
-		setGroupIndex(grIdx);
+		T grpIdx = 0;
+		len /= numGroups();
+		while (!memcmp(pRes, pInput, len)) {
+			pInput += groupSize();
+			pInput += groupSize();
+			grpIdx++;
+		}
+
+		for (T i = 0; i < grpIdx; i++) {
+			if (grpIdx < permut[i])
+				grpIdx = permut[i];
+		}
+
+		setGroupIndex(dayIdx * numGroups() + grpIdx);
 		if (resultOut()) {
 			memcpy(destMemory(), pMatr, lenRow());
 			addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
@@ -415,7 +431,6 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 		if (!diff) {
 			// Automorphism found
-
 			CGroupOrder<T>::UpdateOrbits(permut, numElem, orbits(), rowPermut, calcGroupOrder);
 #if PRINT_PERMUT
 			if (calcGroupOrder) {
