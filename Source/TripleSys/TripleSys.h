@@ -22,6 +22,9 @@ using namespace std;
 #define USE_STATEMENT_17  1    // Only the players 4 or 9 could be in position[1, 4].
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
+#define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
+                                    // NOTE: for nPlayers0 = 15 does not provide new eliminations.
+
 #define USE_STATEMENT_19  1
 #define CHECK_PERMUTATIONS	1
 #define IMPROVE_RESULT_MAX  1000 // Maximal number of attempts to improve matrix 

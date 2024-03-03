@@ -26,6 +26,8 @@ public:
 	CC inline void setLenPerm(T val)				{ m_nLenPermByte = (m_nLenPerm = val) * sizeof(m_pPermutMem[0]); }
 	T *CreateOrbits(const PermutStoragePntr pPermColumn, const  MatrixDataPntr pMatrix, T *pRowOrbits = NULL, T *pColOrbits = NULL, int firstpermIdx = 1) const;
 	CC inline bool isEmpty() const					{ return !lenMemUsed(); }
+	void outputPermutations(FILE *file, T len, const PermutStoragePntr pPermColumn = NULL,
+		const T *permutMemoryCol = NULL, const T *permutMemoryRow = NULL, int nOrbs = 0) const;
 protected:
 private:
 	CK inline auto lenPermByte() const				{ return m_nLenPermByte;  }
@@ -42,8 +44,6 @@ private:
 	void outputOrbits(FILE *file, const T *pOrbits, T len, const PermutStoragePntr pPermColumn = NULL) const;
 	void outputOrbits(FILE *file, const PermutStoragePntr pPermColumn,
 		const MatrixDataPntr pMatrix, const T *pRowOrbits, const T *pColOrbits) const;
-	void outputPermutations(FILE *file, T len, const PermutStoragePntr pPermColumn = NULL,
-		const T *permutMemoryCol = NULL, const T *permutMemoryRow = NULL, int nOrbs = 0) const;
 
 	T *m_pPermutMem;
 	size_t m_nLenMax;

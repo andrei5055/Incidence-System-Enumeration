@@ -53,7 +53,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	bool ret = true;
 	const auto len = m_numPlayers * m_numPlayers;
 
-	if (m_numPlayers == 15 && id < 3)
+	if (m_numPlayers == 15 && id < 4)
 		return true;
 	else if (m_numPlayers == 21 && id < 5) //1)
 		return true;

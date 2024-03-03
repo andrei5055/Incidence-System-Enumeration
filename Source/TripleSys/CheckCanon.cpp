@@ -189,16 +189,12 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 	}
 
 	auto pntrTo = destMemory();
-	auto pDays = destMemory() + numDays() * numElem();
-	*pDays = 0;
 	auto pntrFrom = pMatr;
-	for (T iDay = 1; iDay < numDays(); iDay++) {
-		pntrTo += numElem();
-		pntrFrom += numElem();
-		*(pDays + iDay) = iDay;
-		recodePlayers(pPlayers, pntrFrom, pntrTo);
-	}
+	for (T iDay = 1; iDay < numDays(); iDay++)
+		recodePlayers(pPlayers, pntrFrom += numElem(), pntrTo += numElem());
 
+	// Copying trivial permutation of days
+	memcpy(pntrTo + numElem(), pMatr, numDays() * sizeof(T));
 	orderigRemainingDays(1, 0, destMemory());
 	const int diff = memcmp(destMemory() + numElem(), pMatr + numElem(), lenRow() * (numDays() - 1));
 	if (diff < 0) {
@@ -212,7 +208,7 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 
 		// If the set of days was reordered, we need to adjust grpIdx 
 		const auto pDayIdx = destMemory() + numElem() * numDays();
-		for (T i = 1; i < dayIdx; i++) {
+		for (T i = 1; i <= dayIdx; i++) {
 			if (dayIdx < pDayIdx[i])
 				dayIdx = pDayIdx[i];
 		}
@@ -288,7 +284,7 @@ CheckerCanon(bool)::checkCanonicity() {
 
 			// Loop over different groups of the first day
 			while (true) {
-				sortTuples(m_players);
+				sortTuples(playersPerm());
 				if (!checkDay_1(iDay, pPlayerPerm))
 					return false;
 
@@ -331,7 +327,7 @@ CheckerCanon(T)::switchLeadingPlayersOfGroups(T placeIdx, T * playerPerm, const 
 	for (T i = 0; i < groupSize(); i++)
 		playerPerm[i * groupSize()] = pLeaders[pFrom[i]];
 
-	recordTuples(playerPerm, m_players);
+	recordTuples(playerPerm, playersPerm());
 	return (placeIdx += 3) < countof(leaderPlace) ? placeIdx : ELEMENT_MAX;
 }
 
@@ -381,7 +377,7 @@ CheckerCanon(T)::initNextSetOfGroups(T maxVal, const T* pRow, T *playerPerm, T *
 		pRow += groupSize();
 	}
 
-	recordTuples(playerPerm, m_players);
+	recordTuples(playerPerm, playersPerm());
 	return maxVal;
 }
 
@@ -477,14 +473,15 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 CheckerCanon(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
 	T prev;
-	m_players[prev = res[0]] = inc;
+	auto players = playersPerm();
+	players[prev = res[0]] = inc;
 	for (T j = 1; j < groupSize(); j++) {
 		const auto next = res[j];
 		assert(prev != next);
 		if (doCheck && prev > next)
 			return false;
 
-		m_players[prev = next] = j + inc;
+		players[prev = next] = j + inc;
 	}
 	return true;
 }
@@ -599,7 +596,7 @@ CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const
 
 	recordTuples(pTmp, m_tmpBuffer1);
 	sortTuples(m_tmpBuffer1);
-	const auto retVal = checkDayCode(0, 1, m_tmpBuffer1);
+	const auto retVal = checkDayCode(0, 1, m_tmpBuffer1, false);
 	if (retVal)
 		return retVal;
 
@@ -688,9 +685,9 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 		if (players == studiedMatrix() + m_numElem) {
 			// Do this only when day 0 did not changed its place.
 			// As described in Statement 17, swap days 0 and 1
-			recordTuples(players, m_players);
+			recordTuples(players, playersPerm());
 			checkRemainingDays(1, -1);
-			return explainRejection(m_players, 1, 2, 1, true);
+			return explainRejection(playersPerm(), 1, 2, 1, true);
 		}
 		return false;
 	}
@@ -714,7 +711,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 		recordTuples(pTmp, pSecondRow);
 		sortTuples(pSecondRow);
 
-		const int diff = checkDayCode(0, 1, pSecondRow);
+		const int diff = checkDayCode(0, 1, pSecondRow, false);
 		if (diff < 0) {
 			if (!resultOut())
 				return false;       // we don't need an explanation for rejection
@@ -745,7 +742,7 @@ CheckerCanon(void)::createDaySequence(T iDay) const {
 	}
 }
 
-CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow) {
+CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow, bool createDaySeq) {
 	if (!diff)
 		diff = memcmp(secontRow, studiedMatrix() + m_numElem, lenRow());
 
@@ -767,10 +764,11 @@ CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow) {
 			else
 				addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
 		}
-
-		// Adding all unused days to the array
-		createDaySequence(iDay);
 	}
+
+	// Adding all unused days to the array
+	if (createDaySeq && resultOut())
+		createDaySequence(iDay);
 
 	return diff;
 }
@@ -825,35 +823,52 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 	// iDay index if the day which replaced the day 0
 	int diff = 0;
 #if	(UsePos_1_4_condition & 2)
+	const auto players = playersPerm();
 #if UsePos_1_4_condition && ImproveResults
-	if (!checkPosition1_4(m_players)){
+	if (!checkPosition1_4(players)){
 		diff = -9999;
 		if (numDays() == 2)
 			return diff;
 	}
 #else
-	if (m_players[4] != 4 && m_players[4] != 9) {
+	if (players[4] != 4 && players[4] != 9) {
 		diff = -9999;
 		return diff;
 	}
-	if (m_players[4] > m_players[7])
+	if (players[4] > players[7])
 		return -1;
 #endif
 #endif
-	diff = checkDayCode(diff, iDay, m_players);
+	diff = checkDayCode(diff, iDay, playersPerm());
 	if (diff < 0 && !resultOut())
 		return false;
 
 	if (diff <= 0 && !checkRemainingDays(iDay, diff, pPlayerPerm))
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
-	if (!checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm, true)) {
+#if USE_CHANGING_DAY_0_GROUPS
+	if (!diff && !checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm, false)) {
 		if (!resultOut())
 			return false;
 
-		checkRemainingDays(iDay, -1, pPlayerPerm);
-		return reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay);
+
+		//permutation();
+		//checkRemainingDays(iDay, -1, pPlayerPerm);
+		char* pAddExpl;
+		reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay, &pAddExpl);
+
+		auto pBuffer = comment();
+		const auto len = commentBufferLength();
+		const auto* pPlayerPerm = playersPerm(1);
+		SPRINTFS(pAddExpl, pBuffer, len, "\nPlayer permutation: (%d", *pPlayerPerm);
+
+		for (T i = 1; i < numElem(); i++)
+			SPRINTFS(pAddExpl, pBuffer, len, ", %d", *(pPlayerPerm + i));
+
+		SPRINTFS(pAddExpl, pBuffer, len, ").");
+		return false;
 	}
+#endif
 
 	return true;
 }
@@ -966,7 +981,7 @@ CheckerCanon(void)::orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const {
 	}
 }
 
-CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T nDay) {
+CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, const T *pDays, T nDay, char **ppAddExpl) {
 	// For pDays 1= NULL, nDay is the number of days defined in pDays
 	// Otherwise nDay is a day numbed OR indefined (-1)
 	if (!bBuffer)
@@ -983,15 +998,19 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, T *pDays, T 
 
 	// Adding day related information 
 	auto* pBuff = pBuffer + copyLen;
-	pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ". The problem was detected for day");
+
+	SPRINTFS(pBuff, pBuffer, len, ". The problem was detected for day");
 	if (pDays && nDay > 1) {
-		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), "s: (%d", pDays[0]);
+		SPRINTFS(pBuff, pBuffer, len, "s: (%d", pDays[0]);
 		for (int i = 1; i < nDay; i++)
-			pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ", %d", pDays[i]);
+			SPRINTFS(pBuff, pBuffer, len, ", %d", pDays[i]);
 			
-		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), ").");
+		SPRINTFS(pBuff, pBuffer, len, ").");
 	} else
-		pBuff += sprintf_s(pBuff, len - (pBuff - pBuffer), " %d", nDay);
+		SPRINTFS(pBuff, pBuffer, len, " %d.", nDay);
+
+	if (ppAddExpl)
+		*ppAddExpl = pBuff;
 
 	return false;
 }
@@ -1106,7 +1125,7 @@ CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T le
 }
 
 CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRows) {
-	T* permPlayers = m_players;
+	T* permPlayers = playersPerm();
 	memcpy(permPlayers, result, lenRow());
 	auto pOrbits = new T [numElem()];
 	memcpy(permPlayers, result, lenRow());

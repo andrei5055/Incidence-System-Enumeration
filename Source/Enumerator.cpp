@@ -480,7 +480,7 @@ FClass2(CEnumerator, bool)::ProcessPartiallyConstructedMatrix(
 		}
 #endif
 
-		OUTPUT_CANON_GROUP(useCanonGroup, canonChecker(), outFile());
+		OUTPUT_CANON_GROUP(useCanonGroup, this->permColStorage(), outFile());
 	}
 	else {
 		if (pCanonParam->numParts > 1) {

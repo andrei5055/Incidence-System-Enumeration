@@ -82,9 +82,9 @@ private:
 	inline auto destMemory() const			{ return m_pDestMemory; }
 	bool checkDay_1(T iDay, const T* pPlayerPerm);
 	bool checkDay(T iDay);
-	int checkDayCode(int diff, T iDay, const T* secontRow);
+	int checkDayCode(int diff, T iDay, const T* secontRow, bool createDaySeq = true);
 	void orderigRemainingDays(T daysOK, T groupsOK, T *pDest) const;
-	bool reportTxtError(T* bBuffer, const char* pReason, T* pDays = NULL, T nDays = 2);
+	bool reportTxtError(T* bBuffer, const char* pReason, const T* pDays = NULL, T nDays = 2, char** pAddlExpl = NULL);
 	inline void resetComments()				{ delete[] m_pComment; m_pComment = NULL; }
 	inline void initCommentBuffer(int len)  { resetComments(); m_pComment = new char[m_nCommentBufferLength = len]; }
 	inline auto commentBufferLength() const { return m_nCommentBufferLength; }
@@ -106,7 +106,7 @@ private:
 	inline auto orbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
-	inline auto playersPerm(int idx) const  { assert(idx < 4); return m_players + idx * m_numElem; }
+	inline auto playersPerm(int idx=0) const{ assert(idx < 4); return m_players + idx * m_numElem; }
 	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false, bool useCurrentRow = true);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
