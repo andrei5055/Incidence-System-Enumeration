@@ -97,7 +97,7 @@ private:
 	inline auto dayNumb() const				{ return m_nDay; }
 	void createDaySequence(T iDay = 1) const;
 	bool checkOrderingForDay(T iDay) const;
-	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL);
+	bool checkRemainingDays(T iDay, int retVal = -1, const T* pPerm = NULL, T* pPermPlayer = NULL);
 	bool checkPosition1_4(const T* players);
 	bool explainRejection(const T* players, T playerPrevID, T playerNewID, T firstDayID = 0, bool doOutput = false, const T* pNewOrder = NULL);
 	int orderingMatrix(T nDays, T numGroups, bool expected = true, bool invert = false, const T* permPlayer = NULL);
@@ -107,7 +107,7 @@ private:
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
 	inline auto playersPerm(int idx=0) const{ assert(idx < 4); return m_players + idx * m_numElem; }
-	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useRecording = false, bool useCurrentRow = true);
+	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useCurrentRow = true);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);

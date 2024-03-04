@@ -560,28 +560,17 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	return false;
 }
 
-CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow, bool useRecording, bool useCurrentRow)
+CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCurrentRow, bool useCurrentRow)
 {
-	auto pTmp = playersPerm(1);
 	if (useCurrentRow)
-		memcpy(pTmp, pCurrentRow, lenRow());
+		memcpy(playersPerm(1), pCurrentRow, lenRow());
 
 	if (!checkWithGroup(numGroup, &CCheckerCanon<T>::checkPermutationOnGroups, pCurrentRow)) {
-		if (!resultOut())
-			return false;			// we don't need an explanation for rejection
-
-		setNumReason(t_RejectionRreason::t_Statement_19_G);
-		setReasonParam(numGroup);	// the number of the groups used
-		if (useRecording) {
-			// Recording to the initial player numbers
-			auto pOrbits = orbits();
-			for (auto j = m_numElem; j--;)
-				pOrbits[pCurrentRow[j]] = j;
-
-			recodePlayers(pOrbits, pTmp, pTmp);
+		if (resultOut()) {
+			setNumReason(t_RejectionRreason::t_Statement_19_G);
+			setReasonParam(numGroup);	// the number of the groups used
 		}
-
-		return checkRemainingDays(1, -1, pTmp);
+		return false;
 	}
 
 	return true;
@@ -595,12 +584,17 @@ CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const
 		memcpy(pTmp + i * groupSize(), pCurrentRow + permGroup[i] * groupSize(), lenGroup);
 
 	recordTuples(pTmp, m_tmpBuffer1);
+	memcpy(pTmp = playersPerm(2), m_tmpBuffer1, lenRow());
 	sortTuples(m_tmpBuffer1);
 	const auto retVal = checkDayCode(0, 1, m_tmpBuffer1, false);
-	if (retVal)
+	if (retVal > 0)
 		return retVal;
 
-	if (!checkRemainingDays(dayNumb(), 0, pCurrentRow))
+	if (retVal < 0 && !resultOut())
+		return retVal;
+
+	const auto rc = checkRemainingDays(dayNumb(), 0, NULL, pTmp);
+	if (retVal < 0 || !rc)
 		return -1;
 
 	return 0;
@@ -726,7 +720,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	// For some reason, using a symmetrical group acting on players #0 - #2
 	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
-	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1), false, false);
+	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1), false);
 #endif
 #endif
 }
@@ -773,18 +767,20 @@ CheckerCanon(int)::checkDayCode(int diff, T iDay, const T *secontRow, bool creat
 	return diff;
 }
 
-CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
+CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm, T *pPermPlayer) {
 	// A function to record the remaining days and check them when the code for 
 	// the first two days was built exactly the same as in the input matrix.
 	const auto numElem_2 = 2 * m_numElem;
 	auto* pDest = destMemory();
 	if (iDay) {
 		// Renumbering of players according to permutaion of days: (0, iDay).
-		if (!pPerm)
-			pPerm = getMatrixRow(iDay);
+		if (!pPermPlayer) {
+			if (!pPerm)
+				pPerm = getMatrixRow(iDay);
 
-		auto* pOrbits = playersPerm(2);
-		recordTuples(pPerm, pOrbits);
+			pPermPlayer = playersPerm(2);
+			recordTuples(pPerm, pPermPlayer);
+		}
 
 		// Renumbering the set of players in the groups for all days except 0 and iDay.
 		auto* pOut = pDest + 2 * m_numElem;
@@ -794,7 +790,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm) {
 			if (j == iDay)
 				continue;   // Skip day which is already used as 0's one. 
 
-			recodePlayers(pOrbits, pIn, pOut);
+			recodePlayers(pPermPlayer, pIn, pOut);
 			pOut += m_numElem;
 		}
 
@@ -847,7 +843,7 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
 #if USE_CHANGING_DAY_0_GROUPS
-	if (!diff && !checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm, false)) {
+	if (!checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm)) {
 		if (!resultOut())
 			return false;
 
