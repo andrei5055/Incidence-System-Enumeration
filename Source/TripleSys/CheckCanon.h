@@ -44,11 +44,17 @@ public:
 		m_pOrbits = (m_pPermutation = m_players + 4 * nCol) + nCol;
 		m_tmpBuffer1 = m_pOrbits + nCol;
 		initCommentBuffer(256);
+		// Preparing data for testing with the full group testing
+		m_pPermIndex = new T[numGroups() * 2];
+		m_pGroupPerm = m_pPermIndex + numGroups();
+		for (T i = m_GroupOrder = 2; ++i <= groupSize;)
+			m_GroupOrder *= i;
 	}
 	~CCheckerCanon()						{ delete[] m_players;
 											  delete[] tmpBuffer();
 											  delete[] resultMemory();
 											  resetComments();
+											  delete[] m_pPermIndex;
 											}
 	bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T *bResult=NULL);
 	bool CheckPermutations(const T* result, const T* pMatrix, int nRows);
@@ -108,10 +114,21 @@ private:
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
 	inline auto playersPerm(int idx=0) const{ assert(idx < 4); return m_players + idx * m_numElem; }
 	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useCurrentRow = true);
-	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL);
+	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL, bool symmetrical = true);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
 	int orderingMatrix(const T* permut, T numElem, const T*pDummy)     {
+#if 1
+		static unsigned int cntr = 0;
+		char buffer[256], *pBuf = buffer;
+		for (T j = 0; j < numElem; j++)
+			SPRINTFD(pBuf, buffer, "%3d", permut[j]);
+
+		FOPEN_F(f, "../permuts.txt", cntr? "a" : "w");
+		fprintf(f, "%6d: %s\n", ++cntr, buffer);
+		FCLOSE_F(f);
+		return 1;
+#endif
 		return orderingMatrix(0, 0, false, false, permut);
 	}
 	inline void recordTuples(const T* pTuples, T *pPlayers) const {
@@ -124,6 +141,7 @@ private:
 	}
 
 	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
+	T nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	T initNextSetOfGroups(T maxVal, const T* pRow, T* playerPerm, T* pLeaders) const;
 	T switchLeadingPlayersOfGroups(T placeIdx, T* playerPerm, const T* pLeaders) const;
 	bool checkCanonicity();
@@ -154,6 +172,10 @@ private:
 	T* m_pPermutation = NULL;
 	T* m_pOrbits = NULL;
 	const T* m_pTrivialPerm;
+
+	T* m_pPermIndex = NULL;     // Permutation indices currently used in groups
+	T* m_pGroupPerm = NULL;		// Current permutation of the group
+	T m_GroupOrder = 0;			// Order of the group acting on the elements of each group.
 
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;

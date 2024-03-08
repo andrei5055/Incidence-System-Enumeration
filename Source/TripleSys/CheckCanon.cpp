@@ -165,18 +165,11 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		return false;
 	}
 
-#if 0
-	if (m_numDays != m_numDaysMax)
-		return true;
-
-	static int ccc = 0;
-	//if (!ccc++)
-	//	return true;
-
-	return checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result);
-#else
-	return true;
+#if 1
+	if (m_numDays == m_numDaysMax)
+		return checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
 #endif
+	return true;
 }
 
 CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr) {
@@ -381,7 +374,7 @@ CheckerCanon(T)::initNextSetOfGroups(T maxVal, const T* pRow, T *playerPerm, T *
 	return maxVal;
 }
 
-CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow) {
+CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow, bool symmetrical) {
 	T* permut = permutation();
 	T lenStab = 0;
 
@@ -397,6 +390,11 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	const auto calcGroupOrder = numDays() == m_numDaysMax && numElem == this->numElem();
 	const auto rowPermut = calcGroupOrder;
 
+	T (CCheckerCanon<T>:: *nextPerm)(T*, const T*, T, T, T) = symmetrical? &CCheckerCanon<T>::nextPermutation : &CCheckerCanon<T>::nextPermutationA;
+	if (!symmetrical) {
+		memset(m_pPermIndex, 0, numElem * sizeof(m_pPermIndex[0]));
+	}
+
 	T nElem = ELEMENT_MAX;
 #define PRINT_PERMUT 0
 #if PRINT_PERMUT || PRINT_PERMUT_
@@ -409,7 +407,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	FOPEN_F(f, "../ccc.txt", "w");
 #endif
 	while (true) {
-		nElem = nextPermutation(permut, orbits(), numElem, nElem, lenStab);
+		nElem = (this->*nextPerm)(permut, orbits(), numElem, nElem, lenStab);
 		if (nElem == ELEMENT_MAX)
 			break;
 
@@ -565,15 +563,14 @@ CheckerCanon(bool)::checkPermutationOfFirstDayGroups(int numGroup, const T* pCur
 	if (useCurrentRow)
 		memcpy(playersPerm(1), pCurrentRow, lenRow());
 
-	if (!checkWithGroup(numGroup, &CCheckerCanon<T>::checkPermutationOnGroups, pCurrentRow)) {
-		if (resultOut()) {
-			setNumReason(t_RejectionRreason::t_Statement_19_G);
-			setReasonParam(numGroup);	// the number of the groups used
-		}
-		return false;
-	}
+	if (checkWithGroup(numGroup, &CCheckerCanon<T>::checkPermutationOnGroups, pCurrentRow))
+		return true;
 
-	return true;
+	if (resultOut()) {
+		setNumReason(t_RejectionRreason::t_Statement_19_G);
+		setReasonParam(numGroup);	// the number of the groups used
+	}
+	return false;
 }
 
 CheckerCanon(int)::checkPermutationOnGroups(const T* permGroup, T numElem, const T* pCurrentRow)
@@ -720,7 +717,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	// For some reason, using a symmetrical group acting on players #0 - #2
 	// does not add any new rejections for numPlayers 15 or 21 cases.
 	// But just in case, we will keep the following fragment...
-	return checkPermutationOfFirstDayGroups(3, getMatrixRow(1), false);
+	return checkPermutationOfFirstDayGroups(groupSize(), getMatrixRow(1), false);
 #endif
 #endif
 }
@@ -843,13 +840,10 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
 #if USE_CHANGING_DAY_0_GROUPS
-	if (!checkPermutationOfFirstDayGroups(groupSize(), pPlayerPerm)) {
+	if (numDays() == m_numDaysMax && !checkPermutationOfFirstDayGroups(numGroups(), pPlayerPerm)) {
 		if (!resultOut())
 			return false;
 
-
-		//permutation();
-		//checkRemainingDays(iDay, -1, pPlayerPerm);
 		char* pAddExpl;
 		reportTxtError(resultOut(), reason[t_changing_day_0_group], NULL, iDay, &pAddExpl);
 
@@ -1012,9 +1006,7 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, const T *pDa
 }
 
 CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
-	// Function generates next permutation for the k-system 
-	// Find non-increasing suffix
-	//const auto nRow = numRow();
+	// Function generates next permutation for the symmetrical groups 
 	const auto stabLenght = CGroupOrder<T>::stabilizerLength();
 	T temp, j, i = stabLenght;
 
@@ -1104,7 +1096,117 @@ CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T le
 		}
 	}
 
-	if (!(perm[j] % 3) && i < j) {
+	perm[i] = perm[j];
+	perm[j] = temp;
+	if (idx >= IDX_MAX - 1) {
+		if (CGroupOrder<T>::stabilizerLength() > i)
+			CGroupOrder<T>::setStabilizerLength(i);
+
+		if (nElem > i - 2)
+			revert(perm, nElem, i);
+	}
+
+	return i;
+}
+
+CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
+	// Function generates next permutation for the k-system 
+	const auto stabLenght = CGroupOrder<T>::stabilizerLength();
+	T temp, j, i = stabLenght;
+	const auto grpSize = groupSize() - 1;
+
+	// Check if the algorithm, used immediately after 
+	// some non-trivial automorphism was found
+	if (idx == IDX_MAX && perm[i] == nElem - 1)
+		idx = ELEMENT_MAX;
+
+	if (idx == IDX_MAX) {
+		// Firts call after some automorphism was found
+		temp = perm[idx = i];
+		for (j = nElem; --j > temp;)
+			perm[j] = j;
+
+		for (auto k = j++; k-- > i;)
+			perm[k + 1] = k;
+	}
+	else {
+		if (idx >= IDX_MAX) {
+			j = i = nElem;
+			while (--i > 0 && perm[i - 1] >= perm[i]);
+
+			if (i == lenStab)
+				return ELEMENT_MAX;  // no more permutations
+
+			// Find successor to pivot
+			temp = perm[--i];
+			while (perm[--j] <= temp);
+		}
+		else {
+			temp = perm[j = i = idx];
+			while (++j < nElem && perm[j] <= temp);
+			if (j >= nElem) {
+				if (nElem > i - 2)
+					revert(perm, nElem, i);
+
+				return nextPermutationA(perm, pOrbits, nElem);
+			}
+		}
+	}
+
+	if (stabLenght == i) {
+		bool flag = false;
+		auto k = j, tmp = perm[j];
+		if (idx >= IDX_MAX) {
+			while (k > i && *(pOrbits + perm[k]) != perm[k])
+				k--;
+
+			if (k != j) {
+				if (!k)
+					return ELEMENT_MAX;
+
+				flag = k == i;
+				tmp = perm[k--];
+				while (++k < j)
+					perm[k] = perm[k + 1];
+			}
+		}
+		else {
+			while (k < nElem && *(pOrbits + perm[k]) != perm[k])
+				k++;
+
+			if (k != j) {
+				flag = k == nElem;
+				if (flag) {
+					if (!i)
+						return ELEMENT_MAX;
+
+					// Re-establish trivial permutation
+					k = idx - 1;
+					while (++k < j)
+						perm[k] = k;
+				}
+				else {
+					tmp = perm[k++];
+					while (--k > j)
+						perm[k] = perm[k - 1];
+				}
+			}
+		}
+
+		perm[j] = tmp;
+		if (flag) {
+			j = idx >= IDX_MAX ? nElem - 1 : i;
+			temp = perm[--i];
+			CGroupOrder<T>::setStabilizerLength(i);
+		}
+	}
+
+	if (!((i+1) % groupSize()) && i < j) {
+		auto n = 0;
+		while (n < grpSize && perm[i - n] < perm[i - ++n]);
+		if (n <= grpSize) {
+			;// We still need to construct next permutation on the elements of current group.
+		}
 		i = i;
 	}
 	perm[i] = perm[j];
