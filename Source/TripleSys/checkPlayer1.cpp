@@ -32,15 +32,15 @@ int alldata::checkPlayer1(int iPlayerNumber)
 		if (iPlayerNumber <= tmpPlayers[iPlayer - m1])
 			iPlayerNumber = tmpPlayers[iPlayer - m1] + 1;
 	}
+	if (iPlayer == 1)
+	{
+		// AI statement #6
+		if (iPlayerNumber <= result(iDay - 1)[1])
+			iPlayerNumber = result(iDay - 1)[1] + 1;
+	}
 	if (GroupSize == 3)
 	{
-		if (iPlayer == 1)
-		{
-			//new
-			if (iPlayerNumber > m_numPlayers - m_numDays + iDay - 3) //for n=15 in last day player#1 cant be max 11, for 21 - 17
-				return m_numPlayers;
-		}
-#if UseSS == 0
+#if UseSS != 2
 		if (iPlayer < 7 && m0 == 0)
 		{
 			// AI statement #4 (part 2)
@@ -58,8 +58,6 @@ int alldata::checkPlayer1(int iPlayerNumber)
 				{
 					if (iPlayerNumber < 7)
 						iPlayerNumber = 7;  // not happend
-					if (iPlayerNumber <= result(iDay - 1)[1])
-						iPlayerNumber = result(iDay - 1)[1] + 1;
 				}
 				else
 				{
@@ -234,8 +232,8 @@ int alldata::checkPlayer1(int iPlayerNumber)
 			}
 		}
 		// new 3
-		if (iPlayerNumber < iPlayer / 3)
-			iPlayerNumber = iPlayer / 3; // not happen
+		if (iPlayerNumber < iPlayer / m_groupSize)
+			iPlayerNumber = iPlayer / m_groupSize; // not happen
 
 		if (iPlayerNumber > firstNotSel)
 			return m_numPlayers; // happen for 21

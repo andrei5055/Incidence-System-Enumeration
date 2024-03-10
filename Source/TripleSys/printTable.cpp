@@ -59,7 +59,7 @@ void printTable(char const* name, const int *c, int nl, int nc, int ns, int np, 
 			const auto v = c[j * nc + i];
 			if (np > 0 && (i % np) == 0 && i > 0)
 				printf(" ");
-			scale > 0.0 ? printf(" %4.1f", v * scale) : printf(" %3d", v);
+			scale > 0.0 ? printf(" %4.1f", v * scale) : printf(" %4d", v);
 		}
 		if (j + 1 >= nl || ns <= 0 || ((j + 1) % ns) == 0)
 			makeString ? printf(" \"\n") : printf("\n");

@@ -41,6 +41,7 @@ public:
 		m_makeString(makeString), m_bOutCntr(outCntr) {}
 	void printTable(const T *c, bool outCntr = false, const char *fileName = NULL);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
+	inline auto counter() const					{ return m_cntr; }
 private:
 	const char *m_name;
 	const int m_nl;
@@ -50,7 +51,7 @@ private:
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
 public:
-	int m_cntr = 0;
+	size_t m_cntr = 0;
 };
 
 static size_t nMatr = 0;
@@ -68,7 +69,7 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	if (m_name && strlen(m_name) != 0) {
 		if (outCntr && m_bOutCntr)
-			SPRINTFD(pBuf, buffer, "%s %d:\n", m_name, m_cntr);
+			SPRINTFD(pBuf, buffer, "%s %zd:\n", m_name, m_cntr);
 		else
 			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}

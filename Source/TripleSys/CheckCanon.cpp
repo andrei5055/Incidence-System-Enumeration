@@ -165,7 +165,7 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		return false;
 	}
 
-#if 1
+#if 0
 	if (m_numDays == m_numDaysMax)
 		return checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
 #endif
@@ -209,7 +209,7 @@ CheckerCanon(int)::checkReorderedGroups(const T* permut, T nElem, const T* pMatr
 		T grpIdx = 0;
 		len /= numGroups();
 		while (!memcmp(pRes, pInput, len)) {
-			pInput += groupSize();
+			pRes += groupSize();
 			pInput += groupSize();
 			grpIdx++;
 		}
@@ -378,10 +378,6 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	T* permut = permutation();
 	T lenStab = 0;
 
-	CGroupOrder<T>::setStabilizerLength(numElem - 1);
-	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
-	CGroupOrder<T>::setGroupOrder(1);
-
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
 	memcpy(permut, trivialPerm(), len);
@@ -393,8 +389,24 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	T (CCheckerCanon<T>:: *nextPerm)(T*, const T*, T, T, T) = symmetrical? &CCheckerCanon<T>::nextPermutation : &CCheckerCanon<T>::nextPermutationA;
 	if (!symmetrical) {
 		memset(m_pPermIndex, 0, numElem * sizeof(m_pPermIndex[0]));
+		memcpy(m_pGroupPerm, trivialPerm(), numElem * sizeof(m_pGroupPerm[0]));
+		if (!m_pSubGroup) {
+			m_pSubGroup = new T[m_GroupOrder * groupSize()];
+			const auto len = groupSize() * sizeof(m_pSubGroup[0]);
+			memcpy(m_pSubGroup, trivialPerm(), len);
+			auto pElemNext = m_pSubGroup;
+			for (auto i = 1; i < m_GroupOrder; i++) {
+				auto pElemPrev = pElemNext;
+				memcpy(pElemNext += groupSize(), pElemPrev, len);
+				CGroupOrder<T>::setStabilizerLength(ELEMENT_MAX);
+				nextPermutation(pElemNext, NULL, groupSize());
+			}
+		}
 	}
 
+	CGroupOrder<T>::setStabilizerLength(numElem - 1);
+	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
+	CGroupOrder<T>::setGroupOrder(1);
 	T nElem = ELEMENT_MAX;
 #define PRINT_PERMUT 0
 #if PRINT_PERMUT || PRINT_PERMUT_
@@ -602,7 +614,7 @@ CheckerCanon(bool)::checkPosition1_4(const T *players) {
 	//    0  1  2    3  4  5    6  7  8 ....
 	//    0  3  6    1 z1  *    2 z2 *
 #if USE_STATEMENT_7
-	if (players[4] > players[7]) {
+	if (groupSize() == 3 && players[4] > players[7]) {
 		setNumReason(t_RejectionRreason::t_Statement_7);
 		return explainRejection(players, 1, 2);
 	}
@@ -1109,7 +1121,29 @@ CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T le
 	return i;
 }
 
+
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
+	for (auto i = numGroups(); i--;) {
+		auto val = m_pGroupPerm[i] * groupSize();
+		auto pSubgrPerm = m_pSubGroup;
+		if (++m_pPermIndex[i] < m_GroupOrder)
+			pSubgrPerm += m_pPermIndex[i] * groupSize();
+		else
+			m_pPermIndex[i] = 0;
+
+		for (T j = 0; j < groupSize(); j++)
+			perm[val + j] = val + pSubgrPerm[j];
+
+		if (m_pPermIndex[i] && i >= 3)
+			return 0;
+
+		if (i == 4)
+			continue;
+
+		return 1;
+	}
+	return ELEMENT_MAX;
+
 	// Function generates next permutation for the k-system 
 	const auto stabLenght = CGroupOrder<T>::stabilizerLength();
 	T temp, j, i = stabLenght;

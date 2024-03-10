@@ -242,6 +242,12 @@
     <ClCompile Include="..\Source\TripleSys\getUnselected.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\cnv.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\kmSupport.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Source\TripleSys\PlayerCond.html">

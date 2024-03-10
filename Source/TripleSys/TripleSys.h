@@ -31,7 +31,6 @@ using namespace std;
 #define OUTPUT_VECTOR_STAT	0    // Output of some statistics for constructed matrices
 
 #define PrintLinksStat 1
-#define PrintLinksStatTime 0 /* 1 - ~50% more cpu required */
 #define PrintNVminmax 0
 #define UseSS 0
 #define nPlayers (nPlayers0/GroupSize*GroupSize)
@@ -84,7 +83,7 @@ protected:
 
 class CChecklLink : private SizeParam {
 public:
-	CChecklLink(int numDays, int numPlayers);
+	CChecklLink(int numDays, int numPlayers, int groupSize);
 	~CChecklLink();
 	bool checkLinks(char *c, int id, bool printLinksStatTime = false);
 	bool checkLinks27(char *c, int id);
@@ -151,8 +150,12 @@ private:
 	int checkPlayer3(int iPlayerNumber, int lastPlayer);
 	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
 	void outputError() const;
-    void sortLinks();
 	bool CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errDay, int* errGroup, int* dubLine);
+	bool cnvCheck();
+	bool cnvCheckKm(char* tr, char* tg, int gfs);
+	bool cnvCheckKm1(char* tr);
+	bool cnvCheckTg(char* tr, char* tg, int ntg, int gsf);
+	void cnvInit();
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
@@ -174,6 +177,15 @@ private:
 	int m_groupIndex;     // Index of the group to change if the matrix is not canonical.
 	bool bPrevResult;
 	size_t m_nLenResults;
+	int m_finalKMindex;
+	int m_groupSizeFactorial;
+	int m_nallTr;
+	int m_nallTg;
+	char* m_Km;
+	char* m_allTr;
+	char* m_allTg;
+	char* m_trmk;
+	char* m_groups;
 
 	const int m_np2;
 	const int m_nGroups;
@@ -191,5 +203,8 @@ void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
+void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
+void kmFullSort(char* mo, int nr, int nc, int gs);
+int factorial(int n);
 
 

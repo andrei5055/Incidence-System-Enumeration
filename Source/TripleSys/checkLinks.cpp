@@ -1,13 +1,12 @@
 #include "TripleSys.h"
 #include <iostream>
-#include <chrono>
 
 void alldata::setCheckLinks() {
 
 }
 
-CChecklLink::CChecklLink(int numDays, int numPlayers) :
-		SizeParam(numDays, numPlayers) {
+CChecklLink::CChecklLink(int numDays, int numPlayers, int groupSize) :
+		SizeParam(numDays, numPlayers, groupSize) {
 	const auto len = numDays * numPlayers;
 	initArray(&counts, len);
 	initArray(&faults, len);
@@ -49,23 +48,19 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 
 bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 {
-	std::chrono::steady_clock::time_point start0, start;
 	bool ret = true;
 	const auto len = m_numPlayers * m_numPlayers;
 
-	if (m_numPlayers == 15 && id < 4)
+	if (m_numPlayers == 15 && id < 3)
 		return true;
-	else if (m_numPlayers == 21 && id < 5) //1)
+	else if (m_numPlayers == 21 && id < 2) //1)
 		return true;
-	else if (m_numPlayers == 27 && id < 2)
+	else if (m_numPlayers == 27 && id < 3)
 		return true;
 
 	memcpy(m_pLinksCopy, pLinks, len);
 
 	cnt++;
-
-	if (printLinksStatTime)
-		start0 = std::chrono::high_resolution_clock::now();
 
 	const auto idx = id * m_numPlayers;
 	auto *faults_id = faults + idx;
@@ -75,14 +70,11 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	{
 		int i = (i0 + 5) % m_numPlayers;
 #else
-	for (int i0 = 0; i0 < 8; i0++)
+	for (int i0 = 0; i0 < m_numPlayers - m_groupSize; i0 += m_groupSize)
 	{
 		int i = i0;
 #endif
 		auto *ci = m_pLinksCopy + i * m_numPlayers;
-		if (printLinksStatTime)
-			start = std::chrono::high_resolution_clock::now();
-
 		int nv = 0;
 
 		for (int j = 0; j < m_numPlayers; j++)
@@ -130,30 +122,17 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 			goto okplayer;
 		}
 	//fltPlayer:
+		if (id < 3)
+			id = id;
 		setNV_MinMax(id, i, nv);
 		faults_id[i] |= 1;
 		counts_id[i]++;
 		cntErr++;
-		if (printLinksStatTime)
-		{
-			auto elapsed = std::chrono::high_resolution_clock::now() - start;
-			long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-			*(tmfalse + idx + i) += (double)microseconds;
-			tmtotalFalse += (double)microseconds;
-		}
 		ret = false;
 		break;
 	okplayer:
 		setNV_MinMax(id, i, nv);
 		faults_id[i] |= 2;
-
-		if (printLinksStatTime)
-		{
-			auto elapsed = std::chrono::high_resolution_clock::now() - start;
-			long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-			*(tmok + idx + i) += (double)microseconds;
-			tmtotalOk += (double)microseconds;
-		}
 	}
 	if (ret)
 	{
@@ -168,13 +147,6 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 			printTable("CheckLinks Result", m_co, m_numDays, m_numPlayers);
 		}
 		/**/
-	}
-
-	if (printLinksStatTime)
-	{
-		auto elapsed0 = std::chrono::high_resolution_clock::now() - start0;
-		long long microseconds0 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed0).count();
-		tmtotal += (double)microseconds0;
 	}
 
 	return ret;

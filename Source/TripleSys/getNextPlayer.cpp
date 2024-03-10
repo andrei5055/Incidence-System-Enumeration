@@ -5,7 +5,7 @@ int alldata::getNextPlayer()
 {
 	int iPlayerNumber = indexPlayer[iPlayer];
 	int iRet;
-	int m0 = iPlayer % GroupSize;
+	int m0 = iPlayer % m_groupSize;
 	for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
 	{
 		if (selPlayers[iPlayerNumber] != unset)

@@ -227,11 +227,13 @@
     <ClCompile Include="..\Source\TripleSys\CheckMatrix.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkPlayer1.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp" />
+    <ClCompile Include="..\Source\TripleSys\cnv.cpp" />
     <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp" />
     <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp" />
     <ClCompile Include="..\Source\TripleSys\getUnselected.cpp" />
     <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp" />
     <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />
+    <ClCompile Include="..\Source\TripleSys\kmSupport.cpp" />
     <ClCompile Include="..\Source\TripleSys\printTable.cpp" />
     <ClCompile Include="..\Source\TripleSys\processOneDay.cpp" />
     <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp" />

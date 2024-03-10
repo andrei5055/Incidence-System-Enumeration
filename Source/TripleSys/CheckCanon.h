@@ -55,6 +55,7 @@ public:
 											  delete[] resultMemory();
 											  resetComments();
 											  delete[] m_pPermIndex;
+											  delete[] m_pSubGroup;
 											}
 	bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T *bResult=NULL);
 	bool CheckPermutations(const T* result, const T* pMatrix, int nRows);
@@ -175,7 +176,8 @@ private:
 
 	T* m_pPermIndex = NULL;     // Permutation indices currently used in groups
 	T* m_pGroupPerm = NULL;		// Current permutation of the group
-	T m_GroupOrder = 0;			// Order of the group acting on the elements of each group.
+	T m_GroupOrder = 0;			// Order of the subgroup acting on the elements of each group of elements.
+	T* m_pSubGroup = NULL;      // Elements of the subgroup 
 
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;

@@ -16,7 +16,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 
 	if (l0[iPlayerNumber] != unset)
 		return iPlayerNumber + 1;
-#if UseSS == 0
+#if UseSS != 2
 	if (iPlayer == 1)
 	{
 		// AI statement #15
@@ -38,7 +38,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	if (m0 == 2)
 	{
 		bool bV = true, bH = true, bHdone = false;
-#if UseSS == 0
+#if UseSS != 2
 		if (iPlayer > m_numPlayers / 2 && m_bCheckLinkH)
 		{
 			int nUnselected = m_numPlayers - iPlayer - 1;

@@ -1,6 +1,5 @@
 #include "TripleSys.h"
 #include <iostream>
-#include <chrono>
 void CChecklLink::reportCheckLinksData()
 {
 	if (cnt != 0.0)

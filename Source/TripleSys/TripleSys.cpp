@@ -8,6 +8,8 @@
    #include "CheckCanon.h"
 #endif
 
+Table<char>* pRes = NULL;
+
 alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useCheckLinksH) :
 	SizeParam((numPlayers - 1) / (groupSize - 1), numPlayers, groupSize),
 	m_np2(numPlayers * numPlayers),
@@ -22,8 +24,22 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	indexPlayer = tmpPlayers + m_numPlayers;
 	m_h = indexPlayer + m_numPlayers;
 	m_ho = m_h + m_numPlayers;
+	m_groupSizeFactorial = factorial(m_groupSize);
+	int n = 1, m = m_groupSizeFactorial;
+	for (int j = 2; j <= m_nGroups;j++)
+	{
+		n *= j; m *= m_groupSizeFactorial;
+	}
+	m_nallTr = n;
+	m_nallTg = m;
+	m_finalKMindex = 0;
+	m_allTr = new char[n * m_nGroups];
+	m_allTg = new char[m * m_nGroups];
+	m_Km = new char[m_numPlayers * m_numDays];
+	m_trmk = new char[m_numPlayers];
+	m_groups = new char[m_groupSizeFactorial * m_groupSize];
 	m_pLinks = new char[m_np2];
-	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers);
+	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers, m_groupSize);
 
 #ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
@@ -44,6 +60,11 @@ alldata::~alldata() {
 	delete[] m_pResults;
 	delete[] selPlayers;
 	delete[] m_pLinks;
+	delete[] m_allTr;
+	delete[] m_allTg;
+	delete[] m_Km;
+	delete[] m_trmk;
+	delete[] m_groups;
 	delete m_pCheckLink;
 	delete m_pCheckCanon;
 	FCLOSE_F(m_file);
@@ -57,6 +78,7 @@ void alldata::Init() {
 	noMoreResults = false;
 	iDay = 0;
 	bPrevResult = false; // can be false, or true to go to prev day
+	cnvInit();
 }
 
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
@@ -79,7 +101,7 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 		flag = m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr);
 		if (flag) {
 			pDayPerm = pResult + iDay * numPlayers();
-			sprintf_s(buffer, "Improved Result #%d for %d days:\n", cntr, iDay);
+			sprintf_s(buffer, "Improved Result #%d for %d days  m_groupIndex = %d:\n", cntr, iDay, m_groupIndex);
 			_printf(f, toScreen, buffer);
 		}
 
@@ -87,7 +109,7 @@ void alldata::outputResults(int iDay, const unsigned char *pResult, int cntr) co
 			_printf(f, toScreen, "%s\n", m_pCheckCanon->comment());
 	}
 	else {
-		sprintf_s(buffer, "Initial Result #%zd:\n", canonCalls(0));
+		sprintf_s(buffer, "Initial Result #%zd (%zd):\n", canonCalls(0), pRes->counter());
 		_printf(f, toScreen, buffer);
 	}
 
@@ -114,23 +136,25 @@ bool alldata::Run(int improveResult) {
 	clock_t rTime, mTime, iTime = clock();
 	unsigned char* bResults = NULL;
 	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
-
 	rTime = mTime = iTime;
-#if 1
 	if (improveResult)
 		bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
-#else
-	bResults = new unsigned char[2 * lenResult];
-#endif
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
+	pRes = &Result;
 	if (iDay == m_numDays)
 	{
-		unsigned char* bRes1 = NULL;
+		char* bRes1 = NULL;
 		const auto bResults_1 = new unsigned char[2 * lenResult];
 		m_pCheckCanon->setPreordered(false);
-		if (improveMatrix(2, bResults_1, lenResult, &bRes1))
+		kmFullSort(result(), iDay, m_numPlayers, m_groupSize);
+		bRes1 = m_Km;
+#if 1   // Change to 0 to use "improveMatrix"
+		while(!cnvCheck())
+#else
+        if (improveMatrix(2, (unsigned char *)bResults_1, lenResult, (unsigned char **)& bRes1))
+#endif
 		{
-			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, 3, true);
+			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, m_groupSize, true);
 			memcpy(result(0), bRes1, m_nLenResults);
 			int errLine = 0, errGroup = 0, dubLine = 0;
 			if (!_CheckMatrix(result(0), iDay, m_numPlayers, links(0), true, &errLine, &errGroup, &dubLine))
@@ -179,27 +203,25 @@ ProcessOneDay:
 					m_pCheckLink->reportCheckLinksData();
 					printf("Current result for matrix %.0f: rows=%d, build time=%d, time since start=%d\n",
 						nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
-					//Result.printTable(result());
-					printTable("Current result", result(), iDay + 1, m_numPlayers, 0, 3, true);
-					//printTable("Links", links[0], m_numPlayers, m_numPlayers);
+					printTable("Current result", result(), iDay + 1, m_numPlayers, 0, m_groupSize, true);
 				}
 				rTime = cTime;
 				maxDays = iDay;
 				memcpy(maxResult, result(0), m_nLenResults);
 			}
 			iDay++;
-#if UseSS == 0
+#if UseSS != 2
 			if (iDay > 1)
 			{
+#if 1 // set to 0 to disable improvement 
 				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
-#if 1
 				if (bPrevResult)
 				{
 					if (m_groupIndex / m_nGroups < iDay - 1)
-						printf("*** More then one day back request ignored\n");
+						printf("*** More then one day back (from group %d to %d) request\n", iDay * m_nGroups, m_groupIndex);
 					else if (m_groupIndex >= iDay * m_nGroups)
 					{
-						printf("*** More then current day 'back' request\n");
+						printf("*** After current day 'back' request\n");
 						abort();
 					}
 					else
@@ -233,32 +255,29 @@ ProcessOneDay:
 			abort();
 		if (CalcOnlyNFirstLines == 0 || nLoops >= LoopsMax)
 		{
-			//report result
-			clock_t cTime = clock();
-			printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
-			//printTable("Links", links(), m_numPlayers, m_numPlayers);
-			Result.printTable(result(), true, ResultFile);
+			//printf("*** cnvCheck starts\n");
+			if (cnvCheck())
+			{
+				//report result
+				clock_t cTime = clock();
+				printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+				Result.printTable(result(), true, ResultFile);
+
+				//memcpy(m_Km + m_finalKMindex * m_numDays * m_numPlayers, result(), m_numDays * m_numPlayers);
+				m_finalKMindex++;
+			}
 		}
 		bPrevResult = true;
 	}
-	printf("\nA total of %.0f %d-configurations were built.\n", nLoops, GroupSize);
+	//imStatReport();
+	printf("\nA total of %d non-isomorphic matrices (%dx%d, group size=%d) were selected (from %.0f calculated)\n",
+		m_finalKMindex, m_numPlayers, m_numDays, m_groupSize, nLoops);
 	printf("Total time = %d ms\n", clock() - iTime);
 	if (CalcOnlyNFirstLines > 0 && nLoops < LoopsMax)
 	{
 		clock_t cTime = clock();
 		printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
-		//printTable("Links", links(), m_numPlayers, m_numPlayers);
-		printTable("Last result", result(), m_numDays, m_numPlayers, 0, 3, true);
-	}
-
-	if (nLoops == 1)
-	{
-		if (memcmp(maxResult, result(), m_nLenResults) != 0)
-			printTable("'Maximum days' Result", maxResult, m_numDays, m_numPlayers);
-		printTableColor("Links", links(), m_numPlayers, m_numPlayers);
-		convertLinksToResult(links(), m_co, m_numPlayers, m_groupSize);
-		if (memcmp(m_co, result(), m_nLenResults) != 0)
-			printTable("Result from link (different than result)", m_co, m_numDays, m_numPlayers);
+		printTable("Last result", result(), m_numDays, m_numPlayers, 0, m_groupSize, true);
 	}
 
 	delete[] bResults;

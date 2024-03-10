@@ -139,11 +139,13 @@
     <ClCompile Include="CheckMatrix.cpp" />
     <ClCompile Include="checkPlayer1.cpp" />
     <ClCompile Include="checkPlayer3.cpp" />
+    <ClCompile Include="cnv.cpp" />
     <ClCompile Include="convertLinksToResult.cpp" />
     <ClCompile Include="getNextPlayer.cpp" />
     <ClCompile Include="getUnselected.cpp" />
     <ClCompile Include="improveMatrix.cpp" />
     <ClCompile Include="initStartValues.cpp" />
+    <ClCompile Include="kmSupport.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="printTable.cpp" />
     <ClCompile Include="processOneDay.cpp" />
