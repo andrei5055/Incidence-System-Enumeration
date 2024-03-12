@@ -28,10 +28,6 @@ typedef enum {
 	t_readyCompletely    = 255,
 } t_bResultFlags;
 
-template<typename T>
-inline void revert(T* perm, T j, T i) {
-	while (++i < --j) perm[i] ^= (perm[j] ^= (perm[i] ^= perm[j]));
-}
 
 Class1Def_(CCheckerCanon) : public Class1_(CGroupOrder) {
 public:
@@ -141,7 +137,6 @@ private:
 			pOut[i] = pNewNumb[pIn[i]];
 	}
 
-	T nextPermutation(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	T nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx = ELEMENT_MAX, T lenStab = 0);
 	T initNextSetOfGroups(T maxVal, const T* pRow, T* playerPerm, T* pLeaders) const;
 	T switchLeadingPlayersOfGroups(T placeIdx, T* playerPerm, const T* pLeaders) const;

@@ -103,7 +103,6 @@ protected:
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
-	CC T next_permutation(T *perm, const T *pOrbits, T idx = ELEMENT_MAX, T lenStab = 0);
 	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
@@ -328,7 +327,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		while (true) {
 
 		next_permut:
-			nRow = next_permutation(permRows, pOrbits, nRow, lenStab);
+			nRow = next_permutation(permRows, pOrbits, numRow(), nRow, lenStab);
 			if (nRow == ELEMENT_MAX || nRow < len_stab)
 				break;
 

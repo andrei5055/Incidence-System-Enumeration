@@ -386,7 +386,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	const auto calcGroupOrder = numDays() == m_numDaysMax && numElem == this->numElem();
 	const auto rowPermut = calcGroupOrder;
 
-	T (CCheckerCanon<T>:: *nextPerm)(T*, const T*, T, T, T) = symmetrical? &CCheckerCanon<T>::nextPermutation : &CCheckerCanon<T>::nextPermutationA;
+	T (CCheckerCanon<T>:: *nextPerm)(T*, const T*, T, T, T) = symmetrical? &CCheckerCanon<T>::next_permutation : &CCheckerCanon<T>::nextPermutationA;
 	if (!symmetrical) {
 		memset(m_pPermIndex, 0, numElem * sizeof(m_pPermIndex[0]));
 		memcpy(m_pGroupPerm, trivialPerm(), numElem * sizeof(m_pGroupPerm[0]));
@@ -399,7 +399,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 				auto pElemPrev = pElemNext;
 				memcpy(pElemNext += groupSize(), pElemPrev, len);
 				CGroupOrder<T>::setStabilizerLength(ELEMENT_MAX);
-				nextPermutation(pElemNext, NULL, groupSize());
+				CGroupOrder<T>::next_permutation(pElemNext, NULL, groupSize());
 			}
 		}
 	}
@@ -1017,111 +1017,6 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, const T *pDa
 	return false;
 }
 
-CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
-	// Function generates next permutation for the symmetrical groups 
-	const auto stabLenght = CGroupOrder<T>::stabilizerLength();
-	T temp, j, i = stabLenght;
-
-	// Check if the algorithm, used immediately after 
-	// some non-trivial automorphism was found
-	if (idx == IDX_MAX && perm[i] == nElem - 1)
-		idx = ELEMENT_MAX;
-
-	if (idx == IDX_MAX) {
-		// Firts call after some automorphism was found
-		temp = perm[idx = i];
-		for (j = nElem; --j > temp;)
-			perm[j] = j;
-
-		for (auto k = j++; k-- > i;)
-			perm[k + 1] = k;
-	}
-	else {
-		if (idx >= IDX_MAX) {
-			j = i = nElem;
-			while (--i > 0 && perm[i - 1] >= perm[i]);
-
-			if (i == lenStab)
-				return ELEMENT_MAX;  // no more permutations
-
-			// Find successor to pivot
-			temp = perm[--i];
-			while (perm[--j] <= temp);
-		}
-		else {
-			temp = perm[j = i = idx];
-			while (++j < nElem && perm[j] <= temp);
-			if (j >= nElem) {
-				if (nElem > i - 2)
-					revert(perm, nElem, i);
-
-				return nextPermutation(perm, pOrbits, nElem);
-			}
-		}
-	}
-
-	if (stabLenght == i) {
-		bool flag = false;
-		auto k = j, tmp = perm[j];
-		if (idx >= IDX_MAX) {
-			while (k > i && *(pOrbits + perm[k]) != perm[k])
-				k--;
-
-			if (k != j) {
-				if (!k)
-					return ELEMENT_MAX;
-
-				flag = k == i;
-				tmp = perm[k--];
-				while (++k < j)
-					perm[k] = perm[k + 1];
-			}
-		}
-		else {
-			while (k < nElem && *(pOrbits + perm[k]) != perm[k])
-				k++;
-
-			if (k != j) {
-				flag = k == nElem;
-				if (flag) {
-					if (!i)
-						return ELEMENT_MAX;
-
-					// Re-establish trivial permutation
-					k = idx - 1;
-					while (++k < j)
-						perm[k] = k;
-				}
-				else {
-					tmp = perm[k++];
-					while (--k > j)
-						perm[k] = perm[k - 1];
-				}
-			}
-		}
-
-		perm[j] = tmp;
-		if (flag) {
-			j = idx >= IDX_MAX ? nElem - 1 : i;
-			temp = perm[--i];
-			CGroupOrder<T>::setStabilizerLength(i);
-		}
-	}
-
-	perm[i] = perm[j];
-	perm[j] = temp;
-	if (idx >= IDX_MAX - 1) {
-		if (CGroupOrder<T>::stabilizerLength() > i)
-			CGroupOrder<T>::setStabilizerLength(i);
-
-		if (nElem > i - 2)
-			revert(perm, nElem, i);
-	}
-
-	return i;
-}
-
-
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
 	static int ccc;
 	if (++ccc == 12)
@@ -1147,7 +1042,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 			continue;
 
 		if (m_pGroupPerm[i] < m_pGroupPerm[i + 1]) {
-			nextPermutation(m_pGroupPerm, NULL, numGroups());
+			CGroupOrder<T>::next_permutation(m_pGroupPerm, NULL, numGroups());
 			while (i < numGroups()) {
 				memcpy(perm + i * groupSize(), trivialPerm() + m_pGroupPerm[i] * groupSize(), groupSize() * sizeof(perm[0]));
 				i++;
@@ -1324,7 +1219,7 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 		else
 			counter[1]++;
 
-		const auto nElem = nextPermutation(permPlayers, pOrbits, numElem(), idx, lenStab);
+		const auto nElem = CGroupOrder<T>::next_permutation(permPlayers, pOrbits, numElem(), idx, lenStab);
 		if (nElem == ELEMENT_MAX)
 			break;
 
