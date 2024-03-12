@@ -37,6 +37,8 @@ int alldata::checkPlayer1(int iPlayerNumber)
 		// AI statement #6
 		if (iPlayerNumber <= result(iDay - 1)[1])
 			iPlayerNumber = result(iDay - 1)[1] + 1;
+		if (GroupSize == 2 && iPlayerNumber > iDay + 1)
+			return m_numPlayers;
 	}
 	if (GroupSize == 3)
 	{

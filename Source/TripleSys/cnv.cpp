@@ -77,6 +77,7 @@ bool alldata::cnvCheckKm1(char* tr)
 	char* mo = m_Km;
 	char* res = result();
 	char* mo2 = mo + m_numPlayers;
+	char* mo3 = mo + npm;
 	char* res2 = res + m_numPlayers;
 	int npm2 = npm - m_numPlayers;
 	for (int n = 0; n < iDay; n++)
@@ -91,10 +92,18 @@ bool alldata::cnvCheckKm1(char* tr)
 		{
 			printTable("Tr source", tr, 1, m_numPlayers);
 			printTable("Tr actual", ttr, 1, m_numPlayers);
+			printTable("Original", res, iDay, m_numPlayers);
 		}
 #endif
-		kmTranslate(mo, res, ttr, iDay, m_numPlayers);
-		kmFullSort(mo, iDay, m_numPlayers, m_groupSize);
+		kmTranslate(mo3, res, ttr, iDay, m_numPlayers);
+		kmFullSort(mo, mo3, iDay, m_numPlayers, m_groupSize);
+#if 0
+		if (n == 1)
+		{
+			printTable("Tr actual", ttr, 1, m_numPlayers);
+			printTable("Translated", mo, iDay, m_numPlayers);
+		}
+#endif
 		if (memcmp(mo2, res2, npm2) < 0)
 		{
 #if 0

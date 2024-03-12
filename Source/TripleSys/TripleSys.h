@@ -1,13 +1,13 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 15
-#define GroupSize 3
+#define nPlayers0 10
+#define GroupSize 2
 #define LoopsMax 200000000000.
-#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 1		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
-#define ResultFile		        "../bbb.txt" // Name of output file with the results, "" - no file output.
+#define ResultFile		       ""// "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFile      "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
@@ -204,7 +204,7 @@ void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int 
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
-void kmFullSort(char* mo, int nr, int nc, int gs);
+void kmFullSort(char* mo, char* mi, int nr, int nc, int gs);
 int factorial(int n);
 
 

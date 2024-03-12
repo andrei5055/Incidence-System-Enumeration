@@ -1123,6 +1123,11 @@ CheckerCanon(T)::nextPermutation(T* perm, const T* pOrbits, T nElem, T idx, T le
 
 
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
+	static int ccc;
+	if (++ccc == 12)
+		ccc += 0;
+
+	auto pPerm = perm + numGroups() * groupSize();
 	for (auto i = numGroups(); i--;) {
 		auto val = m_pGroupPerm[i] * groupSize();
 		auto pSubgrPerm = m_pSubGroup;
@@ -1131,15 +1136,46 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 		else
 			m_pPermIndex[i] = 0;
 
+		pPerm -= groupSize();
 		for (T j = 0; j < groupSize(); j++)
-			perm[val + j] = val + pSubgrPerm[j];
+			pPerm[j] = val + pSubgrPerm[j];
 
-		if (m_pPermIndex[i] && i >= 3)
+		if (m_pPermIndex[i])
 			return 0;
 
-		if (i == 4)
+		if (i == numGroups() - 1)
 			continue;
 
+		if (m_pGroupPerm[i] < m_pGroupPerm[i + 1]) {
+			nextPermutation(m_pGroupPerm, NULL, numGroups());
+			while (i < numGroups()) {
+				memcpy(perm + i * groupSize(), trivialPerm() + m_pGroupPerm[i] * groupSize(), groupSize() * sizeof(perm[0]));
+				i++;
+			}
+			return 0;
+		}
+
+		/*
+		T j = numGroups();
+		while (--j > i && m_pGroupPerm[j - 1] > m_pGroupPerm[j]);
+		*/
+//		if (j == i)
+//			continue;
+		if (i > 2) {
+			auto j = numGroups();
+			auto i1 = i - 1;
+			revert(m_pGroupPerm, j, (T)i1);
+			CGroupOrder<T>::setStabilizerLength(ELEMENT_MAX);
+			auto shift = i * groupSize();
+			memcpy(tmpBuffer() + shift, perm + shift, (j - i) * groupSize() * sizeof(T));
+			while (++i1 < --j) {
+				memcpy(perm + shift, tmpBuffer() + j * groupSize(), groupSize() * sizeof(T));
+				memcpy(perm + j * groupSize(), tmpBuffer() + shift, groupSize() * sizeof(T));
+				shift += groupSize();
+			}
+
+			continue;
+		}
 		return 1;
 	}
 	return ELEMENT_MAX;
