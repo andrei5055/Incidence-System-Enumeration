@@ -41,8 +41,9 @@ public:
 		m_tmpBuffer1 = m_pOrbits + nCol;
 		initCommentBuffer(256);
 		// Preparing data for testing with the full group testing
-		m_pPermIndex = new T[numGroups() * 2];
-		m_pGroupPerm = m_pPermIndex + numGroups();
+		m_pPermIndex = new T[numGroups() * 3];
+		m_pNumPermutUsed = m_pPermIndex + numGroups();
+		m_pGroupPerm = m_pNumPermutUsed + numGroups();
 		for (T i = m_GroupOrder = 2; ++i <= groupSize;)
 			m_GroupOrder *= i;
 	}
@@ -116,17 +117,30 @@ private:
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
 	int orderingMatrix(const T* permut, T numElem, const T*pDummy)     {
 #if 1
-		static unsigned int cntr = 0;
+		extern int file_cntr;
+		extern int cntr;
+		static char file_name[32];
+		if (cntr == 1)
+			sprintf_s(file_name, "../permuts_%03d.txt", file_cntr);
+
 		char buffer[256], *pBuf = buffer;
 		for (T j = 0; j < numElem; j++)
 			SPRINTFD(pBuf, buffer, "%3d", permut[j]);
 
-		FOPEN_F(f, "../permuts.txt", cntr? "a" : "w");
-		fprintf(f, "%6d: %s\n", ++cntr, buffer);
-		FCLOSE_F(f);
-		return 1;
-#endif
+		FOPEN_F(f, file_name, cntr != 1? "a" : "w");
+		const auto retVal = orderingMatrix(0, 0, false, false, permut);
+		if (f) {
+			fprintf(f, "%6d: %s  retVal = %d\n", cntr, buffer, retVal);
+			FCLOSE_F(f);
+		}
+
+		if (retVal < 0 || cntr == 3839)
+			cntr += 0;
+
+		return retVal;
+#else
 		return orderingMatrix(0, 0, false, false, permut);
+#endif
 	}
 	inline void recordTuples(const T* pTuples, T *pPlayers) const {
 		for (T j = 0; j < numElem(); j++)
@@ -170,6 +184,7 @@ private:
 	const T* m_pTrivialPerm;
 
 	T* m_pPermIndex = NULL;     // Permutation indices currently used in groups
+	T* m_pNumPermutUsed = NULL;
 	T* m_pGroupPerm = NULL;		// Current permutation of the group
 	T m_GroupOrder = 0;			// Order of the subgroup acting on the elements of each group of elements.
 	T* m_pSubGroup = NULL;      // Elements of the subgroup 

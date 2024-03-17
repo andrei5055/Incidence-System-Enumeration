@@ -30,11 +30,14 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	{
 		n *= j; m *= m_groupSizeFactorial;
 	}
+	//n = m = 50;
 	m_nallTr = n;
 	m_nallTg = m;
 	m_finalKMindex = 0;
 	m_allTr = new char[n * m_nGroups];
 	m_allTg = new char[m * m_nGroups];
+	m_bestTr = 0;
+	m_bestTg = 0;
 	m_Km = new char[m_numPlayers * m_numDays * 2];
 	m_trmk = new char[m_numPlayers];
 	m_groups = new char[m_groupSizeFactorial * m_groupSize];
@@ -146,8 +149,7 @@ bool alldata::Run(int improveResult) {
 		char* bRes1 = NULL;
 		const auto bResults_1 = new unsigned char[2 * lenResult];
 		m_pCheckCanon->setPreordered(false);
-		kmFullSort(m_Km, result(), iDay, m_numPlayers, m_groupSize);
-		memcpy(result(), m_Km, m_numDays * m_numPlayers);
+		kmFullSort(result(), iDay, m_numPlayers, m_groupSize);
 		bRes1 = m_Km;
 #if 1   // Change to 0 to use "improveMatrix"
 		while(!cnvCheck())

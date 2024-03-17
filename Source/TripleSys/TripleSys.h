@@ -181,6 +181,8 @@ private:
 	int m_groupSizeFactorial;
 	int m_nallTr;
 	int m_nallTg;
+	int m_bestTr;
+	int m_bestTg;
 	char* m_Km;
 	char* m_allTr;
 	char* m_allTg;
@@ -204,7 +206,8 @@ void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int 
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
-void kmFullSort(char* mo, char* mi, int nr, int nc, int gs);
+void kmFullSort(char* mi, int nr, int nc, int gs);
+void kmFullSort2(char* mo, char* mi, int nr, int nc);
 int factorial(int n);
 
 
