@@ -165,12 +165,23 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		return false;
 	}
 
-#if 1
-
+#if CHECK_WITH_GROUP
 	if (m_numDays == m_numDaysMax) {
 		file_cntr++;
+		if (file_cntr == 21)
+			file_cntr += 0;
+
 		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
 		cntr = 0;
+#if 0
+		static int ddd;
+		if (retVal) {
+			printf("CANON #%3d", ++ddd);
+			if (ddd >= 13)
+				ddd += 0;
+		}
+#endif
+		return retVal;
 	}
 #endif
 	return true;
@@ -382,6 +393,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	T* permut = permutation();
 	T lenStab = 0;
 
+	size_t nAuto = 0;
 	// Copying trivial permutation
 	const auto len = numElem * sizeof(T);
 	memcpy(permut, trivialPerm(), len);
@@ -392,8 +404,9 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 	T (CCheckerCanon<T>:: *nextPerm)(T*, const T*, T, T, T) = symmetrical? &CCheckerCanon<T>::next_permutation : &CCheckerCanon<T>::nextPermutationA;
 	if (!symmetrical) {
-		memset(m_pPermIndex, 0, 2 * numElem * sizeof(m_pPermIndex[0]));
-		memcpy(m_pGroupPerm, trivialPerm(), numElem * sizeof(m_pGroupPerm[0]));
+		memset(m_pPermIndex, 0, 2 * numGroups() * sizeof(m_pPermIndex[0]));
+		memcpy(m_pGroupPerm, trivialPerm(), numGroups() * sizeof(m_pGroupPerm[0]));
+		memcpy(m_dayIdx, trivialPerm(), (m_nDaysToTest = numDays()) * sizeof(m_dayIdx[0]));
 		if (!m_pSubGroup) {
 			m_pSubGroup = new T[m_GroupOrder * groupSize()];
 			const auto len = groupSize() * sizeof(m_pSubGroup[0]);
@@ -441,6 +454,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 		if (!diff) {
 			// Automorphism found
+			nAuto++;
 			CGroupOrder<T>::UpdateOrbits(permut, numElem, orbits(), rowPermut, calcGroupOrder);
 #if PRINT_PERMUT
 			if (calcGroupOrder) {
@@ -467,6 +481,16 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 		else
 			nElem = numElem;
 	}
+
+#if 1
+	if (!symmetrical) {
+		FOPEN_F(f, "../auto_star.txt", file_cntr != 1 ? "a" : "w");
+		if (f) {
+			fprintf(f, "%6d: nAuto = %zd\n", file_cntr, nAuto);
+			FCLOSE_F(f);
+		}
+	}
+#endif
 
 	if (rowPermut && calcGroupOrder)
 		CGroupOrder<T>::updateGroupOrder(numElem, orbits());
@@ -880,9 +904,13 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 }
 
 CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool invert, const T* permPlayer) {
+	static int ttt; ttt++;
 	T* pDest = resultOut();
 	if (!pDest)
 		pDest = resultMemory();
+
+	if (ttt == 47951)
+		ttt += 0;
 
 	memcpy(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 	if (invert) {
@@ -897,11 +925,9 @@ CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool inve
 
 	if (permPlayer)
 		recodePlayers(permPlayer, pDest, pDest, lenResult());
-
-	auto pDays = pDest + lenResult();
-	for (auto j = numDays(); j--; )
-		pDays[j] = j;
-
+	
+	// Copying trivial permutations for days 
+	memcpy(pDest + lenResult(), trivialPerm(), numDays() * sizeof(*pDest));
 	orderigRemainingDays(nDays, numGroups, pDest);
 	const auto diff = memcmp(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 	if (diff < 0) {
@@ -1024,10 +1050,10 @@ CheckerCanon(bool)::reportTxtError(T *bBuffer, const char *pReason, const T *pDa
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
 	static int ccc;
 	++ccc;
-	if (ccc == 9114 || ccc == 9113)
+	if (ccc == 9114)
 		ccc += 0;
 
-	if (++cntr == 1)
+	if (++cntr == 30)
 		cntr += 0;
 	auto pPerm = perm + numGroups() * groupSize();
 	const auto len = groupSize() * sizeof(T);
@@ -1050,6 +1076,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 			continue;
 
 		if (m_pGroupPerm[i] < m_pGroupPerm[i + 1]) {
+			CGroupOrder<T>::setStabilizerLength(ELEMENT_MAX);
 			CGroupOrder<T>::next_permutation(m_pGroupPerm, NULL, numGroups());
 			while (i < numGroups()) {
 				memcpy(perm + i * groupSize(), trivialPerm() + m_pGroupPerm[i] * groupSize(), len);
@@ -1062,7 +1089,6 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 			auto j = numGroups();
 			auto i1 = i - 1;
 			revert(m_pGroupPerm, j, (T)i1);
-			CGroupOrder<T>::setStabilizerLength(ELEMENT_MAX);
 			auto shift = i * groupSize();
 			memcpy(tmpBuffer() + shift, perm + shift, (j - i) * len);
 			while (++i1 < --j) {

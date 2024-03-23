@@ -75,6 +75,7 @@ void alldata::cnvInit()
 }
 bool alldata::cnvCheckKm1(char* tr)
 {
+	static int hhh;
 	bool ret = true;
 	char ttr[27];
 	int npm = iDay * m_numPlayers;
@@ -86,6 +87,7 @@ bool alldata::cnvCheckKm1(char* tr)
 	int npm2 = npm - m_numPlayers;
 	for (int n = 0; n < iDay; n++)
 	{
+		hhh++;
 		char* resn = result(n);
 		for (int i = 0; i < m_numPlayers; i++)
 		{
@@ -164,6 +166,14 @@ bool alldata::cnvCheckKm1(char* tr)
 #endif
 			//printf(" d%d", n);
 			ret = false;
+#if 1
+			static int cntr, ccc; 
+			FOPEN_F(f, "../cnvCheckKm1.txt", cntr++ ? "a" : "w");
+			if (n)
+				ccc++;
+			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
+			FCLOSE_F(f);
+#endif
 			break;
 		}	
 	}
@@ -197,10 +207,13 @@ bool alldata::cnvCheckKm(char* tr, char* tg, int gfs)
 }
 bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 {
+	static int ggg;
 	int nm = ntg > 1000 ? 1000 : ntg - 1;
 	char* ttg = tg;
 	for (int i = 0; i < ntg; i++, ttg += m_nGroups)
 	{
+		if (++ggg == 46183 || ggg == 4034)
+			ggg += 0;
 		if (!cnvCheckKm(tr, ttg, gsf))
 		{
 #if 1  // a little bit faster with 1
@@ -223,6 +236,7 @@ bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 }
 bool alldata::cnvCheck()
 {
+	static int fff;
 	char t[16];
 	int nm = m_nallTr > 1000 ? 1000 : m_nallTr - 1;
 	char* ttr = m_allTr;
@@ -230,6 +244,9 @@ bool alldata::cnvCheck()
 		abort();
 	for (int i = 0; i < m_nallTr; i++, ttr += m_nGroups)
 	{
+		if (++fff == 1444)
+			fff += 0;
+
 		if (!cnvCheckTg(ttr, m_allTg, m_nallTg, m_groupSizeFactorial))
 		{
 #if 1 // a little bit faster with 1

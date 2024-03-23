@@ -1,10 +1,10 @@
 #pragma once
 #include <string> 
 using namespace std;
-#define nPlayers0 10
+#define nPlayers0 12
 #define GroupSize 2
 #define LoopsMax 200000000000.
-#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 2		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
 #define ResultFile		       ""// "../bbb.txt" // Name of output file with the results, "" - no file output.
@@ -23,6 +23,8 @@ using namespace std;
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
+#define CHECK_WITH_GROUP  1    // Use new group on completely constructed matrices
+#define USE_TRANSLATE_BY_LEO	0
 
 #define USE_STATEMENT_19  1
 #define CHECK_PERMUTATIONS	1
@@ -131,6 +133,7 @@ public:
 	bool Run(int improveResult=0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
+	bool cnvCheckKm1(char* tr);
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
@@ -153,7 +156,7 @@ private:
 	bool CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errDay, int* errGroup, int* dubLine);
 	bool cnvCheck();
 	bool cnvCheckKm(char* tr, char* tg, int gfs);
-	bool cnvCheckKm1(char* tr);
+//	bool cnvCheckKm1(char* tr);
 	bool cnvCheckTg(char* tr, char* tg, int ntg, int gsf);
 	void cnvInit();
 

@@ -15,6 +15,7 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 	const auto inputMatrix = (unsigned char*)result();
 	addCanonCall(0);
 
+	m_pCheckCanon->setAllData(this);
 	if (m_pCheckCanon->CheckCanonicity(inputMatrix, nDays, &m_groupIndex, bResults))
 		return false;
 

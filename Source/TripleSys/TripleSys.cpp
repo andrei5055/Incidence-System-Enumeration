@@ -259,7 +259,7 @@ ProcessOneDay:
 		if (CalcOnlyNFirstLines == 0 || nLoops >= LoopsMax)
 		{
 			//printf("*** cnvCheck starts\n");
-			if (cnvCheck())
+			if (CHECK_WITH_GROUP && USE_TRANSLATE_BY_LEO == 0 || cnvCheck())
 			{
 				//report result
 				clock_t cTime = clock();

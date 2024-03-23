@@ -41,9 +41,10 @@ public:
 		m_tmpBuffer1 = m_pOrbits + nCol;
 		initCommentBuffer(256);
 		// Preparing data for testing with the full group testing
-		m_pPermIndex = new T[numGroups() * 3];
+		m_pPermIndex = new T[numGroups() * 3 + m_numDaysMax];
 		m_pNumPermutUsed = m_pPermIndex + numGroups();
 		m_pGroupPerm = m_pNumPermutUsed + numGroups();
+		m_dayIdx = m_pGroupPerm + numGroups();
 		for (T i = m_GroupOrder = 2; ++i <= groupSize;)
 			m_GroupOrder *= i;
 	}
@@ -61,6 +62,7 @@ public:
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
 											  return (flag & m_bResultFlag) == flag; }
 	inline void setPreordered(bool v = true) { m_bPreordered = v; }
+	inline void setAllData(alldata *ptr)    { m_pAD = ptr; }
 private:
 	inline auto numElem() const				{ return m_numElem; }
 	inline auto groupSize() const			{ return m_groupSise; }
@@ -116,7 +118,7 @@ private:
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
 	int orderingMatrix(const T* permut, T numElem, const T*pDummy)     {
-#if 1
+#if 0
 		extern int file_cntr;
 		extern int cntr;
 		static char file_name[32];
@@ -139,7 +141,42 @@ private:
 
 		return retVal;
 #else
-		return orderingMatrix(0, 0, false, false, permut);
+
+#if USE_TRANSLATE_BY_LEO
+		if (!m_pAD->cnvCheckKm1((char *)permut))
+			return -1;
+#else
+		T ttr[20];
+		int ret = 1;
+		for (T n = 0; n < m_nDaysToTest; n++) {
+			auto * resn = getMatrixRow(m_dayIdx[n]);
+			for (T i = 0; i < numElem; i++)
+				ttr[resn[i]] = permut[i];
+
+			const auto retVal = orderingMatrix(0, 0, false, false, ttr);
+			if (retVal > 0)
+				continue;
+
+			if (!retVal) {
+				ret = 0;
+				if (n)
+					m_dayIdx[n--] = m_dayIdx[--m_nDaysToTest];
+
+				continue;
+			}
+
+/*
+			static int cntr, ccc;
+			FOPEN_F(f, "../myCheck.txt", cntr++ ? "a" : "w");
+			if (n)
+				ccc++;
+			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
+			FCLOSE_F(f);
+*/
+			return -1;
+		}
+#endif
+		return ret;
 #endif
 	}
 	inline void recordTuples(const T* pTuples, T *pPlayers) const {
@@ -187,7 +224,10 @@ private:
 	T* m_pNumPermutUsed = NULL;
 	T* m_pGroupPerm = NULL;		// Current permutation of the group
 	T m_GroupOrder = 0;			// Order of the subgroup acting on the elements of each group of elements.
-	T* m_pSubGroup = NULL;      // Elements of the subgroup 
+	T* m_pSubGroup = NULL;      // Elements of the subgroup
+	T* m_dayIdx = NULL;
+	T m_nDaysToTest;            // Number of days requiring testing with the current permutations of players
+	alldata* m_pAD = NULL;
 
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
