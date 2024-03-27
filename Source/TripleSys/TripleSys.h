@@ -1,15 +1,28 @@
 #pragma once
-#include <string> 
+#include <string>
+#include <iostream>
 using namespace std;
-#define nPlayers0 12
+#define nPlayers0 10
 #define GroupSize 2
+
+#define NThreads 10
+#define MaxMemoryForStartMatrices  2.0e+9
+#define MaxNumberOfStartMatrices 2.0e+6
+#define StepForStartMatrices 1	// each thread generates output matrices on the basis of precalculated NM matrices 
+								// with NR rows (NM = StepForStartMatrices, NR = NRowsInStartMatrix)
+#if 1
+#define NRowsInStartMatrix 0	// 0 - no threads, >0 - number of rows to calculate initial set of matrices for threads
+#else
+#define NRowsInStartMatrix 6	// 0 - no threads, >0 - number of rows to calculate initial set of matrices for threads
+#endif
+
 #define LoopsMax 200000000000.
-#define ImproveResults 2		// 0 - with no explanation of the matrix rejection reason;
+#define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
-#define ResultFile		       ""// "../bbb.txt" // Name of output file with the results, "" - no file output.
+#define ResultFilePrefix		""// "../bbb.txt" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
-#define ImprovedResultFile      "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
+#define ImprovedResultFilePrefix "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
@@ -51,6 +64,12 @@ using namespace std;
 #define FCLOSE_W(f, w)		 if (f != w) fclose(f)
 #define FCLOSE_F(f)			 FCLOSE_W(f, NULL)
 
+
+typedef enum {
+	eCalcNumberOfMatrices,
+	eCalcStartStop,
+	eCalcResult,
+} eThreadStartStopMode;
 
 template<typename T>void initArray(T** pPntr, int len, T val = 0) {
 	auto *ptr = *pPntr = new T[len];
@@ -130,10 +149,12 @@ public:
 	alldata(int numPlayers, int groupSize=GroupSize, bool useCheckLinksV = UseCheckLinksV, bool useCheckLinksH = UseCheckLinksH);
 
 	~alldata();
-	bool Run(int improveResult=0);
+	bool Run(int threadNumber=0, int iStartStopMode=eCalcNumberOfMatrices, int improveResult=0, 
+		char* mstart0=NULL, char* mstart=NULL, char* mstop=NULL,
+		int nrows=0, int mStep=1, double* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	bool cnvCheckKm1(char* tr);
+	bool cnvCheckKm1(char* tr, int nrows); 
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
@@ -153,12 +174,14 @@ private:
 	int checkPlayer3(int iPlayerNumber, int lastPlayer);
 	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
 	void outputError() const;
-	bool CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errDay, int* errGroup, int* dubLine);
+	bool CheckMatrix(const char* matrix, int nl, int nc, int gs, bool printError, int* errDay, int* errGroup, int* dubLine);
 	bool cnvCheck();
-	bool cnvCheckKm(char* tr, char* tg, int gfs);
-//	bool cnvCheckKm1(char* tr);
+	bool cnvCheckKm(char* tr, char* tg);
 	bool cnvCheckTg(char* tr, char* tg, int ntg, int gsf);
 	void cnvInit();
+	void linksFromMatrix(char* iv, int id);
+	bool cnvCheckTgNew(char* tr, int gsf);
+	bool cnvCheckNew();
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
@@ -186,7 +209,11 @@ private:
 	int m_nallTg;
 	int m_bestTr;
 	int m_bestTg;
+	int *m_TrTest;
+	int *m_TgTest;
 	char* m_Km;
+	char* m_Km2;
+	char* m_KmSecondRow;
 	char* m_allTr;
 	char* m_allTg;
 	char* m_trmk;
@@ -198,6 +225,8 @@ private:
 	const bool m_bCheckLinkH;
 	CChecklLink *m_pCheckLink = NULL;
 	CheckCanon *m_pCheckCanon = NULL;
+	char ImprovedResultFile[128];
+	char ResultFile[128];
 	FILE* m_file = NULL;    // File for output of improved matrices.
 };
 
@@ -207,10 +236,11 @@ void printTableColor(char const* name, const char *c, int nl, int nc, int ns = 0
 void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false);
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
-bool _CheckMatrix(const char* matrix, int nl, int nc, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
+bool _CheckMatrix(const char* matrix, int nl, int nc, int gs, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
 void kmFullSort(char* mi, int nr, int nc, int gs);
 void kmFullSort2(char* mo, char* mi, int nr, int nc);
 int factorial(int n);
+void printThreadsStat(double* cntTotal, double* cnt, double dNumMatrices, int nrows, int mStep, int nThreads, clock_t iTime, bool bPrintSetup);
 
 

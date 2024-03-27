@@ -43,8 +43,10 @@ bool alldata::improveMatrix(int improveResult, unsigned char* bResults, const in
 
 #if CHECK_PERMUTATIONS
 			int errLine, errGroup, dubLine;
-			char lnks[21 * 21];
-			if (!_CheckMatrix((char *)bRes1, nDays, numPlayers(), lnks, true, &errLine, &errGroup, &dubLine))
+			char lnks[27 * 27];
+			if (numPlayers() > 27)
+				abort();
+			if (!_CheckMatrix((char *)bRes1, nDays, numPlayers(), m_groupSize, lnks, true, &errLine, &errGroup, &dubLine))
 				outputError();
 #endif
 			// Swap the the best results buffers

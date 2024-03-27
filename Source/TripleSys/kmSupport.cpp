@@ -2,16 +2,48 @@
 #include <assert.h>
 #include "TripleSys.h"
 
+void kmSortAllRowsFor10x9Matrix(char* mo, char* mi)
+{
+	short int* i1;
+	char* c1 = (char*)mi;
+	for (int i = 0; i < 9; i++, c1 += 10)
+	{
+		int ip1 = c1[1] - 1;
+		if (ip1 < 0 || ip1 >= 9)
+			abort();
+		short int* i1 = (short int*)c1;
+		short int* i2 = (short int*)(mo + ip1 * 10);
+		*i2 = *i1;
+		*(i2 + 1) = *(i1 + 1);
+		*(i2 + 2) = *(i1 + 2);
+		*(i2 + 3) = *(i1 + 3);
+		*(i2 + 4) = *(i1 + 4);
+	}
+}
+void kmSortAllRowsFor12x11Matrix(char* mo, char* mi)
+{
+	char* c1 = (char*)mi;
+	for (int i = 0; i < 11; i++, c1 += 12)
+	{
+		int ip1 = c1[1] - 1;
+		if (ip1 < 0 || ip1 >= 11)
+			abort();
+		int* i2 = (int*)(mo + ip1 * 12);
+		int* i1 = (int*)c1;
+		*i2 = *i1;
+		*(i2 + 1) = *(i1 + 1);
+		*(i2 + 2) = *(i1 + 2);
+	}
+}
 void kmSortAllRowsWith2PlayersInGroup(char* mo, char* mi, int nr, int nc)
 {
 	char* r1 = mi;
-	for (int i = 0; i < nr; i++, r1+=nc)
+	for (int i = 0; i < nr; i++, r1 += nc)
 	{
 		int ip1 = r1[1] - 1;
 		if (ip1 < 0 || ip1 >= nr)
 			abort();
 		char* r2 = mo + ip1 * nc;
-		int ip2 = r2[1];
 		memcpy(r2, r1, nc);
 	}
 }
@@ -76,8 +108,13 @@ void kmFullSort2(char* mo, char* mi, int nr, int nc)
 	{
 		char* km = mi + i * nc;
 		kmSortOneRowWith2PlayersInGroup(km, nc / 2, 2);
-	}
-	kmSortAllRowsWith2PlayersInGroup(mo, mi, nr, nc);
+	}/**
+	if (nc == 12)
+		kmSortAllRowsFor12x11Matrix(mo, mi);
+	else if (nc == 10)
+		kmSortAllRowsFor10x9Matrix(mo, mi);
+	else*/
+	    kmSortAllRowsWith2PlayersInGroup(mo, mi, nr, nc);
 }
 void kmFullSort(char* mi, int nr, int nc, int gs)
 {
@@ -109,8 +146,6 @@ void kmFullSort(char* mi, int nr, int nc, int gs)
 }
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc)
 {
-	if (tr[0] < 0)
-	printTable("2", tr, 1, nc, 0, 2);
 	for (int i = 0; i < nr * nc; i++)
 	{
 		mo[i] = tr[mi[i]];

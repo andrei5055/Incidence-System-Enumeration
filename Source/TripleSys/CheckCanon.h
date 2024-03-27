@@ -141,13 +141,12 @@ private:
 
 		return retVal;
 #else
-
+		int ret = 1;
 #if USE_TRANSLATE_BY_LEO
-		if (!m_pAD->cnvCheckKm1((char *)permut))
+		if (!m_pAD->cnvCheckKm1((char *)permut, numDays()))
 			return -1;
 #else
 		T ttr[20];
-		int ret = 1;
 		for (T n = 0; n < m_nDaysToTest; n++) {
 			auto * resn = getMatrixRow(m_dayIdx[n]);
 			for (T i = 0; i < numElem; i++)
@@ -165,14 +164,14 @@ private:
 				continue;
 			}
 
-/*
+#if 0
 			static int cntr, ccc;
 			FOPEN_F(f, "../myCheck.txt", cntr++ ? "a" : "w");
 			if (n)
 				ccc++;
 			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
 			FCLOSE_F(f);
-*/
+#endif
 			return -1;
 		}
 #endif
@@ -194,6 +193,7 @@ private:
 	bool checkCanonicity();
 	inline void setGroupIndex(int val)				{ m_nGrpIdx = val; }
 	inline auto groupIndex() const					{ return m_nGrpIdx; }
+	void printInfo(FILE* f, const T* perm, int idx) const;
 
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;

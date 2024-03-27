@@ -1,126 +1,122 @@
-
-#include <iostream>
+#include <thread>
 #include "TripleSys.h"
-
+#include "main.h"
+#include <vector>
+void RunThread(int threadNumber, int iMode, int improveResult, 
+	char* mstart0, char* mstart, char* mstop, int nRows, int mStep, double* pcnt, bool bPrint)
+{
+	alldata sys(nPlayers);
+	sys.Run(threadNumber, iMode, improveResult, mstart0, mstart, mstop, nRows, mStep, pcnt, bPrint);
+}
 int main()
 {
+	double cnt[NThreads*2];
+	double cntTotal[NThreads*2];
+	double dNumMatrices[2], dNumMatricesMax;
+	bool threadActive[NThreads];
+	int mStep = StepForStartMatrices;
+	int nRows = NRowsInStartMatrix;
+	clock_t cTime, rTime, mTime, iTime = clock();
 //	_CrtSetBreakAlloc(174);  // Put here the memory allocation number you want to stop at.
-	alldata sys(nPlayers);
-	const char* ivc = ""
-#if 0
-		"   0   1    2   3    4   5    6   7    8   9   10  11 "
-		"   0   2    1   3    4   6    5   7    8  10    9  11 "
-		"   0   3    1   2    4   7    5   6    8  11    9  10 "
-		"   0   4    1   5    2   8    3   9    6  10    7  11 "
-		"   0   5    1   4    2   9    3   8    6  11    7  10 "
-		"   0   6    1   8    2  10    3   4    5  11    7   9 "
-		"   0   7    1   9    2  11    3   5    4  10    6   8 "
-		"   0   8    1   6    2   7    3  10    4  11    5   9 "
-#else
-"   0   1    2   3    4   5    6   7    8   9   10  11 "
-"   0   2    1   3    4   6    5   7    8  10    9  11 "
-"   0   3    1   2    4   7    5   6    8  11    9  10 "
-"   0   4    1   5    2   8    3   9    6  10    7  11 "
-"   0   5    1   4    2   9    3   8    6  11    7  10 "
-"   0   6    1   8    2  10    3   4    5  11    7   9 "
-"   0   7    1   9    2  11    3   5    4  10    6   8 "
-"   0   8    1   7    2   4    3  11    5  10    6   9 "
-"   0   9    1   6    2   5    3  10    4  11    7   8 "
-"   0  10    1  11    2   7    3   6    4   8    5   9 "
-#endif
+	dNumMatrices[0] = dNumMatricesMax = MaxNumberOfStartMatrices;
+	std::cout << "TripleSys 12.2\n";
 
-#if nPlayers == 9
-#if 0
-		"    0   1   2    3   4   5    6   7   8 "
-		"    0   3   6    1   4   7    2   5   8 "
-		"    0   4   8    1   5   6    2   3   7 "
-		"    0   5   7    1   3   8    2   4   6 "
-#endif
-#elif nPlayers == 12
-#if 0
-		"    0   1    2   3    4   5    6   7    8   9   10  11 "
-		"    0   2    1   3    4   6    5   7    8  10    9  11 "
-		"    0   3    1   2    4   7    5   6    8  11    9  10 "
-		"    0   4    1   5    2   8    3   9    6  10    7  11 "
-		"    0   5    1   4    2   9    3   8    6  11    7  10 "
-		"    0   6    1   7    2  10    3  11    4   8    5   9 "
-		"    0   7    1   6    2  11    3  10    4   9    5   8 "
-		"    0   8    1  10    2   4    3   7    5  11    6   9 "
-		"    0   9    1  11    2   6    3   5    4  10    7   8 "
-		"    0  10    1   8    2   5    3   6    4  11    7   9 "
-		"    0  11    1   9    2   7    3   4    5  10    6   8 "
-#endif
-#if 0
-		"    0   1    2   3    4   5    6   7    8   9   10  11 "
-		"    0   2    1   3    4   6    5   7    8  10    9  11 "
-		"    0   3    1   2    4   7    5   6    8  11    9  10 "
-		"    0   4    1   5    2   8    3   9    6  10    7  11 "
-		"    0   5    1   4    2   9    3  10    6  11    7   8 "
-		"    0   6    1   9    2  11    3   7    4  10    5   8 "
-		"    0   7    1  10    2   5    3   8    4  11    6   9 "
-		"    0   8    1   6    2   4    3  11    5   9    7  10 "
-		"    0   9    1   7    2  10    3   6    4   8    5  11 "
-		"    0  10    1  11    2   7    3   5    4   9    6   8 "
-		"    0  11    1   8    2   6    3   4    5  10    7   9 "
-#endif
-#elif nPlayers == 15
-#if 0
- "    0   1   2    3   4   5    6   7   8    9  10  11   12  13  14 "
- "    0   3   6    1   9  12    2  10  13    4   7  11    5   8  14 "
- "    0   4   9    1   7  13    2   6  14    3   8  10    5  11  12 "
- "    0   5  13    1   6  11    2   8   9    3   7  12    4  10  14 "
- "    0   7  10    1   3  14    2   4  12    5   6   9    8  11  13 "
- "    0   8  12    1   5  10    2   3  11    4   6  13    7   9  14 "
- "    0  11  14    1   4   8    2   5   7    3   9  13    6  10  12 "
-#endif
-#elif nPlayers == 21
-#if 0 // matrix xxx (see next matrix)
-		"   0   1   2    3   4   5    6   7   8    9  10  11   12  13  14   15  16  17   18  19  20 "
-		"   0   3   6    1   4   9    2   7  12    5  13  15    8  16  18   10  14  19   11  17  20 "
-		"   0   4  18    1  13  20    2   8  14    3  10  15    5   9  16    6  11  12    7  17  19 "
-		"   0   5  12    1   7  11    2  16  19    3  14  20    4   6  15    8   9  13   10  17  18 "
-		"   0   7  13    1  10  16    2   5  20    3   8  17    4  11  14    6   9  19   12  15  18 "
-		"   0   8  19    1  12  17    2   3  11    4  13  16    5   6  10    7  15  20    9  14  18 "
-		"   0   9  17    1   6  14    2  10  13    3  12  16    4   8  20    5   7  18   11  15  19 "
-		"   0  10  20    1   3  18    2   9  15    4  12  19    5   8  11    6  13  17    7  14  16 "
-		"   0  11  16    1   8  15    2   6  18    3  13  19    4   7  10    5  14  17    9  12  20 "
-		"   0  14  15    1   5  19    2   4  17    3   7   9    6  16  20    8  10  12   11  13  18 "
-#endif
-#if 0 // matrix minimized from above matrix (xxx)
-			"    0   1   2    3   4   5    6   7   8    9  10  11   12  13  14   15  16  17   18  19  20 "
-			"    0   3   6    1   4   7    2   9  12    5  10  13    8  15  18   11  16  19   14  17  20 "
-			"    0   4   9    1   3  15    2   6  20    5  12  16    7  14  18    8  10  19   11  13  17 "
-			"    0   5  14    1   8  16    2  10  15    3   9  20    4  13  19    6  11  18    7  12  17 "
-			"    0   7  10    1  12  20    2   8  13    3  11  14    4   6  16    5  17  18    9  15  19 "
-			"    0   8  12    1   5  11    2  14  16    3   7  19    4  15  20    6  10  17    9  13  18 "
-			"    0  11  20    1  10  18    2   4  17    3  13  16    5   7  15    6  12  19    8   9  14 "
-			"    0  13  15    1  14  19    2   7  11    3   8  17    4  12  18    5   6   9   10  16  20 "
-			"    0  16  18    1   9  17    2   5  19    3  10  12    4   8  11    6  14  15    7  13  20 "
-			"    0  17  19    1   6  13    2   3  18    4  10  14    5   8  20    7   9  16   11  12  15 "
-#endif
-#elif nPlayers == 27
-#if 0
-"     0   1   2    3   4   5    6   7   8    9  10  11   12  13  14   15  16  17   18  19  20   21  22  23   24  25  26 \n"
-"     0   3   6    1   4   7    2   5   8    9  12  15   10  13  16   11  14  19   17  21  24   18  22  25   20  23  26 \n"
-"     0   4   8    1   5   6    2   3   7    9  13  18   10  12  17   11  15  24   14  20  21   16  22  26   19  23  25 \n"
-"     0   5   7    1   3   8    2   4   6    9  20  24   10  19  21   11  18  23   12  16  25   13  15  22   14  17  26 \n"
-"     0   9  17    1  13  26    2  11  22    3  16  23    4  18  21    5  10  15    6  19  24    7  12  20    8  14  25 \n"
-"     0  10  26    1   9  22    2  14  18    3  15  19    4  12  24    5  20  25    6  17  23    7  11  16    8  13  21 \n"
-"     0  11  20    1  14  15    2  17  19    3   9  25    4  10  22    5  21  26    6  12  18    7  13  23    8  16  24 \n"
-"     0  12  19    1  11  21    2   9  23    3  10  24    4  14  16    5  13  17    6  20  22    7  15  25    8  18  26 \n"
-"     0  13  25    1  18  24    2  15  21    3  14  22    4  17  20    5  11  12    6   9  16    7  19  26    8  10  23 \n"
-"     0  14  23    1  10  20    2  13  24    3  12  21    4  11  25    5  16  18    6  15  26    7  17  22    8   9  19 \n"
-"     0  15  18    1  17  25    2  16  20    3  11  26    4  13  19    5  23  24    6  10  14    7   9  21    8  12  22 \n"
-"     0  16  21    1  12  23    2  10  25    3  17  18    4   9  26    5  19  22    6  11  13    7  14  24    8  15  20 \n"
-"     0  22  24    1  16  19    2  12  26    3  13  20    4  15  23    5   9  14    6  21  25    7  10  18    8  11  17 \n"
-#endif
-#endif
-	;
+	if (nRows == 0)
+	{
+		alldata sys(nPlayers);
+		sys.initStartValues(ivc);// can be used to start from previous result
+		sys.Run(0, eCalcResult, ImproveResults, (char*)0, (char*)0, (char*)0, 0, 0, NULL, true);
+	}
+	else
+	{
+		RunThread(0, eCalcNumberOfMatrices, ImproveResults, (char*)0, (char*)0, (char*)0, nRows, 0, dNumMatrices, false);
+		if (dNumMatrices[0] > dNumMatricesMax)
+		{
+			printf("Number of initial %d-rows matrices (%.0f) > limit (%.0f). Exit\n", nRows, dNumMatrices[0], dNumMatricesMax);
+			exit(0);
+		}
+		printf("Number of initial %d-rows matrices=%.0f, limit=%.0f\n", nRows, dNumMatrices[0], dNumMatricesMax);
+		//mStep = (int)((dNumMatrices[0] + NThreads - 1) / NThreads);
+		//mStep = mStep / 2;
+		//if (mStep < 1)
+		mStep = StepForStartMatrices;
+		double allMatricesSize = (dNumMatrices[0] / mStep + 1) * nPlayers * nRows;
+		if (allMatricesSize > MaxMemoryForStartMatrices)
+		{
+			printf("Memory needed for initial %d-rows matrices (%.0f) > limit (%.0f). Exit\n", 
+				nRows, allMatricesSize, MaxMemoryForStartMatrices);
+			exit(0);
+		}
+		printf("Memory needed for initial %d-rows matrices=%.0f, limit=%.0f\n",
+			nRows, allMatricesSize, MaxMemoryForStartMatrices);
+		int iAllMatricesSize = (int)((dNumMatrices[0] + mStep - 1) / mStep) * nPlayers * nRows;
+		char* startMatrix = new char[iAllMatricesSize];
+		char* endMatrix = new char[iAllMatricesSize];
 
-	std::cout << "TripleSys 12.1\n";
+		RunThread(0, eCalcStartStop, ImproveResults, (char*)0, startMatrix, endMatrix, nRows, mStep, dNumMatrices, false);
+		mTime = clock() - iTime;
+		printf("%.0f %d-rows matrices needed\n", dNumMatrices[0], nRows);
+		/**/
+		memset(cntTotal, 0, sizeof(cntTotal));
+		memset(cnt, 0, sizeof(cnt));
+		memset(threadActive, false, sizeof(threadActive));
+		int numThreads = NThreads;
+		if ((double)numThreads > dNumMatrices[0])
+			numThreads = (int)dNumMatrices[0];
+		std::vector<std::thread> threads(numThreads);
+		int nb = 0;
+		cTime = clock();
+		int iPrintCount = 0;
+		for (double dj = 0; dj < dNumMatrices[0]; dj += mStep, nb++) {
+			while (1)
+			{
+				int iTask = 0;
+				for (auto& t : threads) {
+					if (!threadActive[iTask])
+					{
+						cnt[iTask * 2] = -1;
+						size_t ind = nb * nPlayers * nRows;
+						threads[iTask] = std::thread{ RunThread, iTask + 1, eCalcResult, ImproveResults,
+							startMatrix + ind, startMatrix + ind, endMatrix + ind, nRows, 0, &cnt[iTask * 2], false };
+						threadActive[iTask] = true;
+						break;
+					}
+					else if (cnt[iTask * 2] >= 0)
+					{
+						t.join();
+						cntTotal[iTask * 2] += cnt[iTask * 2];
+						cntTotal[iTask * 2 + 1] += cnt[iTask * 2 + 1];
+						cnt[iTask * 2 + 1] = cnt[iTask * 2 + 1] = 0;
+						threadActive[iTask] = false;
+						printf("thread %d ended\n", iTask + 1);
+					}
+					iTask++;
+				}
+				if (iTask < numThreads)
+					break;
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
-	sys.initStartValues(ivc);// can be used to start from previous result
-	sys.Run(ImproveResults);
+				if (clock() - cTime > 20000)
+				{
+					printThreadsStat(cntTotal, cnt, dNumMatrices[0], nRows, mStep, numThreads, iTime, ((iPrintCount++) % 10) == 0);
+					cTime = clock();
+				}
+			}
+		}
+		int i = 0;
+		for (auto& t : threads) {
+			if (threadActive[i])
+			{
+				t.join();
+				if (cnt[i * 2] < 0)
+					printf("\n*** Internal error in thread %d (%.0f) ***\n", i + 1, cnt[i * 2]);
+			}
+			i++;
+		}
+		rTime = clock() - iTime;
+		printThreadsStat(cntTotal, cnt, dNumMatrices[0], nRows, mStep, numThreads, iTime, true);
+		printf("Total time=%d (include prep time=%d)\n", rTime, mTime);
+	}
 	cout << "\7" << endl; // play sound
 	return 0;
 }

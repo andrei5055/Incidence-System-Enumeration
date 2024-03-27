@@ -39,16 +39,19 @@ bool cnvInit1(char* t, int nt, int nv, int mv, int gs, bool bCheck)
 				break;
 		}
 	}
-	for (int i = 0; i < nt * nv; i++)
+	if (gs != 1)
 	{
-		t[i] *= gs;
+		for (int i = 0; i < nt * nv; i++)
+		{
+			t[i] *= gs;
+		}
 	}
 	return true;
 }
 void alldata::cnvInit()
 {
-	cnvInit1(m_allTr, m_nallTr, m_nGroups, m_nGroups, m_groupSize, true);
-	cnvInit1(m_allTg, m_nallTg, m_nGroups, m_groupSizeFactorial, m_groupSize, false);
+	//cnvInit1(m_allTr, m_nallTr, m_nGroups, m_nGroups, m_groupSize, true);
+	//cnvInit1(m_allTg, m_nallTg, m_nGroups, m_groupSizeFactorial, 1, false);
 	for (int i = 0; i < m_groupSize; i++)
 	{
 		m_groups[i] = i;
@@ -73,21 +76,17 @@ void alldata::cnvInit()
 		}
 	}
 }
-bool alldata::cnvCheckKm1(char* tr)
+bool alldata::cnvCheckKm1(char* tr, int nrows)
 {
-	static int hhh;
 	bool ret = true;
 	char ttr[27];
-	int npm = iDay * m_numPlayers;
-	char* mo = m_Km;
+	int npm = nrows * m_numPlayers;
 	char* res = result();
-	char* mo2 = mo + m_numPlayers;
-	char* mo3 = mo + npm;
-	char* res2 = res + m_numPlayers;
-	int npm2 = npm - m_numPlayers;
-	for (int n = 0; n < iDay; n++)
+	char* resSecondRow = res + m_numPlayers;
+	int npmMinus1Row = npm - m_numPlayers;
+	
+	for (int n = 0; n < nrows; n++)
 	{
-		hhh++;
 		char* resn = result(n);
 		for (int i = 0; i < m_numPlayers; i++)
 		{
@@ -98,94 +97,59 @@ bool alldata::cnvCheckKm1(char* tr)
 		{
 			printTable("Tr source", tr, 1, m_numPlayers);
 			printTable("Tr actual", ttr, 1, m_numPlayers);
-			printTable("Original", res, iDay, m_numPlayers);
+			printTable("Original", res, nrows, m_numPlayers);
 		}
 #endif
-		if (m_groupSize == 2)
+		if (m_groupSize == 2 && nrows == m_numDays)
 		{
-			kmTranslate(mo3, res, ttr, iDay, m_numPlayers);
-			kmFullSort2(mo, mo3, iDay, m_numPlayers);
+			kmTranslate(m_Km2, res, ttr, nrows, m_numPlayers);
+			kmFullSort2(m_Km, m_Km2, nrows, m_numPlayers);
+#if 0
+			if (n == 1)
+			{
+				printf("n=%d ", n);
+				printTable("Tr actual", ttr, 1, m_numPlayers);
+				printTable("Translated", m_Km, nrows, m_numPlayers);
+		}
+#endif
 		}
 		else
 		{
-			kmTranslate(mo, res, ttr, iDay, m_numPlayers);
-			kmFullSort(mo, iDay, m_numPlayers, m_groupSize);
+			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
+			kmFullSort(m_Km, nrows, m_numPlayers, m_groupSize);
 		}
+		int icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
 #if 0
-		//if (n == 1)
-		{
-			static int icnt = 0,icnt2 = 0;
-			static char ttrd[11][12] ;
-			if (icnt == 0)
-				memset(ttrd[0], -1, sizeof(ttrd));
-			if (ttrd[n][0] == unset)
-				memcpy(ttrd[n], ttr, m_numPlayers);
-			else
-			{
-				char ttrn[24];
-				int j = 0;
-				for (int i = 0;i < m_numPlayers;i++)
-				{
-					if (ttrd[n][i] != ttr[i])
-					{
-						if (j < 3)
-						{
-							ttrn[j] = ttrd[n][i];
-							ttrn[j+1] = ttr[i];
-						}
-						j += 2;
-					}
-				}
-				if (j < 25)
-				{
-					icnt2++;
-					if ((ttrn[0] != ttrn[3]) != 0 || ttrn[1] != ttrn[2])
-						j = j;
-					if (ttrn[0] != ttrn[1] + 1 && ttrn[0] != ttrn[1] - 1)
-						j = j;
-					if ((min(ttrn[0], ttrn[1]) & 1) != 0)
-						j = j;
-				}
-			}
-			memcpy(ttrd[n], ttr, m_numPlayers);
-			icnt++;
-			if ((icnt % 100000) == 0)
-				printf("icnt=%d, %d\n", icnt, icnt2);
-			//printTable("Tr actual", ttr, 1, m_numPlayers);
-			//printTable("Translated", mo, iDay, m_numPlayers);
-		}
+		static int a, b;
+		a++;
+		if (icmp == 0)
+			b++;
+		if ((a % 1000000) == 0)
+			printf("%d %d\n", a, b);
 #endif
-		if (memcmp(mo2, res2, npm2) < 0)
+		if (icmp < 0)
 		{
 #if 0
 			printf("Calculated Matrix %.0f can be improved. See below (nKm=%d row=%d)\n", nLoops, m_finalKMindex, n);
 			printTable("Tr source", tr, 1, m_numPlayers);
 			printTable("Tr actual", ttr, 1, m_numPlayers);
-			printTable("Original", res, iDay, m_numPlayers);
-			printTable("Translated", mo, iDay, m_numPlayers);
+			//printTable("Original", res, nrows, m_numPlayers);
+			//printTable("Translated", m_Km, nrows, m_numPlayers);
 #endif
 			//printf(" d%d", n);
 			ret = false;
-#if 1
-			static int cntr, ccc; 
-			FOPEN_F(f, "../cnvCheckKm1.txt", cntr++ ? "a" : "w");
-			if (n)
-				ccc++;
-			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
-			FCLOSE_F(f);
-#endif
 			break;
-		}	
+		}
 	}
 	return ret;
 }
-bool alldata::cnvCheckKm(char* tr, char* tg, int gfs)
+bool alldata::cnvCheckKm(char* tr, char* tg)
 {
 	int ii = 0;
 	for (int i = 0; i < m_nGroups; i++, ii+=m_groupSize)
 	{
 		int itr = tr[i];
-		int itg = tg[i];
+		int itg = tg[i] * m_groupSize;
 		for (int j = 0; j < m_groupSize; j++)
 		{
 			m_trmk[ii + j] = itr + m_groups[itg + j];
@@ -195,7 +159,7 @@ bool alldata::cnvCheckKm(char* tr, char* tg, int gfs)
 	printTable("Tr", tr, 1, m_nGroups);
 	printTable("Tg", tg, 1, m_nGroups);
 #endif
-	bool ret = cnvCheckKm1(m_trmk);
+	bool ret = cnvCheckKm1(m_trmk, iDay);
 #if 0
 	if (!ret)
 	{
@@ -207,14 +171,12 @@ bool alldata::cnvCheckKm(char* tr, char* tg, int gfs)
 }
 bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 {
-	static int ggg;
 	int nm = ntg > 1000 ? 1000 : ntg - 1;
 	char* ttg = tg;
+	bool ret = true;
 	for (int i = 0; i < ntg; i++, ttg += m_nGroups)
 	{
-		if (++ggg == 46183 || ggg == 4034)
-			ggg += 0;
-		if (!cnvCheckKm(tr, ttg, gsf))
+		if (!cnvCheckKm(tr, ttg))
 		{
 #if 1  // a little bit faster with 1
 			char t[16];
@@ -228,25 +190,57 @@ bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 			}
 #endif
 			//printf(" g%d", i);
-			return false;
+			ret = false;
+			break;
 		}
 	}
 	//printf(" BestTg=%d\n", m_bestTg);
-	return true;
+	return ret;
+}
+bool alldata::cnvCheckTgNew(char* tr, int gsf)
+{
+	char tg[16];
+	char* ttg = tg;
+	bool ret = true;
+	register char ng = m_nGroups;
+	register char gs = gsf;
+	register int i, cnt = 0;
+	memset(tg, 0, ng);
+	while(1)
+	{
+		if (!cnvCheckKm(tr, tg))
+		{
+			//printf(" g%d", i);
+			ret = false;
+			break;
+		}
+		i = ng;
+		while (--i >= 0)
+		{
+			tg[i] += 1;
+			if (tg[i] < gs)
+			{
+				break;
+			}
+			tg[i] = 0;
+		}
+		cnt++;
+		if (i < 0)
+			break;
+	}
+	//if (ret == true)printf(" BestTg=%d\n", cnt);
+	return ret;
 }
 bool alldata::cnvCheck()
 {
-	static int fff;
 	char t[16];
 	int nm = m_nallTr > 1000 ? 1000 : m_nallTr - 1;
 	char* ttr = m_allTr;
+	bool ret = true;
 	if (m_nGroups > sizeof(t))
 		abort();
 	for (int i = 0; i < m_nallTr; i++, ttr += m_nGroups)
 	{
-		if (++fff == 1444)
-			fff += 0;
-
 		if (!cnvCheckTg(ttr, m_allTg, m_nallTg, m_groupSizeFactorial))
 		{
 #if 1 // a little bit faster with 1
@@ -260,9 +254,56 @@ bool alldata::cnvCheck()
 			}
 #endif
 			//printf(" t%d ", i);
-			return false;
+			ret = false;
+			break;
 		}
 	}
 	//printf(" BestTr=%d\n", m_bestTr);
-	return true;
+	return ret;
+}
+bool alldata::cnvCheckNew()
+{
+	// Head Permutations Using a Linear Array Without Recursion by Phillip Paul Fuchs
+	char a[16], p[16];
+	register char i, j, tmp; // Upper Index i; Lower Index j
+	int itr = 0;
+	bool ret = true;
+	if (m_nGroups + 1 > sizeof(p))
+		abort();
+	for (i = 0; i < m_nGroups; i++)   // initialize arrays; a[N] can be any type
+	{
+		a[i] = i * m_groupSize;   // a[i] value is not revealed and can be arbitrary
+		p[i] = i;
+	}
+	if (!cnvCheckTgNew(a, m_groupSizeFactorial))
+	{
+		//printf(" t%d ", itr);
+		return false;
+	}
+	itr++;
+	p[m_nGroups] = m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
+	i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
+	while (i < m_nGroups)
+	{
+		p[i]--;             // decrease index "weight" for i by one
+		j = i % 2 * p[i];   // IF i is odd then j = p[i] otherwise j = 0
+		tmp = a[j];         // swap(a[j], a[i])
+		a[j] = a[i];
+		a[i] = tmp;
+		if (!cnvCheckTgNew(a, m_groupSizeFactorial))
+		{
+			//printf(" t%d ", itr);
+			ret = false;
+			break;
+		}
+		itr++;
+		i = 1;              // reset index i to 1 (assumed)
+		while (!p[i])       // while (p[i] == 0)
+		{
+			p[i] = i;        // reset p[i] zero value
+			i++;             // set new index value for i (increase by one)
+		} // while(!p[i])
+	} // while(i < m_nGroups)
+	//if (ret == true)printf(" itr=%d\n", itr);
+	return ret;
 }

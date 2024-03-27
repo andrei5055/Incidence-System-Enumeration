@@ -3,7 +3,7 @@
 
 char lastError[256];
 
-bool checkMatrix1(char* lnks, int ln, int nc, const char* matrix, int i1, int i2, bool printError, int* errLine, int* errGroup, int* dubLine)
+bool checkMatrix1(char* lnks, int ln, int nc, int gs, const char* matrix, int i1, int i2, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
 	const char* c = matrix + ln * nc;
 	char a = c[i1], b = c[i2];
@@ -11,29 +11,29 @@ bool checkMatrix1(char* lnks, int ln, int nc, const char* matrix, int i1, int i2
 		b < 0 || b >= nc ||
 		a == b)
 	{
-		printf("CheckMatrix: matrix values (%d %d) in group %d on line %d are incorrect, job aborted\n", a, b, i1 / 3, ln);
+		printf("CheckMatrix: matrix values (%d %d) in group %d on line %d are incorrect, job aborted\n", a, b, i1 / gs, ln);
 		abort();
 	}
 	char dLine = lnks[a * nc + b];
 	if (dLine != unset)
 	{
-		sprintf_s(lastError, "CheckMatrix: matrix pair (%d %d) in group %d on line %d already defined in line %d\n", a, b, i1 / 3, ln, dLine);
+		sprintf_s(lastError, "CheckMatrix: matrix pair (%d %d) in group %d on line %d already defined in line %d\n", a, b, i1 / gs, ln, dLine);
 		if (printError)
 			printf(lastError);
 
 		*errLine = ln;
-		*errGroup = i1 / 3;
+		*errGroup = i1 / gs;
 		*dubLine = dLine;
 		return false;
 	}
 	lnks[a * nc + b] = lnks[b * nc + a] = ln;
 	return true;
 }
-bool _CheckMatrix(const char* matrix, int nl, int nc, char *lnks, bool printError, int* errLine, int* errGroup, int* dubLine)
+bool _CheckMatrix(const char* matrix, int nl, int nc, int gs, char *lnks, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	if (nl < 0 || nl > 10 || (nc != 15 && nc != 21))
+	if (gs <= 1 || ((nc - 1) % (gs - 1)) != 0 || (nc - 1) / (gs - 1) < nl)
 	{
-		printf("CheckMatrix: incorrect parameters (nlines=%d ncolumns=%d), job aborted\n", nl, nc);
+		printf("CheckMatrix: incorrect parameters (nlines=%d, ncolumns=%d, group size=%d), job aborted\n", nl, nc, gs);
 		abort();
 	}
 
@@ -41,19 +41,23 @@ bool _CheckMatrix(const char* matrix, int nl, int nc, char *lnks, bool printErro
 
 	for (int j = 0; j < nl; j++)
 	{
-		for (int i = 0; i < nc; i = i + 3)
+		for (int i = 0; i < nc; i = i + gs)
 		{
-			if (!checkMatrix1(lnks, j, nc, matrix, i,     i + 1, printError, errLine, errGroup, dubLine) ||
-				!checkMatrix1(lnks, j, nc, matrix, i,     i + 2, printError, errLine, errGroup, dubLine) ||
-				!checkMatrix1(lnks, j, nc, matrix, i + 1, i + 2, printError, errLine, errGroup, dubLine))
+			for (int k = 0; k < gs - 1; k++)
 			{
-				return false;
+				for (int m = k + 1; m < gs; m++)
+				{
+					if (!checkMatrix1(lnks, j, nc, gs, matrix, i + k, i + m, printError, errLine, errGroup, dubLine))
+					{
+						return false;
+					}
+				}
 			}
 		}
 	}
 	return true;
 }
-bool alldata::CheckMatrix(const char* matrix, int nl, int nc, bool printError, int* errLine, int* errGroup, int* dubLine)
+bool alldata::CheckMatrix(const char* matrix, int nl, int nc, int gs, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	return _CheckMatrix(matrix, nl, nc, links(), printError, errLine, errGroup, dubLine);
+	return _CheckMatrix(matrix, nl, nc, gs, links(), printError, errLine, errGroup, dubLine);
 }
