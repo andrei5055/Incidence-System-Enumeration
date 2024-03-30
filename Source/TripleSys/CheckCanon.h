@@ -62,7 +62,7 @@ public:
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
 											  return (flag & m_bResultFlag) == flag; }
 	inline void setPreordered(bool v = true) { m_bPreordered = v; }
-	inline void setAllData(alldata *ptr)    { m_pAD = ptr; }
+	inline void setAllData(const alldata *ptr)    { m_pAD = ptr; }
 private:
 	inline auto numElem() const				{ return m_numElem; }
 	inline auto groupSize() const			{ return m_groupSise; }
@@ -227,7 +227,7 @@ private:
 	T* m_pSubGroup = NULL;      // Elements of the subgroup
 	T* m_dayIdx = NULL;
 	T m_nDaysToTest;            // Number of days requiring testing with the current permutations of players
-	alldata* m_pAD = NULL;
+	const alldata* m_pAD = NULL;
 
 	unsigned int m_bResultFlag;
 	int m_nCommentBufferLength = 0;
