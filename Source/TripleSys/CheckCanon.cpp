@@ -1082,7 +1082,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 	++cntr;
 	static int cntrMax = 3840;
 #if USE_ORBTS == 0
-	static int ctrIdx[] = { 48, 32, 176, 128, 320, 224};
+	static int ctrIdx[] = { 16, 13, 45, 29, 173, 125, 317, 195 };
 	static int jStart;
 	if (ccc >= 8856 && jStart <= countof(ctrIdx) - 2 && cntr >= ctrIdx[jStart]) {
 		cntrMax -= ctrIdx[jStart] - (cntr = ctrIdx[jStart + 1]);
@@ -1124,10 +1124,11 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 			}
 		}
 	}
-//start:
+
 	bool orderTail = false;
 	auto pPerm = perm + nElem;
 	for (auto i = numGroups(); i--;) {
+		pPerm -= groupSize();
 	start_loop:
 		auto val = m_pGroupPerm[i] * groupSize();
 		auto const* pSubgrPerm = m_pSubGroup;
@@ -1136,7 +1137,6 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 		else
 			m_pPermIndex[i] = 0;
 
-		pPerm -= groupSize();
 		for (T j = 0; j < groupSize(); j++)
 			pPerm[j] = val + pSubgrPerm[j];
 
@@ -1147,11 +1147,11 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 				while (perm[j] == j) 
 					j++;
 
+			check_orb:
 				if (perm[j] != pOrbits[perm[j]]) {
 					if (m_pPermIndex[i] < groupSize() - 1)
 						goto start_loop;
 
-					//goto start;
 					if (orderTail) {
 						// The tail of the permutation needs to be re-established.
 						const auto j = i * groupSize();
@@ -1175,12 +1175,18 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 							pGr[j] = val + j;
 
 						const auto tmp = m_pGroupPerm[i];
-						m_pGroupPerm[i] = m_pGroupPerm[j];
-						val = (m_pGroupPerm[j] = tmp) * groupSize();
+						val = (m_pGroupPerm[i] = m_pGroupPerm[j]) * groupSize();
+						m_pGroupPerm[j] = tmp;
 						m_pPermIndex[i] = 0;
 						memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
-					} else 
-						assert(true);
+						goto check_orb;
+					}
+					
+					// Impossible to swap
+					if (!i)
+						break;  // No more permutations 
+
+					i += 0;
 				}
 			}
 			if (f)
@@ -1205,7 +1211,6 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 				const auto j = i * groupSize();
 				if (perm[j] != pOrbits[perm[j]]) {
 					++m_pNumPermutUsed[i];
-					pPerm += groupSize();
 					orderTail = true;
 					goto start_loop;
 				}
