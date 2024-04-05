@@ -130,7 +130,8 @@ CheckerCanon(void)::sortTuples(T *players) const {
 	elemOrdering(players, m_numElem, groupSize());
 	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
-static int cntr, file_cntr;
+int cntr, file_cntr;
+#define F_CNTR 1702
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
@@ -167,8 +168,7 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 
 #if CHECK_WITH_GROUP
 	if (m_numDays == m_numDaysMax) {
-		file_cntr++;
-		if (file_cntr == 21)
+		if (++file_cntr == F_CNTR)
 			file_cntr += 0;
 
 		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
@@ -425,7 +425,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 	CGroupOrder<T>::setGroupOrder(1);
 	T nElem = ELEMENT_MAX;
-	if (file_cntr == 9)
+	if (file_cntr == F_CNTR)
 		file_cntr += 0;
 #define PRINT_PERMUT 1
 #if PRINT_PERMUT || PRINT_PERMUT_
@@ -1075,25 +1075,28 @@ CheckerCanon(void)::printInfo(FILE* f, const T* perm, int idx) const {
 
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
 #define USE_ORBTS   1
-	static int ccc;
-	if (++ccc == 8856)
-		ccc += 0; //*(pOrbits + perm[k]) != perm[k]
-
 	++cntr;
 	static int cntrMax = 3840;
 #if USE_ORBTS == 0
-	static int ctrIdx[] = { 16, 13, 45, 29, 173, 125, 317, 195 };
+	static int ctrIdx[] = ////, 173, 125, 317, 195
+#if F_CNTR == 9
+	{ 16, 13, 45, 29, 173, 125, 317, 195 };
+#elif F_CNTR == 11
+	{ 16, 13, 45, 28, 76, 49, 337, 97, 1249, 865};
+#else
+	{3840};
+#endif
 	static int jStart;
-	if (ccc >= 8856 && jStart <= countof(ctrIdx) - 2 && cntr >= ctrIdx[jStart]) {
+	if (file_cntr == F_CNTR && jStart <= countof(ctrIdx) - 2 && cntr >= ctrIdx[jStart]) {
 		cntrMax -= ctrIdx[jStart] - (cntr = ctrIdx[jStart + 1]);
 		jStart += 2;
 	}
 #endif
-	if (cntr == cntrMax || cntr == 1731)
-		cntr += 0;
-
 	FILE* f = NULL;
-	if (/*false && */ccc >= 8843) {
+	if (/*false && */ file_cntr == F_CNTR) {
+		if (cntr == 824)
+			cntr += 0;
+
 		FOPEN_F(ff, "../ddd.txt", "a");
 		f = ff;
 	}
@@ -1103,23 +1106,22 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 	if (USE_ORBTS && idx == IDX_MAX) {
 		// Permutation perm defines an automorphism.
 		T j = 0;
-		while (perm[j] == j && ++j < nElem);
-		if (j < nElem) {
-			// We are preparing to reset all remaining groups.
-			auto i = iMinVar = j / groupSize() + 1;
-			memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
-			for (; i < numGroups(); i++) {
-				// To do that we need for all remaining groups
-				// (a) to set m_pPermIndex to their highest values
-				m_pPermIndex[i] = m_GroupOrder;
-				// (b) reorder all group indices  
-				auto idx = m_pGroupPerm[i];
-				for (auto k = i; ++k < numGroups();) {
-					if (idx < m_pGroupPerm[k]) {
-						m_pGroupPerm[i] = m_pGroupPerm[k];
-						m_pGroupPerm[k] = idx;
-						idx = m_pGroupPerm[i];
-					}
+		while (perm[j] == j) 
+			j++;
+		// We are preparing to reset all remaining groups.
+		auto i = iMinVar = j / groupSize() + 1;
+		memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
+		for (; i < numGroups(); i++) {
+			// To do that we need for all remaining groups
+			// (a) to set m_pPermIndex to their highest values
+			m_pPermIndex[i] = m_GroupOrder;
+			// (b) reorder all group indices  
+			auto idx = m_pGroupPerm[i];
+			for (auto k = i; ++k < numGroups();) {
+				if (idx < m_pGroupPerm[k]) {
+					m_pGroupPerm[i] = m_pGroupPerm[k];
+					m_pGroupPerm[k] = idx;
+					idx = m_pGroupPerm[i];
 				}
 			}
 		}
@@ -1129,8 +1131,8 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 	auto pPerm = perm + nElem;
 	for (auto i = numGroups(); i--;) {
 		pPerm -= groupSize();
-	start_loop:
 		auto val = m_pGroupPerm[i] * groupSize();
+	start_loop:
 		auto const* pSubgrPerm = m_pSubGroup;
 		if (++m_pPermIndex[i] < m_GroupOrder)
 			pSubgrPerm += m_pPermIndex[i] * groupSize();
@@ -1143,12 +1145,12 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 		if (m_pPermIndex[i]) {
 			// Skip stabilizer elements
 			if (USE_ORBTS && (!i || !memcmp(perm, trivialPerm(), i * len))) {
-				auto j = i * groupSize();
-				while (perm[j] == j) 
-					j++;
+				auto k = i * groupSize();
+				while (perm[k] == k) 
+					k++;
 
 			check_orb:
-				if (perm[j] != pOrbits[perm[j]]) {
+				if (perm[k] != pOrbits[perm[k]]) {
 					if (m_pPermIndex[i] < groupSize() - 1)
 						goto start_loop;
 
@@ -1166,6 +1168,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 					auto pGr = pPerm;
 					while (++j < numGroups() && val > *(pGr += groupSize()));
 
+					const auto tmp = m_pGroupPerm[i];
 					if (j < numGroups()) {
 						// Swapping groups and their indices
 						memcpy(pPerm, pGr, len);
@@ -1174,11 +1177,11 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 						for (T j = 0; j < groupSize(); j++)
 							pGr[j] = val + j;
 
-						const auto tmp = m_pGroupPerm[i];
 						val = (m_pGroupPerm[i] = m_pGroupPerm[j]) * groupSize();
 						m_pGroupPerm[j] = tmp;
 						m_pPermIndex[i] = 0;
-						memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
+						m_pNumPermutUsed[i + 1] = 0;
+						//memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
 						goto check_orb;
 					}
 					
@@ -1186,7 +1189,20 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 					if (!i)
 						break;  // No more permutations 
 
-					i += 0;
+					// Moving all groups and element of permutation to the left
+					const auto nElem = numGroups() - i - 1;
+					memcpy(pPerm, pPerm + groupSize(), nElem * len);
+					memcpy(m_pGroupPerm + i, m_pGroupPerm + i + 1, nElem * sizeof(m_pGroupPerm[0]));
+					m_pGroupPerm[nElem + i] = tmp;
+					m_pPermIndex[i] = 0;
+					m_pNumPermutUsed[i + 1] = 0;
+					m_pNumPermutUsed[i] = 1;
+					//memset(m_pNumPermutUsed + i, 0, (numGroups() - i) * sizeof(m_pNumPermutUsed[0]));
+					// and the current group to last position.
+					for (T j = 0; j < groupSize(); j++)
+						pGr[j] = val + j;
+
+					continue;
 				}
 			}
 			if (f)
@@ -1212,6 +1228,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 				if (perm[j] != pOrbits[perm[j]]) {
 					++m_pNumPermutUsed[i];
 					orderTail = true;
+					val = m_pGroupPerm[i] * groupSize();
 					goto start_loop;
 				}
 			}

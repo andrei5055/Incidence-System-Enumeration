@@ -20,9 +20,9 @@ using namespace std;
 #define ImproveResults 0		// 0 - with no explanation of the matrix rejection reason;
                                 // 1 - reason of rejection will be explained;
 								// 2 - improve matrix as much as possible.
-#define ResultFilePrefix		""// "../bbb.txt" // Name of output file with the results, "" - no file output.
+#define ResultFilePrefix		"../bbb" // Name of output file with the results, "" - no file output.
 #define PrintImprovedResults 1	// Set this value to >= 2 if you want to see improved results on screen.
-#define ImprovedResultFilePrefix "../aaa_.txt"  // Name of output file with the improved results, "" - no file output.
+#define ImprovedResultFilePrefix "../aaa_"  // Name of output file with the improved results, "" - no file output.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
 #define UseCheckLinksH 1
@@ -154,7 +154,7 @@ public:
 		int nrows=0, int mStep=1, double* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	bool cnvCheckKm1(char* tr, int nrows); 
+	bool cnvCheckKm1(char* tr, int nrows) const; 
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }

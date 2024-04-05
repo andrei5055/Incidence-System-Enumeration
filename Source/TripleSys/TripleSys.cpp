@@ -161,9 +161,9 @@ bool alldata::Run(int threadNumber, int iStartStopMode, int improveResult,
 		bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
 	if (strlen(ImprovedResultFilePrefix) > 0)
-		sprintf_s(ImprovedResultFile, sizeof(ImprovedResultFile), "%s%04d.txt", ImprovedResultFilePrefix, threadNumber);
+		sprintf_s(ImprovedResultFile, "%s%04d.txt", ImprovedResultFilePrefix, threadNumber);
 	if (strlen(ResultFilePrefix) > 0)
-		sprintf_s(ResultFile, sizeof(ResultFile), "%s%04d.txt", ResultFilePrefix, threadNumber);
+		sprintf_s(ResultFile, "%s%04d.txt", ResultFilePrefix, threadNumber);
 
 	pRes = &Result;
 	if (mStart0 != NULL)
@@ -322,7 +322,8 @@ ProcessOneDay:
 				{
 					//report result
 					clock_t cTime = clock();
-					printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+					extern int file_cntr;
+					printf("Result %.0f (%3d): matrix build time=%d, time since start=%d\n", nLoops, file_cntr, cTime - mTime, cTime - iTime);
 					Result.printTable(result(), true, ResultFile);
 				}
 				m_finalKMindex++;

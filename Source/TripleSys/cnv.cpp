@@ -76,7 +76,7 @@ void alldata::cnvInit()
 		}
 	}
 }
-bool alldata::cnvCheckKm1(char* tr, int nrows)
+bool alldata::cnvCheckKm1(char* tr, int nrows) const
 {
 	bool ret = true;
 	char ttr[27];
