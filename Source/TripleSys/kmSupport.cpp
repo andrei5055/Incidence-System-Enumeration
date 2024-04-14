@@ -4,7 +4,6 @@
 
 void kmSortAllRowsFor10x9Matrix(char* mo, char* mi)
 {
-	short int* i1;
 	char* c1 = (char*)mi;
 	for (int i = 0; i < 9; i++, c1 += 10)
 	{

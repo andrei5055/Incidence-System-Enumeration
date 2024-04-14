@@ -76,7 +76,7 @@ void alldata::cnvInit()
 		}
 	}
 }
-bool alldata::cnvCheckKm1(char* tr, int nrows) const
+int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 {
 	bool ret = true;
 	char ttr[27];
@@ -118,7 +118,7 @@ bool alldata::cnvCheckKm1(char* tr, int nrows) const
 			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
 			kmFullSort(m_Km, nrows, m_numPlayers, m_groupSize);
 		}
-		int icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
+		const int icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
 #if 0
 		static int a, b;
 		a++;
@@ -127,21 +127,23 @@ bool alldata::cnvCheckKm1(char* tr, int nrows) const
 		if ((a % 1000000) == 0)
 			printf("%d %d\n", a, b);
 #endif
-		if (icmp < 0)
-		{
+		if (icmp > 0 || (!icmp && !useEqual))
+			continue;
+
 #if 0
+		//extern bool flg;
+		if (/*flg &&*/ icmp < 0) {
 			printf("Calculated Matrix %.0f can be improved. See below (nKm=%d row=%d)\n", nLoops, m_finalKMindex, n);
 			printTable("Tr source", tr, 1, m_numPlayers);
 			printTable("Tr actual", ttr, 1, m_numPlayers);
-			//printTable("Original", res, nrows, m_numPlayers);
-			//printTable("Translated", m_Km, nrows, m_numPlayers);
-#endif
-			//printf(" d%d", n);
-			ret = false;
-			break;
+			printTable("Original", res, nrows, m_numPlayers);
+			printTable("Translated", m_Km, nrows, m_numPlayers);
 		}
+#endif
+		//printf(" d%d", n);
+		return icmp;
 	}
-	return ret;
+	return 1;
 }
 bool alldata::cnvCheckKm(char* tr, char* tg)
 {
@@ -159,7 +161,7 @@ bool alldata::cnvCheckKm(char* tr, char* tg)
 	printTable("Tr", tr, 1, m_nGroups);
 	printTable("Tg", tg, 1, m_nGroups);
 #endif
-	bool ret = cnvCheckKm1(m_trmk, iDay);
+	bool ret = cnvCheckKm1(m_trmk, iDay) > 0;
 #if 0
 	if (!ret)
 	{

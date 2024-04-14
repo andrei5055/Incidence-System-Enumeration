@@ -117,7 +117,7 @@ private:
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL, bool symmetrical = true);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
-	int orderingMatrix(const T* permut, T numElem, const T*pDummy)     {
+	int orderingMatrix(const T* permut, T numElem, const T*pDummy) {
 #if 0
 		extern int file_cntr;
 		extern int cntr;
@@ -141,11 +141,10 @@ private:
 
 		return retVal;
 #else
-		int ret = 1;
 #if USE_TRANSLATE_BY_LEO
-		if (!m_pAD->cnvCheckKm1((char *)permut, numDays()))
-			return -1;
+		return m_pAD->cnvCheckKm1((char*)permut, numDays(), true);
 #else
+		int ret = 1;
 		T ttr[20];
 		for (T n = 0; n < m_nDaysToTest; n++) {
 			auto * resn = getMatrixRow(m_dayIdx[n]);
@@ -174,8 +173,8 @@ private:
 #endif
 			return -1;
 		}
-#endif
 		return ret;
+#endif
 #endif
 	}
 	inline void recordTuples(const T* pTuples, T *pPlayers) const {
