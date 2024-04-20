@@ -119,11 +119,11 @@ private:
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
 	int orderingMatrix(const T* permut, T numElem, const T*pDummy) {
 #if 0
-		extern int file_cntr;
+		extern int matr_cntr;
 		extern int cntr;
 		static char file_name[32];
 		if (cntr == 1)
-			sprintf_s(file_name, "../permuts_%03d.txt", file_cntr);
+			sprintf_s(file_name, "../permuts_%03d.txt", matr_cntr);
 
 		char buffer[256], *pBuf = buffer;
 		for (T j = 0; j < numElem; j++)
@@ -152,6 +152,10 @@ private:
 				ttr[resn[i]] = permut[i];
 
 			const auto retVal = orderingMatrix(0, 0, false, false, ttr);
+			extern bool flg;
+			if (flg)
+				printTransformed(m_nDaysToTest, numElem, (const char *)permut, (const char *)ttr, (const char*)studiedMatrix(), (const char*)resultMemory(), n);
+
 			if (retVal > 0)
 				continue;
 

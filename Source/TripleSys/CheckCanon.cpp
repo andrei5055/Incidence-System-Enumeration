@@ -130,9 +130,9 @@ CheckerCanon(void)::sortTuples(T *players) const {
 	elemOrdering(players, m_numElem, groupSize());
 	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
-int cntr, file_cntr;
+int perm_cntr, matr_cntr;
 bool flg = false;
-#define F_CNTR 1955 //1702
+#define M_CNTR 1955 //1702
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
@@ -167,13 +167,13 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		return false;
 	}
 
-#if CHECK_WITH_GROUP
 	if (m_numDays == m_numDaysMax) {
-		if (++file_cntr == F_CNTR)
-			file_cntr += 0;
+#if CHECK_WITH_GROUP
+		if (++matr_cntr == M_CNTR)
+			matr_cntr += 0;
 
+		perm_cntr = 0;
 		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
-		cntr = 0;
 #if 0
 		static int ddd;
 		if (retVal) {
@@ -183,10 +183,11 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		}
 #endif
 		return retVal;
-	}
 #else
-	++file_cntr;
-#endif
+		++matr_cntr;
+#endif	
+	}
+
 	return true;
 }
 
@@ -409,7 +410,10 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	if (!symmetrical) {
 		memset(m_pPermIndex, 0, 2 * numGroups() * sizeof(m_pPermIndex[0]));
 		memcpy(m_pGroupPerm, trivialPerm(), numGroups() * sizeof(m_pGroupPerm[0]));
-		memcpy(m_dayIdx, trivialPerm(), (m_nDaysToTest = numDays()) * sizeof(m_dayIdx[0]));
+		if (USE_TRANSLATE_BY_LEO)
+			m_pAD->initDayIdx(numDays());
+		else
+			memcpy(m_dayIdx, trivialPerm(), (m_nDaysToTest = numDays()) * sizeof(m_dayIdx[0]));
 		if (!m_pSubGroup) {
 			m_pSubGroup = new T[m_GroupOrder * groupSize()];
 			const auto len = groupSize() * sizeof(m_pSubGroup[0]);
@@ -428,15 +432,16 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 	CGroupOrder<T>::setGroupOrder(1);
 	T nElem = ELEMENT_MAX;
-	if (file_cntr == F_CNTR)
-		file_cntr += 0;
-#define PRINT_PERMUT 1
+	if (flg = (matr_cntr == M_CNTR))
+		matr_cntr += 0;
+#define PRINT_PERMUT  0
+#define PRINT_PERMUT_ 0
 #if PRINT_PERMUT || PRINT_PERMUT_
 	char buffer[256], *ptr;
 	static int ctr_canon = 0;
 	size_t ctr = 0;
 	const auto fName = "../auto_orb.txt";
-	if (calcGroupOrder && file_cntr == 1) {
+	if (calcGroupOrder && matr_cntr == 1) {
 		FOPEN_F(f, fName, "w");
 		FCLOSE_F(f);
 	}
@@ -473,13 +478,13 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 			if (calcGroupOrder) {
 				FOPEN_F(f, fName, "a");
 				ptr = buffer;
-				SPRINTFD(ptr, buffer, "     ");
+				SPRINTFD(ptr, buffer, "%4d     :", matr_cntr);
 				for (T i = 0; i < numElem; i++)
 					SPRINTFD(ptr, buffer, " %3d", permut[i]);
 
 				_printf(f, false, "%s\n", buffer);
 				ptr = buffer;
-				SPRINTFD(ptr, buffer, "%4zd:", ++ctr);
+				SPRINTFD(ptr, buffer, "%5d (%1zd):", perm_cntr, ++ctr);
 				for (T i = 0; i < numElem; i++)
 					SPRINTFD(ptr, buffer, " %3d", orbits()[i]);
 
@@ -494,9 +499,9 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 
 #if 0
 	if (!symmetrical) {
-		FOPEN_F(f, "../auto_star.txt", file_cntr != 1 ? "a" : "w");
+		FOPEN_F(f, "../auto_star.txt", matr_cntr != 1 ? "a" : "w");
 		if (f) {
-			fprintf(f, "%6d: nAuto = %zd\n", file_cntr, nAuto);
+			fprintf(f, "%6d: nAuto = %zd\n", matr_cntr, nAuto);
 			FCLOSE_F(f);
 		}
 	}
@@ -1068,7 +1073,7 @@ void outInfo(FILE* f, const unsigned char* pInfo, int len, const char* pName) {
 }
 
 CheckerCanon(void)::printInfo(FILE* f, const T* perm, int idx) const {
-	fprintf(f, "Returned from %d (%d)\n", idx, cntr);
+	fprintf(f, "Returned from %d (%d)\n", idx, perm_cntr);
 	outInfo(f, perm, 10, "Perm");
 	outInfo(f, m_pGroupPerm, 5, "GrPerm");
 	outInfo(f, m_pPermIndex, 5, "IdxPerm");
@@ -1077,33 +1082,31 @@ CheckerCanon(void)::printInfo(FILE* f, const T* perm, int idx) const {
 }
 
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
-#define USE_ORBTS   1
-	++cntr;
+	++perm_cntr;
 	static int cntrMax = 3840;
 #if USE_ORBTS == 0
 	static int ctrIdx[] = ////, 173, 125, 317, 195
-#if F_CNTR == 9
+#if M_CNTR == 9
 	{ 16, 13, 45, 29, 173, 125, 317, 195 };
-#elif F_CNTR == 11
+#elif M_CNTR == 11
 	{ 16, 13, 45, 28, 76, 49, 337, 97, 1249, 865};
-#elif F_CNTR == 1955
+#elif M_CNTR == 1955
 	{1536, 1370, 2906, 1754};
 #else
 	{3840};
 #endif
 	static int jStart;
-	if (file_cntr == F_CNTR && jStart <= countof(ctrIdx) - 2 && cntr >= ctrIdx[jStart]) {
-		cntrMax -= ctrIdx[jStart] - (cntr = ctrIdx[jStart + 1]);
+	if (matr_cntr == M_CNTR && jStart <= countof(ctrIdx) - 2 && perm_cntr >= ctrIdx[jStart]) {
+		cntrMax -= ctrIdx[jStart] - (perm_cntr = ctrIdx[jStart + 1]);
 		jStart += 2;
 	}
 #endif
-	flg = false;
+
 	FILE* f = NULL;
-	if (false && file_cntr == F_CNTR) {
-		if (cntr == 2471 || cntr == 2128) {
+	flg = false;
+	if (false && matr_cntr == M_CNTR) {
+		if (/*perm_cntr == 2471 ||*/ perm_cntr == 1369 /*2310*/)
 			flg = true;
-			cntr += 0;
-		}
 
 		FOPEN_F(ff, "../ddd.txt", "a");
 		f = ff;

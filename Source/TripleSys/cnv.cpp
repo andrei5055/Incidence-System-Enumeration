@@ -78,15 +78,13 @@ void alldata::cnvInit()
 }
 int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 {
-	bool ret = true;
 	char ttr[27];
-	int npm = nrows * m_numPlayers;
 	char* res = result();
 	char* resSecondRow = res + m_numPlayers;
-	int npmMinus1Row = npm - m_numPlayers;
-	
-	for (int n = 0; n < nrows; n++)
+	const int npmMinus1Row = (nrows - 1) * m_numPlayers;
+	for (int day = 0; day < m_NumDaysToTransform; day++)
 	{
+		const auto n = m_DayIdx[day];
 		char* resn = result(n);
 		for (int i = 0; i < m_numPlayers; i++)
 		{
@@ -132,13 +130,8 @@ int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 
 #if 0
 		//extern bool flg;
-		if (/*flg &&*/ icmp < 0) {
-			printf("Calculated Matrix %.0f can be improved. See below (nKm=%d row=%d)\n", nLoops, m_finalKMindex, n);
-			printTable("Tr source", tr, 1, m_numPlayers);
-			printTable("Tr actual", ttr, 1, m_numPlayers);
-			printTable("Original", res, nrows, m_numPlayers);
-			printTable("Translated", m_Km, nrows, m_numPlayers);
-		}
+		if (/*flg && */icmp < 0)
+			printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 #endif
 		//printf(" d%d", n);
 		return icmp;
@@ -270,6 +263,7 @@ bool alldata::cnvCheckNew()
 	register char i, j, tmp; // Upper Index i; Lower Index j
 	int itr = 0;
 	bool ret = true;
+	initDayIdx(iDay);
 	if (m_nGroups + 1 > sizeof(p))
 		abort();
 	for (i = 0; i < m_nGroups; i++)   // initialize arrays; a[N] can be any type

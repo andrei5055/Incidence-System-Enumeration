@@ -38,6 +38,8 @@ using namespace std;
 #define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
 #define CHECK_WITH_GROUP  0    // Use new group on completely constructed matrices
 #define USE_TRANSLATE_BY_LEO	1
+#define USE_ORBTS		  0
+#define PRINT_MATR_CNTR	  0
 
 #define USE_STATEMENT_19  1
 #define CHECK_PERMUTATIONS	1
@@ -154,7 +156,11 @@ public:
 		int nrows=0, int mStep=1, double* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	int cnvCheckKm1(char* tr, int nrows, bool useEqual=false) const; 
+	int cnvCheckKm1(char* tr, int nrows, bool useEqual=false) const;
+	inline void initDayIdx(int nDays) const     {
+		m_NumDaysToTransform = nDays;
+		while (nDays--) m_DayIdx[nDays] = nDays; 
+	}
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
@@ -218,6 +224,8 @@ private:
 	char* m_allTg;
 	char* m_trmk;
 	char* m_groups;
+	mutable int m_NumDaysToTransform;
+	mutable unsigned char* m_DayIdx;
 
 	const int m_np2;
 	const int m_nGroups;
@@ -242,5 +250,6 @@ void kmFullSort(char* mi, int nr, int nc, int gs);
 void kmFullSort2(char* mo, char* mi, int nr, int nc);
 int factorial(int n);
 void printThreadsStat(double* cntTotal, double* cnt, double dNumMatrices, int nrows, int mStep, int nThreads, clock_t iTime, bool bPrintSetup);
+void printTransformed(int nrows, int ncols, const char* tr, const char* ttr, const char* pImatr, const char* pTmatr, int numRow = 0, const double nLoops = 0, int finalKMindex = 0);
 
 

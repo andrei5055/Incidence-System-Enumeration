@@ -52,6 +52,7 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_groups = new char[m_groupSizeFactorial * m_groupSize];
 	m_pLinks = new char[m_np2];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers, m_groupSize);
+	m_DayIdx = new unsigned char[m_numDays];
 
 #ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
@@ -79,6 +80,7 @@ alldata::~alldata() {
 	delete[] m_Km;
 	delete[] m_trmk;
 	delete[] m_groups;
+	delete[] m_DayIdx;
 	delete m_pCheckLink;
 	delete m_pCheckCanon;
 	FCLOSE_F(m_file);
@@ -321,9 +323,13 @@ ProcessOneDay:
 				if (bPrint)
 				{
 					//report result
-					clock_t cTime = clock();
-					extern int file_cntr;
-					printf("Result %.0f (%3d): matrix build time=%d, time since start=%d\n", nLoops, file_cntr, cTime - mTime, cTime - iTime);
+					const clock_t cTime = clock();
+#if PRINT_MATR_CNTR
+					extern int matr_cntr, perm_cntr;
+					printf("Result %.0f (%3d, %3d): matrix build time=%d, time since start=%d\n", nLoops, matr_cntr, perm_cntr, cTime - mTime, cTime - iTime);
+#else
+					printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+#endif
 					Result.printTable(result(), true, ResultFile);
 				}
 				m_finalKMindex++;
@@ -359,6 +365,15 @@ ProcessOneDay:
 	}
 	delete[] bResults;
 	return true;
+}
+
+void printTransformed(int nrows, int ncols, const char* tr, const char* ttr, const char *pImatr, const char* pTmatr, int numRow, const double nLoops, int finalKMindex)
+{
+	printf("Calculated Matrix %.0f can be improved. See below (nKm=%d row=%d)\n", nLoops, finalKMindex, numRow);
+	printTable("Tr source", tr, 1, ncols);
+	printTable("Tr actual", ttr, 1, ncols);
+	printTable("Original", pImatr, nrows, ncols);
+	printTable("Translated", pTmatr, nrows, ncols);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
