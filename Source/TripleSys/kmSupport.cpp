@@ -143,7 +143,7 @@ void kmFullSort(char* mi, int nr, int nc, int gs)
 	}
 	kmSortRowsByOneValue(mi, nr, nc, 1);
 }
-void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc)
+void kmTranslate(char* mo, const char* mi, char* tr, int nr, int nc)
 {
 	for (int i = 0; i < nr * nc; i++)
 	{

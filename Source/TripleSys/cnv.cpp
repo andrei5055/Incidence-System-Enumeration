@@ -76,17 +76,17 @@ void alldata::cnvInit()
 		}
 	}
 }
-int alldata::cnvCheckKm1(char* tr, int nrows) const
+int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 {
 	int ret = 1;
 	char ttr[27];
-	char* res = result();
-	char* resSecondRow = res + m_numPlayers;
+	const char* res = result();
+	const char* resSecondRow = res + m_numPlayers;
 	const int npmMinus1Row = (nrows - 1) * m_numPlayers;
 	for (int day = 0; day < m_NumDaysToTransform; day++)
 	{
 		const auto n = m_DayIdx[day];
-		char* resn = result(n);
+		const char* resn = result(n);
 		for (int i = 0; i < m_numPlayers; i++)
 		{
 			ttr[resn[i]] = tr[i];
@@ -131,6 +131,13 @@ int alldata::cnvCheckKm1(char* tr, int nrows) const
 			continue;
 
 		if (!icmp) {
+			if (pOrbits) {
+				if (!ret) {
+					;
+				}
+				else
+					memcpy(pOrbits, ttr, m_numPlayers);
+			}
 			ret = 0;
 			if (day) 
 				m_DayIdx[day--] = m_DayIdx[--m_NumDaysToTransform];

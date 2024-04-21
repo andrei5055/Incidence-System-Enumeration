@@ -158,7 +158,7 @@ public:
 		int nrows=0, int mStep=1, double* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	int cnvCheckKm1(char* tr, int nrows) const;
+	int cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits=NULL) const;
 	inline void initDayIdx(int nDays) const     {
 		m_NumDaysToTransform = nDays;
 		while (nDays--) m_DayIdx[nDays] = nDays; 
@@ -247,7 +247,7 @@ void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, int gs, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
-void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
+void kmTranslate(char* mo, const char* mi, char* tr, int nr, int nc);
 void kmFullSort(char* mi, int nr, int nc, int gs);
 void kmFullSort2(char* mo, char* mi, int nr, int nc);
 int factorial(int n);
