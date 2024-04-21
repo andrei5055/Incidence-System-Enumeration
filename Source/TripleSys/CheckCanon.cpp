@@ -132,7 +132,7 @@ CheckerCanon(void)::sortTuples(T *players) const {
 }
 int perm_cntr, matr_cntr;
 bool flg = false;
-#define M_CNTR 1955 //1702
+#define M_CNTR 13 //1955 //1702
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
@@ -1105,6 +1105,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 	FILE* f = NULL;
 	flg = false;
 	if (false && matr_cntr == M_CNTR) {
+		flg = true;
 		if (/*perm_cntr == 2471 ||*/ perm_cntr == 1369 /*2310*/)
 			flg = true;
 

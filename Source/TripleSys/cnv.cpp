@@ -78,6 +78,7 @@ void alldata::cnvInit()
 }
 int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 {
+	int ret = 1;
 	char ttr[27];
 	char* res = result();
 	char* resSecondRow = res + m_numPlayers;
@@ -128,15 +129,22 @@ int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 		if (icmp > 0 || (!icmp && !useEqual))
 			continue;
 
-#if 0
+		if (!icmp) {
+			ret = 0;
+			if (day) 
+				m_DayIdx[day--] = m_DayIdx[--m_NumDaysToTransform];
+
+            continue;
+		}
+#if PRINT_TRANSFORMED
 		//extern bool flg;
 		if (/*flg && */icmp < 0)
 			printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 #endif
 		//printf(" d%d", n);
-		return icmp;
+		return -1;
 	}
-	return 1;
+	return ret;
 }
 bool alldata::cnvCheckKm(char* tr, char* tg)
 {

@@ -326,7 +326,7 @@ ProcessOneDay:
 					const clock_t cTime = clock();
 #if PRINT_MATR_CNTR
 					extern int matr_cntr, perm_cntr;
-					printf("Result %.0f (%3d, %3d): matrix build time=%d, time since start=%d\n", nLoops, matr_cntr, perm_cntr, cTime - mTime, cTime - iTime);
+					printf("Result %.0f (%3d, %3d)\n", nLoops, matr_cntr, perm_cntr);
 #else
 					printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
 #endif

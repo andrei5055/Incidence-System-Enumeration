@@ -152,9 +152,6 @@ private:
 				ttr[resn[i]] = permut[i];
 
 			const auto retVal = orderingMatrix(0, 0, false, false, ttr);
-			extern bool flg;
-			if (flg)
-				printTransformed(m_nDaysToTest, numElem, (const char *)permut, (const char *)ttr, (const char*)studiedMatrix(), (const char*)resultMemory(), n);
 
 			if (retVal > 0)
 				continue;
@@ -174,6 +171,11 @@ private:
 				ccc++;
 			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
 			FCLOSE_F(f);
+#endif
+#if PRINT_TRANSFORMED
+			extern bool flg;
+			if (flg)
+				printTransformed(m_nDaysToTest, numElem, (const char*)permut, (const char*)ttr, (const char*)studiedMatrix(), (const char*)resultMemory(), n);
 #endif
 			return -1;
 		}
