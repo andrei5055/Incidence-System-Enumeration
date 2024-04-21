@@ -76,7 +76,7 @@ void alldata::cnvInit()
 		}
 	}
 }
-int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
+int alldata::cnvCheckKm1(char* tr, int nrows) const
 {
 	int ret = 1;
 	char ttr[27];
@@ -126,7 +126,8 @@ int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 		if ((a % 1000000) == 0)
 			printf("%d %d\n", a, b);
 #endif
-		if (icmp > 0 || (!icmp && !useEqual))
+#if CHECK_WITH_GROUP
+		if (icmp > 0)
 			continue;
 
 		if (!icmp) {
@@ -136,6 +137,10 @@ int alldata::cnvCheckKm1(char* tr, int nrows, bool useEqual) const
 
             continue;
 		}
+#else
+		if (icmp >= 0)
+			continue;
+#endif
 #if PRINT_TRANSFORMED
 		//extern bool flg;
 		if (/*flg && */icmp < 0)
@@ -162,7 +167,7 @@ bool alldata::cnvCheckKm(char* tr, char* tg)
 	printTable("Tr", tr, 1, m_nGroups);
 	printTable("Tg", tg, 1, m_nGroups);
 #endif
-	bool ret = cnvCheckKm1(m_trmk, iDay) > 0;
+	bool ret = cnvCheckKm1(m_trmk, iDay) >= 0;
 #if 0
 	if (!ret)
 	{
@@ -271,7 +276,9 @@ bool alldata::cnvCheckNew()
 	register char i, j, tmp; // Upper Index i; Lower Index j
 	int itr = 0;
 	bool ret = true;
+#if USE_EQUAL
 	initDayIdx(iDay);
+#endif
 	if (m_nGroups + 1 > sizeof(p))
 		abort();
 	for (i = 0; i < m_nGroups; i++)   // initialize arrays; a[N] can be any type

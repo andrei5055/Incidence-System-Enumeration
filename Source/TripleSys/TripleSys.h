@@ -37,8 +37,9 @@ using namespace std;
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
 #define CHECK_WITH_GROUP  1    // Use new group on completely constructed matrices
-#define USE_TRANSLATE_BY_LEO 0	
+#define USE_TRANSLATE_BY_LEO 1
 #define USE_ORBTS		  0
+#define USE_EQUAL		  0
 #define PRINT_MATR_CNTR	  0
 #define PRINT_TRANSFORMED 0
 
@@ -157,7 +158,7 @@ public:
 		int nrows=0, int mStep=1, double* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	int cnvCheckKm1(char* tr, int nrows, bool useEqual=false) const;
+	int cnvCheckKm1(char* tr, int nrows) const;
 	inline void initDayIdx(int nDays) const     {
 		m_NumDaysToTransform = nDays;
 		while (nDays--) m_DayIdx[nDays] = nDays; 

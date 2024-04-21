@@ -53,6 +53,9 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_pLinks = new char[m_np2];
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers, m_groupSize);
 	m_DayIdx = new unsigned char[m_numDays];
+#if !USE_EQUAL && !CHECK_WITH_GROUP
+	initDayIdx(m_numDays);
+#endif
 
 #ifdef CD_TOOLS
 	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);

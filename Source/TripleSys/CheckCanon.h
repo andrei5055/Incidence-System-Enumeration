@@ -142,7 +142,7 @@ private:
 		return retVal;
 #else
 #if USE_TRANSLATE_BY_LEO
-		return m_pAD->cnvCheckKm1((char*)permut, numDays(), true);
+		return m_pAD->cnvCheckKm1((char*)permut, numDays());
 #else
 		int ret = 1;
 		T ttr[20];
