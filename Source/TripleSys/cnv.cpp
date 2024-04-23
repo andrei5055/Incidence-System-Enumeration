@@ -131,6 +131,7 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 			continue;
 
 		if (!icmp) {
+#if 0
 			if (pOrbits) {
 				if (!ret) {
 					;
@@ -138,6 +139,7 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 				else
 					memcpy(pOrbits, ttr, m_numPlayers);
 			}
+#endif
 			ret = 0;
 			if (day) 
 				m_DayIdx[day--] = m_DayIdx[--m_NumDaysToTransform];

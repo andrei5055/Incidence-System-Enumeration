@@ -261,6 +261,7 @@ ProcessOneDay:
 				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
 				if (bPrevResult)
 				{
+#if 0
 					if (m_groupIndex / m_nGroups < iDay - 1)
 					{
 						printf("*** Thread %d: More than one day back (from group %d to %d) request. Task exit.\n", 
@@ -269,6 +270,7 @@ ProcessOneDay:
 						//m_groupIndex = iDay * m_nGroups - 2;
 						//exit(0);
 					}
+#endif
 					/* else */ if (m_groupIndex >= iDay * m_nGroups)
 					{
 						printf("*** Thread %d: After current day 'back' request\n", threadNumber);

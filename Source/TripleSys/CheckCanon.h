@@ -164,13 +164,29 @@ private:
 				continue;
 			}
 
+#if 1
+			static int cntr;
+			T* pDest = resultOut();
+			if (!pDest)
+				pDest = resultMemory();
+
+			const auto* pDays = pDest + lenResult();
+			const auto* pInputMatr = studiedMatrix();
+			T dayMax = *pDays;
+			do {
+				pDest += numElem;
+				pInputMatr += numElem;
+				if (dayMax < *++pDays)
+					dayMax = *pDays;
+
+			} while (!memcmp(pDest, pInputMatr, numElem));
+			
+			setGroupIndex((dayMax+1) * numGroups() - 2);
 #if 0
-			static int cntr, ccc;
 			FOPEN_F(f, "../myCheck.txt", cntr++ ? "a" : "w");
-			if (n)
-				ccc++;
-			fprintf(f, "%4d: n = %d  ccc = %4d\n", cntr, n, ccc);
+			fprintf(f, "%4d: dayMax = %d\n", cntr, dayMax);
 			FCLOSE_F(f);
+#endif
 #endif
 #if PRINT_TRANSFORMED
 			extern bool flg;

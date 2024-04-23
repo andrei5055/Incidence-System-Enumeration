@@ -37,7 +37,7 @@ using namespace std;
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
 #define CHECK_WITH_GROUP  1    // Use new group on completely constructed matrices
-#define USE_TRANSLATE_BY_LEO 1
+#define USE_TRANSLATE_BY_LEO 0
 #define USE_ORBTS		  0
 #define USE_EQUAL		  0
 #define PRINT_MATR_CNTR	  0

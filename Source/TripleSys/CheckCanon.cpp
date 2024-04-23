@@ -182,6 +182,9 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 				ddd += 0;
 		}
 #endif
+		if (!retVal)
+			*pGrpNumb = groupIndex();
+
 		return retVal;
 #else
 		++matr_cntr;
@@ -414,6 +417,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 			m_pAD->initDayIdx(numDays());
 		else
 			memcpy(m_dayIdx, trivialPerm(), (m_nDaysToTest = numDays()) * sizeof(m_dayIdx[0]));
+
 		if (!m_pSubGroup) {
 			m_pSubGroup = new T[m_GroupOrder * groupSize()];
 			const auto len = groupSize() * sizeof(m_pSubGroup[0]);
