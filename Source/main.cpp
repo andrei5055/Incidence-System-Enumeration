@@ -11,7 +11,6 @@
 #include <string>      // for getline
 #include <algorithm>
 #include <iterator>
-#include <functional>   // for ptr_fun
 
 #define SDL_MAIN_HANDLED
 using namespace std;

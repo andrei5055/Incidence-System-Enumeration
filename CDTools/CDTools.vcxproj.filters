@@ -123,6 +123,12 @@
     <ClInclude Include="..\Source\TripleSys\TopGun.h">
       <Filter>Source Files\k-systems</Filter>
     </ClInclude>
+    <ClInclude Include="..\Source\TripleSys\TimerInfo.h">
+      <Filter>Source Files\k-systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\TripleSys\CudaInfo.h">
+      <Filter>Source Files\k-systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\CanonicityChecker.cpp">
@@ -261,6 +267,9 @@
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\ioSupport.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\TimerInfo.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>

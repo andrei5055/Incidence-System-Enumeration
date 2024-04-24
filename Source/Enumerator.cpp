@@ -1382,7 +1382,7 @@ FClass2(CEnumerator, bool)::cmpProcedure(FILE* file[2], bool *pBetterResults)
 		if (pntr[0]) {
 			if (!file[1] || pntr[1]) {
 				if (pBetterResults)
-					*pBetterResults = Class2(CEnumInfo)::compareTime(pntr[0] + len, pntr[1] + len);
+					*pBetterResults = CTimerInfo::compareTime(pntr[0] + len, pntr[1] + len);
 
 				if ((!pBetterResults || *pBetterResults) && getNextLineForComparison(file[0], buf[1], lenBuf, buf[2])) {
 					char* pInfo[] = { pntr[0] + len, buf[0], buf[1] };

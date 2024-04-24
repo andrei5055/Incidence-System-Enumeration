@@ -1,42 +1,12 @@
 #pragma once
 #include <time.h>
 #include "GroupsInfo.h"
+#include "TimerInfo.h"
 
 #define BEG_OUT_BLOCK			"<<<< "		// Marks for beginning and end of the output info, which
 #define END_OUT_BLOCK			">>>> "		// will be skipped during the comparison of output results
 #define ONE_LINE_BLOCK			"#### "		// To skip just one line
 #define OF_THEM		            "of them"   // Marker of supporting information to skip
-
-class CTimerInfo
-{
-public:
-	CC inline CTimerInfo()									{}
-	CC inline ~CTimerInfo()									{}
-	CK void startClock();
-	CK void setRunTime();
-	inline auto runTime() const								{ return m_fRunTime; }
-	inline auto procTime(int idx) const						{ return m_ProcTime[idx]; }
-protected:
-	inline clock_t prevClock() const						{ return m_prevClock; }
-	CK inline void setPrevClock(const clock_t &val)			{ m_prevClock = val; }
-	inline clock_t prevClockReport() const					{ return m_prevClockReport; }
-	CK inline void setPrevClockReport(const clock_t &val)	{ m_prevClockReport = val; }
-	inline size_t reportInt() const							{ return m_reportInt; }
-	CK inline void setReportInt(size_t val)					{ m_reportInt = val; }
-	inline ulonglong prevCounter() const					{ return m_prevCounter; }
-	CK inline void setPrevCounter(ulonglong value)			{ m_prevCounter = value; }
-	inline clock_t startTime() const						{ return m_startClock; }
-private:
-	CK void get_cpu_usage(double& user, double& system);
-
-	clock_t m_startClock = 0;
-	clock_t m_prevClock = 0;
-	clock_t m_prevClockReport = 0;
-	size_t m_reportInt = 0;
-	ulonglong m_prevCounter = 0;
-	double m_fRunTime = 0.0f;
-	double m_ProcTime[4] = { 0,0,0,0 };
-};
 
 enum class t_reportCriteria {
 	t_reportNow,
@@ -110,10 +80,8 @@ public:
 #endif
 	void setReportFileName(const char *pntr);
 	CK void outEnumInfo(FILE **pOutFile, bool removeReportFile = true, const CGroupsInfo *pGroupInfo = NULL, const char* pComment = NULL);
-	size_t convertTime(double time, char *buffer, size_t lenBuf, bool alignment = true) const;
 	CK inline void setResType(t_resType resType)			{ m_nResType = resType; }
 	CC inline void resetEnumInfo()							{ init(); resetGroupsInfo(); }
-	static bool compareTime(char *time1, char *time2);
 	void outEnumInformation(FILE** pOutFile, const uint enumInfo, bool printMTlevel = true, const char* pComment = NULL) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 	void updateCounters(CEnumInfo* p);
@@ -121,7 +89,6 @@ protected:
 	inline t_resType getResType() const						{ return m_nResType; }
 	size_t cleanEndOfLine(char* pBuffer) const;
 private:
-	static double stringToTime(char *pTime);
 	CC inline void incrConstrCanonical(ulonglong val = 1)	{ addMatrOfType(val, t_design_type::t_canonical); }
 	void outAdditionalInfo(ulonglong nMatr, FILE* outFile, char* buff, size_t lenBuf) const;
 	CC inline void resetCounters()							{ m_prevReportCounter[0] = m_prevReportCounter[1] = m_nCounter = 0; }
