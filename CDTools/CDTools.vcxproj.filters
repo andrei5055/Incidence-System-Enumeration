@@ -120,6 +120,9 @@
     <ClInclude Include="GroupOrder.h">
       <Filter>Source Files\k-systems</Filter>
     </ClInclude>
+    <ClInclude Include="..\Source\TripleSys\TopGun.h">
+      <Filter>Source Files\k-systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\CanonicityChecker.cpp">
@@ -246,6 +249,18 @@
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\TripleSys\kmSupport.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\allData.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\TopGun.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\TGsupport.cpp">
+      <Filter>Source Files\k-systems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\TripleSys\ioSupport.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
   </ItemGroup>

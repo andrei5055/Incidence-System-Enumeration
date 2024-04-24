@@ -43,7 +43,7 @@ int alldata::getNextPlayer()
 			}
 			else
 			{
-				if (setLinksForOnePlayer(tmpPlayers, iPlayer, (char)iPlayerNumber))
+				if (setLinksForOnePlayer(iDay, m_numPlayers, links(), tmpPlayers, iPlayer, (char)iPlayerNumber))
 				{
 					break;
 				}

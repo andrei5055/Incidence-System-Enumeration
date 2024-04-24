@@ -3,10 +3,10 @@
 
 int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 {
-	int m0 = iPlayer % GroupSize;
+	int m0 = iPlayer % m_groupSize;
 	if (m0 == 0)
 		abort();
-	int m1 = m0 == 0 ? GroupSize : 1;
+	int m1 = m0 == 0 ? m_groupSize : 1;
 
 	char i0 = iPlayer > 0 ? tmpPlayers[iPlayer - 1] : 0;
 	char i1 = iPlayer > 1 ? tmpPlayers[iPlayer - 2] : 0;
@@ -47,7 +47,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				selPlayers[iPlayerNumber] = iPlayer;
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				getUnselected(m_h, nUnselected);
-				bHdone = bH = m_pCheckLink->checkLinksH(links(), NULL, NULL, 0, m_h, nUnselected, nUnselected, unset, unset, m_ho);
+				bHdone = bH = m_pCheckLink->checkLinksH(links(), m_h, nUnselected, nUnselected, unset, unset, m_ho);
 			}
 		}
 #endif
@@ -68,7 +68,7 @@ int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			for (int i = iPlayer + 1, j = 0; i < m_numPlayers; i++, j++)
 			{
 				char v = m_ho[j];
-				if (!setLinksForOnePlayer(tmpPlayers, i, v))
+				if (!setLinksForOnePlayer(iDay, m_numPlayers, links(), tmpPlayers, i, v))
 					abort();
 				indexPlayer[i] = v;
 				if ((i % 3) == 2)

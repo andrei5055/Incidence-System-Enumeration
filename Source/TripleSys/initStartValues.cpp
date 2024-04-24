@@ -1,26 +1,25 @@
 #include <iostream>
 #include "TripleSys.h"
-void alldata::linksFromMatrix(char* iv, int id)
+void linksFromMatrix(char* lnk, char* iv, int nr, int np)
 {
 	char* iv_id = iv;
-	auto* res = result(0);
-	for (int i = 0; i < id; i++, iv_id += m_numPlayers, res += m_numPlayers)
+	memset(lnk, unset, np * np);
+	for (int i = 0; i < nr; i++, iv_id += np)
 	{
-		iDay = i;
-		for (int j = 0; j < m_numPlayers; j++)
+		for (int j = 0; j < np; j++)
 		{
 			const auto ivId = iv_id[j];
 			if (ivId == unset)
 			{
 				printf("Init: value for day %d position %d not defined\n", i, j);
-				printTable("Initial result", result(0), m_numDays, m_numPlayers);
+				printTable("Initial result", iv, nr, np);
 				exit(0);
 			}
 
-			if (!setLinksForOnePlayer(res, j, ivId))
+			if (!setLinksForOnePlayer(i, np, lnk, iv_id, j, ivId))
 			{
 				printf("Init: value of %d (for day %d position %d) already defined in links table\n", ivId, i, j);
-				printTable("Initial result", result(0), m_numDays, m_numPlayers);
+				printTable("Initial result", iv, nr, np);
 				exit(0);
 			}
 		}
@@ -29,7 +28,7 @@ void alldata::linksFromMatrix(char* iv, int id)
 
 bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 {
-	char* iv = m_co; // We can use existing array m_co
+	char* iv = result();
 	int v;
 	int ind = 0, lastInd = 0;
 	int id = iDay = 0;
@@ -77,7 +76,7 @@ doneInit:
 		printTable("Initial result", result(0), m_numDays, m_numPlayers);
 		exit(0);
 	}
-	linksFromMatrix(iv, id);
+	linksFromMatrix(links(), result(), id, m_numPlayers);
 	iDay = id;
 	maxDays = iDay;
 	memcpy(maxResult, result(0), m_nLenResults);

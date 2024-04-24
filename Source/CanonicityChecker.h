@@ -84,6 +84,7 @@ public:
 	inline void setPreordered(bool flag) {
 		m_pCheckerKSystemCanon->setPreordered(flag);
 	}
+	inline void setAllData(const alldata* ptr) { m_pCheckerKSystemCanon->setAllData(ptr); }
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}

@@ -164,7 +164,7 @@ private:
 				continue;
 			}
 
-#if 1
+#if NEW_CODE
 			static int cntr;
 			T* pDest = resultOut();
 			if (!pDest)

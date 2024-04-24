@@ -9,10 +9,10 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 		for (int i = 0; i < nc; i++, c++) {
 			if (np && !(i % np))
 				SPRINTFD(pBuf, buffer, " ");
-
+			/* need fix
 			if (*c == -1 && !f)
 				printfGreen(" %3d", *c);
-			else
+			else */
 				SPRINTFD(pBuf, buffer, " %3d", *c);
 		}
 
@@ -39,7 +39,7 @@ public:
 	Table(char const *name, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, bool outCntr = false) :
 		m_name(name), m_nl(nl), m_nc(nc), m_ns(ns), m_np(np), 
 		m_makeString(makeString), m_bOutCntr(outCntr) {}
-	void printTable(const T *c, bool outCntr = false, const char *fileName = NULL);
+	void printTable(const T *c, bool outCntr = false, const char *fileName = NULL, bool outToScreen = true, int nl = 0);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
 private:
@@ -59,7 +59,7 @@ static size_t nMatrMax = 0;
 unsigned char *pMatrixStorage = NULL;
 
 template<typename T>
-void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
+void Table<T>::printTable(const T *c, bool outCntr, const char *fileName, bool outToScreen, int nl)
 {
 	char buffer[512], *pBuf = buffer;
 	FOPEN_F(f, fileName, m_cntr ? "a" : "w");
@@ -69,13 +69,13 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName)
 
 	if (m_name && strlen(m_name) != 0) {
 		if (outCntr && m_bOutCntr)
-			SPRINTFD(pBuf, buffer, "%s %zd:\n", m_name, m_cntr);
+			SPRINTFD(pBuf, buffer, "%zd %s\n", m_cntr, m_name);
 		else
 			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}
 
-	_printf(f, true, buffer);
-	outMatrix(c, m_nl, m_nc, m_np, m_ns, f, m_makeString, true);
+	_printf(f, outToScreen, buffer);
+	outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen);
 #if OUTPUT_VECTOR_STAT
 	// Output of a vector with the i-th coordinate equal to the number  
 	// of appearances of the i-th player first player in the group.

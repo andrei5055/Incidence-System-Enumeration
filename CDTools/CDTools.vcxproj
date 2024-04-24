@@ -108,6 +108,7 @@
       <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source\TripleSys;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <BrowseInformation>true</BrowseInformation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +153,7 @@
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalHeaderUnitDependencies>
       </AdditionalHeaderUnitDependencies>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -192,6 +194,7 @@
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
     <ClInclude Include="..\Source\TripleSys\CheckCanon.h" />
+    <ClInclude Include="..\Source\TripleSys\TopGun.h" />
     <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
@@ -220,6 +223,7 @@
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
+    <ClCompile Include="..\Source\TripleSys\allData.cpp" />
     <ClCompile Include="..\Source\TripleSys\CheckCanon.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinks.cpp" />
     <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp" />
@@ -233,11 +237,14 @@
     <ClCompile Include="..\Source\TripleSys\getUnselected.cpp" />
     <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp" />
     <ClCompile Include="..\Source\TripleSys\initStartValues.cpp" />
+    <ClCompile Include="..\Source\TripleSys\ioSupport.cpp" />
     <ClCompile Include="..\Source\TripleSys\kmSupport.cpp" />
     <ClCompile Include="..\Source\TripleSys\printTable.cpp" />
     <ClCompile Include="..\Source\TripleSys\processOneDay.cpp" />
     <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp" />
     <ClCompile Include="..\Source\TripleSys\Support.cpp" />
+    <ClCompile Include="..\Source\TripleSys\TGsupport.cpp" />
+    <ClCompile Include="..\Source\TripleSys\TopGun.cpp" />
     <ClCompile Include="..\Source\TripleSys\TripleSys.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />

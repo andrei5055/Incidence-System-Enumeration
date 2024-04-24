@@ -1,7 +1,5 @@
-
 #include <iostream>
 #include "TripleSys.h"
-
 
 bool alldata::initCurrentDay()
 {
@@ -23,12 +21,13 @@ bool alldata::initCurrentDay()
 		}
 		else
 		{
-			char* s = iDay == 1 ? selPlayers : NULL;
-			if (!m_pCheckLink->checkLinksH(links(), NULL, s, 0, m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
+			if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
 			{
 				bPrevResult = true;
 				return false;
 			}
+			//printf("day=%d ", iDay);
+			//printTable("m_ho", m_ho, 1, m_numPlayers);
 		}
 		memcpy(tmpPlayers, m_ho, np);
 		memcpy(indexPlayer, m_ho, np);
@@ -37,7 +36,7 @@ bool alldata::initCurrentDay()
 		for (int j = 0; j < m_numPlayers; j++)
 		{
 			char k = tmpPlayers[j];
-			if (!setLinksForOnePlayer(tmpPlayers, j, k))
+			if (!setLinksForOnePlayer(iDay, m_numPlayers, links(), tmpPlayers, j, k))
 			{
 				if (iDay == 0)
 				{
@@ -52,15 +51,14 @@ bool alldata::initCurrentDay()
 #endif // UseSS
 	return true;
 }
-
-
-bool alldata::setLinksForOnePlayer(char* p, int ip, char v) const
+// setLinksForOnePlayer need to be available outside of alldata
+bool setLinksForOnePlayer(int id, int np, char* lnk, char* p, int ip, char v)
 {
 	const int i = ip % GroupSize;
 	if (i != 0)
 	{
-		char bset = iDay;
-		auto* linkPtr = links(v);
+		char bset = id;
+		auto* linkPtr = lnk + v * np;
 		for (int j = 1; j <= i; j++)
 		{
 			char i2 = p[ip - j];
@@ -70,7 +68,7 @@ bool alldata::setLinksForOnePlayer(char* p, int ip, char v) const
 		for (int j = 1; j <= i; j++)
 		{
 			const char i2 = p[ip - j];
-			linkPtr[i2] = *(links(i2) + v) = bset;
+			linkPtr[i2] = *(lnk + i2 * np + v) = bset;
 		}
 	}
 	p[ip] = v;

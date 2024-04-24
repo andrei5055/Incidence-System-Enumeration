@@ -50,8 +50,10 @@ bool cnvInit1(char* t, int nt, int nv, int mv, int gs, bool bCheck)
 }
 void alldata::cnvInit()
 {
-	//cnvInit1(m_allTr, m_nallTr, m_nGroups, m_nGroups, m_groupSize, true);
-	//cnvInit1(m_allTg, m_nallTg, m_nGroups, m_groupSizeFactorial, 1, false);
+#if USE_cnvCheckNew == 0
+	cnvInit1(m_allTr, m_nallTr, m_nGroups, m_nGroups, m_groupSize, true);
+	cnvInit1(m_allTg, m_nallTg, m_nGroups, m_groupSizeFactorial, 1, false);
+#endif
 	for (int i = 0; i < m_groupSize; i++)
 	{
 		m_groups[i] = i;
@@ -80,52 +82,57 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 {
 	int ret = 1;
 	char ttr[27];
-	const char* res = result();
+	char* res = result();
 	const char* resSecondRow = res + m_numPlayers;
 	const int npmMinus1Row = (nrows - 1) * m_numPlayers;
 	for (int day = 0; day < m_NumDaysToTransform; day++)
 	{
 		const auto n = m_DayIdx[day];
 		const char* resn = result(n);
+		int icmp;
 		for (int i = 0; i < m_numPlayers; i++)
 		{
 			ttr[resn[i]] = tr[i];
 		}
-#if 0
-		if (n == 1)
+		if (m_groupSize == 2)
 		{
-			printTable("Tr source", tr, 1, m_numPlayers);
-			printTable("Tr actual", ttr, 1, m_numPlayers);
-			printTable("Original", res, nrows, m_numPlayers);
-		}
-#endif
-		if (m_groupSize == 2 && nrows == m_numDays)
-		{
-			kmTranslate(m_Km2, res, ttr, nrows, m_numPlayers);
-			kmFullSort2(m_Km, m_Km2, nrows, m_numPlayers);
-#if 0
-			if (n == 1)
+			icmp = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, m_createImprovedResult, m_Km2ndRowInd, n);
+#if 0 // test of kmTranslateAndSort2
+			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
+			kmFullSort(m_Ktmp, m_Km, nrows, m_numPlayers, m_groupSize);
+			int icmp2  = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
+			if (icmp != icmp2)
 			{
-				printf("n=%d ", n);
-				printTable("Tr actual", ttr, 1, m_numPlayers);
-				printTable("Translated", m_Km, nrows, m_numPlayers);
-		}
+				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
+				exit(1);
+			}
+#endif 
+#if 0
+			//if (icmp < 0 && n == 1 && ttr[0] != 0)
+			{
+				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
+			}
 #endif
 		}
 		else
 		{
 			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
-			kmFullSort(m_Km, nrows, m_numPlayers, m_groupSize);
-		}
-		const int icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
 #if 0
-		static int a, b;
-		a++;
-		if (icmp == 0)
-			b++;
-		if ((a % 1000000) == 0)
-			printf("%d %d\n", a, b);
+			if (n == 1 && ttr[0] != 0)
+				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
 #endif
+			kmFullSort(m_Ktmp, m_Km, nrows, m_numPlayers, m_groupSize);
+
+			icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
+#if 0
+			static int a, b;
+			a++;
+			if (icmp == 0)
+				b++;
+			if ((a % 1000000) == 0)
+				printf("%d %d\n", a, b);
+#endif
+		}
 #if CHECK_WITH_GROUP
 		if (icmp > 0)
 			continue;
@@ -144,7 +151,7 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 			if (day) 
 				m_DayIdx[day--] = m_DayIdx[--m_NumDaysToTransform];
 
-            continue;
+			continue;
 		}
 #else
 		if (icmp >= 0)
@@ -214,15 +221,16 @@ bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 	//printf(" BestTg=%d\n", m_bestTg);
 	return ret;
 }
-bool alldata::cnvCheckTgNew(char* tr, int gsf)
+bool alldata::cnvCheckTgNew(char* tr, int gsf, bool bSkipFirst)
 {
 	char tg[16];
 	char* ttg = tg;
 	bool ret = true;
-	register char ng = m_nGroups;
-	register char gs = gsf;
-	register int i, cnt = 0;
+	char ng = m_nGroups;
+	char gs = gsf;
+	int i, cnt = 0;
 	memset(tg, 0, ng);
+	tg[ng - 1] = bSkipFirst ? 1 : 0;
 	while(1)
 	{
 		if (!cnvCheckKm(tr, tg))
@@ -282,7 +290,7 @@ bool alldata::cnvCheckNew()
 {
 	// Head Permutations Using a Linear Array Without Recursion by Phillip Paul Fuchs
 	char a[16], p[16];
-	register char i, j, tmp; // Upper Index i; Lower Index j
+	char i, j, tmp; // Upper Index i; Lower Index j
 	int itr = 0;
 	bool ret = true;
 #if USE_EQUAL
@@ -295,7 +303,7 @@ bool alldata::cnvCheckNew()
 		a[i] = i * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		p[i] = i;
 	}
-	if (!cnvCheckTgNew(a, m_groupSizeFactorial))
+	if (!cnvCheckTgNew(a, m_groupSizeFactorial, true))
 	{
 		//printf(" t%d ", itr);
 		return false;
@@ -310,7 +318,7 @@ bool alldata::cnvCheckNew()
 		tmp = a[j];         // swap(a[j], a[i])
 		a[j] = a[i];
 		a[i] = tmp;
-		if (!cnvCheckTgNew(a, m_groupSizeFactorial))
+		if (!cnvCheckTgNew(a, m_groupSizeFactorial, false))
 		{
 			//printf(" t%d ", itr);
 			ret = false;

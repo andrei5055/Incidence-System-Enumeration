@@ -8,97 +8,17 @@
    #include "CheckCanon.h"
 #endif
 
-Table<char>* pRes = NULL;
-
-alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useCheckLinksH) :
-	SizeParam((numPlayers - 1) / (groupSize - 1), numPlayers, groupSize),
-	m_np2(numPlayers * numPlayers),
-	m_nGroups(numPlayers / groupSize),
-	m_bCheckLinkV(groupSize == 3 && useCheckLinksV),
-	m_bCheckLinkH(groupSize == 3 && useCheckLinksH) {
-	m_nLenResults = m_numDays * numPlayers;
-	maxResult = new char[m_nLenResults];
-	m_pResults = new char[m_nLenResults];
-	selPlayers = new char[5 * m_numPlayers];
-	tmpPlayers = selPlayers + m_numPlayers;
-	indexPlayer = tmpPlayers + m_numPlayers;
-	m_h = indexPlayer + m_numPlayers;
-	m_ho = m_h + m_numPlayers;
-	ImprovedResultFile[0] = '\0';
-	ResultFile[0] = '\0';
-	m_groupSizeFactorial = factorial(m_groupSize);
-	int n = 1, m = m_groupSizeFactorial;
-	for (int j = 2; j <= m_nGroups;j++)
-	{
-		n *= j; m *= m_groupSizeFactorial;
-	}
-	n = m = 50;
-	m_nallTr = n;
-	m_nallTg = m;
-	m_finalKMindex = 0;
-	m_allTr = new char[n * m_nGroups];
-	m_allTg = new char[m * m_nGroups];
-	m_bestTr = 0;
-	m_bestTg = 0;
-	m = n = 2;
-	m_TrTest = new int[n];
-	memset(m_TrTest, 0, n * sizeof(m_TrTest[0]));
-	m_TgTest = new int[m];
-	memset(m_TgTest, 0, m * sizeof(m_TgTest[0]));
-	m_Km = new char[m_numPlayers * m_numDays * 2];
-	m_KmSecondRow = m_Km + m_numPlayers;
-	m_Km2 = m_Km + m_numPlayers * m_numDays;
-	m_trmk = new char[m_numPlayers];
-	m_groups = new char[m_groupSizeFactorial * m_groupSize];
-	m_pLinks = new char[m_np2];
-	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers, m_groupSize);
-	m_DayIdx = new unsigned char[m_numDays];
-#if !USE_EQUAL && !CHECK_WITH_GROUP
-	initDayIdx(m_numDays);
-#endif
-
-#ifdef CD_TOOLS
-	m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
+#if 0
+#ifdef _MSC_VER
+#include <intrin.h> /* for rdtscp and clflush */
+#pragma optimize("gt",on)
 #else
-	//m_pCheckCanon = new CCheckerCanon<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize);
-	m_pCheckCanon = new CCheckerCanon<unsigned char>(m_numDays, numPlayers, groupSize);
+#include <x86intrin.h> /* for rdtscp and clflush */
 #endif
+#endif
+//#include <windows.h>
 
-	Init();
-	if (!strchr(ImprovedResultFile, '_')) {
-		FOPEN_F(f, ImprovedResultFile, "w");
-		m_file = f;
-	}
-}
-
-alldata::~alldata() {
-	delete[] maxResult;
-	delete[] m_pResults;
-	delete[] selPlayers;
-	delete[] m_pLinks;
-	delete[] m_allTr;
-	delete[] m_allTg;
-	delete[] m_TrTest;
-	delete[] m_TgTest;
-	delete[] m_Km;
-	delete[] m_trmk;
-	delete[] m_groups;
-	delete[] m_DayIdx;
-	delete m_pCheckLink;
-	delete m_pCheckCanon;
-	FCLOSE_F(m_file);
-}
-
-void alldata::Init() {
-	memset(links(), unset, m_numPlayers * m_numPlayers);
-	memset(result(), 0, m_nLenResults);
-	maxDays = -1;
-	nLoops = 0;
-	noMoreResults = false;
-	iDay = 0;
-	bPrevResult = false; // can be false, or true to go to prev day
-	cnvInit();
-}
+Table<char>* pRes = NULL;
 
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
 	if (f)
@@ -145,8 +65,8 @@ void alldata::outputError() const {
 	FCLOSE_W(f, m_file);
 }
 
-bool alldata::Run(int threadNumber, int iStartStopMode, int improveResult, 
-	char* mStart0, char* mStart, char* mStop, int nrows, int mStep, double* pcnt, bool bPrint) {
+bool alldata::Run(int threadNumber, int iCalcMode, 
+	char* mStart0, char* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, bool bPrint) {
 	// Input parameter:
 	//      improveResult: 
 	//           0 (default) - do not try to improve given "result"; 
@@ -154,59 +74,107 @@ bool alldata::Run(int threadNumber, int iStartStopMode, int improveResult,
 	//               and days that improve given "results";
 	//          >1 - try to improve the “results” as much as possible.
 	clock_t rTime, mTime, iTime = clock();
-	double dNumMatricesMax = 0;
-	int nBytesInStartMatrix = nrows * m_numPlayers;
-	double startStopMatrixCount = 0;
+	int nMatricesMax = 0;
+	int nBytesInStartMatrix = nrowsStart * m_numPlayers;
+	int startMatrixCount = 0;
 	unsigned char* bResults = NULL;
 	const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
-	if (iStartStopMode == eCalcStartStop)
-		dNumMatricesMax = *pcnt;
+	int minRows = nrowsStart;
+	int numDaysAdj = nrowsOut;
 	rTime = mTime = iTime;
-	if (improveResult)
-		bResults = new unsigned char[(improveResult > 1 ? 2 : 1) * lenResult];
+
+	//HANDLE hwnd;
+	//hwnd = GetCurrentProcess(); // current process handle
+	//FILETIME time1, time2, dum1, dum2, dum3;
+	//LARGE_INTEGER time1, time2, dum1, dum2, dum3;
+
+	if (iCalcMode == eCalcStart)
+	{
+		minRows = 0;
+		numDaysAdj = nrowsOut;
+		nMatricesMax = (int)(*pcnt);
+	}
+	else if (iCalcMode == eCalcResult)
+	{
+		minRows = nrowsStart;
+		numDaysAdj = nrowsOut;
+	}
+	if (m_improveResult)
+		bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
+
 	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
-	if (strlen(ImprovedResultFilePrefix) > 0)
-		sprintf_s(ImprovedResultFile, "%s%04d.txt", ImprovedResultFilePrefix, threadNumber);
-	if (strlen(ResultFilePrefix) > 0)
-		sprintf_s(ResultFile, "%s%04d.txt", ResultFilePrefix, threadNumber);
+
+	createFolderAndFileName(ImprovedResultFile, sizeof(ImprovedResultFile), ImprovedResultFolder, ImprovedResultNameFormat,
+		m_numPlayers, numDaysAdj, m_groupSize, threadNumber);
+	createFolderAndFileName(ResultFile, sizeof(ResultFile), ResultFolder, ResultNameFormat,
+		m_numPlayers, numDaysAdj, m_groupSize, threadNumber);
 
 	pRes = &Result;
 	if (mStart0 != NULL)
 	{
-		linksFromMatrix(mStart0, nrows);
-		iDay = nrows;
+		iDay = nrowsStart;
+		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
+		linksFromMatrix(links(), mStart0, nrowsStart, m_numPlayers);
 	}
-	if (iDay == m_numDays)
+	else if (iDay > 0) //== m_numDays && threadNumber == 0)
 	{
+		//uint64_t time1, time2;
+		unsigned int junk = 0;
 		char* bRes1 = NULL;
 		const auto bResults_1 = new unsigned char[2 * lenResult];
-		m_pCheckCanon->setPreordered(false);
-		kmFullSort(result(), iDay, m_numPlayers, m_groupSize);
+		kmFullSort(m_Ktmp, result(), iDay, m_numPlayers, m_groupSize);
 		bRes1 = m_Km;
-#if 0   // Change to 0 to use "improveMatrix"
-		while(!cnvCheckNew()) // cnvCheck (if 2 playes in group) works only with full matrix
-#else
-        if (improveMatrix(2, (unsigned char *)bResults_1, lenResult, (unsigned char **)& bRes1))
-#endif
+		//time1 = __rdtscp(&junk);
+
+		//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time1);
+		//QueryPerformanceCounter(&time1);
+		//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time1);
+
+		clock_t tTime = clock();
+		int improveResult = m_improveResult;
+		int createImprovedResult = m_createImprovedResult;
+		m_createImprovedResult = 2;
+		m_improveResult = 2;
+		int nTests = 100;
+		for (int i = 0; i < nTests; i++)
 		{
-			printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, m_groupSize, true);
-			memcpy(result(0), bRes1, m_nLenResults);
-			int errLine = 0, errGroup = 0, dubLine = 0;
-			if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
+#if 0   // Change to 0 to use "improveMatrix"
+			if (!cnvCheckNew())
+#else
+			bRes1 = 0;
+			if (improveMatrix(m_improveResult, (unsigned char*)bResults_1, lenResult, (unsigned char**)&bRes1) && bRes1 != 0)
+#endif
 			{
-				printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
-				abort();
+				printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, m_groupSize, true);
+				memcpy(result(0), bRes1, m_nLenResults);
+				int errLine = 0, errGroup = 0, dubLine = 0;
+				if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
+				{
+					printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
+					abort();
+				}
+				printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers);
 			}
-			//printTableColor("Links improved", links(0), numPlayers(), numPlayers());
+			else
+			{
+				m_createImprovedResult = createImprovedResult;
+				m_improveResult = improveResult;
+			}
 		}
+		m_createImprovedResult = createImprovedResult;
+		m_improveResult = improveResult;
+		//time2 = __rdtscp(&junk);
+		//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time2);
+		//QueryPerformanceCounter(&time2);
+		//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time2);
+		printf("+++ %.1f ms needed per one improvement check\n", (double(clock() - tTime)) / nTests);
+		//printf(" %.1f ms (%.1f cpu) needed per one improvement check\n", (double(clock() - tTime)) / nTests);
+		//	(time2.QuadPart - time1.QuadPart) / nTests / 1000.0);
+		//	(double(time2.dwLowDateTime - time1.dwLowDateTime)) / nTests / 1000.0);
 		delete[] bResults_1;
-		m_pCheckCanon->setPreordered(true);
 	}
-	const auto numDaysAdj = iStartStopMode == eCalcResult ? m_numDays : nrows;
 	while (nLoops < LoopsMax)
 	{
-		if (threadNumber == 2)
-			nLoops = nLoops;
 		clock_t dTime = clock();
 		mTime = clock();
 		while (iDay < numDaysAdj || bPrevResult)
@@ -224,6 +192,11 @@ bool alldata::Run(int threadNumber, int iStartStopMode, int improveResult,
 			else if (!initCurrentDay())
 				continue;
 ProcessOneDay:
+			if (iDay < minRows && iCalcMode == eCalcResult)
+			{
+				noMoreResults = true;
+				break;
+			}
 			if (!processOneDay())
 			{
 				bPrevResult = true;
@@ -236,10 +209,10 @@ ProcessOneDay:
 				clock_t cTime = clock();
 				if (maxDays < iDay || cTime - rTime > ReportInterval)
 				{
-					if (1)//nrows == 0)
+					if (1)//nrowsStart == 0)
 					{
 						//m_pCheckLink->reportCheckLinksData();
-						printf("Thread %d: Current result for matrix %.0f: rows=%d, build time=%d, time since start=%d\n",
+						printf("Thread %d: Current result for matrix %zd: rows=%d, build time=%d, time since start=%d\n",
 							threadNumber, nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
 						printTable("Current result", result(), iDay + 1, m_numPlayers, 0, m_groupSize, true);
 					}
@@ -252,26 +225,45 @@ ProcessOneDay:
 #if UseSS != 2
 			if (iDay > 1)
 			{
-				if (iStartStopMode == eCalcResult && iDay == nrows && memcmp(result(0), mStop, nBytesInStartMatrix) > 0)
+#if 1 // set to 0 to disable improvement
+				bPrevResult = improveMatrix(m_improveResult, bResults, lenResult);
+#if 1
+				if (!bPrevResult && (
+					(!CHECK_WITH_GROUP && iDay == m_numDays)
+					|| (iCalcMode == eCalcStart && iDay <= nrowsStart)
+					|| (iDay == numDaysAdj && numDaysAdj != m_numDays)
+				//	|| (iDay < m_numDays)
+					))
 				{
-					noMoreResults = true;
-					break;
+#if USE_cnvCheckNew
+					bPrevResult = !cnvCheckNew();
+#else
+					bPrevResult = !cnvCheck();
+#endif
+					/**
+					if (CHECK_WITH_GROUP && bPrevResult && iDay == m_numDays)
+					{
+						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
+						printf("*** improvement!!!***\n");
+						exit(0);
+					}**/
+					if (bPrevResult)
+					    m_groupIndex = iDay * m_nGroups - 2;
 				}
-#if 1 // set to 0 to disable improvement 
-				bPrevResult = improveMatrix(improveResult, bResults, lenResult);
+#endif
 				if (bPrevResult)
 				{
 #if 0
-					if (m_groupIndex / m_nGroups < iDay - 1)
+					if (m_groupIndex < (iDay - 1) * m_nGroups - 1)
 					{
-						printf("*** Thread %d: More than one day back (from group %d to %d) request. Task exit.\n", 
+						printf("*** Thread %d: More than one day back (from group %d to %d) request.\n", 
 							threadNumber, iDay * m_nGroups, m_groupIndex);
 						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
 						//m_groupIndex = iDay * m_nGroups - 2;
 						//exit(0);
 					}
 #endif
-					/* else */ if (m_groupIndex >= iDay * m_nGroups)
+					if (m_groupIndex >= iDay * m_nGroups)
 					{
 						printf("*** Thread %d: After current day 'back' request\n", threadNumber);
 						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
@@ -282,6 +274,16 @@ ProcessOneDay:
 						if (iDay == m_numDays && m_groupIndex > (iDay - 1) * m_nGroups - 2)
 							m_groupIndex = (iDay - 1) * m_nGroups - 2;
 						iDay--;
+#if NEW_CODE && !USE_TRANSLATE_BY_LEO
+						while (iDay > m_groupIndex / m_nGroups)
+						{
+							while (iPlayer >= 0)
+							{
+								getPrevPlayer();
+							}
+							initPrevDay();
+						}
+#endif
 						bPrevResult = false;
 						while(iDay * m_numPlayers + iPlayer >= (m_groupIndex + 1) * m_groupSize)
 						{
@@ -303,40 +305,27 @@ ProcessOneDay:
 		}
 		if (iDay < numDaysAdj)
 			abort();
-		if (iStartStopMode == eCalcStartStop)
+		if (iCalcMode == eCalcStart)
 		{
-			if (startStopMatrixCount >= dNumMatricesMax)
+			memcpy(mStart, result(), nBytesInStartMatrix);
+			startMatrixCount++;
+			mStart += nBytesInStartMatrix;
+			if (startMatrixCount >= nMatricesMax)
 				break;
-			memcpy(mStop, result(), nBytesInStartMatrix);
-			if (startStopMatrixCount == 0)
-				memcpy(mStart, result(), nBytesInStartMatrix);
-			startStopMatrixCount++;
-			if (startStopMatrixCount == mStep)
-			{
-				dNumMatricesMax -= mStep;
-				startStopMatrixCount = 0;
-				mStart += nBytesInStartMatrix;
-				mStop += nBytesInStartMatrix;
-			}
 		}
 		nLoops++;
-		if (iStartStopMode == eCalcResult)
+		if (iCalcMode == eCalcResult)
 		{
 			//printf("*** cnvCheck starts\n");
-			if (CHECK_WITH_GROUP || cnvCheckNew())
+			//if (CHECK_WITH_GROUP || cnvCheckNew())
 			{
 				if (bPrint)
 				{
 					//report result
-					const clock_t cTime = clock();
-#if PRINT_MATR_CNTR
-					extern int matr_cntr, perm_cntr;
-					printf("Result %.0f (%3d, %3d)\n", nLoops, matr_cntr, perm_cntr);
-#else
-					printf("Result %.0f: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
-#endif
-					Result.printTable(result(), true, ResultFile);
+					clock_t cTime = clock();
+					printf("Result %zd: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
 				}
+				Result.printTable(result(), true, ResultFile, bPrint, numDaysAdj);
 				m_finalKMindex++;
 				if (pcnt != NULL)
 					*pcnt = -m_finalKMindex - 1;
@@ -347,12 +336,12 @@ ProcessOneDay:
 		bPrevResult = true;
 	}
 	//imStatReport();
-	if (iStartStopMode == eCalcResult)
+	if (iCalcMode == eCalcResult)
 	{
 		if (bPrint)
 		{
-			printf("\nThread %d: %d non-isomorphic matrices (%d,%d,%d) were selected (from %.0f generated)\n",
-				threadNumber, m_finalKMindex, m_numPlayers, m_numDays, m_groupSize, nLoops);
+			printf("\nThread %d: %d non-isomorphic matrices (%d,%d,%d) were selected (from %zd generated)\n",
+				threadNumber, m_finalKMindex, m_numPlayers, numDaysAdj, m_groupSize, nLoops);
 			printf("Thread execution time = %d ms\n", clock() - iTime);
 		}
 		if (pcnt != NULL)
@@ -364,21 +353,12 @@ ProcessOneDay:
 	else
 	{
 		if (bPrint)
-		    printf("%.0f matrices, time since start=%d\n", nLoops, clock() - iTime);
+		    printf("%zd matrices, time since start=%d\n", nLoops, clock() - iTime);
 		if (pcnt != NULL)
 			*pcnt = nLoops;
 	}
 	delete[] bResults;
 	return true;
-}
-
-void printTransformed(int nrows, int ncols, const char* tr, const char* ttr, const char *pImatr, const char* pTmatr, int numRow, const double nLoops, int finalKMindex)
-{
-	printf("Calculated Matrix %.0f can be improved. See below (nKm=%d row=%d)\n", nLoops, finalKMindex, numRow);
-	printTable("Tr source", tr, 1, ncols);
-	printTable("Tr actual", ttr, 1, ncols);
-	printTable("Original", pImatr, nrows, ncols);
-	printTable("Translated", pTmatr, nrows, ncols);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

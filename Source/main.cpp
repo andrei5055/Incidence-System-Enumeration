@@ -56,15 +56,15 @@ int find_T_designParam(int v, int k, int lambda)
 }
 
 // trim from start (in place)
-static inline void ltrim(string &s) {
- 	s.erase(s.begin(), find_if(s.begin(), s.end(),
-		not1(ptr_fun<int, int>(isspace))));
+static inline void ltrim(string& s) {
+	s.erase(s.begin(), find_if(s.begin(), s.end(), 
+		[](int c) { return !isspace(c); }));
 }
 
 // trim from end (in place)
-static inline void rtrim(string &s) {
+static inline void rtrim(string& s) {
 	s.erase(find_if(s.rbegin(), s.rend(),
-		not1(ptr_fun<int, int>(isspace))).base(), s.end());
+		[](int c) {return !isspace(c); }).base(), s.end());
 }
 
 // trim from both ends (in place)

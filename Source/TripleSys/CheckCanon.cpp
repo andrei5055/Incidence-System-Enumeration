@@ -182,9 +182,10 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 				ddd += 0;
 		}
 #endif
+#if NEW_CODE
 		if (!retVal)
 			*pGrpNumb = groupIndex();
-
+#endif
 		return retVal;
 #else
 		++matr_cntr;

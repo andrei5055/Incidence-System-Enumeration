@@ -107,6 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,6 +123,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,6 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="allData.cpp" />
     <ClCompile Include="CheckCanon.cpp" />
     <ClCompile Include="checkLinks.cpp" />
     <ClCompile Include="checkLinksH.cpp" />
@@ -145,17 +148,21 @@
     <ClCompile Include="getUnselected.cpp" />
     <ClCompile Include="improveMatrix.cpp" />
     <ClCompile Include="initStartValues.cpp" />
+    <ClCompile Include="ioSupport.cpp" />
     <ClCompile Include="kmSupport.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="printTable.cpp" />
     <ClCompile Include="processOneDay.cpp" />
     <ClCompile Include="reportCheckLinksData.cpp" />
     <ClCompile Include="Support.cpp" />
+    <ClCompile Include="TGsupport.cpp" />
+    <ClCompile Include="TopGun.cpp" />
     <ClCompile Include="TripleSys.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckCanon.h" />
     <ClInclude Include="Table.h" />
+    <ClInclude Include="TopGun.h" />
     <ClInclude Include="TripleSys.h" />
   </ItemGroup>
   <ItemGroup>

@@ -37,10 +37,24 @@ int alldata::checkPlayer1(int iPlayerNumber)
 		// AI statement #6
 		if (iPlayerNumber <= result(iDay - 1)[1])
 			iPlayerNumber = result(iDay - 1)[1] + 1;
-		if (GroupSize == 2 && iPlayerNumber > iDay + 1)
-			return m_numPlayers;
+		if (GroupSize == 2)
+		{
+			return (iPlayerNumber > iDay + 1) ? m_numPlayers : iDay + 1;
+		}
 	}
-	if (GroupSize == 3)
+	if (GroupSize == 2)
+	{
+		if (iPlayer == 2)
+			return (iPlayerNumber > 1) ? m_numPlayers : 1;
+		if (iDay == 1 && m_numPlayers == 12)
+		{
+			if (iPlayer == m_numPlayers - 2)
+				return (iPlayerNumber > 9) ? m_numPlayers : 9;
+			else if (iPlayer == m_numPlayers - 1)
+				return (iPlayerNumber > 11) ? m_numPlayers : 11;
+		}
+	}
+	else if (GroupSize == 3)
 	{
 #if UseSS != 2
 		if (iPlayer < 7 && m0 == 0)
@@ -238,9 +252,9 @@ int alldata::checkPlayer1(int iPlayerNumber)
 			iPlayerNumber = iPlayer / m_groupSize; // not happen
 
 		if (iPlayerNumber > firstNotSel)
-			return m_numPlayers; // happen for 21
+			return m_numPlayers; // happen for 21, 10
 		else
-			iPlayerNumber = firstNotSel; // happend for 21
+			iPlayerNumber = firstNotSel; // happend for 21, 10
 		//new
 		if (iPlayerNumber > iPlayer)
 			return m_numPlayers; // not happen if at the end

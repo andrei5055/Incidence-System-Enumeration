@@ -2,12 +2,12 @@
 #include <iostream>
 void CChecklLink::reportCheckLinksData()
 {
-	if (cnt != 0.0)
+	if (cnt != 0)
 	{
 		if (PrintLinksStat)
 		{
 			printf("\nTotal calls to 'checkLinks'=%.0fM, 'False' returns=%.2f%%, 'OK' returns=%.2f%%\n",
-				cnt / 1000000, cntErr * 100.0 / cnt, cntOk * 100 / cnt);
+				cnt / 1000000.0, cntErr * 100.0 / cnt, cntOk * 100.0 / cnt);
 			/**
 			printTable("'False' returns per player per day (% of total calls)", counts[0],
 				m_numDays, m_numPlayers, 0, 0, false, 100.0 / cnt);
@@ -41,7 +41,7 @@ void CChecklLink::reportCheckLinksData()
 	tmtotalFalse = 0;
 	tmtotalOk = 0;
 	const auto len = m_numDays * m_numPlayers;
-	const auto dlen = len * sizeof(double);
+	const auto dlen = len * sizeof(sLongLong);
 	memset(faults, 0, len);
 	memset(counts, 0, dlen);
 	memset(tmfalse, 0, dlen);

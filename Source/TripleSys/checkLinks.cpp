@@ -57,9 +57,13 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		return true;
 	else if (m_numPlayers == 27 && id < 3)
 		return true;
-
+	char* lnks;
+#if UseSS == 0
+	lnks = pLinks;
+#else
 	memcpy(m_pLinksCopy, pLinks, len);
-
+	lnks = m_pLinksCopy;
+#endif
 	cnt++;
 
 	const auto idx = id * m_numPlayers;
@@ -74,7 +78,7 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 	{
 		int i = i0;
 #endif
-		auto *ci = m_pLinksCopy + i * m_numPlayers;
+		auto *ci = lnks + i * m_numPlayers;
 		int nv = 0;
 
 		for (int j = 0; j < m_numPlayers; j++)
@@ -92,11 +96,11 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		{
 			//continue;
 			printf("CheckLinks: error in links table: nv=%d for i=%d\n", nv, i);
-			printTableColor("Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
+			printTableColor("Links", lnks, m_numPlayers, m_numPlayers);
 			abort();
 		}
 
-		if (checkLinksV(m_pLinksCopy, m_v, nv, -1, m_vo))
+		if (checkLinksV(lnks, m_v, nv, -1, m_vo))
 		{
 #if UseSS == 0
 			goto okplayer;
@@ -109,12 +113,12 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 
 				if (a == unset || b == unset)
 					abort();
-				auto* ca = m_pLinksCopy + a * m_numPlayers;
+				auto* ca = lnks + a * m_numPlayers;
 				if (ci[a] != unset || ci[b] != unset || ca[b] != unset)
 					abort();
 				idd = -2;// m_numDays - nv / 2 + n;
 
-				auto* cb = m_pLinksCopy + b * m_numPlayers;
+				auto* cb = lnks + b * m_numPlayers;
 				ci[a] = ca[i] = idd;
 				ci[b] = cb[i] = idd;
 				cb[a] = ca[b] = idd;
@@ -142,12 +146,64 @@ bool CChecklLink::checkLinks(char *pLinks, int id, bool printLinksStatTime)
 		/**/
 		if (id > 33)
 		{
-			printTableColor("CheckLinks Links", m_pLinksCopy, m_numPlayers, m_numPlayers);
-			convertLinksToResult(m_pLinksCopy, m_co, m_numPlayers, m_groupSize);
+			printTableColor("CheckLinks Links", lnks, m_numPlayers, m_numPlayers);
+			convertLinksToResult(lnks, m_co, m_numPlayers, m_groupSize);
 			printTable("CheckLinks Result", m_co, m_numDays, m_numPlayers);
 		}
 		/**/
 	}
 
+	return ret;
+}
+bool CChecklLink::checkLinks2(char* pLinks, int id, bool printLinksStatTime)
+{
+	bool ret = true;
+	const auto len = m_numPlayers * m_numPlayers;
+
+	if (m_numPlayers == 12 && id < 3)
+		return true;
+	else if (m_numPlayers == 10 && id < 2) //1)
+		return true;
+
+	char* lnks = pLinks;
+
+	cnt++;
+
+	const auto idx = id * m_numPlayers;
+	auto* faults_id = faults + idx;
+	auto* counts_id = counts + idx;
+	for (int i0 = 0; i0 < m_numPlayers; i0++)
+	{
+		int i = (i0 + 5) % m_numPlayers;
+		auto* ci = lnks + i * m_numPlayers;
+		int nv = 0;
+
+		for (int j = 0; j < m_numPlayers; j++)
+		{
+			if (ci[j] == unset && i != j)
+				m_v[nv++] = j;
+		}
+		if (nv == 0)
+			continue;
+
+		//if (nv >= (m_numDays - 1)) // this check makes it faster
+		//	continue;
+
+		//if (!checkLinksV2(lnks, m_v, nv, -1, m_vo))
+		{
+			if (id < 3)
+				id = id;
+			faults_id[i] |= 1;
+			counts_id[i]++;
+			cntErr++;
+			ret = false;
+			break;
+		}
+		faults_id[i] |= 2;
+	}
+	if (ret)
+	{
+		cntOk++;
+	}
 	return ret;
 }
