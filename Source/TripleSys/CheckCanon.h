@@ -142,8 +142,12 @@ private:
 		return retVal;
 #else
 #if USE_TRANSLATE_BY_LEO
-		return m_pAD->cnvCheckKm1((char*)permut, numDays(), (T *)pDummy);
+		int dayMax;
+		const auto ret = m_pAD->cnvCheckKm1((char*)permut, numDays(), (T *)pDummy, &dayMax);
+		setGroupIndex((dayMax + 1) * numGroups() - 2);
+		return ret;
 #else
+
 		int ret = 1;
 		T ttr[20];
 		for (T n = 0; n < m_nDaysToTest; n++) {
@@ -164,7 +168,6 @@ private:
 				continue;
 			}
 
-#if NEW_CODE
 			static int cntr;
 			T* pDest = resultOut();
 			if (!pDest)
@@ -180,14 +183,7 @@ private:
 					dayMax = *pDays;
 
 			} while (!memcmp(pDest, pInputMatr, numElem));
-			
-			setGroupIndex((dayMax+1) * numGroups() - 2);
-#if 0
-			FOPEN_F(f, "../myCheck.txt", cntr++ ? "a" : "w");
-			fprintf(f, "%4d: dayMax = %d\n", cntr, dayMax);
-			FCLOSE_F(f);
-#endif
-#endif
+			setGroupIndex((dayMax+1) * numGroups() - 2);			
 #if PRINT_TRANSFORMED
 			extern bool flg;
 			if (flg)
@@ -214,8 +210,9 @@ private:
 	bool checkCanonicity();
 	inline void setGroupIndex(int val)				{ m_nGrpIdx = val; }
 	inline auto groupIndex() const					{ return m_nGrpIdx; }
+#if DEBUG_NextPermut
 	void printInfo(FILE* f, const T* perm, int idx) const;
-
+#endif
 	T m_nStabExtern = 0;		// number of first elements of permutation which Canonicity Checker will not move
 	T* m_players = NULL;
 	const T m_numElem;			// The number of elements that will be the same for all partially constructed objects

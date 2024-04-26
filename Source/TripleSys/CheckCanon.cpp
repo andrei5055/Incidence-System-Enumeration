@@ -130,9 +130,13 @@ CheckerCanon(void)::sortTuples(T *players) const {
 	elemOrdering(players, m_numElem, groupSize());
 	groupOrdering(players, numGroups(), tmpBuffer(), groupSize());
 }
+
+#if DEBUG_NextPermut
 int perm_cntr, matr_cntr;
 bool flg = false;
 #define M_CNTR 13 //1955 //1702
+#endif
+
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
 	// Input parameters:
 	//    result - pointer to a sequence of lists, each containing "m_numElem" players
@@ -168,27 +172,19 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 	}
 
 	if (m_numDays == m_numDaysMax) {
+#if DEBUG_NextPermut
+		++matr_cntr;
+#endif
 #if CHECK_WITH_GROUP
-		if (++matr_cntr == M_CNTR)
+		if (matr_cntr == M_CNTR)
 			matr_cntr += 0;
 
 		perm_cntr = 0;
 		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
-#if 0
-		static int ddd;
-		if (retVal) {
-			printf("CANON #%3d", ++ddd);
-			if (ddd >= 13)
-				ddd += 0;
-		}
-#endif
-#if NEW_CODE
 		if (!retVal)
 			*pGrpNumb = groupIndex();
-#endif
+
 		return retVal;
-#else
-		++matr_cntr;
 #endif	
 	}
 
@@ -437,8 +433,10 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
 	CGroupOrder<T>::setGroupOrder(1);
 	T nElem = ELEMENT_MAX;
+#if DEBUG_NextPermut
 	if (flg = (matr_cntr == M_CNTR))
 		matr_cntr += 0;
+#endif
 #define PRINT_PERMUT  0
 #define PRINT_PERMUT_ 0
 #if PRINT_PERMUT || PRINT_PERMUT_
@@ -830,7 +828,7 @@ CheckerCanon(bool)::checkRemainingDays(T iDay, int retVal, const T *pPerm, T *pP
 	const auto numElem_2 = 2 * m_numElem;
 	auto* pDest = destMemory();
 	if (iDay) {
-		// Renumbering of players according to permutaion of days: (0, iDay).
+		// Renumbering of players according to permutation of days: (0, iDay).
 		if (!pPermPlayer) {
 			if (!pPerm)
 				pPerm = getMatrixRow(iDay);
@@ -895,9 +893,7 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 	diff = checkDayCode(diff, iDay, playersPerm());
 	if (diff < 0 && !resultOut())
 		return false;
-	static int vvv; vvv++;
-	if (vvv == 201)
-		vvv += 0;
+
 	if (diff <= 0 && !checkRemainingDays(iDay, diff, pPlayerPerm))
 		return reportTxtError(resultOut(), reason[t_changing_day_0], NULL, iDay);
 
@@ -926,13 +922,9 @@ CheckerCanon(bool)::checkDay_1(T iDay, const T* pPlayerPerm) {
 }
 
 CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool invert, const T* permPlayer) {
-	static int ttt; ttt++;
 	T* pDest = resultOut();
 	if (!pDest)
 		pDest = resultMemory();
-
-	if (ttt == 47951)
-		ttt += 0;
 
 	memcpy(pDest, studiedMatrix(), lenResult() * sizeof(*pDest));
 	if (invert) {
@@ -1077,6 +1069,7 @@ void outInfo(FILE* f, const unsigned char* pInfo, int len, const char* pName) {
 	fprintf(f, "%s\n", buf);
 }
 
+#if DEBUG_NextPermut
 CheckerCanon(void)::printInfo(FILE* f, const T* perm, int idx) const {
 	fprintf(f, "Returned from %d (%d)\n", idx, perm_cntr);
 	outInfo(f, perm, 10, "Perm");
@@ -1085,8 +1078,10 @@ CheckerCanon(void)::printInfo(FILE* f, const T* perm, int idx) const {
 	outInfo(f, m_pNumPermutUsed, 5, "NPermUsd");
 	fclose(f);
 }
+#endif
 
 CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T lenStab) {
+#if DEBUG_NextPermut
 	++perm_cntr;
 	static int cntrMax = 3840;
 #if USE_ORBTS == 0
@@ -1117,7 +1112,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 		FOPEN_F(ff, "../ddd.txt", "a");
 		f = ff;
 	}
-
+#endif
 	const auto len = groupSize() * sizeof(T);
 	auto iMinVar = numGroups() - 1;
 	if (USE_ORBTS && idx == IDX_MAX) {
@@ -1228,9 +1223,10 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 					continue;
 				}
 			}
+#if DEBUG_NextPermut
 			if (f)
 				printInfo(f, perm, 1);
-
+#endif
 			return 0;
 		}
 
@@ -1255,9 +1251,11 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 					goto start_loop;
 				}
 			}
+
+#if DEBUG_NextPermut
 			if (f)
 				printInfo(f, perm, 2);
-
+#endif
 			return 0;
 		}
 
@@ -1276,7 +1274,9 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 			m_pNumPermutUsed[i] = 0;
 	}
 
+#if DEBUG_NextPermut
 	FCLOSE_F(f);
+#endif
 	return ELEMENT_MAX;
 }
 

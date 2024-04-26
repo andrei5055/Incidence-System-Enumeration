@@ -212,7 +212,7 @@ ProcessOneDay:
 					if (1)//nrowsStart == 0)
 					{
 						//m_pCheckLink->reportCheckLinksData();
-						printf("Thread %d: Current result for matrix %zd: rows=%d, build time=%d, time since start=%d\n",
+						printf("Thread %d: Current result for matrix %lld: rows=%d, build time=%d, time since start=%d\n",
 							threadNumber, nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
 						printTable("Current result", result(), iDay + 1, m_numPlayers, 0, m_groupSize, true);
 					}
@@ -247,8 +247,6 @@ ProcessOneDay:
 						printf("*** improvement!!!***\n");
 						exit(0);
 					}**/
-					if (bPrevResult)
-					    m_groupIndex = iDay * m_nGroups - 2;
 				}
 #endif
 				if (bPrevResult)
@@ -265,7 +263,7 @@ ProcessOneDay:
 #endif
 					if (m_groupIndex >= iDay * m_nGroups)
 					{
-						printf("*** Thread %d: After current day 'back' request\n", threadNumber);
+						printf("*** Thread %d: After current day 'back' request (m_groupIndex=%d)\n", threadNumber, m_groupIndex);
 						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
 						abort();
 					}
@@ -274,7 +272,6 @@ ProcessOneDay:
 						if (iDay == m_numDays && m_groupIndex > (iDay - 1) * m_nGroups - 2)
 							m_groupIndex = (iDay - 1) * m_nGroups - 2;
 						iDay--;
-#if NEW_CODE && !USE_TRANSLATE_BY_LEO
 						while (iDay > m_groupIndex / m_nGroups)
 						{
 							while (iPlayer >= 0)
@@ -283,7 +280,6 @@ ProcessOneDay:
 							}
 							initPrevDay();
 						}
-#endif
 						bPrevResult = false;
 						while(iDay * m_numPlayers + iPlayer >= (m_groupIndex + 1) * m_groupSize)
 						{

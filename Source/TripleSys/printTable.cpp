@@ -101,7 +101,7 @@ void printThreadsStat(sLongLong* cntTotal, sLongLong* cnt, int nMatrices, int nP
 		sum1 += cntTotal[j] + d;
 		sum2 += cntTotal[j + 1] + cnt[j + 1];
 	}
-	printf("T=%dsec: %d (out of %d) Start Matrices (%dx%d) processed by %d threads. %zd output matrices (%dx%d) generated\n", 
+	printf("T=%dsec: %d (from %d) matrices (%dx%d) processed by %d threads. %zd matrices (%dx%d) generated\n", 
 		(clock() - iTime) / 1000, nProccesed, nMatrices, nPlayers, nrowsStart, nThreads, sum1, nPlayers, nrowsOut);
 
 	if (bPrintSetup)

@@ -54,7 +54,8 @@ alldata::alldata(int numPlayers, int groupSize, bool useCheckLinksV, bool useChe
 	m_pCheckLink = new CChecklLink(m_numDays, m_numPlayers, m_groupSize);
 	m_DayIdx = new unsigned char[m_numDays];
 #if !USE_EQUAL && !CHECK_WITH_GROUP
-	initDayIdx(m_numDays);
+	auto nDays = m_numDays;
+	while (nDays--) m_DayIdx[nDays] = nDays;
 #endif
 
 #ifdef CD_TOOLS

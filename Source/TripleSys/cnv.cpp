@@ -78,25 +78,33 @@ void alldata::cnvInit()
 		}
 	}
 }
-int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
+int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, int* pDayMax) const
 {
 	int ret = 1;
-	char ttr[27];
+	char ttr1[27], *ttr = tr;
+	if (pDayMax)
+		*pDayMax = nrows - 1;
 	char* res = result();
 	const char* resSecondRow = res + m_numPlayers;
 	const int npmMinus1Row = (nrows - 1) * m_numPlayers;
-	for (int day = 0; day < m_NumDaysToTransform; day++)
+	unsigned char n;
+	for (int day = n = 0; day < m_NumDaysToTransform; day++)
 	{
-		const auto n = m_DayIdx[day];
-		const char* resn = result(n);
 		int icmp;
-		for (int i = 0; i < m_numPlayers; i++)
-		{
-			ttr[resn[i]] = tr[i];
+		if (day) {
+			ttr = ttr1;
+			const auto* resn = result(n = m_DayIdx[day]);
+			for (int i = 0; i < m_numPlayers; i++)
+			{
+				ttr[resn[i]] = tr[i];
+			}
 		}
-		if (m_groupSize == 2)
+
+		if (m_groupSize == 2 && m_createImprovedResult < 2)
 		{
-			icmp = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, m_createImprovedResult, m_Km2ndRowInd, n);
+			//char tmp[16];
+			//memcpy(tmp, m_Km2ndRowInd, m_numPlayers);
+			icmp = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
 #if 0 // test of kmTranslateAndSort2
 			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
 			kmFullSort(m_Ktmp, m_Km, nrows, m_numPlayers, m_groupSize);
@@ -104,6 +112,10 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 			if (icmp != icmp2)
 			{
 				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
+				memset(m_Km2ndRowInd, 0, m_numPlayers);
+				int icmp3 = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, tmp, n, pDayMax);
+				printTable("kmTransleAndSort2", m_Km, nrows, m_numPlayers);
+				printf("c1=%d c2=%d c3=%d\n", icmp2, icmp, icmp3);
 				exit(1);
 			}
 #endif 
@@ -133,7 +145,7 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits) const
 				printf("%d %d\n", a, b);
 #endif
 		}
-#if CHECK_WITH_GROUP
+#if USE_EQUAL
 		if (icmp > 0)
 			continue;
 
@@ -183,7 +195,9 @@ bool alldata::cnvCheckKm(char* tr, char* tg)
 	printTable("Tr", tr, 1, m_nGroups);
 	printTable("Tg", tg, 1, m_nGroups);
 #endif
-	bool ret = cnvCheckKm1(m_trmk, iDay) >= 0;
+	int maxDay;
+	const bool ret = cnvCheckKm1(m_trmk, iDay, NULL, &maxDay) >= 0;
+	m_groupIndex = (maxDay + 1) * m_nGroups - 2;
 #if 0
 	if (!ret)
 	{
@@ -294,7 +308,10 @@ bool alldata::cnvCheckNew()
 	int itr = 0;
 	bool ret = true;
 #if USE_EQUAL
-	initDayIdx(iDay);
+	// Creating the sequences 0,1,2,3,... as the day's indices.
+	memcpy(m_DayIdx, result(), m_NumDaysToTransform = iDay);
+#else
+	m_NumDaysToTransform = iDay
 #endif
 	if (m_nGroups + 1 > sizeof(p))
 		abort();

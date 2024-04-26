@@ -1,6 +1,7 @@
 #pragma once
 #include <string> 
 #include <iostream>
+
 #define nPlayers  10
 #define GroupSize 2
 
@@ -9,7 +10,7 @@
 #if UseMultiThreading
 #define NThreads 12				  // number of threads to calculate matrices		
 #define NRowsInStartMatrix 4	  // number of rows in initial set of matrices for threads
-#define NRowsInResultMatrix 8	  // number of rows in result, if 0 then calculate full matrix
+#define NRowsInResultMatrix 0	  // number of rows in result, if 0 then calculate full matrix
 #define MaxNumberOfStartMatrices 1000000
 #else
 #define NThreads 1
@@ -23,7 +24,7 @@
 #define LoopsMax 200000000000.
 #define ImproveResults 0		  // 0 - with no explanation of the matrix rejection reason;
                                   // 1 - reason of rejection will be explained;
-								  // 2 - improve matrix as much as possible.v
+								  // 2 - improve matrix as much as possible.
 #define CreateImprovedResult 0    // 2 - cnvCheckNew create improved matrix in m_Km, 0 - not (0works faster) 
 #define StartFolder				  "../Logs1/" 	// Name of folder with 'Start Matrices, must present in multithread mode.
 #define ResultFolder			  "../Logs2/" 	// Name of folder with the results, "" - no file output.
@@ -43,12 +44,11 @@
 #define USE_STATEMENT_17  1    // Only the players 4 or 9 could be in position[1, 4].
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
-#define USE_CHANGING_DAY_0_GROUPS 1 // Use permutation of first 3 groups of day 0
-#define CHECK_WITH_GROUP  1    // Use new group on completely constructed matrices
+#define USE_CHANGING_DAY_0_GROUPS 0 // Use permutation of first 3 groups of day 0
+#define CHECK_WITH_GROUP  0    // Use new group on completely constructed matrices
 #define USE_TRANSLATE_BY_LEO 0
-#define NEW_CODE		  0
 #define USE_ORBTS		  0
-#define USE_EQUAL		  0
+#define USE_EQUAL		  1
 #define PRINT_MATR_CNTR	  0
 #define PRINT_TRANSFORMED 0
 
@@ -166,17 +166,16 @@ public:
 		int nrowsStart=0, int nrowsOut=0, sLongLong* pcnt=NULL, bool bPrint=false);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	bool improveMatrix(int improveResult, unsigned char* bResults, const int lenResult, unsigned char** pbRes1 = NULL);
-	int cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits=NULL) const;
+	int cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits=NULL, int* pDayMax=NULL) const;
 	inline void initDayIdx(int nDays) const     {
-		m_NumDaysToTransform = nDays;
-		while (nDays--) m_DayIdx[nDays] = nDays; 
+		memcpy(m_DayIdx, result(), (m_NumDaysToTransform = nDays));
 	}
 private:
 	void Init();
 	inline auto numPlayers() const				{ return m_numPlayers; }
 	inline auto numDays() const					{ return m_numDays; }
 	bool initPrevDay();
-	inline auto *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
+	inline char *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	inline auto *links(int nPlayer = 0) const	{ return m_pLinks + nPlayer * m_numPlayers; }
 	void getUnselected(char* v, int nv);
 	void getPrevPlayer();
@@ -257,7 +256,7 @@ void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, int gs, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
-int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, int ir, char* rind, int ind);
+int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, char* rind, int ind, int* pDayMax);
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
 void kmFullSort(char* mi, char* tmp, int nr, int nc, int gs);
 int factorial(int n);
@@ -269,3 +268,4 @@ void saveStartData(char* fn, char* sm, int nm, int np, int nr, int gs);
 int readStartData(char* fn, char* sm, int nm, int np, int nr, int gs);
 bool setLinksForOnePlayer(int id, int np, char* lnk, char* p, int ip, char v);
 void linksFromMatrix(char* lnk, char* iv, int nr, int np);
+

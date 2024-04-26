@@ -158,7 +158,7 @@ void kmFullSort(char* tmp, char* mi, int nr, int nc, int gs)
 	// result of the loop above is in tmp, send it back to mi
 	kmSortRowsByOneValue(mi, tmp, nc, nr, nc, 1);
 }
-int kmTranslateAndCheckOneRow2(char* mo, char* mi, int mind, char* ta, char* tb, char* tr, int nr, int nc, int ir)
+int kmTranslateAndCheckOneRow2(char* mo, char* mi, int mind, char* ta, char* tb, char* tr, int nr, int nc)
 {
 	char* mii = mi + mind * nc;
 	memset(ta, unset, nc);
@@ -187,26 +187,24 @@ int kmTranslateAndCheckOneRow2(char* mo, char* mi, int mind, char* ta, char* tb,
 		}
 	}
 	char iRow = tb[0];
-	int iret = 3;
-#if 1
+	int iret;
 	if (iRow == 2)
 	{
 		char diff = tb[1] - mi[nc + 3];
-		if (diff != 0 && ir < 2)
+		if (diff != 0)
 		{
 			iret = diff > 0 ? 1 : -1;
 			return iret;
 		}
-		iret = 2;
 	}
-#endif
-
-	char* mon = mo + (iRow - 1) * nc;
+	int ncc = (iRow - 1) * nc;
+	char* mon = mo + ncc; // needed for macros below
 	unsigned char m = 0;
 	switch (nc)
 	{
 	case 10:
 		SetTwoGroups2(0)
+		//SetFirstTwoGroups2()
 		SetTwoGroups2(2)
 		SetTwoGroups2(4)
 		SetTwoGroups2(6)
@@ -214,6 +212,7 @@ int kmTranslateAndCheckOneRow2(char* mo, char* mi, int mind, char* ta, char* tb,
 		break;
 	case 12:
 		SetTwoGroups2(0)
+		//SetFirstTwoGroups2()
 		SetTwoGroups2(2)
 		SetTwoGroups2(4)
 		SetTwoGroups2(6)
@@ -226,13 +225,14 @@ int kmTranslateAndCheckOneRow2(char* mo, char* mi, int mind, char* ta, char* tb,
 			SetTwoGroups2(j)
 		}
 	}
+	iret = memcmp(mon, mi + ncc, nc);
 	return iret;
 }
-int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, int ir, char* rind, int ind)
+int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, char* rind, int ind, int* pDayMax)
 {
 	int nall = nr * nc;
 	int iRet;
-	char ta[16*2], tb[16*2];
+	char ta[16], tb[16], tc[16], tm[16];
 	bool bProc2 = false, bProc3 = false;
 	if (nc > 16)
 		abort();
@@ -248,45 +248,39 @@ int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, int ir, ch
 		printf("\n");
 	}
 #endif
-	if (nr < nc - 1)
-	{
-		for (int i = nc; i < nc * (nc - 1); i += nc)
-			mo[i] = unset;
-	}
+	memset(tc, 2, nc); //  not -1, 0, 1
+	tm[1] = ind;
+	char rowMax = ind;
 	char r2ind = rind[ind];
-	iRet = 3;
-	if (r2ind < nr)
-	    iRet = kmTranslateAndCheckOneRow2(mo, mi, r2ind, ta, tb, tr, nr, nc, ir);
-	//if (nr < nc - 1)
-	//	return iRet < 0 ? -1 : 1;
-	if (iRet < 3)
+	iRet;
+	if (r2ind >= nr)
+		r2ind = 1;
+	iRet = kmTranslateAndCheckOneRow2(mo, mi, r2ind, ta, tb, tr, nr, nc);
+    char iRow = tb[0];
+	if (iRow == 2)
 	{
-		//printf("\n 2\n");
 #if absstat
 		b++;
 #endif
-		if (iRet < 2)
-		    return iRet;
-		iRet = memcmp(mo + nc, mi + nc, nc);
-		if (iRet != 0 && ir < 2)
+		if (iRet != 0)
+		{
+			if (iRet < 0 && pDayMax != NULL)
+				*pDayMax = std::max(r2ind, rowMax);
 			return iRet;
+		}
 		bProc2 = true;
 	}
+	tm[iRow] = r2ind;
+	tc[iRow] = iRet;
+
 	for (int i = 0; i < nr; i++)
 	{
-		iRet = kmTranslateAndCheckOneRow2(mo, mi, i, ta, tb, tr, nr, nc, ir);
-		char iRow = tb[0];
-		if (bProc2 && iRow == 2)
+		if (i == r2ind || i == ind)
 			continue;
-		/**
-		if (i == 0)
-			printf("\n%d ", nr);
-		printf(" %2d:%2d", i, iRow);
-		if (i == nr - 1)
-			printf("\n");
-		if (iRow < 1)
-			abort();
-		**/
+		iRet = kmTranslateAndCheckOneRow2(mo, mi, i, ta, tb, tr, nr, nc);
+		iRow = tb[0];
+		tm[iRow] = i;
+		tc[iRow] = iRet;
 		if (iRow == 2)
 		{
 #if absstat
@@ -295,94 +289,48 @@ int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, int ir, ch
 				i = i;
 #endif
 			rind[ind] = i;
-			if (iRet < 2)
+			if (iRet != 0)
 			{
 #if absstat
 				//c++;
 #endif
+				if (iRet < 0 && pDayMax != NULL)
+					*pDayMax = std::max((char)i, rowMax);
 				return iRet;
 			}
+			bProc2 = true;
 		}
 #if 1
 		if (iRow <= nr)
 		{
-			switch (iRow) {
-				case 2: bProc2 = true; iRet = memcmp(mo + nc, mi + nc, bProc3 ? nc * 2 : nc); break;
-				case 3: bProc3 = true;
-					if (bProc2)
-					{
-						iRet = memcmp(mo + nc, mi + nc, nc * 2);
-						break;
-					}
-					else
-						continue;
-				default: continue;
-			}
-			if (iRet == 1 || (iRet != 0 && ir < 2))
+			if(bProc2 == true && iRow == 3 && iRet != 0)
 			{
-#if absstat
-				z[i]++;
-#endif
+				if (iRet < 0 && pDayMax != NULL)
+					*pDayMax = std::max(std::max((char)i, rowMax), tm[2]);
 				return iRet;
 			}
 		}	
 #endif
 	}
-	if (!bProc2 && ir < 2)
+	if (!bProc2)
 	{
 #if absstat
 		d++;
 #endif
 		return 1;
 	}
-	if (nr < nc - 1)
+	rowMax = std::max(rowMax, tm[2]);
+	for (int i = 3; i < nc; i++)
 	{
-		int k = nc;
-		int ncncm1 = nc * (nc - 1);
-		if (ir < 2)
+		switch (tc[i])
 		{
-			for (int i = nc; i < ncncm1; i += nc)
-			{
-				if (mo[i] != unset)
-				{
-					iRet = memcmp(mo + k, mo + i, nc);
-					if (iRet != 0)
-						return iRet;
-					k += nc;
-				}
-			}
-			return 0;
-		}
-		for (int i = nc; i < ncncm1; i += nc)
-		{
-			if (mo[i] != unset)
-			{
-				if (i != k)
-					memcpy(mo + k, mo + i, nc);
-				k += nc;
-			}
-		}
-	}
-#if 0
-	for (int i = 1; i < nr; i++)
-	{
-		int ic = memcmp(mo + nc*i, mi + nc*i, nc);
-		if (ic != 0)
-		{
-			//if (mo[nc*i + 1] == i+1)
-			   z[i]++;
-			return ic;
-			
+		case -1: if (pDayMax != NULL)*pDayMax = std::max(tm[i], rowMax); return -1;
+		case 0: rowMax = std::max(tm[i], rowMax); break;
+		case 1: return 1;
+		default: break;
 		}
 	}
 	return 0;
-#endif
-#if absstat
-	e++;
-#endif
-	return memcmp(mo + nc, mi + nc, nall - nc);
-	//z[nr - 1]++;
-	return 1;
 }
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc)
 {
