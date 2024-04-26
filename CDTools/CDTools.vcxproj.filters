@@ -127,7 +127,7 @@
       <Filter>Source Files\k-systems</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\TripleSys\CudaInfo.h">
-      <Filter>Source Files\k-systems</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -105,7 +105,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>X64;WIN;WIN32;CD_TOOLS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source\TripleSys;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source\TripleSys;c:\NVIDIA GPU Computing Toolkit\v9.1\include;C:\Users\16507\source\repos\Incidence-System-Enumeration\Source\TripleSys;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <BrowseInformation>true</BrowseInformation>
       <LanguageStandard>stdcpp17</LanguageStandard>
