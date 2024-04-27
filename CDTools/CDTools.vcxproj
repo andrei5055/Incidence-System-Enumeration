@@ -245,6 +245,7 @@
     <ClCompile Include="..\Source\TripleSys\processOneDay.cpp" />
     <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp" />
     <ClCompile Include="..\Source\TripleSys\Support.cpp" />
+    <ClCompile Include="..\Source\TripleSys\Tests.cpp" />
     <ClCompile Include="..\Source\TripleSys\TGsupport.cpp" />
     <ClCompile Include="..\Source\TripleSys\TimerInfo.cpp" />
     <ClCompile Include="..\Source\TripleSys\TopGun.cpp" />

@@ -102,53 +102,51 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, int* pDayM
 
 		if (m_groupSize == 2 && m_createImprovedResult < 2)
 		{
-			//char tmp[16];
-			//memcpy(tmp, m_Km2ndRowInd, m_numPlayers);
-			icmp = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
-#if 0 // test of kmTranslateAndSort2
-			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
-			kmFullSort(m_Ktmp, m_Km, nrows, m_numPlayers, m_groupSize);
-			int icmp2  = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
-			if (icmp != icmp2)
+#if 0
+			char tmp[16], ttrtmp[16], ktmp[16*16];
+			memcpy(tmp, m_Km2ndRowInd, m_numPlayers);
+			memcpy(ttrtmp, ttr, m_numPlayers);
+			memcpy(ktmp, m_Km, m_numPlayers * m_numPlayers);
+#endif
+			icmp = kmProcessMatrix2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
+#if 0       // test of kmProcessMatrix2
+			int dayMax = nrows - 1;
+			int icmp2 = kmProcessMatrix(m_Km, res, m_Ktmp, nrows, m_numPlayers, m_groupSize, ttr, &dayMax);
+			if (icmp != icmp2 || (pDayMax != NULL && *pDayMax != dayMax))
 			{
-				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
-				memset(m_Km2ndRowInd, 0, m_numPlayers);
-				int icmp3 = kmTranslateAndSort2(m_Km, res, ttr, nrows, m_numPlayers, tmp, n, pDayMax);
-				printTable("kmTransleAndSort2", m_Km, nrows, m_numPlayers);
-				printf("c1=%d c2=%d c3=%d\n", icmp2, icmp, icmp3);
+				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
+				memcpy(m_Km2ndRowInd, tmp, m_numPlayers);
+				memcpy(ttr, ttrtmp, m_numPlayers);
+				memcpy(m_Km, ktmp, m_numPlayers * m_numPlayers);
+				int icmp3 = kmProcessMatrix2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
+				printTable("Translated", m_Km, nrows, m_numPlayers);
+				printf("ic=%d %d %d\n", icmp, icmp2, icmp3);
+				if (pDayMax != NULL)
+					printf("dm = %d %d\n", *pDayMax, dayMax);
 				exit(1);
 			}
 #endif 
 #if 0
 			//if (icmp < 0 && n == 1 && ttr[0] != 0)
 			{
-				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
+				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km);
 			}
 #endif
 		}
 		else
 		{
-			kmTranslate(m_Km, res, ttr, nrows, m_numPlayers);
-#if 0
-			if (n == 1 && ttr[0] != 0)
-				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
-#endif
-			kmFullSort(m_Ktmp, m_Km, nrows, m_numPlayers, m_groupSize);
-
-			icmp = memcmp(m_KmSecondRow, resSecondRow, npmMinus1Row);
-#if 0
-			static int a, b;
-			a++;
-			if (icmp == 0)
-				b++;
-			if ((a % 1000000) == 0)
-				printf("%d %d\n", a, b);
-#endif
+			icmp = kmProcessMatrix(m_Km, res, m_Ktmp, nrows, m_numPlayers, m_groupSize, ttr, pDayMax);
 		}
-#if USE_EQUAL
-		if (icmp > 0)
-			continue;
+#if 0
+		static int a, b;
+		a++;
+		if (icmp == 0)
+			b++;
+		if ((a % 1000000) == 0)
+			printf("%d %d\n", a, b);
+#endif
 
+#if USE_EQUAL
 		if (!icmp) {
 #if 0
 			if (pOrbits) {
@@ -165,16 +163,14 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, int* pDayM
 
 			continue;
 		}
-#else
+#endif
 		if (icmp >= 0)
 			continue;
-#endif
 #if PRINT_TRANSFORMED
 		//extern bool flg;
 		if (/*flg && */icmp < 0)
 			printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 #endif
-		//printf(" d%d", n);
 		return -1;
 	}
 	return ret;
@@ -256,6 +252,8 @@ bool alldata::cnvCheckTgNew(char* tr, int gsf, bool bSkipFirst)
 		i = ng;
 		while (--i >= 0)
 		{
+			//if (i < ng - 3)
+			//	printf(" %d:%d", i, tg[i]);
 			tg[i] += 1;
 			if (tg[i] < gs)
 			{
@@ -311,7 +309,7 @@ bool alldata::cnvCheckNew()
 	// Creating the sequences 0,1,2,3,... as the day's indices.
 	memcpy(m_DayIdx, result(), m_NumDaysToTransform = iDay);
 #else
-	m_NumDaysToTransform = iDay
+	m_NumDaysToTransform = iDay;
 #endif
 	if (m_nGroups + 1 > sizeof(p))
 		abort();
@@ -347,8 +345,7 @@ bool alldata::cnvCheckNew()
 		{
 			p[i] = i;        // reset p[i] zero value
 			i++;             // set new index value for i (increase by one)
-		} // while(!p[i])
-	} // while(i < m_nGroups)
-	//if (ret == true)printf(" itr=%d\n", itr);
+		}
+	}
 	return ret;
 }

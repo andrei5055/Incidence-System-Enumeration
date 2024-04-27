@@ -124,7 +124,7 @@ retry:	if (fb != '\"')
 				for (int k = 0; k < np; k++) {
 					int iv = 0;
 					mf >> iv;
-					if (mf.eof() || (k == 1 && iv != j + 1))
+					if (mf.eof() || (k == 0 && iv != 0))
 					{
 						printf("Error in data line %d, file: %s\n", nl, fn);
 						exit(0);

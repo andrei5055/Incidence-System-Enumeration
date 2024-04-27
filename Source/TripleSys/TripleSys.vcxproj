@@ -155,6 +155,7 @@
     <ClCompile Include="processOneDay.cpp" />
     <ClCompile Include="reportCheckLinksData.cpp" />
     <ClCompile Include="Support.cpp" />
+    <ClCompile Include="Tests.cpp" />
     <ClCompile Include="TGsupport.cpp" />
     <ClCompile Include="TopGun.cpp" />
     <ClCompile Include="TripleSys.cpp" />

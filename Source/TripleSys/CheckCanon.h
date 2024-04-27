@@ -13,6 +13,8 @@
 
 #include "GroupOrder.h"
 
+#define DEBUG_NextPermut 1
+
 #define TFunc1_(x, ...)			template<typename T> __VA_ARGS__ x
 #define Class1_(x)              x<T>
 #define Class1Def_(x)           TFunc1_(x, class)

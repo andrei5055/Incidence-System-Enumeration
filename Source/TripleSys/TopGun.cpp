@@ -42,7 +42,7 @@ bool TopGun::Run()
 		}
 		alldata sys(m_numPlayers);
 		sys.initStartValues(ivc);// can be used to start from previous result
-		sys.Run(0, eCalcResult, (char*)0, (char*)0, nRowsStart, nRowsOut, NULL, true);
+		sys.Run(1, eCalcResult, (char*)0, (char*)0, nRowsStart, nRowsOut, NULL, true);
 	}
 	else
 	{
@@ -54,7 +54,7 @@ bool TopGun::Run()
 		}
 		if (getStartMatrices() < 1)
 		{
-			printf("Cant get/calculate 'Start' matrices for threads. Exit\n");
+			printf("Cant find 'Start' matrices for threads. Exit\n");
 			exit(1);
 		}
 
@@ -62,7 +62,7 @@ bool TopGun::Run()
 		if (tsm != NULL)
 			startMatrix = tsm;
 
-		myTemporaryCheck();
+		//myTemporaryCheck();
 		delete[] mStartLinks;
 		mStartLinks = NULL;
 

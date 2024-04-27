@@ -2,7 +2,7 @@
 
 int main()
 {
-	std::cout << "TripleSys 14.3\n";
+	std::cout << "TripleSys 14.48\n";
 
 	TopGun start(nPlayers, GroupSize);
 

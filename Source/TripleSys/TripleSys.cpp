@@ -83,11 +83,6 @@ bool alldata::Run(int threadNumber, int iCalcMode,
 	int numDaysAdj = nrowsOut;
 	rTime = mTime = iTime;
 
-	//HANDLE hwnd;
-	//hwnd = GetCurrentProcess(); // current process handle
-	//FILETIME time1, time2, dum1, dum2, dum3;
-	//LARGE_INTEGER time1, time2, dum1, dum2, dum3;
-
 	if (iCalcMode == eCalcStart)
 	{
 		minRows = 0;
@@ -116,62 +111,9 @@ bool alldata::Run(int threadNumber, int iCalcMode,
 		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
 		linksFromMatrix(links(), mStart0, nrowsStart, m_numPlayers);
 	}
-	else if (iDay > 0) //== m_numDays && threadNumber == 0)
+	else if (iDay > 0)
 	{
-		//uint64_t time1, time2;
-		unsigned int junk = 0;
-		char* bRes1 = NULL;
-		const auto bResults_1 = new unsigned char[2 * lenResult];
-		kmFullSort(m_Ktmp, result(), iDay, m_numPlayers, m_groupSize);
-		bRes1 = m_Km;
-		//time1 = __rdtscp(&junk);
-
-		//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time1);
-		//QueryPerformanceCounter(&time1);
-		//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time1);
-
-		clock_t tTime = clock();
-		int improveResult = m_improveResult;
-		int createImprovedResult = m_createImprovedResult;
-		m_createImprovedResult = 2;
-		m_improveResult = 2;
-		int nTests = 100;
-		for (int i = 0; i < nTests; i++)
-		{
-#if 0   // Change to 0 to use "improveMatrix"
-			if (!cnvCheckNew())
-#else
-			bRes1 = 0;
-			if (improveMatrix(m_improveResult, (unsigned char*)bResults_1, lenResult, (unsigned char**)&bRes1) && bRes1 != 0)
-#endif
-			{
-				printTable("Result improved", (const char*)bRes1, iDay, m_numPlayers, 0, m_groupSize, true);
-				memcpy(result(0), bRes1, m_nLenResults);
-				int errLine = 0, errGroup = 0, dubLine = 0;
-				if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
-				{
-					printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
-					abort();
-				}
-				printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers);
-			}
-			else
-			{
-				m_createImprovedResult = createImprovedResult;
-				m_improveResult = improveResult;
-			}
-		}
-		m_createImprovedResult = createImprovedResult;
-		m_improveResult = improveResult;
-		//time2 = __rdtscp(&junk);
-		//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time2);
-		//QueryPerformanceCounter(&time2);
-		//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time2);
-		printf("+++ %.1f ms needed per one improvement check\n", (double(clock() - tTime)) / nTests);
-		//printf(" %.1f ms (%.1f cpu) needed per one improvement check\n", (double(clock() - tTime)) / nTests);
-		//	(time2.QuadPart - time1.QuadPart) / nTests / 1000.0);
-		//	(double(time2.dwLowDateTime - time1.dwLowDateTime)) / nTests / 1000.0);
-		delete[] bResults_1;
+		testImproveMatrixSpeed();
 	}
 	while (nLoops < LoopsMax)
 	{
@@ -212,7 +154,7 @@ ProcessOneDay:
 					if (1)//nrowsStart == 0)
 					{
 						//m_pCheckLink->reportCheckLinksData();
-						printf("Thread %d: Current result for matrix %lld: rows=%d, build time=%d, time since start=%d\n",
+						printf("Thread %d: Current result for matrix %zd: rows=%d, build time=%d, time since start=%d\n",
 							threadNumber, nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
 						printTable("Current result", result(), iDay + 1, m_numPlayers, 0, m_groupSize, true);
 					}
@@ -336,8 +278,8 @@ ProcessOneDay:
 	{
 		if (bPrint)
 		{
-			printf("\nThread %d: %d non-isomorphic matrices (%d,%d,%d) were selected (from %zd generated)\n",
-				threadNumber, m_finalKMindex, m_numPlayers, numDaysAdj, m_groupSize, nLoops);
+			printf("\nThread %d: %d non-isomorphic matrices (%d,%d,%d) created\n",
+				threadNumber, m_finalKMindex, m_numPlayers, numDaysAdj, m_groupSize);
 			printf("Thread execution time = %d ms\n", clock() - iTime);
 		}
 		if (pcnt != NULL)

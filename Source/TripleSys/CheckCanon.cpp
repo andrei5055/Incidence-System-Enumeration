@@ -134,7 +134,7 @@ CheckerCanon(void)::sortTuples(T *players) const {
 #if DEBUG_NextPermut
 int perm_cntr, matr_cntr;
 bool flg = false;
-#define M_CNTR 13 //1955 //1702
+#define M_CNTR 496 //1955 //1702
 #endif
 
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
@@ -173,13 +173,11 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 
 	if (m_numDays == m_numDaysMax) {
 #if DEBUG_NextPermut
-		++matr_cntr;
+		if (++matr_cntr == M_CNTR)
+			matr_cntr += 0;
+		perm_cntr = 0;
 #endif
 #if CHECK_WITH_GROUP
-		if (matr_cntr == M_CNTR)
-			matr_cntr += 0;
-
-		perm_cntr = 0;
 		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
 		if (!retVal)
 			*pGrpNumb = groupIndex();
@@ -428,6 +426,8 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 			}
 		}
 	}
+		
+	auto pPerm = (symmetrical || !USE_EQUAL) ? permut : pCurrentRow;
 
 	CGroupOrder<T>::setStabilizerLength(numElem - 1);
 	CGroupOrder<T>::setStabilizerLengthAut(ELEMENT_MAX);
@@ -475,7 +475,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 		if (!diff) {
 			// Automorphism found
 			autFlag = true;
-			CGroupOrder<T>::UpdateOrbits(permut, numElem, orbits(), rowPermut, calcGroupOrder);
+			CGroupOrder<T>::UpdateOrbits(pPerm, numElem, orbits(), rowPermut, calcGroupOrder);
 			nElem = IDX_MAX;
 #if PRINT_PERMUT
 			if (calcGroupOrder) {

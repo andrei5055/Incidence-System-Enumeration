@@ -58,20 +58,22 @@ int TopGun::getStartMatrices()
 			m_numPlayers, nRowsStart, m_groupSize, nf++);
 		if ((nms = readStartData(logfn, s, n, m_numPlayers, nRowsStart, m_groupSize)) == 0)
 		{
-			printf("Cant open file with 'Start' matrices: %s\n", logfn);
+			if (nerr == 0)
+				printf("\n");
+			printf("\rCant open file with 'Start' matrices: %s", logfn);
 			if (++nerr > 100)
 			    break;
 			continue;
 		}
 		nerr = 0;
 		nfr++;
-		printf("%d %d-rows 'Start' matrices loaded from file %s\n", nms, nRowsStart, logfn);
+		printf("\n%d %d-rows 'Start' matrices loaded from file %s", nms, nRowsStart, logfn);
 		nmsAll += nms;
 		s += nms * mStartMatrixSize;
 		n -= nms;
 	}
 	nMatrices = nmsAll;
-	printf("%d %d-rows 'Start' matrices loaded from %d files\n", nMatrices, nRowsStart, nfr);
+	printf("\n%d %d-rows 'Start' matrices loaded from %d files\n", nMatrices, nRowsStart, nfr);
 	//exit(0);
 	/**
 	createStartFolderAndFileName(startMatricesFullFileName, sizeof(startMatricesFullFileName), StartMatricesFolder, startMatricesFileName,

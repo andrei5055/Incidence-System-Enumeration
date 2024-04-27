@@ -45,11 +45,11 @@
 #define USE_STATEMENT_18  1    // The positions of any two players who were in the same group 
                                // on the first day on the second day must be in ascending order of their numbers.
 #define USE_CHANGING_DAY_0_GROUPS 0 // Use permutation of first 3 groups of day 0
-#define CHECK_WITH_GROUP  0    // Use new group on completely constructed matrices
+#define CHECK_WITH_GROUP  1    // Use new group on completely constructed matrices
 #define USE_TRANSLATE_BY_LEO 0
-#define USE_ORBTS		  0
+#define USE_ORBTS		  1
 #define USE_EQUAL		  1
-#define PRINT_MATR_CNTR	  0
+#define PRINT_MATR_CNTR	  1
 #define PRINT_TRANSFORMED 0
 
 #define USE_STATEMENT_19  1
@@ -195,6 +195,7 @@ private:
 	void cnvInit();
 	bool cnvCheckTgNew(char* tr, int gsf, bool bSkipFirst);
 	bool cnvCheckNew();
+	void testImproveMatrixSpeed();
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
@@ -256,9 +257,11 @@ void printTable(char const* name, const char *c, int nl, int nc, int ns = 0, int
 void printTable(char const* name, const int *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 0.0);
 void printTable(char const* name, const double *c, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, double scale = 1.0);
 bool _CheckMatrix(const char* matrix, int nl, int nc, int gs, char* links, bool printError, int* errLine, int* errGroup, int* dubLine);
-int kmTranslateAndSort2(char* mo, char* mi, char* tr, int nr, int nc, char* rind, int ind, int* pDayMax);
+int kmProcessMatrix2(char* mo, char* mi, char* tr, int nr, int nc, char* rind, int ind, int* pDayMax);
 void kmTranslate(char* mo, char* mi, char* tr, int nr, int nc);
-void kmFullSort(char* mi, char* tmp, int nr, int nc, int gs);
+int kmProcessMatrix(char* mo, char* mi, char* tmp, int nr, int nc, int gs, char* tm = NULL, int* pDayMax = NULL);
+void kmSortGroupsByFirstValue(char* mo, char* mi, char nr, char nc, char np);
+void kmSortRowsBy2ndValue(char* mo, char* mi, char nr, char nc, char* tm);
 int factorial(int n);
 void printThreadsStat(sLongLong* cntTotal, sLongLong* cnt, int nMatrices, int nProcessed, int nrowsStart, int nrowsOut, int nThreads, clock_t iTime, bool bPrintSetup);
 void printTransformed(int nrows, int ncols, const char* tr, const char* ttr, const char* pImatr, const char* pTmatr, int numRow=0, sLongLong nLoops=0, int finalKMindex=0);
@@ -268,4 +271,3 @@ void saveStartData(char* fn, char* sm, int nm, int np, int nr, int gs);
 int readStartData(char* fn, char* sm, int nm, int np, int nr, int gs);
 bool setLinksForOnePlayer(int id, int np, char* lnk, char* p, int ip, char v);
 void linksFromMatrix(char* lnk, char* iv, int nr, int np);
-
