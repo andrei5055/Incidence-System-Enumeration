@@ -260,8 +260,13 @@ ProcessOneDay:
 				if (bPrint)
 				{
 					//report result
+#if DEBUG_NextPermut == 0
 					clock_t cTime = clock();
 					printf("Result %zd: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+#else
+					extern int matr_cntr;
+					printf("Result %zd: matr_cntr = %d\n", nLoops, matr_cntr);
+#endif
 				}
 				Result.printTable(result(), true, ResultFile, bPrint, numDaysAdj);
 				m_finalKMindex++;

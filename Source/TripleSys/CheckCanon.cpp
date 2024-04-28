@@ -134,7 +134,7 @@ CheckerCanon(void)::sortTuples(T *players) const {
 #if DEBUG_NextPermut
 int perm_cntr, matr_cntr;
 bool flg = false;
-#define M_CNTR 496 //1955 //1702
+#define M_CNTR 167 //496
 #endif
 
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
@@ -182,6 +182,11 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		if (!retVal)
 			*pGrpNumb = groupIndex();
 
+		if (187 >= matr_cntr && matr_cntr >= 162) {
+			FOPEN_F(f, "../CCC.txt", "a");
+			fprintf(f, "matr_cntr = %3d: retVal = %d  *pGrpNumb = %d\n", matr_cntr, retVal, *pGrpNumb);
+			FCLOSE_F(f);
+		}
 		return retVal;
 #endif	
 	}
@@ -437,7 +442,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	if (flg = (matr_cntr == M_CNTR))
 		matr_cntr += 0;
 #endif
-#define PRINT_PERMUT  0
+#define PRINT_PERMUT  1
 #define PRINT_PERMUT_ 0
 #if PRINT_PERMUT || PRINT_PERMUT_
 	char buffer[256], *ptr;
@@ -1104,7 +1109,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 
 	FILE* f = NULL;
 	flg = false;
-	if (false && matr_cntr == M_CNTR) {
+	if (/*false &&*/ matr_cntr == M_CNTR) {
 		flg = true;
 		if (/*perm_cntr == 2471 ||*/ perm_cntr == 1369 /*2310*/)
 			flg = true;
