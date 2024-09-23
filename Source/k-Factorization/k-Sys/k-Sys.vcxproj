@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>17.0</VCProjectVersion>
+    <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{dd293748-8d62-4f87-8e07-a57d00d84bd4}</ProjectGuid>
-    <RootNamespace>TripleSys</RootNamespace>
+    <ProjectGuid>{55610add-ebad-4cbe-9ed9-618cdfe7a825}</ProjectGuid>
+    <RootNamespace>kSys</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -80,8 +80,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>WINMM.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -98,7 +96,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>WINMM.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -107,12 +104,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>../TripleSys/Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>WINMM.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>TripleSys.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -123,51 +121,19 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>../TripleSys/Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>WINMM.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TripleSys.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="allData.cpp" />
-    <ClCompile Include="CheckCanon.cpp" />
-    <ClCompile Include="checkLinks.cpp" />
-    <ClCompile Include="checkLinksH.cpp" />
-    <ClCompile Include="checkLinksV.cpp" />
-    <ClCompile Include="CheckMatrix.cpp" />
-    <ClCompile Include="checkPlayer1.cpp" />
-    <ClCompile Include="checkPlayer3.cpp" />
-    <ClCompile Include="cnv.cpp" />
-    <ClCompile Include="convertLinksToResult.cpp" />
-    <ClCompile Include="getNextPlayer.cpp" />
-    <ClCompile Include="getUnselected.cpp" />
-    <ClCompile Include="improveMatrix.cpp" />
-    <ClCompile Include="initStartValues.cpp" />
-    <ClCompile Include="ioSupport.cpp" />
-    <ClCompile Include="kmSupport.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="printTable.cpp" />
-    <ClCompile Include="processOneDay.cpp" />
-    <ClCompile Include="reportCheckLinksData.cpp" />
-    <ClCompile Include="Support.cpp" />
-    <ClCompile Include="Tests.cpp" />
-    <ClCompile Include="TGsupport.cpp" />
-    <ClCompile Include="TopGun.cpp" />
-    <ClCompile Include="TripleSys.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="CheckCanon.h" />
-    <ClInclude Include="Table.h" />
-    <ClInclude Include="TopGun.h" />
-    <ClInclude Include="TripleSys.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PlayerCond_Eng.html" />
+    <ClCompile Include="k-Sys.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

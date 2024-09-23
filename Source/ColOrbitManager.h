@@ -34,7 +34,7 @@ public:
 	CC inline auto *colOrbits(S iPart = 0) const		{ return m_ppColOrb[iPart]; }
 	CC inline S currentRowNumb() const					{ return m_nCurrRow; }
 	CC inline auto colOrbitsIni(S iPart = 0) const		{ return m_ppColOrbIni[iPart]; }
-	CC void initiateColOrbits(S nRows, S firstRow, const Class1(BlockGroupDescr) *pGroupDesct, bool using_IS_enumerator,
+	CC void initiateColOrbits(S nRows, S firstRow = 0, const Class1(BlockGroupDescr) *pGroupDesct = NULL, bool using_IS_enumerator = false,
 		                      int use_master_solutions = 0, const Class1(CColOrbitManager) *pMaster = NULL, void *pMem = NULL);
 	CK void copyColOrbitInfo(const Class1(CColOrbitManager) *pColOrb, S nRow);
 	CC void restoreColOrbitInfo(S nRow, const size_t *pColOrbInfo) const;

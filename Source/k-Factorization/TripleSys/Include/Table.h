@@ -42,8 +42,10 @@ public:
 	void printTable(const T *c, bool outCntr = false, const char *fileName = NULL, bool outToScreen = true, int nl = 0);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
-private:
+	virtual const char *name() 					{ return m_name; }
+protected:
 	const char *m_name;
+private:
 	const int m_nl;
 	const int m_nc;
 	const int m_ns;
@@ -52,6 +54,24 @@ private:
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
 public:
 	size_t m_cntr = 0;
+};
+
+class TableAut : public Table<char>
+{
+public:
+	TableAut(char const* name, int nl, int nc, int ns = 0, int np = GroupSize, bool makeString = false, bool outCntr = false) :
+		Table<char>(name, nl, nc, ns, np, makeString, outCntr) {}
+	~TableAut()				{ delete[] m_pBuffer; }
+	void allocateBuffer(int len)		  { m_pBuffer = new char[m_nLenBuffer = len]; }
+	void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
+	virtual const char* name() { 
+		snprintf(m_pBuffer, m_nLenBuffer, "%s = %d", m_name, m_groupOrder);
+		return m_pBuffer;
+	}
+private:
+	int m_groupOrder = 0;
+	char* m_pBuffer = NULL;
+	int m_nLenBuffer = 0;
 };
 
 static size_t nMatr = 0;
@@ -69,7 +89,7 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName, bool o
 
 	if (m_name && strlen(m_name) != 0) {
 		if (outCntr && m_bOutCntr)
-			SPRINTFD(pBuf, buffer, "%zd %s\n", m_cntr, m_name);
+			SPRINTFD(pBuf, buffer, "%5zd: %s\n", m_cntr, name());
 		else
 			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}

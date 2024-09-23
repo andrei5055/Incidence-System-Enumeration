@@ -191,9 +191,7 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	auto nMatr = numMatrOfType(t_design_type::t_canonical);
 	char buff[256];
 	SPRINTF(buff, "\n%10llu matri%s" CONSTRUCTED_IN " ", nMatr, nMatr == 1 ? "x was" : "ces were");
-	const auto len = strlen(buff);
-	convertTime(runTime(), buff + len, countof(buff) - len, false);
-	outString(buff, outFile);
+	outRunTimeInfo(outFile, buff);
 
 	if (nMatr) {
 		outAdditionalInfo(total.numMatrOfType(t_design_type::t_transitive), outFile, buff, sizeof(buff));
@@ -208,8 +206,25 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 	SPRINTF(buff, "%10llu matri%s fully constructed.\n", nMatr, nMatr == 1 ? "x was" : "ces were");
 	outString(buff, outFile);
 
+	outRunTimeInfo(outFile);
+	outEnumInformation(pOutFile, true, pComment);
+	if (removeReportFile) // Remove temporary file with the intermediate results	
+		remove(reportFileName());
+}
+
+FClass2(CEnumInfo, void)::outRunTimeInfo(FILE* outFile, const char *pOutString) const
+{
+	char buff[256];
+	if (pOutString) {
+		strcpy_s(buff, pOutString);
+		const auto len = strlen(buff);
+		convertTime(runTime(), buff + len, countof(buff) - len, false);
+		outString(buff, outFile);
+		return;
+	}
+
 	outString("\nProcessing times are:\n", outFile);
-	const char *time_name[] = { "user_time", "kernel (system) time" };
+	const char* time_name[] = { "user_time", "kernel (system) time" };
 	for (int i = 0; i < 2; i++) {
 		SPRINTF(buff, "%22s: ", time_name[i]);
 		const auto lenBuff = strlen(buff);
@@ -217,10 +232,6 @@ FClass2(CEnumInfo, void)::outEnumInfo(FILE **pOutFile, bool removeReportFile, co
 		outString(buff, outFile);
 	}
 	outString("\n", outFile);
-
-	outEnumInformation(pOutFile, true, pComment);
-	if (removeReportFile) // Remove temporary file with the intermediate results	
-		remove(reportFileName());
 }
 
 #define SPACE "        "

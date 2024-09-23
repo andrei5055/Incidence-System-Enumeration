@@ -37,6 +37,10 @@ void renumberPlayers(T* pntr, size_t i, size_t iLast) {
 		pntr[i] = pntr[pntr[i]];
 }
 
+int compare_fn(const void* pA, const void* pB) {
+	return *(unsigned char*)pA - *(unsigned char*)pB;
+}
+
 template<typename T>
 void elemOrdering(T* pElems, size_t numElem, size_t groupSize) {
 	// Ordering elements in the groups od size groupSize
@@ -86,9 +90,12 @@ void elemOrdering(T* pElems, size_t numElem, size_t groupSize) {
 			}
 		}
 		return;
+	 default: 
+		 for (; j -= groupSize; pElems += groupSize)
+			 qsort(pElems, groupSize, sizeof(T), compare_fn);
 	}
 
-	assert(false); // Not implemented for given groupSize
+	return;
 }
 
 template<typename T>
@@ -134,7 +141,7 @@ CheckerCanon(void)::sortTuples(T *players) const {
 #if DEBUG_NextPermut
 int perm_cntr, matr_cntr;
 bool flg = false;
-#define M_CNTR 167 //496
+#define M_CNTR 12 //167 //496
 #endif
 
 CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T* bResult) {
@@ -178,7 +185,8 @@ CheckerCanon(bool)::CheckCanonicity(const T* result, int nDays, int* pGrpNumb, T
 		perm_cntr = 0;
 #endif
 #if CHECK_WITH_GROUP
-		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, result, false);
+		T ttr[24];
+		const auto retVal = checkWithGroup(m_numElem, &CCheckerCanon<T>::orderingMatrix, ttr, false);
 		if (!retVal)
 			*pGrpNumb = groupIndex();
 
@@ -413,8 +421,10 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	if (!symmetrical) {
 		memset(m_pPermIndex, 0, 2 * numGroups() * sizeof(m_pPermIndex[0]));
 		memcpy(m_pGroupPerm, trivialPerm(), numGroups() * sizeof(m_pGroupPerm[0]));
-		if (USE_TRANSLATE_BY_LEO)
+		if (USE_TRANSLATE_BY_LEO) {
 			m_pAD->initDayIdx(numDays());
+			m_pAD->orbits()->resetOrbits(trivialPerm());
+		}
 		else
 			memcpy(m_dayIdx, trivialPerm(), (m_nDaysToTest = numDays()) * sizeof(m_dayIdx[0]));
 
@@ -431,7 +441,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 			}
 		}
 	}
-		
+	
 	auto pPerm = (symmetrical || !USE_EQUAL) ? permut : pCurrentRow;
 
 	CGroupOrder<T>::setStabilizerLength(numElem - 1);
@@ -448,6 +458,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 	char buffer[256], *ptr;
 	static int ctr_canon = 0;
 	size_t ctr = 0;
+	size_t counter = 1;	
 	const auto fName = "../auto_orb.txt";
 	if (calcGroupOrder && matr_cntr == 1) {
 		FOPEN_F(f, fName, "w");
@@ -486,13 +497,21 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 			if (calcGroupOrder) {
 				FOPEN_F(f, fName, "a");
 				ptr = buffer;
-				SPRINTFD(ptr, buffer, "%4d     :", matr_cntr);
+				SPRINTFD(ptr, buffer, "  permut = %4zd     :", ++counter);
 				for (T i = 0; i < numElem; i++)
 					SPRINTFD(ptr, buffer, " %3d", permut[i]);
 
 				_printf(f, false, "%s\n", buffer);
+
 				ptr = buffer;
-				SPRINTFD(ptr, buffer, "%5d (%1zd):", perm_cntr, ++ctr);
+				SPRINTFD(ptr, buffer, "matr_cntr = %4d     :", matr_cntr);
+				for (T i = 0; i < numElem; i++)
+					SPRINTFD(ptr, buffer, " %3d", pPerm[i]);
+
+				_printf(f, false, "%s\n", buffer);
+
+				ptr = buffer;
+				SPRINTFD(ptr, buffer, "perm_cntr = %5d (%1zd):", perm_cntr, ++ctr);
 				for (T i = 0; i < numElem; i++)
 					SPRINTFD(ptr, buffer, " %3d", orbits()[i]);
 

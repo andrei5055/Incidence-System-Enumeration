@@ -14,7 +14,7 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Source Files\k-systems">
-      <UniqueIdentifier>{f2e3fcdb-f5a0-466f-8f3c-f135d92a51f7}</UniqueIdentifier>
+      <UniqueIdentifier>{f386d931-7e4a-4b81-b10b-3923364249e3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -117,16 +117,40 @@
     <ClInclude Include="..\Source\TripleSys\CheckCanon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GroupOrder.h">
-      <Filter>Source Files\k-systems</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\TripleSys\TopGun.h">
-      <Filter>Source Files\k-systems</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\TripleSys\TimerInfo.h">
-      <Filter>Source Files\k-systems</Filter>
-    </ClInclude>
     <ClInclude Include="..\Source\TripleSys\CudaInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\allSupports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\CheckCanon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\CudaInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\GroupOrder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\Table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TimerInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TopGun.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TripleSys.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\designParam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -200,85 +224,83 @@
     <ClCompile Include="..\Source\RowIntersection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\Support.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\CheckCanon.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\TripleSys.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\cnv.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\checkLinks.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\allData.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\checkLinksV.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\Tests.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\convertLinksToResult.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TripleSys.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\initStartValues.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TopGun.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\printTable.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\initStartValues.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\reportCheckLinksData.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\kmSupport.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\processOneDay.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\reportCheckLinksData.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\checkLinksH.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\Support.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\getNextPlayer.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TGsupport.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\checkPlayer1.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinks.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\checkPlayer3.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinksV.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\improveMatrix.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\ioSupport.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\CheckCanon.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\improveMatrix.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\CheckMatrix.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\printTable.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\getUnselected.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TimerInfo.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\cnv.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinksH.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\kmSupport.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkPlayer1.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\allData.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkPlayer3.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\TopGun.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\getNextPlayer.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\TGsupport.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\CheckMatrix.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\ioSupport.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\convertLinksToResult.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\TimerInfo.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\getUnselected.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\TripleSys\Tests.cpp">
+    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\processOneDay.cpp">
       <Filter>Source Files\k-systems</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Source\TripleSys\PlayerCond.html">
-      <Filter>Source Files\k-systems</Filter>
-    </None>
+    <ClCompile Include="..\Source\designParam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

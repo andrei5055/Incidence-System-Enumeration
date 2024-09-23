@@ -64,13 +64,14 @@ public:
 
 		m_nRows = nRows;
 		m_nCols = nCols;
-		m_nMaxElement = maxElement;
+		setMaxElement(maxElement);
 		setDataOwner(!data);
 		m_nLenData = sizeof(S) * m_nRows * m_nCols;
 		m_pData = data? data : m_nLenData? new S[m_nRows * m_nCols] : NULL;
 	}
 
 	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
+	CK inline void ResetData()					{ memset(GetDataPntr(), 0, m_nLenData); }
 	void printOut(FILE* pFile = NULL, T nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, int canonFlag = 1) const;
 	CC virtual T numParts() const				{ return 1; }
@@ -92,6 +93,7 @@ public:
 		return GetRow(nRow) + (idx? partsInfo()->GetPartInfo(idx, pLen) : 0);
 	}
 	CC bool isSimple(bool* pFlag = NULL) const;
+	CC void setMaxElement(S val)					{ m_nMaxElement = val; }
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
 	CK inline void releaseData()					{ if (dataOwner()) delete[] m_pData;
@@ -143,7 +145,7 @@ typedef enum {
 Class2Def(C_InSys) : public Class2(CMatrix)
 {
  public:
-	CK C_InSys(T nRows, T nCols, int t) : Class2(CMatrix)(nRows, nCols), m_t(t) {
+	CK C_InSys(T nRows, T nCols, int t = 2, S maxElem = 1) : Class2(CMatrix)(nRows, nCols, maxElem), m_t(t) {
 		setDataOwner(true);
 		setMaxBlockIntrsection(nRows);
 		m_ppNumbSet = createParamStorage(t_kSet); // Create 3 sets of vector: Lambda, R, and K 
@@ -230,7 +232,7 @@ protected:
 Class2Def(C_PBIBD) : public Class2(C_InSys)
 {
 public:
-	CK C_PBIBD(int v, int k, int r, const std::vector<uint> &lambdaSet) : Class2(C_InSys)(v, v * r/k, 2) {
+	CK C_PBIBD(int v, int k, int r, const std::vector<uint> &lambdaSet) : Class2(C_InSys)(v, v * r/k) {
 		InitParam(v, k, r, lambdaSet);
 	}
 	CK C_PBIBD(const Class2(C_InSys) *pMaster, T nRow) : Class2(C_InSys)(pMaster, nRow) {}

@@ -12,7 +12,7 @@ public:
 		CColOrbitManager<S>(pMatrix->maxElement() + 1, pMatrix->rowNumb(), pMatrix->colNumb(), pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags);
 	}
-	CC CMatrixCol(const InSysPntr pMatrix, S rowNumb, S colNumb, S maxElem, uint enumFlags) :
+	CC CMatrixCol(const InSysPntr pMatrix, T rowNumb, T colNumb, T maxElem, uint enumFlags) :
 		CColOrbitManager<S>(maxElem + 1, rowNumb, colNumb, pMatrix->numParts()) {
 		initiateMatrixCol(pMatrix, enumFlags & (t_allFlags ^ t_matrixOwner));
 	}
@@ -70,8 +70,10 @@ public:
 	CK ColOrbPntr MakeRow(T nRow, const T* pRowSolution, uint clean_flags = t_MatrixFlags::t_getNextColOrb, T partIdx = 0) const;
 	CK bool CheckBlockIntersections(T nRow, T b, const T* pRowSolution, T* pBlockIdx, T partIdx = 0);
 
-	CK void CreateColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
-	CK void CanonizeMatrix();
+	CK void GenerateBinaryColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
+	CK void GenerateColumnOrbits(T nRow, S* pRow, T* pColPermut = NULL) const;
+	CK void CanonizeMatrix(const designParam* pParam = NULL);
+	void sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag = false);
 protected:
 	CK inline auto* commonElemNumber() const							{ return m_pCommonElemNumber; }
 	CK inline auto* blockIdx() const									{ return m_pBlockIdx; }

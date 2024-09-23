@@ -1,21 +1,27 @@
 #pragma once
-#include "TripleSys.h"
 #include <thread>
 #include <vector>
+#include "TripleSys.h"
+#define LIBRARY_EXPORTS 1
+#ifdef LIBRARY_EXPORTS
+#    define LIBRARY_API __declspec(dllexport)
+#else
+#    define LIBRARY_API __declspec(dllimport)
+#endif
 class TopGun : private SizeParam {
 public:
-	TopGun(int numPlayers, int groupSize);
+	LIBRARY_API TopGun(int numPlayers, int groupSize);
 
-	~TopGun();
-	bool Run();
+	LIBRARY_API ~TopGun();
+	bool LIBRARY_API Run();
 private:
 	int getStartMatrices();
 	void myTemporaryCheck();
 	void startThread(int iTask);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
-	sLongLong cnt[NThreads * 2];
-	sLongLong cntTotal[NThreads * 2];
+	sLongLong m_cnt[NThreads * 2];
+	sLongLong m_cntTotal[NThreads * 2];
 	sLongLong dNumMatrices[2];
 	char startMatricesFileName[256];
 	char startMatricesFullFileName[256];

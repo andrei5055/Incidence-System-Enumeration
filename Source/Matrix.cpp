@@ -103,7 +103,7 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 
 	int i = -1;
 	int iMax = nMax <= 9 ? nMax : 9;
-	while (++i < iMax)
+	while (++i <= iMax)
 		*(pSymb + i) = '0' + i;
 
 	i--;

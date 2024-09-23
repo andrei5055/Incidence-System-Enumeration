@@ -44,7 +44,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(InSysPntr pMatrix, T *pColId
 
 			// Loop over the orbits of columns
 			while (pColOrbit) {
-				// Each column orbits could be splited into sub-orbits
+				// Each column orbit can be further divided into sub-orbits.
 				// For binary incidence systems the algorithm is simple (and it is implemented here)
 				// For general case we need to re-order columns of current orbits according to their
 				// incidence with current element (corresponding to the current row of the matrix)
@@ -96,7 +96,7 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(InSysPntr pMatrix, T *pColId
 			break;
 
 		if (permCol && colPermFound) {
-			// Permut of columns is needed
+			// Permutation of columns is needed
 			S jMin = 0;
 			while (jMin < nCols && pColIdxMem[jMin] == jMin)
 				jMin++;

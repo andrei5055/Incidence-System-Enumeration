@@ -1,7 +1,7 @@
 #include "MatrixCanonChecker.h"
 #include "RowSolution.h"
+#include "designParam.h"
 
-//template class CEnumInfo<TDATA_TYPES>;
 template class CMatrixCanonChecker<TDATA_TYPES>;
 
 FClass2(CMatrixCanonChecker)::~CMatrixCanonChecker() {
@@ -174,16 +174,6 @@ FClass2(CMatrixCanonChecker, bool)::CheckBlockIntersections(
 			}
 
 			*(pBlockIdx + partIdx) = nColAbs;
-			/*
-			static int css;
-			if (cntr > START_PRINTING) {
-				css++;
-				pCommonElemNumber = commonElemNumber() + 29 * b;
-				fprintf(outFile(), "\ncss = %d: BlInt[29, 20] = %d", css, *(pCommonElemNumber + 20));
-				fprintf(outFile(), "\ncss = %d:  (%d, %d)", css, *(pBlockIdx + 4), *(pBlockIdx + 5));
-				if (css == 561037)
-					css += 0;
-			} */
 			break;
 		}
 
@@ -193,9 +183,9 @@ FClass2(CMatrixCanonChecker, bool)::CheckBlockIntersections(
 	return true;
 }
 
-FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColPermut) const {
-	// Create column orbits for row number nRow of the matrix()
-	// and make it cannonical, if it is possible
+FClass2(CMatrixCanonChecker, void)::GenerateBinaryColumnOrbits(T nRow, S *pRow, T *pColPermut) const {
+	// Create column orbits for binary row number `nRow` 
+	// of the matrix() and make it canonical, if possible
 	if (!pRow)
 		pRow = matrix()->GetRow(nRow);
 
@@ -206,7 +196,10 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColP
 	auto* pNewColOrbit = (nRow < v) ? colOrbitIni(nRow) : NULL;
 	T j, jMax, lenOrb, type;
 	j = jMax = 0;
+	int cntrX = 0;
+	static int cntrY = 0;
 	while (pColOrbit) {
+		cntrX++;
 		T n = 0;
 		type = pRow[j];
 		jMax += (lenOrb = pColOrbit->length());
@@ -215,9 +208,10 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColP
 			while (++j < jMax)
 				n += pRow[j];
 
-			if (n && n < lenOrb) {
-				// Orbit is split in two parts
-
+			if (type && n < lenOrb || n) {
+				// If `type` is 0 and `n` is not, the orbit started with 0, but at least one 1 was found within it.
+				type = 1;   // we need to change type
+				// Orbit is divided into two parts
 				T j2, j1 = (j2 = j) - lenOrb;
 				const T jLast = j1 + n;
 				while (j1 < jLast) {
@@ -271,42 +265,328 @@ FClass2(CMatrixCanonChecker, void)::CreateColumnOrbits(T nRow, S *pRow, T *pColP
 		pColOrbitLast->setNext(NULL);
 }
 
-FClass2(CMatrixCanonChecker, void)::CanonizeMatrix() {
+FClass2(CMatrixCanonChecker, void)::GenerateColumnOrbits(T nRow, S* pRow, T* pColPermut) const {
+	// Create column orbits for row number `nRow`  
+	// of the matrix() and make it canonical, if possible
+	// NOTE: This function is not yet written as it should be.
+	if (!pRow)
+		pRow = matrix()->GetRow(nRow);
+
+	const auto* pColOrbit = colOrbit(nRow++);
+	CColOrbit<T>* pColOrbitLast;
+	const auto v = matrix()->rowNumb();
+	const auto b = !pColPermut ? matrix()->colNumb() : 0;
+	auto* pNewColOrbit = (nRow < v) ? colOrbitIni(nRow) : NULL;
+	T j, jMax, lenOrb, type;
+	j = jMax = 0;
+	while (pColOrbit) {
+		T n = 0;
+		type = pRow[j];
+		jMax += (lenOrb = pColOrbit->length());
+		if (lenOrb > 1) {
+			n = 1;
+			while (++j < jMax)
+				if (pRow[j] == type)
+					n++;
+
+			if (type && n < lenOrb) {
+				// Orbit is divided into multiple parts
+
+				T j2, j1 = (j2 = j) - lenOrb;
+				const T jLast = j1 + n;
+				while (j1 < jLast) {
+					// Find first element which is not equal to type
+					while (pRow[j1] == type) j1++;
+					if (j1 == jLast)
+						break;
+
+					// Find last 1 in current fragment
+					while (!pRow[--j2]);
+
+					if (pNewColOrbit) {
+						// Rearranging corresponding elements of the column permutation
+						if (!pColPermut) {
+							// Permutation of two columns in the remaining rows of the matrix
+							auto* pNextRow = pRow;
+							for (auto i1 = nRow; i1 < v; i1++) {
+								pNextRow += b;
+								if (pNextRow[j1] != pNextRow[j2])
+									pNextRow[j2] = 1 - (pNextRow[j1] = pNextRow[j2]);
+							}
+						}
+						else {
+							auto tmp = pColPermut[j1];
+							pColPermut[j1] = pColPermut[j2];
+							pColPermut[j2] = tmp;
+						}
+					}
+
+					pRow[j1++] = 1;   // When we going back, first we change index.
+					pRow[j2] = 0;     // This is why we have no symmetry here.
+				}
+
+				if (pNewColOrbit) {
+					// NOTE: We need to:
+					// a) add `type` as the input parameter of the following method;
+					// b) use the count of each type's occurrences in the previous rows, instead of the column's weight.
+					pNewColOrbit = pNewColOrbit->InitOrbit(n, colOrbitLen(), pColOrbit, 1);
+					type = 0;
+				}
+			}
+			else
+				n = 0;
+		}
+		else
+			j = jMax;
+
+		if (pNewColOrbit)
+			pNewColOrbit = (pColOrbitLast = pNewColOrbit)->InitOrbit(lenOrb - n, colOrbitLen(), pColOrbit, type);
+
+		pColOrbit = pColOrbit->next();
+	}
+
+	if (pNewColOrbit)
+		pColOrbitLast->setNext(NULL);
+}
+
+#if 1
+#define checkMatr(x, y, z)
+#else
+void checkMatr(unsigned char* pMatr, int v, int b)
+{
+	for (int i = 0; i < b; i++) {
+		auto* pTo = pMatr + i;
+		int l = 0;
+		for (int j = 1; j < v; j++, pTo += b) {
+			if (*pTo) {
+				if (l++ == 3)
+					break;
+			}
+		}
+	}
+
+	auto* pTo = pMatr;
+	for (int i = 1; i < v; i++, pTo += b) {
+		auto* pFrom = pTo;
+		for (int j = i + 1; j < v; j++) {
+			pFrom += b;
+			int l = 0;
+			for (auto k = b; k--;) {
+				if (pFrom[k] && pTo[k]) {
+					if (l)
+						break;
+
+					l++;
+				}
+			}
+		}
+	}
+}
+#endif
+
+size_t lenToCompare = 0;
+int compareRows(const void* arg1, const void* arg2) {
+	return memcmp(arg2, arg1, lenToCompare);
+}
+
+int cntr = 0;
+FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag)
+{
+	checkMatr(matrix()->GetRow(1), v, b);
+	qsort(matrix()->GetRow(nRowStart), v - nRowStart, lenToCompare = b, compareRows);
+	checkMatr(matrix()->GetRow(1), v, b);
+
+	if (initFlag) {
+		initiateColOrbits(v, 0, NULL, true);
+		const auto iMax = CCanonicityChecker::rank();
+		const auto lenOrb = b / iMax;
+		const auto* pColOrbit = colOrbit(0);
+		auto* pNewColOrbit = colOrbitIni(1);
+		CColOrbit<T>* pPrev;
+		for (T i = 0; i < iMax; i++) {
+			pPrev = pNewColOrbit;
+			pNewColOrbit = pPrev->InitOrbit(lenOrb, colOrbitLen(), pColOrbit, 0);
+		}
+		pPrev->setNext(NULL);
+	}
+
+	for (auto i = nRowStart; i < v; i++) {
+		GenerateBinaryColumnOrbits(i, matrix()->GetRow(i));
+		checkMatr(matrix()->GetRow(1), i, b);
+	}
+	checkMatr(matrix()->GetRow(1), v, b);
+}
+
+int myLenght = 7;
+
+FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb();
 	T colBuffer[512], *pColumnBuf = b <= countof(colBuffer)? colBuffer : new T[b];
 	const auto len = b * sizeof(pColumnBuf[0]);
-	TestCanonParams<T, S> canonParam = { this, matrix(), 1};
-	while (!TestCanonicity(v, &canonParam, t_saveRowPermutations)) {
-		// Rearrage the row of matrix in accordance with
-		// the permutations permRow() which was just found
-		auto* pPermRow = permRow();
-		bool adjustColumnOrbits = false;
-		for (T tmp, from, i = 0; i < v; i++) {
-			T* pRow;
-			if (i != (from = pPermRow[i])) {
-				T* pFrom;
-				memcpy(pColumnBuf, pFrom = pRow = matrix()->GetRow(tmp = i), len);
-				do {
+	TestCanonParams<T, S> canonParam = { this, matrix(), 1 };
+
+	S* pCompMatrix = NULL;
+	S* pMatr = matrix()->GetRow(1);
+	T* permClasses = NULL;
+	T* pOrbits = NULL;
+	T lenPerm, lenStab = 0;
+	T numClasses;
+	T nRowStart = 0;
+	T numGroups = 0;
+	//size_t matrixGroupOrder;
+	const auto lenMatrix = (v - 1) * b;
+	const auto lenData = lenMatrix * sizeof(S);
+	CanonicityCheckerPntr pClassGroupHandle;
+	if (pParam) {
+		// As of 09/09/2024 we are here only when canonizing the K-SYSTEM's
+		lenToCompare = b;
+		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1, true);
+		// Preparing data for processing automorphisms associated with day permutations
+		numGroups = (v - 1) / pParam->k;
+		numClasses = lenStab = lenPerm = (v - 2) / (pParam->k - 1);
+	}
+#if PRINT
+	char buf[256], * pBuf;
+	const auto lenBuf = countof(buf);
+	sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_000.txt");
+	FOPEN(f, buf, "w");
+	matrix()->printOut(f, matrix()->rowNumb(), 0, this);
+	fclose(f);
+#endif
+	int cmp = 1;
+	T idx = IDX_MAX;
+	while (true) {
+		while (!TestCanonicity(v, &canonParam, t_saveRowPermutations)) {
+			// Re-arrange the matrix rows according to the permutation found by permRow() 
+			auto* pPermRow = permRow();
+			bool adjustColumnOrbits = false;
+			int firstAdjustedRow = -1;
+			for (T tmp, from, i = nRowStart; i < v; i++) {
+				T* pRow;
+				if (i != (from = pPermRow[i])) {
+					T* pFrom;
+					memcpy(pColumnBuf, pFrom = pRow = matrix()->GetRow(tmp = i), len);
+					do {
+						pPermRow[tmp] = tmp;
+						T* pTo = pFrom;
+						memcpy(pTo, pFrom = matrix()->GetRow(tmp = from), len);
+					} while ((from = pPermRow[from]) != i);
+
 					pPermRow[tmp] = tmp;
-					T* pTo = pFrom;
-					memcpy(pTo, pFrom = matrix()->GetRow(tmp = from), len);
-				} while ((from = pPermRow[from]) != i);
+					memcpy(pFrom, pColumnBuf, len);
+					adjustColumnOrbits = true;
+				}
+				else {
+					// Column orbits need to be adjusted only at least one previous row was moved
+					if (!adjustColumnOrbits)
+						continue;
 
-				pPermRow[tmp] = tmp;
-				memcpy(pFrom, pColumnBuf, len);
-				adjustColumnOrbits = true;
-			} else {
-				// Column orbits need to be adjusted only at least one previous row was moved
-				if (!adjustColumnOrbits)
-					continue;
+					pRow = matrix()->GetRow(i);
+				}
 
-				pRow = matrix()->GetRow(i);
+				if (firstAdjustedRow < 0)
+					firstAdjustedRow = i;
+
+				GenerateBinaryColumnOrbits(i, pRow);
 			}
 
-			CreateColumnOrbits(i, pRow);
+			if (pParam && adjustColumnOrbits) {
+				checkMatr(pMatr, v, b);
+				sortRowsUpdateColumnOrbits(v, b, firstAdjustedRow);
+				checkMatr(pMatr, v, b);
+			}
 		}
+
+		if (!pParam)
+			break;
+
+		if (pCompMatrix) {
+			cmp = memcmp(pMatr, pCompMatrix, lenData);
+			if (!cmp) {
+				// Non-trivial automorphism on classes found
+				pClassGroupHandle->addAutomorphism(permClasses);
+				idx = IDX_MAX;
+#if PRINT
+				FOPEN(f1, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\bbb.txt", "a");
+				pBuf = buf;
+				pBuf += SNPRINTF(pBuf, lenBuf, "cntr = %d:  groupOrder: %3zd  PERM = ", cntr, pClassGroupHandle->groupOrder());
+				for (int i = 0; i < 7; i++)
+					pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buf), "%2d", permClasses[i]);
+
+				fprintf(f1, "%s\n", buf);
+				fclose(f1);
+#endif
+			}
+			else {
+				if (cmp < 0)
+					memcpy(pMatr, pCompMatrix, lenData);
+			}
+		}
+		else {
+			// Matrix for comparison was not yet created
+			pClassGroupHandle = new CCanonicityChecker<TDATA_TYPES>(lenPerm, 0);
+			permClasses = new T[numClasses];
+			pCompMatrix = new S[lenMatrix];
+		}
+		if (cmp == 1) {
+			pClassGroupHandle->initOrbits(permClasses);
+			memcpy(pCompMatrix, pMatr, lenData);
+			checkMatr(pCompMatrix, v, b);
+#if PRINT
+			sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_%03d.txt", ++cntr);
+			FOPEN(f1, buf, "w");
+			matrix()->printOut(f1, matrix()->rowNumb(), 0, this);
+			fclose(f1);
+#endif
+		}
+
+		idx = pClassGroupHandle->next_permutation(permClasses, idx);// , pOrbits, lenPerm, numClasses, lenStab);
+		if (idx == ELEMENT_MAX)
+			break;		// there are no more permutations of the classes
+
+		idx = lenPerm;
+
+		T i = 0;
+		while (permClasses[i] == i) i++;
+
+#if PRINT
+		FOPEN(fx, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\aaa.txt", "a");
+		pBuf = buf;
+		pBuf += SNPRINTF(pBuf, lenBuf, "cntr = %3d  cmp = %2d  PERM = ", cntr, cmp);
+		for (int i = 0; i < 7; i++)
+			pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buf), "%2d", permClasses[i]);
+
+		fprintf(fx, "%s  i = %d\n", buf, i);
+		fclose(fx);
+#endif
+
+		// Permute the column groups based on the class permutations just constructed.
+		while (i < lenPerm) {
+			auto* pTo = pMatr + numGroups * i;
+			const auto* pFrom = pCompMatrix + numGroups * permClasses[i++];
+			for (auto i = v; --i;) {
+				memcpy(pTo, pFrom, numGroups * sizeof(pTo[0]));
+				pTo += b;
+				pFrom += b;
+			}
+		}
+
+		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1);
+		checkMatr(pMatr, v, b);
 	}
+
+	pClassGroupHandle->updateOrderOfGroup();
+	setGroupOrder(pClassGroupHandle->groupOrder() * groupOrder());
+#if PRINT
+	sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_XXX.txt");
+	FOPEN(f2, buf, "w");
+	matrix()->printOut(f2, matrix()->rowNumb(), 0, this);
+	fclose(f2);
+#endif
+	delete[] permClasses;
+	delete[] pCompMatrix;
+	delete pClassGroupHandle;
 
 	if (pColumnBuf != colBuffer)
 		delete[] pColumnBuf;

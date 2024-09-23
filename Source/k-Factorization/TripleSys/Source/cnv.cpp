@@ -78,75 +78,86 @@ void alldata::cnvInit()
 		}
 	}
 }
-int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, int* pDayMax) const
+int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, bool bLastRowOnly)
 {
 	int ret = 1;
+	bool allIcmpEq1 = true;
 	char ttr1[27], *ttr = tr;
-	if (pDayMax)
-		*pDayMax = nrows - 1;
 	char* res = result();
-	const char* resSecondRow = res + m_numPlayers;
-	const int npmMinus1Row = (nrows - 1) * m_numPlayers;
-	unsigned char n;
-	for (int day = n = 0; day < m_NumDaysToTransform; day++)
+	int dayMax = nrows - 1;
+	unsigned char n = 0, day = 0;
+	int icmp = 0;
+	if (bLastRowOnly)
 	{
-		int icmp;
+		day = m_NumDaysToTransform - 1;
+		n = nrows - 1;
+	}
+	for (; day < m_NumDaysToTransform; day++)
+	{
 		if (day) {
 			ttr = ttr1;
-			const auto* resn = result(n = m_DayIdx[day]);
+			if (!bLastRowOnly)
+				n = m_DayIdx[day];
+			const auto* resn = result(n);
 			for (int i = 0; i < m_numPlayers; i++)
 			{
 				ttr[resn[i]] = tr[i];
 			}
 		}
-
-		if (m_groupSize == 2 && m_createImprovedResult < 2)
+		//memset(m_Km, 0, m_numPlayers * m_numPlayers);
+		//memset(m_Ktmp, 0, m_numPlayers * m_numPlayers);
+		if (m_groupSize > 3 || m_createImprovedMatrix)
 		{
-#if 0
-			char tmp[16], ttrtmp[16], ktmp[16*16];
-			memcpy(tmp, m_Km2ndRowInd, m_numPlayers);
-			memcpy(ttrtmp, ttr, m_numPlayers);
-			memcpy(ktmp, m_Km, m_numPlayers * m_numPlayers);
-#endif
-			icmp = kmProcessMatrix2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
-#if 0       // test of kmProcessMatrix2
-			int dayMax = nrows - 1;
-			int icmp2 = kmProcessMatrix(m_Km, res, m_Ktmp, nrows, m_numPlayers, m_groupSize, ttr, &dayMax);
-			if (icmp != icmp2 || (pDayMax != NULL && *pDayMax != dayMax))
-			{
-				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
-				memcpy(m_Km2ndRowInd, tmp, m_numPlayers);
-				memcpy(ttr, ttrtmp, m_numPlayers);
-				memcpy(m_Km, ktmp, m_numPlayers * m_numPlayers);
-				int icmp3 = kmProcessMatrix2(m_Km, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, pDayMax);
-				printTable("Translated", m_Km, nrows, m_numPlayers);
-				printf("ic=%d %d %d\n", icmp, icmp2, icmp3);
-				if (pDayMax != NULL)
-					printf("dm = %d %d\n", *pDayMax, dayMax);
-				exit(1);
-			}
-#endif 
-#if 0
-			//if (icmp < 0 && n == 1 && ttr[0] != 0)
-			{
-				printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km);
-			}
-#endif
-		}
+			icmp = kmProcessMatrix(m_Km, res, m_Ktmp, nrows, m_numPlayers, m_groupSize, ttr, &dayMax);
+                              		}
 		else
 		{
-			icmp = kmProcessMatrix(m_Km, res, m_Ktmp, nrows, m_numPlayers, m_groupSize, ttr, pDayMax);
+			if (m_groupSize == 2)
+			{
+/* AI */		icmp = kmProcessMatrix(m_Ktmp, res, m_Km, nrows, m_numPlayers, m_groupSize, ttr, &dayMax);
+				//icmp = kmProcessMatrix2(m_Ktmp, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, &dayMax);
+				//TestkmProcessMatrix(nrows, n, tr, ttr, icmp, pDayMax);
+			}
+			else if (m_groupSize == 3)
+			{
+				icmp = kmProcessMatrix3(m_Ktmp, res, ttr, nrows, m_numPlayers, m_Km2ndRowInd, n, &dayMax);
+				//TestkmProcessMatrix(nrows, n, tr, ttr, icmp, pDayMax);
+			}
+#if 0 // AI
+			if (m_finalKMindex >= 0/*84*/)
+			{
+				//if (m_TrInd > 0 && m_TrInd < 16)
+				//    printf(".TrInd=%3d icmp=%d day=%d n=%d r2ind=%d\n", m_TrInd, icmp, day, n, m_Km2ndRowInd[n]);
+				if (true || icmp == 0 /* && m_TrInd > 13 */ && m_TrInd < 5 /*16*/)
+				{
+					printf("+TrInd=%3d icmp=%d day=%d n=%d r2ind=%d\n", m_TrInd, icmp, day, n, m_Km2ndRowInd[n]);
+					printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Ktmp);
+				}
+				if (m_finalKMindex > 0/*84*/)
+					n = n;
+			}
+#endif
 		}
 #if 0
-		static int a, b;
-		a++;
-		if (icmp == 0)
-			b++;
-		if ((a % 1000000) == 0)
-			printf("%d %d\n", a, b);
+		Stat("all tr", 1, true);
+		Stat("tr=-1", 2, icmp == -1);
+		Stat("tr=0", 3, icmp == 0);
+		Stat("tr=1", 4, icmp == 1);
+		Stat("tr=2", 5, icmp == 2);
 #endif
-
-#if USE_EQUAL
+		if (m_dayMax > dayMax)
+			m_dayMax = dayMax;
+#if UseTrMask == 1
+		if (icmp != 1)
+			allIcmpEq1 = false;
+#endif
+#if UseTrMask == 2
+		if (m_TrResult > icmp)
+			m_TrResult = icmp;
+		if (icmp == 0)
+			SetBit(m_TrMask + n * m_nTrBytes, m_TrInd);
+#endif
+#if USE_EQUAL && UseTrMask != 2
 		if (!icmp) {
 #if 0
 			if (pOrbits) {
@@ -173,10 +184,33 @@ int alldata::cnvCheckKm1(char* tr, int nrows, unsigned char* pOrbits, int* pDayM
 #endif
 		return -1;
 	}
+
+#if UseTrMask == 1
+	if (allIcmpEq1)
+		SetBit(m_TrMask + (iDay - 1) * m_nTrBytes, m_TrInd);
+	else if(bLastRowOnly)
+		ResetBit(m_TrMask + (iDay - 1) * m_nTrBytes, m_TrInd);
+#endif
 	return ret;
 }
 bool alldata::cnvCheckKm(char* tr, char* tg)
 {
+	bool bLastRowOnly = false;
+#if UseTrMask == 1
+	if (m_TrInd < 0 || m_TrInd/8 >= m_nTrBytes)
+		abort();
+	int ib = GetBit(m_TrMask + (iDay - 1) * m_nTrBytes, m_TrInd);
+#if 0
+	Stat("all tr (all days)", 6, true);
+	Stat("last day only", 7, ib != 0);
+#endif
+	if (ib)
+	{
+		bLastRowOnly = true;
+		//m_TrInd++;
+		//return true;
+	}
+#endif
 	int ii = 0;
 	for (int i = 0; i < m_nGroups; i++, ii+=m_groupSize)
 	{
@@ -191,9 +225,12 @@ bool alldata::cnvCheckKm(char* tr, char* tg)
 	printTable("Tr", tr, 1, m_nGroups);
 	printTable("Tg", tg, 1, m_nGroups);
 #endif
-	int maxDay;
-	const bool ret = cnvCheckKm1(m_trmk, iDay, NULL, &maxDay) >= 0;
-	m_groupIndex = (maxDay + 1) * m_nGroups - 2;
+	const bool ret = cnvCheckKm1(m_trmk, iDay, NULL, bLastRowOnly) >= 0;
+
+#if UseTrMask
+	m_TrInd++;
+#endif
+
 #if 0
 	if (!ret)
 	{
@@ -231,7 +268,7 @@ bool alldata::cnvCheckTg(char* tr, char* tg, int ntg, int gsf)
 	//printf(" BestTg=%d\n", m_bestTg);
 	return ret;
 }
-bool alldata::cnvCheckTgNew(char* tr, int gsf, bool bSkipFirst)
+bool alldata::cnvCheckTgNew(char* tr, int gsf)
 {
 	char tg[16];
 	char* ttg = tg;
@@ -240,7 +277,7 @@ bool alldata::cnvCheckTgNew(char* tr, int gsf, bool bSkipFirst)
 	char gs = gsf;
 	int i, cnt = 0;
 	memset(tg, 0, ng);
-	tg[ng - 1] = bSkipFirst ? 1 : 0;
+	tg[ng - 1] = 0;
 	while(1)
 	{
 		if (!cnvCheckKm(tr, tg))
@@ -296,6 +333,7 @@ bool alldata::cnvCheck()
 		}
 	}
 	//printf(" BestTr=%d\n", m_bestTr);
+	m_groupIndex = iDay * m_nGroups - 2;
 	return ret;
 }
 bool alldata::cnvCheckNew()
@@ -305,12 +343,16 @@ bool alldata::cnvCheckNew()
 	char i, j, tmp; // Upper Index i; Lower Index j
 	int itr = 0;
 	bool ret = true;
-#if USE_EQUAL
-	// Creating the sequences 0,1,2,3,... as the day's indices.
-	memcpy(m_DayIdx, result(), m_NumDaysToTransform = iDay);
-#else
-	m_NumDaysToTransform = iDay;
+
+	m_TrResult = 2;
+	m_dayMax = iDay - 1;
+#if UseTrMask
+	m_TrInd = 0;
+	memset(m_TrMask, 0, m_nTrBytes * m_numDays);
 #endif
+	m_NumDaysToTransform = iDay;
+	// Creating the sequences 0,1,2,3,... as the day's indices.
+	initDayIdx(m_NumDaysToTransform);
 	if (m_nGroups + 1 > sizeof(p))
 		abort();
 	for (i = 0; i < m_nGroups; i++)   // initialize arrays; a[N] can be any type
@@ -318,34 +360,41 @@ bool alldata::cnvCheckNew()
 		a[i] = i * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		p[i] = i;
 	}
-	if (!cnvCheckTgNew(a, m_groupSizeFactorial, true))
+	if (!cnvCheckTgNew(a, m_groupSizeFactorial))
 	{
 		//printf(" t%d ", itr);
-		return false;
+		ret = false;
 	}
-	itr++;
-	p[m_nGroups] = m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
-	i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
-	while (i < m_nGroups)
+	else
 	{
-		p[i]--;             // decrease index "weight" for i by one
-		j = i % 2 * p[i];   // IF i is odd then j = p[i] otherwise j = 0
-		tmp = a[j];         // swap(a[j], a[i])
-		a[j] = a[i];
-		a[i] = tmp;
-		if (!cnvCheckTgNew(a, m_groupSizeFactorial, false))
-		{
-			//printf(" t%d ", itr);
-			ret = false;
-			break;
-		}
 		itr++;
-		i = 1;              // reset index i to 1 (assumed)
-		while (!p[i])       // while (p[i] == 0)
+		p[m_nGroups] = m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
+		i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
+		while (i < m_nGroups)
 		{
-			p[i] = i;        // reset p[i] zero value
-			i++;             // set new index value for i (increase by one)
+			p[i]--;             // decrease index "weight" for i by one
+			j = i % 2 * p[i];   // IF i is odd then j = p[i] otherwise j = 0
+			tmp = a[j];         // swap(a[j], a[i])
+			a[j] = a[i];
+			a[i] = tmp;
+			if (!cnvCheckTgNew(a, m_groupSizeFactorial))
+			{
+				//printf(" t%d ", itr);
+				ret = false;
+				break;
+			}
+			itr++;
+			i = 1;              // reset index i to 1 (assumed)
+			while (!p[i])       // while (p[i] == 0)
+			{
+				p[i] = i;        // reset p[i] zero value
+				i++;             // set new index value for i (increase by one)
+			}
 		}
 	}
+#if 0 // print result after all transitions applied
+	TestStatPrint("iDay=%d:", iDay);
+#endif
+	m_groupIndex = (m_dayMax + 1) * m_nGroups - 2;
 	return ret;
 }

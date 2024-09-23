@@ -79,7 +79,6 @@ doneInit:
 	linksFromMatrix(links(), result(), id, m_numPlayers);
 	iDay = id;
 	maxDays = iDay;
-	memcpy(maxResult, result(0), m_nLenResults);
 	if (printStartValues) {
 		printTable("Start Result", result(), numDays(), numPlayers());
 		printTableColor("Start Links", links(0), numPlayers(), numPlayers());

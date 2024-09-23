@@ -1,7 +1,45 @@
 #include "TripleSys.h"
 #include <iostream>
 
-bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, char *vo)
+bool CChecklLink::checkLinksTR(const char* v, int nvAll, int nv, int ind)
+{
+	if (nvAll <= 0)
+		return true;
+	if (nv <= 0)
+	{
+		if (ind != unset)
+			v++;
+		nv = *v;
+		v++;
+		nvAll--;
+		ind = unset;
+	}
+	char t[256];
+	if (ind == unset)
+		memcpy(t, v, nvAll);
+	else if (ind == 0)
+		memcpy(t, v + 1, nvAll);
+	else
+	{
+		memcpy(t, v, ind);
+		if (nvAll > ind)
+			memcpy(t + ind, v + ind + 1, nvAll - ind);
+	}
+	char* lnkt0 = m_pLinksCopy + t[0] * m_numPlayers;
+	for (int i = 1; i < nv; i++)
+	{
+		char* lnk = lnkt0 + t[i];
+		if (*lnk == unset)
+		{
+			*lnk = 1;
+			if (checkLinksTR(t + 1, nvAll - 2, nv - 2, i - 1))
+				return true;
+			*lnk = unset;
+		}
+	}
+	return false;
+}
+bool CChecklLink::checkLinksV(const char* c, const char* v, int nv, int ind, char* vo)
 {
 	if (nv <= 0)
 		return true;
@@ -44,9 +82,9 @@ bool CChecklLink::checkLinksV(const char *c, const char *v, int nv, int ind, cha
 	{
 		memcpy(t, v, ind);
 		if (nv > ind)
-		    memcpy(t + ind, v + ind + 1, nv - ind);
+			memcpy(t + ind, v + ind + 1, nv - ind);
 	}
-	const char *ct0 = c + t[0] * m_numPlayers;
+	const char* ct0 = c + t[0] * m_numPlayers;
 	for (int i = 1; i < nv; i++)
 	{
 		if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))

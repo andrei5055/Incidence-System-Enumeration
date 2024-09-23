@@ -3,7 +3,7 @@
 #include "Table.h"
 
 #ifdef CD_TOOLS
-   #include "../CanonicityChecker.h"
+   #include "CanonicityChecker.h"
 #else
    #include "CheckCanon.h"
 #endif
@@ -97,7 +97,8 @@ bool alldata::Run(int threadNumber, int iCalcMode,
 	if (m_improveResult)
 		bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
 
-	Table<char> Result("Result table", m_numDays, m_numPlayers, 0, GroupSize, true, true);
+	TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, GroupSize, true, true);
+	Result.allocateBuffer(32);
 
 	createFolderAndFileName(ImprovedResultFile, sizeof(ImprovedResultFile), ImprovedResultFolder, ImprovedResultNameFormat,
 		m_numPlayers, numDaysAdj, m_groupSize, threadNumber);
@@ -155,26 +156,33 @@ ProcessOneDay:
 					{
 						//m_pCheckLink->reportCheckLinksData();
 						printf("Thread %d: Current result for matrix %zd: rows=%d, build time=%d, time since start=%d\n",
-							threadNumber, nLoops + 1, iDay + 1, cTime - mTime, cTime - iTime);
+							threadNumber, nLoops + 1, iDay + 1, cTime - rTime, cTime - iTime);
 						printTable("Current result", result(), iDay + 1, m_numPlayers, 0, m_groupSize, true);
+#if 0
+						TestStatPrint("iDay=%d:", iDay);
+#endif
 					}
 					rTime = cTime;
 					maxDays = iDay;
-					memcpy(maxResult, result(0), m_nLenResults);
 				}
 			}
 			iDay++;
 #if UseSS != 2
 			if (iDay > 1)
 			{
-#if 1 // set to 0 to disable improvement
+				if (m_bCheckLinkT && !m_pCheckLink->checkLinksT(links(), iDay))
+				{
+					m_groupIndex = iDay * m_nGroups - 2;
+					bPrevResult = true;
+				}
+#if 1 // set to 0 to disable improvement by improveMatrix and cnvCheckNew/cnvCheck
+				if (!bPrevResult)
 				bPrevResult = improveMatrix(m_improveResult, bResults, lenResult);
 #if 1
 				if (!bPrevResult && (
 					(!CHECK_WITH_GROUP && iDay == m_numDays)
-					|| (iCalcMode == eCalcStart && iDay <= nrowsStart)
+				//	|| (iDay > m_numDays - 2)
 					|| (iDay == numDaysAdj && numDaysAdj != m_numDays)
-				//	|| (iDay < m_numDays)
 					))
 				{
 #if USE_cnvCheckNew
@@ -182,27 +190,10 @@ ProcessOneDay:
 #else
 					bPrevResult = !cnvCheck();
 #endif
-					/**
-					if (CHECK_WITH_GROUP && bPrevResult && iDay == m_numDays)
-					{
-						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
-						printf("*** improvement!!!***\n");
-						exit(0);
-					}**/
 				}
 #endif
 				if (bPrevResult)
 				{
-#if 0
-					if (m_groupIndex < (iDay - 1) * m_nGroups - 1)
-					{
-						printf("*** Thread %d: More than one day back (from group %d to %d) request.\n", 
-							threadNumber, iDay * m_nGroups, m_groupIndex);
-						printTable("Input matrix", result(), iDay, m_numPlayers, 0, m_groupSize, true);
-						//m_groupIndex = iDay * m_nGroups - 2;
-						//exit(0);
-					}
-#endif
 					if (m_groupIndex >= iDay * m_nGroups)
 					{
 						printf("*** Thread %d: After current day 'back' request (m_groupIndex=%d)\n", threadNumber, m_groupIndex);
@@ -214,6 +205,10 @@ ProcessOneDay:
 						if (iDay == m_numDays && m_groupIndex > (iDay - 1) * m_nGroups - 2)
 							m_groupIndex = (iDay - 1) * m_nGroups - 2;
 						iDay--;
+#if UseTrMask == 1
+						if (iDay > 0)
+							memcpy(m_TrMask + iDay * m_nTrBytes, m_TrMask + (iDay - 1) * m_nTrBytes, m_nTrBytes);
+#endif
 						while (iDay > m_groupIndex / m_nGroups)
 						{
 							while (iPlayer >= 0)
@@ -254,22 +249,20 @@ ProcessOneDay:
 		nLoops++;
 		if (iCalcMode == eCalcResult)
 		{
-			//printf("*** cnvCheck starts\n");
-			//if (CHECK_WITH_GROUP || cnvCheckNew())
+			m_finalKMindex++;
 			{
 				if (bPrint)
 				{
 					//report result
-#if DEBUG_NextPermut == 0
 					clock_t cTime = clock();
-					printf("Result %zd: matrix build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
-#else
-					extern int matr_cntr;
-					printf("Result %zd: matr_cntr = %d\n", nLoops, matr_cntr);
-#endif
+					printf("%5zd: Result Matrix, build time=%d, time since start=%d\n", nLoops, cTime - mTime, cTime - iTime);
+
 				}
+				Result.setGroupOrder(reportMatrixStats(bPrint));
 				Result.printTable(result(), true, ResultFile, bPrint, numDaysAdj);
-				m_finalKMindex++;
+#if 0
+				TestStatPrint("iDay=%d:", iDay);
+#endif
 				if (pcnt != NULL)
 					*pcnt = -m_finalKMindex - 1;
 			}

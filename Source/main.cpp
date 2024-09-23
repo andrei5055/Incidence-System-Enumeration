@@ -5,7 +5,8 @@
 #include "C_tDesignEnumerator.h"
 #include "CombBIBD_Enumerator.h"
 #include "IG_Enumerator.h"
-#include "TripleSys/TripleSys.h"
+#include "TripleSys.h"
+#include "designParam.h"
 
 #include <fstream>
 #include <string>      // for getline
@@ -18,15 +19,16 @@ using namespace std;
 const char *obj_name[] = {
 	"BIBD",					// t_BIBD,			- default
 	"COMBINED_BIBD",		// t_CombinedBIBD,
-	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triples
+	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triple
 	"TRIPLE_SYSTEM",        // t_TripleSystem - construction by Leo's program
 	"T-DESIGN",				// t_tDesign,
 	"PBIBD",				// t_PBIBD,
 	"INCIDENCE",            // t_IncidenceSystem,
-	"SEMI_SYMMETRIC_GRAPH"  // t_SemiSymmetricGraph
+	"SEMI_SYMMETRIC_GRAPH", // t_SemiSymmetricGraph
+	"CANON_MATR"			// t_CanonMatr
 };
 
-// Order of checking object names during parsing of parameters
+// The order of checking object names used during parameter parsing.
 t_objectType idx_obj_type[] = {
 	t_objectType::t_PBIBD,
 	t_objectType::t_CombinedBIBD,
@@ -36,6 +38,7 @@ t_objectType idx_obj_type[] = {
 	t_objectType::t_SemiSymmetricGraph,
 	t_objectType::t_Kirkman_Triple,
 	t_objectType::t_TripleSystem,
+	t_objectType::t_CanonMatr,
 };
 
 int find_T_designParam(int v, int k, int lambda)
@@ -175,192 +178,6 @@ static bool getTParam(const string &paramText, designParam *param)
 	return true;
 }
 
-template <typename T, typename S>
-void output_2_decompInfo(designParam *param, const CDesignDB *pDesignDB, string& outputInfo, bool addInfo = false, const char* pSummaryFileName = NULL) {
-	const auto& lambda = param->InterStruct()->lambda();
-	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
-	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
-	bibdEnum.outNonCombinedDesigns(param, pDesignDB, outputInfo, addInfo);
-	if (!addInfo) {
-		char buffer[256];
-		param->enumInfo()->reportResult(buffer, countof(buffer));
-		outString(buffer, pSummaryFileName);
-		cout << '\r' << buffer;
-	}
-}
-
-template <typename T, typename S>
-bool RunOperation(designParam *pParam, const char *pSummFile, bool FirstPath, std::string* outInfo) {
-	if (pParam->v <= 0) {
-		printf("Problem in RunOperation. Number of elements v = %d <= 0", pParam->v);
-		return false;
-	}
-
-	InitCanonInfo(pParam->threadNumb);
-	Class2(C_InSys) *pInSys = NULL;
-	Class2(C_InSysEnumerator) *pInSysEnum = NULL;
-	t_objectType objType = pParam->objType;
-	uint enumFlags = pParam->noReplicatedBlocks ? t_noReplicatedBlocks : t_enumDefault;
-	if ((pParam->outType & t_GroupGeneratingSet) == t_GroupGeneratingSet)
-		enumFlags |= t_outRowOrbits + t_outRowPermute;
-	else
-	if (pParam->outType & t_GroupOrbits)
-		enumFlags |= t_outRowOrbits;
-
-	const auto k = pParam->k;
-	const auto& lambda = pParam->InterStruct()->lambda();
-	if (pParam->t <= 2) {
-		if (lambda.size() > 1 || objType == t_objectType::t_SemiSymmetricGraph) {
-			bool kirkmanTriples = false;
-			static t_objectType obj_types[] = { t_objectType::t_PBIBD, t_objectType::t_CombinedBIBD, t_objectType::t_SemiSymmetricGraph };
-			switch (objType) {
-			case t_objectType::t_PBIBD:
-				pInSys = new Class2(C_PBIBD)(pParam->v, k, pParam->r, lambda);
-				pInSysEnum = new Class2(CPBIBD_Enumerator)(pInSys, enumFlags);
-				break;
-			case t_objectType::t_SemiSymmetricGraph:
-				enumFlags |= t_outColumnOrbits + t_outStabilizerOrbit + t_colOrbitsConstructed + t_alwaysKeepRowPermute;
-				pInSys = new Class2(CSemiSymmetricGraph)(pParam->v, k, pParam->r, lambda);
-				pInSysEnum = new Class2(CIG_Enumerator)(pInSys, pParam, enumFlags, FirstPath);
-				break;
-			case t_objectType::t_Kirkman_Triple: 
-				kirkmanTriples = true;
-			case t_objectType::t_CombinedBIBD:
-				pInSys = new Class2(CCombinedBIBD)(pParam->v, k, kirkmanTriples, lambda);
-				pInSysEnum = new Class2(CCombBIBD_Enumerator)(pInSys, enumFlags + t_useGroupOnParts);
-				break;
-			default:
-				printf("LambdaSet has %zu elements, in that case the object type cannot be \'%s\'\n", lambda.size(), obj_name[+objType]);
-				printf("Possible values are:");
-				for (int i = 0; i < countof(obj_types); i++)
-					printf("\n    %s", obj_name[+obj_types[i]]);
-
-				return false;
-			}
-		}
-		else {
-			const auto λ = lambda[0];
-			pInSys = new Class2(C_BIBD)(pParam->v, k, 2, λ);
-			const auto r = pInSys->GetNumSet(t_rSet)->GetAt(0);
-			const int maxNumbCommonElement = (2 * k * λ / r) + (r - k - λ);
-			if (maxNumbCommonElement < k) {
-				// According the theorem by Connor, maxNumbCommenElement is
-				// the maximal number of common elements for two blocks
-				enumFlags |= t_noReplicatedBlocks;
-				pInSys->setMaxBlockIntrsection(static_cast<T>(maxNumbCommonElement));
-			}
-
-			if (λ > 1) {
-				if (pParam->enumFlags & t_use_3_condition)
-					enumFlags |= t_use_3_condition;
-
-				if ((pParam->enumFlags & t_symmetrical_t_cond) && k == r)
-					enumFlags |= t_symmetrical_t_cond;
-			}
-
-			if (objType != t_objectType::t_TripleSystem) {
-				pInSysEnum = new Class2(CBIBD_Enumerator)(pInSys, enumFlags);
-				objType = t_objectType::t_BIBD;
-			}
-		}
-	}
-	else {
-		pInSys = new Class2(C_tDesign)(pParam->t, pParam->v, k, lambda[0]);
-		pInSysEnum = new Class2(C_tDesignEnumerator)(static_cast<TDesignPntr>(pInSys), enumFlags);
-		objType = t_objectType::t_tDesign;
-	}
-
-	pInSys->setObjectType(objType);
-
-	char buff[256] = {}, buffer[256] = {};
-	if (pInSysEnum)
-		MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
-	else {
-		const auto name = obj_name[static_cast<int>(t_objectType::t_TripleSystem)];
-		sprintf_s(buff, "%s(%d)", name, pParam->v);
-	}
-	cout << buff;
-
-	auto* pEnumInfo = new CInsSysEnumInfo<TDATA_TYPES>(buff);
-	const bool resetMTlevel = pParam->MT_level() == 0;
-	if (pInSysEnum) {
-		pEnumInfo->setDesignInfo(pParam);
-		if (FirstPath) {
-			FOPEN(outFile, pSummFile, "w");
-			pEnumInfo->outEnumInformation(&outFile, pInSysEnum->enumFlags(), false);
-			outString("         BIBDs:                     Canonical:      NRB #:      Constructed:    Run Time (sec):\n", pSummFile);
-		}
-
-		if (resetMTlevel) {
-			// The row number, on which the threads will be launched was not defined.
-			// Let's do it here by other parameters
-			pParam->set_MT_level(pInSysEnum->define_MT_level(pParam));
-		}
-	}
-
-	try {
-		bool retVal = false;
-		if (objType != t_objectType::t_TripleSystem) {
-			retVal = pInSysEnum->Enumerate(pParam, PRINT_TO_FILE, pEnumInfo);
-			if (retVal) {
-				pEnumInfo->reportResult(buffer, countof(buffer));
-				outString(buffer, pSummFile);
-				cout << '\r' << buffer;
-			}
-		}
-		else {
-			alldata sys(pParam->v);
-			retVal = sys.Run();
-		}
-
-		if (!retVal) {
-			cout << "\rSome problem was found during the enumeration\n";
-			pInSysEnum->closeFile();
-		}
-	}
-	catch (...) {
-		pInSysEnum->closeFile();
-	}
-
-
-	delete pInSys;
-	if (pParam->find_all_2_decomp) {
-		auto* pDesignDB = pInSysEnum->designDB();
-		if (pParam->find_master_design) {
-			// Compare two databases with BIBDs and make output
-			// of the designs which are NOT in second database.
-			auto* pComplementDB = new CDesignDB(pDesignDB->recordLength());
-			pComplementDB->combineDesignDBs(pParam->designDB(), pDesignDB, true);
-			delete pDesignDB;
-			delete pEnumInfo;
-			output_2_decompInfo<TDATA_TYPES>(pParam, pComplementDB, *outInfo, true);
-		}
-		else {
-			// Saving pEnumInfo for use it after enumeration of combined BIBDs
-			pParam->setEnumInfo(pEnumInfo);
-			pParam->setDesignDB(pDesignDB);
-			// Saving mt_level used for regular BIBDs enumeration
-			pParam->set_MT_level(pParam->MT_level(), 1);
-			char buffer[265];
-			sprintf_s(buffer, "Number of %s's which are NOT combined for the following {lambda_1, lambda_2}:\n  ", buff);
-			*outInfo = buffer;
-		}
-
-		pInSysEnum->setDesignDB(NULL);
-	}
-	else {
-		delete pEnumInfo;
-	}
-
-	delete pInSysEnum;
-
-	if (resetMTlevel)
-		pParam->set_MT_level(0);
-
-	CloseCanonInfo();
-	return true;
-}
-
 static size_t find(const string &str, const char *strValue)
 {
 	const size_t pos = str.find(strValue);
@@ -448,101 +265,32 @@ void getMasterBIBD_param(const string& line, const size_t lineLength, designPara
 
 const char* pSummaryFile = "EnumSummary.txt";
 
-bool designParam::LaunchEnumeration(t_objectType objType, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun)
-{
-	uint iMax = 0;
-	uint lambda = 1;
-	find_master_design = 0;   // This option for CombBIBDs only
-	auto lambdaSet = InterStruct()->lambdaPtr();
-	uint baseLambda = 0;
-	switch (objType) {
-	case t_objectType::t_Kirkman_Triple:
-	case t_objectType::t_TripleSystem:
-		break;
-	default: baseLambda = this->lambda()[0];
-	}
+bool parsingPath(string& line, size_t pos, bool isDir = true) {
+	line = line.substr(pos + 1);
+	std::replace(line.begin(), line.end(), '\\', '/');
+	if (isDir && line.back() != '/')
+		line += '/';
 
-	switch (objType) {
-	case t_objectType::t_TripleSystem:
-	case t_objectType::t_Kirkman_Triple:
-		if (this->v % 6 != 3) {
-			printf("\nNumber of elements for Kirkman triple system should be equal to 3(mod 6)");
-			printf("\nNow it is set to %d", this->v);
-			return false;
-		}
- 
-		this->k = 3;
-		if (objType == t_objectType::t_TripleSystem) {
-			lambdaSet->push_back(1);
-			break;
-		}
-	
-		lambdaSet->push_back(0);
-		lambdaSet->push_back(r = 1);
-	case t_objectType::t_CombinedBIBD:
-		find_master_design = find_master;
-		this->use_master_sol = 0;
-		break;
-	case t_objectType::t_BIBD: {
-			const auto vMinus1 = this->v - 1;
-			const auto kMinus1 = this->k - 1;
-			const auto r = vMinus1 * baseLambda / kMinus1;
-			if (r * kMinus1 != vMinus1 * baseLambda) {
-				printf("\nParameters (v, k, lambda) = (%d, %d, %d) cannot be parameters of BIBD.", this->v, this->k, baseLambda);
-				return false;
-			}
-			this->find_all_2_decomp = find_all_2_decomp ? 2 : 0;
-			if (find_all_2_decomp) {
-				while (lambda <= (baseLambda >> 1) && (vMinus1 * lambda / kMinus1) * kMinus1 != vMinus1 * lambda)
-					lambda++;
+	struct stat sb;
+	const auto* pWorkDir = line.c_str();
+	const char* pCause = NULL;
+	if (stat(pWorkDir, &sb))
+		pCause = isDir? "get information about" : "find";
+	else
+	if (isDir && !(S_IFDIR & sb.st_mode))
+		pCause = "find";
+	else
+	if (!(S_IREAD & sb.st_mode))
+		pCause = "read from";
+	else
+	if (!(S_IWRITE & sb.st_mode))
+		pCause = "write into";
 
-				if (lambda > (baseLambda >> 1)) {
-					printf("\n BIBD is not a Combined BIBD.");
-					return false;
-				}
+	if (!pCause)
+		return true;
 
-				setLambdaStep(lambda);
-				iMax = baseLambda / (2 * lambda);
-			}
-		}
-	}
-
-	const string summaryFile = this->workingDir + pSummaryFile;
-	const char* pSummFile = summaryFile.c_str();
-	std::string outInfo;
-	for (uint i = 0; i <= iMax; i++) {
-		if (i) {
-			// For all 2-part decomposition search only
-			this->objType = t_objectType::t_CombinedBIBD;
-			find_all_2_decomp = this->find_master_design = 1;
-			this->use_master_sol = 0;
-			lambdaSet->resize(0);
-			lambdaSet->push_back(i * lambda);
-			lambdaSet->push_back(baseLambda - i * lambda);
-		}
-		if (!RunOperation<TDATA_TYPES>(this, pSummFile, firstRun, &outInfo))
-			break;
-
-		firstRun = false;
-	}
-
-	if (this->find_all_2_decomp) {
-		output_2_decompInfo<TDATA_TYPES>(this, designDB(1), outInfo, false, pSummFile);
-		delete enumInfo();
-		setEnumInfo(NULL);
-	}
-
-	for (int i = 0; i < 2; i++) {
-		delete designDB(i);
-		setDesignDB(NULL, i);
-	}
-
-	this->use_master_sol = use_master_sol;
-	find_master_design = find_master;
-	logFile = "";
-	setLambdaStep(0);
-	setEmptyLines();
-	return true;
+	printf("Cannot %s %s: \'%s\'\n", pCause, isDir? "working directory" : "file", pWorkDir);
+	return false;
 }
 
 int main(int argc, char * argv[])
@@ -643,34 +391,19 @@ int main(int argc, char * argv[])
 		const auto length = line.length();
 		pos = find(line, "WORKING_DIR");
 		if (pos != string::npos) {
-			line = line.substr(pos + 1);
-			std::replace(line.begin(), line.end(), '\\', '/');
-			if (line.back() != '/')
-				line += '/';
+			if (!parsingPath(line, pos))
+				break;
+			newWorkDir = line;
+			continue;
+		}
 
+		pos = find(line, "INPUT_FILE");
+		if (pos != string::npos) {
+			if (!parsingPath(line, pos, false))
+				break;
 
-			struct stat sb;
-			const auto* pWorkDir = line.c_str();
-			const char* pCause = NULL;
-			if (stat(pWorkDir, &sb))
-				pCause = "get information about";
-			else
-				if (!(S_IFDIR & sb.st_mode))
-					pCause = "find";
-				else
-					if (!(S_IREAD & sb.st_mode))
-						pCause = "read from";
-					else
-						if (!(S_IWRITE & sb.st_mode))
-							pCause = "write into";
-
-			if (!pCause) {
-				newWorkDir = line;
-				continue;
-			}
-
-			printf("Cannot %s working directory: \'%s\'\n", pCause, pWorkDir);
-			break;
+			param->logFile = line;
+			continue;
 		}
 
 		switch (getIntegerParam(line, "THREAD_NUMBER", &param->threadNumb)) {
@@ -730,9 +463,9 @@ int main(int argc, char * argv[])
 		getIntegerParam(line, "COMPRESS_MATRICES", &param->m_compress_matrices);
 		getIntegerParam(line, "NO_REPLICATED_BLOCKS", &param->noReplicatedBlocks);
 		getIntegerParam(line, "USE_THREAD_POOL", &param->m_bUseThreadPool);
-		getBooleanParam(line, "USE_SYMMETRICAL_T-CONDITION", t_symmetrical_t_cond, &param->enumFlags);
-		getBooleanParam(line, "USE_3-ELEMENT_CONDITION", t_use_3_condition, &param->enumFlags);
-		getBooleanParam(line, "UPDATE_RESULTS", t_update_results, &param->enumFlags);
+		getBooleanParam(line, "USE_SYMMETRICAL_T-CONDITION", t_symmetrical_t_cond, param->enumFlagsPtr());
+		getBooleanParam(line, "USE_3-ELEMENT_CONDITION", t_use_3_condition, param->enumFlagsPtr());
+		getBooleanParam(line, "UPDATE_RESULTS", t_update_results, param->enumFlagsPtr());
 
 		// Define a job type
 		if (line.find("ENUMERATION") != string::npos)
@@ -751,6 +484,12 @@ int main(int argc, char * argv[])
 			const auto type = idx_obj_type[i];
 			if (line.find(obj_name[static_cast<int>(type)]) != string::npos) {
 				objType = type;
+				pos = line.find("=");
+				if (pos != string::npos) {
+					param->objSubType = line.substr(pos + 1);
+					trim(param->objSubType);
+					line.clear();
+				}
 				break;
 			}
 		}
@@ -761,7 +500,7 @@ int main(int argc, char * argv[])
 			outType = t_Summary;
 			string output = line.substr(pos);
 			bool val;
-			if (getIntegerParam(output, "ONLY_SIMPLE_DESSIGN", &val))
+			if (getIntegerParam(output, "ONLY_SIMPLE_DESIGN", &val))
 				param->setPrintOnlySimpleDesigns(val);
 
 			if (output.find("NO SUMMARY") != string::npos)
@@ -843,6 +582,7 @@ int main(int argc, char * argv[])
 		case t_objectType::t_PBIBD:
 		case t_objectType::t_Kirkman_Triple:
 		case t_objectType::t_TripleSystem:
+		case t_objectType::t_CanonMatr:
 						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
@@ -863,13 +603,18 @@ int main(int argc, char * argv[])
 
 		//		if (param->save_restart_info) {
 		//		}
+		param->setEnumFlags();
 
 		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
 			int InconsistentGraphs(designParam * pParam, const char* pSummaryFileName, bool firstPath);
 			InconsistentGraphs(param, pSummaryFile, firstRun);
 		}
+		else
+		if (objType == t_objectType::t_CanonMatr) {
+			param->LaunchCanonization();
+		}
 		else {
-			if (!param->LaunchEnumeration(objType, find_master_design, find_all_2_decomp, use_master_sol, firstRun))
+			if (!param->LaunchEnumeration(pSummaryFile, find_master_design, find_all_2_decomp, use_master_sol, firstRun))
 				continue;
 		}
 

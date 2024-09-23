@@ -7,6 +7,7 @@
 //
 
 #include "Enumerator.h"
+#include "designParam.h"
 
 template class CCanonicityChecker<TDATA_TYPES>;
 
@@ -85,6 +86,21 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 CanonicityChecker(void)::addAutomorphism(const T numRow, const T *permRow, T *pOrbits, bool rowPermut, bool savePermut, bool calcGroupOrder)
 {
 	UpdateOrbits(permRow, numRow, pOrbits, rowPermut, calcGroupOrder);
+#if PRINT
+	extern int myLenght;
+	if (numRow == myLenght) {
+		FOPEN(f1, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\ccc.txt", "a");
+		char buf[256], * pBuf = buf;
+		const auto pOrb = getRowOrbits(0);
+		pBuf += SNPRINTF(pBuf, 256, "groupOrder: %3zd\n ORB = ", groupOrder());
+
+		for (int i = 0; i < myLenght; i++)
+			pBuf += SNPRINTF(pBuf, 256 - (pBuf - buf), "%2d", pOrb[i]);
+
+		fprintf(f1, "%s\n", buf);
+		fclose(f1);
+	}
+#endif
 	if (!rowPermut) {
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow, permRow);

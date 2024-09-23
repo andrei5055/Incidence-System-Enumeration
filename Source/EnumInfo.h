@@ -85,6 +85,7 @@ public:
 	void outEnumInformation(FILE** pOutFile, const uint enumInfo, bool printMTlevel = true, const char* pComment = NULL) const;
 	inline void setDesignInfo(designParam *pParam)			{ m_pParam = pParam; }
 	void updateCounters(CEnumInfo* p);
+	void outRunTimeInfo(FILE* outFile, const char* pOutString = NULL) const;
 protected:
 	inline t_resType getResType() const						{ return m_nResType; }
 	size_t cleanEndOfLine(char* pBuffer) const;

@@ -12,8 +12,8 @@ TopGun::TopGun(int numPlayers, int groupSize) :
 		printf("Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart, nMatricesMax);
 		exit(1);
 	}
-	memset(cntTotal, 0, sizeof(cntTotal));
-	memset(cnt, 0, sizeof(cnt));
+	memset(m_cntTotal, 0, sizeof(m_cntTotal));
+	memset(m_cnt, 0, sizeof(m_cnt));
 	memset(threadActive, false, sizeof(threadActive));
 	iMatrix = 0;
 	iPrintCount = 0;
@@ -98,7 +98,7 @@ bool TopGun::Run()
 				else
 				{
 					nThreadsRunning++;
-					if (cnt[iTask * 2] >= 0)
+					if (m_cnt[iTask * 2] >= 0)
 					{
 						// thread finished
 						nMatricesProc++;
@@ -115,13 +115,13 @@ bool TopGun::Run()
 
 			if (clock() - cTime > 20000)
 			{
-				printThreadsStat(cntTotal, cnt, nMatrices, nMatricesProc, nRowsStart, nRowsOut, numThreads, iTime, ((iPrintCount++) % 10) == 0);
+				printThreadsStat(m_cntTotal, m_cnt, nMatrices, nMatricesProc, nRowsStart, nRowsOut, numThreads, iTime, ((iPrintCount++) % 10) == 0);
 				cTime = clock();
 			}
 		}
 		waitAllThreadFinished();
 		rTime = clock() - iTime;
-		printThreadsStat(cntTotal, cnt, nMatrices, iMatrix, nRowsStart, nRowsOut, numThreads, iTime, true);
+		printThreadsStat(m_cntTotal, m_cnt, nMatrices, iMatrix, nRowsStart, nRowsOut, numThreads, iTime, true);
 		printf("Total time=%dms (include prep time=%dms)\n", rTime, mTime);
 	}
 	std::cout << "\7" << std::endl; // play sound

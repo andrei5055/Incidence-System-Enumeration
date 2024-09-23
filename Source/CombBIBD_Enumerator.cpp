@@ -319,7 +319,7 @@ FClass2(CCombBIBD_Enumerator, void)::ConstructedDesignProcessing() const {
 		for (auto j = b; --j >= 1;)
 			pRow[j] = pRowSrc[pColPermut[j]];
 
-		m_pCanonChecker->CreateColumnOrbits(i, pRow, pColPermut);
+		m_pCanonChecker->GenerateBinaryColumnOrbits(i, pRow, pColPermut);
 	}
 
 	if (pColPermut != colPermut)

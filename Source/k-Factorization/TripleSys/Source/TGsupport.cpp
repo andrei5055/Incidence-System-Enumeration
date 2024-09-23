@@ -13,26 +13,26 @@ void TopGun:: waitAllThreadFinished()
 		if (threadActive[i])
 		{
 			t.join();
-			if (cnt[i * 2] < 0)
-				printf("\n*** Internal error in thread %d (%zd) ***\n", i + 1, cnt[i * 2]);
+			if (m_cnt[i * 2] < 0)
+				printf("\n*** Internal error in thread %d (%zd) ***\n", i + 1, m_cnt[i * 2]);
 		}
 		i++;
 	}
 }
 void TopGun::threadStopped(int iTask)
 {
-	cntTotal[iTask * 2] += cnt[iTask * 2];
-	cntTotal[iTask * 2 + 1] += cnt[iTask * 2 + 1];
-	cnt[iTask * 2] = cnt[iTask * 2 + 1] = 0;
+	m_cntTotal[iTask * 2] += m_cnt[iTask * 2];
+	m_cntTotal[iTask * 2 + 1] += m_cnt[iTask * 2 + 1];
+	m_cnt[iTask * 2] = m_cnt[iTask * 2 + 1] = 0;
 	threadActive[iTask] = false;
 	//printf("thread %d stopped\n", iTask + 1);
 }
 void TopGun::startThread(int iTask)
 {
-	cnt[iTask * 2] = -1;
-	cnt[iTask * 2 + 1] = 0;
+	m_cnt[iTask * 2] = -1;
+	m_cnt[iTask * 2 + 1] = 0;
 	threads[iTask] = std::thread{ RunThread, ++iTaskSeq, eCalcResult,
-		mstart, mstart, nRowsStart, nRowsOut, &cnt[iTask * 2], false };
+		mstart, mstart, nRowsStart, nRowsOut, &m_cnt[iTask * 2], false };
 	threadActive[iTask] = true;
 #if 0
 	printf("*** Thread %d ", iTask + 1);

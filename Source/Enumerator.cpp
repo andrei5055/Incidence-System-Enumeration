@@ -710,6 +710,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 
 	T level(0), nPart(0);
 	TestCanonParams<T,S> canonParam = {this, matrix(), numParts(), &nPart, &level, pGroupOnParts, pSpareMatrix};
+	canonParam.startingRowNumb = pGroupOnParts ? 1 : 0;
 
 	CreateAuxiliaryStructures(pMaster);
 
@@ -1002,6 +1003,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 			outString("\n" END_OUT_BLOCK "Constructed Matrices " BEG_OUT_BLOCK "\n", this->outFile());
 
 		beforeEnumInfoOutput();
+
 		compareResults(pEnumInfo, lenName, buff);
 		if (pParam->outType & t_Summary)
 			pEnumInfo->outEnumInformation(this->outFilePntr(), enumFlags());
@@ -1060,7 +1062,7 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 		if (compareResults(buff, lenName, buffer ? &betterResults : NULL)) {
 			if (buffer) {
 				resType = betterResults? t_resType::t_resBetter : t_resType::t_resWorse;
-				if (pParam->enumFlags & t_EnumeratorFlags::t_update_results) {
+				if (pParam->enumFlags() & t_EnumeratorFlags::t_update_results) {
 					// Create the name of the file with the current results
 					if (betterResults) {
 						remove(buff);			// Remove file with previous results

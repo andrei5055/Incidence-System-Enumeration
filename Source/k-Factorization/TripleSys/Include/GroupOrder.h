@@ -8,7 +8,7 @@ inline void revert(T* perm, T j, T i) {
 }
 
 template<typename T>
-void Update_Orbits(const T* permut, T lenPerm, T* pOrb, T idx) {
+void Update_Orbits(const T* permut, T lenPerm, T* pOrb, T idx = 0) {
 	// Update orbits of elements
 	do {
 		auto i = *(pOrb + idx);
@@ -41,8 +41,11 @@ protected:
 	}
 
 	CC void updateGroupOrder(const T numRow, const T * pOrb) {
-		size_t len = 1;
 		auto idx = stabilizerLengthAut();
+        if (idx == ELEMENT_MAX)
+            return;
+
+        size_t len = 1;
 		while (++idx < numRow) {
 			if (*(pOrb + idx) == stabilizerLengthAut())
 				len++;
@@ -51,15 +54,15 @@ protected:
 		setGroupOrder(len * groupOrder());
 	}
 
-	CC inline void setStabilizerLength(T len) { m_nStabLength = len; }
-	CC inline auto stabilizerLength() const { return m_nStabLength; }
-	CC inline void setStabilizerLengthAut(T l) { m_nStabLengthAut = l; }
-	CC inline auto stabilizerLengthAut() const { return m_nStabLengthAut; }
+	CC inline void setStabilizerLength(T len)   { m_nStabLength = len; }
+	CC inline auto stabilizerLength() const     { return m_nStabLength; }
+	CC inline void setStabilizerLengthAut(T l)  { m_nStabLengthAut = l; }
+	CC inline auto stabilizerLengthAut() const  { return m_nStabLengthAut; }
 	CC T next_permutation(T* perm, const T* pOrbits, T nRow, T idx = ELEMENT_MAX, T lenStab = 0) {
             // Function generates next permutation among those which stabilize first lenStab elements
             // We are using the algorithm from http://nayuki.eigenstate.org/res/next-lexicographical-permutation-algorithm/nextperm.java
             // taking into account that we don't need the the permutations which are equivalent with respect to already found orbits of the 
-            // automorphis group acting on the matrix's rows.
+            // automorphism group acting on the matrix's rows.
             //
             // For instance, we found the automorphism
             //  (0, 1, 2, ..., i-1, pi, ...) and pi != i
@@ -78,7 +81,7 @@ protected:
                 idx = ELEMENT_MAX;
 
             if (idx == IDX_MAX) {
-                // Firts call after some automorphism was found
+                // First call after some automorphism was found
                 temp = perm[idx = i = stabilizerLength()];
                 for (j = nRow; --j > temp;)
                     perm[j] = j;
@@ -173,7 +176,20 @@ private:
 		T idx = 0;
 		while (idx == permut[idx])
 			idx++;
+#if PRINT
+        extern int myLenght;
+        if (lenPerm == myLenght) {
+            FOPEN(f1, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\ccc.txt", "a");
+            char buf[256], *pBuf = buf;
+            pBuf += SNPRINTF(pBuf, 256, "calcOrder = %d,  rowPermut = %d  LengthAut = %d  idx = %d  groupOrder: %3zd\nPERM = ", 
+                calcOrder, rowPermut, stabilizerLengthAut(), idx, groupOrder());
+            for (int i = 0; i < myLenght; i++)
+                pBuf += SNPRINTF(pBuf, 256 - (pBuf - buf), "%2d", permut[i]);
 
+            fprintf(f1, "%s\n", buf);
+            fclose(f1);
+        }
+#endif
 		if (calcOrder) {
 			if (rowPermut && stabilizerLengthAut() > idx)
 				updateGroupOrder(lenPerm, pOrb);
@@ -188,4 +204,30 @@ private:
 	T m_nStabLength;
 	T m_nStabLengthAut;
 	size_t m_nGroupOrder;
+};
+
+template<typename T>
+class CGroupOrbits {
+public:
+    CGroupOrbits(T len) : m_nLenPermut(len)
+                                    { m_pOrbits = new T[len]; }
+    ~CGroupOrbits()                 { delete[] groupOtbits(); }
+    void resetOrbits(const T *pTrivial = NULL) {
+        if (!pTrivial) {
+            for (T i = lenPermut(); i--;)
+                *(groupOtbits() + i) = i;
+        }
+        else {
+            memcpy(groupOtbits(), pTrivial, lenPermut() * sizeof(T));
+        }
+    }
+    const auto isLeader(T idx) const{ return m_nLenPermut[idx] == idx; }
+    inline void Update_Orbits(const T* permut) {
+        Update_Orbits(permut, lenPermut(), groupOtbits());
+    }
+private:
+    inline auto groupOtbits() const { return m_pOrbits; }
+    inline auto lenPermut() const   { return m_nLenPermut; }
+    const T m_nLenPermut;
+    T* m_pOrbits = NULL;
 };

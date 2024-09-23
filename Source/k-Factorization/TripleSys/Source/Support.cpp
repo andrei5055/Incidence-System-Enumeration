@@ -8,6 +8,11 @@ bool alldata::initCurrentDay()
 	memset(selPlayers, unset, m_numPlayers);
 	memset(tmpPlayers, unset, m_numPlayers);
 
+#if UseTrMask == 1
+	if (iDay > 0)
+	    memcpy(m_TrMask + iDay * m_nTrBytes, m_TrMask + (iDay - 1) * m_nTrBytes, m_nTrBytes);
+#endif
+
 #if UseSS == 0
 
 	if (m_bCheckLinkH && iDay > 1)
@@ -15,20 +20,13 @@ bool alldata::initCurrentDay()
 		const int np = m_numPlayers;
 		for (int i = 0; i < m_numPlayers; i++)
 			m_h[i] = i;
-		if (iDay == 0)
+		if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
 		{
-			memcpy(m_ho, m_h, np);
+			bPrevResult = true;
+			return false;
 		}
-		else
-		{
-			if (!m_pCheckLink->checkLinksH(links(), m_h, m_numPlayers, np, unset, result(iDay - 1)[1], m_ho))
-			{
-				bPrevResult = true;
-				return false;
-			}
-			//printf("day=%d ", iDay);
-			//printTable("m_ho", m_ho, 1, m_numPlayers);
-		}
+		//printf("day=%d ", iDay);
+		//printTable("m_ho", m_ho, 1, m_numPlayers);
 		memcpy(tmpPlayers, m_ho, np);
 		memcpy(indexPlayer, m_ho, np);
 		iPlayer = m_numPlayers;
@@ -37,14 +35,7 @@ bool alldata::initCurrentDay()
 		{
 			char k = tmpPlayers[j];
 			if (!setLinksForOnePlayer(iDay, m_numPlayers, links(), tmpPlayers, j, k))
-			{
-				if (iDay == 0)
-				{
-					bPrevResult = true;
-					return false;
-				}
 				abort();
-			}
 			selPlayers[k] = j;
 		}
 	}
@@ -92,7 +83,9 @@ bool alldata::unsetLinksForOnePlayer(char* p, int ip) const
 bool alldata::initPrevDay()
 {
 	if (iDay >= 0 && iDay < m_numDays)
+	{
 		memset(result(iDay), 0, m_numPlayers);
+	}
 	iDay--;
 	bPrevResult = false;
 
@@ -109,7 +102,10 @@ bool alldata::initPrevDay()
 			return false;
 		}
 	}
-
+#if UseTrMask == 1
+	if (iDay > 0)
+		memcpy(m_TrMask + iDay * m_nTrBytes, m_TrMask + (iDay - 1) * m_nTrBytes, m_nTrBytes);
+#endif
 	auto* const pRes = result(iDay);
 	memcpy(indexPlayer, pRes, m_numPlayers);
 	memcpy(tmpPlayers, pRes, m_numPlayers);

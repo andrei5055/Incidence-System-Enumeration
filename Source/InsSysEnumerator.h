@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Enumerator.h"
 #include "RightPartFilter.h"
+#include "designParam.h"
 
 Class2Def(C_InSysEnumerator) : public Class2(CEnumerator), public Class2(CInSysSolver), public CVector<S>
 {
@@ -16,6 +17,10 @@ public:
 	CK int define_MT_level(int v) const							{ return v / 2; }
 	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
+	CK void ConstructCanonicalMatrix(const designParam* pParam) {
+		CanonizeMatrix(pParam);
+		matrix()->printOut(outFile(), matrix()->rowNumb(), 0, this);
+	}
 protected:
 	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }
 	CK virtual bool checkSolutions(RowSolutionPntr ptr, PERMUT_ELEMENT_TYPE idx, bool doSorting = true);
@@ -36,6 +41,9 @@ protected:
 	CK virtual bool checkRightParts(T nRow)						{ return false; }
 	CK virtual bool useAsRightPart(CRowSolution<TDATA_TYPES> *pRowSol, PERMUT_ELEMENT_TYPE idx)		{ return true;  }
 	CK void copyLimits(RowSolutionPntr pRowSolution, bool saveValues) const override;
+#if !CONSTR_ON_GPU
+	bool makeFileName(char* buffer, size_t len, const char* ext = NULL) const override;
+#endif
 #if USE_EXRA_EQUATIONS
 	CK virtual void addColOrbitForVariable(S nVar, CColOrbit<S> *pColOrb)	{}
 #else
@@ -65,6 +73,14 @@ private:
 	T m_firstUnforcedRow;
 	CRightPartFilter<T> *m_pRightPartFilter;
 	const bool m_bNoReplBlock;
+};
+
+Class2Def(C_InSysCanonizator) : public Class2(C_InSysEnumerator) {
+public:
+	C_InSysCanonizator(Class2(C_InSys) * pInsSys, uint enumFlags) : Class2(C_InSysEnumerator)(pInsSys, enumFlags) {}
+	virtual void makeJobTitle(const designParam* pParam, char* buffer, int len, const char* comment = "") const {
+		SNPRINTF(buffer, len, "Canonization of %" _FRMT "x%" _FRMT " matrix", this->rowNumb(),this->colNumb());
+	}
 };
 
 FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :
@@ -480,3 +496,19 @@ FClass2(C_InSysEnumerator, void)::setVariableLimit(T nVar, T len, T nRowToBuild,
 	inSysRowEquation()->setVariableMaxVal(nVar, len);
 }
 
+#if !CONSTR_ON_GPU
+FClass2(C_InSysEnumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, const char* ext) const
+{
+	const auto inSys = this->getInSys();
+	std::string inputFile(designParams()->logFile);
+	auto pos = inputFile.find_last_of("/");
+	if (pos != std::string::npos)
+		inputFile = inputFile.substr(0, pos + 1);
+	else
+		inputFile.clear();
+
+	const auto len = SNPRINTF(buffer, lenBuffer, "%s", inputFile.c_str());
+	SNPRINTF(buffer + len, lenBuffer - len, ME_FRMT"_" ME_FRMT, rowNumb(), colNumb());
+	return true;
+}
+#endif

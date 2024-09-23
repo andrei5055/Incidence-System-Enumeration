@@ -45,6 +45,7 @@ struct TestCanonParams {
 	T* pRowOut;
 	CGroupOnParts<T>* pGroupOnParts;
 	MatrixDataPntr pSpareMatrix;         // used when pGroupOnParts != NULL
+	bool check_trivial_row_perm;
 	T* pPermCol;
 	T startingRowNumb;                   // starting row for the loop in TestCanonicity (used when pPermCol != NULL)
 };
@@ -85,6 +86,49 @@ public:
 		m_pCheckerKSystemCanon->setPreordered(flag);
 	}
 	inline void setAllData(const alldata* ptr) { m_pCheckerKSystemCanon->setAllData(ptr); }
+	inline void addAutomorphism(const T* perm) {
+#if PRINT
+		FOPEN(f, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\aaa.txt", "a");
+		char buffer[256], *pBuf = buffer;
+		const auto len = countof(buffer);
+		pBuf += SPRINTF(pBuf, "perm = ");
+		for (int i = 0; i < numRow(); i++)
+			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", perm[i]);
+
+		pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "\n orb = ");
+		for (int i = 0; i < numRow(); i++)
+			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", getRowOrbits(0)[i]);
+
+		fprintf(f, "%s\n", buffer);
+#endif
+		addAutomorphism(numRow(), perm, getRowOrbits(0), true, false);
+		//updateGroupOrder(numRow(), getRowOrbits(0));
+#if PRINT
+
+		pBuf = buffer;
+		pBuf += SPRINTF(pBuf, " orb = ");
+		for (int i = 0; i < numRow(); i++)
+			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", getRowOrbits(0)[i]);
+
+		fprintf(f, "%s  groupOrder = %zd\n", buffer, groupOrder());
+		fclose(f);
+#endif
+	}
+	inline T next_permutation(T* perm, T idx) {
+		return CGroupOrder<T>::next_permutation(perm, getRowOrbits(0), numRow(), idx, stabiliserLengthExt());// , lenStab)
+	}
+	inline void initOrbits(T* perm) {
+		auto* pntr = getRowOrbits(0);
+		setStabilizerLength(numRow() - 1);
+		setStabilizerLengthAut(numRow() - 1);
+		for (auto i = numRow(); i--;)
+			pntr[i] = i;
+
+		memcpy(perm, pntr, numRow() * sizeof(T));
+	}
+	inline void updateOrderOfGroup() {
+		CGroupOrder<T>::updateGroupOrder(numRow(), getRowOrbits(0));
+	}
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
 	CC virtual void ConstructColumnPermutation(const MatrixDataPntr pMatrix)		{}
@@ -102,9 +146,9 @@ protected:
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr) { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const			{ return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
+	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
-	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
 	CC inline void setNumRow(T nRow)				{ m_nNumRow = nRow; }
 	CC inline auto numCol() const					{ return static_cast<T>(m_pPermutCol->numElement()); }
@@ -119,7 +163,7 @@ private:
 	CC T rowToChange(T nRow) const;
 	void reconstructSolution(const ColOrbPntr pColOrbitStart, const ColOrbPntr pColOrbit,
 		size_t colOrbLen, const ColOrbPntr pColOrbitIni, const T *pRowPerm, const T *pRowSolution, size_t solutionSize);
-//	CC void UpdateOrbits(const T *permut, const T lenPerm, T *pOrbits, bool rowPermut, bool updateGroupOrder = false);
+
 #if CHECK_PERMUTS
 	CC void check_permut(const T* permut, T len_perm) const;
 #else
@@ -177,6 +221,8 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, 
 	const auto nPermutStorages = numParts + (outColumnOrbits ? 1 : 0) + (keepRowPermute ? 1 : 0);
 	auto pPermStorage = new CPermutStorage<T, S>[nPermutStorages]();
 	setPermStorage(pPermStorage);
+	setNumRow(nRow);
+	setGroupOrder(1);
 
 	memset(m_pObits, 0, sizeof(m_pObits));
 
@@ -269,7 +315,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	const auto* pMatr = pCanonParam->pMatrix;
 	const auto* pMatrPerm = pMatr;
 	const auto numParts = pCanonParam->numParts;
-	bool check_trivial_row_perm = pCanonParam->pPermCol != NULL;
+	bool check_trivial_row_perm = pCanonParam->check_trivial_row_perm; // pCanonParam->pPermCol != NULL;
 	auto savePermut = rowPermut && (enumFlags() & t_outRowPermute);
 
 	const auto colOrbLen = pEnum->colOrbitLen();
@@ -289,7 +335,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 	T colNumb;
 #endif
 	size_t numGroups = 0;
-	T startingRowNumb = pCanonParam->startingRowNumb;
+	auto startingRowNumb = pCanonParam->startingRowNumb;
 	size_t idxPerm[16] = {};	// to keep the indices of currently used permutation
 	size_t* pIndxPerms = NULL;	// of i-th symmetrical group acting on the parts
 
@@ -328,7 +374,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		while (true) {
 
 		next_permut:
-			nRow = next_permutation(permRows, pOrbits, numRow(), nRow, lenStab);
+			nRow = CGroupOrder<T>::next_permutation(permRows, pOrbits, numRow(), nRow, lenStab);
 			if (nRow == ELEMENT_MAX || nRow < len_stab)
 				break;
 
@@ -374,9 +420,8 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 								if (pRowSolution && !pRowSolution->isLastSolution()) {
 									// NOTE: No need to remove last solution, we will leave this level anyway
 									if (nRow + 1 < nRowMax) {
-										// We can remove all solutions which are in the same group with the solution just tested.
-										// We don't need them even as the right parts of our equations, because the usage of everyone 
-										// will make the matrix non canonical
+										//We can remove all solutions that belong to the same group as the solution just tested. They are not needed 
+										// as the right-hand sides of our equations since using any of them would make the matrix non-canonical.
 										pRowSolution->removeNoncanonicalSolutions(startIndex);
 									}
 									else {
@@ -573,7 +618,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 		check_permut(pPartSrc, numParts);
 		check_permut(permColumn, pMatr->colNumb());
 
-		// After permitation of parts we also need 
+		// After permutation of parts we also need 
 		// to try trivial permutation on rows
 		check_trivial_row_perm = true; 
 		continue;

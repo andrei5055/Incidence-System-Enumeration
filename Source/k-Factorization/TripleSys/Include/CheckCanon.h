@@ -8,7 +8,8 @@
 #define CC
 #define countof(x)  (sizeof(x)/sizeof(x[0]))
 #else
-#include "../DataTypes.h"
+//#include "../../../../DataTypes.h"
+#include "DataTypes.h"
 #endif
 
 #include "GroupOrder.h"
@@ -119,7 +120,7 @@ private:
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL, bool symmetrical = true);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);
 	int checkReorderedGroups(const T* permut, T numElem, const T* pMatr);
-	int orderingMatrix(const T* permut, T numElem, const T*pDummy) {
+	int orderingMatrix(const T* permut, T numElem, const T* pDummy) {
 #if 0
 		extern int matr_cntr;
 		extern int cntr;
@@ -145,13 +146,14 @@ private:
 #else
 #if USE_TRANSLATE_BY_LEO
 		int dayMax;
-		const auto ret = m_pAD->cnvCheckKm1((char*)permut, numDays(), (T *)pDummy, &dayMax);
+		const auto ret = ((alldata *)m_pAD)->cnvCheckKm1((char*)permut, numDays(), (T *)pDummy, &dayMax);
 		setGroupIndex((dayMax + 1) * numGroups() - 2);
 		return ret;
 #else
 
 		int ret = 1;
-		T ttr[20];
+		auto* ttr = (T *)(pDummy);
+		//T ttr[24];
 		for (T n = 0; n < m_nDaysToTest; n++) {
 			auto * resn = getMatrixRow(m_dayIdx[n]);
 			for (T i = 0; i < numElem; i++)

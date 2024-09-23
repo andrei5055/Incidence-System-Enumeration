@@ -107,6 +107,10 @@ public:
 	CK void setDesignDB(CDesignDB* pntr)					{ m_pDesignDB = pntr; }
 	CK auto* designDB() const								{ return m_pDesignDB; }
 	CK void compareResults(EnumInfoPntr pEnumInfo, size_t lenName, const char* buffer = NULL, const char* pLastComment = NULL);
+	CK void assignDesignParam(designParam* ptr) {
+		setDesignParams(ptr);
+		setOutputFile();
+	}
 #if CANON_ON_GPU
 	CK inline auto CanonCheckerGPU() const					{ return m_pGPU_CanonChecker; }
 	size_t copyColOrbitInfo(S nRow) const;
