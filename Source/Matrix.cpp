@@ -75,10 +75,14 @@ FClass2(CMatrixData, void)::printOut(FILE* pFile, T nRow, ulonglong matrNumber, 
 			len = SNPRINTF(pTmp += len, lenBuf -= len, "  *** Canonicity was not tested ***");
 
 		if (pCanonCheck) {
-			len = SNPRINTF(pTmp += len, lenBuf -= len, "    |Aut(M)| = %6zu", pCanonCheck->groupOrder());
-			size_t exrtraGroupOrder = pCanonCheck->extraGroupOrder() ? pCanonCheck->extraGroupOrder()->groupOrder() : 0;
+			len = SNPRINTF(pTmp += len, lenBuf -= len, "    |Aut(M)| = ");
+			const auto exrtraGroupOrder = pCanonCheck->extraGroupOrder() ? pCanonCheck->extraGroupOrder()->groupOrder() : 0;
 			if (exrtraGroupOrder > 1)
-				len = SNPRINTF(pTmp += len, lenBuf -= len, "*%zu", exrtraGroupOrder);
+				len = SNPRINTF(pTmp += len, lenBuf -= len, "%zu = %zu * %zu", pCanonCheck->groupOrder() * exrtraGroupOrder, 
+					pCanonCheck->groupOrder(), exrtraGroupOrder);
+			else
+				len = SNPRINTF(pTmp += len, lenBuf -= len, "%6zu", pCanonCheck->groupOrder());
+
 		}
 
 		SNPRINTF(pTmp +=len, lenBuf-=len, "\n");

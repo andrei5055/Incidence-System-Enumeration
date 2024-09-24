@@ -417,9 +417,7 @@ FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowS
 	checkMatr(matrix()->GetRow(1), v, b);
 }
 
-int myLenght = 7;
-
-FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
+FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, CanonicityCheckerPntr *ppClassGroup) {
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb();
 	T colBuffer[512], *pColumnBuf = b <= countof(colBuffer)? colBuffer : new T[b];
@@ -434,7 +432,6 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 	T numClasses;
 	T nRowStart = 0;
 	T numGroups = 0;
-	//size_t matrixGroupOrder;
 	const auto lenMatrix = (v - 1) * b;
 	const auto lenData = lenMatrix * sizeof(S);
 	CanonicityCheckerPntr pClassGroupHandle;
@@ -446,14 +443,7 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 		numGroups = (v - 1) / pParam->k;
 		numClasses = lenStab = lenPerm = (v - 2) / (pParam->k - 1);
 	}
-#if PRINT
-	char buf[256], * pBuf;
-	const auto lenBuf = countof(buf);
-	sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_000.txt");
-	FOPEN(f, buf, "w");
-	matrix()->printOut(f, matrix()->rowNumb(), 0, this);
-	fclose(f);
-#endif
+
 	int cmp = 1;
 	T idx = IDX_MAX;
 	while (true) {
@@ -507,16 +497,6 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 				// Non-trivial automorphism on classes found
 				pClassGroupHandle->addAutomorphism(permClasses);
 				idx = IDX_MAX;
-#if PRINT
-				FOPEN(f1, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\bbb.txt", "a");
-				pBuf = buf;
-				pBuf += SNPRINTF(pBuf, lenBuf, "cntr = %d:  groupOrder: %3zd  PERM = ", cntr, pClassGroupHandle->groupOrder());
-				for (int i = 0; i < 7; i++)
-					pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buf), "%2d", permClasses[i]);
-
-				fprintf(f1, "%s\n", buf);
-				fclose(f1);
-#endif
 			}
 			else {
 				if (cmp < 0)
@@ -525,7 +505,7 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 		}
 		else {
 			// Matrix for comparison was not yet created
-			pClassGroupHandle = new CCanonicityChecker<TDATA_TYPES>(lenPerm, 0);
+			pClassGroupHandle = new CCanonicityChecker<TDATA_TYPES>(lenPerm, 0, 0, t_outRowOrbits | t_outRowPermute);
 			permClasses = new T[numClasses];
 			pCompMatrix = new S[lenMatrix];
 		}
@@ -533,15 +513,9 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 			pClassGroupHandle->initOrbits(permClasses);
 			memcpy(pCompMatrix, pMatr, lenData);
 			checkMatr(pCompMatrix, v, b);
-#if PRINT
-			sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_%03d.txt", ++cntr);
-			FOPEN(f1, buf, "w");
-			matrix()->printOut(f1, matrix()->rowNumb(), 0, this);
-			fclose(f1);
-#endif
 		}
 
-		idx = pClassGroupHandle->next_permutation(permClasses, idx);// , pOrbits, lenPerm, numClasses, lenStab);
+		idx = pClassGroupHandle->next_permutation(permClasses, idx);
 		if (idx == ELEMENT_MAX)
 			break;		// there are no more permutations of the classes
 
@@ -549,17 +523,6 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 
 		T i = 0;
 		while (permClasses[i] == i) i++;
-
-#if PRINT
-		FOPEN(fx, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\aaa.txt", "a");
-		pBuf = buf;
-		pBuf += SNPRINTF(pBuf, lenBuf, "cntr = %3d  cmp = %2d  PERM = ", cntr, cmp);
-		for (int i = 0; i < 7; i++)
-			pBuf += SNPRINTF(pBuf, lenBuf - (pBuf - buf), "%2d", permClasses[i]);
-
-		fprintf(fx, "%s  i = %d\n", buf, i);
-		fclose(fx);
-#endif
 
 		// Permute the column groups based on the class permutations just constructed.
 		while (i < lenPerm) {
@@ -577,16 +540,14 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam) {
 	}
 
 	pClassGroupHandle->updateOrderOfGroup();
-	setGroupOrder(pClassGroupHandle->groupOrder() * groupOrder());
-#if PRINT
-	sprintf_s(buf, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\matr_XXX.txt");
-	FOPEN(f2, buf, "w");
-	matrix()->printOut(f2, matrix()->rowNumb(), 0, this);
-	fclose(f2);
-#endif
+	extraGroupOrder()->setGroupOrder(pClassGroupHandle->groupOrder());
+
 	delete[] permClasses;
 	delete[] pCompMatrix;
-	delete pClassGroupHandle;
+	if (ppClassGroup)
+		*ppClassGroup = pClassGroupHandle;
+	else
+		delete pClassGroupHandle;
 
 	if (pColumnBuf != colBuffer)
 		delete[] pColumnBuf;

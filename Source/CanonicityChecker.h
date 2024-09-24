@@ -87,35 +87,10 @@ public:
 	}
 	inline void setAllData(const alldata* ptr) { m_pCheckerKSystemCanon->setAllData(ptr); }
 	inline void addAutomorphism(const T* perm) {
-#if PRINT
-		FOPEN(f, "C:\\Users\\16507\\Downloads\\TripleSys_240824\\Logs_CI\\15x7x3\\aaa.txt", "a");
-		char buffer[256], *pBuf = buffer;
-		const auto len = countof(buffer);
-		pBuf += SPRINTF(pBuf, "perm = ");
-		for (int i = 0; i < numRow(); i++)
-			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", perm[i]);
-
-		pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "\n orb = ");
-		for (int i = 0; i < numRow(); i++)
-			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", getRowOrbits(0)[i]);
-
-		fprintf(f, "%s\n", buffer);
-#endif
-		addAutomorphism(numRow(), perm, getRowOrbits(0), true, false);
-		//updateGroupOrder(numRow(), getRowOrbits(0));
-#if PRINT
-
-		pBuf = buffer;
-		pBuf += SPRINTF(pBuf, " orb = ");
-		for (int i = 0; i < numRow(); i++)
-			pBuf += SNPRINTF(pBuf, len - (pBuf - buffer), "%2d", getRowOrbits(0)[i]);
-
-		fprintf(f, "%s  groupOrder = %zd\n", buffer, groupOrder());
-		fclose(f);
-#endif
+		addAutomorphism(numRow(), perm, getRowOrbits(0), true, true);
 	}
 	inline T next_permutation(T* perm, T idx) {
-		return CGroupOrder<T>::next_permutation(perm, getRowOrbits(0), numRow(), idx, stabiliserLengthExt());// , lenStab)
+		return CGroupOrder<T>::next_permutation(perm, getRowOrbits(0), numRow(), idx, stabiliserLengthExt());
 	}
 	inline void initOrbits(T* perm) {
 		auto* pntr = getRowOrbits(0);
@@ -125,6 +100,8 @@ public:
 			pntr[i] = i;
 
 		memcpy(perm, pntr, numRow() * sizeof(T));
+		permStorage()->initPermutStorage();
+		permStorage()->savePermut(numRow(), perm);
 	}
 	inline void updateOrderOfGroup() {
 		CGroupOrder<T>::updateGroupOrder(numRow(), getRowOrbits(0));

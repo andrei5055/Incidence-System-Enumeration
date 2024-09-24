@@ -18,8 +18,11 @@ public:
 	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
 	CK void ConstructCanonicalMatrix(const designParam* pParam) {
-		CanonizeMatrix(pParam);
+		CanonicityCheckerPntr pClassGroup = NULL;
+		CanonizeMatrix(pParam, &pClassGroup);
 		matrix()->printOut(outFile(), matrix()->rowNumb(), 0, this);
+		pClassGroup->outputAutomorphismInfo(outFile());
+		delete pClassGroup;
 	}
 protected:
 	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }
@@ -77,10 +80,17 @@ private:
 
 Class2Def(C_InSysCanonizator) : public Class2(C_InSysEnumerator) {
 public:
-	C_InSysCanonizator(Class2(C_InSys) * pInsSys, uint enumFlags) : Class2(C_InSysEnumerator)(pInsSys, enumFlags) {}
+	C_InSysCanonizator(Class2(C_InSys) * pInsSys, uint enumFlags) : Class2(C_InSysEnumerator)(pInsSys, enumFlags) {
+		m_pGroupOrder = new CGroupOrder<T>;
+		setGroupOrder(1);
+	}
+	~C_InSysCanonizator()					{ delete m_pGroupOrder; }
+	inline void setGroupOrder(size_t val)   { m_pGroupOrder->setGroupOrder(val); }
 	virtual void makeJobTitle(const designParam* pParam, char* buffer, int len, const char* comment = "") const {
 		SNPRINTF(buffer, len, "Canonization of %" _FRMT "x%" _FRMT " matrix", this->rowNumb(),this->colNumb());
 	}
+	CK CGroupOrder<T>* extraGroupOrder() const override { return m_pGroupOrder; }
+	CGroupOrder<T>* m_pGroupOrder;
 };
 
 FClass2(C_InSysEnumerator)::C_InSysEnumerator(const InSysPntr pInSys, uint enumFlags, int treadIdx, uint nCanonChecker) :

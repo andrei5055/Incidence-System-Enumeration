@@ -410,7 +410,6 @@ bool designParam::LaunchCanonization() {
 			// An additional matrix row will be used to store the indices 
 			// of the columns corresponding to the original matrix rows.
 			this->v++;
-			auto objType = this->objType;// t_objectType::t_BIBD;// this->objType;
 			uint enumFlags = this->enumFlags() | t_kSystems;
 			matrixRank = nRows - 1;
 			PrepareBIBD_Enumeration(this, &pInSys, &pInSysEnum, objType, enumFlags);
@@ -442,7 +441,7 @@ bool designParam::LaunchCanonization() {
 			pInSysEnum->ConstructCanonicalMatrix(this);
 
 			pEnumInfo->setRunTime();
-			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile(), "Canonization was done in ");
+			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile(), "\n\nCanonization was done in ");
 			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile());
 			fclose(pInSysEnum->outFile());
 			delete pEnumInfo;
