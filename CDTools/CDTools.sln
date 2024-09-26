@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31729.503
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CDTools", "CDTools.vcxproj", "{F69B13B6-D50D-4970-935F-8A8B7C31E686}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CDTools_GPU", "..\CDTools_GPU\CDTools_GPU.vcxproj", "{0FE5D30F-9547-4365-A946-9347F130DA89}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BIBD_list", "..\BIBD_list\BIBD_list.vcxproj", "{1513C6CF-C235-430B-A433-F48BABE9FB7D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CombiLogic", "..\CombiLogic\CombiLogic.vcxproj", "{280D67A3-4E67-49E1-B314-37A9123BC6D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +63,22 @@ Global
 		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|Win32.Build.0 = Release|Win32
 		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|x64.ActiveCfg = Release|x64
 		{1513C6CF-C235-430B-A433-F48BABE9FB7D}.Release|x64.Build.0 = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|ARM.ActiveCfg = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|ARM.Build.0 = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|Win32.Build.0 = Debug|Win32
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|x64.ActiveCfg = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Debug|x64.Build.0 = Debug|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|ARM.ActiveCfg = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|ARM.Build.0 = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|Mixed Platforms.Build.0 = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|Win32.ActiveCfg = Release|Win32
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|Win32.Build.0 = Release|Win32
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|x64.ActiveCfg = Release|x64
+		{280D67A3-4E67-49E1-B314-37A9123BC6D9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

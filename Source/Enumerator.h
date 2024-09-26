@@ -20,8 +20,6 @@
 #define LAUNCH_CANONICITY_TESTING(x, y)
 #endif
 #else
-#define cudaDeviceReset()	// empty macro
-#define cudaDeviceSetLimit(x,...)
 #define setGPU_CanonChecker(x)
 #define releaseGPU_CanonChecker()
 #define LAUNCH_CANONICITY_TESTING(x, y)

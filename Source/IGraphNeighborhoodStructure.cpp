@@ -1,4 +1,5 @@
 #include "designParam.h"
+#include "DataTypes.h"
 #include <numeric>
 #include <cmath>
 
@@ -351,12 +352,12 @@ bool CheckFolkmanConditions(int v)
 	return (res * res != v) || !isPrime(res);
 }
 
-int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool firstPath)
+int designParam::InconsistentGraphs(const char *pSummaryFileName, bool firstPath)
 {
-	if (!CheckFolkmanConditions(pParam->v))
+	if (!CheckFolkmanConditions(this->v))
 		return 0;
 
-	const int nVertex = pParam->v /= 2;
+	const int nVertex = this->v /= 2;
 	const auto kMax = nVertex - 2;
 	const int len = kMax + 1;
 	int *mult = new int[len * 6];
@@ -414,7 +415,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 					if (iStruct)
 						iStruct->setNext(iStructTmp);
 					else
-						pParam->InterStruct()->setNext(iStructTmp);
+						InterStruct()->setNext(iStructTmp);
 
 					iStruct = iStructTmp;
 
@@ -473,7 +474,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 
 		// To do the formated output, define maximal size of lambda sets
 		size_t maxSize = 0;
-		iStruct = pParam->InterStruct();
+		iStruct = InterStruct();
 		CheckIntersections(iStruct, pIndices, k, nVertex);
 
 		CInterStruct *iStructCurr = iStruct->getNext();
@@ -490,16 +491,16 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 			iStructCurr = iStructCurr->getNext();
 		}
 
-		pParam->setLambdaSizeMax(maxSize);
+		setLambdaSizeMax(maxSize);
 
 		// Launching the enumeration for all constructed parameters
-		pParam->r = k;
+		this->r = k;
 		iStructCurr = iStruct->getNext();
 		while (iStructCurr) {
 			if (iStructCurr->isValid()) {
 				auto n = iStructCurr->mult();
-				pParam->k = k / n;
-				pParam->v = nVertex / n;
+				this->k = k / n;
+				this->v = nVertex / n;
 
 				// Copy current set of parameters into place where from they will be used
 				const auto jMax = iStructCurr->lambda().size() - (n > 1 ? 1 : 0);
@@ -514,7 +515,7 @@ int InconsistentGraphs(designParam *pParam, const char *pSummaryFileName, bool f
 				}
 
 				if (true/* k >= 4 *//*&& val[0] == 8 && val[2] == 4*/) {
-					if (!RunOperation<TDATA_TYPES>(pParam, pSummaryFileName, firstPath))
+					if (!RunOperation<TDATA_TYPES>(this, pSummaryFileName, firstPath))
 						return 0;
 
 					firstPath = false;

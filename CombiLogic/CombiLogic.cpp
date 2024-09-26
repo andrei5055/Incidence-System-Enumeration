@@ -1,32 +1,20 @@
-﻿// BIBD.cpp : Defines the entry point for the console application.
+﻿// CombiLogic.cpp : Defines the entry point for the console application.
 // 
 
 #include "stdafx.h"
-#include "C_tDesignEnumerator.h"
-#include "CombBIBD_Enumerator.h"
-#include "IG_Enumerator.h"
-#include "TripleSys.h"
 #include "designParam.h"
 
 #include <fstream>
-#include <string>      // for getline
 #include <algorithm>
-#include <iterator>
+
+#ifndef USE_CUDA
+#define cudaDeviceReset()	// empty macro
+#define cudaDeviceSetLimit(x,...)
+#endif
 
 #define SDL_MAIN_HANDLED
 using namespace std;
 
-const char *obj_name[] = {
-	"BIBD",					// t_BIBD,			- default
-	"COMBINED_BIBD",		// t_CombinedBIBD,
-	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triple
-	"TRIPLE_SYSTEM",        // t_TripleSystem - construction by Leo's program
-	"T-DESIGN",				// t_tDesign,
-	"PBIBD",				// t_PBIBD,
-	"INCIDENCE",            // t_IncidenceSystem,
-	"SEMI_SYMMETRIC_GRAPH", // t_SemiSymmetricGraph
-	"CANON_MATR"			// t_CanonMatr
-};
 
 // The order of checking object names used during parameter parsing.
 t_objectType idx_obj_type[] = {
@@ -267,7 +255,7 @@ const char* pSummaryFile = "EnumSummary.txt";
 
 bool parsingPath(string& line, size_t pos, bool isDir = true) {
 	line = line.substr(pos + 1);
-	std::replace(line.begin(), line.end(), '\\', '/');
+	replace(line.begin(), line.end(), '\\', '/');
 	if (isDir && line.back() != '/')
 		line += '/';
 
@@ -480,6 +468,7 @@ int main(int argc, char * argv[])
 		if (line.find("CANONICITY") != string::npos)
 			operType = t_Canonicity;
 
+		const auto* obj_name = param->objNames();
 		for (int i = 0; i < countof(idx_obj_type); i++) {
 			const auto type = idx_obj_type[i];
 			if (line.find(obj_name[static_cast<int>(type)]) != string::npos) {
@@ -606,8 +595,7 @@ int main(int argc, char * argv[])
 		param->setEnumFlags();
 
 		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
-			int InconsistentGraphs(designParam * pParam, const char* pSummaryFileName, bool firstPath);
-			InconsistentGraphs(param, pSummaryFile, firstRun);
+			param->InconsistentGraphs(pSummaryFile, firstRun);
 		}
 		else
 		if (objType == t_objectType::t_CanonMatr) {

@@ -167,9 +167,6 @@
     <ClCompile Include="..\Source\InSysSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

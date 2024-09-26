@@ -4,10 +4,12 @@
     <LocalDebuggerCommandArguments>jobsA.txt</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>C:\Users\16507\Results</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand>$(SolutionDir)$(Platform)\$(Configuration)\CombiLogic.exe</LocalDebuggerCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>jobsA.txt</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>C:\Users\16507\Results</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand>$(SolutionDir)$(Platform)\$(Configuration)\CombiLogic.exe</LocalDebuggerCommand>
   </PropertyGroup>
 </Project>

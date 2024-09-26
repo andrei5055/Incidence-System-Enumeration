@@ -7,6 +7,32 @@
 #include "CombBIBD_Enumerator.h"
 #include "C_tDesignEnumerator.h"
 
+const char* obj_name[] = {
+	"BIBD",					// t_BIBD,			- default
+	"COMBINED_BIBD",		// t_CombinedBIBD,
+	"KIRKMAN_TRIPLE_SYSTEM",// t_Kirkman_Triple
+	"TRIPLE_SYSTEM",        // t_TripleSystem - construction by Leo's program
+	"T-DESIGN",				// t_tDesign,
+	"PBIBD",				// t_PBIBD,
+	"INCIDENCE",            // t_IncidenceSystem,
+	"SEMI_SYMMETRIC_GRAPH", // t_SemiSymmetricGraph
+	"CANON_MATR"			// t_CanonMatr
+};
+
+template <typename T, typename S>
+void output_2_decompInfo(designParam* param, const CDesignDB* pDesignDB, std::string& outputInfo, bool addInfo = false, const char* pSummaryFileName = NULL) {
+	const auto& lambda = param->InterStruct()->lambda();
+	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
+	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
+	bibdEnum.outNonCombinedDesigns(param, pDesignDB, outputInfo, addInfo);
+	if (!addInfo) {
+		char buffer[256];
+		param->enumInfo()->reportResult(buffer, countof(buffer));
+		outString(buffer, pSummaryFileName);
+		std::cout << '\r' << buffer;
+	}
+}
+
 template <typename T, typename S>
 void PrepareBIBD_Enumeration(const designParam* pParam, Class2(C_InSys)** ppInSys, Class2(C_InSysEnumerator)** ppInSysEnum, t_objectType &objType, uint& enumFlags)
 {
@@ -45,7 +71,6 @@ void PrepareBIBD_Enumeration(const designParam* pParam, Class2(C_InSys)** ppInSy
 
 template <typename T, typename S>
 CInsSysEnumInfo<T, S>* createEnumInfo(designParam* pParam, C_InSysEnumerator<T, S>* pInSysEnum = NULL) {
-	extern const char* obj_name[];
 	char buff[256] = {0};
 	if (pInSysEnum)
 		MAKE_JOB_TITLE(pInSysEnum, pParam, buff, countof(buff));
@@ -77,7 +102,6 @@ bool RunOperation(designParam* pParam, const char* pSummFile, bool FirstPath, st
 
 	const auto k = pParam->k;
 	const auto& lambda = pParam->InterStruct()->lambda();
-	extern const char* obj_name[];
 	if (pParam->t <= 2) {
 		if (lambda.size() > 1 || objType == t_objectType::t_SemiSymmetricGraph) {
 			bool kirkmanTriples = false;
@@ -464,4 +488,8 @@ void designParam::setEnumFlags() {
 	else
 		if (outType & t_GroupOrbits)
 			m_enumFlags |= t_outRowOrbits;
+}
+
+LIBRARY_API const char** designParam::objNames() const {
+	return obj_name;
 }

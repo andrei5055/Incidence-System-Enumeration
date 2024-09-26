@@ -1,8 +1,100 @@
-#pragma once
-#include "DataTypes.h"
+﻿#pragma once
+#include <vector>
+#include <string>
+#include "CudaInfo.h"
+
+#ifdef LIBRARY_EXPORTS
+#    define LIBRARY_API __declspec(dllexport)
+#else
+#    define LIBRARY_API __declspec(dllimport)
+#endif
+
+typedef enum {
+	t_Summary = 1 << 0,		// default
+	t_AllObject = 1 << 1,
+	t_GroupOrbits = 1 << 2,
+	t_GroupGeneratingSet = t_GroupOrbits + (1 << 3),
+	t_Transitive = 1 << 4,
+	t_GroupOrderEQ = 1 << 5,
+	t_GroupOrderGT = 1 << 6,
+	t_GroupOrderLT = 1 << 7,
+	t_CombMasters = 1 << 8,
+} t_outputType;
+
+
+enum class t_objectType {
+	t_BIBD,			// default
+	t_CombinedBIBD,
+	t_Kirkman_Triple,
+	t_TripleSystem,
+	t_tDesign,
+	t_PBIBD,
+	t_IncidenceSystem,
+	t_SemiSymmetricGraph,
+	t_CanonMatr
+};
+
+
+typedef enum {
+	t_enumDefault			= 0,
+	t_IS_enumerator			= 1 << 0,
+	t_matrixOwner			= 1 << 1,
+	t_noReplicatedBlocks	= 1 << 2,
+	t_outColumnOrbits		= 1 << 3,
+	t_outStabilizerOrbit	= 1 << 4,	// Keep the orbits of stabilizer of first elements.
+	t_colOrbitsConstructed  = 1 << 5,
+	t_printTransposedMatrix = 1 << 6,
+	t_alwaysKeepRowPermute	= 1 << 7,   // Keep generating set of the Aut(M) acting on the rows of partially constructed matrix M.
+	t_outRowPermute			= 1 << 8,   // Keep generating set of the Aut(M) acting on the rows of fully constructed matrix M.
+	t_outRowOrbits			= 1 << 9,
+	t_useGroupOnParts       = 1 << 10,
+	t_symmetrical_t_cond	= 1 << 11,  // Any(λ + 1) elements of symmetric BIBDs(v, v, k, k, λ) simultaneously belong to 0 or 1 block.
+	t_use_3_condition		= 1 << 12,  // Use limits on the number of common blocks that any 3 elements belong to. 
+	t_update_results        = 1 << 13,  // Updating enumeration results
+	t_kSystems              = 1 << 14,  // Enumeration of k-systems
+	t_allFlags				= -1
+} t_EnumeratorFlags;
+#define MATRIX_ELEMENT_TYPE  	unsigned __int8 //uchar
+#define SIZE_TYPE				unsigned __int8 //uchar //uint16_t //uchar //uint16_t
+#define TDATA_TYPES				SIZE_TYPE, MATRIX_ELEMENT_TYPE 
+
+#define Class1(x)               x<S>
+#define Class1Def(x)            template<typename S> class x
+#define FClass1(x, ...)			template<typename S> __VA_ARGS__  Class1(x)
+
+#define TFunc2(x, ...)          template<typename T, typename S> __VA_ARGS__ x
+#define Class2(x)               x<T,S>
+#define Class2Def(x)            TFunc2(x, class)
+#define FClass2(x, ...)			TFunc2(Class2(x), __VA_ARGS__)
 
 class CDesignDB;
 Class2Def(CInsSysEnumInfo);
+
+class CInterStruct {
+public:
+	inline CInterStruct(int mult = 1) { setMult(mult); }
+	inline auto* Counterparts() const { return m_pCounterparts; }
+	inline ~CInterStruct() { delete Counterparts(); }
+	inline const auto& lambda() const { return iParam[0]; }
+	inline const auto& lambdaA() const { return iParam[1]; }
+	inline const auto& lambdaB() const { return iParam[2]; }
+	inline auto* lambdaPtr() { return iParam; }
+	inline auto* lambdaAPtr() { return iParam + 1; }
+	inline auto* lambdaBPtr() { return iParam + 2; }
+
+	inline bool isValid() const { return Counterparts(); }
+	inline void InitCounterparts() { m_pCounterparts = new std::vector<CInterStruct*>(); }
+	inline void setNext(CInterStruct* pntr) { m_pNext = pntr; }
+	inline auto* getNext() const { return m_pNext; }
+	inline void setMult(int val) { m_mult = val; }
+	inline int mult() const { return m_mult; }
+
+private:
+	std::vector<uint> iParam[3];
+	std::vector<CInterStruct*>* m_pCounterparts = NULL;
+	int m_mult;
+	CInterStruct* m_pNext = NULL;
+};
 
 class publicParam {
 public:
@@ -44,7 +136,7 @@ public:
 			delete pntr;
 		}
 	}
-	void setEnumFlags();
+	LIBRARY_API void setEnumFlags();
 	inline auto enumFlags() const					{ return m_enumFlags; }
 	inline auto enumFlagsPtr()                      { return &m_enumFlags; }
 	inline CInterStruct* InterStruct()	const		{ return m_pInterStruct; }
@@ -69,8 +161,10 @@ public:
 	inline auto compressMatrices() const			{ return m_compress_matrices; }
 	inline auto useThreadPool() const				{ return m_bUseThreadPool; }
 	inline bool create_commonData() const			{ return threadNumb && MT_level() < v; }
-	bool LaunchEnumeration(const char *pSummaryFile, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun);
-	bool LaunchCanonization();
+	LIBRARY_API bool LaunchEnumeration(const char *pSummaryFile, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun);
+	LIBRARY_API bool LaunchCanonization();
+	LIBRARY_API int InconsistentGraphs(const char* pSummaryFileName, bool firstPath);
+	LIBRARY_API const char** objNames() const;
 
 private:
 	CInterStruct* m_pInterStruct = NULL;
@@ -83,16 +177,4 @@ private:
 	bool m_printSimpleDesign = false;
 };
 
-template <typename T, typename S>
-void output_2_decompInfo(designParam* param, const CDesignDB* pDesignDB, std::string& outputInfo, bool addInfo = false, const char* pSummaryFileName = NULL) {
-	const auto& lambda = param->InterStruct()->lambda();
-	Class2(C_BIBD) bibd(param->v, param->k, 2, lambda[0] + lambda[1]);
-	Class2(CBIBD_Enumerator) bibdEnum(&bibd, t_enumDefault);
-	bibdEnum.outNonCombinedDesigns(param, pDesignDB, outputInfo, addInfo);
-	if (!addInfo) {
-		char buffer[256];
-		param->enumInfo()->reportResult(buffer, countof(buffer));
-		outString(buffer, pSummaryFileName);
-		std::cout << '\r' << buffer;
-	}
-}
+
