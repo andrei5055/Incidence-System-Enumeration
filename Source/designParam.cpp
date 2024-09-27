@@ -6,6 +6,7 @@
 #include "IG_Enumerator.h"
 #include "CombBIBD_Enumerator.h"
 #include "C_tDesignEnumerator.h"
+#include "k-SysSupport.h"
 
 const char* obj_name[] = {
 	"BIBD",					// t_BIBD,			- default
@@ -171,8 +172,8 @@ bool RunOperation(designParam* pParam, const char* pSummFile, bool FirstPath, st
 			}
 		}
 		else {
-			alldata sys(pParam->v);
-			retVal = sys.Run();
+			//alldata sys(pParam->v);
+			//retVal = sys.Run();
 		}
 
 		if (!retVal) {
@@ -318,85 +319,6 @@ bool designParam::LaunchEnumeration(const char *pSummaryFile, int find_master, i
 	setLambdaStep(0);
 	setEmptyLines();
 	return true;
-}
-
-template<typename T>
-CC T* reallocStorageMemory(T** pObjects, size_t lenObj) {
-	auto* pNewObjMemory = new T[lenObj];
-	memcpy(pNewObjMemory, *pObjects, lenObj >>= 1);
-	delete[] * pObjects;
-	return (*pObjects = pNewObjMemory) + lenObj;
-}
-
-int readTable(const std::string& fn, int nRows, int nCols, unsigned char** pSm, int nmax, int reservedElement, char infoSymb = '"') {
-	if (fn.length() == 0)
-		return 0;
-	std::ifstream mf;
-	mf.open(fn, std::ios::in);
-	if (!mf)
-		return 0;
-
-	const auto checkFirstElem = nRows > 0;
-	int i(0), nl(0);
-	auto sm = *pSm;
-	while (i < nmax)
-	{
-		char fb;
-		mf >> fb;
-		if (mf.eof())
-			break;
-
-		if (fb == infoSymb) {
-			auto* sms = sm;
-			int iv = 0;
-			int j = 0;
-			while (true) {
-				for (int k = 0; k < nCols; k++) {
-					mf >> iv;
-					if (mf.eof() || checkFirstElem && (k == 0 && iv))
-					{
-						//printfRed("*** Error in data line %d, file: %s\n", nl, fn.c_str());
-						//myExit(1);
-						return -1;
-					}
-					*(sm++) = iv;
-				}
-				nl++;
-				mf.ignore(256, '\n');
-				mf >> fb;
-				++j;
-				if (nRows > 0) {
-					if (j == nRows)
-						break;
-
-					if (mf.eof() || fb != '\"')
-					{
-						// printfRed("*** Error in data\n");
-						sm = sms;
-						goto retry;
-					}
-				}
-				else {
-					if (mf.eof() || fb != '\"') {
-						mf.close();
-						return j;
-					}
-
-					if (j == reservedElement)
-						sm = reallocStorageMemory(pSm, nCols * (reservedElement <<= 1));
-				}
-
-			}
-			i++;
-			continue;
-		}
-
-	retry:
-		mf.ignore(256, '\n');
-		nl++;
-	}
-	mf.close();
-	return i;
 }
 
 bool writeTable(const std::string& fn, FILE *file, const char *pComment = NULL) {

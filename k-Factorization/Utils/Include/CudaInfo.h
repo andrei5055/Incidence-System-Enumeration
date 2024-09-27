@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#include "k-SysSupport.h"
+#include "CudaAttributes.h"
 
 #ifdef USE_CUDA
 #define CONSTR_ON_GPU				0						// 1 - Start using GPU for object construction
@@ -9,11 +9,17 @@
 #define NUM_GPU_WORKERS             128
 //#include "host_defines.h"
 #include "cuda_runtime_api.h"
+#if CONSTR_ON_GPU
+#define CK	CC __noinline__
+#else
+#define CK
+#endif
 #else
 #define USE_THREADS					15 //(TEST? 0 : 15)	// default numer if thread used, If NOT 0, it can be chanaged by THREAD_NUMBER
 #define CONSTR_ON_GPU				0
 #define CANON_ON_GPU				0
 #define NUM_GPU_WORKERS				0
+#define CK
 #endif
 
 typedef unsigned int		uint;

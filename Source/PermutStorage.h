@@ -243,6 +243,7 @@ PermutStorage(void)::multiplyPermutations(size_t currPermIdx, size_t fromIdx, si
 			multiplyPermutations(permIdx, lastIdx + p);
 	}
 }
+
 #if CONSTR_ON_GPU
 CK int cudaMemCmp(const unsigned char* left, const unsigned char* right, size_t length);
 #define MEMCMP(left, right, length)		cudaMemCmp(left, right, length)

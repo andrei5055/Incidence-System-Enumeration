@@ -13,6 +13,7 @@
 #include <new>   //only supports Win32 and Mac
 #include <cstring>
 #include "DataTypes.h"
+#include "k-SysSupport.h"
 
 template<class TYPE, class ARG_TYPE>
 class CClassArray

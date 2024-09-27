@@ -15,7 +15,7 @@
 #include "PermutStorage.h"
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
-#include "CheckCanon.h"
+//#include "CheckCanon.h"
 #include "GroupOrder.h"
 
 
@@ -70,22 +70,6 @@ public:
 	bool printMatrix(const designParam *pParam) const;
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
-	inline bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T* bResult = NULL) {
-		return m_pCheckerKSystemCanon->CheckCanonicity(result, nLines, pGrpNumb, bResult);
-	}
-	inline bool CheckPermutations(const T* inputMatrix, const T* bestResult, int nRows) {
-		return m_pCheckerKSystemCanon->CheckPermutations(inputMatrix, bestResult, nRows);
-	}
-	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {
-		return m_pCheckerKSystemCanon->improvedResultIsReady(flag);
-	}
-	inline char* comment() const {
-		return m_pCheckerKSystemCanon->comment();
-	}
-	inline void setPreordered(bool flag) {
-		m_pCheckerKSystemCanon->setPreordered(flag);
-	}
-	inline void setAllData(const alldata* ptr) { m_pCheckerKSystemCanon->setAllData(ptr); }
 	inline void addAutomorphism(const T* perm) {
 		addAutomorphism(numRow(), perm, getRowOrbits(0), true, true);
 	}
@@ -175,7 +159,6 @@ private:
 	T* m_pTrivialPermutCol = NULL;     // Trivial permutation on columns
 	const T m_numElem;				   // The number of elements that will be the same for all partially constructed objects
 	                                   // (it is equal nCol for combinatorial designs or number of players for k-system) 
-	CCheckerCanon<SIZE_TYPE> *m_pCheckerKSystemCanon = NULL;
 };
 
 CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, T numParts) : 
@@ -227,12 +210,6 @@ CanonicityChecker()::CCanonicityChecker(T nRow, T nCol, T rank, uint enumFlags, 
 	m_pTrivialPermutCol = new T[nCol];
 	for (auto i = nCol; i--;)
 		m_pTrivialPermutCol[i] = i;
-
-	if (enumFlags & t_EnumeratorFlags::t_kSystems &&
-		(!m_pCheckerKSystemCanon || m_pCheckerKSystemCanon->numDays() != nRow)) {
-		delete m_pCheckerKSystemCanon;
-		m_pCheckerKSystemCanon = new CCheckerCanon<unsigned char>(nRow, m_numElem, 3);
-	}
 }
 
 CanonicityChecker()::~CCanonicityChecker()
@@ -254,7 +231,6 @@ CanonicityChecker()::~CCanonicityChecker()
 	if (getGroupOnParts() && getGroupOnParts()->owner() == this)
 		delete getGroupOnParts();
 
-	delete m_pCheckerKSystemCanon;
 #if USE_STRONG_CANONICITY
 	delete solutionStorage();
 #endif
