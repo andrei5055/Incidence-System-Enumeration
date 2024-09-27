@@ -122,7 +122,6 @@ void printTransformed(int nrows, int ncols, int groupSize, ctchar* tr, ctchar* t
 void createStartFolderAndFileName(char* fn, size_t fns, const char* folder, const char* fileNameFmt, int np, int nr, int gs);
 CC int u1fCheck(ctchar* u1f, int nu1f, ctchar* rowir, int ir, int nc, ctchar* t1);
 CC int p1fCheckGroups(int iv, int ic, int nc, ctchar* lnk, ctchar* v);
-void myAssert(int code, const char* file, int line);
 void myExit(int code);
 void reportEOJ(int code);
 void setConsoleOutputMode();

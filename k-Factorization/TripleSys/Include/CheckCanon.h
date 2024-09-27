@@ -24,6 +24,7 @@ typedef enum {
 #endif
 
 class alldata;
+void myAssert(int code, const char* file, int line);
 
 Class1Def_(CCheckerCanon) : public Class1_(CGroupOrder) {
 public:

@@ -24,7 +24,7 @@
     <ClInclude Include="Include\k-SysSupport.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="io.cpp" />
+    <ClCompile Include="Source\io.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
