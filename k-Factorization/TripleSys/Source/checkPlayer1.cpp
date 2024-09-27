@@ -1,0 +1,115 @@
+#include "TripleSys.h"
+
+CC int alldata::checkPlayer1(int iPlayerNumber)
+{
+	int m0 = iPlayer % m_groupSize;
+	int m1 = m0 == 0 ? m_groupSize : 1;
+	if (iDay <= 0)
+	{
+		if (iPlayerNumber > iPlayer)
+			return m_numPlayers;
+		return iPlayer;
+	}
+	// iDay > 0
+
+	if (m_groupSize == 2)
+	{
+		if (iPlayer < 3)
+			return iPlayerNumber; // iPlayerNumber is in range [m_indexPlayerMin,Max], for players 0, 1, 2 m_indexPlayerMin equal m_indexPlayerM
+		// AI #1,2 (for all groups)
+		if (iPlayerNumber <= tmpPlayers[iPlayer - m1])
+			iPlayerNumber = tmpPlayers[iPlayer - m1] + 1;
+		if (m0 == 0)
+		{
+			for (; m_firstNotSel < m_numPlayers; m_firstNotSel++)
+			{
+				if (selPlayers[m_firstNotSel] == unset)
+					break;
+			}
+			if (iPlayerNumber > m_firstNotSel)
+				return m_numPlayers;
+			return m_firstNotSel;
+		}
+		else if (!param(t_u1f) && m_p1f && m_numPlayers > 4)
+		{
+			iPlayerNumber = p1fCheckGroups(iPlayerNumber, iPlayer, m_numPlayers, links(0), tmpPlayers);
+		}
+
+		return iPlayerNumber;
+	}
+	if (iPlayer >= m1)
+	{
+		// AI #1 and #2 (for all groups)
+		if (iPlayerNumber <= tmpPlayers[iPlayer - m1])
+			iPlayerNumber = tmpPlayers[iPlayer - m1] + 1;
+	}
+	if (m_groupSize == 3)
+	{
+		
+		if (iDay == 1)
+		{
+#if 1
+			//if player[1, 4] == 4 ==> player[1, 5] <= player[0, { 5 }]
+			if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
+				return 6;
+#endif
+			// AI #4 (part)
+			switch (iPlayer)
+			{
+				case 2: return (iPlayerNumber <= 6) ? 6 : m_numPlayers;
+				case 4: /* AI #17 */ return (iPlayerNumber <= 4) ? 4 : (m_numPlayers > 9 && iPlayerNumber <= 9) ? 9 : m_numPlayers;
+				case 5: /* AI #14 */ 
+					if (tmpPlayers[4] == 4)
+						return (iPlayerNumber <= 7) ? 7 : (iPlayerNumber <= 9) ? 9 : m_numPlayers;
+					break;
+				case 7:
+					// AI #7 
+					if (iPlayerNumber <= tmpPlayers[4])
+						iPlayerNumber = tmpPlayers[4] + 1;
+					if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
+						return m_numPlayers;
+					// AI #19
+					if (tmpPlayers[4] != 4)
+					{
+						if (iPlayerNumber <= 12)
+							iPlayerNumber = 12;
+					}
+					break;
+				case 8:
+					if (tmpPlayers[7] == 5 && tmpPlayers[4] == 4 && iPlayerNumber <= tmpPlayers[5])
+					{
+						// AI #10
+						iPlayerNumber = tmpPlayers[5] + 1;
+					}
+					break;
+				case 9:
+					// AI #8,9a 
+					if (tmpPlayers[4] == 4 && tmpPlayers[7] != 5)
+					{
+						if (iPlayerNumber <= 5)
+							return 5; // not happend
+						return m_numPlayers; // not happend
+					}
+					break;
+			}
+			// AI #18 (for group size == 3)
+			if ((iPlayerNumber % 3) == 2)
+			{
+				if (selPlayers[iPlayerNumber - 2] == unset || selPlayers[iPlayerNumber - 1] == unset ||
+					selPlayers[iPlayerNumber - 2] >= selPlayers[iPlayerNumber - 1])
+					return iPlayerNumber + 1;
+			}
+		}
+	}
+
+	if (m0 == 0)
+	{
+		for (; m_firstNotSel < m_numPlayers; m_firstNotSel++)
+		{
+			if (selPlayers[m_firstNotSel] == unset)
+				break;
+		}
+		return (iPlayerNumber > m_firstNotSel) ? m_numPlayers : m_firstNotSel;
+	}
+	return iPlayerNumber;
+}

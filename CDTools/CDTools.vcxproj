@@ -105,7 +105,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>X64;WIN;WIN32;CD_TOOLS;_DEBUG;_CONSOLE;_LIB;LIBRARY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source;c:\NVIDIA GPU Computing Toolkit\v9.1\include;..\Source\k-Factorization\TripleSys\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\boost_1_56_0;..\Source;c:\NVIDIA GPU Computing Toolkit\v9.1\include;..\k-Factorization\Utils\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <BrowseInformation>true</BrowseInformation>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -113,7 +113,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Utils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\CDTools\x64\$(Configuration);C:\local\boost_1_56_0\lib32-msvc-12.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -149,7 +149,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>X64;WIN;WIN32;CD_TOOLS;NDEBUG;_CONSOLE;_LIB;LIBRARY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>..\Source;C:\Program Files\boost_1_56_0;..\Source\k-Factorization\TripleSys\Include;c:\NVIDIA GPU Computing Toolkit\v9.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Source;C:\Program Files\boost_1_56_0;c:\NVIDIA GPU Computing Toolkit\v9.1\include;..\k-Factorization\Utils\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D _WIN32_WINNT=0x0501 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalHeaderUnitDependencies>
       </AdditionalHeaderUnitDependencies>
@@ -160,7 +160,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Utils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\CDTools\x64\$(Configuration);C:\local\boost_1_56_0\lib32-msvc-12.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -186,16 +186,6 @@
     <ClInclude Include="..\Source\InSysRowEquation.h" />
     <ClInclude Include="..\Source\InSysSolver.h" />
     <ClInclude Include="..\Source\IntersectionStorage.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\allSupports.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\CheckCanon.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\CudaInfo.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\data.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\Global.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\GroupOrder.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\Table.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TimerInfo.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TopGun.h" />
-    <ClInclude Include="..\Source\k-Factorization\TripleSys\Include\TripleSys.h" />
     <ClInclude Include="..\Source\matrix.h" />
     <ClInclude Include="..\Source\MatrixCanonChecker.h" />
     <ClInclude Include="..\Source\PBIBD_Enumerator.h" />
@@ -204,9 +194,7 @@
     <ClInclude Include="..\Source\RowSolution.h" />
     <ClInclude Include="..\Source\Sorter.h" />
     <ClInclude Include="..\Source\ThreadEnumerator.h" />
-    <ClInclude Include="..\Source\TripleSys\CheckCanon.h" />
-    <ClInclude Include="..\Source\TripleSys\CudaInfo.h" />
-    <ClInclude Include="..\Source\TripleSys\TripleSys.h" />
+    <ClInclude Include="..\Source\TimerInfo.h" />
     <ClInclude Include="..\Source\Variable.h" />
     <ClInclude Include="..\Source\VariableMapping.h" />
     <ClInclude Include="..\Source\Vector.h" />
@@ -228,36 +216,12 @@
     <ClCompile Include="..\Source\InSysEnumerator.cpp" />
     <ClCompile Include="..\Source\InSysRowEquation.cpp" />
     <ClCompile Include="..\Source\InSysSolver.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\allData.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\CheckCanon.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinks.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinksH.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkLinksV.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\CheckMatrix.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkPlayer1.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\checkPlayer3.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\cnv.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\convertLinksToResult.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\getNextPlayer.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\getUnselected.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\improveMatrix.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\initStartValues.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\ioSupport.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\kmSupport.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\printTable.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\processOneDay.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\reportCheckLinksData.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\Support.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\Tests.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TGsupport.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TimerInfo.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TopGun.cpp" />
-    <ClCompile Include="..\Source\k-Factorization\TripleSys\Source\TripleSys.cpp" />
     <ClCompile Include="..\Source\Matrix.cpp" />
     <ClCompile Include="..\Source\MatrixCanonChecker.cpp" />
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
+    <ClCompile Include="..\Source\TimerInfo.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />
   </ItemGroup>
