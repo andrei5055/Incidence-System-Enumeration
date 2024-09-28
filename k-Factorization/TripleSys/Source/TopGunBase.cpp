@@ -11,7 +11,7 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 		m_nRowsOut = m_numDays;
 
 	if (m_nRowsOut < 2 || m_nRowsOut > m_numDays) {
-		printfRed("***The number of rows (%d) for the result matrices must be either 0 or within the range 2:%d\n",
+		printfRed("*** NRowsInResultMatrix(%d) must be either 0 or within the range 2:%d\n",
 			nRowsOut(), m_numDays);
 		myExit(1);
 	}
@@ -20,7 +20,7 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 bool TopGunBase::readStartMatrices() {
 	if (nRowsStart() < 2 || nRowsStart() > m_numDays)
 	{
-		printfRed("*** Number of rows(%d) in 'Start Matrices' must be in range 2:%d\n",
+		printfRed("*** NRowsInStartMatrix(%d) with UseMultiThreading must be in range 2:%d\n",
 			nRowsStart(), m_numDays);
 		myExit(1);
 	}
@@ -36,12 +36,13 @@ bool TopGunBase::readStartMatrices() {
 
 int TopGunBase::getStartMatrices() const
 {
-	// file name for 'Start Matrices' can be P0123456789.txt, or K0123456789.txt, or U0123456789.txt
-	// 15 bytes length, starts from "P", "K" or "U", with extension ".txt"
-	// the full path: 
-	// StartFolder/xxyyzz/P0123456789.txt 
-	// or StartFolder/xxyyzz_UFName/U0123456789.txt
-	// or StartFolder/xxyyzz/K0123456789.txt
+	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[UFName]/MatrixID.txt
+	// StartFolder, Columns, Rows, GroupSize, UFName - input parameters
+	// MatrixID: starts from prefix (P, K, U, PM, KM, UM), then 10 digits and extension ".txt"
+	// Examples: 
+	//   Logs/16x15x2/PM0123456789.txt 
+	//   Logs/16x15x2_4444_88/U0123456789.txt
+	//   Logs/27x13x2_999/U0123456789.txt
 	//
 
 	const std::string ch(getFileNameAttr(paramPtr()));

@@ -9,7 +9,7 @@
     for (tchar i1 = 1; i1 < nv; i1++)  { \
 		const auto v1 = t0[i1]; \
 		if (ct1[v1] != unset) continue; \
-		if (i1 > 1) memcpy(t1, t0 + 1, i1 - 1);
+		if (i1 > 1) memcpy(t1, t0 + 1, i1 - 1)
 #define SetFirstLoopH2(nv) \
 	Set1LoopH2(ct2, v2, v3, t1, t2, i2, nv - 2)
 #define SetFirst2LoopsH2(nv) \
@@ -33,13 +33,29 @@
 	vo[n] = t4[0]; vo[n+1] = t4[1]
 #define Set2LastValuesH2(n, t4)  Set2LastValues(n, t4, continue)
 #define Set2LastValuesRH2(n, t4) Set2LastValues(n, t4, return false)
-
+#define P1FCheck()  if (checkLinksHResult(vo) || !m_p1f) return true
+/**
 #define P1FCheck() \
 	p1fSetTableRow(p1ftable(nextDay - 1), vo); \
 	if (!m_p1f || p1fCheck(nextDay, vo) < 0) \
 		return true
-
-CC bool alldata::checkLinksH2(const tchar* v, int nv, int nvo, int ind1, int iday, tchar* vo)
+**/
+CC bool alldata::checkLinksHResult(tchar * vo)
+{
+	p1fSetTableRow(p1ftable(iDay), vo);
+	if (m_p1f)
+	{
+		memcpy(result(iDay), vo, m_numPlayers);
+		memcpy(tmpPlayers, vo, m_numPlayers);
+		m_playerIndex = m_numPlayers * iDay + iPlayer - 1;
+		const bool ret = matrixStat(p1ftable(), iDay + 1);
+		if (!ret)
+			memset(result(iDay), 0, m_numPlayers);
+		return ret;
+	}
+	return true;
+}
+CC bool alldata::checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int iday, tchar* vo)
 {
 	ASSERT(nv < 4 || nv > 16 || (nv & 1));
 	ASSERT(v[0]);
@@ -127,22 +143,11 @@ CC bool alldata::checkLinksH2(const tchar* v, int nv, int nvo, int ind1, int ida
 
 	return false;
 }
-CC bool alldata::checkLinksH(const tchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo)
+CC bool alldata::checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo)
 {
 	if (nvo <= 0)
 	{
-		p1fSetTableRow(p1ftable(iDay), vo -= m_numPlayers);
-		if (m_p1f)
-		{
-			memcpy(result(iDay), vo, m_numPlayers);
-			memcpy(tmpPlayers, vo, m_numPlayers);
-			m_playerIndex = m_numPlayers * iDay + iPlayer - 1;
-			const bool ret = matrixStat(p1ftable(), iDay + 1);
-			if (!ret)
-				memset(result(iDay), 0, m_numPlayers);
-			return ret;
-		}
-		return true;
+		return checkLinksHResult(vo -= m_numPlayers);
 	}
 
 	tchar t[MAX_PLAYER_NUMBER];
@@ -186,7 +191,7 @@ CC bool alldata::checkLinksH(const tchar* v, int nv, int nvo, int ind1, int ind2
 			const auto tj = t[j];
 			if (ct0[tj] == unset && cti[tj] == unset)
 			{
-				* vo = t0;
+				*vo = t0;
 				*(vo + 1) = ti;
 				*(vo + 2) = tj;
 				if (checkLinksH(t + 1, nvMinus3, nvo, i, j - 1, vo + 3))

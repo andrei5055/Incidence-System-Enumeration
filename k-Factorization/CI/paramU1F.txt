@@ -5,7 +5,7 @@ ResultFolder="../Logs_CI/"
 TestName="U1F_44"
 USE_GPU=0
 GroupSize=2
-UsePerfect1Factorization=1
+UsePerfect1Factorization=0
 UseUniform1Factorization=1
 NRowsInStartMatrix=0
 NRowsInResultMatrix=0
@@ -35,7 +35,7 @@ TestName="U1F_444_48_66"
 UFName="_u1f_444_48_66"
 nPlayers=12
 UF={{4, 4, 4}, {4, 8}, {6, 6}}
-ExpectedResult=1
+ExpectedResult=2
 /*
 RUN_JOB
 

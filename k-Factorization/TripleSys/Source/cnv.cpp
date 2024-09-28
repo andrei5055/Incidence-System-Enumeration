@@ -213,9 +213,11 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		updateGroupOrder(result(0));
 		if (groupOrder() >= param(t_nestedGroups)) {
 			saveGroup(*this, nrows);
-			return true;
+			if (nrows < m_numDaysResult)
+				return true;
 		}
-		return false;
+		else
+			return false;
 	}
 
 	bool ret = true;

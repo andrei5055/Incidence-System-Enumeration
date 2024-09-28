@@ -77,6 +77,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	const auto iTime = clock();
 	const char* fHdr = getFileNameAttr(sysParam());
 	auto rTime = iTime;
+	auto cTime = iTime;
 	const auto bSavingMatricesToDisk = param(t_savingMatricesToDisk);
 	int nMatricesMax = 0;
 	int startMatrixCount = 0;
@@ -135,6 +136,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	if (iDay > m_numDaysResult)
 		iDay = m_numDaysResult; // warning?
 
+	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
 	for (int i = 0; i < iDay; i++)
 		p1fSetTableRow(p1ftable(i), result(i));
 
@@ -143,7 +145,14 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		if (m_groupSize == 2) // need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
-
+#if 0 // print group order for each submatrix
+	printf("Rows-Group Order: ");
+	for (int i = 2; i <= iDay; i++) {
+		cnvCheckNew(0, i, false);
+		printf("%d-%d ", i, groupOrder());
+	}
+	printf("\n");
+#endif
 	for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
 		auto* pGroupInfo = groupInfo(i);
 		if (!pGroupInfo)
@@ -177,7 +186,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
 #if 0
-	if (mStart == 0 && iDay > 0)
+	if (!mStart0 && iDay > 0)
 	{
 		testCanonizatorSpeed();
 		exit(0);
@@ -256,14 +265,15 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		checkCurrentMatrix:
 			//CUDA_PRINTF("       After memcpy\n");
 #if ReportPeriodically && !USE_CUDA
-			const auto cTime = clock();
+			cTime = clock();
+			m_rowTime[iDay] = cTime - iTime;
 			if (maxDays < iDay || cTime - rTime > ReportInterval)
 			{
 				if (bPrint)
 				{
 					printf("Thread %d: Current data for %s-matrix %zd: rows=%d, build time=%d, time since start=%d\n",
 						threadNumber, fHdr, nLoops + 1, iDay + 1, cTime - rTime, cTime - iTime);
-					printTable("Current matrix", result(), iDay + 1, m_numPlayers, m_groupSize, 0, true);
+					printResultWithHistory("Current matrix", iDay + 1);
 				}
 #if ReportCheckLinksData
 				if (bFirstThread)
@@ -301,10 +311,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			m_finalKMindex++;
 			if (bPrint)
 			{
+				cTime = clock();
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
-				const auto cTime = clock();
 				printf("%5zd: %s-Matrix, build time=%d, time since start=%d\n", nLoops, fHdr, cTime - mTime, cTime - iTime);
 #else
 				extern int matr_cntr;
@@ -323,7 +333,16 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 				Result.setInfo(stat);
 				Result.setGroupOrder(groupOrder());
+#if 0			// record result and print on screen (if bPrint==true)
 				Result.printTable(result(), true, ResultFile.c_str(), bPrint, m_numDaysResult);
+#else			// record result without print on screen
+				Result.printTable(result(), true, ResultFile.c_str(), false, m_numDaysResult);
+				if (bPrint) {
+					printf("%5zd: |Aut(M)| = %d, %s\n", nLoops, groupOrder(), stat);
+					// print on screen result with highlighted differences from prev result
+					printResultWithHistory("", iDay);
+				}
+#endif
 				//cnvCheckNew(2, iDay);
 
 				if (pAutGroup) {

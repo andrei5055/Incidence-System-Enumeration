@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="..\Source\BIBD_Enumerator.h" />
     <ClInclude Include="..\Source\CanonicityChecker.h" />
+    <ClInclude Include="..\Source\CDTools.h" />
     <ClInclude Include="..\Source\ClassArray.h" />
     <ClInclude Include="..\Source\ColOrbitManager.h" />
     <ClInclude Include="..\Source\ColOrbits.h" />
@@ -221,6 +222,7 @@
     <ClCompile Include="..\Source\PermutStorage.cpp" />
     <ClCompile Include="..\Source\RowIntersection.cpp" />
     <ClCompile Include="..\Source\RowSolution.cpp" />
+    <ClCompile Include="..\Source\CDTools.cpp" />
     <ClCompile Include="..\Source\TimerInfo.cpp" />
     <ClCompile Include="..\Source\Variable.cpp" />
     <ClCompile Include="..\Source\VariableMapping.cpp" />

@@ -24,7 +24,9 @@
 #define FirstIndexOfStartMatrices 0
 #endif
 #define NRBase					  2
-#define AllowNotP1FRowsFor3P1F    0 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
+#define UseP1fCheckGroups         1
+#define UseCnvCheckNewEachRow     0
+#define AllowNotP1FRowsFor3P1F    1 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
 #define Any2RowsConvertToFirst2   1 // Only for 3P1F. (*) If 1, then any two rows must be converted to first 2 rows.
 									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
@@ -162,6 +164,7 @@ public:
 #endif
 	}
 
+	CC bool checkLinksHResult(tchar* vo);
 	CC bool checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo);
 	CC bool checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo);
 
@@ -174,7 +177,6 @@ private:
 	CC void getUnselected(tchar* v, int nv) const;
 	CC void getPrevPlayer();
 	CC int getNextPlayer();
-	CC int getNextPlayer3SS();
 	CC bool initCurrentDay();
 	CC bool unsetLinksForOnePlayer(ctchar* p, int ip) const;
 	void setCheckLinks();
@@ -239,6 +241,7 @@ private:
 	bool FindIsomorphicBaseElements(const std::string& fileName);
 	void checkCommonValues(ctchar* pBaseValues, int numSets);
     void checkCommonValues();
+	void printResultWithHistory(char const* name, int nRows);
 
 	CC void setArraysForLastRow(int nrows);
 	CC void adjustPlayerPosition(tchar* path, tchar length, tchar nrows);
@@ -262,7 +265,9 @@ private:
 	int maxDaysPlayers;
 	sLongLong nLoops;
 	bool noMoreResults;
+	clock_t* m_rowTime;
 	tchar* m_pResults;
+	tchar* m_pResultsPrev;
 	tchar* m_pLinks;
 	tchar* selPlayers;
 	tchar* tmpPlayers;

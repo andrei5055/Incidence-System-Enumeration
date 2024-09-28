@@ -1,17 +1,29 @@
 #include "TopGun.h"
 
-void printTableColor(char const* name, const tchar *c, int nl, int nc, int np, int ns, bool makeString)
+void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, clock_t* t)
 {
-	printf("%s:\n", name);
-	for (int j = 0; j < nl; j++)
+	int ind = 0;
+	if (!name && !name[0]) {
+		printf("%s:", name);
+		if (t)
+			printfGreen("     Last column: Row change time stamp (minutes)");
+		printf("\n");
+	}
+	for (int j = 0; j < nl; j++, ind += nc)
 	{
 		if (makeString) printf("\"");
 		for (int i = 0; i < nc; i++)
 		{
-			char v = c[j * nc + i];
+			char v = c[ind + i];
 			if (np > 0 && (i % np) == 0 && i > 0)
 				printf(" ");
-			if (v >= 0 && v < 67)
+			if (co) {
+				if (v == co[ind + i])
+					nc > 16 ? printf("%2d", v) : printf("%3d", v);
+				else
+					nc > 16 ? printfYellow("%2d", v) : printfYellow("%3d", v);
+			}
+			else if (v >= 0 && v < 67)
 			{
 				printf("\x1b[38;5;%dm%2d", 28 + v * 3, v);
 				printf("\x1b[0m");
@@ -20,10 +32,22 @@ void printTableColor(char const* name, const tchar *c, int nl, int nc, int np, i
 				printf("%2d", v);
 		}
 		if (j + 1 >= nl || ns <= 0 || ((j + 1) % ns) == 0)
-			makeString ? printf(" \"\n") : printf("\n");
+		{
+			if (makeString)
+				printf(" \"");
+			if (t)
+				printfGreen("//%7d", t[j] / 60000);
+			printf("\n");
+		}
 		else
 			printf(" ");
 	}
+}
+
+void alldata::printResultWithHistory(char const* name, int nRows)
+{
+	printTableColor(name, result(), nRows, m_numPlayers, m_groupSize, 0, true, m_pResultsPrev, m_rowTime);
+	memcpy(m_pResultsPrev, result(), m_nLenResults);
 }
 
 sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t& iTime, bool bPrintSetup)

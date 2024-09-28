@@ -15,7 +15,10 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 	m_bCheckLinkT(m_groupSize == 3 && useCheckLinksT),
 	m_nLenResults(m_numDays * numPlayers()) {
 	m_improveResult = improveResult;
+	m_rowTime = new clock_t[m_numDays];
+	m_rowTime[0] = 0;
 	m_pResults = new tchar[m_nLenResults];
+	m_pResultsPrev = new tchar[m_nLenResults];
 	int numPlayers64 = (m_numPlayers + 7) / 8 * 8;
 
 	selPlayers = new tchar[7 * numPlayers64];
@@ -181,7 +184,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 }
 
 CC alldata::~alldata() {
+	delete[] m_rowTime;
 	delete[] m_pResults;
+	delete[] m_pResultsPrev;
 	delete[] selPlayers;
 	delete[] m_pLinks;
 	delete[] m_Km;
@@ -205,6 +210,7 @@ CC void alldata::Init() {
 	memset(result()+ m_numPlayers, 0, m_nLenResults-m_numPlayers);
 	for (int i = 0; i < m_numPlayers; i++)
 		result()[i] = i;
+	memcpy(m_pResultsPrev, result(), m_nLenResults);
 	initCheckByGroup(1, 0);
 	p1fSetTableRow(p1ftable(), result());
 

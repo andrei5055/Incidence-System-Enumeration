@@ -59,10 +59,10 @@ CC int alldata::checkCurrentResult(bool bPrint)
 #endif
 #endif
 #if 1
-		if (iDay == m_numDaysResult
-			//|| (iDay > 1)
-			|| param(t_submatrixGroupOrderMin) > 0
-			|| param(t_nestedGroups) > 1
+		if ((iDay == m_numDaysResult)
+			|| (UseCnvCheckNewEachRow)
+			|| (param(t_submatrixGroupOrderMin) > 0)
+			|| (param(t_nestedGroups) > 1)
 			|| (m_p1f && (iDay == 6 || m_groupSize == 3))
 			)
 		{

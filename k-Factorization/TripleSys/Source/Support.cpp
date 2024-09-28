@@ -56,8 +56,9 @@ CC bool alldata::initCurrentDay()
 	memset(selPlayers, unset, m_numPlayers);
 	memset(tmpPlayers, unset, m_numPlayers);
 	CUDA_PRINTF("   === initCurrentDay\n");
-	if (m_groupSize != 3 && m_pCheckLinksH && iDay > 0)
+	if (m_groupSize < 3 && m_pCheckLinksH && iDay > 0)
 	{
+		// m_pCheckLinksH below disabled for gs=3 because generates 49 matrices instead of 26 (with 4 days result)
 		if (!(this->*m_pCheckLinksH)(result(), m_numPlayers, m_numPlayers, -1, result(iDay - 1)[1], m_ho))
 		{
 			bPrevResult = true;

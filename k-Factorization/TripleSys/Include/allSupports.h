@@ -6,7 +6,7 @@ typedef signed long long sLongLong;
 LIBRARY_API const char* getFileNameAttr(const kSysParam* param, const char** uf = NULL);
 void convertLinksToResult(const char* ci, char* res, int np, int gs);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
-void printTableColor(char const* name, const tchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false);
+void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false, ctchar* co=NULL, clock_t* t=NULL);
 
 template<typename T>
 CC void printValue(tchar v, double scale) {
@@ -122,6 +122,7 @@ void printTransformed(int nrows, int ncols, int groupSize, ctchar* tr, ctchar* t
 void createStartFolderAndFileName(char* fn, size_t fns, const char* folder, const char* fileNameFmt, int np, int nr, int gs);
 CC int u1fCheck(ctchar* u1f, int nu1f, ctchar* rowir, int ir, int nc, ctchar* t1);
 CC int p1fCheckGroups(int iv, int ic, int nc, ctchar* lnk, ctchar* v);
+void myAssert(int code, const char* file, int line);
 void myExit(int code);
 void reportEOJ(int code);
 void setConsoleOutputMode();

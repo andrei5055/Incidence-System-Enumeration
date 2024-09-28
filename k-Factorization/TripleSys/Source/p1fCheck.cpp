@@ -128,7 +128,7 @@ CC int alldata::collectCyclesAndPath(TrCycles* trc)
 CC void alldata::adjustPlayerPosition(tchar* path, tchar length, tchar nrows)
 {
 	if (length / 2 == m_numPlayers)
-		return; // no adjustment can be made if full cyrcle
+		return; // no adjustment can be made if full cycle
 	tchar sp[MAX_PLAYER_NUMBER], *res = result(nrows - 1);
 	for (int i = 0; i < m_numPlayers; i++)
 		sp[res[i]] = i;

@@ -91,7 +91,8 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 		}
 	}
 #endif
-	const int maxv0 = AllowNotP1FRowsFor3P1F ? MAX_3PF_SETS : 1;
+	//const auto u1f = sysParam()->u1f[0];
+	const int maxv0 = MAX_3PF_SETS; //u1f[0] != 1 || u1f[1] != m_numPlayers) ? MAX_3PF_SETS : 1;
 	const int maxv1 = MAX_3PF_SETS;
 
 #define _StatAdd(x, y, z)  // StatAdd(x, y, z)
@@ -202,7 +203,7 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 								if (pTestedTRs && pTestedTRs->isProcessed(tr))
 								{
 #if !USE_CUDA 
-									if (1)//indRow0 + indRow1 >= 2)
+									if (0)//indRow0 + indRow1 >= 2)
 									{
 										int k = 0, numCycles = trCycles.ncycles;
 										printf("%4d:", ++k);

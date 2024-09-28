@@ -11,7 +11,7 @@ CC int CGroupInfo::updateGroupOrder(ctchar* tr) {
 		itr = low + ((high - low) >> 1);
 		cmp = MEMCMP(getObjPntr(itr), tr, m_lenObj);
 		if (!cmp)
-			return itr;
+			return -itr - 1;
 
 		if (cmp < 0)
 			low = itr + 1;  // ignore left half
