@@ -187,6 +187,23 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	virtual T rowNumbExt() const							{ return this->rowNumb(); }
 	CK inline auto maxBlockIntrsection() const              { return m_maxBlockIntersection; }
 	CK inline void setMaxBlockIntrsection(T value)          { m_maxBlockIntersection = value; }
+	CK void prepareFirstMatrixRow(int nRows) {
+		ResetData();
+		auto* pNextCol = GetDataPntr();
+		const auto numGroups = colNumb() / nRows;
+		for (int i = nRows; i--; pNextCol += numGroups)
+			memset(pNextCol, i, numGroups);
+	}
+	CK void convertToBinaryMatrix(ctchar *pTripleCol, int nRows, int k) const {
+		const auto b = colNumb();
+		auto* pNextCol = GetDataPntr() + b;
+		for (int i = 0; i < nRows; i++) {
+			for (int j = 1; j < rowNumb(); j += k, pTripleCol += k, pNextCol++)
+				for (int n = 0; n < k; n++)
+					*(pNextCol + pTripleCol[n] * b) = 1;
+		}
+	}
+
 protected:
 	CK inline bool isDataOwner() const						{ return m_bDataOwner; }
 	CK VectorPntr *createParamStorage(int n) const  {

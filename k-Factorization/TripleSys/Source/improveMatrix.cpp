@@ -1,11 +1,5 @@
-
 #include "TripleSys.h"
-
-#ifdef CD_TOOLS
-#include "../CanonicityChecker.h"
-#else
 #include "CheckCanon.h"
-#endif
 
 bool alldata::improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar **pbRes1)
 {

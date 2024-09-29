@@ -38,6 +38,7 @@ const char* intParamNames[]{
 	"UseImproveMatrix",
 	"OutAutomorphismGroup",
 	"NestedGroups",
+	"UseBinaryCanonizer",
 	"GridSize",
 	"BlockSize",
 };
@@ -410,7 +411,8 @@ int main(int argc, const char* argv[])
 
 	kSysParam param;
 	// Set default integer parameters:
-	auto* val = param.val;
+	auto& val = param.val;
+	memset(val, 0, sizeof(val));
 	val[t_numPlayers] = nPlayers;
 	val[t_groupSize] = GroupSize;
 	val[t_u1f] = UseUniform1Factorization;
@@ -433,13 +435,7 @@ int main(int argc, const char* argv[])
 	val[t_useSS] = UseSS;
 	val[t_p1f_counter] = 5000;
 	val[t_autLevelMinDef] = val[t_autLevelMin] = NRBase;
-	val[t_autLevelMaxDef] = val[t_autLevelMax] = 0;
-	val[t_autDirection] = 0;
-	val[t_autGroupNumb] = 0;
-	val[t_autSaveTestedTrs] = 0;
 	val[t_useImproveMatrix] = UseImproveMatrix;
-	val[t_outAutomorphismGroup] = 0;
-	val[t_nestedGroups] = 0;
 	val[t_gridSize] = 32;
 	val[t_blockSize] = 24;
 

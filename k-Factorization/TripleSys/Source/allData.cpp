@@ -1,9 +1,6 @@
 #include "TripleSys.h"
-#ifdef CD_TOOLS
-#include "../CanonicityChecker.h"
-#else
 #include "CheckCanon.h"
-#endif
+
 using namespace std;
 
 CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
@@ -87,11 +84,12 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
-	if (m_groupSize <= 3 && numPlayers() >= 10 && param(t_useCheckLinksH)) {
+	if (m_groupSize < 3 && numPlayers() >= 10 && param(t_useCheckLinksH)) {
 		// NOTE: the use of &alldata::checkLinksH is the cause of the warning:
 		// CUDACOMPILE : ptxas warning : Stack size for entry function '_Z10initKernelPP7alldata9SizeParamPK9kSysParami' 
 		// cannot be statically determined
-		m_pCheckLinksH = m_groupSize == 2 ? &alldata::checkLinksH2 : &alldata::checkLinksH;
+		//m_pCheckLinksH = m_groupSize == 2 ? &alldata::checkLinksH2 : &alldata::checkLinksH;
+		m_pCheckLinksH = &alldata::checkLinksH2;
 	}
 
 	expected2ndRow3p1f(-1);
@@ -128,7 +126,12 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 			}
 		}
 	}
-			               
+	
+	if (param(t_binaryCanonizer)) {
+		const auto b = m_numDays * m_numPlayers / m_groupSize;
+		const auto lenBinaryMatrix = m_numPlayers * b;
+		m_pBinMatrStorage = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+	}
 #if Use_GroupOrbits
 	m_pOrbits = new CGroupOrbits<unsigned char>(m_numPlayers);
 #endif
@@ -200,6 +203,7 @@ CC alldata::~alldata() {
 	delete m_pOrbits;
 	delete[] m_tx;
 	delete[] m_cycles;
+	delete m_pBinMatrStorage;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

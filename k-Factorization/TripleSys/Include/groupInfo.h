@@ -163,23 +163,26 @@ private:
 	int* m_pIdx = NULL;
 };
 
-class CGroupInfo : public CStorageIdx<tchar> {
+class CRepository : public CStorageIdx<tchar> {
 public:
-	CC CGroupInfo(int numPlayers, int nPerm = 0) : 
-		CStorageIdx<tchar>(nPerm, numPlayers) {}
+	CC CRepository(int lenObj, int numObjects = 0) :
+		CStorageIdx<tchar>(numObjects, lenObj) {}
 
-	CC int updateGroupOrder(ctchar* tr);
-	CC inline auto groupOrder()		{ return numObjects(); }
+	CC int updateRepo(ctchar* tr);
 	CC inline auto isProcessed(ctchar* tr) {
 		const auto numRegisteredTrs = numObjects();
-		updateGroupOrder(tr);
+		updateRepo(tr);
 		return numRegisteredTrs == numObjects();
 	}
 
-#define incGroupOrder()		m_numObjects++
-#define resetGroupOrder()	m_numObjects = 0
 	int m_numDaysResult;
 };
+
+typedef CRepository CGroupInfo;
+#define incGroupOrder()		m_numObjects++
+#define resetGroupOrder()	m_numObjects = 0
+#define groupOrder()		numObjects()
+#define updateGroup(x)		updateRepo(x)
 
 class CGroupUtilisation {
 protected:

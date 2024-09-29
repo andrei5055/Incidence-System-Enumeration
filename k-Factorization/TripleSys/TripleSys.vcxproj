@@ -115,7 +115,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>WINMM.lib;Utils.lib;EngineGPU.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WINMM.lib;Utils.lib;EngineGPU.lib;CDTools.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -140,7 +140,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>WINMM.lib;Utils.lib;EngineGPU.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WINMM.lib;Utils.lib;EngineGPU.lib;CDTools.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>

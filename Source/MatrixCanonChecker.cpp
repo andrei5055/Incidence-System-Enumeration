@@ -417,7 +417,7 @@ FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowS
 	checkMatr(matrix()->GetRow(1), v, b);
 }
 
-FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, CanonicityCheckerPntr *ppClassGroup) {
+FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *ppClassGroup) {
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb();
 	T colBuffer[512], *pColumnBuf = b <= countof(colBuffer)? colBuffer : new T[b];
@@ -425,7 +425,7 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, Ca
 	TestCanonParams<T, S> canonParam = { this, matrix(), 1 };
 
 	S* pCompMatrix = NULL;
-	S* pMatr = matrix()->GetRow(1);
+	S* pMatr = NULL;
 	T* permClasses = NULL;
 	T* pOrbits = NULL;
 	T lenPerm, lenStab = 0;
@@ -435,13 +435,17 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, Ca
 	const auto lenMatrix = (v - 1) * b;
 	const auto lenData = lenMatrix * sizeof(S);
 	CanonicityCheckerPntr pClassGroupHandle;
-	if (pParam) {
+	if (k < 0)
+		k = matrix()->maxElement();
+
+	if (k) {
 		// As of 09/09/2024 we are here only when canonizing the K-SYSTEM's
 		lenToCompare = b;
 		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1, true);
 		// Preparing data for processing automorphisms associated with day permutations
-		numGroups = (v - 1) / pParam->k;
-		numClasses = lenStab = lenPerm = (v - 2) / (pParam->k - 1);
+		numGroups = (v - 1) / k;
+		numClasses = lenStab = lenPerm = (v - 2) / (k - 1);
+		pMatr = matrix()->GetRow(1);
 	}
 
 	int cmp = 1;
@@ -481,14 +485,14 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, Ca
 				GenerateBinaryColumnOrbits(i, pRow);
 			}
 
-			if (pParam && adjustColumnOrbits) {
+			if (k && adjustColumnOrbits) {
 				checkMatr(pMatr, v, b);
 				sortRowsUpdateColumnOrbits(v, b, firstAdjustedRow);
 				checkMatr(pMatr, v, b);
 			}
 		}
 
-		if (!pParam)
+		if (!k)
 			break;
 
 		if (pCompMatrix) {
@@ -551,4 +555,6 @@ FClass2(CMatrixCanonChecker, void)::CanonizeMatrix(const designParam* pParam, Ca
 
 	if (pColumnBuf != colBuffer)
 		delete[] pColumnBuf;
+
+	return pMatr;
 }

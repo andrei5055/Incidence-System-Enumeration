@@ -1,11 +1,5 @@
 #include "TripleSys.h"
 
-#ifdef CD_TOOLS
-#include "../CanonicityChecker.h"
-#else
-#include "CheckCanon.h"
-#endif
-
 bool addRow(tchar* allPaths, int maxP, int* pnp, tchar* path, int pathLength)
 {
 	int np = *pnp;

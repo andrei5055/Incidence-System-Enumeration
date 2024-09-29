@@ -50,6 +50,7 @@ typedef enum {
 	t_useImproveMatrix,
 	t_outAutomorphismGroup,
 	t_nestedGroups,
+	t_binaryCanonizer,
 	t_gridSize,
 	t_blockSize,
 	t_lastParam,

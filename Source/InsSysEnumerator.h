@@ -17,9 +17,9 @@ public:
 	CK int define_MT_level(int v) const							{ return v / 2; }
 	CK int define_MT_level(const designParam *pParam) const		{ return pParam->lambda()[0] == 1?
 																		 pParam->v / pParam->k : define_MT_level(pParam->v); }
-	CK void ConstructCanonicalMatrix(const designParam* pParam) {
+	CK void ConstructCanonicalMatrix(int k) {
 		CanonicityCheckerPntr pClassGroup = NULL;
-		CanonizeMatrix(pParam, &pClassGroup);
+		CanonizeMatrix(k, &pClassGroup);
 		matrix()->printOut(outFile(), matrix()->rowNumb(), 0, this);
 		pClassGroup->outputAutomorphismInfo(outFile());
 		delete pClassGroup;

@@ -35,7 +35,7 @@ TestName="U1F_444_48_66"
 UFName="_u1f_444_48_66"
 nPlayers=12
 UF={{4, 4, 4}, {4, 8}, {6, 6}}
-ExpectedResult=2
+ExpectedResult=1
 /*
 RUN_JOB
 

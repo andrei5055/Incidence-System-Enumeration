@@ -33,6 +33,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 	l0[iPlayerNumber] = li[i0] = day;
 	if (m0 == 2)
 	{
+#if 0
 		bool bH = true, bHdone = false;
 		int ipToUseLinksH = m_numPlayers - m_numPlayers / 3;
 		//if (!m_p1f && iPlayer > m_numPlayers / 2 && iDay > 2 && m_pCheckLinksH)
@@ -43,7 +44,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			{
 				selPlayers[iPlayerNumber] = iPlayer;
 				tmpPlayers[iPlayer] = iPlayerNumber;
-				if (iPlayer + 1 < m_numPlayers && iPlayerNumber != indexPlayer[iPlayer])
+				if (iPlayer + 1 < m_numPlayers)// && iPlayerNumber != indexPlayer[iPlayer])
 					indexPlayer[iPlayer + 1] = m_indexPlayerMin[iPlayer + 1];
 				indexPlayer[iPlayer] = iPlayerNumber;
 				getUnselected(m_h, nUnselected);
@@ -65,7 +66,9 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 				}
 			}
 		}
-		if (m_bCheckLinkV && !checkLinks(links(), iDay))
+		else 
+#endif
+			if (m_bCheckLinkV && !checkLinks(links(), iDay))
 		{
 			selPlayers[iPlayerNumber] = unset;
 			tmpPlayers[iPlayer] = unset;
@@ -73,32 +76,20 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			l0[iPlayerNumber] = l1[iPlayerNumber] = unset;
 			return iPlayerNumber + 1;
 		}
+#if 0
 		if (bHdone)
 		{
 			for (int i = iPlayer + 1; i < m_numPlayers; i++)
 			{
 				const auto v = m_ho[i];
-				auto linksOK = setLinksForOnePlayer(iDay, links(), tmpPlayers, i, v);
-				ASSERT(!linksOK);
+				tmpPlayers[i] = v;
 				indexPlayer[i] = v;
-				if ((i % 3) == 2)
-				{
-					if (m_bCheckLinkV)
-					{
-						if (!checkLinks(links(), iDay))
-						{
-							linksOK = unsetLinksForOnePlayer(tmpPlayers, i);
-							ASSERT(!linksOK);
-							tmpPlayers[iPlayer = i] = unset;
-							return -1;
-						}
-					}
-				}
 				selPlayers[v] = i;
 			}
 			iPlayer = m_numPlayers;
 			return -1;
 		}
+#endif
 	}
 	return iPlayerNumber;
 }

@@ -58,7 +58,6 @@ CC bool alldata::initCurrentDay()
 	CUDA_PRINTF("   === initCurrentDay\n");
 	if (m_groupSize < 3 && m_pCheckLinksH && iDay > 0)
 	{
-		// m_pCheckLinksH below disabled for gs=3 because generates 49 matrices instead of 26 (with 4 days result)
 		if (!(this->*m_pCheckLinksH)(result(), m_numPlayers, m_numPlayers, -1, result(iDay - 1)[1], m_ho))
 		{
 			bPrevResult = true;
@@ -73,15 +72,17 @@ CC bool alldata::initCurrentDay()
 		for (int j = 0; j < m_numPlayers; j++)
 		{
 			const auto k = tmpPlayers[j];
-			const auto linksOK = setLinksForOnePlayer(iDay, links(), tmpPlayers, j, k);
-			ASSERT(!linksOK);
+			if (m_groupSize == 2)
+			{
+				const auto linksOK = setLinksForOnePlayer(iDay, links(), tmpPlayers, j, k);
+				ASSERT(!linksOK);
+			}
 			selPlayers[k] = j;
 		}
 	}
 	CUDA_PRINTF("   <<< initCurrentDay\n");
 	return true;
 }
-// setLinksForOnePlayer need to be available outside of alldata
 CC bool SizeParam::setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const
 {
 	const int i = ip % m_groupSize;

@@ -132,6 +132,9 @@ typedef struct TrCycles {
 	tchar fullPath[MAX_PLAYER_NUMBER * 2];
 } TrCycles;
 
+
+typedef CRepository CBinaryMatrixStorage;
+
 class alldata : private CGroupInfo, CGroupUtilisation, CycleSupport, CChecklLink {
 	typedef bool(alldata::*checkP1F)(int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
@@ -323,4 +326,5 @@ private:
 	processMatrix2 m_pProcessMatrix;
 	checkLinksFn m_pCheckLinksH = NULL;
 	checkInvalidCycle m_pInvalidCycle;
+	CBinaryMatrixStorage* m_pBinMatrStorage = NULL;
 };

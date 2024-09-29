@@ -64,7 +64,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 	if (!m_TrInd && !groupOrder())
 	{
 		//printf("cnvCheckStart\n");
-		updateGroupOrder(res);
+		updateGroup(res);
 		day = 1;
 	}
 	for (; day < m_NumDaysToTransform; day++)
@@ -91,7 +91,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 				orbits()->UpdateOrbits(ttr);
 #else
 			//printTable("ttr", ttr, 1, 21, 3);
-			updateGroupOrder(ttr);
+			updateGroup(ttr);
 #endif
 #if USE_EQUAL
 #if 0
@@ -197,7 +197,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 					return false;
 				}
 				if (!cmp)
-					updateGroupOrder(cmpTr);
+					updateGroup(cmpTr);
 				cmpTr += m_numPlayers;
 			}
 
@@ -210,7 +210,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 
 	if (param(t_nestedGroups) > 1 && nrows > 2)
 	{
-		updateGroupOrder(result(0));
+		updateGroup(result(0));
 		if (groupOrder() >= param(t_nestedGroups)) {
 			saveGroup(*this, nrows);
 			if (nrows < m_numDaysResult)

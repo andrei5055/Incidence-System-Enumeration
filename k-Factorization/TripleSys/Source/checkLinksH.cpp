@@ -33,15 +33,19 @@
 	vo[n] = t4[0]; vo[n+1] = t4[1]
 #define Set2LastValuesH2(n, t4)  Set2LastValues(n, t4, continue)
 #define Set2LastValuesRH2(n, t4) Set2LastValues(n, t4, return false)
-#define P1FCheck()  if (checkLinksHResult(vo) || !m_p1f) return true
-/**
+//#define P1FCheck()  if (checkLinksHResult(vo) || !m_p1f) return true
+/**/
 #define P1FCheck() \
 	p1fSetTableRow(p1ftable(nextDay - 1), vo); \
 	if (!m_p1f || p1fCheck(nextDay, vo) < 0) \
 		return true
-**/
-CC bool alldata::checkLinksHResult(tchar * vo)
+/**/
+#if 0
+CC bool alldata::checkLinksHResult(tchar* vo)
 {
+	for (tchar i = 0; i < m_numPlayers; i++)
+		if (vo[i] < m_indexPlayerMin[i] || vo[i] > m_indexPlayerMax[i])
+			return false;
 	p1fSetTableRow(p1ftable(iDay), vo);
 	if (m_p1f)
 	{
@@ -55,6 +59,7 @@ CC bool alldata::checkLinksHResult(tchar * vo)
 	}
 	return true;
 }
+#endif
 CC bool alldata::checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int iday, tchar* vo)
 {
 	ASSERT(nv < 4 || nv > 16 || (nv & 1));
@@ -143,6 +148,7 @@ CC bool alldata::checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int iday, tc
 
 	return false;
 }
+#if 0
 CC bool alldata::checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo)
 {
 	if (nvo <= 0)
@@ -164,7 +170,7 @@ CC bool alldata::checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tch
 	}
 
 	const auto t0 = t[0];
-	const auto* ct0 = links(t0);
+	auto* ct0 = links(t0);
 	nvo -= 3;
 	const auto nvMinus3 = nv - 3;
 	tchar is = 0;
@@ -185,22 +191,35 @@ CC bool alldata::checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tch
 		if (ct0[ti] != unset)
 			continue;
 
-		const auto* cti = links(ti);
+		auto* cti = links(ti);
 		for (int j = i + 2; j < nv; j++)
 		{
 			const auto tj = t[j];
 			if (ct0[tj] == unset && cti[tj] == unset)
 			{
+				auto* ctj = links(tj);
+				ctj[t0] = cti[t0] = ctj[ti] = iDay;
+				ct0[ti] = ct0[tj] = cti[tj] = iDay;
+				if (m_bCheckLinkV)
+				{
+					if (!checkLinks(links(), iDay))
+					{
+						ctj[t0] = cti[t0] = ctj[ti] = unset;
+						ct0[ti] = ct0[tj] = cti[tj] = unset;
+						continue;
+					}
+				}
 				*vo = t0;
 				*(vo + 1) = ti;
 				*(vo + 2) = tj;
 				if (checkLinksH(t + 1, nvMinus3, nvo, i, j - 1, vo + 3))
-				{
 					return true;
-				}
+				ctj[t0] = cti[t0] = ctj[ti] = unset;
+				ct0[ti] = ct0[tj] = cti[tj] = unset;
 			}
 		}
 	}
 
 	return false;
 }
+#endif

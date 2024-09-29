@@ -2,10 +2,9 @@
 #include "TripleSys.h"
 #include "Table.h"
 
-#ifdef CD_TOOLS
-   #include "../CanonicityChecker.h"
-#else
-   #include "CheckCanon.h"
+#define USE_BINARY_CANONIZER	1
+#if !USE_CUDA && USE_BINARY_CANONIZER
+#include "CDTools.h"
 #endif
 
 #if 0
@@ -215,6 +214,13 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		}
 	}
 #endif
+
+#if !USE_CUDA && USE_BINARY_CANONIZER
+	void* pIS_Canonizer = NULL;
+	if (m_pBinMatrStorage)
+		pIS_Canonizer = createCanonizer(numPlayers(), m_groupSize);
+#endif
+
 	bPrevResult = false;
 	if (iDay > 0) {
 		setArraysForLastRow(iDay);
@@ -306,6 +312,15 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		ASSERT(iDay < m_numDaysResult);
 		if (groupOrder() >= param(t_resultGroupOrderMin))
 		{
+#if !USE_CUDA && USE_BINARY_CANONIZER
+			if (pIS_Canonizer) {
+				const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize);
+				if (m_pBinMatrStorage->updateRepo(pCanonBinaryMatr) < 0) {
+					// The binary matrix has already been encountered
+					;
+				}
+			}
+#endif
 			nLoops++;
 #if !USE_CUDA
 			m_finalKMindex++;
@@ -321,7 +336,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				printf("%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, fHdr, matr_cntr);
 #endif
 			}
-			if ((bPrint || bSavingMatricesToDisk))
+			if (bPrint || bSavingMatricesToDisk)
 			{
 				char stat[128];
 				bool needOutput = false;
@@ -396,8 +411,13 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			break;
 		bPrevResult = true;
 	}
+
 noResult:
+
 #if !USE_CUDA
+#if USE_BINARY_CANONIZER
+	releaseCanonizer(pIS_Canonizer);
+#endif
 	if (pcnt)
 	{
 		*pcnt = m_finalKMindex;

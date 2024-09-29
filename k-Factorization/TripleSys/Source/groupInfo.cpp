@@ -1,11 +1,11 @@
 #include "GroupInfo.h"
 
-CC int CGroupInfo::updateGroupOrder(ctchar* tr) {
-	// search for tr 	
+CC int CRepository::updateRepo(ctchar* tr) {
+	// search for element 	
 	int itr;
 	int low = 0;
-	const auto grOrder = groupOrder();
-	auto high = itr = grOrder - 1;
+	const auto nElem = numObjects();
+	auto high = itr = nElem - 1;
 	int cmp = -1;
 	while (low <= high) {
 		itr = low + ((high - low) >> 1);
@@ -22,12 +22,12 @@ CC int CGroupInfo::updateGroupOrder(ctchar* tr) {
 	if (cmp < 0)
 		itr++;
 
-	auto* cmpTr = getObjAddr(grOrder);
+	auto* cmpTr = getObjAddr(nElem);
 
-	if (itr < grOrder)
-		insert(itr, grOrder);
+	if (itr < nElem)
+		insert(itr, nElem);
 	else
-		push_back(grOrder);
+		push_back(nElem);
 
 	memcpy(cmpTr, tr, m_lenObj);
 	return itr;

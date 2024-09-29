@@ -39,7 +39,7 @@ CC bool alldata::cnvCheck2P1F(int nrows)
 				Stat_cnvCheckKm1("cmp(all)", 3, true);
 				if (icmp == 0)
 				{
-					updateGroupOrder(tr);
+					updateGroup(tr);
 				}
 				else if (icmp < 0)
 				{
@@ -230,7 +230,7 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 								if (icmp == 0)
 								{
 #if 1
-									updateGroupOrder(tr);
+									updateGroup(tr);
 #elif !USE_CUDA
 									int mm = groupOrder();
 									updateGroupOrder(tr);

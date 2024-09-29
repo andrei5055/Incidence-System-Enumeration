@@ -72,7 +72,7 @@ public:
 
 	CK void GenerateBinaryColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
 	CK void GenerateColumnOrbits(T nRow, S* pRow, T* pColPermut = NULL) const;
-	CK void CanonizeMatrix(const designParam* pParam = NULL, CanonicityCheckerPntr* ppClassGroup = NULL);
+	CK S *CanonizeMatrix(int k = 0, CanonicityCheckerPntr* ppClassGroup = NULL);
 	void sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag = false);
 protected:
 	CK inline auto* commonElemNumber() const							{ return m_pCommonElemNumber; }

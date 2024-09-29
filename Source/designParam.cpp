@@ -352,11 +352,11 @@ bool designParam::LaunchCanonization() {
 
 		const auto retVal = readTable(this->logFile, nRows, nCols, &pSm, 1, reservedElement);
 		if (retVal) {
-			this->b = (v - 1) / (k - 1) * v / k;
+			this->b = nRows * v / k;
 			// An additional matrix row will be used to store the indices 
 			// of the columns corresponding to the original matrix rows.
 			this->v++;
-			uint enumFlags = this->enumFlags() | t_kSystems;
+			uint enumFlags = this->enumFlags();
 			matrixRank = nRows - 1;
 			PrepareBIBD_Enumeration(this, &pInSys, &pInSysEnum, objType, enumFlags);
 
@@ -367,24 +367,9 @@ bool designParam::LaunchCanonization() {
 			comment += "\"" + this->logFile + "\"\n";
 			writeTable(this->logFile, pInSysEnum->outFile(), comment.c_str());
 
-			pInSys->ResetData();
-			auto* pNextCol = pInSys->GetDataPntr();
-			const auto b = pInSys->colNumb();
-			auto numGroups = b / nRows;
-			for (int i = nRows; i--; pNextCol += numGroups) {
-				memset(pNextCol, i, numGroups);
-			}
-
-			pNextCol = pInSys->GetDataPntr() + b;
-			const auto* pTripleCol = pSm;
-
-			for (int i = 0; i < nRows; i++) {
-				for (int j = 0; j < nCols; j += k, pTripleCol += k, pNextCol++)
-					for (int n = 0; n < k; n++)
-						*(pNextCol + pTripleCol[n] * b) = 1;
-			}
-
-			pInSysEnum->ConstructCanonicalMatrix(this);
+			pInSys->prepareFirstMatrixRow(nRows);
+			pInSys->convertToBinaryMatrix(pSm, nRows, k);
+			pInSysEnum->ConstructCanonicalMatrix(k);
 
 			pEnumInfo->setRunTime();
 			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile(), "\n\nCanonization was done in ");
