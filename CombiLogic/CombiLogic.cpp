@@ -27,6 +27,7 @@ t_objectType idx_obj_type[] = {
 	t_objectType::t_Kirkman_Triple,
 	t_objectType::t_TripleSystem,
 	t_objectType::t_CanonMatr,
+	t_objectType::t_SemiSym_KSystems,
 };
 
 int find_T_designParam(int v, int k, int lambda)
@@ -390,7 +391,7 @@ int main(int argc, char * argv[])
 			if (!parsingPath(line, pos, false))
 				break;
 
-			param->logFile = line;
+			param->setLogFile(line);
 			continue;
 		}
 
@@ -572,6 +573,7 @@ int main(int argc, char * argv[])
 		case t_objectType::t_Kirkman_Triple:
 		case t_objectType::t_TripleSystem:
 		case t_objectType::t_CanonMatr:
+		case t_objectType::t_SemiSym_KSystems:
 						if (!getBIBDParam(line.substr(beg + 1, end - beg - 1), param, BIBD_flag))
 							from = beg + 1;
 
@@ -594,14 +596,16 @@ int main(int argc, char * argv[])
 		//		}
 		param->setEnumFlags();
 
-		if ((param->objType = objType) == t_objectType::t_SemiSymmetricGraph) {
+		switch (param->objType = objType) {
+		case t_objectType::t_SemiSymmetricGraph:
 			param->InconsistentGraphs(pSummaryFile, firstRun);
-		}
-		else
-		if (objType == t_objectType::t_CanonMatr) {
+			break;
+		case t_objectType::t_CanonMatr:
 			param->LaunchCanonization();
-		}
-		else {
+			break;
+		case t_objectType::t_SemiSym_KSystems:
+			param->SemiSymByKSystems();
+		default:
 			if (!param->LaunchEnumeration(pSummaryFile, find_master_design, find_all_2_decomp, use_master_sol, firstRun))
 				continue;
 		}

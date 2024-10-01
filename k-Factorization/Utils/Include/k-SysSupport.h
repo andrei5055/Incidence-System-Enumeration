@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <wtypes.h>
 
 #ifndef USE_CUDA
 #ifdef UTILS_EXPORTS
@@ -8,11 +9,12 @@
 #    define UTIL_LIBRARY __declspec(dllimport)
 #endif
 
-#ifdef LIBRARY_EXPORTS
-#    define LIBRARY_API __declspec(dllexport)
+#ifdef K_SYS_LIBRARY_EXPORTS
+#    define K_SYS_LIBRARY_API __declspec(dllexport)
 #else
-#    define LIBRARY_API __declspec(dllimport)
+#    define K_SYS_LIBRARY_API __declspec(dllimport)
 #endif
+
 #define CC
 #define CK
 #else
@@ -23,7 +25,7 @@
 #define CK
 #endif
 #define UTIL_LIBRARY
-#define LIBRARY_API
+#define K_SYS_LIBRARY_API
 #endif
 
 
@@ -47,3 +49,5 @@ CC T* reallocStorageMemory(T** pObjects, size_t lenObj) {
 }
 
 UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, tchar** pSm, int nmax, int reservedElement = 0, char infoSymb = '\"');
+K_SYS_LIBRARY_API void speakText(LPCWSTR text);
+

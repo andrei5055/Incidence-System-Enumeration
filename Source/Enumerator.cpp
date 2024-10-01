@@ -1033,7 +1033,7 @@ FClass2(CEnumerator, void)::compareResults(EnumInfoPntr pEnumInfo, size_t lenNam
 		char buff[256] = { 0 };
 		if (!lenName) {
 			if (!buffer) {
-				const auto& resFile = pParam->logFile;
+				const auto& resFile = pParam->logFile();
 				if (!resFile.empty()) {
 					lenName = resFile.find(CURRENT_RESULTS);
 					if (lenName == string::npos)
@@ -1333,9 +1333,9 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 
 	this->setOutFile(file);
 	if (designParams()->find_all_2_decomp == 1 && designParams()->objType == t_objectType::t_BIBD) {
-		if (designParams()->logFile.empty()) {
+		if (designParams()->logFile().empty()) {
 			// Save the name of the output file, we will need it to add decomposition information.
-			designParams()->logFile = buff;
+			designParams()->setLogFile(buff);
 			outputJobTitle();
 		}
 	}

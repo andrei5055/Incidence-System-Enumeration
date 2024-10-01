@@ -31,9 +31,9 @@ enum class t_objectType {
 	t_PBIBD,
 	t_IncidenceSystem,
 	t_SemiSymmetricGraph,
-	t_CanonMatr
+	t_CanonMatr,
+	t_SemiSym_KSystems  // Construction SemiSymmetric Graph from k-systems
 };
-
 
 typedef enum {
 	t_enumDefault			= 0,
@@ -54,6 +54,11 @@ typedef enum {
 	t_kSystems              = 1 << 14,  // Enumeration of k-systems
 	t_allFlags				= -1
 } t_EnumeratorFlags;
+
+typedef enum {
+	t_log_file,
+} t_strParamIdx;
+
 #define MATRIX_ELEMENT_TYPE  	unsigned __int8 //uchar
 #define SIZE_TYPE				unsigned __int8 //uchar //uint16_t //uchar //uint16_t
 #define TDATA_TYPES				SIZE_TYPE, MATRIX_ELEMENT_TYPE 
@@ -117,9 +122,10 @@ public:
 	bool m_compress_matrices = false; // Use bitwise compression of the matrices stored in the database
 	bool m_bUseThreadPool = false;	// allow threads to start threads
 	std::string workingDir = "";	// Current working directory name
-	std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
+	//std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
 	std::string objSubType = "";
-	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewinded
+	std::string strParam[2] = { "" };
+	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewound.
 	int save_restart_info = 0;		// Save restart information that will be used to restart the program.
 	std::string restart_info_dir;
 	size_t restart_update_unterval = 10 * 60; // default update interval in sec.
@@ -137,6 +143,9 @@ public:
 		}
 	}
 	LIBRARY_API void setEnumFlags();
+	void setLogFile(const char* pntr = "")			{ strParam[t_log_file] = pntr; }
+	void setLogFile(const std::string& str)			{ strParam[t_log_file] = str; }
+	const auto& logFile() const						{ return strParam[t_log_file]; }
 	inline auto enumFlags() const					{ return m_enumFlags; }
 	inline auto enumFlagsPtr()                      { return &m_enumFlags; }
 	inline CInterStruct* InterStruct()	const		{ return m_pInterStruct; }
@@ -163,7 +172,8 @@ public:
 	inline bool create_commonData() const			{ return threadNumb && MT_level() < v; }
 	LIBRARY_API bool LaunchEnumeration(const char *pSummaryFile, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun);
 	LIBRARY_API bool LaunchCanonization();
-	LIBRARY_API int InconsistentGraphs(const char* pSummaryFileName, bool firstPath);
+	LIBRARY_API int InconsistentGraphs(const char* pSummaryFile, bool firstPath);
+	LIBRARY_API void SemiSymByKSystems();
 	LIBRARY_API const char** objNames() const;
 
 private:

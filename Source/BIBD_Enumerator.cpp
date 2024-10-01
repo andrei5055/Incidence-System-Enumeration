@@ -435,10 +435,10 @@ FClass2(CBIBD_Enumerator, bool)::outFileIsValid(const struct stat& info, const c
 	if (designParams()->objType != t_objectType::t_BIBD || designParams()->find_all_2_decomp != 1)
 		return true;
 
-	if (designParams()->logFile.empty())
+	if (designParams()->logFile().empty())
 		return validLastLine(pFileName, END_OF_FILE);
 
-	return designParams()->logFile != pFileName;
+	return designParams()->logFile() != pFileName;
 }
 
 FClass2(CBIBD_Enumerator, bool)::outNonCombinedDesigns(designParam* pParam, const CDesignDB* pDesignDB, string& outputInfo, bool addInfo) {

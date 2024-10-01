@@ -510,7 +510,7 @@ FClass2(C_InSysEnumerator, void)::setVariableLimit(T nVar, T len, T nRowToBuild,
 FClass2(C_InSysEnumerator, bool)::makeFileName(char* buffer, size_t lenBuffer, const char* ext) const
 {
 	const auto inSys = this->getInSys();
-	std::string inputFile(designParams()->logFile);
+	std::string inputFile(designParams()->logFile());
 	auto pos = inputFile.find_last_of("/");
 	if (pos != std::string::npos)
 		inputFile = inputFile.substr(0, pos + 1);

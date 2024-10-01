@@ -80,17 +80,17 @@ FClass2(CIG_Enumerator, bool)::fileExists(const char *path, bool file) const {
 	// The answer is fake. When following statement is false, the file exists,
 	// but we don't need the caller knows that, because for semi-symmetric graphs
 	// all outputs for same order graphs will be in the same file
-	return this->designParams()->logFile != std::string(path);
+	return this->designParams()->logFile() != std::string(path);
 }
 
 FClass2(CIG_Enumerator, bool)::createNewFile(const char *fName) const {
 	if (!fName)
 		return firstPath();
 
-	if (this->designParams()->logFile == fName)
+	if (designParams()->logFile() == fName)
 		return false;
 
-	this->designParams()->logFile = fName;
+	designParams()->setLogFile(fName);
 	return true;
 }
 

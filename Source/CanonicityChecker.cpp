@@ -5,7 +5,6 @@
 //  Created by Andrei Ivanov on 3/28/14.
 //  Copyright (c) 2014 Andrei Ivanov. All rights reserved.
 //
-
 #include "Enumerator.h"
 #include "designParam.h"
 
@@ -349,7 +348,7 @@ size_t outString(const char *str, FILE *file)
         return fwrite(str, sizeof(*str), strlen(str), file) + 1;
 
 	std::cout << str;
-	return std::numeric_limits<std::size_t>::max();
+	return ULONG_MAX;
 }    
 
 size_t outString(const char *str, const char *fileName, const char *mode)

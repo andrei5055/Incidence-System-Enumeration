@@ -3,7 +3,7 @@
 
 typedef signed long long sLongLong;
 
-LIBRARY_API const char* getFileNameAttr(const kSysParam* param, const char** uf = NULL);
+K_SYS_LIBRARY_API const char* getFileNameAttr(const kSysParam* param, const char** uf = NULL);
 void convertLinksToResult(const char* ci, char* res, int np, int gs);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false, ctchar* co=NULL, clock_t* t=NULL);
@@ -127,8 +127,5 @@ void myExit(int code);
 void reportEOJ(int code);
 void setConsoleOutputMode();
 CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len);
-CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, const tchar* v, 
-	const tchar* t1, const tchar* t2, const tchar* res1, const tchar* res2, int gn);
+CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, const tchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn);
 
-#include <wtypes.h>
-void LIBRARY_API speakText(LPCWSTR text);

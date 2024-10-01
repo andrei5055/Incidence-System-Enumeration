@@ -2,7 +2,7 @@
 #include <thread>
 #define RPC_NO_WINDOWS_H
 #include <sapi.h>
-void LIBRARY_API speakText(LPCWSTR text)
+void speakText(LPCWSTR text)
 {
 	ISpVoice* pVoice = NULL;
 

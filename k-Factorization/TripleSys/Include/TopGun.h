@@ -12,7 +12,7 @@ public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase()					{ free(startMatrix); delete[] cnt(); }
 	int virtual Run() = 0;
-	void LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt") const;
+	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt") const;
 	inline auto numPlayers() const			{ return m_numPlayers; }
 	inline auto groupSize() const			{ return m_groupSize; }
 	inline auto groupSizeFactorial() const	{ return m_groupSizeFactorial; }
@@ -44,10 +44,10 @@ private:
 
 class TopGun : public TopGunBase {
 public:
-	LIBRARY_API TopGun(const kSysParam& param);
+	K_SYS_LIBRARY_API TopGun(const kSysParam& param);
 
-	LIBRARY_API ~TopGun();
-	int LIBRARY_API Run();
+	K_SYS_LIBRARY_API ~TopGun();
+	int K_SYS_LIBRARY_API Run();
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	void myTemporaryCheck();
@@ -69,9 +69,9 @@ private:
 
 class TopGunGPU : public TopGunBase {
 public:
-	LIBRARY_API TopGunGPU(const kSysParam& param) : TopGunBase(param)		{}
-	LIBRARY_API ~TopGunGPU();
-	int LIBRARY_API Run();
+	K_SYS_LIBRARY_API TopGunGPU(const kSysParam& param) : TopGunBase(param)		{}
+	K_SYS_LIBRARY_API ~TopGunGPU();
+	K_SYS_LIBRARY_API int Run();
 	inline int gridSize() const		{ return param(t_gridSize); }
 	inline int blockSize() const	{ return param(t_blockSize); }  // 32 x 28 also works
 };

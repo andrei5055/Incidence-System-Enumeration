@@ -4,6 +4,7 @@
 
 #define USE_BINARY_CANONIZER	1
 #if !USE_CUDA && USE_BINARY_CANONIZER
+#include "k-SysSupport.h"
 #include "CDTools.h"
 #endif
 

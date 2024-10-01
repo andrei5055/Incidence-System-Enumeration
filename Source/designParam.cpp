@@ -17,7 +17,8 @@ const char* obj_name[] = {
 	"PBIBD",				// t_PBIBD,
 	"INCIDENCE",            // t_IncidenceSystem,
 	"SEMI_SYMMETRIC_GRAPH", // t_SemiSymmetricGraph
-	"CANON_MATR"			// t_CanonMatr
+	"CANON_MATR",			// t_CanonMatr
+	"SEMI_SYMMETRIC_KSYS"	// t_SemiSym_KSystems
 };
 
 template <typename T, typename S>
@@ -315,7 +316,7 @@ bool designParam::LaunchEnumeration(const char *pSummaryFile, int find_master, i
 
 	this->use_master_sol = use_master_sol;
 	find_master_design = find_master;
-	logFile = "";
+	setLogFile();
 	setLambdaStep(0);
 	setEmptyLines();
 	return true;
@@ -350,7 +351,7 @@ bool designParam::LaunchCanonization() {
 		const int reservedElement = nRows * nCols;
 		unsigned char* pSm = new unsigned char[reservedElement];
 
-		const auto retVal = readTable(this->logFile, nRows, nCols, &pSm, 1, reservedElement);
+		const auto retVal = readTable(logFile(), nRows, nCols, &pSm, 1, reservedElement);
 		if (retVal) {
 			this->b = nRows * v / k;
 			// An additional matrix row will be used to store the indices 
@@ -364,8 +365,8 @@ bool designParam::LaunchCanonization() {
 			pEnumInfo->startClock();
 			pInSysEnum->assignDesignParam(this);
 			std::string comment("Input data: ");
-			comment += "\"" + this->logFile + "\"\n";
-			writeTable(this->logFile, pInSysEnum->outFile(), comment.c_str());
+			comment += "\"" + logFile() + "\"\n";
+			writeTable(logFile(), pInSysEnum->outFile(), comment.c_str());
 
 			pInSys->prepareFirstMatrixRow(nRows);
 			pInSys->convertToBinaryMatrix(pSm, nRows, k);
@@ -386,6 +387,10 @@ bool designParam::LaunchCanonization() {
 	delete pInSys;
 	delete pInSysEnum;
 	return retVal > 0;
+}
+
+void designParam::SemiSymByKSystems() {
+
 }
 
 void designParam::setEnumFlags() {
