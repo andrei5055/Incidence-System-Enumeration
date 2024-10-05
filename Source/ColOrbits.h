@@ -11,8 +11,8 @@ Class1Def(CColOrbit) {
 	}
 
 	CC virtual ~CColOrbit()							{}   
- 	CC void Init(S length, CColOrbit *pNext = NULL)	{ setLength(length); setNext(pNext); }
-	CC inline S length() const						{ return m_nLength; }
+ 	CC void InitOrb(S len, CColOrbit *pNext = NULL)	{ setLength(len); setNext(pNext); }
+	CC inline auto length() const					{ return m_nLength; }
 	CC inline auto next() const						{ return m_pNext; }
 	CC inline void setNext(CColOrbit *pntr)			{ m_pNext = pntr; }
 	CC virtual void InitEntryCntrs(const CColOrbit *pParent, int idx = 0) = 0;
@@ -20,7 +20,9 @@ Class1Def(CColOrbit) {
 	CC virtual int columnWeight() const				{ return 0; }
 	CC CColOrbit *InitOrbit(int lenFragm, size_t colOrbitLen, const CColOrbit *pColOrbit, int idx);
 	CC void clone(const CColOrbit *pColOrb);
-	CC inline void setLength(S len)					{ m_nLength = len; }
+	CC inline void setLength(S len)					{ 
+		m_nLength = len; 
+	}
 private:
 	S m_nLength;
 	ColOrbPntr m_pNext;
@@ -31,7 +33,7 @@ private:
 FClass1(CColOrbit, ColOrbPntr)::InitOrbit(int lenFragm, size_t colOrbitLen, const ColOrbPntr pColOrbit, int idx)
 {
 	auto pColOrbitNext = (ColOrbPntr)((char *)this + lenFragm * colOrbitLen);
-	Init(lenFragm, pColOrbitNext);
+	InitOrb(lenFragm, pColOrbitNext);
 	InitEntryCntrs(pColOrbit, idx);
 	return pColOrbitNext;
 }
@@ -91,10 +93,11 @@ Class1Def(CColOrbitCS) : public Class1(CColOrbit)
 
 class CRank {
 public:
-	CRank(int nRows, int rank = 2) : m_rank(rank)	{
+	CRank(int nRows, int rank = 2)	{
 		if (nRows <= 8)  // We could use sizeof(void *) as the index in m_pShift array 
 			nRows = 9;
 
+		setRank(rank);
 		m_pShift = new size_t[nRows];
 		m_pShift[0] = 0;
 		for (int i = 1; i < nRows; i++)
@@ -104,6 +107,8 @@ public:
 	CC inline auto rank() const											{ return m_rank; }
 //	CK inline auto shiftToUnforcedOrbit(S nRow) const					{ return m_pShift[nRow]; }
 protected:
+	CC void setRank(int rank)											{ m_rank = rank; }
+
 	size_t* m_pShift;
 private:
 	int m_rank;

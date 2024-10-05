@@ -56,7 +56,13 @@ typedef enum {
 } t_EnumeratorFlags;
 
 typedef enum {
+	t_workingDir,		// Current working directory name
 	t_log_file,
+	t_input_file = t_log_file,
+	t_extraStrParam,
+	t_objSubType = t_extraStrParam,
+	t_restart_info_dir = t_extraStrParam,
+	t_strParamTotal
 } t_strParamIdx;
 
 #define MATRIX_ELEMENT_TYPE  	unsigned __int8 //uchar
@@ -121,13 +127,9 @@ public:
 	bool noReplicatedBlocks = true;	// TRUE, when only block designs with no replicated blocks should be constructed
 	bool m_compress_matrices = false; // Use bitwise compression of the matrices stored in the database
 	bool m_bUseThreadPool = false;	// allow threads to start threads
-	std::string workingDir = "";	// Current working directory name
-	//std::string logFile = "";		// Used for semi-symmetric graphs and non-combined BIBDs search
-	std::string objSubType = "";
-	std::string strParam[2] = { "" };
+	std::string strParam[t_strParamTotal] = { "" };
 	size_t rewindLen = 0;			// Length of the portion of log file, which probably will be rewound.
 	int save_restart_info = 0;		// Save restart information that will be used to restart the program.
-	std::string restart_info_dir;
 	size_t restart_update_unterval = 10 * 60; // default update interval in sec.
 	uint m_enumFlags = 0;
 };
@@ -144,11 +146,10 @@ public:
 	}
 	LIBRARY_API void setEnumFlags();
 	void setLogFile(const char* pntr = "")			{ strParam[t_log_file] = pntr; }
-	void setLogFile(const std::string& str)			{ strParam[t_log_file] = str; }
 	const auto& logFile() const						{ return strParam[t_log_file]; }
 	inline auto enumFlags() const					{ return m_enumFlags; }
 	inline auto enumFlagsPtr()                      { return &m_enumFlags; }
-	inline CInterStruct* InterStruct()	const		{ return m_pInterStruct; }
+	inline auto InterStruct() const					{ return m_pInterStruct; }
 	inline void SetInterStruct(CInterStruct* pntr)	{ m_pInterStruct = pntr; }
 	const auto& lambda() const						{ return m_pInterStruct->lambda(); }
 	const auto& lambdaA() const						{ return m_pInterStruct->lambdaA(); }
@@ -156,7 +157,7 @@ public:
 	inline auto lambdaSizeMax() const				{ return m_lambdaSizeMax; }
 	inline void setLambdaSizeMax(size_t val)		{ m_lambdaSizeMax = val; }
 	inline void setDesignDB(const CDesignDB* pntr, int idx = 0) { m_pDesignDB[idx] = pntr; }
-	inline const CDesignDB* designDB(int idx = 0) const { return m_pDesignDB[idx]; }
+	inline const auto* designDB(int idx = 0) const	{ return m_pDesignDB[idx]; }
 	inline auto* enumInfo() const					{ return m_pEnumInfo; }
 	inline void setEnumInfo(CInsSysEnumInfo<TDATA_TYPES>* pntr) { m_pEnumInfo = pntr; }
 	inline int MT_level(int idx = 0) const			{ return mt_level[idx]; }
@@ -173,7 +174,7 @@ public:
 	LIBRARY_API bool LaunchEnumeration(const char *pSummaryFile, int find_master, int find_all_2_decomp, int use_master_sol, bool& firstRun);
 	LIBRARY_API bool LaunchCanonization();
 	LIBRARY_API int InconsistentGraphs(const char* pSummaryFile, bool firstPath);
-	LIBRARY_API void SemiSymByKSystems();
+	LIBRARY_API bool SemiSymByKSystems();
 	LIBRARY_API const char** objNames() const;
 
 private:

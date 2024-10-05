@@ -72,11 +72,26 @@ typedef enum {
 } t_parsingStage;
 
 typedef enum {
-	t_Enumeration,	// default
+	t_Enumeration,			// default
 	t_Automorphism,
 	t_Isomorphism,
-	t_Canonicity
+	t_Canonicity,
+	t_SemiSymmeric,			// Construction of SemiSym graphs with k-Systems
+	t_operationTotal
 } t_operationType;
+
+typedef struct { 
+	t_operationType opType;
+	const char* opName;
+} operationDescr;
+
+operationDescr operations[] = {
+	{ t_Enumeration, "ENUMERATION" },
+	{ t_Automorphism, "AUTOMORPHISM" },
+	{ t_Isomorphism, "ISOMORPHISM" },
+	{ t_Canonicity, "CANONICITY" },
+	{ t_SemiSymmeric, "SEMI-SYMMETRIC" }
+};
 
 static bool getBIBDParam(const string &paramText, designParam *param, bool BIBD_flag = true)
 {
@@ -338,8 +353,7 @@ int main(int argc, char * argv[])
 	uint outType = t_Summary;
 	string *pLine = new string();
 	string &line = *pLine;
-	string* pWorkDir = new string("./");
-	string& newWorkDir = *pWorkDir;
+	param->strParam[t_workingDir] = "./";
 	int use_master_sol = 0;
 	int find_master_design = 0;
 	int find_all_2_decomp = 0;
@@ -382,7 +396,7 @@ int main(int argc, char * argv[])
 		if (pos != string::npos) {
 			if (!parsingPath(line, pos))
 				break;
-			newWorkDir = line;
+			param->strParam[t_workingDir] = line;
 			continue;
 		}
 
@@ -391,7 +405,7 @@ int main(int argc, char * argv[])
 			if (!parsingPath(line, pos, false))
 				break;
 
-			param->setLogFile(line);
+			param->strParam[t_input_file] = line;
 			continue;
 		}
 
@@ -457,27 +471,21 @@ int main(int argc, char * argv[])
 		getBooleanParam(line, "UPDATE_RESULTS", t_update_results, param->enumFlagsPtr());
 
 		// Define a job type
-		if (line.find("ENUMERATION") != string::npos)
-			operType = t_Enumeration;
-		else
-		if (line.find("AUTOMORPHISM") != string::npos)
-			operType = t_Automorphism;
-		else
-		if (line.find("ISOMORPHISM") != string::npos)
-			operType = t_Isomorphism;
-		else
-		if (line.find("CANONICITY") != string::npos)
-			operType = t_Canonicity;
+		for (auto& op : operations) {
+			if (line.find(op.opName) != string::npos) {
+				operType = op.opType;
+				break;
+			}
+		}
 
 		const auto* obj_name = param->objNames();
-		for (int i = 0; i < countof(idx_obj_type); i++) {
-			const auto type = idx_obj_type[i];
+		for (auto type : idx_obj_type) {
 			if (line.find(obj_name[static_cast<int>(type)]) != string::npos) {
 				objType = type;
 				pos = line.find("=");
 				if (pos != string::npos) {
-					param->objSubType = line.substr(pos + 1);
-					trim(param->objSubType);
+					trim(line = line.substr(pos + 1));
+					param->strParam[t_objSubType] = line;
 					line.clear();
 				}
 				break;
@@ -589,8 +597,6 @@ int main(int argc, char * argv[])
 		}
 
 		param->find_all_2_decomp = 0;
-		if (param->workingDir != newWorkDir || firstRun)
-			param->workingDir = newWorkDir;
 
 		//		if (param->save_restart_info) {
 		//		}
@@ -614,7 +620,6 @@ int main(int argc, char * argv[])
 	}
 
 	delete pLine;
-	delete pWorkDir;
 	infile.close();
 
 	delete param;

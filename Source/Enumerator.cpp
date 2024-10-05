@@ -1222,7 +1222,7 @@ FClass2(CEnumerator, size_t)::getDirectory(char *dirName, size_t lenBuffer, bool
 	const auto pParam = designParams();
 	lenBuffer--;		// Reserving 1 byte for last '/'
 
-	auto len = SNPRINTF(dirName, lenBuffer, "%s", pParam->workingDir.c_str());
+	auto len = SNPRINTF(dirName, lenBuffer, "%s", pParam->strParam[t_workingDir].c_str());
 	SET_DIRECTORY(dirName);
 
 	const auto* pDirName = this->getTopLevelDirName();
@@ -1316,7 +1316,7 @@ FClass2(CEnumerator, bool)::setOutputFile(size_t* pLenName) {
 		restart_info += buff;
 		const auto* dir = restart_info.c_str();
 		SET_DIRECTORY(dir);
-		designParams()->restart_info_dir = restart_info;
+		designParams()->strParam[t_restart_info_dir] = restart_info;
 	}
 
 	// The results are known, if the file with the enumeration results exists and it is valid

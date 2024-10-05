@@ -8,4 +8,4 @@
 
 LIBRARY_API void* createCanonizer(int v, int lenGroup);
 LIBRARY_API void releaseCanonizer(void *pCanonizer);
-LIBRARY_API const unsigned char* runCanonizer(void* pCanonizer, const unsigned char* pMatrix, int k);
+LIBRARY_API const unsigned char* runCanonizer(void* pCanonizer, const unsigned char* pMatrix, int k, int dayNumb = 0);

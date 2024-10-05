@@ -234,7 +234,7 @@ FClass2(C_InSysEnumerator, T)::MakeSystem(T numPart)
 
 					auto pTmp = pColOrbitNext;
 					pColOrbitNext = pTmp->next();
-					pTmp->Init(len, pColOrbitNext);
+					pTmp->InitOrb(len, pColOrbitNext);
 
 					addForciblyConstructedColOrbit(pTmp, pColOrbit, numPart, 1);
 					rightPartFilter()->addFilter(equationIdx, len, nVar);

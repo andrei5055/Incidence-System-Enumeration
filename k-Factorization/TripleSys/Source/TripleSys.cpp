@@ -218,7 +218,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 #if !USE_CUDA && USE_BINARY_CANONIZER
 	void* pIS_Canonizer = NULL;
-	if (m_pBinMatrStorage)
+	if (m_ppBinMatrStorage)
 		pIS_Canonizer = createCanonizer(numPlayers(), m_groupSize);
 #endif
 
@@ -270,7 +270,16 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
 		checkCurrentMatrix:
-			//CUDA_PRINTF("       After memcpy\n");
+#if !USE_CUDA && USE_BINARY_CANONIZER
+			if (pIS_Canonizer && m_ppBinMatrStorage[iDay]) {
+				const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay);
+				if (m_ppBinMatrStorage[iDay]->updateRepo(pCanonBinaryMatr) < 0) {
+					// The binary matrix has already been encountered
+					;
+				}
+			}
+#endif
+
 #if ReportPeriodically && !USE_CUDA
 			cTime = clock();
 			m_rowTime[iDay] = cTime - iTime;
@@ -316,7 +325,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #if !USE_CUDA && USE_BINARY_CANONIZER
 			if (pIS_Canonizer) {
 				const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize);
-				if (m_pBinMatrStorage->updateRepo(pCanonBinaryMatr) < 0) {
+				if (m_ppBinMatrStorage[iDay]->updateRepo(pCanonBinaryMatr) < 0) {
 					// The binary matrix has already been encountered
 					;
 				}

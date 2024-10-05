@@ -126,12 +126,45 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 			}
 		}
 	}
-	
-	if (param(t_binaryCanonizer)) {
-		const auto b = m_numDays * m_numPlayers / m_groupSize;
-		const auto lenBinaryMatrix = m_numPlayers * b;
-		m_pBinMatrStorage = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+
+#if !USE_CUDA
+	const auto* binaryCanonRows = sysParam()->strVal[t_binaryCanonizer];
+	if (binaryCanonRows) {
+		m_ppBinMatrStorage = new CBinaryMatrixStorage * [m_numDays + 1];
+		memset(m_ppBinMatrStorage, 0, (m_numDays + 1) * sizeof(m_ppBinMatrStorage[0]));
+		const auto numGroups = m_numPlayers / m_groupSize;
+		string s(*binaryCanonRows);
+		size_t pos = 0;
+		bool flagOK = true;
+		while (pos <= s.size()) {
+			pos = s.find(",");
+			auto line = s.substr(0, pos);
+			trim(line);
+			if (!is_number(line)) {
+				printfRed("*** Expected all numbers in the list of days: \"%s\"\n", binaryCanonRows->c_str());
+				flagOK = false;
+				break;
+			}
+			s.erase(0, pos + 1);
+			const auto idx = atoi(line.c_str());
+			if (idx < 0 || idx >= m_numDays)
+				continue;
+
+			const auto lenBinaryMatrix = m_numPlayers * idx * numGroups;
+			m_ppBinMatrStorage[idx] = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+		}
+
+		if (flagOK) {
+			const auto idx = m_numDays;
+			if (!m_ppBinMatrStorage[idx]) {
+				const auto lenBinaryMatrix = m_numPlayers * m_numDays * numGroups;
+				m_ppBinMatrStorage[idx] = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+			}
+		} else
+			releaseBinaryMatricesStorage();
 	}
+#endif
+
 #if Use_GroupOrbits
 	m_pOrbits = new CGroupOrbits<unsigned char>(m_numPlayers);
 #endif
@@ -203,7 +236,7 @@ CC alldata::~alldata() {
 	delete m_pOrbits;
 	delete[] m_tx;
 	delete[] m_cycles;
-	delete m_pBinMatrStorage;
+	releaseBinaryMatricesStorage();
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif
@@ -222,6 +255,17 @@ CC void alldata::Init() {
 	nLoops = iDay = 0;
 	noMoreResults = bPrevResult = false; // can be false, or true to go to prev day
 	cnvInit();
+}
+
+CC void alldata::releaseBinaryMatricesStorage() {
+	if (!m_ppBinMatrStorage)
+		return;
+
+	for (int i = 0; i < m_numDays; i++)
+		delete m_ppBinMatrStorage[i];
+
+	delete[] m_ppBinMatrStorage;
+	m_ppBinMatrStorage = NULL;
 }
 
 #if !USE_CUDA

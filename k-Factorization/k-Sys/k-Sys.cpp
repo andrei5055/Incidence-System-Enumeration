@@ -38,7 +38,6 @@ const char* intParamNames[]{
 	"UseImproveMatrix",
 	"OutAutomorphismGroup",
 	"NestedGroups",
-	"UseBinaryCanonizer",
 	"GridSize",
 	"BlockSize",
 };
@@ -48,6 +47,7 @@ const char* strParamNames[]{
 	"StartFolder",
 	"ResultFolder",
 	"ImprovedResultFolder",
+	"UseBinaryCanonizer",
 	"TestName",
 	"MatrTest",
 };
@@ -59,24 +59,6 @@ const char* arrayParamNames[]{
 using namespace std;
 
 bool checkInputParam(const kSysParam& param, const char** paramNames);
-
-// trim from start (in place)
-static inline void ltrim(string& s) {
-	s.erase(s.begin(), find_if(s.begin(), s.end(),
-		[](int c) { return !isspace(c); }));
-}
-
-// trim from end (in place)
-static inline void rtrim(string& s) {
-	s.erase(find_if(s.rbegin(), s.rend(),
-		[](int c) {return !isspace(c); }).base(), s.end());
-}
-
-// trim from both ends (in place)
-static inline void trim(string& s) {
-	ltrim(s);
-	rtrim(s);
-}
 
 static size_t getValue(string& tmp, size_t* pPos)
 {

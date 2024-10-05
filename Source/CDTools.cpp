@@ -22,10 +22,36 @@ void releaseCanonizer(void* pCanon) {
 	delete pCanonizer;
 }
 
-ctchar *runCanonizer(void* pCanon, ctchar* pMatrix, int k) {
+ctchar *runCanonizer(void* pCanon, ctchar* pMatrix, int k, int dayNumb) {
 	auto* pCanonizer = static_cast<C_InSysCanonizator<tchar, tchar>*>(pCanon);
-	auto pInSys = pCanonizer->matrix();
-	const auto numDays = (pInSys->rowNumb() - 1) / (k - 1);
-	pInSys->convertToBinaryMatrix(pMatrix, numDays, k);
-	return pCanonizer->CanonizeMatrix(-1);
+	auto pInSys = ((C_InSys <tchar, tchar>*)(pCanonizer->matrix()));
+	
+	const auto v = pInSys->rowNumb() - 1;
+	const auto b = pInSys->colNumb();
+	const auto dayNumbMax = (v - 1) / (k - 1);
+	if (dayNumb <= 0)
+		dayNumb = dayNumbMax;
+
+	auto dayAdj = dayNumbMax - dayNumb;
+	if (dayAdj) {
+		pInSys->adjustData(dayAdj *= v / k);
+		pCanonizer->adjustData(dayNumb, pInSys->colNumb());
+	}
+
+	pInSys->convertToBinaryMatrix(pMatrix, k, dayNumb);
+	const auto retVal = pCanonizer->CanonizeMatrix(k, NULL, dayNumb);
+	static int ccc = 0;
+#if 0
+	FILE* f;
+	if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a")) {
+		pInSys->printOut(f, 16, ++ccc);
+		fclose(f);
+	}
+#endif
+	if (dayAdj) {
+		pInSys->adjustData(-dayAdj);
+		pCanonizer->adjustData(dayNumbMax, pInSys->colNumb());
+	}
+
+	return retVal;
 }

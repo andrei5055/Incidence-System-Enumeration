@@ -54,6 +54,7 @@ protected:
 	CC inline auto *unforcedColOrbPntr(S idxPart = 0) const			{ return m_ppUnforcedColOrb[idxPart]; }
 	CC inline void setRowMaster(S val)								{ m_nRowMaster = val; }
 	CC inline auto rowMaster() const								{ return m_nRowMaster; }
+	CC inline void setColNumber(S nCol)								{ m_nCol = nCol; }
 private:
 	CK inline void setColOrbit(ColOrbPntr pntr, S idx, S idxPart)	{ m_ppColOrb[idxPart][idx] = pntr; }
 	CC inline void setColOrbitLen(size_t len)						{ m_nColOrbLen = len; }
@@ -75,7 +76,7 @@ private:
 FClass1(CColOrbitManager, void)::InitiateColOrbitManager(uint matrRank, S nRows, S nCol, S nParts, void *pMem)
 {
 	m_ppOrb = NULL;
-	m_nCol = nCol;
+	setColNumber(nCol);
 	m_nShiftMult = matrRank * nRows;
 	m_ppColOrb = new ColOrbPntr *[4 * nParts];
 	m_ppUnforcedColOrbCurr = (m_ppUnforcedColOrb = (m_ppColOrbIni = m_ppColOrb + nParts) + nParts) + nParts;
@@ -198,13 +199,13 @@ FClass1(CColOrbitManager, void)::initiateColOrbits(S nRows, S firstRow, const Cl
 #endif
 	}
 	else {
-		m_ppColOrb[0][0]->Init(colNumb());
+		m_ppColOrb[0][0]->InitOrb(colNumb());
 		if (numParts > 1) {
 			// Initiating the leading column orbits of all block
 			S len(0);
 			while (numParts--) {
 				const auto shift = pGroupDescr->GetPartInfo(numParts, &len);
-				m_ppColOrb[numParts][firstRow]->Init(len);
+				m_ppColOrb[numParts][firstRow]->InitOrb(len);
 			}
 		}
 	}

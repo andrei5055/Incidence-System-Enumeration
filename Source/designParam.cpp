@@ -284,7 +284,7 @@ bool designParam::LaunchEnumeration(const char *pSummaryFile, int find_master, i
 		}
 	}
 
-	const std::string summaryFile = this->workingDir + pSummaryFile;
+	const std::string summaryFile = this->strParam[t_workingDir] + pSummaryFile;
 	const char* pSummFile = summaryFile.c_str();
 	std::string outInfo;
 	for (uint i = 0; i <= iMax; i++) {
@@ -345,13 +345,14 @@ bool designParam::LaunchCanonization() {
 	int retVal = 1;
 	C_InSys<TDATA_TYPES>* pInSys = NULL;
 	C_InSysEnumerator<TDATA_TYPES>* pInSysEnum = NULL;
-	if (objSubType == "K-SYSTEM") {
+	if (strParam[t_objSubType] == "K-SYSTEM") {
 		const auto nCols = this->v;
 		const auto nRows = (nCols - 1) / (k - 1);
 		const int reservedElement = nRows * nCols;
 		unsigned char* pSm = new unsigned char[reservedElement];
 
-		const auto retVal = readTable(logFile(), nRows, nCols, &pSm, 1, reservedElement);
+		const auto& inputFile = strParam[t_input_file];
+		const auto retVal = readTable(inputFile, nRows, nCols, &pSm, 1, reservedElement);
 		if (retVal) {
 			this->b = nRows * v / k;
 			// An additional matrix row will be used to store the indices 
@@ -365,11 +366,11 @@ bool designParam::LaunchCanonization() {
 			pEnumInfo->startClock();
 			pInSysEnum->assignDesignParam(this);
 			std::string comment("Input data: ");
-			comment += "\"" + logFile() + "\"\n";
-			writeTable(logFile(), pInSysEnum->outFile(), comment.c_str());
+			comment += "\"" + inputFile + "\"\n";
+			writeTable(inputFile, pInSysEnum->outFile(), comment.c_str());
 
 			pInSys->prepareFirstMatrixRow(nRows);
-			pInSys->convertToBinaryMatrix(pSm, nRows, k);
+			pInSys->convertToBinaryMatrix(pSm, k);
 			pInSysEnum->ConstructCanonicalMatrix(k);
 
 			pEnumInfo->setRunTime();
@@ -389,8 +390,25 @@ bool designParam::LaunchCanonization() {
 	return retVal > 0;
 }
 
-void designParam::SemiSymByKSystems() {
+bool designParam::SemiSymByKSystems() {
+	const auto nCols = this->v;
+	const auto nRows = (nCols - 1) / (k - 1);
+	const auto lenMatr = nRows * nCols;
+	tchar* pSm = new tchar[2 * lenMatr];
 
+	auto pMatr = pSm;
+	for (auto file : { t_input_file, t_extraStrParam }) {
+		const auto& inputFile = strParam[file];
+		if (!readTable(inputFile, nRows, nCols, &pMatr, 1, lenMatr)) {
+			delete[] pSm;
+			return false;
+		}
+
+		pMatr += lenMatr;
+	}
+
+	delete[] pSm;
+	return true;
 }
 
 void designParam::setEnumFlags() {

@@ -78,11 +78,11 @@ FClass2(C_InSysEnumerator, void)::CanonizeByColumns(InSysPntr pMatrix, T *pColId
 
 					// Save the column's orbit information
 					if (idx == 0 || idx == len) // Orbit was not split
-						pColOrbNext->Init(len, pNext);
+						pColOrbNext->InitOrb(len, pNext);
 					else {
 						CColOrbit<S> *pNxt = (CColOrbit<S> *)((char *)pColOrbNext + colOrbLen * idx);
-						pColOrbNext->Init(idx, pNxt);
-						pNxt->Init(len - idx, pNext);
+						pColOrbNext->InitOrb(idx, pNxt);
+						pNxt->InitOrb(len - idx, pNext);
 					}
 
 					pColOrbNext = pNext;

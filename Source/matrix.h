@@ -20,10 +20,13 @@ public:
 	CC inline T colNumb() const				{ return m_nCols; }
 	CC inline T rowNumb() const				{ return m_nRows; }
 	CC inline S maxElement() const			{ return m_nMaxElement; }
-	CC inline S *GetRow(T nRow) const		{ return m_pData + nRow * m_nCols; }
+	CC inline S *GetRow(T nRow) const		{ return GetDataPntr() + nRow * colNumb(); }
 	CC inline void setDataOwner(bool val)	{ m_bDataOwner = val; }
 	CK inline S *GetDataPntr() const		{ return m_pData; }
 	CK inline auto lenData() const			{ return m_nLenData; }
+	CK inline void setLenData()				{ m_nLenData = sizeof(S) * m_nRows * m_nCols; }
+	CK inline void setColNumb(T val)		{ m_nCols = val; }
+	CK inline void SetDataPntr(S* pntr)		{ m_pData = pntr; }
 	CK void InitTransposed(const CMatrixData *pMatr, uint mult = 1) {
 		Init(pMatr->colNumb(), pMatr->rowNumb() * mult);
 		auto *pMatrData = GetDataPntr();
@@ -66,12 +69,11 @@ public:
 		m_nCols = nCols;
 		setMaxElement(maxElement);
 		setDataOwner(!data);
-		m_nLenData = sizeof(S) * m_nRows * m_nCols;
-		m_pData = data? data : m_nLenData? new S[m_nRows * m_nCols] : NULL;
+		setLenData();
+		SetDataPntr(data? data : m_nLenData? new S[m_nRows * m_nCols] : NULL);
 	}
 
 	CK inline void AssignData(S *data)			{ memcpy(GetDataPntr(), data, m_nLenData); }
-	CK inline void ResetData()					{ memset(GetDataPntr(), 0, m_nLenData); }
 	void printOut(FILE* pFile = NULL, T nRow = ELEMENT_MAX, ulonglong matrNumber = UINT64_MAX, 
 				  const CanonicityCheckerPntr pCanonCheck = NULL, ulonglong number = 0, int canonFlag = 1) const;
 	CC virtual T numParts() const				{ return 1; }
@@ -96,8 +98,8 @@ public:
 	CC void setMaxElement(S val)					{ m_nMaxElement = val; }
 private:
 	CK inline bool dataOwner()	const				{ return m_bDataOwner; }
-	CK inline void releaseData()					{ if (dataOwner()) delete[] m_pData;
-													  m_pData = NULL;
+	CK inline void releaseData()					{ if (dataOwner()) delete[] GetDataPntr();
+													  SetDataPntr(NULL);
 	                                                }
 	T m_nRows;
 	T m_nCols;
@@ -187,21 +189,30 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 	virtual T rowNumbExt() const							{ return this->rowNumb(); }
 	CK inline auto maxBlockIntrsection() const              { return m_maxBlockIntersection; }
 	CK inline void setMaxBlockIntrsection(T value)          { m_maxBlockIntersection = value; }
-	CK void prepareFirstMatrixRow(int nRows) {
-		ResetData();
+	CK void prepareFirstMatrixRow(int nDay) {
 		auto* pNextCol = GetDataPntr();
-		const auto numGroups = colNumb() / nRows;
-		for (int i = nRows; i--; pNextCol += numGroups)
-			memset(pNextCol, i, numGroups);
+		const auto numGroups = colNumb() / nDay;
+		for (; nDay--; pNextCol += numGroups)
+			memset(pNextCol, nDay, numGroups);
 	}
-	CK void convertToBinaryMatrix(ctchar *pTripleCol, int nRows, int k) const {
+	CK void convertToBinaryMatrix(ctchar *pTripleCol, int k, int dayNumb = 0) const {
+		const auto pDataSave = GetDataPntr();
 		const auto b = colNumb();
+
 		auto* pNextCol = GetDataPntr() + b;
-		for (int i = 0; i < nRows; i++) {
-			for (int j = 1; j < rowNumb(); j += k, pTripleCol += k, pNextCol++)
-				for (int n = 0; n < k; n++)
+		const auto jMax = rowNumb() - 1;
+		memset(pNextCol, 0, jMax * b * sizeof(pNextCol[0]));
+		while (dayNumb--) {												// Iterate through all days
+			const auto pLastCol = pNextCol + jMax / k;
+			for (; pNextCol < pLastCol; pTripleCol += k, pNextCol++)	// Iterate through day groups
+				for (int n = 0; n < k; n++)								// Iterate through elements of the group
 					*(pNextCol + pTripleCol[n] * b) = 1;
 		}
+	}
+	CK void adjustData(int val) {
+		setColNumb(colNumb() - val);
+		SetDataPntr(GetDataPntr() + val);
+		setLenData();
 	}
 
 protected:

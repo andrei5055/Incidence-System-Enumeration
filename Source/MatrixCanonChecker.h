@@ -72,8 +72,13 @@ public:
 
 	CK void GenerateBinaryColumnOrbits(T nRow, S *pRow, T *pColPermut = NULL) const;
 	CK void GenerateColumnOrbits(T nRow, S* pRow, T* pColPermut = NULL) const;
-	CK S *CanonizeMatrix(int k = 0, CanonicityCheckerPntr* ppClassGroup = NULL);
+	CK S* CanonizeMatrix(int k = 0, CanonicityCheckerPntr* ppClassGroup = NULL, T numClasses = 0);
 	void sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag = false);
+	void adjustData(T rank, T colNumb) {
+		CMatrixCol::setRank(rank);
+		CCanonicityChecker::setRank(rank);
+		setColNumber(colNumb);
+	}
 protected:
 	CK inline auto* commonElemNumber() const							{ return m_pCommonElemNumber; }
 	CK inline auto* blockIdx() const									{ return m_pBlockIdx; }

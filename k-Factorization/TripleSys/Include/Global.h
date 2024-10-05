@@ -50,7 +50,6 @@ typedef enum {
 	t_useImproveMatrix,
 	t_outAutomorphismGroup,
 	t_nestedGroups,
-	t_binaryCanonizer,
 	t_gridSize,
 	t_blockSize,
 	t_lastParam,
@@ -59,6 +58,7 @@ typedef enum {
 	t_StartFolder,
 	t_ResultFolder,
 	t_ImprovedResultFolder,
+	t_binaryCanonizer,
 	t_testName,
 	t_matrTest, // parameter, which will define the test to be launched for constructed matrix or matrices 
 	t_lastStrParam

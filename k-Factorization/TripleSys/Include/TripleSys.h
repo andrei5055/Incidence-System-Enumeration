@@ -241,6 +241,7 @@ private:
 	CC int kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow = 2) const;
 	CC void setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom, int nc) const;
 	CC void setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayMax, int iDayCurrent, int nc, int ip) const;
+	CC void releaseBinaryMatricesStorage();
 	bool FindIsomorphicBaseElements(const std::string& fileName);
 	void checkCommonValues(ctchar* pBaseValues, int numSets);
     void checkCommonValues();
@@ -326,5 +327,28 @@ private:
 	processMatrix2 m_pProcessMatrix;
 	checkLinksFn m_pCheckLinksH = NULL;
 	checkInvalidCycle m_pInvalidCycle;
-	CBinaryMatrixStorage* m_pBinMatrStorage = NULL;
+	CBinaryMatrixStorage** m_ppBinMatrStorage = NULL;
 };
+
+// trim from start (in place)
+inline void ltrim(std::string& s) {
+	s.erase(s.begin(), find_if(s.begin(), s.end(),
+		[](int c) { return !isspace(c); }));
+}
+
+// trim from end (in place)
+inline void rtrim(std::string& s) {
+	s.erase(find_if(s.rbegin(), s.rend(),
+		[](int c) {return !isspace(c); }).base(), s.end());
+}
+// trim from both ends (in place)
+inline void trim(std::string& s) {
+	ltrim(s);
+	rtrim(s);
+}
+
+inline bool is_number(const std::string& s)
+{
+	return !s.empty() && std::find_if(s.begin(), s.end(), 
+		[](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}

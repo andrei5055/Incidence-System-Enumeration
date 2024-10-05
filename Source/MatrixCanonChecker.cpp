@@ -197,12 +197,27 @@ FClass2(CMatrixCanonChecker, void)::GenerateBinaryColumnOrbits(T nRow, S *pRow, 
 	T j, jMax, lenOrb, type;
 	j = jMax = 0;
 	int cntrX = 0;
-	static int cntrY = 0;
+#if PRINT_GENERATE_COLUMNS
+	FILE* f;
+	if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a")) {
+		fprintf(f, "     GenerateBinaryColumnOrbits A: nRow = %d, b = %d\n", nRow, b);
+		fclose(f);
+	}
+#endif
 	while (pColOrbit) {
 		cntrX++;
 		T n = 0;
 		type = pRow[j];
 		jMax += (lenOrb = pColOrbit->length());
+		assert(jMax <= 35);
+/*		
+		if (lll >= 3200) {
+			if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a")) {
+				fprintf(f, "     GenerateBinaryColumnOrbits B: cntrX = %d  jMax = %d, lenOrb = %d\n", cntrX, jMax, lenOrb);
+				fclose(f);
+			}
+		}
+		*/
 		if (lenOrb > 1) {
 			n = type;
 			while (++j < jMax)
@@ -260,7 +275,12 @@ FClass2(CMatrixCanonChecker, void)::GenerateBinaryColumnOrbits(T nRow, S *pRow, 
 
 		pColOrbit = pColOrbit->next();
 	}
-
+	
+#if PRINT_GENERATE_COLUMNS
+	fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+	fprintf(f, "   GenerateBinaryColumnOrbits B:  cntrX = %d  pNewColOrbit = %p  pColOrbitLast = %p\n", cntrX, pNewColOrbit, pColOrbitLast);
+	fclose(f);
+#endif
 	if (pNewColOrbit)
 		pColOrbitLast->setNext(NULL);
 }
@@ -389,13 +409,19 @@ int compareRows(const void* arg1, const void* arg2) {
 	return memcmp(arg2, arg1, lenToCompare);
 }
 
-int cntr = 0;
+static int lll;
 FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag)
 {
 	checkMatr(matrix()->GetRow(1), v, b);
 	qsort(matrix()->GetRow(nRowStart), v - nRowStart, lenToCompare = b, compareRows);
 	checkMatr(matrix()->GetRow(1), v, b);
-
+#if PRINT_UPDATE_ORBITS
+	FILE* f;
+	if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a")) {
+		fprintf(f, "   sortRowsUpdateColumnOrbits A:  v = %d  b = %d  initFlag = %d\n", v, b, initFlag);
+		fclose(f);
+	}
+#endif
 	if (initFlag) {
 		initiateColOrbits(v, 0, NULL, true);
 		const auto iMax = CCanonicityChecker::rank();
@@ -409,15 +435,29 @@ FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowS
 		}
 		pPrev->setNext(NULL);
 	}
+#if PRINT_UPDATE_ORBITS
+	FILE* f;
+	if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", ++lll >= 7196 ? "a" : "a")) {
+		fprintf(f, "   sortRowsUpdateColumnOrbits B:  lll = %d  nRowStart = %d\n", lll, nRowStart);
+		if (true || lll >= 7196)
+			matrix()->printOut(f, 16, 1);
+		fclose(f);
+	}
+#endif
 
 	for (auto i = nRowStart; i < v; i++) {
 		GenerateBinaryColumnOrbits(i, matrix()->GetRow(i));
+#if PRINT_UPDATE_ORBITS
+		fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+		fprintf(f, "   sortRowsUpdateColumnOrbits C:  i = %d\n", i);
+		fclose(f)
+#endif
 		checkMatr(matrix()->GetRow(1), i, b);
 	}
 	checkMatr(matrix()->GetRow(1), v, b);
 }
 
-FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *ppClassGroup) {
+FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *ppClassGroup, T numClasses) {
 	const auto b = matrix()->colNumb();
 	const auto v = matrix()->rowNumb();
 	T colBuffer[512], *pColumnBuf = b <= countof(colBuffer)? colBuffer : new T[b];
@@ -429,14 +469,11 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 	T* permClasses = NULL;
 	T* pOrbits = NULL;
 	T lenPerm, lenStab = 0;
-	T numClasses;
 	T nRowStart = 0;
 	T numGroups = 0;
 	const auto lenMatrix = (v - 1) * b;
 	const auto lenData = lenMatrix * sizeof(S);
 	CanonicityCheckerPntr pClassGroupHandle;
-	if (k < 0)
-		k = matrix()->maxElement();
 
 	if (k) {
 		// As of 09/09/2024 we are here only when canonizing the K-SYSTEM's
@@ -444,18 +481,38 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1, true);
 		// Preparing data for processing automorphisms associated with day permutations
 		numGroups = (v - 1) / k;
-		numClasses = lenStab = lenPerm = (v - 2) / (k - 1);
+		//numClasses = lenStab = lenPerm = (v - 2) / (k - 1);
+		lenStab = lenPerm = numClasses;// = (v - 2) / (k - 1);
 		pMatr = matrix()->GetRow(1);
 	}
 
+#if PRINT_CANONIZE_MATRIX
+	FILE* f;
+	fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+	fprintf(f, "   I am CanonizeMatrix: k = %d\n", k);
+	fclose(f);
+	fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\bbb.txt", "a");
+	fprintf(f, "   I am CanonizeMatrix: k = %d\n", k);
+	fclose(f);
+#endif
 	int cmp = 1;
 	T idx = IDX_MAX;
 	while (true) {
+#if PRINT_CANONIZE_MATRIX
+		fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+		fprintf(f, "   -->\n");
+		fclose(f);
+#endif
 		while (!TestCanonicity(v, &canonParam, t_saveRowPermutations)) {
 			// Re-arrange the matrix rows according to the permutation found by permRow() 
 			auto* pPermRow = permRow();
 			bool adjustColumnOrbits = false;
 			int firstAdjustedRow = -1;
+#if PRINT_CANONIZE_LOOP
+			fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+			fprintf(f, "   A: -->\n");
+			fclose(f);
+#endif
 			for (T tmp, from, i = nRowStart; i < v; i++) {
 				T* pRow;
 				if (i != (from = pPermRow[i])) {
@@ -484,14 +541,28 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 
 				GenerateBinaryColumnOrbits(i, pRow);
 			}
-
+#if PRINT_CANONIZE_LOOP
+			fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+			fprintf(f, "   B: --> k = %d  adjustColumnOrbits = %d  (%d, %d)\n", k, adjustColumnOrbits, v, b);
+			fclose(f);
+#endif
 			if (k && adjustColumnOrbits) {
 				checkMatr(pMatr, v, b);
 				sortRowsUpdateColumnOrbits(v, b, firstAdjustedRow);
 				checkMatr(pMatr, v, b);
 			}
+#if PRINT_CANONIZE_LOOP
+			fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+			fprintf(f, "   C: -->\n");
+			fclose(f);
+#endif
 		}
 
+#if PRINT_CANONIZE_MATRIX
+		fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a");
+		fprintf(f, "   ==>\n");
+		fclose(f);
+#endif
 		if (!k)
 			break;
 
