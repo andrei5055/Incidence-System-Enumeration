@@ -40,15 +40,8 @@ ctchar *runCanonizer(void* pCanon, ctchar* pMatrix, int k, int dayNumb) {
 
 	pInSys->convertToBinaryMatrix(pMatrix, k, dayNumb);
 	const auto retVal = pCanonizer->CanonizeMatrix(k, NULL, dayNumb);
-	static int ccc = 0;
-#if 0
-	FILE* f;
-	if (!fopen_s(&f, "C:\\Users\\16507\\source\\repos\\Incidence-System-Enumeration\\aaa.txt", "a")) {
-		pInSys->printOut(f, 16, ++ccc);
-		fclose(f);
-	}
-#endif
 	if (dayAdj) {
+		// Reverting previously adjusted parameters
 		pInSys->adjustData(-dayAdj);
 		pCanonizer->adjustData(dayNumbMax, pInSys->colNumb());
 	}

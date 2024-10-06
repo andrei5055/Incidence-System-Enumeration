@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\CDTools.h" />
     <ClInclude Include="Include\CudaAttributes.h" />
     <ClInclude Include="Include\GroupOrder.h" />
     <ClInclude Include="Include\k-SysSupport.h" />
