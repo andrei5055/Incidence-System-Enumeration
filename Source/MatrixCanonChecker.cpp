@@ -436,8 +436,7 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1, true);
 		// Preparing data for processing automorphisms associated with day permutations
 		numGroups = (v - 1) / k;
-		//numClasses = lenStab = lenPerm = (v - 2) / (k - 1);
-		lenStab = lenPerm = numClasses;// = (v - 2) / (k - 1);
+		lenStab = lenPerm = numClasses;
 		pMatr = matrix()->GetRow(1);
 	}
 
@@ -485,7 +484,7 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 			}
 		}
 
-		if (!k)
+		if (!numClasses)
 			break;
 
 		if (pCompMatrix) {

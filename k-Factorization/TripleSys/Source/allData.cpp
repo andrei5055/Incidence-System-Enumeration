@@ -136,32 +136,62 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 		string s(*binaryCanonRows);
 		size_t pos = 0;
 		bool flagOK = true;
+		bool lastStorageNeeded = false;
 		while (pos <= s.size()) {
+			int idx1 = -1;
 			pos = s.find(",");
 			auto line = s.substr(0, pos);
 			trim(line);
 			if (!is_number(line)) {
-				printfRed("*** Expected all numbers in the list of days: \"%s\"\n", binaryCanonRows->c_str());
-				flagOK = false;
-				break;
-			}
+				const auto pos1 = s.find("-");
+				if (pos1 != string::npos) {
+					auto line1 = line.substr(pos1 + 1);
+					if (is_number(line1)) {
+						idx1 = atoi(line1.c_str());
+						line = line.substr(0, pos1);
+					}
+				}
+				if (idx1 < 0) {
+					flagOK = false;
+					break;
+				}
+			} 
 			s.erase(0, pos + 1);
-			const auto idx = atoi(line.c_str());
-			if (idx < 0 || idx >= m_numDays)
+			auto idx = atoi(line.c_str());
+			lastStorageNeeded |= idx >= 1;
+			if (idx1 < 0)
+				idx1 = idx;
+			else
+				if (idx > idx1) {
+					flagOK = false;
+					break;
+				}
+					
+
+			if (idx1 < 2 || idx >= m_numDays)
 				continue;
 
-			const auto lenBinaryMatrix = m_numPlayers * idx * numGroups;
-			m_ppBinMatrStorage[idx] = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+			while (idx <= idx1) {
+				if (idx > 1 && !m_ppBinMatrStorage[idx]) {
+					const auto lenBinaryMatrix = m_numPlayers * idx * numGroups;
+					m_ppBinMatrStorage[idx] = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
+				}
+				idx++;
+			}
 		}
 
-		if (flagOK) {
+		if (flagOK && lastStorageNeeded) {
 			const auto idx = m_numDays;
 			if (!m_ppBinMatrStorage[idx]) {
 				const auto lenBinaryMatrix = m_numPlayers * m_numDays * numGroups;
 				m_ppBinMatrStorage[idx] = new CBinaryMatrixStorage(lenBinaryMatrix, 50 * lenBinaryMatrix);
 			}
-		} else
+		}
+		else {
 			releaseBinaryMatricesStorage();
+			if (!flagOK)
+				printfRed("*** Unexpected value for \"UseBinaryCanonizer\": \"%s\"\n", binaryCanonRows->c_str());
+		}
 	}
 #endif
 

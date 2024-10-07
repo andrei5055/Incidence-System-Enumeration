@@ -25,6 +25,7 @@
 #endif
 #define NRBase					  2
 #define UseP1fCheckGroups         1
+#define USE_BINARY_CANONIZER	  1
 #define UseCnvCheckNewEachRow     0
 #define AllowNotP1FRowsFor3P1F    1 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
@@ -210,7 +211,7 @@ private:
 	CC int collectCyclesAndPath(TrCycles* trc);
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1);
 	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL);
-	CC int checkCurrentResult(bool bPrint);
+	CC int checkCurrentResult(bool bPrint, void* pIS_Canonizer = NULL);
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
 	CC void p1fCheckStartMatrix(int nr) const;

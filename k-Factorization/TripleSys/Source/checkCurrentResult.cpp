@@ -1,5 +1,10 @@
 #include "TripleSys.h"
 
+#if !USE_CUDA && USE_BINARY_CANONIZER
+#include "k-SysSupport.h"
+#include "CDTools.h"
+#endif
+
 CC void alldata::goBack()
 {
 	ASSERT(m_playerIndex >= iDay * m_numPlayers,
@@ -27,7 +32,7 @@ CC void alldata::goBack()
 		getPrevPlayer();
 	}
 }
-CC int alldata::checkCurrentResult(bool bPrint)
+CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 {
 	// function returns : -1 - prev result, 0 - continue, 1 - eoj
 	if (iDay > 1)
@@ -58,6 +63,7 @@ CC int alldata::checkCurrentResult(bool bPrint)
 		}
 #endif
 #endif
+
 #if 1
 		if ((iDay == m_numDaysResult)
 			|| (UseCnvCheckNewEachRow)
@@ -66,20 +72,33 @@ CC int alldata::checkCurrentResult(bool bPrint)
 			|| (m_p1f && (iDay == 6 || m_groupSize == 3))
 			)
 		{
+			bool bPrev = true;
+#if !USE_CUDA && USE_BINARY_CANONIZER
+			if (m_ppBinMatrStorage) {
+				if (pIS_Canonizer && m_ppBinMatrStorage[iDay]) {
+					const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay < m_numDaysResult ? 0 : iDay);
+					if (m_ppBinMatrStorage[iDay]->updateRepo(pCanonBinaryMatr) < 0) {
+						bPrev = false;
+					}
+				}
+			}
+			else
+#endif
+			{
 #define LOOP_LENGTH1		0
 #if LOOP_LENGTH1
-			bool bPrev;
-			for (int i = 0; i < LOOP_LENGTH1; i++)
-				bPrev = !cnvCheckNew(0, iDay);
+				for (int i = 0; i < LOOP_LENGTH1; i++)
+					bPrev = !cnvCheckNew(0, iDay);
 #else
-			const bool bPrev = cnvCheckNew(0, iDay);
+				bPrev = cnvCheckNew(0, iDay);
+#endif
+			}
 #endif
 			// print stat result after all transitions applied
 			StatReportAfterAllTr(ResetStat, "Stat for one improvement. iDay", iDay, bPrint);
 			if (!bPrev || groupOrder() < param(t_submatrixGroupOrderMin))
 				return -1;
 		}
-#endif
 #endif
 	}
 	return 0;
