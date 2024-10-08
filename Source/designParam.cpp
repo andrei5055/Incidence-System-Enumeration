@@ -38,7 +38,9 @@ void output_2_decompInfo(designParam* param, const CDesignDB* pDesignDB, std::st
 template <typename T, typename S>
 void PrepareBIBD_Enumeration(const designParam* pParam, Class2(C_InSys)** ppInSys, Class2(C_InSysEnumerator)** ppInSysEnum, t_objectType &objType, uint& enumFlags)
 {
-	if (objType == t_objectType::t_CanonMatr) {
+	switch (objType) {
+	case t_objectType::t_CanonMatr:
+	case t_objectType::t_SemiSym_KSystems:
 		*ppInSys = new Class2(C_InSys)(pParam->v, pParam->b, 2, pParam->matrixRank);
 		*ppInSysEnum = new Class2(C_InSysCanonizator)(*ppInSys, enumFlags);
 		return;
@@ -367,16 +369,17 @@ bool designParam::LaunchCanonization() {
 			pInSysEnum->assignDesignParam(this);
 			std::string comment("Input data: ");
 			comment += "\"" + inputFile + "\"\n";
-			writeTable(inputFile, pInSysEnum->outFile(), comment.c_str());
+			const auto file = pInSysEnum->outFile();
+			writeTable(inputFile, file, comment.c_str());
 
 			pInSys->prepareFirstMatrixRow(nRows);
-			pInSys->convertToBinaryMatrix(pSm, k);
+			pInSys->convertToBinaryMatrix(pSm, k, nRows);
 			pInSysEnum->ConstructCanonicalMatrix(k);
 
 			pEnumInfo->setRunTime();
-			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile(), "\n\nCanonization was done in ");
-			pEnumInfo->outRunTimeInfo(pInSysEnum->outFile());
-			fclose(pInSysEnum->outFile());
+			pEnumInfo->outRunTimeInfo(file, "\n\nCanonization was done in ");
+			pEnumInfo->outRunTimeInfo(file);
+			fclose(file);
 			delete pEnumInfo;
 		}
 
@@ -407,7 +410,28 @@ bool designParam::SemiSymByKSystems() {
 		pMatr += lenMatr;
 	}
 
-	delete[] pSm;
+	this->v = this->b = 2 * nRows * v / k;
+	uint enumFlags = this->enumFlags();
+	matrixRank = 2;
+	C_InSys<TDATA_TYPES>* pInSys = NULL;
+	C_InSysEnumerator<TDATA_TYPES>* pInSysEnum = NULL;
+	PrepareBIBD_Enumeration(this, &pInSys, &pInSysEnum, objType, enumFlags);
+	auto* pEnumInfo = createEnumInfo(this, pInSysEnum);
+	pEnumInfo->startClock();
+	pInSysEnum->assignDesignParam(this);
+	const auto file = pInSysEnum->outFile();
+	pInSys->convertToSemiSymGraph(pSm, nCols, nRows, k);
+	pInSysEnum->ConstructCanonicalMatrix(-1);
+
+	pEnumInfo->setRunTime();
+	pEnumInfo->outRunTimeInfo(file, "\n\nCanonization was done in ");
+	pEnumInfo->outRunTimeInfo(file);
+	fclose(file);
+
+    delete[] pSm;
+
+	delete pInSys;
+	delete pInSysEnum;
 	return true;
 }
 

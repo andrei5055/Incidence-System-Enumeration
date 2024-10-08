@@ -32,14 +32,16 @@ ctchar *runCanonizer(void* pCanon, ctchar* pMatrix, int k, int dayNumb) {
 	if (dayNumb <= 0)
 		dayNumb = dayNumbMax;
 
+	auto numClasses = dayNumb;
 	auto dayAdj = dayNumbMax - dayNumb;
 	if (dayAdj) {
+		numClasses = 0;
 		pInSys->adjustData(dayAdj *= v / k);
 		pCanonizer->adjustData(dayNumb, pInSys->colNumb());
 	}
 
 	pInSys->convertToBinaryMatrix(pMatrix, k, dayNumb);
-	const auto retVal = pCanonizer->CanonizeMatrix(k, NULL, dayNumb);
+	const auto retVal = pCanonizer->CanonizeMatrix(k, NULL, numClasses);
 	if (dayAdj) {
 		// Reverting previously adjusted parameters
 		pInSys->adjustData(-dayAdj);

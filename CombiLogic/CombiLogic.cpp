@@ -611,6 +611,7 @@ int main(int argc, char * argv[])
 			break;
 		case t_objectType::t_SemiSym_KSystems:
 			param->SemiSymByKSystems();
+			break;
 		default:
 			if (!param->LaunchEnumeration(pSummaryFile, find_master_design, find_all_2_decomp, use_master_sol, firstRun))
 				continue;

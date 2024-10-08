@@ -196,7 +196,6 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 			memset(pNextCol, nDay, numGroups);
 	}
 	CK void convertToBinaryMatrix(ctchar *pTripleCol, int k, int dayNumb = 0) const {
-		const auto pDataSave = GetDataPntr();
 		const auto b = colNumb();
 
 		auto* pNextCol = GetDataPntr() + b;
@@ -207,6 +206,48 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 			for (; pNextCol < pLastCol; pTripleCol += k, pNextCol++)	// Iterate through day groups
 				for (int n = 0; n < k; n++)								// Iterate through elements of the group
 					*(pNextCol + pTripleCol[n] * b) = 1;
+		}
+	}
+	CK void convertToSemiSymGraph(ctchar* pGraphs, int nCols, int nRows, int k) const {
+		const auto b = colNumb();
+
+		auto* pMatr = GetDataPntr();
+		const auto jMax = rowNumb();
+		memset(pMatr, 0, b * b * sizeof(pMatr[0]));
+
+		const auto nGroups = nCols / k;
+		const auto nTotal = nGroups * nRows;
+		ctchar *pFirst, *pSecond;
+
+		for (int i = 0; i < 2; i++) {							// Iterate through both matrices
+			auto* pMatr1 = GetDataPntr();
+			pFirst = pSecond = pGraphs;
+			if (i) {
+				pMatr1 += b * b / 2;
+				pFirst += nCols * nRows;
+			}
+			else {
+				pMatr1 += b / 2;
+				pSecond += nCols * nRows;
+			}
+
+			for (int j = 0; j < nRows; j++, pMatr += nGroups) {	// Iterate through all days
+				for (int n = 0; n < nGroups; n++, pMatr += b) {	// Iterate through all groups of the day
+					memset(pMatr, 1, nGroups);
+
+					// Search for the set specified by pFirst in another matrix. 
+					auto* pTmp = pSecond;
+					auto m = nTotal;
+					while (m-- && memcmp(pTmp, pFirst, k))
+						pTmp += k;
+
+					assert(m >= 0);
+					// Corresponding set in another matrix found
+					memset(pMatr1 + ((nTotal - m - 1) / nGroups) * nGroups, 1, nGroups);
+					pFirst += k;
+					pMatr1 += b;
+				}
+			}
 		}
 	}
 	CK void adjustData(int val) {

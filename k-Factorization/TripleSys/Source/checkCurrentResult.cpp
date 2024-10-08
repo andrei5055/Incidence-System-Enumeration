@@ -76,7 +76,7 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 #if !USE_CUDA && USE_BINARY_CANONIZER
 			if (m_ppBinMatrStorage) {
 				if (pIS_Canonizer && m_ppBinMatrStorage[iDay]) {
-					const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay < m_numDaysResult ? 0 : iDay);
+					const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay < m_numDaysResult ? iDay : 0);
 					if (m_ppBinMatrStorage[iDay]->updateRepo(pCanonBinaryMatr) < 0) {
 						bPrev = false;
 					}

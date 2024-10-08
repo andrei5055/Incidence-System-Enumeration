@@ -428,16 +428,18 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 	T numGroups = 0;
 	const auto lenMatrix = (v - 1) * b;
 	const auto lenData = lenMatrix * sizeof(S);
-	CanonicityCheckerPntr pClassGroupHandle;
+	CanonicityCheckerPntr pClassGroupHandle = NULL;
 
 	if (k) {
-		// As of 09/09/2024 we are here only when canonizing the K-SYSTEM's
 		lenToCompare = b;
-		sortRowsUpdateColumnOrbits(v, b, nRowStart = 1, true);
-		// Preparing data for processing automorphisms associated with day permutations
-		numGroups = (v - 1) / k;
-		lenStab = lenPerm = numClasses;
-		pMatr = matrix()->GetRow(1);
+		if (k > 0) {
+			// As of 09/09/2024 we are here only when canonizing the K-SYSTEM's 
+			// Preparing data for processing automorphisms associated with day permutations
+			numGroups = (v - 1) / k;
+			pMatr = matrix()->GetRow(nRowStart = 1);
+			lenStab = lenPerm = numClasses;
+		}
+		sortRowsUpdateColumnOrbits(v, b, nRowStart, true);
 	}
 
 	int cmp = 1;
@@ -535,8 +537,10 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 		checkMatr(pMatr, v, b);
 	}
 
-	pClassGroupHandle->updateOrderOfGroup();
-	extraGroupOrder()->setGroupOrder(pClassGroupHandle->groupOrder());
+	if (pClassGroupHandle) {
+		pClassGroupHandle->updateOrderOfGroup();
+		extraGroupOrder()->setGroupOrder(pClassGroupHandle->groupOrder());
+	}
 
 	delete[] permClasses;
 	delete[] pCompMatrix;
