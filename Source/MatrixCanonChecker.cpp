@@ -205,7 +205,7 @@ FClass2(CMatrixCanonChecker, void)::GenerateBinaryColumnOrbits(T nRow, S *pRow, 
 			while (++j < jMax)
 				n += pRow[j];
 
-			if (type && n < lenOrb || n) {
+			if (n && n < lenOrb) {
 				// If `type` is 0 and `n` is not, the orbit started with 0, but at least one 1 was found within it.
 				type = 1;   // we need to change type
 				// Orbit is divided into two parts
@@ -346,22 +346,26 @@ FClass2(CMatrixCanonChecker, void)::GenerateColumnOrbits(T nRow, S* pRow, T* pCo
 		pColOrbitLast->setNext(NULL);
 }
 
+
 #if 1
 #define checkMatr(x, y, z)
 #else
+#define FIRST_ROW	0
+#define VAL_K		10
 void checkMatr(unsigned char* pMatr, int v, int b)
 {
+	static int rrr = 0; rrr++;
 	for (int i = 0; i < b; i++) {
 		auto* pTo = pMatr + i;
 		int l = 0;
-		for (int j = 1; j < v; j++, pTo += b) {
+		for (int j = (FIRST_ROW? 1 : 0); j < v; j++, pTo += b) {
 			if (*pTo) {
-				if (l++ == 3)
+				if (l++ == VAL_K)
 					break;
 			}
 		}
 	}
-
+#if USE_LAMBDA
 	auto* pTo = pMatr;
 	for (int i = 1; i < v; i++, pTo += b) {
 		auto* pFrom = pTo;
@@ -378,6 +382,7 @@ void checkMatr(unsigned char* pMatr, int v, int b)
 			}
 		}
 	}
+#endif
 }
 #endif
 
@@ -388,9 +393,9 @@ int compareRows(const void* arg1, const void* arg2) {
 
 FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowStart, bool initFlag)
 {
-	checkMatr(matrix()->GetRow(1), v, b);
+	checkMatr(matrix()->GetRow(nRowStart), v, b);
 	qsort(matrix()->GetRow(nRowStart), v - nRowStart, lenToCompare = b, compareRows);
-	checkMatr(matrix()->GetRow(1), v, b);
+	checkMatr(matrix()->GetRow(nRowStart), v, b);
 	if (initFlag) {
 		initiateColOrbits(v, 0, NULL, true);
 		const auto iMax = CCanonicityChecker::rank();
@@ -407,9 +412,9 @@ FClass2(CMatrixCanonChecker, void)::sortRowsUpdateColumnOrbits(T v, T b, T nRowS
 
 	for (auto i = nRowStart; i < v; i++) {
 		GenerateBinaryColumnOrbits(i, matrix()->GetRow(i));
-		checkMatr(matrix()->GetRow(1), i, b);
+		checkMatr(matrix()->GetRow(nRowStart), v, b);
 	}
-	checkMatr(matrix()->GetRow(1), v, b);
+	checkMatr(matrix()->GetRow(nRowStart), v, b);
 }
 
 FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *ppClassGroup, T numClasses) {
@@ -439,6 +444,9 @@ FClass2(CMatrixCanonChecker, S *)::CanonizeMatrix(int k, CanonicityCheckerPntr *
 			pMatr = matrix()->GetRow(nRowStart = 1);
 			lenStab = lenPerm = numClasses;
 		}
+		else
+			pMatr = matrix()->GetRow(0);
+
 		sortRowsUpdateColumnOrbits(v, b, nRowStart, true);
 	}
 

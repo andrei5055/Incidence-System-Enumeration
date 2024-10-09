@@ -21,8 +21,10 @@ public:
 		CanonicityCheckerPntr pClassGroup = NULL;
 		CanonizeMatrix(k, &pClassGroup);
 		matrix()->printOut(outFile(), matrix()->rowNumb(), 0, this);
-		pClassGroup->outputAutomorphismInfo(outFile());
-		delete pClassGroup;
+		if (pClassGroup) {
+			pClassGroup->outputAutomorphismInfo(outFile());
+			delete pClassGroup;
+		}
 	}
 protected:
 	CK virtual void setX0_3(T value)							{ m_x0_3 = value; }

@@ -432,6 +432,7 @@ bool designParam::SemiSymByKSystems() {
 
 	delete pInSys;
 	delete pInSysEnum;
+	delete pEnumInfo;
 	return true;
 }
 

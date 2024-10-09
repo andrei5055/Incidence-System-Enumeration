@@ -26,7 +26,7 @@
 #define NRBase					  2
 #define UseP1fCheckGroups         1
 #define USE_BINARY_CANONIZER	  1
-#define UseCnvCheckNewEachRow     0
+#define UseCnvCheckNewEachRow     1
 #define AllowNotP1FRowsFor3P1F    1 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
 #define Any2RowsConvertToFirst2   1 // Only for 3P1F. (*) If 1, then any two rows must be converted to first 2 rows.
