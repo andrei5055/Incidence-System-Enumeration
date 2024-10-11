@@ -231,10 +231,14 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 				pSecond += nCols * nRows;
 			}
 
+#define EXEPT_CONNECTIONS_TO_TWINS  1
 			for (int j = 0; j < nRows; j++, pMatr += nGroups) {	// Iterate through all days
 				for (int n = 0; n < nGroups; n++, pMatr += b) {	// Iterate through all groups of the day
+					// Vertex is adjacent to all vertices from the other part appearing whith it in the same day
 					memset(pMatr, 1, nGroups);
-
+#if EXEPT_CONNECTIONS_TO_TWINS
+					pMatr[n] = 0;								// except the vertex of the same matrix with the same name
+#endif
 					// Search for the set specified by pFirst in another matrix. 
 					auto* pTmp = pSecond;
 					auto m = nTotal;
@@ -243,7 +247,11 @@ Class2Def(C_InSys) : public Class2(CMatrix)
 
 					assert(m >= 0);
 					// Corresponding set in another matrix found
-					memset(pMatr1 + ((nTotal - m - 1) / nGroups) * nGroups, 1, nGroups);
+					auto pTmp1 = pMatr1 + ((nTotal - m - 1) / nGroups) * nGroups;
+					memset(pTmp1, 1, nGroups);
+#if EXEPT_CONNECTIONS_TO_TWINS
+					pTmp1[(nTotal - m - 1) % nGroups] = 0;		// except the vertex of the another matrix with the same name
+#endif
 					pFirst += k;
 					pMatr1 += b;
 				}
