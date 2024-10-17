@@ -144,6 +144,42 @@ CC bool alldata::checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int iday, tc
 			}}}}}}
 			break;
 		}
+		case 18:
+		{
+			SetFirst3LoopsH2(18);
+			Set1LoopH2(ct5, v8, v9, t4, t5, i5, 10);
+			Set1LoopH2(ct6, va, vb, t5, t6, i6, 8);
+			Set1LoopH2(ct7, vc, vd, t6, t7, i7, 6);
+			Set1LoopH2(ct8, ve, vf, t7, t8, i8, 4);
+			Set2LastValuesH2(16, t8);
+			Set8ResultsH2();
+			Set2ValuesH2(8, v8, v9);
+			Set2ValuesH2(10, va, vb);
+			Set2ValuesH2(12, vc, vd);
+			Set2ValuesH2(14, ve, vf);
+			P1FCheck();
+			}}}}}}}
+			break;
+		}
+		case 20:
+		{
+			SetFirst3LoopsH2(18);
+			Set1LoopH2(ct5, v8, v9, t4, t5, i5, 12);
+			Set1LoopH2(ct6, va, vb, t5, t6, i6, 10);
+			Set1LoopH2(ct7, vc, vd, t6, t7, i7, 8);
+			Set1LoopH2(ct8, ve, vf, t7, t8, i8, 6);
+			Set1LoopH2(ct9, vg, vh, t8, t9, i9, 4);
+			Set2LastValuesH2(18, t9);
+			Set8ResultsH2();
+			Set2ValuesH2(8, v8, v9);
+			Set2ValuesH2(10, va, vb);
+			Set2ValuesH2(12, vc, vd);
+			Set2ValuesH2(14, ve, vf);
+			Set2ValuesH2(16, vg, vh);
+			P1FCheck();
+			}}}}}}}}
+			break;
+		}
 	}
 
 	return false;
