@@ -55,32 +55,6 @@ CC bool alldata::initCurrentDay()
 	m_firstNotSel = 0;
 	memset(selPlayers, unset, m_numPlayers);
 	memset(tmpPlayers, unset, m_numPlayers);
-	CUDA_PRINTF("   === initCurrentDay\n");
-	if (m_groupSize < 3 && m_pCheckLinksH && iDay > 0)
-	{
-		if (!(this->*m_pCheckLinksH)(result(), m_numPlayers, m_numPlayers, -1, result(iDay - 1)[1], m_ho))
-		{
-			bPrevResult = true;
-			return false;
-		}
-		//printf("day=%d ", iDay);
-		//printTable("m_ho", m_ho, 1, m_numPlayers);
-		memcpy(tmpPlayers, m_ho, m_numPlayers);
-		memcpy(indexPlayer, m_ho, m_numPlayers);
-		iPlayer = m_numPlayers;
-
-		for (int j = 0; j < m_numPlayers; j++)
-		{
-			const auto k = tmpPlayers[j];
-			if (m_groupSize == 2)
-			{
-				const auto linksOK = setLinksForOnePlayer(iDay, links(), tmpPlayers, j, k);
-				ASSERT(!linksOK);
-			}
-			selPlayers[k] = j;
-		}
-	}
-	CUDA_PRINTF("   <<< initCurrentDay\n");
 	return true;
 }
 CC bool SizeParam::setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const

@@ -139,7 +139,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	for (int i = 0; i < iDay; i++)
 		p1fSetTableRow(p1ftable(i), result(i));
 
-	if (m_p1f)
+	if (m_p1f || param(t_u1f))
 	{
 		if (m_groupSize == 2) // need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
@@ -246,6 +246,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 			if (bPrevResult)
 			{
+				if (iDay == 2 && m_groupSize == 2 && (m_p1f || param(t_u1f)))
+				{
+					noMoreResults = true;
+					goto noResult;
+				}
 				if (!initPrevDay())
 					continue;
 			}
@@ -374,7 +379,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 			//Result.printTable(p1ftable(), true, ResultFile, bPrint, m_numDaysResult);
 			//reportCheckLinksData();
-			//printTable("p1f", p1ftable(), iDay, m_numPlayers, 0);
+			//printTable("p1f", p1ftable(), iDay, m_numPlayers, 2);
 
 			StatReportAfterEachResult(ResetStat, "Stat for matrix result. iDay", iDay, bPrint); // see stat.h to activate
 			if (pcnt) {
@@ -430,7 +435,7 @@ noResult:
 		auto str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
 			threadNumber, m_finalKMindex, m_numPlayers, m_numDaysResult, m_groupSize);
 
-#if GenerateSecondRowsFor3P1F
+#if GenerateSecondRowsFor3U1F
 		printTable("Calculated second rows set", m_p3fSecondRows, m_p3fNumSecondRowsAct, m_numPlayers, m_groupSize);
 #endif
 		str += format("Thread execution time = {} ms\n", clock() - iTime);

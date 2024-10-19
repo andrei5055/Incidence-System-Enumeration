@@ -25,7 +25,8 @@ CC bool alldata::cnvCheck2P1F(int nrows)
 			int nk = m_numPlayers;
 			for (int k = 0; k < nk; k++)
 			{
-				create2P1FTr(tr, k, pf0, pf1, pfi, pfj);
+				if (!create2P1FTr(tr, k, pf0, pf1, pfi, pfj))
+					continue;
 				m_TrInd++;
 #if !USE_CUDA
 				if (m_cnvMode) {
@@ -54,7 +55,7 @@ ret:
 	Stat_cnvCheckKm1("(-1)", 1, !bRet);
 	return bRet;
 }
-CC bool alldata::cnvCheck3P1F(int nrows)
+CC bool alldata::cnvCheck3U1F(int nrows)
 {
 	if (nrows < 2)
 		return true;
@@ -70,7 +71,7 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 	bool bCurrentSet = false;
 	//if (result(1)[5] == 9 && iDay == 4)
 	//	printf("%d ", iDay);
-#if GenerateSecondRowsFor3P1F
+#if GenerateSecondRowsFor3U1F
 	if (!m_p3fNumSecondRows) {
 		memcpy(m_p3fSecondRows, result(1), m_numPlayers);
 		m_p3fNumSecondRows++;
@@ -103,7 +104,7 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 	//	ip1 = ip1;
 	while (1)
 	{
-#if GenerateSecondRowsFor3P1F
+#if GenerateSecondRowsFor3U1F
 		if (ip1 >= m_p3fNumSecondRows)
 			break;
 		p1 = m_p3fSecondRows + ip1 * m_numPlayers;
@@ -164,7 +165,7 @@ CC bool alldata::cnvCheck3P1F(int nrows)
 						do {
 							_StatAdd("create3P1FTr", 11, true);
 							
-							const bool btr = create3U1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
+							const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
 							if (!btr && indRow0 >= 1 && indRow1 >= 2)
@@ -293,7 +294,7 @@ ret:
 	}
 	else
 	{
-#if GenerateSecondRowsFor3P1F
+#if GenerateSecondRowsFor3U1F
 		if (nrows == 2 && m_p3fNumSecondRows)
 			m_p3fNumSecondRows--;
 #endif

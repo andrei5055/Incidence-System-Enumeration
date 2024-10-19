@@ -16,7 +16,7 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "kmSupport.cpp"
 #include "checkLinks.cpp"
 #include "checkLinksV.cpp"
-#include "checkLinksH.cpp"
+#include "cnvSupport2.cpp"
 #include "Support.cpp"
 #include "initStartValues.cpp"
 #include "processOneDay.cpp"

@@ -252,6 +252,8 @@ CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* 
 	tchar va, vb;
 	switch (nc)
 	{
+	case 18:
+		SetTaTb(16, mii, ta, tb, va, vb)
 	case 16:
 		SetTaTb(14, mii, ta, tb, va, vb)
 	case 14:

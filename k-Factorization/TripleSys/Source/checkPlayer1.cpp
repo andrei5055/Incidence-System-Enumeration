@@ -35,8 +35,9 @@ CC int alldata::checkPlayer1(int iPlayerNumber)
 		iPlayerNumber  = MAX2(prevPlayer + 1, iPlayerNumber);
 		// do we need a separate cycle for m0 == 2?
 		tchar* lnk = links(prevPlayer);
-		for (; iPlayerNumber <= m_indexPlayerMax[iPlayer]; iPlayerNumber++)
-			if (lnk[iPlayerNumber] == unset)
+		const auto maxp = m_indexPlayerMax[iPlayer];
+		for (; iPlayerNumber <= maxp; iPlayerNumber++)
+			if (lnk[iPlayerNumber] == unset && selPlayers[iPlayerNumber] == unset)
 				goto PlayerOk1;
 		//	else
 		//printf("%d.%d ", iDay, iPlayer);

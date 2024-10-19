@@ -221,7 +221,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 	}
 
 	bool ret = true;
-	if (m_p1f && iMode >= 0 && !param(t_u1f)) {
+	if (m_p1f && iMode >= 0) { // leo && !param(t_u1f)) {
 		ret = (this->*m_pCheckP1F)(nrows);
 	}
 	else {
@@ -230,7 +230,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		m_cnvMode = iMode;
 
 		// change "ng = m_nGroups;" below (for "fast version" of cnfCheckNew) to: 
-		//int ng = m_nGroups > 4 ? 4 : m_nGroups; // check permutations for the first ng groups only
+		//int ng = m_nGroups > 4 ? 8 : m_nGroups; // check permutations for the first ng groups only
 		int ng = m_nGroups; // "full check"
 
 		// Head Permutations Using a Linear Array Without Recursion by Phillip Paul Fuchs

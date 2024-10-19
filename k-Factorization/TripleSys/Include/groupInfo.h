@@ -73,7 +73,6 @@ public:
 	CC bool cycleLengthOk(tchar length);
 	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles);
 protected:
-	CC int p1fCheck(int nr, ctchar* row) const;
 	CC void p1fSetTableRow(tchar* ro, ctchar* ri) const;
 	CC inline auto* p1ftable(int nDay = 0) const { return m_pP1Ftable + nDay * m_numPlayers; }
 	CC inline void set_kSysParam(const kSysParam* p) { m_param = p; }

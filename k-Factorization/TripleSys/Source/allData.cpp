@@ -77,20 +77,15 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 		m_file = f;
 	}
 #endif
-	if (m_p1f && m_groupSize == 3)
+	if ((m_p1f || param(t_u1f)) && m_groupSize == 3)
 		InitCycleSupport(m_nGroups);
 
-	m_pCheckP1F = m_p1f? ((m_groupSize == 2) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck3P1F) : NULL;
+	auto u1fPntr = sysParam()->u1f[0];
+	bool bp1f = !u1fPntr || u1fPntr[1] == m_numPlayers;
+	m_pCheckP1F = m_p1f ? ((m_groupSize == 2) ? (bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F) : &alldata::cnvCheck3U1F) : NULL;
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
-	if (m_groupSize < 3 && numPlayers() >= 10 && param(t_useCheckLinksH)) {
-		// NOTE: the use of &alldata::checkLinksH is the cause of the warning:
-		// CUDACOMPILE : ptxas warning : Stack size for entry function '_Z10initKernelPP7alldata9SizeParamPK9kSysParami' 
-		// cannot be statically determined
-		//m_pCheckLinksH = m_groupSize == 2 ? &alldata::checkLinksH2 : &alldata::checkLinksH;
-		m_pCheckLinksH = &alldata::checkLinksH2;
-	}
 
 	expected2ndRow3p1f(-1);
 

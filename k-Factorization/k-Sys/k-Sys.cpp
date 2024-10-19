@@ -20,7 +20,6 @@ const char* intParamNames[]{
 	"FirstIndexOfStartMatrices",
 	"NRowsInResultMatrix",
 	"ExpectedResult",
-	"UseCheckLinksH",
 	"UseCheckLinksV",
 	"PrintMatrices",
 	"SavingMatricesToDisk",
@@ -409,7 +408,6 @@ int main(int argc, const char* argv[])
 	val[t_nFirstIndexOfStartMatrices] = FirstIndexOfStartMatrices;
 	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;
 	val[t_expectedResult] = ExpectedResult;
-	val[t_useCheckLinksH] = UseCheckLinksH;
 	val[t_useCheckLinksV] = UseCheckLinksV;
 	val[t_printMatrices] = PrintMatrices;
 	val[t_savingMatricesToDisk] = SavingMatricesToDisk;
@@ -497,7 +495,7 @@ int main(int argc, const char* argv[])
 
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
 			if (val[t_u1f]) {
-				val[t_p1f] = 1;				// must be 1 with UF
+				//val[t_p1f] = 1;		leo		// must be 1 with UF
 				const auto uf = getUF(param.u1f[0]);
 				printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), strVal[t_UFname]->c_str(), uf.c_str());
 			}

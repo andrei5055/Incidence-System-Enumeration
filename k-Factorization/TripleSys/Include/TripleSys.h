@@ -26,13 +26,13 @@
 #define NRBase					  2
 #define UseP1fCheckGroups         1
 #define USE_BINARY_CANONIZER	  1
-#define UseCnvCheckNewEachRow     1
+#define UseCnvCheckEachRow        6
 #define AllowNotP1FRowsFor3P1F    1 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
 #define Any2RowsConvertToFirst2   1 // Only for 3P1F. (*) If 1, then any two rows must be converted to first 2 rows.
 									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
 									// If 2, then a. no requirement (*), b. same as (*) set of first 2 rows pairs used
-#define GenerateSecondRowsFor3P1F 0 // Only for 3P1F. Use 1 in single thread mode only with NRowsInResultMatrix=2. 
+#define GenerateSecondRowsFor3U1F 0 // Only for 3P1F. Use 1 in single thread mode only with NRowsInResultMatrix=2. 
 									// SW will use on the fly calculated 2nd rows (instead of precalculated '_expected2ndRow3p1f')
 									// Calculated rows will be printed at the end
 #define UseUniform1Factorization  0
@@ -62,7 +62,6 @@
 #define ImprovedResultFolder	  "../ImprovedResults/"	// Name of folder for files with the improved results.
 #define UsePos_1_4_condition 1
 #define UseCheckLinksV 1
-#define UseCheckLinksH 1
 #define UseCheckLinksT 0
 #define StartMatricesFolder		  "../StartMatrices/" 	// Name of folder to save/Load Start Matrices, "" - do not use.
 
@@ -140,7 +139,6 @@ class alldata : private CGroupInfo, CGroupUtilisation, CycleSupport, CChecklLink
 	typedef bool(alldata::*checkP1F)(int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
-	typedef bool(alldata::*checkLinksFn)(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo);
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, bool useCheckLinksT = UseCheckLinksT,
@@ -167,11 +165,6 @@ public:
 		orbits()->resetOrbits((ctchar*)result());
 #endif
 	}
-
-	CC bool checkLinksHResult(tchar* vo);
-	CC bool checkLinksH(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo);
-	CC bool checkLinksH2(ctchar* v, int nv, int nvo, int ind1, int ind2, tchar* vo);
-
 private:
 	CC void Init();
 	inline auto numDays() const					{ return m_numDays; }
@@ -199,7 +192,8 @@ private:
 	CC bool cnvCheckTgNew(ctchar* tr, int nrows);
 	CC bool cnvCheckNew(int iMode, int nrows, bool useAutomorphisms = true);
 	CC bool cnvCheck2P1F(int nrows);
-	CC bool cnvCheck3P1F(int nrows);
+	CC bool cnvCheck2U1F(int nrows);
+	CC bool cnvCheck3U1F(int nrows);
 	void testCanonizatorSpeed();
 	void testRightNeighbor(int nr);
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
@@ -214,13 +208,13 @@ private:
 	CC int checkCurrentResult(bool bPrint, void* pIS_Canonizer = NULL);
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
-	CC void p1fCheckStartMatrix(int nr) const;
+	CC void p1fCheckStartMatrix(int nr);
 	CC bool create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1, ctchar* pfi, ctchar* pfj) const;
 	CC bool create3P1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0);
 	CC bool create3P1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0) const;
-	CC bool create3U1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles,
+	CC bool createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles,
 		ctchar* dir, ctchar* offset, ctchar* start, int iPrint = 0);
 
 
@@ -326,7 +320,6 @@ private:
 	checkP1F m_pCheckP1F;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
-	checkLinksFn m_pCheckLinksH = NULL;
 	checkInvalidCycle m_pInvalidCycle;
 	CBinaryMatrixStorage** m_ppBinMatrStorage = NULL;
 };

@@ -11,9 +11,9 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesMax());
 		myExit(1);
 	}
-	if (m_p1f && m_groupSize > 3)
+	if ((m_p1f || param.val[t_u1f]) && m_groupSize > 3)
 	{
-		printfRed("*** 'UsePerfect1Factorization' cannot be used with 'GroupSize'=%d. Exit\n", m_groupSize);
+		printfRed("*** u1f and/or p1f cannot be used with 'GroupSize'=%d. Exit\n", m_groupSize);
 		myExit(1);
 	}
 

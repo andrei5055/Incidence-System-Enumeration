@@ -52,7 +52,7 @@ CC bool alldata::processOneDay()
 		if (iPlayer == m_numPlayers && iDay > 0)
 		{
 			p1fSetTableRow(p1ftable(iDay), tmpPlayers);
-			if (m_p1f)
+			if (m_p1f || param(t_u1f))
 			{
 				memcpy(result(iDay), tmpPlayers, m_numPlayers);
 				m_playerIndex = m_numPlayers * (iDay + 1) - m_groupSize - 1;

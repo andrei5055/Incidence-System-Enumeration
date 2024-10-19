@@ -66,10 +66,10 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 
 #if 1
 		if ((iDay == m_numDaysResult)
-			|| (UseCnvCheckNewEachRow)
+			|| (UseCnvCheckEachRow && ((iDay % UseCnvCheckEachRow) == 0))
 			|| (param(t_submatrixGroupOrderMin) > 0)
 			|| (param(t_nestedGroups) > 1)
-			|| (m_p1f && (iDay == 6 || m_groupSize == 3))
+			|| (m_p1f && m_groupSize == 3)
 			)
 		{
 			bool bPrev = true;

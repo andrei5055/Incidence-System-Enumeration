@@ -1,7 +1,5 @@
 #pragma once
 
-#define MAX_CYCLE_SETS 30
-#define MAX_CYCLES_PER_SET 6
 class Cycles {
 public:
 	bool defined = false;

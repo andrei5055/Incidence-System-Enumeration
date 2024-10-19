@@ -151,13 +151,13 @@
     <ClCompile Include="Source\checkCurrentResult.cpp" />
     <ClCompile Include="Source\checkLinksT.cpp" />
     <ClCompile Include="Source\checkLinks.cpp" />
-    <ClCompile Include="Source\checkLinksH.cpp" />
     <ClCompile Include="Source\checkLinksV.cpp" />
     <ClCompile Include="Source\CheckMatrix.cpp" />
     <ClCompile Include="Source\checkPlayer1.cpp" />
     <ClCompile Include="Source\checkPlayer3.cpp" />
     <ClCompile Include="Source\cnv.cpp" />
     <ClCompile Include="Source\cnvSupport.cpp" />
+    <ClCompile Include="Source\cnvSupport2.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
     <ClCompile Include="Source\cycles.cpp" />

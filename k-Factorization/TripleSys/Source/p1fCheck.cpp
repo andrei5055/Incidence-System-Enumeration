@@ -1,26 +1,5 @@
 #include "TripleSys.h"
 #include "p1fCheck.h"
-inline void p1ftmp14(tchar* ro, const tchar* ri, int nc)
-{
-	P1FT(0);
-	P1FT(2);
-	P1FT(4);
-	P1FT(6);
-	P1FT(8);
-	P1FT(10);
-	P1FT(12);
-}
-inline void p1ftmp16(tchar* ro, const tchar* ri, int nc)
-{
-	P1FT(0);
-	P1FT(2);
-	P1FT(4);
-	P1FT(6);
-	P1FT(8);
-	P1FT(10);
-	P1FT(12);
-	P1FT(14);
-}
 CC void CChecklLink::p1fSetTableRow(tchar* ro, const tchar* ri) const
 {
 	if (m_groupSize == 3)
@@ -29,29 +8,13 @@ CC void CChecklLink::p1fSetTableRow(tchar* ro, const tchar* ri) const
 		{
 			P1FT3(i);
 		}
-		if (ro[7] == ro[6])
-		{
-			printTable("ri", ri, 1, 15, 3);
-			printTable("ro", ro, 1, 15, 3);
-		}
 	}
-	else 
-	if (m_groupSize == 2)
+	else if (m_groupSize == 2)
 	{
-#if !USE_CUDA
-		switch (m_numPlayers) {
-			case 14: p1ftmp14(ro, ri, m_numPlayers); break;
-			case 16: p1ftmp16(ro, ri, m_numPlayers); break;
-			default:
-#endif
-				for (int i = 0; i < m_numPlayers; i += 2)
-				{
-					P1FT(i);
-				}
-#if !USE_CUDA
-				break;
+		for (int i = 0; i < m_numPlayers; i += 2)
+		{
+			P1FT(i);
 		}
-#endif
 	}
 }
 CC int u1fCheck(ctchar* u1f, int nu1f, const tchar* rowir, int ir, int nc, const tchar* t1)
@@ -392,96 +355,7 @@ char *alldata::matrixStatOutput(char* str, int maxStr) const
 	}
 	return retVal;
 }
-CC int CChecklLink::p1fCheck(int nr, const tchar* newRow) const
-{
-	// checks newRow to be p1f or requested u1f (by checkin newRow with existing rows)
-	// returns rejected row number (0:nr-1), or -1(no rejections)
-	const auto nc = m_numPlayers;
-	ASSERT(nc & 1);
 
-	const int nrMinus1 = nr - 1;
-	auto* t1 = p1ftable(nrMinus1);
-	CUDA_PRINTF("*** p1fCheck: before p1fSetTableRow  t1 = %p  nr = %d  nc = %d\n", t1, nr, nc);
-	// already calculated p1fSetTableRow(t1, newRow);
-	CUDA_PRINTF("*** p1fCheck: after p1fSetTableRow  nr = %d\n", nr);
-	if (param(t_u1f))
-		return u1fCheckFunc(nr, t1);	
-
-	auto* rowi = p1ftable();
-	tchar t2[MAX_PLAYER_NUMBER];
-	CUDA_PRINTF("*** p1fCheck: befor switch  nc = %d\n", nc);
-	switch (nc) {
-#if MAX_PLAYER_NUMBER > 10
-		case 16:
-		{
-			for (int i = 0; i < nrMinus1; i++, rowi += nc)
-			{
-				Stat_p1fCheck("p1f(all)", 0, true);
-				tchar k = 0, k1;
-				memcpy(t2, rowi, nc);
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				Stat_p1fCheck("not rej", 11, true);
-			}
-			return -1;
-		}
-		case 14:
-		{
-			for (int i = 0; i < nrMinus1; i++, rowi += nc)
-			{
-				Stat_p1fCheck("p1f(all)", 0, true);
-				tchar k = 0, k1;
-				memcpy(t2, rowi, nc);
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				Stat_p1fCheck("not rej", 11, true);
-			}
-			return -1;
-		}
-		case 12:
-		{
-			for (int i = 0; i < nrMinus1; i++, rowi += nc)
-			{
-				Stat_p1fCheck("p1f(all)", 0, true);
-				tchar k = 0, k1;
-				memcpy(t2, rowi, nc);
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				P1F();
-				Stat_p1fCheck("not rej", 11, true);
-			}
-			return -1;
-		}
-#endif
-		default:
-		{
-			for (int i = 0; i < nrMinus1; i++, rowi += nc)
-			{
-				Stat_p1fCheck("p1f(all)", 0, true);
-				tchar k = 0, k1;
-				memcpy(t2, rowi, nc);
-				for (int j = 2; j < nc; j += 2)
-				{
-					P1F();
-				}
-				Stat_p1fCheck("not rej", 11, true);
-			}
-			return -1;
-		}
-	}
-	return -1;
-}
 CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
 {
 	if (ncr != 1)
@@ -550,7 +424,7 @@ CC int CChecklLink::u1fCheckFunc(const int nr, const tchar* rowm) const
 		if (nr != nc - 1)
 			break;
 	}
-	/**/
+	/**/ // below is check for full matrix that all UF defined cycles are present. Do we need it?
 	if (nr == nc - 1)
 	{
 		while (nu--)
@@ -705,7 +579,7 @@ CC int alldata::p1fCheck2ndRow() const
 	{
 		if (nc < 9 || nc > 27)
 			return 0;
-#if GenerateSecondRowsFor3P1F
+#if GenerateSecondRowsFor3U1F
 		return 0;
 #endif
 		ctchar* p;
@@ -737,15 +611,21 @@ CC int alldata::p1fCheck2ndRow() const
 	return MEMCMP(p2ndRow, expectedSecondRow[(nc - 4) / 2], nc);
 }
 
-CC void alldata::p1fCheckStartMatrix(int nr) const
+CC void alldata::p1fCheckStartMatrix(int nr) 
 {
-	for (int i = 0; i < nr; i++)
+	for (int i = 1; i < nr; i++)
 	{
-		const auto irow = p1fCheck(i+1, result(i));
+		TrCycles trCycles;
+		int iret = getCyclesAndPath(&trCycles, 1, p1ftable(0), p1ftable(i));
+		if (iret) {
+			auto u1fPntr = sysParam()->u1f[0];
+			if ((!u1fPntr && trCycles.ncycles != 1) || (MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
+				iret = 0;
+		}
 		CUDA_PRINTF("*** p1fCheck DONE for i = %d  irow = %d\n", i, irow);
-		ASSERT(irow >= 0, 
-			printfRed("*** Error in input 'Start matrix' - not p1f matrix (rows (%d, %d) are not p1f), Exit\n", irow, i);
-			printTable("Incorrect 'Start p1f matrix'", result(), nr, m_numPlayers, m_groupSize, 0, true);
+		ASSERT(iret <= 0, 
+			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not p1f/u1f), Exit\n", i);
+			printTable("Incorrect 'Start matrix'", result(), nr, m_numPlayers, m_groupSize);
 			myExit(1);
 		)
 	}
@@ -777,14 +657,6 @@ CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2)
 		case 15: {
 			P3Cycles5();
 			memcpy(allv + nv * gn, v, gn);
-			/**
-			if (ir1 == 5 && ir2 == 6)
-			{
-				printTable("r", result(0), 7, 15, 3);
-				printTable("v", v, 1, 5, 3);
-				if (v[0] > v[1])
-					nv = nv;
-			}**/
 			nv++;
 			if (nv >= maxv)
 				return nv;
