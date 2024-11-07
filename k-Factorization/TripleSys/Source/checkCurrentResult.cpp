@@ -31,14 +31,17 @@ CC void alldata::goBack()
 	{
 		getPrevPlayer();
 	}
+	m_playerIndex = 0;
 }
 CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 {
 	// function returns : -1 - prev result, 0 - continue, 1 - eoj
+	m_playerIndex = iDay * m_numPlayers - m_groupSize - 1;
 	if (iDay > 1)
 	{
-		m_playerIndex = iDay * m_numPlayers - m_groupSize - 1;
-		if (m_p1f && !param(t_u1f)) {
+		if (!checkLinksV2(links(), iDay))
+			return -1;
+		if (m_use2RowsCanonization && !param(t_u1f)) {
 			if (iDay == 2)
 			{
 				switch (p1fCheck2ndRow()) {
@@ -57,7 +60,7 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 			return -1;
 #if 0 // looks like we do not need it (matrixStat used in processOneDay and checkLinkH)
 #if !USE_CUDA// double check in some cases
-		if (m_p1f && m_groupSize == 3 && !matrixStat(p1ftable(), iDay))
+		if (m_use2RowsCanonization && m_groupSize == 3 && !matrixStat(neighbors(), iDay))
 		{
 			return -1;
 		}
@@ -65,11 +68,12 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 #endif
 
 #if 1
-		if ((iDay == m_numDaysResult)
-			|| (UseCnvCheckEachRow && ((iDay % UseCnvCheckEachRow) == 0))
+		if ((iDay == numDaysResult())
+			|| checkCanonicity()
 			|| (param(t_submatrixGroupOrderMin) > 0)
 			|| (param(t_nestedGroups) > 1)
-			|| (m_p1f && m_groupSize == 3)
+			|| (m_use2RowsCanonization && m_groupSize == 3)
+			|| (m_useRowsPrecalculation == eCalculateRows)
 			)
 		{
 			bool bPrev = true;
@@ -101,5 +105,6 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 		}
 #endif
 	}
+	m_playerIndex = 0;
 	return 0;
 }

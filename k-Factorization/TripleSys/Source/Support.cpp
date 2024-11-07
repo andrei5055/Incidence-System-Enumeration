@@ -185,6 +185,9 @@ CC void alldata::updateIndexPlayerMinMax()
 			{
 				m_indexPlayerMin[1] = m_indexPlayerMax[1] = iDay + 1;
 				m_indexPlayerMax[2] = 1;
+
+				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 			}
 		}
 		else if (m_groupSize == 3)
@@ -212,5 +215,4 @@ CC void alldata::setArraysForLastRow(int nrows)
 	for (int i = 0; i < m_numPlayers; i++)
 		selPlayers[tmpPlayers[i]] = i;
 	iPlayer = m_numPlayers;
-	m_playerIndex = m_numPlayers * nrows - m_groupSize - 1;
 }

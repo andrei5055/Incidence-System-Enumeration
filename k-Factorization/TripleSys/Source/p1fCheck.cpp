@@ -1,50 +1,56 @@
 #include "TripleSys.h"
 #include "p1fCheck.h"
-CC void CChecklLink::p1fSetTableRow(tchar* ro, const tchar* ri) const
+CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri) const
 {
 	if (m_groupSize == 3)
 	{
 		for (int i = 0; i < m_numPlayers; i += 3)
 		{
-			P1FT3(i);
+			U1FT3(i);
 		}
 	}
 	else if (m_groupSize == 2)
 	{
 		for (int i = 0; i < m_numPlayers; i += 2)
 		{
-			P1FT(i);
+			U1FT(i);
 		}
 	}
 }
-CC int u1fCheck(ctchar* u1f, int nu1f, const tchar* rowir, int ir, int nc, const tchar* t1)
+CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int nc)
 {
-	// returns rejected row number (0:nr-1), or -1(no rejections)
-	tchar t2[MAX_PLAYER_NUMBER];
-	tchar k = 0, k1;
-	memcpy(t2, rowir, nc);
-	int i = ir; // needed for macros below
-	for (int iu1f = 0; iu1f < nu1f; iu1f++)
-	{
-		if (!u1f[iu1f])
-			break;
-		if (iu1f)
-		{
-			for (k1 = 0; k1 < nc; k1++)
-				if (t2[k1] != unset)
-					break;
-			if (k1 >= nc)
-				return i;
-			k = t2[k1];
-		}
-		for (int j = 0; j < u1f[iu1f] / 2; j++)
-		{
-			P1F();
-		}
-		P1FN();
+	unsigned int cyclesBitsDef = 0;
+	unsigned int checked = 0;
+	int ncycles = 0;
+	if (u1fCycles) {
+		while (ncycles < MAX_UNIFOM_CONF_LENGTH && u1fCycles[1 + ncycles])
+			cyclesBitsDef |= 1 << u1fCycles[1 + ncycles++];
 	}
-	return -1;
+	else {
+		cyclesBitsDef = 1 << nc;
+		ncycles = 1;
+	}
+	tchar k = 0;
+	for (tchar m = 0; m < nc; m++)
+	{
+		if (!(checked & (1 << m))) {
+			k = m;
+			for (int i = 2; i <= nc; i += 2)
+			{
+				if ((k = neighborsj[neighborsi[k]]) == m) {
+					if (!(cyclesBitsDef & (1 << i)))
+						return false;
+					if (!(--ncycles))
+						return true;
+					break;
+				}
+				checked |= 1 << k;
+			}
+		}
+	}
+	return false;
 }
+
 CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles)
 {
 	for (int j = 1; j < ncycles; j++) {
@@ -275,14 +281,13 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
 		return true;
-	// program returns false if there is not full cycle
 	bool ret = true;
 	const auto nc = m_numPlayers;
 	const auto ncr = pNeedOutput ? MAX_CYCLE_SETS : 1;
 
 	memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
 
-	if (m_p1f && !param(t_u1f) && m_groupSize == 3 && !pNeedOutput)
+	if (m_use2RowsCanonization && !param(t_u1f) && m_groupSize == 3 && !pNeedOutput)
 	{
 		m_p1f_counter++;
 		if (!(m_p1f_counter % 10000000))
@@ -360,7 +365,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
 {
 	if (ncr != 1)
 		return false;
-	auto pntr = m_param->u1f[0];
+	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
 		return ncycles == 1 && length[0] != m_numPlayers;
 	const auto ngrp = pntr[0];
@@ -375,7 +380,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
 
 CC bool CChecklLink::cycleLengthOk(tchar length)
 {
-	auto pntr = m_param->u1f[0];
+	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
 		return length == m_numPlayers;
 	const auto ngrp = pntr[0];
@@ -390,113 +395,67 @@ CC bool CChecklLink::cycleLengthOk(tchar length)
 	}
 	return false;
 }
-CC int CChecklLink::u1fCheckFunc(const int nr, const tchar* rowm) const
-{
-	const auto u1f = m_param->u1f[0] + 1;
-	auto nu = *(u1f - 1);
-	auto u1ft = u1f + nu * MAX_UNIFOM_CONF_LENGTH;
-	memset(u1ft, 0, nu);
-
-	const auto nc = m_numPlayers;
-	for (auto m = nr; --m > 0; rowm -= nc)
-	{
-		auto* rowi = p1ftable();
-		for (int i = 0; i < m; i++, rowi += nc)
-		{
-			Stat_p1fCheck("u1f(all)", 0, true);
-			auto u1f_j = u1f;
-			for (int j = 0; j < nu; j++)
-			{
-				if (u1fCheck(u1f_j, MAX_UNIFOM_CONF_LENGTH, rowi, i, nc, rowm) < 0)
-				{
-					u1ft[j] = unset;
-					goto nextRow;
-				}
-				if (u1ft[j] != unset)
-					u1ft[j] = m;
-
-				u1f_j += MAX_UNIFOM_CONF_LENGTH;
-			}
-			return m;
-		nextRow:
-			continue;
-		}
-		if (nr != nc - 1)
-			break;
-	}
-	/**/ // below is check for full matrix that all UF defined cycles are present. Do we need it?
-	if (nr == nc - 1)
-	{
-		while (nu--)
-			if (u1ft[nu] != unset)
-				return u1ft[nu];
-	}
-	/**/
-	return -1;
-}
 	
-CC int p1fCheckGroups(int iv, int ic, int nc, ctchar* lnk, ctchar* v)
+CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, ctchar* v)
 {
+	// v - array with values already in current row
+	// iv - candidate for v[ic]
+	// 0 v1  v2 v3  v4 v5 ...
+	// ... a1 b1 ... a0 b0 - 2 groups from v (b0 = candidate)
+	// sw checks that there are two groups in some of prior: [a1 a0...b1 b0] or [a1 b0...b1 a0]
+	// if yes, then there is a loop with length 4
 	auto a0 = v[ic - 1];
 	auto* la0 = lnk + a0 * nc;
-	while (iv < nc)
+	auto b0 = iv;
+	auto* lb0 = lnk + b0 * nc;
+	for (tchar i = 0; i < ic - 1; i += 2)
 	{
-		auto b0 = iv;
-		auto* lb0 = lnk + b0 * nc;
-		for (int i = 0; i < ic - 1; i += 2)
-		{
-			auto a1 = v[i];
-			auto b1 = v[i + 1];
-			auto a0a1 = *(la0 + a1);
+		auto a1 = v[i];
+		auto b1 = v[i + 1];
+		auto a0a1 = *(la0 + a1); // from link table for a0,a1 - day when group used, or unset
+		if (a0a1 != unset) {
 			auto b0b1 = *(lb0 + b1);
-
-			//Stat_p1fCheck("p1f(all)", 0, true);
-
-			if (a0a1 != unset && a0a1 == b0b1)
-				goto nextPlayer;
-			auto b0a1 = *(lb0 + a1);
-			auto a0b1 = *(la0 + b1);
-			if (b0a1 != unset && b0a1 == a0b1)
-				goto nextPlayer;
-#define UseP1FCheck6 0 // if enabled then 50%-100% more time needed
-#if UseP1FCheck6
-			auto* la1 = lnk + a1 * nc;
-			auto* lb1 = lnk + b1 * nc;
-			for (int j = i + 2; j < ic - 1; j += 2)
-			{
-				// a1:b1 a2:b2 a0:b0
-				auto a2 = v[j];
-				auto b2 = v[j + 1];
-				auto b1a2 = *(lb1 + a2);
-				auto b0b2 = *(lb0 + b2);
-				auto b1b2 = *(lb1 + b2);
-				auto b0a2 = *(lb0 + a2);
-				P1FCheck6(a0a1, b1a2, b0b2, b1b2, b0a2);
-				auto a0a2 = *(la0 + a2);
-				auto a0b2 = *(la0 + b2);
-				P1FCheck6(b0a1, b1a2, a0b2, b1b2, a0a2);
-				auto a1b2 = *(la1 + b2);
-				P1FCheck6(a0a2, a1b2, b0b1, b1b2, b0a1);
-				P1FCheck6(b0a2, a1b2, a0b1, b1b2, a0a1);
-				auto a1a2 = *(la1 + a2);
-				P1FCheck6(a0b1, a1a2, b0b2, a1b2, b0a2);
-				P1FCheck6(b0b1, a1a2, a0b2, a1b2, a0a2);
-				P1FCheck6(a0b2, a1a2, b0b1, b1a2, b0a1);
-				P1FCheck6(b0b2, b1a2, a0a1, a1a2, a0b1);
-			}
-#endif
+			if (a0a1 == b0b1)
+				return iv + 1;
 		}
-		break;
-#if UseP1FCheck6
-	nextPlayer6: iv++; 
-		//Stat_p1fCheck("rej6", 2, true);
-		break; // only one correction
+		auto b0a1 = *(lb0 + a1);
+		if (b0a1 != unset) {
+			auto a0b1 = *(la0 + b1);
+			if (b0a1 == a0b1)
+				return iv + 1;
+		}
+#define UseU1FCheck6 0 // if enabled then 50%-100% more time needed
+#if UseU1FCheck6
+		auto* la1 = lnk + a1 * nc;
+		auto* lb1 = lnk + b1 * nc;
+		for (int j = i + 2; j < ic - 1; j += 2)
+		{
+			// a1:b1 a2:b2 a0:b0
+			auto a2 = v[j];
+			auto b2 = v[j + 1];
+			auto b1a2 = *(lb1 + a2);
+			auto b0b2 = *(lb0 + b2);
+			auto b1b2 = *(lb1 + b2);
+			auto b0a2 = *(lb0 + a2);
+			U1FCheck6(a0a1, b1a2, b0b2, b1b2, b0a2);
+			auto a0a2 = *(la0 + a2);
+			auto a0b2 = *(la0 + b2);
+			U1FCheck6(b0a1, b1a2, a0b2, b1b2, a0a2);
+			auto a1b2 = *(la1 + b2);
+			U1FCheck6(a0a2, a1b2, b0b1, b1b2, b0a1);
+			U1FCheck6(b0a2, a1b2, a0b1, b1b2, a0a1);
+			auto a1a2 = *(la1 + a2);
+			U1FCheck6(a0b1, a1a2, b0b2, a1b2, b0a2);
+			U1FCheck6(b0b1, a1a2, a0b2, a1b2, a0a2);
+			U1FCheck6(a0b2, a1a2, b0b1, b1a2, b0a1);
+			U1FCheck6(b0b2, b1a2, a0a1, a1a2, a0b1);
+		}
 #endif
-	nextPlayer: iv++;
-		//Stat_p1fCheck("rej4", 3, true);
-		break; // only one correction
 	}
 	return iv;
+#if UseU1FCheck6
+	nextPlayer6 : return iv + 1;
+#endif
 }
 CC ctchar* alldata::expected2ndRow3p1f(int iSet) const
 {
@@ -507,8 +466,8 @@ CC ctchar* alldata::expected2ndRow3p1f(int iSet) const
 	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 10, 13,   8, 11, 14
 	};
 	static tchar _expected2ndRow3p1f_21[] = {
-	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20, // Use3P1F_21_669_912
-#if AllowNotP1FRowsFor3P1F
+	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20, // Use3U1F_21_669_912
+#if AllowNotP1FRows
 	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20,
 	  0,  3,  6,   1,  4,  7,   2,  5,  9,   8, 10, 12,  11, 15, 18,  13, 16, 19,  14, 17, 20,
 	  0,  3,  6,   1,  4,  7,   2,  5,  9,   8, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20,
@@ -517,7 +476,7 @@ CC ctchar* alldata::expected2ndRow3p1f(int iSet) const
 #if Any2RowsConvertToFirst2 == 0
 	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 11, 18,  13, 16, 19,  14, 17, 20, // all cycles 21
 #endif
-#if AllowNotP1FRowsFor3P1F
+#if AllowNotP1FRows
 #if Any2RowsConvertToFirst2 == 0
 	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 13, 18,  11, 16, 19,  14, 17, 20,
 #endif
@@ -530,8 +489,8 @@ CC ctchar* alldata::expected2ndRow3p1f(int iSet) const
 	  0,  3,  6,   1,  9, 12,   2, 15, 18,   4, 10, 16,   5, 13, 19,   7, 11, 20,   8, 14, 17, // all cycles 21, has tr to r1, r2
 	};
 	static tchar _expected2ndRow3p1f_27[] = { 
-		// below: one 3U1F {9,9,9} and three pure 3P1F second rows.
-	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 16,  11, 14, 17,  18, 21, 24,  19, 22, 25,  20, 23, 26, // Use3P1F_27_999
+		// below: one 3U1F {9,9,9} and three pure 3U1F second rows.
+	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 16,  11, 14, 17,  18, 21, 24,  19, 22, 25,  20, 23, 26, // Use3U1F_27_999
 	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 15, 18,  11, 16, 19,  14, 21, 24,  17, 22, 25,  20, 23, 26,
 	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 15, 18,  11, 21, 24,  14, 22, 25,  16, 19, 23,  17, 20, 26,
 	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 11, 18,  13, 16, 19,  14, 21, 24,  17, 22, 25,  20, 23, 26
@@ -616,15 +575,15 @@ CC void alldata::p1fCheckStartMatrix(int nr)
 	for (int i = 1; i < nr; i++)
 	{
 		TrCycles trCycles;
-		int iret = getCyclesAndPath(&trCycles, 1, p1ftable(0), p1ftable(i));
+		int iret = getCyclesAndPath(&trCycles, 1, neighbors(0), neighbors(i));
 		if (iret) {
-			auto u1fPntr = sysParam()->u1f[0];
+			auto u1fPntr = sysParam()->u1fCycles[0];
 			if ((!u1fPntr && trCycles.ncycles != 1) || (MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
 				iret = 0;
 		}
 		CUDA_PRINTF("*** p1fCheck DONE for i = %d  irow = %d\n", i, irow);
 		ASSERT(iret <= 0, 
-			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not p1f/u1f), Exit\n", i);
+			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not p1f/u1fCycles), Exit\n", i);
 			printTable("Incorrect 'Start matrix'", result(), nr, m_numPlayers, m_groupSize);
 			myExit(1);
 		)
@@ -634,7 +593,7 @@ CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2)
 {
 	// Get up to maxv sets of "common" values from rows ir1, ir2.
 	// Each value in one set of "common" values present only in one group of row ir1 and in one group of row ir2.
-	tchar* t2 = pt2 ? pt2 : p1ftable(ir2);
+	tchar* t2 = pt2 ? pt2 : neighbors(ir2);
 	int nc = m_numPlayers;
 	int gn = m_nGroups;
 	tchar* res1 = result(ir1);

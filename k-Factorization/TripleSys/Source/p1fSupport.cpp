@@ -11,7 +11,7 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		itr = pf1[itr];
 		v1 = pfj[v2];
 	}
-#if 1
+#if _DEBUG
 	int s = 0;
 	for (itr = 0; itr < m_numPlayers; itr++) {
 		ASSERT(tr[itr] == unset || tr[itr] >= m_numPlayers);
@@ -31,12 +31,12 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 #endif
 	return true;
 }
-CC bool alldata::create3P1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
+CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 	ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint) const
 {
 	tchar a0, b0, c0, a1, b1, c1;
-	tchar* ti0 = p1ftable(ir0);
-	tchar* ti1 = p1ftable(ir1);
+	tchar* ti0 = neighbors(ir0);
+	tchar* ti1 = neighbors(ir1);
 	ctchar* res0 = result();
 	auto* resi0 = result(ir0);
 	auto* resi1 = result(ir1);
@@ -220,7 +220,7 @@ CC bool alldata::create3P1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 #endif
 				goto falseret;
 			}
-			s += 1 << tr[i];
+			s |= 1 << tr[i];
 		}
 		if (s != (1 << m_numPlayers) - 1)
 			goto falseret;
@@ -240,7 +240,7 @@ CC bool alldata::getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar*
 	return getCyclesAndPath(trc, 1, tt1, tt2, tt3, tt4);
 }
 
-CC bool alldata::create3P1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
+CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 	ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint)
 {
 	TrCycles trCycles01;
@@ -248,7 +248,7 @@ CC bool alldata::create3P1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v
 	m_numCycles = 0;
 	if (!getCyclesAndPath3(&trCycles01, v0, t0, t1, result(), res1))
 		return false;
-	if (!getCyclesAndPath3(&trCycles, v1, p1ftable(ir0), p1ftable(ir1), result(ir0), result(ir1)))
+	if (!getCyclesAndPath3(&trCycles, v1, neighbors(ir0), neighbors(ir1), result(ir0), result(ir1)))
 		return false;
 	if (MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET) != 0)
 		return false;

@@ -4,21 +4,21 @@
 #define sort3bytes(a, b, c) \
 	if (a > b) SWAP(a, b); if (a > c) SWAP(a, c); if (b > c) SWAP(b, c)
 
-#define P1F() \
+#define U1F() \
 	if ((k = t2[k1 = t1[k]]) == unset) \
 		return i; \
 	t2[k] = t2[k1] = unset
 
-#define P1FN() \
+#define U1FN() \
 	if ((k = t2[k1 = t1[k]]) != unset) \
 		return i
 
-#define P1FT(i) ro[ro[ri[i]] = ri[i + 1]] = ri[i]
+#define U1FT(i) ro[ro[ri[i]] = ri[i + 1]] = ri[i]
 
-//#define P1FT3(i) ro[ri[i]] = ri[i+1]; ro[ri[i+1]] = ri[i+2]; ro[ri[i+2]] = ri[i]
-#define P1FT3(i) ro[ri[i]] = i; ro[ri[i+1]] = i+1; ro[ri[i+2]] = i+2
+//#define U1FT3(i) ro[ri[i]] = ri[i+1]; ro[ri[i+1]] = ri[i+2]; ro[ri[i+2]] = ri[i]
+#define U1FT3(i) ro[ri[i]] = i; ro[ri[i+1]] = i+1; ro[ri[i+2]] = i+2
 
-#define P1FCheck6(a, b, c, d, e) if (a != unset && \
+#define U1FCheck6(a, b, c, d, e) if (a != unset && \
 	((a == b && a == c) || (a == d && a == e))) \
 		goto nextPlayer6
 

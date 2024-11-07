@@ -1,10 +1,10 @@
 #include "TopGun.h"
 
 void RunThread(int threadNumber, int iMode,
-	TopGun *pMaster, tchar* mstart0, tchar* mstart, sLongLong* pcnt, bool firstThread)
+	TopGun *pMaster, tchar* mstart0, tchar* mstart, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
-	alldata sys(*pMaster, pMaster->paramPtr());
-	sys.Run(threadNumber, iMode, mstart0, mstart, pMaster->nRowsStart(), pMaster->nRowsOut(), pcnt, 0, firstThread);
+	alldata sys(*pMaster, pMaster->paramPtr(), pRowStorage);
+	sys.Run(threadNumber, iMode, mstart0, mstart, pMaster->nRowsStart(), pMaster->nRowsOut(), pcnt, 0, iThread);
 	if (pMaster->descrStorage())
 		pMaster->addMatrixDB(sys.matrixDB());
 	else
@@ -32,19 +32,21 @@ void TopGun::threadStopped(int iTask)
 	threadActive[iTask] = false;
 	//printf("thread %d stopped\n", iTask + 1);
 }
-void TopGun::startThread(int iTask)
+void TopGun::startThread(int iTask, int iMode, bool bOnlyStart, CRowStorage* pRowStorage)
 {
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
-	threads[iTask] = std::thread{ RunThread, ++m_iTaskSeq, eCalcResult,
-		this, mstart, mstart, m_cnt + iTask * 2, iTask == 0};
+	threads[iTask] = std::thread{ RunThread, ++m_iTaskSeq, iMode,
+		this, mstart, mstart, m_cnt + iTask * 2, iTask, pRowStorage};
 	threadActive[iTask] = true;
 #if 0
 	printfRed("*** Thread %d ", iTask + 1);
 	printTable("Start matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
 #endif
-	mstart += mStartMatrixSize;
-	m_iMatrix += 1;
+	if (!bOnlyStart) {
+		mstart += mStartMatrixSize;
+		m_iMatrix += 1;
+	}
 }
 
 void TopGun::myTemporaryCheck()

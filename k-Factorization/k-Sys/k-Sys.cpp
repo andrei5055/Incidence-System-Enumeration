@@ -9,7 +9,7 @@ const char* intParamNames[]{
 	"nPlayers",
 	"GroupSize",
 	"UseUniform1Factorization",
-	"UsePerfect1Factorization",
+	"Use2RowsCanonization",
 	"SubmatrixGroupOrderMin",
 	"ResultGroupOrderMin",
 	"USE_GPU",
@@ -21,8 +21,10 @@ const char* intParamNames[]{
 	"NRowsInResultMatrix",
 	"ExpectedResult",
 	"UseCheckLinksV",
+	"UseRowsPrecalculation",
 	"PrintMatrices",
 	"SavingMatricesToDisk",
+	"MatrixCanonInterval",
 	"CheckConstructedMatrices",
 	"UseSS",
 	"p1f_counter",
@@ -42,7 +44,7 @@ const char* intParamNames[]{
 };
 
 const char* strParamNames[]{
-	"UFName",
+	"U1FName",
 	"StartFolder",
 	"ResultFolder",
 	"ImprovedResultFolder",
@@ -52,7 +54,7 @@ const char* strParamNames[]{
 };
 
 const char* arrayParamNames[]{
-	"UF"
+	"U1FCycles"
 };
 
 using namespace std;
@@ -314,7 +316,7 @@ bool getParameters(ifstream& infile, const paramDescr *par, int nDescr, kSysPara
 				if (j == 1)
 					rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
 				else
-					rc = getParam<tchar*>(line, paramNames[i], &param.u1f[i]);
+					rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
 			}
 
 			if (i >= 0) {
@@ -362,7 +364,7 @@ int factorial(int n) {
 }
 int main(int argc, const char* argv[])
 {
-	std::cout << "k - Sys 10.01\n";
+	std::cout << "k - Sys 10.61\n";
 
 	paramDescr par[] = { 
 		intParamNames, countof(intParamNames), 
@@ -397,7 +399,7 @@ int main(int argc, const char* argv[])
 	val[t_numPlayers] = nPlayers;
 	val[t_groupSize] = GroupSize;
 	val[t_u1f] = UseUniform1Factorization;
-	val[t_p1f] = UsePerfect1Factorization;
+	val[t_use2RowsCanonization] = Use2RowsCanonization;
 	val[t_submatrixGroupOrderMin] = SubmatrixGroupOrderMin;
 	val[t_resultGroupOrderMin] = ResultGroupOrderMin;
 	val[t_useGPU] = USE_GPU;
@@ -422,15 +424,15 @@ int main(int argc, const char* argv[])
 	// Set default string parameters:
 	auto* strVal = param.strVal;
 	memset(strVal, 0, t_lastStrParam * sizeof(strVal[0]));
-	if (UFName && strlen(UFName))
-		strVal[t_UFname] = new string(UFName);
+	if (U1FName && strlen(U1FName))
+		strVal[t_UFname] = new string(U1FName);
 
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
 	strVal[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
 
-	for (int i = 0; i < countof(param.u1f); i++)
-		param.u1f[i] = 0;
+	for (int i = 0; i < countof(param.u1fCycles); i++)
+		param.u1fCycles[i] = 0;
 
 	string* testToRun = NULL;
 	ifstream* infile = NULL;
@@ -465,8 +467,8 @@ int main(int argc, const char* argv[])
 			const auto numPlayers = val[t_numPlayers];
 			const auto groupSize = val[t_groupSize];
 			const auto useGPU = val[t_useGPU];
-			if (!param.u1f[0])
-				val[t_u1f] = 0;
+			//leoif (!param.u1fCycles[0])
+			//leo	val[t_u1f] = 0;
 
 			char buffer[64];
 			if (testName)
@@ -495,9 +497,16 @@ int main(int argc, const char* argv[])
 
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
 			if (val[t_u1f]) {
-				//val[t_p1f] = 1;		leo		// must be 1 with UF
-				const auto uf = getUF(param.u1f[0]);
-				printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), strVal[t_UFname]->c_str(), uf.c_str());
+				if (!val[t_use2RowsCanonization])
+					printfYellow(" 1 row canonization %s\n", val[t_groupSize] > 3 || val[t_numPlayers] < 12  ? "" : "(can be slow)");
+				else
+					printfGreen(" 2 rows canonization\n");
+				if (param.u1fCycles[0]) {
+					const auto uf = getUF(param.u1fCycles[0]);
+					printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), strVal[t_UFname]->c_str(), uf.c_str());
+				}
+				else
+					printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), val[t_numPlayers]);
 			}
 			else {
 				printfGreen("%s-matrices ", getFileNameAttr(&param));
@@ -508,7 +517,6 @@ int main(int argc, const char* argv[])
 				printfGreen("%d CPU threads\n", val[t_numThreads]);
 			else
 				printfGreen("%cPU\n", useGPU ? 'G' : 'C');
-
 
 			bool testOK = checkInputParam(param, intParamNames);
 			if (testOK) {
@@ -564,8 +572,8 @@ int main(int argc, const char* argv[])
 		delete strVal[j];
 
 	for (int j = par[2].numParams; j--;)
-		for (int i = 0; i < countof(param.u1f); i++)
-			delete [] param.u1f[i];
+		for (int i = 0; i < countof(param.u1fCycles); i++)
+			delete [] param.u1fCycles[i];
 
 	delete infile;
 	delete testToRun;

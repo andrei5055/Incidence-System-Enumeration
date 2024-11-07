@@ -36,8 +36,8 @@ bool TopGunBase::readStartMatrices() {
 
 int TopGunBase::getStartMatrices() const
 {
-	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[UFName]/MatrixID.txt
-	// StartFolder, Columns, Rows, GroupSize, UFName - input parameters
+	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[U1FName]/MatrixID.txt
+	// StartFolder, Columns, Rows, GroupSize, U1FName - input parameters
 	// MatrixID: starts from prefix (P, K, U, PM, KM, UM), then 10 digits and extension ".txt"
 	// Examples: 
 	//   Logs/16x15x2/PM0123456789.txt 
@@ -134,12 +134,12 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			}
 			break;
 		default:
-			if (paramPtr()->u1f[0]) {
+			if (paramPtr()->u1fCycles[0]) {
 				fprintf(f, "\nU1F configurations:\n");
 				char buffer[128], *pBuf = buffer;
 				const auto lenBuf = countof(buffer);
 				SPRINTFS(pBuf, buffer, lenBuf, "%c", '{');
-				auto pntr = paramPtr()->u1f[0];
+				auto pntr = paramPtr()->u1fCycles[0];
 				const auto ngrp = pntr[0];
 				pntr++;
 				tchar symb;

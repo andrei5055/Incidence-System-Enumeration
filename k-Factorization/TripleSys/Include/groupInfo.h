@@ -3,13 +3,14 @@
 #include "Global.h"
 #include "Stat.h"
 #include "GroupOrder.h"
+#include "Storage.h"
 
 class SizeParam {
 public:
 	CC SizeParam(const kSysParam& p) :
 		m_numPlayers(p.val[t_numPlayers]),
 		m_groupSize(p.val[t_groupSize]),
-		m_p1f(p.val[t_p1f]),
+		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
 		m_numDays((m_numPlayers - 1) / (m_groupSize - 1)) {}
 protected:
@@ -18,7 +19,7 @@ protected:
 	void createFolderAndFileName(std::string& fnn, const kSysParam* param, int tFolder, int nr, const std::string* fName = NULL) const;
 	const int m_numPlayers;
 	const int m_groupSize;
-	const int m_p1f;
+	const int m_use2RowsCanonization;
 	const int m_groupSizeFactorial;
 	const int m_numDays;
 };
@@ -72,17 +73,17 @@ public:
 	CC bool checkLinks(tchar* c, int id, bool printLinksStatTime = false);
 	CC bool cycleLengthOk(tchar length);
 	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles);
+	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 protected:
-	CC void p1fSetTableRow(tchar* ro, ctchar* ri) const;
-	CC inline auto* p1ftable(int nDay = 0) const { return m_pP1Ftable + nDay * m_numPlayers; }
+	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;
+	CC inline auto* neighbors(int nDay = 0) const { return m_pU1Ftable + nDay * m_numPlayers; }
 	CC inline void set_kSysParam(const kSysParam* p) { m_param = p; }
 	CC inline int param(paramID id)	const { return m_param->val[id]; }
 	CC inline const kSysParam* sysParam() const { return m_param; }
 private:
-	CC int u1fCheckFunc(const int nr, ctchar* rowm) const;
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
 
-	tchar* m_pP1Ftable;
+	tchar* m_pU1Ftable;
 	tchar* m_pLinksCopy = NULL;
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;
@@ -94,72 +95,6 @@ private:
 #else
 #define setNV_MinMax(id, idx, nv)   // empty macros
 #endif
-};
-
-template<typename T>
-class CStorage {
-public:
-	CC CStorage(int numObjects, int lenObj = 1) : m_lenObj(lenObj) {
-		if (numObjects)
-			m_pObjects = new T[numObjects * m_lenObj]; 
-	}
-	CC ~CStorage()				{ delete[] m_pObjects; }
-	CC T *reallocStorageMemory(int numObjects) {
-		return ::reallocStorageMemory(&m_pObjects, m_lenObj * numObjects);
-	}
-	CC inline T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
-	CC inline T** getObjectsPntr()				{ return &m_pObjects; }
-protected:
-	const int m_lenObj;
-private:
-	T* m_pObjects = NULL;
-};
-
-template<typename T>
-class CStorageIdx : public CStorage<T> {
-public:
-	CC CStorageIdx(int numObjects, int lenObj = 1) : CStorage<T>(numObjects, lenObj) {
-		if (numObjects)
-			m_pIdx = new int[m_numObjectsMax = numObjects];
-	}
-	CC ~CStorageIdx()					{ delete [] m_pIdx; }
-	CC inline T* getObjPntr(int idx) const { return CStorage<T>::getObject(m_pIdx[idx]); }
-	CC inline auto numObjects() const	{ return m_numObjects; }
-	CC T* reallocStorageMemory() {
-		m_numObjectsMax <<= 1;
-		::reallocStorageMemory(&m_pIdx, m_numObjectsMax * sizeof(m_pIdx[0]));
-		return CStorage<T>::reallocStorageMemory(m_numObjectsMax);
-	}
-	CC void push_back(int idx)			{ m_pIdx[m_numObjects++] = idx; }
-	CC void insert(int idx, int value)  {
-		const auto len = (m_numObjects++ - idx) * sizeof(m_pIdx[0]);
-		const auto pSrc = m_pIdx + idx;
-		MEMMOVE((void *)(pSrc + 1), pSrc, len);
-		m_pIdx[idx] = value;
-	}
-	CC T *getObjAddr(int idx)			{ return idx < m_numObjectsMax ? CStorage<T>::getObject(idx) : reallocStorageMemory(); }
-	CC inline int* getIndices() const	{ return m_pIdx; }
-	CC CStorageIdx& operator = (const CStorageIdx& other) {
-		auto** ppStorage = CStorage<T>::getObjectsPntr();
-		delete[] *ppStorage;
-		delete[] m_pIdx;
-		m_pIdx = NULL;	// We don't need indices for now 	
-		m_numObjectsMax = m_numObjects = other.numObjects();
-		const auto len = m_numObjects * CStorage<T>::m_lenObj;
-		*ppStorage = new T[len];
-		memcpy(*ppStorage, other.getObject(), len);
-		return *this;
-	}
-	CC void copyIndex(const CStorageIdx& other) {
-		m_pIdx = new int[other.numObjects()];
-		memcpy(m_pIdx, other.getIndices(), m_numObjects * sizeof(m_pIdx[0]));
-	}
-
-	int m_numObjects = 0;
-protected:
-	int m_numObjectsMax = 0;
-private:
-	int* m_pIdx = NULL;
 };
 
 class CRepository : public CStorageIdx<tchar> {

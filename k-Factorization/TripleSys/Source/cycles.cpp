@@ -6,7 +6,7 @@ int compare_fn(const void* pA, const void* pB) {
 
 void alldata::checkCommonValues()
 {
-	if (m_groupSize != 3 || m_numDaysResult != 2)
+	if (m_groupSize != 3 || numDaysResult() != 2)
 		return;
 	tchar v[MAX_GROUP_NUMBER * MAX_3PF_SETS];
 	const int nv = getAllV(v, MAX_3PF_SETS, 0, 1);

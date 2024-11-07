@@ -32,15 +32,13 @@ CC int alldata::checkPlayer1(int iPlayerNumber)
 	}
 	else
 	{
-		iPlayerNumber  = MAX2(prevPlayer + 1, iPlayerNumber);
+		iPlayerNumber = MAX2(prevPlayer + 1, iPlayerNumber);
 		// do we need a separate cycle for m0 == 2?
 		tchar* lnk = links(prevPlayer);
 		const auto maxp = m_indexPlayerMax[iPlayer];
 		for (; iPlayerNumber <= maxp; iPlayerNumber++)
 			if (lnk[iPlayerNumber] == unset && selPlayers[iPlayerNumber] == unset)
 				goto PlayerOk1;
-		//	else
-		//printf("%d.%d ", iDay, iPlayer);
 		return m_numPlayers;
 	}
 PlayerOk1:
@@ -49,8 +47,8 @@ PlayerOk1:
 		if (iPlayer < 3)// for indices=0,1,2 and group size=2 m_indexPlayerMin equal m_indexPlayerMax
 			return iPlayerNumber;
 
-		if (UseP1fCheckGroups && m0 && !param(t_u1f) && m_p1f && m_numPlayers > 4)
-			iPlayerNumber = p1fCheckGroups(iPlayerNumber, iPlayer, m_numPlayers, links(0), tmpPlayers);
+		if (m0 && m_checkForUnexpectedCycle)
+			iPlayerNumber = checkForUnexpectedCycle(iPlayerNumber, iPlayer, m_numPlayers, links(), tmpPlayers);
 
 		return iPlayerNumber;
 		break;

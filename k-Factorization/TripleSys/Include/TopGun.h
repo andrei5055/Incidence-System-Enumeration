@@ -25,7 +25,7 @@ public:
 protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
 	bool readStartMatrices();
-	void InitCnt(size_t nThrds)				{ m_cnt = new sLongLong [2 * nThrds]; }
+	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
 
 	int m_nRowsOut;
@@ -51,7 +51,7 @@ public:
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	void myTemporaryCheck();
-	void startThread(int iTask);
+	void startThread(int iTask, int iMode = eCalcResult, bool bOnlyStart = false, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
 	sLongLong *m_cntTotal = NULL;

@@ -138,7 +138,7 @@ void alldata::testRightNeighbor(int nr)
 	{
 		TrCycles trCycles;
 
-		if (!getCyclesAndPath3(&trCycles, pV1, p1ftable(iRow1), p1ftable(iRow0), result(iRow1), result(iRow0)))
+		if (!getCyclesAndPath3(&trCycles, pV1, neighbors(iRow1), neighbors(iRow0), result(iRow1), result(iRow0)))
 			continue;
 		int m = 0;
 		for (m = 0; m < pathLength; m += m_groupSize * 2)
@@ -275,7 +275,7 @@ void alldata::testCanonizatorSpeed()
 				abort();
 			}
 			for (int j = 0; j < iDay; j++)
-				p1fSetTableRow(p1ftable(j), result(j));
+				u1fSetTableRow(neighbors(j), result(j));
 			printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, m_groupSize);
 #endif
 		}

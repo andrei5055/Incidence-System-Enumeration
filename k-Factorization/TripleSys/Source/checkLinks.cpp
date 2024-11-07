@@ -3,7 +3,7 @@
 CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : CChecklLinkBase(sizeParam) {
 	set_kSysParam(p);
 	const auto len = m_numDays * m_numPlayers;
-	initArray(&m_pP1Ftable, len);
+	initArray(&m_pU1Ftable, len);
 	initArray(&m_pLinksCopy, m_numPlayers * m_numPlayers);
 	initArray(&m_v, m_numPlayers);
 	initArray(&m_vo, m_numPlayers);
@@ -15,7 +15,7 @@ CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : C
 }
 
 CC CChecklLink::~CChecklLink() {
-	delete[] m_pP1Ftable;
+	delete[] m_pU1Ftable;
 	delete[] m_pLinksCopy;
 	delete[] m_v;
 	delete[] m_vo;

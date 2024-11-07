@@ -70,8 +70,8 @@ void alldata::outputError() const {
 #endif
 
 CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
-	tchar* mStart0, tchar* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, string *pOutResult, bool bFirstThread) {
-	// Input parameter:
+	tchar* mStart0, tchar* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, string *pOutResult, int iThread) {
+	// Input parameters:
 #if !USE_CUDA
 	const auto iTime = clock();
 	const char* fHdr = getFileNameAttr(sysParam());
@@ -82,7 +82,15 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	int startMatrixCount = 0;
 	int nBytesInStartMatrix = nrowsStart * m_numPlayers;
 #endif
-	const auto bPrint = bFirstThread && param(t_printMatrices);
+	const auto nPrecalcRows = param(t_useRowsPrecalculation);
+	if (iCalcMode == eCalcResult)
+		m_useRowsPrecalculation = (nPrecalcRows && m_groupSize == 2 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
+	else
+		m_useRowsPrecalculation = iCalcMode;
+	m_secondPlayerInRow4 = nPrecalcRows ? nPrecalcRows + 1 : 0; // used only if UseRowsPrecalculation not 0
+	int nRows4 = 0;
+	int nRows4Day = 0;
+	const auto bPrint = !iThread && param(t_printMatrices);
 	int minRows = nrowsStart;
 	if (!nrowsOut)
 		nrowsOut = m_numDays;
@@ -96,10 +104,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	if (m_improveResult) {
 		const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
 		bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
-		createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, m_numDaysResult, &fName);
+		createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, numDaysResult(), &fName);
 	}
 
-	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, m_numDaysResult, &fName);
+	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), &fName);
 
 	TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
@@ -131,15 +139,15 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
 		linksFromMatrix(links(), mStart0, nrowsStart);
 	}
-	CUDA_PRINTF("*** iDay = %d  m_numDaysResult = %d\n", iDay, m_numDaysResult);
-	if (iDay > m_numDaysResult)
-		iDay = m_numDaysResult; // warning?
+
+	if (iDay > numDaysResult())
+		iDay = numDaysResult(); // warning?
 
 	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
 	for (int i = 0; i < iDay; i++)
-		p1fSetTableRow(p1ftable(i), result(i));
+		u1fSetTableRow(neighbors(i), result(i));
 
-	if (m_p1f || param(t_u1f))
+	if (m_use2RowsCanonization || param(t_u1f))
 	{
 		if (m_groupSize == 2) // need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
@@ -152,6 +160,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	}
 	printf("\n");
 #endif
+#if 1
 	for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
 		auto* pGroupInfo = groupInfo(i);
 		if (!pGroupInfo)
@@ -180,6 +189,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		}
 #endif
 	}
+#endif
 
 #if !USE_CUDA
 	sLongLong nMCreated = 0;
@@ -193,7 +203,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 #endif
 #if 0
-	const auto checkFlag = iDay == m_numDays || iDay == m_numDaysResult;
+	const auto checkFlag = iDay == m_numDays || iDay == numDaysResult();
 	if (checkFlag)
 	{
 		const auto retVal = improveMatrix(m_improveResult, NULL, 0/*, bResults, lenResult()*/);
@@ -221,23 +231,93 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 
 	bPrevResult = false;
-	if (iDay > 0) {
+
+	if (iCalcMode == eCalculateMatrices)
+		m_pRowUsage->init(iThread, param(t_numThreads));
+
+	else if (iDay > 0) {
 		setArraysForLastRow(iDay);
-		//printTable("p1f", p1ftable(), iDay, m_numPlayers, 0);
+		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
 		iDay--;
 		//updateIndexPlayerMinMax();
 		//testRightNeighbor(iDay + 1);
 		goto checkCurrentMatrix;
 	}
+
 	while (nLoops < LoopsMax)
 	{
 #if !USE_CUDA
 		mTime = clock();
 #endif
-		CUDA_PRINTF(" **** nLoops = %lld, iDay = %d  m_numDaysResult = %d  bPrevResult = %d\n", nLoops, iDay, m_numDaysResult, bPrevResult);
 		CUDA_PRINTF(" *** nLoops = %lld\n", nLoops);
-		while (iDay < m_numDaysResult || bPrevResult)
+		while (iDay < numDaysResult() || bPrevResult)
 		{
+			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices) {
+
+			ProcessPrecalculatedRow:
+#if 0
+				static int a, b, c;
+				if (m_playerIndex)
+					a++;
+				if (checkCanonicity())
+					c++;
+				b++;
+				if ((b%1000000)==0)
+					printf("%d:%d:%d ", a, c, b);
+#endif
+				if (bPrevResult) {
+					iDay--;
+					bPrevResult = false;
+				}
+				if (iDay >= nPrecalcRows){
+					int ipx = 0;
+					if (m_playerIndex)
+					{
+						iDay = m_playerIndex / m_numPlayers;
+						ipx = m_playerIndex % m_numPlayers;
+						m_playerIndex = 0;
+						if (iDay >= numDaysResult())
+						{
+							ASSERT(1);
+							noMoreResults = true;
+							goto noResult;
+						}
+					}
+					if (m_pRowUsage->getRow(iDay, ipx))
+					{
+#if !USE_CUDA
+						if (iDay == nPrecalcRows) {
+							cTime = clock();
+							m_rowTime[iDay] = cTime - iTime;
+						}
+#endif
+						iDay++;
+						if (iDay < numDaysResult() && !checkCanonicity()) {
+#if !USE_CUDA
+							if (!bPrint || cTime - rTime < ReportInterval)
+#endif
+								goto ProcessPrecalculatedRow;
+						}
+						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
+#if !USE_CUDA
+						cTime = clock();
+						for (int i = nPrecalcRows + 1; i < iDay; i++)
+							m_rowTime[i] = cTime - iTime;
+#endif
+						iDay--;
+						goto checkCurrentMatrix;
+					}
+					iDay--;
+					goto ProcessPrecalculatedRow;
+				}
+				if (iCalcMode == eCalcResult) {
+					m_useRowsPrecalculation = eCalculateRows;
+					continue;
+				}
+				noMoreResults = true;
+				goto noResult;
+			}
+
 			CUDA_PRINTF("   *** iDay = %d  bPrevResult = %d\n", iDay, bPrevResult);
 			if (iDay < 0)
 			{
@@ -246,7 +326,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 			if (bPrevResult)
 			{
-				if (iDay == 2 && m_groupSize == 2 && (m_p1f || param(t_u1f)))
+				if (iDay == 2 && m_groupSize == 2 && (m_use2RowsCanonization || param(t_u1f)))
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -264,13 +344,45 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				noMoreResults = true;
 				goto noResult;
 			}
-
 			if (!processOneDay())
 			{
+				if (nPrecalcRows && nPrecalcRows == iDay && m_useRowsPrecalculation == eCalculateRows) {
+					m_secondPlayerInRow4++;
+					if (!nRows4Day)
+					{
+						noMoreResults = true;
+						goto noResult;
+					}
+					nRows4Day = 0;
+					if (m_secondPlayerInRow4 <= numDaysResult())
+						continue;
+					m_secondPlayerInRow4 = nPrecalcRows + 1;
+					if (nRows4) {
+						iDay = nPrecalcRows;
+						if (bPrint) {
+							printf("Number of Precalculated rows=%5d\n", nRows4);
+						}
+						m_useRowsPrecalculation = eCalculateMatrices;
+						m_playerIndex = 0;
+						m_pRowStorage->init(sysParam()->u1fCycles[0]);
+						if (iCalcMode == eCalculateRows) {
+							nLoops = nRows4;
+							noMoreResults = true;
+							goto noResult;
+						}
+						m_pRowUsage->init();
+						nRows4 = 0;
+						continue;
+					}
+				}
 				bPrevResult = true;
 				continue;
 			}
-
+			if (m_useRowsPrecalculation == eCalculateMatrices) {
+				ASSERT(1);
+				noMoreResults = true;
+				goto noResult;
+			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
 		checkCurrentMatrix:
 
@@ -303,19 +415,41 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			Stat(">12", 5, iDay > 12);
 #endif
 #if !USE_CUDA
-			if (bPrint && (int)((++nMCreated) % 1000000) == 0)
-				printf(" %zdM", nMCreated / 1000000);
+			if (bPrint && (int)((++nMCreated) % 10000000) == 0)
+				printf(" %zdM calls to checkCurrentResult\n", nMCreated / 1000000);
 #endif
 
 #if 1
 			switch (checkCurrentResult(bPrint, pIS_Canonizer)) {
-				case -1: goBack(); goto ProcessOneDay;
+			case -1:  
+				if (nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices) {
+					goto ProcessPrecalculatedRow;
+				}
+				else {
+					goBack();
+					goto ProcessOneDay;
+				}
 				case  1: noMoreResults = true; goto noResult;
 				default: break;
 			}
 #endif
+			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
+				if (iDay == nPrecalcRows) {
+					//static int nmatr = 0;
+					//printf("nm=%d\n", ++nmatr);
+				}
+				if (iDay == nPrecalcRows + 1) {
+					nRows4++;
+					nRows4Day++;
+					//printf("%6d:", nRows4);
+					//printTable("", result(3), 1, m_numPlayers, 2);
+					m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
+					bPrevResult = true;
+					continue;
+				}
+			}
 		}
-		ASSERT(iDay < m_numDaysResult);
+		ASSERT(iDay < numDaysResult());
 		if (groupOrder() >= param(t_resultGroupOrderMin))
 		{
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0
@@ -334,6 +468,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			if (bPrint)
 			{
 				cTime = clock();
+				rTime = cTime;
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
@@ -343,11 +478,12 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				printf("%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, fHdr, matr_cntr);
 #endif
 			}
+
 			if (bPrint || bSavingMatricesToDisk)
 			{
 				char stat[128];
 				bool needOutput = false;
-				matrixStat(p1ftable(), iDay, &needOutput);
+				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
 					m_matrixDB.addMatrix(groupOrder(), matrixStatOutput(stat, sizeof(stat)));
 				else
@@ -356,9 +492,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				Result.setInfo(stat);
 				Result.setGroupOrder(groupOrder());
 #if 0			// record result and print on screen (if bPrint==true)
-				Result.printTable(result(), true, ResultFile.c_str(), bPrint, m_numDaysResult);
+				Result.printTable(result(), true, ResultFile.c_str(), bPrint, numDaysResult());
 #else			// record result without print on screen
-				Result.printTable(result(), true, ResultFile.c_str(), false, m_numDaysResult);
+				Result.printTable(result(), true, ResultFile.c_str(), false, numDaysResult());
 				if (bPrint) {
 					printf("%5zd: |Aut(M)| = %d, %s\n", nLoops, groupOrder(), stat);
 					// print on screen result with highlighted differences from prev result
@@ -370,16 +506,16 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				if (pAutGroup) {
 					pAutGroup->setGroupOrder(groupOrder());
 					string outFile, fName("_AutPermut.txt");
-					createFolderAndFileName(outFile, sysParam(), t_ResultFolder, m_numDaysResult, &fName);
+					createFolderAndFileName(outFile, sysParam(), t_ResultFolder, numDaysResult(), &fName);
 					pAutGroup->printTable(getObject(), true, outFile.c_str(), false, groupOrder(), getIndices());
 				}
 			}
 
 			//checkCommonValues();
 
-			//Result.printTable(p1ftable(), true, ResultFile, bPrint, m_numDaysResult);
+			//Result.printTable(neighbors(), true, ResultFile, bPrint, numDaysResult());
 			//reportCheckLinksData();
-			//printTable("p1f", p1ftable(), iDay, m_numPlayers, 2);
+			//printTable("p1f", neighbors(), iDay, m_numPlayers, 2);
 
 			StatReportAfterEachResult(ResetStat, "Stat for matrix result. iDay", iDay, bPrint); // see stat.h to activate
 			if (pcnt) {
@@ -432,16 +568,18 @@ noResult:
 	}
 
 	else {
-		auto str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
-			threadNumber, m_finalKMindex, m_numPlayers, m_numDaysResult, m_groupSize);
+		if (param(t_MultiThreading) <= 1) {
+			auto str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
+				threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
 
 #if GenerateSecondRowsFor3U1F
-		printTable("Calculated second rows set", m_p3fSecondRows, m_p3fNumSecondRowsAct, m_numPlayers, m_groupSize);
+			printTable("Calculated second rows set", m_p3fSecondRows, m_p3fNumSecondRowsAct, m_numPlayers, m_groupSize);
 #endif
-		str += format("Thread execution time = {} ms\n", clock() - iTime);
-		printf(str.c_str());
-		if (pOutResult)
-			*pOutResult += str;
+			str += format("Thread execution time = {} ms\n", clock() - iTime);
+			printf(str.c_str());
+			if (pOutResult)
+				*pOutResult += str;
+		}
 	}
 	StatReportAfterThreadEnd(ResetStat, "Thread ended, processed", (int)nLoops, bFirstThread); // see stat.h to enable
 	delete[] bResults;

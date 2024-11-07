@@ -5,12 +5,17 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 	if (uf)
 		*uf = "";
 
-	fhdr = param->val[t_p1f] ? "P" : "K";
+	fhdr = "K";
 	if (param->val[t_u1f]) {
-		fhdr = "U";
-		if (uf)
-			*uf = param->strVal[t_UFname]->c_str();
+		if (!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers]))
+			fhdr = "P";
+		else {
+			fhdr = "U";
+			if (uf)
+				*uf = param->strVal[t_UFname]->c_str();
+		}
 	}
+
 	if (param->val[t_nestedGroups])
 		return *fhdr == 'K' ? "KM" : *fhdr == 'P' ? "PM" : "UM";
 	return fhdr;
@@ -163,66 +168,74 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows)
 }
 CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 {
+	int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
 	m_TrInd = 0;
 	resetGroupOrder();
 	auto* pTestedTRs = testedTRs();
 	if (pTestedTRs)
 		pTestedTRs->resetGroupOrder();
+	m_playerIndex = playerIndexCycle;
 
-	if (useAutomorphisms && utilizeGroups(nrows)) {
-		int step, lastVal, j, nGroupsTested = 0;
-		int i = setupIteratorByGroups(&lastVal, &step);
-		int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
-		while (i != lastVal) {
-			auto* m_pRowGroup = rowGroup(i += step);
-			if (!m_pRowGroup || (j = m_pRowGroup->groupOrder()) < 1)
-				continue;
-			
-			const auto nRowsToTest = nrows - i;
-			if (nRowsToTest < 1)
-				continue;
-
-			const auto* pMatrToTest = result(i);
-			auto* cmpTr = m_pRowGroup->getObject();
-			while (j--) {
-				if (pTestedTRs && pTestedTRs->isProcessed(cmpTr))
-				{
-					cmpTr += m_numPlayers;
+	if (m_useRowsPrecalculation != eCalculateRows) {
+		if (useAutomorphisms && utilizeGroups(nrows)) {
+			int step, lastVal, j, nGroupsTested = 0;
+			int i = setupIteratorByGroups(&lastVal, &step);
+			while (i != lastVal) {
+				auto* m_pRowGroup = rowGroup(i += step);
+				if (!m_pRowGroup || (j = m_pRowGroup->groupOrder()) < 1)
 					continue;
+				int i1 = i; 
+				//i = 0;
+				const auto nRowsToTest = nrows - i;
+				if (nRowsToTest < 1)
+					continue;
+
+				const auto* pMatrToTest = result(i);
+				auto* cmpTr = m_pRowGroup->getObject();
+				while (j--) {
+					if (pTestedTRs && pTestedTRs->isProcessed(cmpTr))
+					{
+						cmpTr += m_numPlayers;
+						continue;
+					}
+					m_playerIndex = playerIndexCycle - i * m_numPlayers;
+					const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
+					if (cmp < 0) {
+						m_playerIndex += i * m_numPlayers;
+						return false;
+					}
+
+					if (!cmp)
+						updateGroup(cmpTr);
+					cmpTr += m_numPlayers;
 				}
-				m_playerIndex = playerIndexCycle - i * m_numPlayers;
-				const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
-				if (cmp < 0) {
-					m_playerIndex += i * m_numPlayers;
-					return false;
-				}
-				if (!cmp)
-					updateGroup(cmpTr);
-				cmpTr += m_numPlayers;
+				i = i1;
+				if (++nGroupsTested == param(t_autGroupNumb))
+					break;
 			}
-
-			if (++nGroupsTested == param(t_autGroupNumb))
-				break;
 		}
-	}
 
-	m_playerIndex = nrows * m_numPlayers - m_groupSize - 1;
+		m_playerIndex = playerIndexCycle;
 
-	if (param(t_nestedGroups) > 1 && nrows > 2)
-	{
-		updateGroup(result(0));
-		if (groupOrder() >= param(t_nestedGroups)) {
-			saveGroup(*this, nrows);
-			if (nrows < m_numDaysResult)
-				return true;
+		if (m_useRowsPrecalculation != eCalculateRows && param(t_nestedGroups) > 1 && nrows > 2)
+		{
+			updateGroup(result(0));
+			if (groupOrder() >= param(t_nestedGroups)) {
+				saveGroup(*this, nrows);
+				if (nrows < numDaysResult())
+				{
+					m_playerIndex = 0;
+					return true;
+				}
+			}
+			else
+				return false;
 		}
-		else
-			return false;
 	}
 
 	bool ret = true;
-	if (m_p1f && iMode >= 0) { // leo && !param(t_u1f)) {
-		ret = (this->*m_pCheckP1F)(nrows);
+	if (m_use2RowsCanonization && iMode >= 0) { // leo && !param(t_u1f)) {
+		ret = (this->*m_pCheckU1F)(nrows);
 	}
 	else {
 		tchar a[MAX_GROUP_NUMBER + 1], p[MAX_GROUP_NUMBER + 1];
@@ -265,8 +278,10 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		}
 	}
 
-	if (ret)
-		saveGroup(*this, nrows);
-
+	if (ret) {
+		m_playerIndex = 0;
+		if (m_useRowsPrecalculation != eCalculateRows || nrows < param(t_useRowsPrecalculation))
+			saveGroup(*this, nrows);
+	}
 	return ret;
 }

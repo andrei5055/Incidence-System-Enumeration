@@ -51,20 +51,21 @@ CC bool alldata::processOneDay()
 		}
 		if (iPlayer == m_numPlayers && iDay > 0)
 		{
-			p1fSetTableRow(p1ftable(iDay), tmpPlayers);
-			if (m_p1f || param(t_u1f))
+			u1fSetTableRow(neighbors(iDay), tmpPlayers);
+			if (m_use2RowsCanonization || param(t_u1f))
 			{
 				memcpy(result(iDay), tmpPlayers, m_numPlayers);
 				m_playerIndex = m_numPlayers * (iDay + 1) - m_groupSize - 1;
 #if 1
-				if (m_groupSize <= 3 && !matrixStat(p1ftable(), iDay + 1))
+				if (m_groupSize <= 3 && !matrixStat(neighbors(), iDay + 1))
 				{
 					while (iDay * m_numPlayers + iPlayer > m_playerIndex)
 						getPrevPlayer();
 				}
+				m_playerIndex = 0;
 #else
 				if ((param(t_u1f) && m_groupSize == 2 && p1fCheck(iDay + 1, tmpPlayers) >= 0) ||
-					(!param(t_u1f) && m_groupSize <= 3 && !matrixStat(p1ftable(), iDay + 1)))
+					(!param(t_u1f) && m_groupSize <= 3 && !matrixStat(neighbors(), iDay + 1)))
 				{
 					while (iDay * m_numPlayers + iPlayer > m_playerIndex)
 						getPrevPlayer();

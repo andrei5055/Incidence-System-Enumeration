@@ -6,7 +6,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 	if (!name && !name[0]) {
 		printf("%s:", name);
 		if (t)
-			printfGreen("     Last column: Row change time stamp (minutes)");
+			printfGreen("     Last column: Row change time stamp (sec)");
 		printf("\n");
 	}
 	for (int j = 0; j < nl; j++, ind += nc)
@@ -36,7 +36,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 			if (makeString)
 				printf(" \"");
 			if (t)
-				printfGreen("//%7d", t[j] / 60000);
+				printfGreen("//%7d", t[j] / 1000);
 			printf("\n");
 		}
 		else

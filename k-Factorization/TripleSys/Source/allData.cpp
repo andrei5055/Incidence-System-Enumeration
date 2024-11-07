@@ -3,7 +3,7 @@
 
 using namespace std;
 
-CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
+CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage,
 	bool useCheckLinksT, int improveResult, bool createImprovedMatrix) :
 	CGroupInfo(pSysParam->val[t_numPlayers], 200), CGroupUtilisation(pSysParam),
 	CycleSupport(pSysParam->val[t_numPlayers]), CChecklLink(p, pSysParam),
@@ -52,6 +52,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 	m_DayIdx = new tchar[m_numDays];
 	m_numCycles = 0;
 	m_firstNotSel = 0;
+	m_matrixCanonInterval = param(t_matrixCanonInterval);
+	m_checkForUnexpectedCycle = UseP1fCheckGroups && m_numPlayers > 4 && 
+		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4);
 
 	iPlayerIni = m_numPlayers - 1;
 	if (m_numPlayers > m_groupSize)
@@ -77,12 +80,25 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 		m_file = f;
 	}
 #endif
-	if ((m_p1f || param(t_u1f)) && m_groupSize == 3)
+	if ((param(t_u1f)) && m_groupSize == 3)
 		InitCycleSupport(m_nGroups);
 
-	auto u1fPntr = sysParam()->u1f[0];
-	bool bp1f = !u1fPntr || u1fPntr[1] == m_numPlayers;
-	m_pCheckP1F = m_p1f ? ((m_groupSize == 2) ? (bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F) : &alldata::cnvCheck3U1F) : NULL;
+	const auto u1fPntr = sysParam()->u1fCycles[0];
+	
+	const auto nPreconstructedRows = param(t_useRowsPrecalculation);
+	if (nPreconstructedRows) {
+		if (m_bRowStorageOwner = (pRowStorage == NULL))
+			m_pRowStorage = new CRowStorage(nPreconstructedRows, m_numPlayers, 30000);
+		else
+			m_pRowStorage = pRowStorage;
+
+		if (pRowStorage || !(param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation)))
+			m_pRowUsage = new CRowUsage(m_pRowStorage);
+	}
+	bool bp1f = (!u1fPntr || u1fPntr[1] == m_numPlayers);
+
+	m_pCheckU1F = m_use2RowsCanonization ? ((m_groupSize == 2) ? (bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F) : &alldata::cnvCheck3U1F) : NULL;
+	//m_pCheckU1F = m_use2RowsCanonization ? ((m_groupSize == 2) ? &alldata::cnvCheck2U1F : &alldata::cnvCheck3U1F) : NULL;
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
@@ -91,7 +107,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 
 	typedef struct {
 		int numPlayer;
-		tchar u1f[20];
+		tchar u1fCycles[20];
 		int size;
 		alldata::checkInvalidCycle pFunc;
 	} SpecialCaseFuncDescr;
@@ -104,16 +120,16 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam,
 
 	// Assign the special case function for determination of the invalid cycles.
 	m_pInvalidCycle = &alldata::CycleIsInvalid;
-	const auto u1f_in = pSysParam->u1f[0];
+	const auto u1f_in = pSysParam->u1fCycles[0];
 	if (u1f_in) {
 		for (int i = countof(invCyclesFunc); i--;) {
 			const auto& specCase = invCyclesFunc[i];
 			if (numPlayers() != specCase.numPlayer)
 				continue;
 
-			const auto& u1f = specCase.u1f;
+			const auto& u1fCycles = specCase.u1fCycles;
 			int j = specCase.size;
-			while (j-- && u1f[j] == u1f_in[j]);
+			while (j-- && u1fCycles[j] == u1f_in[j]);
 			if (j < 0) {
 				m_pInvalidCycle = specCase.pFunc;
 				expected2ndRow3p1f(-2);
@@ -261,6 +277,9 @@ CC alldata::~alldata() {
 	delete m_pOrbits;
 	delete[] m_tx;
 	delete[] m_cycles;
+	if (m_bRowStorageOwner)
+		delete m_pRowStorage;
+	delete m_pRowUsage;
 	releaseBinaryMatricesStorage();
 #if !USE_CUDA
 	FCLOSE_F(m_file);
@@ -274,7 +293,7 @@ CC void alldata::Init() {
 		result()[i] = i;
 	memcpy(m_pResultsPrev, result(), m_nLenResults);
 	initCheckByGroup(1, 0);
-	p1fSetTableRow(p1ftable(), result());
+	u1fSetTableRow(neighbors(), result());
 
 	maxDays = -1;
 	nLoops = iDay = 0;

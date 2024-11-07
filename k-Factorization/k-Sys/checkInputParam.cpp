@@ -29,14 +29,25 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		return false;
 	}
 
-	if (/*val[t_u1f] */ param.u1f[0]) {
-		auto pU1F = param.u1f[0] + 1;
-		for (tchar i = 0; i < *param.u1f[0]; i++) {
+	if (/*val[t_u1f] */ param.u1fCycles[0]) {
+		auto pU1F = param.u1fCycles[0] + 1;
+		if (*param.u1fCycles[0] != 1) {
+			printfRed("*** Incorrect parameter 'U1FCycles': this version supports only one cycles set definition, Exit\n");
+			return false;
+		}
+		for (tchar i = 0; i < *param.u1fCycles[0]; i++) {
 			// Iterating through all prescribed combinations of cycle versions. 
 			int nElem = 0;
 			for (int i = 0; i < MAX_UNIFOM_CONF_LENGTH; i++) {
 				if (pU1F[i])
+				{
+					if (i > 0 && pU1F[i - 1] > pU1F[i]) {
+						printfRed("*** Incorrect parameter 'U1FCycles': cycle length(%d) is less than next cycle length(%d), Exit\n",
+							pU1F[i - 1], pU1F[i]);
+						return false;
+					}
 					nElem += pU1F[i];
+				}
 				else
 					break;
 			}
@@ -50,10 +61,16 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		}
 	}
 
-	if (val[t_p1f]) {
+	if (val[t_use2RowsCanonization]) {
 		if (groupSize > 3)
 		{
-			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_p1f], paramNames[t_groupSize], groupSize);
+			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize], groupSize);
+			return false;
+		}
+
+		if (!val[t_u1f])
+		{
+			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_u1f], val[t_u1f]);
 			return false;
 		}
 	}

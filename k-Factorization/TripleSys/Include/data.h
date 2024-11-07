@@ -74,12 +74,6 @@ const char* ivc = ""
 #endif
 #elif nPlayers == 16
 #if 0
-//218: | Aut(M) | = 2, Cycles : 3(16)
-"    0   1    2   3    4   5    6   7    8   9   10  11   12  13   14  15 "
-"    0   2    1   4    3   6    5   8    7  10    9  12   11  14   13  15 "
-"    0   3    1  15    2  13    4  14    5  11    6  12    7   9    8  10 "
-#endif
-#if 0
 //Rows - Group Order : 2-32 3-4 4-1 5-2 6-1 7-2 8-1 9-2 10-1 11-2 12-1 13-2 14-1 15-2
 //1 : P - Matrix, build time = 2, time since start = 20
 //1 : | Aut(M) | = 2, Cycles : 105(16)

@@ -186,8 +186,14 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	auto dayMax = tm[0];
 	auto miFrom = mi;
 	coi = mo;
+	if (m_useRowsPrecalculation == eCalculateRows) {
+		int nrr = param(t_useRowsPrecalculation);
+		if (nr == nrr + 1 && *(mi + nc * nrr + 1) != nr)
+			nr = nrr;
+	}
 	for (int i = 0; i < nr; i++, coi += nc, mi += nc)
 	{
+		ASSERT(tm[i] >= nc);
 		switch (MEMCMP(coi, mi, nc))
 	    {
 		case -1: setPlayerIndex(tr, dayMax, tm[i], coi, mi, miFrom + nc * tm[i], nc); return -1;
@@ -394,6 +400,9 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	memset(tm, unset, nc);
 	auto rowMax = (tchar)(MAX2(ind0, ind1));
 	char row2ndValue = 0;
+
+	int nrr = param(t_useRowsPrecalculation);
+	bool bCalcRows5AndUp = m_useRowsPrecalculation == eCalculateRows && nr > 3 && *(mi + nc * 3 + 1) != 4;
 	for (tchar i = 0; i < nr; i++)
 	{
 		if (i == ind0 || i == ind1)
@@ -415,7 +424,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			rowMax = MAX2(rowMax, i);
 			bProc3 = true;
 		}
-		else if (row2ndValue <= nr) // cant return if row2ndValue > nr
+		else if (row2ndValue <= nr && !bCalcRows5AndUp) // cant use quick check if row2ndValue > nr, or precalculation of rows 5 and up
 		{
 			if (bProc3 && row2ndValue == 4)
 			{
@@ -435,6 +444,10 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	{
 		return 2;
 	}
+
+	if (bCalcRows5AndUp)
+		nr = nrr;
+	
 	for (int i = 4; i <= nr; i++)
 	{
 		if (tm[i] == unset) // all values of tm are >= 0; unset indicates that row is missing

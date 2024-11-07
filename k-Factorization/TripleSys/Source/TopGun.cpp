@@ -11,11 +11,6 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesMax());
 		myExit(1);
 	}
-	if ((m_p1f || param.val[t_u1f]) && m_groupSize > 3)
-	{
-		printfRed("*** u1f and/or p1f cannot be used with 'GroupSize'=%d. Exit\n", m_groupSize);
-		myExit(1);
-	}
 
 	if (this->param(t_MultiThreading)) {
 		m_cntTotal = new sLongLong[2 * numThreads];
@@ -36,6 +31,7 @@ int TopGun::Run()
 {
 	iTime = clock();
 	sLongLong resultMatr = 0;
+	bool bUsePm = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 	if (!param(t_MultiThreading))
 	{
 		alldata sys(*this, paramPtr());
@@ -57,10 +53,10 @@ int TopGun::Run()
 				firstIndexOfStartMatrices, nMatrices);
 			myExit(1);
 		}
-
-		if (numThreads > nMatrices - firstIndexOfStartMatrices)
-			numThreads = nMatrices - firstIndexOfStartMatrices;
-
+		if (!param(t_MultiThreading) == 1) {
+			if (numThreads > nMatrices - firstIndexOfStartMatrices)
+				numThreads = nMatrices - firstIndexOfStartMatrices;
+		}
 		threads.resize(numThreads);
 
 		InitCnt(numThreads);
@@ -72,42 +68,74 @@ int TopGun::Run()
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
 
 		cTime = clock();
-		while (nThreadsRunning > 0 || m_iMatrix < nMatrices)
+
+		if (bUsePm)
 		{
-			int iTask = 0;
-			nThreadsRunning = 0;
-			for (auto& t : threads)
-			{
-				if (!threadActive[iTask])
-				{
-					if (m_iMatrix < nMatrices)
-					{
-						//printTable("Input matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
-						startThread(iTask);
-						nThreadsRunning++;
-					}
+			int icode = 0;
+			while (m_iMatrix < nMatrices) {
+				nMatricesProc++;
+				alldata sys(*this, paramPtr());
+				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), nRowsOut(), NULL, &m_reportInfo)) {
+					printfRed("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
-				else
-				{
-					nThreadsRunning++;
-					if (m_cnt[iTask * 2] >= 0)
-					{
-						//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
-						// thread finished
-						nMatricesProc++;
-						t.join();
+				else {
+					for (int iTask = 0; iTask < numThreads; iTask++)
+						startThread(iTask, eCalculateMatrices, true, sys.RowStorage());
+
+					waitAllThreadFinished();
+
+					for (int iTask = 0; iTask < numThreads; iTask++)
 						threadStopped(iTask);
+
+					if (clock() - cTime > 20000)
+					{
+						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+						cTime = clock();
 					}
 				}
-				iTask++;
+				mstart += mStartMatrixSize;
+				m_iMatrix += 1;
 			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
-			if (clock() - cTime > 20000)
+		}
+		else
+		{
+			while (nThreadsRunning > 0 || m_iMatrix < nMatrices)
 			{
-				printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
-				cTime = clock();
+				int iTask = 0;
+				nThreadsRunning = 0;
+				for (auto& t : threads)
+				{
+					if (!threadActive[iTask])
+					{
+						if (m_iMatrix < nMatrices)
+						{
+							//printTable("Input matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
+							startThread(iTask);
+							nThreadsRunning++;
+						}
+					}
+					else
+					{
+						nThreadsRunning++;
+						if (m_cnt[iTask * 2] >= 0)
+						{
+							//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
+							// thread finished
+							nMatricesProc++;
+							t.join();
+							threadStopped(iTask);
+						}
+					}
+					iTask++;
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+				if (clock() - cTime > 20000)
+				{
+					printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+					cTime = clock();
+				}
 			}
 		}
 		waitAllThreadFinished();

@@ -11,7 +11,8 @@ USE_GPU=0
 TestName = "K1F_10x9x2_SingleThread"
 GroupSize=2
 MaxNumberOfStartMatrices=100000
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 NRowsInStartMatrix=0
 NRowsInResultMatrix=0
 UseMultiThreading=0
@@ -21,26 +22,30 @@ ExpectedResult=396
 RUN_JOB
 
 TestName = "P1F_10x9x2_SingleThread"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=1
 RUN_JOB
 
 TestName = "K1F_15x7x3_SingleThread"
 nPlayers=15
 GroupSize=3
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 ExpectedResult=7
 RUN_JOB
 
 TestName = "P1F_15x7x3_SingleThread"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=2
 RUN_JOB
 
 TestName = "K1F_16x5x4_SingleThread"
 nPlayers=16
 GroupSize=4
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 ExpectedResult=1
 RUN_JOB
 
@@ -50,25 +55,29 @@ GroupSize=2
 nPlayers=10
 NRowsInStartMatrix=0
 NRowsInResultMatrix=3
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 ExpectedResult=12
 RUN_JOB
 
 TestName = "P1F_10x3x2_SingleThread"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=6
 RUN_JOB
 
 TestName = "K1F_15x4x3_SingleThread"
 GroupSize=3
 nPlayers=15
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 NRowsInResultMatrix=4
 ExpectedResult=26
 RUN_JOB
 
 TestName = "P1F_15x4x3_SingleThread"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=3
 RUN_JOB
 
@@ -81,12 +90,14 @@ TestName = "K1F_10x9x2_10_Threads"
 GroupSize=2
 nPlayers=10
 NRowsInStartMatrix=3
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 ExpectedResult=396
 RUN_JOB
 	
 TestName = "P1F_10x9x2_10_Threads"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=1
 RUN_JOB
 
@@ -94,12 +105,14 @@ TestName = "K1F_15x7x3_10_Threads"
 nPlayers=15
 GroupSize=3
 NRowsInStartMatrix=4
-UsePerfect1Factorization=0
+Use2RowsCanonization=0
+UseUniform1Factorization=0
 ExpectedResult=7
 RUN_JOB
 
 TestName = "P1F_15x7x3_10_Threads"
-UsePerfect1Factorization=1
+Use2RowsCanonization=1
+UseUniform1Factorization=1
 ExpectedResult=2
 RUN_JOB  //END_JOB
 

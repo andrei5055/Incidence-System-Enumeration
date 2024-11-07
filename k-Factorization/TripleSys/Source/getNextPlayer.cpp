@@ -5,7 +5,6 @@ CC int alldata::getNextPlayer()
 	int iPlayerNumber = indexPlayer[iPlayer];
 	int iRet;
 	int m0 = iPlayer % m_groupSize;
-	
 	for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
 	{
 	checkPlayerNumber:
@@ -26,24 +25,24 @@ CC int alldata::getNextPlayer()
 
 		if (m0 != 0)
 		{
-			if (m_groupSize == 3)
+			if (m_groupSize == 2)
+			{
+				tchar* lnk = links(tmpPlayers[iPlayer - 1]);
+				if (lnk[iPlayerNumber] != unset)
+					continue;
+				tmpPlayers[iPlayer] = iPlayerNumber;
+				lnk[iPlayerNumber] = iDay;
+				links(iPlayerNumber)[tmpPlayers[iPlayer - 1]] = iDay;
+				break;
+			}
+			else if (m_groupSize == 3)
 			{
 				if ((iRet = checkPlayer3(iPlayerNumber, m_numPlayers)) >= m_numPlayers)
 					return m_numPlayers;
 				if (iPlayerNumber == iRet)
 					break;
-				if (iRet < 0)
-				{
-					if (iPlayer < m_numPlayers)
-					{
-						m0 = iPlayer % m_groupSize;
-						iPlayerNumber = indexPlayer[iPlayer];
-						continue;
-					}
-					return iRet;
-				}
-				iPlayerNumber = iRet - 1;
-				continue;
+				iPlayerNumber = iRet;
+				goto checkPlayerNumber;
 			}
 			else
 			{

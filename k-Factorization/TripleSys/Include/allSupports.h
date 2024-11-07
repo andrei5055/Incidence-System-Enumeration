@@ -120,8 +120,8 @@ CC void elemOrdering(T* pElems, size_t numElem, size_t groupSize) {
 bool _CheckMatrix(ctchar* matrix, int nl, int nc, int gs, tchar* links, bool printError, int* errLine, int* errGroup, int* dubLine);
 void printTransformed(int nrows, int ncols, int groupSize, ctchar* tr, ctchar* ttr, ctchar* pImatr, ctchar* pTmatr, int numRow = 0, sLongLong nLoops = 0, int finalKMindex = 0);
 void createStartFolderAndFileName(char* fn, size_t fns, const char* folder, const char* fileNameFmt, int np, int nr, int gs);
-CC int u1fCheck(ctchar* u1f, int nu1f, ctchar* rowir, int ir, int nc, ctchar* t1);
-CC int p1fCheckGroups(int iv, int ic, int nc, ctchar* lnk, ctchar* v);
+CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neigborsi, ctchar* neighborsj, int nc);
+CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, ctchar* v);
 void myAssert(int code, const char* file, int line);
 void myExit(int code);
 void reportEOJ(int code);

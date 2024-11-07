@@ -7,8 +7,12 @@
 #include "allsupports.h"
 #include "MatrixDB.h"
 #include "cycles.h"
+#include "RowStorage.h"
 
-#define UseMultiThreading 0
+#define UseRowsPrecalculation  0 // The number of first rows of the matrix from which we start to pre-calculate the remaining rows. 
+                                 // ntd: change to parameter, check input params that numbers of rows in input is 3 or less
+
+#define UseMultiThreading   0
 
 #if UseMultiThreading
 #define NThreads 10				  // number of threads to calculate matrices		
@@ -25,25 +29,19 @@
 #endif
 #define NRBase					  2
 #define UseP1fCheckGroups         1
-#define USE_BINARY_CANONIZER	  1
-#define UseCnvCheckEachRow        6
-#define AllowNotP1FRowsFor3P1F    1 // Only for 3P1F. if 0 - all rows pairs must be p1f for all common sets combinations.
+#define USE_BINARY_CANONIZER	  0
+#define AllowNotP1FRows    1 // Only for 3U1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
-#define Any2RowsConvertToFirst2   1 // Only for 3P1F. (*) If 1, then any two rows must be converted to first 2 rows.
+#define Any2RowsConvertToFirst2   1 // Only for 3U1F. (*) If 1, then any two rows must be converted to first 2 rows.
 									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
 									// If 2, then a. no requirement (*), b. same as (*) set of first 2 rows pairs used
-#define GenerateSecondRowsFor3U1F 0 // Only for 3P1F. Use 1 in single thread mode only with NRowsInResultMatrix=2. 
+#define GenerateSecondRowsFor3U1F 0 // Only for 3U1F. Use 1 in single thread mode only with NRowsInResultMatrix=2. 
 									// SW will use on the fly calculated 2nd rows (instead of precalculated '_expected2ndRow3p1f')
 									// Calculated rows will be printed at the end
 #define UseUniform1Factorization  0
-#define UFName "U1F"
-#if UseUniform1Factorization
-//#define UF {{4, 4, 4}, {4, 8}, {6, 6}}
-//#define UF {{6, 6}}
-#define UsePerfect1Factorization 1 // do not change, must be 1 with UF
-#else
-#define UsePerfect1Factorization 0 
-#endif
+#define U1FName ""
+
+#define Use2RowsCanonization    0 
 #define SubmatrixGroupOrderMin  0
 #define ResultGroupOrderMin     0
 #define LoopsMax 200000000000
@@ -103,8 +101,10 @@
 #define SWAP(a, b)          a ^= (b ^= (a ^= b))
 
 typedef enum {
-	eCalcStart,
 	eCalcResult,
+	eCalculateRows,
+	eCalculateMatrices,
+	eDisabled,
 } eThreadStartMode;
 
 template<typename T>CC void initArray(T** pPntr, int len, T val = 0) {
@@ -136,22 +136,23 @@ typedef struct TrCycles {
 typedef CRepository CBinaryMatrixStorage;
 
 class alldata : private CGroupInfo, CGroupUtilisation, CycleSupport, CChecklLink {
-	typedef bool(alldata::*checkP1F)(int);
+	typedef bool(alldata::*checkU1F)(int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
-	CC alldata(const SizeParam& p, const kSysParam* pSysParam, bool useCheckLinksT = UseCheckLinksT,
+	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcStart,
+	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult,
 		tchar* mstart0=NULL, tchar* mstart=NULL, int nrowsStart=0, 
-		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, bool firstThread = true);
+		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);
 	CC int cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits=NULL);
 	GroupOrbits* orbits() const					{ return m_pOrbits; }
 	CC inline auto numPlayers() const			{ return m_numPlayers; }
+	CC auto RowStorage() const					{ return m_pRowStorage; }
 #if !USE_CUDA
 	inline MatrixDB* matrixDB()					{ return &m_matrixDB; }
 #endif
@@ -180,6 +181,7 @@ private:
 	CC bool processOneDay();
 	CC int checkPlayer1(int iPlayerNumber);
 	CC int checkPlayer3(int iPlayerNumber, int lastPlayer);
+	CC inline auto numDaysResult() const	     { return m_numDaysResult; }
 #if !USE_CUDA && PrintImprovedResults
 	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
 #else
@@ -191,8 +193,8 @@ private:
 	CC void cnvInit();
 	CC bool cnvCheckTgNew(ctchar* tr, int nrows);
 	CC bool cnvCheckNew(int iMode, int nrows, bool useAutomorphisms = true);
-	CC bool cnvCheck2P1F(int nrows);
 	CC bool cnvCheck2U1F(int nrows);
+	CC bool cnvCheck2P1F(int nrows);
 	CC bool cnvCheck3U1F(int nrows);
 	void testCanonizatorSpeed();
 	void testRightNeighbor(int nr);
@@ -210,9 +212,9 @@ private:
 	CC void goBack();
 	CC void p1fCheckStartMatrix(int nr);
 	CC bool create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1, ctchar* pfi, ctchar* pfj) const;
-	CC bool create3P1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
+	CC bool create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0);
-	CC bool create3P1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
+	CC bool create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0) const;
 	CC bool createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles,
 		ctchar* dir, ctchar* offset, ctchar* start, int iPrint = 0);
@@ -226,6 +228,7 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
+	CC inline bool checkCanonicity() const		{ return iDay == m_matrixCanonInterval; }
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;
@@ -287,6 +290,8 @@ private:
 	int m_improveResult;
 	int m_TrInd;
 	int m_cnvMode;
+	int m_useRowsPrecalculation;
+	int m_secondPlayerInRow4;
 
 	tchar* m_Km;
 	tchar* m_Km2;
@@ -307,6 +312,9 @@ private:
 	CheckCanon *m_pCheckCanon = NULL;
 	GroupOrbits *m_pOrbits = NULL;
 	unsigned int m_p1f_counter = 0;
+	bool m_checkForUnexpectedCycle;
+	int m_matrixCanonInterval;   // 0 - Canonicity will be verified only for fully constructed matrices.
+	                             // != 0 Canonicality will be checked on lines with numbers proportional to m_matrixCanonInterval
 #if !USE_CUDA
 	int m_finalKMindex;
 	std::string ImprovedResultFile;
@@ -317,11 +325,14 @@ private:
 	void* m_pRes;
 	TrCycles m_TrCycles;
 	TrCycles m_TrCyclesAll[MAX_CYCLE_SETS];
-	checkP1F m_pCheckP1F;
+	checkU1F m_pCheckU1F;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
 	checkInvalidCycle m_pInvalidCycle;
 	CBinaryMatrixStorage** m_ppBinMatrStorage = NULL;
+	bool m_bRowStorageOwner;
+	CRowStorage* m_pRowStorage = NULL;
+	CRowUsage* m_pRowUsage = NULL;
 };
 
 // trim from start (in place)

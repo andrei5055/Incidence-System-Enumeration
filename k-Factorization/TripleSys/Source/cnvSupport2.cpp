@@ -7,7 +7,7 @@ CC bool alldata::cnvCheck2U1F(int nrows)
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 	TrCycles trCycles01;
-	bool ok = getCyclesAndPath(&trCycles01, 1, p1ftable(0), p1ftable(1)) > 0;
+	bool ok = getCyclesAndPath(&trCycles01, 1, neighbors(0), neighbors(1)) > 0;
 	ASSERT(!ok);
 
 #define _StatAdd(x, y, z)  // StatAdd(x, y, z)
@@ -23,14 +23,22 @@ CC bool alldata::cnvCheck2U1F(int nrows)
 			if (indRow0 == indRow1)
 				continue;
 			TrCycles trCycles;
-			bool ok = getCyclesAndPath(&trCycles, 1, p1ftable(indRow0), p1ftable(indRow1)) > 0 &&
+			bool ok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0 &&
 				!MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET);
+			if (!ok) {
+				printTable("result", result(), nrows, m_numPlayers, 2);
+				printTable("resi", result(indRow0), 1, m_numPlayers, 2);
+				printTable("resj", result(indRow1), 1, m_numPlayers, 2);
+				printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
+				printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);
+			}
+
 			ASSERT(!ok);
 			ctchar *pDir, *pStartOut;
 			auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
 
 			do {
-				_StatAdd("create2U1FTr", 11, true);
+				_StatAdd("create2P1FTr", 11, true);
 
 				const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
 
