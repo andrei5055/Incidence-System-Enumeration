@@ -286,7 +286,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					if (m_pRowUsage->getRow(iDay, ipx))
 					{
 #if !USE_CUDA
-						if (iDay == nPrecalcRows) {
+						if (bPrint && iDay < nPrecalcRows + 3) {
 							cTime = clock();
 							m_rowTime[iDay] = cTime - iTime;
 						}
@@ -301,7 +301,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if !USE_CUDA
 						cTime = clock();
-						for (int i = nPrecalcRows + 1; i < iDay; i++)
+						for (int i = nPrecalcRows + 3; i < iDay; i++)
 							m_rowTime[i] = cTime - iTime;
 #endif
 						iDay--;
