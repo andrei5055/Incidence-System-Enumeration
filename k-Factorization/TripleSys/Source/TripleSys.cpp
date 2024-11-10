@@ -312,6 +312,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				}
 				if (iCalcMode == eCalcResult) {
 					m_useRowsPrecalculation = eCalculateRows;
+					m_pRowStorage->init();
+					iDay++;
+					bPrevResult = true;
 					continue;
 				}
 				noMoreResults = true;
@@ -360,11 +363,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					if (nRows4) {
 						iDay = nPrecalcRows;
 						if (bPrint) {
-							printf("Number of Precalculated rows=%5d\n", nRows4);
+							printf("Total number of precalculated row solutions = %5d\n", nRows4);
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->init(sysParam()->u1fCycles[0]);
+						m_pRowStorage->initCompatibilityMasks(sysParam()->u1fCycles[0]);
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;
