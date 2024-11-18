@@ -177,7 +177,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 	m_playerIndex = playerIndexCycle;
 
 	if (m_useRowsPrecalculation != eCalculateRows) {
-		if (useAutomorphisms && utilizeGroups(nrows)) {
+		if (useAutomorphisms && param(t_autGroupNumb) && utilizeGroups(nrows)) {
 			int step, lastVal, j, nGroupsTested = 0;
 			int i = setupIteratorByGroups(&lastVal, &step);
 			while (i != lastVal) {

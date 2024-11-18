@@ -193,7 +193,8 @@ CC bool CycleMapping::ProceedToNextMapping() {
 		while (j--)
 			permCycles[j] = j;
 
-		MEMCMP(pStartCycleOut, pStartCycleIn, lenGroup);
+		//memcpy(pStartCycleOut, pStartCycleIn, lenGroup);
+		//MEMCMP(pStartCycleOut, pStartCycleIn, lenGroup);
 		permCycles += lenGroup;
 		pStartCycleIn += lenGroup;
 		pStartCycleOut += lenGroup;

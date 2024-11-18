@@ -70,7 +70,7 @@ void alldata::outputError() const {
 #endif
 
 CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
-	tchar* mStart0, tchar* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, string *pOutResult, int iThread) {
+	tchar* mStart0, tchar* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 #if !USE_CUDA
 	const auto iTime = clock();
@@ -96,7 +96,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		nrowsOut = m_numDays;
 	m_numDaysResult = nrowsOut;
 
-	CUDA_PRINTF("*** threadNumber = %d nrowsOut = %d, numDaysAdj = %d \n", threadNumber, nrowsOut, numDaysAdj);
+	CUDA_PRINTF("*** threadNumber = %d nrowsOut = %d, numDaysResult = %d \n", threadNumber, nrowsOut, m_numDaysResult);
 
 #if !USE_CUDA
 	unsigned char* bResults = NULL;
@@ -147,7 +147,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
 
-	if (m_use2RowsCanonization || param(t_u1f))
+	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
 		if (m_groupSize == 2) // need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
@@ -160,34 +160,40 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	}
 	printf("\n");
 #endif
-#if 1
-	for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
-		auto* pGroupInfo = groupInfo(i);
-		if (!pGroupInfo)
-			break;
+#if 1 // preset automorphism groups
+	if (param(t_autGroupNumb)) {
 
-		if (iDay < i)
-			break;
+		int iCalc = m_useRowsPrecalculation;
+		m_useRowsPrecalculation = eCalcResult;
+		for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
+			auto* pGroupInfo = groupInfo(i);
+			if (!pGroupInfo)
+				break;
 
-		cnvCheckNew(0, i, false); // create initial set of tr for first i rows
-		pGroupInfo->copyIndex(*this);
-		resetGroupOrder();
+			if (iDay < i)
+				break;
+
+			cnvCheckNew(0, i, false); // create initial set of tr for first i rows
+			pGroupInfo->copyIndex(*this);
+			resetGroupOrder();
 #if 0
-		int grOrder = 0;
-		if (i > 2) {
-			auto* pPrevGroup = groupInfo(i - 1);
-			auto* pTmp = pPrevGroup;
-			pPrevGroup = pGroupInfo;
-			pGroupInfo = pTmp;
-			grOrder = pGroupInfo->groupOrder();
-			auto* cmpTr = pPrevGroup->getObject();
-			for (int j = pPrevGroup->groupOrder(); --j;) {
-				cmpTr += m_numPlayers;
-				pGroupInfo->updateGroupOrder(cmpTr);
+			int grOrder = 0;
+			if (i > 2) {
+				auto* pPrevGroup = groupInfo(i - 1);
+				auto* pTmp = pPrevGroup;
+				pPrevGroup = pGroupInfo;
+				pGroupInfo = pTmp;
+				grOrder = pGroupInfo->groupOrder();
+				auto* cmpTr = pPrevGroup->getObject();
+				for (int j = pPrevGroup->groupOrder(); --j;) {
+					cmpTr += m_numPlayers;
+					pGroupInfo->updateGroupOrder(cmpTr);
+				}
+				grOrder = pGroupInfo->groupOrder() - grOrder;
 			}
-			grOrder = pGroupInfo->groupOrder() - grOrder;
-		}
 #endif
+		}
+		m_useRowsPrecalculation = iCalc;
 	}
 #endif
 
@@ -276,7 +282,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						iDay = m_playerIndex / m_numPlayers;
 						ipx = m_playerIndex % m_numPlayers;
 						m_playerIndex = 0;
-						if (iDay >= numDaysResult())
+						if (iDay < nPrecalcRows || iDay >= numDaysResult())
 						{
 							ASSERT(1);
 							noMoreResults = true;
@@ -285,6 +291,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					}
 					if (m_pRowUsage->getRow(iDay, ipx))
 					{
+
+						///m_pRowUsage->getMatrix(result(), neighbors(), iDay + 1);
+						//printTable("tbl", result(), iDay + 1, m_numPlayers, 2);
+
+						m_playerIndex = 0;
 #if !USE_CUDA
 						if (bPrint && iDay < nPrecalcRows + 3) {
 							cTime = clock();
@@ -293,10 +304,14 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 						iDay++;
 						if (iDay < numDaysResult() && !checkCanonicity()) {
-#if !USE_CUDA
-							if (!bPrint || cTime - rTime < ReportInterval)
+#if 1
+							m_p1f_counter++;
+							if (m_p1f_counter % param(t_p1f_counter))
 #endif
-								goto ProcessPrecalculatedRow;
+#if !USE_CUDA
+								if (cTime - rTime < ReportInterval)
+#endif
+									goto ProcessPrecalculatedRow;
 						}
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if !USE_CUDA

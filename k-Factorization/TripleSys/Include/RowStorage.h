@@ -2,9 +2,8 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
-#define NEW_GET_ROW 1
-#define UseSolutionMasks 1
-#define USE_64_BIT_MASK		!USE_CUDA
+#define NEW_GET_ROW      1
+#define USE_64_BIT_MASK	 !USE_CUDA
 
 #if USE_64_BIT_MASK
 typedef long long tmask;
@@ -56,78 +55,9 @@ public:
 		memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
 		m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
 	}
-	CC void initCompatibilityMasks(tchar* u1fCycles = NULL)
-	{
-		m_u1fCycles = u1fCycles;
-		for (int i = 1; i < m_numPlayers; i++)
-			m_pRowSolutionCntr[i] += m_pRowSolutionCntr[i - 1];
+	CC inline auto numPlayers() const { return m_numPlayers; }
+	CC void initCompatibilityMasks(tchar* u1fCycles = NULL);
 
-		const auto& numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
-		delete[] m_fullExcludeTable;
-		m_numSolutionTotalB = ((numSolutionTotal + 7) / 8 + 7) / 8 * 8;
-		auto len = numSolutionTotal * m_numSolutionTotalB;
-		m_fullExcludeTable = new tchar[len];
-		memset(m_fullExcludeTable, 0, len);
-
-
-		delete[] m_pRowSolutionMasksIdx;
-		delete[] m_pRowSolutionMasks;
-		len = numPlayers();
-		m_pRowSolutionMasksIdx = new uint[len];
-
-		m_pRowSolutionMasks = new tmask[len];
-		memset(m_pRowSolutionMasks, 0, len * sizeof(tmask));
-
-#if !USE_64_BIT_MASK || !NEW_GET_ROW
-		// Filling the lookup table m_FirstOnePosition
-		memset(m_FirstOnePosition, 0, sizeof(m_FirstOnePosition));
-		for (int i = 2; i < 256; i += 2)
-			m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
-#endif
-
-		// Define the number of first long long's we don't need to copy to the next row.
-		memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
-		for (int i = m_numPreconstructedRows; i < m_numPlayers - 1; i++)
-			m_pNumLongs2Skip[i+1] = m_pRowSolutionCntr[i] >> 6;
-
-		const auto jMax = m_lenMask >> 3;
-		auto* pFullIncludeTable = (tmask *)m_fullExcludeTable;
-		unsigned int last = 0;
-		m_pRowSolutionMasksIdx[0] = 0;
-		int i = m_numPreconstructedRows;
-		while (i < m_numPlayers) {
-			auto first = last;
-			last = m_pRowSolutionCntr[i++];
-			m_pRowSolutionMasksIdx[i - 1] = IDX(last);
-			if (REM(last))
-				m_pRowSolutionMasks[i-1] = (tmask)(-1) << REM(last);
-
-			while (first < last) {
-				auto* rm = (const long long*)m_pMaskStorage->getObject(first);
-				const auto pRow = getObject(first++);
-				ASSERT(pRow[1] != i);
-				const auto pNeighbors = pRow + m_numPlayers;
-				auto idx = last - 1;
-				while (++idx < numSolutionTotal) {
-					// Let's check if the masks are mutually compatible
-					auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-					int j = jMax;
-					while (j-- && !(rm[j] & pMask[j]));
-
-					if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
-						// The masks are compatible and the length of the cycle is equal to m_numPlayers
-						SET_MASK_BIT(pFullIncludeTable, idx);     // 1 - means OK
-					}
-				}
-
-				pFullIncludeTable += m_numSolutionTotalB / sizeof(tmask);
-			}
-		}
-		delete m_pMaskStorage;
-		m_pMaskStorage = NULL;
-	}
-
-	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
@@ -180,7 +110,6 @@ private:
 	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
 	uint* m_pRowSolutionMasksIdx = NULL; 
 	tchar* m_u1fCycles = NULL;
-	int m_lenType[4];              // The number of long long's, int's short's and bytes  in the solution mask that need to be copied to the next row.
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 };
 
@@ -213,13 +142,6 @@ public:
 			memcpy(row + iRow * numPlayers, pObj, numPlayers);
 			memcpy(neighbors + iRow * numPlayers, pObj + numPlayers, numPlayers);
 		}
-
-		FILE* f;
-		extern int cntr;
-		static int nMatr= 0;
-		fopen_s(&f, "aaa.txt", nMatr++? "a" : "w");
-		fprintf(f, "===========  nMatr = %2d  cntr = %d \n", nRows, cntr);
-		fclose(f);
 	}
 	CC bool getRow(int iRow, int ipx) const;
 private:

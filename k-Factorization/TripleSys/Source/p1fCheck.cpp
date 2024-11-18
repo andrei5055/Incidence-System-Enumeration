@@ -578,10 +578,10 @@ CC void alldata::p1fCheckStartMatrix(int nr)
 		int iret = getCyclesAndPath(&trCycles, 1, neighbors(0), neighbors(i));
 		if (iret) {
 			auto u1fPntr = sysParam()->u1fCycles[0];
-			if ((!u1fPntr && trCycles.ncycles != 1) || (MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
+			if ((!u1fPntr && trCycles.ncycles != 1) || (u1fPntr && MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
 				iret = 0;
 		}
-		CUDA_PRINTF("*** p1fCheck DONE for i = %d  irow = %d\n", i, irow);
+		CUDA_PRINTF("*** p1fCheck DONE for rows = 0,%d  iret = %d\n", i, iret);
 		ASSERT(iret <= 0, 
 			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not p1f/u1fCycles), Exit\n", i);
 			printTable("Incorrect 'Start matrix'", result(), nr, m_numPlayers, m_groupSize);

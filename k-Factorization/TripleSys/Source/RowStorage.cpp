@@ -4,7 +4,106 @@
 #include <bitset>
 #endif
 
-int cntr = 0;
+#define UseSolutionMasks 1
+#define UseIPX			 0 // works faster with 0
+#define USE_INTRINSIC	 !USE_CUDA
+
+#if USE_INTRINSIC
+#include <immintrin.h> // Header for AVX2 intrinsics
+
+void bitwise_multiply(const long long* a, const long long* b, long long* result, size_t size) {
+	size_t i = 0;
+
+	// Process 4 `long long` elements at a time using AVX2
+	for (; i + 4 <= size; i += 4) {
+		// Load 4 `long long` elements from each array
+		__m256i vec_a = _mm256_loadu_si256((__m256i*) & a[i]);
+		__m256i vec_b = _mm256_loadu_si256((__m256i*) & b[i]);
+
+		// Perform bitwise AND operation
+		__m256i vec_result = _mm256_and_si256(vec_a, vec_b);
+
+		// Store the result back to the result array
+		_mm256_storeu_si256((__m256i*) & result[i], vec_result);
+	}
+
+	// Handle the remainder elements (if `size` is not a multiple of 4)
+	for (; i < size; ++i) {
+		result[i] = a[i] & b[i];
+	}
+}
+#endif
+
+CC void CRowStorage::initCompatibilityMasks(tchar* u1fCycles)
+{
+	m_u1fCycles = u1fCycles;
+	for (int i = 1; i < m_numPlayers; i++)
+		m_pRowSolutionCntr[i] += m_pRowSolutionCntr[i - 1];
+
+	const auto& numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
+	delete[] m_fullExcludeTable;
+	m_numSolutionTotalB = ((numSolutionTotal + 7) / 8 + 7) / 8 * 8;
+	auto len = numSolutionTotal * m_numSolutionTotalB;
+	m_fullExcludeTable = new tchar[len];
+	memset(m_fullExcludeTable, 0, len);
+
+	delete[] m_pRowSolutionMasksIdx;
+	delete[] m_pRowSolutionMasks;
+	len = numPlayers();
+	m_pRowSolutionMasksIdx = new uint[len];
+
+	m_pRowSolutionMasks = new tmask[len];
+	memset(m_pRowSolutionMasks, 0, len * sizeof(tmask));
+
+#if !USE_64_BIT_MASK || !NEW_GET_ROW
+	// Filling the lookup table m_FirstOnePosition
+	memset(m_FirstOnePosition, 0, sizeof(m_FirstOnePosition));
+	for (int i = 2; i < 256; i += 2)
+		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
+#endif
+
+	// Define the number of first long long's we don't need to copy to the next row.
+	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
+	for (int i = m_numPreconstructedRows; i < m_numPlayers - 1; i++)
+		m_pNumLongs2Skip[i + 1] = m_pRowSolutionCntr[i] >> 6;
+
+	const auto jMax = m_lenMask >> 3;
+	auto* pFullIncludeTable = (tmask*)m_fullExcludeTable;
+	unsigned int last = 0;
+	m_pRowSolutionMasksIdx[0] = 0;
+	int i = m_numPreconstructedRows;
+	while (i < m_numPlayers) {
+		auto first = last;
+		last = m_pRowSolutionCntr[i];
+		m_pRowSolutionMasksIdx[i] = last >> 6;
+		if (REM(last))
+			m_pRowSolutionMasks[i] = (tmask)(-1) << REM(last);
+
+		i++;
+		while (first < last) {
+			auto* rm = (const long long*)m_pMaskStorage->getObject(first);
+			const auto pRow = getObject(first++);
+			ASSERT(pRow[1] != i);
+			const auto pNeighbors = pRow + m_numPlayers;
+			auto idx = last - 1;
+			while (++idx < numSolutionTotal) {
+				// Let's check if the masks are mutually compatible
+				auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
+				int j = jMax;
+				while (j-- && !(rm[j] & pMask[j]));
+
+				if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
+					// The masks are compatible and the length of the cycle is equal to m_numPlayers
+					SET_MASK_BIT(pFullIncludeTable, idx);     // 1 - means OK
+				}
+			}
+
+			pFullIncludeTable += m_numSolutionTotalB / sizeof(tmask);
+		}
+	}
+	delete m_pMaskStorage;
+	m_pMaskStorage = NULL;
+}
 
 CC bool CRowUsage::getRow(int iRow, int ipx) const
 {
@@ -27,48 +126,43 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
 	const auto lastB = IDX(last);
 
-#define UseIPX 0 // works faster with 0
-#if UseSolutionMasks
-	while (true)
-#endif
-	{
-#if UseIPX
-		while (true) {
+#if UseSolutionMasks || UseIPX
+	while (true) {
 #endif
 #if USE_64_BIT_MASK
-			// Skip all longs equal to 0
-			auto firstB = first >> 6;
-			unsigned long iBit = 0;
-			while (firstB < lastB && !pCompSol[firstB])
-				firstB++;
+		// Skip all longs equal to 0
+		auto firstB = first >> 6;
+		unsigned long iBit = 0;
+		while (firstB < lastB && !pCompSol[firstB])
+			firstB++;
 
-			if (firstB >= lastB || !_BitScanForward64(&iBit, *(pCompSol + firstB))) {
-				first = last;
-				return false;
-			}
+		if (firstB >= lastB || !_BitScanForward64(&iBit, *(pCompSol + firstB))) {
+			first = last;
+			return false;
+		}
 
-			first = (firstB << 6) + iBit;
-			pCompSol[firstB] ^= (long long)1 << iBit;
+		first = (firstB << 6) + iBit;
+		pCompSol[firstB] ^= (long long)1 << iBit;
 #else
-			// Skip all bytes equal to 0
-			auto firstB = first >> 3;
-			while (firstB < lastB && !pCompSol[firstB])
-				firstB++;
+		// Skip all bytes equal to 0
+		auto firstB = first >> 3;
+		while (firstB < lastB && !pCompSol[firstB])
+			firstB++;
 
-			if (firstB >= lastB)
-				return false;
+		if (firstB >= lastB)
+			return false;
 
-			const auto shift = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
-			if ((first = (firstB << 3) + shift) >= last)
-				return false;
+		const auto shift = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
+		if ((first = (firstB << 3) + shift) >= last)
+			return false;
 
-			pCompSol[firstB] ^= 1 << shift;
+		pCompSol[firstB] ^= 1 << shift;
 #endif
 #if UseIPX
-			// Previous solution should be different in first ipx bytes
-			if (!ipx || !pPrevSolution || memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1))
-				break;
+		// Previous solution should be different in first ipx bytes
+		if (ipx && pPrevSolution && !memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1)) {
 			first++; // We need to try next solution 
+			continue;
 		}
 #endif
 		if (iRow < m_nRowMax) {
@@ -77,22 +171,28 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 			auto pPrevA = (const long long*)(pCompSol)+numLongs2Skip;
 			auto pToA = (long long*)(pPrevA + (m_numSolutionTotalB >> 3));
 			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
+
+#if USE_INTRINSIC
+			bitwise_multiply(pPrevA, pFromA, pToA, (m_numSolutionTotalB >> 3) - numLongs2Skip);
+#else
 			for (auto j = (m_numSolutionTotalB >> 3) - numLongs2Skip; j--;)
 				pToA[j] = pPrevA[j] & pFromA[j];
+#endif
 
 #if UseSolutionMasks
+			pToA -= numLongs2Skip;
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
-
-			auto jMax = pRowSolutionMasksIdx[iRow - 1];
-			int i = iRow;
-			for (; i < m_nRowMax; i++) {
+			
+			int i = iRow + 1;
+			auto jMax = pRowSolutionMasksIdx[iRow];
+			for (; i <= m_nRowMax; i++) {
 				auto j = jMax;
 				jMax = pRowSolutionMasksIdx[i];
 
 				// Check left, middle and right parts of the solution interval for i - th row
-				auto mask = pRowSolutionMasks[i];
-				if (mask && (mask & pToA[j - 1]))
+				auto mask = pRowSolutionMasks[i-1];
+				if (mask && (mask & pToA[j++]))
 					continue;  // at least one solution masked by first left part of the interval is still valid
 
 				// middle part
@@ -104,27 +204,22 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 
 				// There are no valid solutions with the indices inside 
 				// the interval defined by set of long longs
-				// We need to check the left and right sides of the intervals.
-				mask = pRowSolutionMasks[i + 1];
+				mask = pRowSolutionMasks[i];
+				// If mask != 0, we need to check the left and right sides of the intervals.
 				if (!mask || !((~mask) & pToA[jMax]))
 					break;
 			}
 
-#if 0
-			first++;
-			if (i >= m_nRowMax)
-				return true;
-#else
-			if (i >= m_nRowMax)
-				break;
-
-			first++;
-#endif
+			if (i <= m_nRowMax) {
+				first++;
+				continue;
+			}
 #endif
 		}
-		else
-			break;
+#if UseSolutionMasks || UseIPX
+		break;
 	}
+#endif
 #else
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
@@ -167,17 +262,6 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 #endif
 
 	m_excludeForRow[iRow] = (tchar *)m_pRowStorage->getSolutionMask(first);
-#endif
-
-#if 0	
-	FOPEN_F(f, "aaa.txt", cntr++ ? "a" : "w");
-	fprintf(f, "cntr = %2d:  iRow = %2d  first = %4d\n", cntr, iRow, first);
-
-	FCLOSE_F(f);
-	if (cntr >= 10)
-		cntr += 0;
-#else
-	cntr++;
 #endif
 
 	first++;

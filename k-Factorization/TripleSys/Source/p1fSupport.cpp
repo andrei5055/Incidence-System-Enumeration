@@ -4,6 +4,9 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 {
 	tchar v1 = kStart, v2;
 	tchar itr = 0;
+#if _DEBUG
+	memset(tr, unset, m_numPlayers);
+#endif
 	for (int n = 0; n < m_numPlayers; n += 2)
 	{
 		tr[v1] = itr;
