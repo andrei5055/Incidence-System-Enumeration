@@ -158,6 +158,7 @@
     <ClCompile Include="Source\cnv.cpp" />
     <ClCompile Include="Source\cnvSupport.cpp" />
     <ClCompile Include="Source\cnvSupport2.cpp" />
+    <ClCompile Include="Source\CompSolGraph.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
     <ClCompile Include="Source\cycles.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="Include\MatrixDB.h" />
     <ClInclude Include="Include\p1fCheck.h" />
     <ClInclude Include="Include\RowStorage.h" />
+    <ClInclude Include="Include\CompSolGraph.h" />
     <ClInclude Include="Include\Stat.h" />
     <ClInclude Include="Include\Storage.h" />
     <ClInclude Include="Include\Table.h" />

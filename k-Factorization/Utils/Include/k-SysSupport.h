@@ -39,6 +39,7 @@
 
 typedef unsigned char tchar;
 typedef const tchar  ctchar;
+typedef unsigned int uint;
 
 template<typename T>
 CC T* reallocStorageMemory(T** pObjects, size_t lenObj) {

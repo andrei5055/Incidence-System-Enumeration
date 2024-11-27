@@ -41,6 +41,7 @@ const char* intParamNames[]{
 	"NestedGroups",
 	"GridSize",
 	"BlockSize",
+	"OrderMatrices",
 };
 
 const char* strParamNames[]{

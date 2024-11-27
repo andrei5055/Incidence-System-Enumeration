@@ -54,7 +54,7 @@
                                   // 1 - reason of rejection will be explained;
 								  // 2 - improve matrix as much as possible.
 #define CreateImprovedMatrix 0	  // 1 - cnvCheckNew will create improved matrix in m_Km, 0 - not (0 works faster) 
-#define StartFolder				  "../Logs1/" 	// Name of folder with 'Start Matrices, must present in multithread mode.
+#define StartFolder				  "../Logs1/" 	// Name of folder with 'Start Matrices', must present in multithread mode.
 #define ResultFolder			  "../Logs1/" 	// Name of folder with the results, "" - no file output.
 #define PrintImprovedResults 0	  // Set this value to >= 2 if you want to see improved results on screen.
 #define ImprovedResultFolder	  "../ImprovedResults/"	// Name of folder for files with the improved results.

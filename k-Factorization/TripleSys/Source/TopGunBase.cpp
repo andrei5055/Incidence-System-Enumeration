@@ -94,7 +94,7 @@ int TopGunBase::getStartMatrices() const
 	}
 
 	if (nMatricesAll)
-		printf("\n%d %d-rows 'Start matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), nfr);
+		printf("\n%d %d-rows 'Start Matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), nfr);
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
 	return nMatricesAll;
@@ -160,4 +160,15 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	}
 
 	FCLOSE_F(f);
+}
+
+int matrixSize;
+
+int compare_matr_fn(const void* pA, const void* pB) {
+	return memcmp(pA, pB, matrixSize);
+}
+
+void TopGunBase::orderMatrices() const {
+	matrixSize = mStartMatrixSize;
+	std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
 }

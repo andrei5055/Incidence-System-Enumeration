@@ -46,7 +46,7 @@ CC bool alldata::cnvCheck2P1F(int nrows)
 				{
 					bRet = false;
 					goto ret;
-				}/**/
+				}
 			}
 		}
 	}

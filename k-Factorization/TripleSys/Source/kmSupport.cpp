@@ -186,11 +186,10 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	auto dayMax = tm[0];
 	auto miFrom = mi;
 	coi = mo;
-	if (m_useRowsPrecalculation == eCalculateRows) {
-		int nrr = param(t_useRowsPrecalculation);
-		if (nr == nrr + 1 && *(mi + nc * nrr + 1) != nr)
-			nr = nrr;
-	}
+	int nrr = param(t_useRowsPrecalculation);
+	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
+	if (bPrecalcRow)
+		nr = nrr;
 	for (int i = 0; i < nr; i++, coi += nc, mi += nc)
 	{
 		ASSERT(tm[i] >= nc);
@@ -201,7 +200,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 		case 1: return coi[1] == mi[1] ? 1 : 2;
 		}
 	}
-	return param(t_nestedGroups) > 1 ? 1 : 0;
+	return (bPrecalcRow || param(t_nestedGroups) > 1) ? 1 : 0;
 }
 CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayMax, int iDayCurrent, int nc, int ip) const
 {
@@ -402,7 +401,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	char row2ndValue = 0;
 
 	int nrr = param(t_useRowsPrecalculation);
-	bool bCalcRows5AndUp = m_useRowsPrecalculation == eCalculateRows && nr > 3 && *(mi + nc * 3 + 1) != 4;
+	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
 	for (tchar i = 0; i < nr; i++)
 	{
 		if (i == ind0 || i == ind1)
@@ -424,7 +423,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			rowMax = MAX2(rowMax, i);
 			bProc3 = true;
 		}
-		else if (row2ndValue <= nr && !bCalcRows5AndUp) // cant use quick check if row2ndValue > nr, or precalculation of rows 5 and up
+		else if (row2ndValue <= nr && !bPrecalcRow) // cant use quick check if row2ndValue > nr, or precalculation of rows nrr and up
 		{
 			if (bProc3 && row2ndValue == 4)
 			{
@@ -445,7 +444,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		return 2;
 	}
 
-	if (bCalcRows5AndUp)
+	if (bPrecalcRow)
 		nr = nrr;
 	
 	for (int i = 4; i <= nr; i++)
@@ -461,7 +460,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		case 1: return 1;
 		}
 	}
-	return 0;
+	return bPrecalcRow ? 1 : 0;
 }
 CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 {

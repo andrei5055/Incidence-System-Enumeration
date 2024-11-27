@@ -53,6 +53,7 @@ typedef enum {
 	t_nestedGroups,
 	t_gridSize,
 	t_blockSize,
+	t_orderMatrices,
 	t_lastParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,

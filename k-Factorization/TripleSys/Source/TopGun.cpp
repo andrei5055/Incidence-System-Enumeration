@@ -49,9 +49,13 @@ int TopGun::Run()
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
 		if (nMatrices <= firstIndexOfStartMatrices)
 		{
-			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start matrices'(%d). Exit\n", 
+			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n", 
 				firstIndexOfStartMatrices, nMatrices);
 			myExit(1);
+		}
+		if (param(t_orderMatrices)) {
+			orderMatrices();
+			printfGreen("%d 'Start Matrices' sorted\n", nMatrices);
 		}
 		if (!param(t_MultiThreading) == 1) {
 			if (numThreads > nMatrices - firstIndexOfStartMatrices)

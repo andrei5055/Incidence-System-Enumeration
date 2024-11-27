@@ -27,6 +27,7 @@ protected:
 	bool readStartMatrices();
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
+	void orderMatrices() const;
 
 	int m_nRowsOut;
 	int mStartMatrixSize;

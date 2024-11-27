@@ -4,9 +4,8 @@
 #include <bitset>
 #endif
 
-#define UseSolutionMasks 1
-#define UseIPX			 0 // works faster with 0
-#define USE_INTRINSIC	 !USE_CUDA
+#define UseIPX				0 // works faster with 0
+#define USE_INTRINSIC		!USE_CUDA
 
 #if USE_INTRINSIC
 #include <immintrin.h> // Header for AVX2 intrinsics
@@ -34,7 +33,7 @@ void bitwise_multiply(const long long* a, const long long* b, long long* result,
 }
 #endif
 
-CC void CRowStorage::initCompatibilityMasks(tchar* u1fCycles)
+CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 {
 	m_u1fCycles = u1fCycles;
 	for (int i = 1; i < m_numPlayers; i++)
@@ -105,8 +104,12 @@ CC void CRowStorage::initCompatibilityMasks(tchar* u1fCycles)
 	m_pMaskStorage = NULL;
 }
 
-CC bool CRowUsage::getRow(int iRow, int ipx) const
+long long cntr = 0;
+CC int CRowUsage::getRow(int iRow, int ipx) const
 {
+#if !USE_CUDA
+	//cntr++;
+#endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows);
 	const auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
@@ -115,11 +118,11 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
-			return false;
+			return 0;
 
 		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
 		first += m_step;
-		return true;
+		return 1;
 	}
 
 	auto* pCompSol = (tmask*)(m_pCompatibleSolutions + (iRow - numPreconstructedRows - 1) * m_numSolutionTotalB);
@@ -129,35 +132,25 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 #if UseSolutionMasks || UseIPX
 	while (true) {
 #endif
-#if USE_64_BIT_MASK
-		// Skip all longs equal to 0
-		auto firstB = first >> 6;
-		unsigned long iBit = 0;
-		while (firstB < lastB && !pCompSol[firstB])
-			firstB++;
-
-		if (firstB >= lastB || !_BitScanForward64(&iBit, *(pCompSol + firstB))) {
-			first = last;
-			return false;
-		}
-
-		first = (firstB << 6) + iBit;
-		pCompSol[firstB] ^= (long long)1 << iBit;
-#else
-		// Skip all bytes equal to 0
-		auto firstB = first >> 3;
+		// Skip all bytes/longs equal to 0
+		auto firstB = first >> SHIFT;
 		while (firstB < lastB && !pCompSol[firstB])
 			firstB++;
 
 		if (firstB >= lastB)
-			return false;
+			return 0;
 
-		const auto shift = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
-		if ((first = (firstB << 3) + shift) >= last)
-			return false;
-
-		pCompSol[firstB] ^= 1 << shift;
+#if USE_64_BIT_MASK
+		unsigned long iBit = 0;
+		const auto retVal = _BitScanForward64(&iBit, *(pCompSol + firstB));
+		ASSERT(!retVal);
+#else
+		const auto iBit = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
 #endif
+		if ((first = (firstB << SHIFT) + iBit) >= last)
+			return 0;
+
+		pCompSol[firstB] ^= (tmask) 1 << iBit;
 #if UseIPX
 		// Previous solution should be different in first ipx bytes
 		if (ipx && pPrevSolution && !memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1)) {
@@ -172,10 +165,11 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 			auto pToA = (long long*)(pPrevA + (m_numSolutionTotalB >> 3));
 			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
 
+			const auto len = (m_numSolutionTotalB >> 3) - numLongs2Skip;
 #if USE_INTRINSIC
-			bitwise_multiply(pPrevA, pFromA, pToA, (m_numSolutionTotalB >> 3) - numLongs2Skip);
+			bitwise_multiply(pPrevA, pFromA, pToA, len);
 #else
-			for (auto j = (m_numSolutionTotalB >> 3) - numLongs2Skip; j--;)
+			for (auto j = len; j--;)
 				pToA[j] = pPrevA[j] & pFromA[j];
 #endif
 
@@ -190,10 +184,10 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 				auto j = jMax;
 				jMax = pRowSolutionMasksIdx[i];
 
-				// Check left, middle and right parts of the solution interval for i - th row
+				// Check left, middle and right parts of the solution interval for i-th row
 				auto mask = pRowSolutionMasks[i-1];
 				if (mask && (mask & pToA[j++]))
-					continue;  // at least one solution masked by first left part of the interval is still valid
+					continue;  // at least one solution masked by left part of the interval is still valid
 
 				// middle part
 				while (j < jMax && !pToA[j])
@@ -205,7 +199,7 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 				// There are no valid solutions with the indices inside 
 				// the interval defined by set of long longs
 				mask = pRowSolutionMasks[i];
-				// If mask != 0, we need to check the left and right sides of the intervals.
+				// If mask != 0, we need to check the right side of the intervals.
 				if (!mask || !((~mask) & pToA[jMax]))
 					break;
 			}
@@ -214,7 +208,52 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 				first++;
 				continue;
 			}
-#endif
+
+#if UseSolutionClicks
+			if (iRow > 6) {
+				m_pCompSolutions->releaseSolDB();
+				int kMax = 0;
+				i = iRow + 1;
+
+				auto pBuffer = m_pCompSolutions->getBuffer();
+				memcpy(pBuffer + numLongs2Skip, pToA + numLongs2Skip, len * sizeof(pBuffer[0]));
+				jMax = pRowSolutionMasksIdx[iRow];
+				for (; i <= m_nRowMax; i++, kMax++) {
+					auto j = jMax;
+					jMax = pRowSolutionMasksIdx[i];
+
+					// Check left, middle and right parts of the solution interval for i-th row
+					auto mask = pRowSolutionMasks[i - 1];
+					if (mask && (mask &= pToA[j++])) {
+						// at least one solution masked by left part of the interval is still valid
+						m_pCompSolutions->addCompatibleSolutions(j - 1, mask, kMax, m_pRowStorage, pToA);
+					}
+
+					// middle part
+					while (true) {
+						while (j < jMax && !pBuffer[j])
+							j++;
+
+						if (j >= jMax)
+							break;
+
+						m_pCompSolutions->addCompatibleSolutions(j, pBuffer[j], kMax, m_pRowStorage, pToA);
+						pBuffer[j] = 0;
+					}
+
+					mask = pRowSolutionMasks[i];
+					if (mask && (mask = (~mask) & pToA[jMax]))
+						m_pCompSolutions->addCompatibleSolutions(j, mask, kMax, m_pRowStorage, pToA);
+
+					if (kMax > 1)
+						m_pCompSolutions->removeUnreachableVertices(kMax);
+				}
+
+				return 2;
+			}
+#endif  // UseSolutionClicks
+
+#endif  // UseSolutionMasks
 		}
 #if UseSolutionMasks || UseIPX
 		break;
@@ -223,10 +262,10 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 #else
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
-			return false;
+			return 0;
 		m_excludeForRow[iRow] = (tchar*)m_pRowStorage->getSolutionMask(first);
 		first += m_step;
-		return true;
+		return 1;
 	}
 #if UseIPX
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
@@ -251,7 +290,7 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 		}
 
 		if (first >= last)
-			return false;
+			return 0;
 #if UseIPX
 		// Previous solution should be different in first ipx bytes
 		if (!pPrevSolution || memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1))
@@ -265,5 +304,5 @@ CC bool CRowUsage::getRow(int iRow, int ipx) const
 #endif
 
 	first++;
-	return true;
+	return 1;
 }

@@ -98,7 +98,6 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	bool bp1f = (!u1fPntr || u1fPntr[1] == m_numPlayers);
 
 	m_pCheckU1F = m_use2RowsCanonization ? ((m_groupSize == 2) ? (bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F) : &alldata::cnvCheck3U1F) : NULL;
-	//m_pCheckU1F = m_use2RowsCanonization ? ((m_groupSize == 2) ? &alldata::cnvCheck2U1F : &alldata::cnvCheck3U1F) : NULL;
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);

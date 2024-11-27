@@ -1,23 +1,28 @@
 #pragma once
+#include <vector>
 #include "k-SysSupport.h"
 #include "Storage.h"
 
-#define NEW_GET_ROW      1
-#define USE_64_BIT_MASK	 !USE_CUDA
+#define NEW_GET_ROW			1
+#define USE_64_BIT_MASK		!USE_CUDA
+#define UseSolutionMasks	1
+#define UseSolutionClicks	!USE_CUDA	// The graph whose vertices are the remaining solutions must have a maximum 
+										// clique whose size is equal to the number of unconstructed rows of the matrix.
 
 #if USE_64_BIT_MASK
 typedef long long tmask;
+#define SHIFT					6 
 #define IDX(n)					(n + 63) >> 6
-#define REM(n)					(n % 64)			// remainder from division
 #define SET_MASK_BIT(mask, idx)	mask[idx >> 6] |= (tmask)1 << (idx & 0x3f)
 #else
 typedef tchar tmask;
+#define SHIFT					3 
 #define IDX(n)					(n + 7) >> 3
-#define REM(n)					(n % 8)				// remainder from division
 #define SET_MASK_BIT(mask, idx)	mask[idx >> 3] |= (tmask)1 << (idx & 0x07)
 #endif
+#define REM(n)					(n % (1<<SHIFT))	// remainder from division
 
-typedef unsigned int uint;
+#include "CompSolGraph.h"
 
 class CRowStorage : public CStorage<tchar> {
 public:
@@ -56,7 +61,7 @@ public:
 		m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
 	}
 	CC inline auto numPlayers() const { return m_numPlayers; }
-	CC void initCompatibilityMasks(tchar* u1fCycles = NULL);
+	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
 
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
@@ -109,7 +114,7 @@ private:
 	tmask* m_pRowSolutionMasks = NULL;
 	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
 	uint* m_pRowSolutionMasksIdx = NULL; 
-	tchar* m_u1fCycles = NULL;
+	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 };
 
@@ -119,11 +124,15 @@ public:
 		const auto numPlayers = pRowStorage->numPlayers();
 		m_pRowSolutionIdx = new uint[numPlayers + 1];
 		memset(m_pRowSolutionIdx, 0, numPlayers * sizeof(m_pRowSolutionIdx[0]));
+#if UseSolutionClicks
+		m_pCompSolutions = new CompSolStorage(numPlayers, 100);
+#endif
 	}
 
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
 		delete[] m_pCompatibleSolutions;
+		delete m_pCompSolutions;
 	}
 	CC void init(int iThread = 0, int numThreads = 1) {
 		m_numSolutionTotalB = m_pRowStorage->numSolutionTotalB();
@@ -131,6 +140,8 @@ public:
 		m_pCompatibleSolutions = new tchar[len];
 		m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
 		m_step = numThreads;
+		if (m_pCompSolutions)
+			m_pCompSolutions->allocateBuffer(m_numSolutionTotalB>>3);
 	}
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows) {
 		const auto numPlayers = m_pRowStorage->numPlayers();
@@ -143,7 +154,7 @@ public:
 			memcpy(neighbors + iRow * numPlayers, pObj + numPlayers, numPlayers);
 		}
 	}
-	CC bool getRow(int iRow, int ipx) const;
+	CC int getRow(int iRow, int ipx) const;
 private:
 	const CRowStorage* m_pRowStorage;
 	const int m_nRowMax;				// Maximum value of iRow
@@ -154,4 +165,6 @@ private:
 #if NEW_GET_ROW == 0
 	tchar* m_excludeForRow[MAX_PLAYER_NUMBER];
 #endif
+
+	CompSolStorage* m_pCompSolutions = NULL;
 };

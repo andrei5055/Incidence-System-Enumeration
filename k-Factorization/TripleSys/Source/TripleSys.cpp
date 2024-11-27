@@ -306,7 +306,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						if (iDay < numDaysResult() && !checkCanonicity()) {
 #if 1
 							m_p1f_counter++;
-							if (m_p1f_counter % param(t_p1f_counter))
+							if (!param(t_p1f_counter) || (m_p1f_counter % param(t_p1f_counter)))
 #endif
 #if !USE_CUDA
 								if (cTime - rTime < ReportInterval)
@@ -603,6 +603,9 @@ noResult:
 	delete[] bResults;
 	delete pAutGroup;
 #endif
-
+#if !USE_CUDA
+	extern long long cntr;
+//	printf("********** cntr = %lld\n", cntr);
+#endif
 	return nLoops;
 }
