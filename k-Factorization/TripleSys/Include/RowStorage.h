@@ -6,7 +6,7 @@
 #define NEW_GET_ROW			1
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionMasks	1
-#define UseSolutionClicks	!USE_CUDA	// The graph whose vertices are the remaining solutions must have a maximum 
+#define UseSolutionCliques	!USE_CUDA	// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
 
 #if USE_64_BIT_MASK
@@ -26,7 +26,7 @@ typedef tchar tmask;
 
 class CRowStorage : public CStorage<tchar> {
 public:
-	CC CRowStorage(int numPreconstructedRows, int numPlayers, int useClicksAfterRow, int numObjects = 1000) : m_numPlayers(numPlayers),
+	CC CRowStorage(int numPreconstructedRows, int numPlayers, int useCliquesAfterRow, int numObjects = 1000) : m_numPlayers(numPlayers),
 		m_numPreconstructedRows(numPreconstructedRows), CStorage<tchar>(numObjects, 2 * numPlayers)	
 	{
 		m_numObjectsMax = numObjects;
@@ -34,7 +34,7 @@ public:
 		m_pNumLongs2Skip = m_pRowSolutionCntr + numPlayers;
 		initMaskStorage(numObjects);
 		m_lenMask = m_pMaskStorage->lenObject();
-		m_useClicksAfterRow = useClicksAfterRow ? useClicksAfterRow : numPlayers;
+		m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
 	}
 	CC ~CRowStorage() {
 		delete[] m_pRowSolutionCntr;
@@ -71,8 +71,8 @@ public:
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
-	CC inline auto useClicksAfterRow() const			{ return m_useClicksAfterRow; }
-	CC inline auto useClicks(int iRow) const			{ return iRow > m_useClicksAfterRow; }
+	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
+	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
 #if !(USE_64_BIT_MASK && NEW_GET_ROW)
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
@@ -119,7 +119,7 @@ private:
 	uint* m_pRowSolutionMasksIdx = NULL; 
 	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
-	int m_useClicksAfterRow;
+	int m_useCliquesAfterRow;
 };
 
 class CRowUsage : public CompSolStorage {

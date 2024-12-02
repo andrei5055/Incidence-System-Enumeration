@@ -170,9 +170,9 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 
 #if UseSolutionMasks
 			pToA -= numLongs2Skip;
-			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
-		
+			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
+			
 			int i = iRow + 1;
 			auto jMax = pRowSolutionMasksIdx[iRow];
 			for (; i <= m_nRowMax; i++) {
@@ -204,15 +204,15 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 				continue;
 			}
 
-#if UseSolutionClicks
-			if (m_pRowStorage->useClicks(iRow)) {
+#if UseSolutionCliques
+			if (m_pRowStorage->useCliques(iRow)) {
 				first++;
 				if (ConstructCompatibleSolutionGraph(pToA, iRow))
 					return 2;   // Ready to proceed with the getMatrix2() call.
 
 				continue;
 			}
-#endif  // UseSolutionClicks
+#endif  // UseSolutionCliques
 
 #endif  // UseSolutionMasks
 		}

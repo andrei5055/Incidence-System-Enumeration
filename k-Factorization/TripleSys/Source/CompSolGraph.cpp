@@ -2,7 +2,7 @@
 
 CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup) :
 	m_pRowStorage(pRowStorage), m_nRowMax(pRowStorage->numPlayers() - 2) {
-	m_nGroups = pRowStorage->numPlayers() - pRowStorage->useClicksAfterRow();
+	m_nGroups = pRowStorage->numPlayers() - pRowStorage->useCliquesAfterRow();
 	if (m_nGroups > 3) {
 		m_nGroups -= 3;
 		m_ppCompSol = new CompSolSet * [m_nGroups];

@@ -22,7 +22,7 @@ const char* intParamNames[]{
 	"ExpectedResult",
 	"UseCheckLinksV",
 	"UseRowsPrecalculation",
-	"UseSolutionClicksAfterRow",
+	"UseSolutionCliquesAfterRow",
 	"PrintMatrices",
 	"SavingMatricesToDisk",
 	"MatrixCanonInterval",
