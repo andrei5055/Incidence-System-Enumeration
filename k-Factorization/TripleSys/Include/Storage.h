@@ -36,6 +36,7 @@ public:
 	}
 
 	CC inline void releaseObject()			{ m_numObjects--; }
+	CC inline void releaseAllObjects()		{ m_numObjects = 0; }
 	int m_numObjects = 0;
 protected:
 	CC T* reallocStorageMemory() {

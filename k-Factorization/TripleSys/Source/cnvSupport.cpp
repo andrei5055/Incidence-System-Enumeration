@@ -44,6 +44,9 @@ CC bool alldata::cnvCheck2P1F(int nrows)
 				}
 				else if (icmp < 0)
 				{
+#if PRINT_TRANSFORMED
+					printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Ktmp, 0, 0, 0);
+#endif
 					bRet = false;
 					goto ret;
 				}

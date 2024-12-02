@@ -26,7 +26,7 @@ typedef tchar tmask;
 
 class CRowStorage : public CStorage<tchar> {
 public:
-	CC CRowStorage(int numPreconstructedRows, int numPlayers, int numObjects = 1000) : m_numPlayers(numPlayers), 
+	CC CRowStorage(int numPreconstructedRows, int numPlayers, int useClicksAfterRow, int numObjects = 1000) : m_numPlayers(numPlayers),
 		m_numPreconstructedRows(numPreconstructedRows), CStorage<tchar>(numObjects, 2 * numPlayers)	
 	{
 		m_numObjectsMax = numObjects;
@@ -34,6 +34,7 @@ public:
 		m_pNumLongs2Skip = m_pRowSolutionCntr + numPlayers;
 		initMaskStorage(numObjects);
 		m_lenMask = m_pMaskStorage->lenObject();
+		m_useClicksAfterRow = useClicksAfterRow ? useClicksAfterRow : numPlayers;
 	}
 	CC ~CRowStorage() {
 		delete[] m_pRowSolutionCntr;
@@ -68,8 +69,10 @@ public:
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
 	CC inline auto getSolutionMask(uint solNumb) const	{ return (const long long *)(m_fullExcludeTable + solNumb * m_numSolutionTotalB); }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
-	CC inline auto rowSolutionMasksIdx() const			{ return m_pRowSolutionMasksIdx; }
-	CC inline auto rowSolutionMasks() const				{ return m_pRowSolutionMasks; }
+	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
+	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
+	CC inline auto useClicksAfterRow() const			{ return m_useClicksAfterRow; }
+	CC inline auto useClicks(int iRow) const			{ return iRow > m_useClicksAfterRow; }
 #if !(USE_64_BIT_MASK && NEW_GET_ROW)
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
@@ -116,23 +119,20 @@ private:
 	uint* m_pRowSolutionMasksIdx = NULL; 
 	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
+	int m_useClicksAfterRow;
 };
 
-class CRowUsage {
+class CRowUsage : public CompSolStorage {
 public:
-	CC CRowUsage(const CRowStorage* pRowStorage) : m_pRowStorage(pRowStorage), m_nRowMax(pRowStorage->numPlayers() - 2) {
+	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
 		const auto numPlayers = pRowStorage->numPlayers();
 		m_pRowSolutionIdx = new uint[numPlayers + 1];
 		memset(m_pRowSolutionIdx, 0, numPlayers * sizeof(m_pRowSolutionIdx[0]));
-#if UseSolutionClicks
-		m_pCompSolutions = new CompSolStorage(numPlayers, 100);
-#endif
 	}
 
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
 		delete[] m_pCompatibleSolutions;
-		delete m_pCompSolutions;
 	}
 	CC void init(int iThread = 0, int numThreads = 1) {
 		m_numSolutionTotalB = m_pRowStorage->numSolutionTotalB();
@@ -140,24 +140,25 @@ public:
 		m_pCompatibleSolutions = new tchar[len];
 		m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
 		m_step = numThreads;
-		if (m_pCompSolutions)
-			m_pCompSolutions->allocateBuffer(m_numSolutionTotalB>>3);
 	}
-	CC void getMatrix(tchar* row, tchar* neighbors, int nRows) {
+	CC bool getMatrix2(tchar* row, tchar* neighbors, int nRows, int iRow) {
+		getMatrix(row, neighbors, ++iRow);
+		return completeMatrix(row, neighbors, nRows, iRow);
+	}
+	CC void getMatrix(tchar * row, tchar * neighbors, int nRows) {
 		const auto numPlayers = m_pRowStorage->numPlayers();
 		auto iStep = m_step;
+		size_t shift = m_pRowStorage->numPreconstructedRows() * numPlayers;
 		for (int iRow = m_pRowStorage->numPreconstructedRows(); iRow < nRows; iRow++) {
-			auto& first = m_pRowSolutionIdx[iRow];
-			auto* pObj = m_pRowStorage->getObject(first - iStep);
+			const auto* pObj = m_pRowStorage->getObject(m_pRowSolutionIdx[iRow] - iStep);
 			iStep = 1;
-			memcpy(row + iRow * numPlayers, pObj, numPlayers);
-			memcpy(neighbors + iRow * numPlayers, pObj + numPlayers, numPlayers);
+			memcpy(row + shift, pObj, numPlayers);
+			memcpy(neighbors + shift, pObj + numPlayers, numPlayers);
+			shift += numPlayers;
 		}
 	}
-	CC int getRow(int iRow, int ipx) const;
+	CC int getRow(int iRow, int ipx);
 private:
-	const CRowStorage* m_pRowStorage;
-	const int m_nRowMax;				// Maximum value of iRow
 	uint m_numSolutionTotalB;
 	uint* m_pRowSolutionIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
@@ -165,6 +166,4 @@ private:
 #if NEW_GET_ROW == 0
 	tchar* m_excludeForRow[MAX_PLAYER_NUMBER];
 #endif
-
-	CompSolStorage* m_pCompSolutions = NULL;
 };

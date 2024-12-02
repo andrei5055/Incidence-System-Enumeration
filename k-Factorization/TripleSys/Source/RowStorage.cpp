@@ -1,13 +1,9 @@
 #include "TripleSys.h"
 
-#if USE_64_BIT_MASK
-#include <bitset>
-#endif
-
 #define UseIPX				0 // works faster with 0
 #define USE_INTRINSIC		!USE_CUDA
 
-#if USE_INTRINSIC
+#if USE_INTRINSIC || USE_64_BIT_MASK
 #include <immintrin.h> // Header for AVX2 intrinsics
 
 void bitwise_multiply(const long long* a, const long long* b, long long* result, size_t size) {
@@ -105,7 +101,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 }
 
 long long cntr = 0;
-CC int CRowUsage::getRow(int iRow, int ipx) const
+CC int CRowUsage::getRow(int iRow, int ipx)
 {
 #if !USE_CUDA
 	//cntr++;
@@ -141,9 +137,8 @@ CC int CRowUsage::getRow(int iRow, int ipx) const
 			return 0;
 
 #if USE_64_BIT_MASK
-		unsigned long iBit = 0;
-		const auto retVal = _BitScanForward64(&iBit, *(pCompSol + firstB));
-		ASSERT(!retVal);
+		unsigned long iBit;
+		_BitScanForward64(&iBit, *(pCompSol + firstB));
 #else
 		const auto iBit = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
 #endif
@@ -175,9 +170,9 @@ CC int CRowUsage::getRow(int iRow, int ipx) const
 
 #if UseSolutionMasks
 			pToA -= numLongs2Skip;
-			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
-			
+			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
+		
 			int i = iRow + 1;
 			auto jMax = pRowSolutionMasksIdx[iRow];
 			for (; i <= m_nRowMax; i++) {
@@ -210,46 +205,12 @@ CC int CRowUsage::getRow(int iRow, int ipx) const
 			}
 
 #if UseSolutionClicks
-			if (iRow > 6) {
-				m_pCompSolutions->releaseSolDB();
-				int kMax = 0;
-				i = iRow + 1;
+			if (m_pRowStorage->useClicks(iRow)) {
+				first++;
+				if (ConstructCompatibleSolutionGraph(pToA, iRow))
+					return 2;   // Ready to proceed with the getMatrix2() call.
 
-				auto pBuffer = m_pCompSolutions->getBuffer();
-				memcpy(pBuffer + numLongs2Skip, pToA + numLongs2Skip, len * sizeof(pBuffer[0]));
-				jMax = pRowSolutionMasksIdx[iRow];
-				for (; i <= m_nRowMax; i++, kMax++) {
-					auto j = jMax;
-					jMax = pRowSolutionMasksIdx[i];
-
-					// Check left, middle and right parts of the solution interval for i-th row
-					auto mask = pRowSolutionMasks[i - 1];
-					if (mask && (mask &= pToA[j++])) {
-						// at least one solution masked by left part of the interval is still valid
-						m_pCompSolutions->addCompatibleSolutions(j - 1, mask, kMax, m_pRowStorage, pToA);
-					}
-
-					// middle part
-					while (true) {
-						while (j < jMax && !pBuffer[j])
-							j++;
-
-						if (j >= jMax)
-							break;
-
-						m_pCompSolutions->addCompatibleSolutions(j, pBuffer[j], kMax, m_pRowStorage, pToA);
-						pBuffer[j] = 0;
-					}
-
-					mask = pRowSolutionMasks[i];
-					if (mask && (mask = (~mask) & pToA[jMax]))
-						m_pCompSolutions->addCompatibleSolutions(j, mask, kMax, m_pRowStorage, pToA);
-
-					if (kMax > 1)
-						m_pCompSolutions->removeUnreachableVertices(kMax);
-				}
-
-				return 2;
+				continue;
 			}
 #endif  // UseSolutionClicks
 

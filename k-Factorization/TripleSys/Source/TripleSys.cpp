@@ -82,6 +82,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	int startMatrixCount = 0;
 	int nBytesInStartMatrix = nrowsStart * m_numPlayers;
 #endif
+	int iDaySaved = 0;
 	const auto nPrecalcRows = param(t_useRowsPrecalculation);
 	if (iCalcMode == eCalcResult)
 		m_useRowsPrecalculation = (nPrecalcRows && m_groupSize == 2 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
@@ -271,11 +272,26 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				if ((b%1000000)==0)
 					printf("%d:%d:%d ", a, c, b);
 #endif
+				if (iDaySaved){
+					if (m_pRowUsage->getMatrix2(result(), neighbors(), numDaysResult(), iDaySaved)) {
+#if !USE_CUDA
+						cTime = clock() - iTime;
+						for (int i = nPrecalcRows + 3; i < numDaysResult(); i++)
+							m_rowTime[i] = cTime;
+#endif
+						iDay = numDaysResult() - 1;
+						goto checkCurrentMatrix;
+					}
+					iDay = iDaySaved;
+					iDaySaved = 0;
+					bPrevResult = false;
+					m_playerIndex = 0;
+				}
 				if (bPrevResult) {
 					iDay--;
 					bPrevResult = false;
 				}
-				if (iDay >= nPrecalcRows){
+				if (iDay >= nPrecalcRows) {
 					int ipx = 0;
 					if (m_playerIndex)
 					{
@@ -289,9 +305,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 							goto noResult;
 						}
 					}
-					if (m_pRowUsage->getRow(iDay, ipx))
-					{
-
+					switch (m_pRowUsage->getRow(iDay, ipx)) {
+					case 2:
+						iDaySaved = iDay;
+						break;
+					case 1:
 						///m_pRowUsage->getMatrix(result(), neighbors(), iDay + 1);
 						//printTable("tbl", result(), iDay + 1, m_numPlayers, 2);
 
@@ -321,8 +339,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 						iDay--;
 						goto checkCurrentMatrix;
+					case 0:
+						iDay--;
+						break;
 					}
-					iDay--;
 					goto ProcessPrecalculatedRow;
 				}
 				if (iCalcMode == eCalcResult) {
@@ -605,7 +625,7 @@ noResult:
 #endif
 #if !USE_CUDA
 	extern long long cntr;
-//	printf("********** cntr = %lld\n", cntr);
+	//printf("********** cntr = %lld\n", cntr);
 #endif
 	return nLoops;
 }
