@@ -26,14 +26,14 @@ typedef tchar tmask;
 
 class CRowStorage : public CStorage<tchar> {
 public:
-	CC CRowStorage(int numPreconstructedRows, int numPlayers, int useCliquesAfterRow, int numObjects = 1000) : m_numPlayers(numPlayers),
-		m_numPreconstructedRows(numPreconstructedRows), CStorage<tchar>(numObjects, 2 * numPlayers)	
-	{
+	CC CRowStorage(const kSysParam *pSysParam, int numPlayers, int numObjects = 1000) : m_pSysParam(pSysParam), m_numPlayers(numPlayers),
+		m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]), CStorage<tchar>(numObjects, 2 * numPlayers) {
 		m_numObjectsMax = numObjects;
 		m_pRowSolutionCntr = new uint[2*numPlayers];
 		m_pNumLongs2Skip = m_pRowSolutionCntr + numPlayers;
 		initMaskStorage(numObjects);
 		m_lenMask = m_pMaskStorage->lenObject();
+		const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 		m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
 	}
 	CC ~CRowStorage() {
@@ -61,7 +61,7 @@ public:
 		memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
 		m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
 	}
-	CC inline auto numPlayers() const { return m_numPlayers; }
+	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
 
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
@@ -73,6 +73,7 @@ public:
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
+	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
 #if !(USE_64_BIT_MASK && NEW_GET_ROW)
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
@@ -98,6 +99,7 @@ private:
 	}
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numPlayers;
+	const kSysParam* m_pSysParam;
 	CStorage<tchar>* m_pMaskStorage = NULL;
 #if 0
 	long long cnt1 = 0;

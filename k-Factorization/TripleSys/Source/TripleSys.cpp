@@ -467,8 +467,8 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					goBack();
 					goto ProcessOneDay;
 				}
-				case  1: noMoreResults = true; goto noResult;
-				default: break;
+			case  1: noMoreResults = true; goto noResult;
+			default: break;
 			}
 #endif
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {

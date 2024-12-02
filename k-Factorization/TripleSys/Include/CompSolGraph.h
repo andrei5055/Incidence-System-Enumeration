@@ -72,7 +72,7 @@ private:
 	}
 protected:
 	const CRowStorage* const m_pRowStorage;
-	const int m_nRowMax;		// Maximum value of iRow
+	int m_nRowMax;				// Maximum value of iRow
 private:
 	int m_nGroups;
 	CompSolSet** m_ppCompSol;

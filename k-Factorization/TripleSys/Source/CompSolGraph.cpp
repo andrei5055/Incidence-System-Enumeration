@@ -1,8 +1,13 @@
 #include "TripleSys.h"
 
 CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup) :
-	m_pRowStorage(pRowStorage), m_nRowMax(pRowStorage->numPlayers() - 2) {
-	m_nGroups = pRowStorage->numPlayers() - pRowStorage->useCliquesAfterRow();
+	m_pRowStorage(pRowStorage) {
+	m_nRowMax = pRowStorage->numPlayers() - 2;
+	const int nRowsRes = pRowStorage->sysParam()->val[t_nRowsInResultMatrix];
+	if (nRowsRes && m_nRowMax > nRowsRes - 1)
+		m_nRowMax = nRowsRes - 1;
+
+	m_nGroups = m_nRowMax + 2 - pRowStorage->useCliquesAfterRow();
 	if (m_nGroups > 3) {
 		m_nGroups -= 3;
 		m_ppCompSol = new CompSolSet * [m_nGroups];

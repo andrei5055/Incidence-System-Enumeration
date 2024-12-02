@@ -156,7 +156,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
 			const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
-			auto pPrevA = (const long long*)(pCompSol)+numLongs2Skip;
+			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
 			auto pToA = (long long*)(pPrevA + (m_numSolutionTotalB >> 3));
 			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
 
