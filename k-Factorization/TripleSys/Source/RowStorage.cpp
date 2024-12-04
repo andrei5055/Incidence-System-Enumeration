@@ -48,7 +48,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	m_pRowSolutionMasksIdx = new uint[len];
 
 	m_pRowSolutionMasks = new tmask[len];
-	memset(m_pRowSolutionMasks, 0, len * sizeof(tmask));
+	memset(m_pRowSolutionMasks, 0, len * sizeof(m_pRowSolutionMasks[0]));
 
 #if !USE_64_BIT_MASK || !NEW_GET_ROW
 	// Filling the lookup table m_FirstOnePosition
@@ -70,9 +70,10 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	while (i < m_numPlayers) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
-		m_pRowSolutionMasksIdx[i] = last >> 6;
-		if (REM(last))
-			m_pRowSolutionMasks[i] = (tmask)(-1) << REM(last);
+		m_pRowSolutionMasksIdx[i] = last >> SHIFT;
+		const auto rem = REM(last);
+		if (rem)
+			m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
 
 		i++;
 		while (first < last) {
@@ -169,7 +170,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 
 #if UseSolutionMasks
-			pToA -= numLongs2Skip;
+			auto *pToASol = (tmask *)(pToA - numLongs2Skip);
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
 			
@@ -181,11 +182,11 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 
 				// Check left, middle and right parts of the solution interval for i-th row
 				auto mask = pRowSolutionMasks[i-1];
-				if (mask && (mask & pToA[j++]))
+				if (mask && (mask & pToASol[j++]))
 					continue;  // at least one solution masked by left part of the interval is still valid
 
 				// middle part
-				while (j < jMax && !pToA[j])
+				while (j < jMax && !pToASol[j])
 					j++;
 
 				if (j < jMax)
@@ -195,7 +196,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 				// the interval defined by set of long longs
 				mask = pRowSolutionMasks[i];
 				// If mask != 0, we need to check the right side of the intervals.
-				if (!mask || !((~mask) & pToA[jMax]))
+				if (!mask || !((~mask) & pToASol[jMax]))
 					break;
 			}
 
@@ -207,7 +208,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #if UseSolutionCliques
 			if (m_pRowStorage->useCliques(iRow)) {
 				first++;
-				if (ConstructCompatibleSolutionGraph(pToA, iRow))
+				if (ConstructCompatibleSolutionGraph(pToASol, iRow))
 					return 2;   // Ready to proceed with the getMatrix2() call.
 
 				continue;

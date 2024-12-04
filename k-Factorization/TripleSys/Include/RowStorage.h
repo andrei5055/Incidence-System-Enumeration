@@ -20,7 +20,7 @@ typedef tchar tmask;
 #define IDX(n)					(n + 7) >> 3
 #define SET_MASK_BIT(mask, idx)	mask[idx >> 3] |= (tmask)1 << (idx & 0x07)
 #endif
-#define REM(n)					(n % (1<<SHIFT))	// remainder from division
+#define REM(n)					(n % ((tmask)1<<SHIFT))	// remainder from division
 
 #include "CompSolGraph.h"
 

@@ -47,7 +47,7 @@ class CompSolStorage {
 public:
 	CC CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup = 100);
 	CC ~CompSolStorage();
-	bool ConstructCompatibleSolutionGraph(long long* pToA, int iRow);
+	bool ConstructCompatibleSolutionGraph(tmask* pToA, int iRow);
 protected:
 	CC bool completeMatrix(tchar* row, tchar* neighbors, int nRows, int iRow);
 private:
@@ -64,7 +64,7 @@ private:
 	CC CompSol* compatibleSolutions(uint idx, int rowIdx) const {
 		return m_ppCompSol[rowIdx]->getNextObject()->Initialize(idx, rowIdx);
 	}
-	CC inline void releaseCompatibleSolutions(int rowIdx) {
+	CC inline void releaseCompatibleSolutions(int rowIdx) const {
 		m_ppCompSol[rowIdx]->releaseObject();
 	}
 	CC inline auto currentSolution(int idx) const {

@@ -35,12 +35,12 @@ CC CompSolStorage::~CompSolStorage() {
 
 CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax)
 {
-	tmask solMask;
+	long long solMask;
 	unsigned long iBit = 0;
 	do {
 		_BitScanForward64(&iBit, mask);
-		const auto solID = (uint)(((tmask)jBase << SHIFT) + iBit);
-		solMask = (tmask)1 << iBit;
+		const auto solID = (uint)(((long long)jBase << 6) + iBit);
+		solMask = (long long)1 << iBit;
 		CompSol* pCompSol = kMax? NULL : compatibleSolutions(solID, 0);
 		int k = 0;
 		for (; k < kMax; k++) {         // for all previously constructed groups of solutions
@@ -115,7 +115,7 @@ bool CompSolStorage::removeUnreachableVertices(int rowIdx) {
 	return true;
 }
 
-bool CompSolStorage::ConstructCompatibleSolutionGraph(long long* pToA, int iRow)
+bool CompSolStorage::ConstructCompatibleSolutionGraph(tmask* pToA, int iRow)
 {
 	auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 	auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
