@@ -335,23 +335,6 @@ private:
 	CRowUsage* m_pRowUsage = NULL;
 };
 
-// trim from start (in place)
-inline void ltrim(std::string& s) {
-	s.erase(s.begin(), find_if(s.begin(), s.end(),
-		[](int c) { return !isspace(c); }));
-}
-
-// trim from end (in place)
-inline void rtrim(std::string& s) {
-	s.erase(find_if(s.rbegin(), s.rend(),
-		[](int c) {return !isspace(c); }).base(), s.end());
-}
-// trim from both ends (in place)
-inline void trim(std::string& s) {
-	ltrim(s);
-	rtrim(s);
-}
-
 inline bool is_number(const std::string& s)
 {
 	return !s.empty() && std::find_if(s.begin(), s.end(), 
