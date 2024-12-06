@@ -350,7 +350,7 @@ bool designParam::LaunchCanonization() {
 	if (strParam[t_objSubType] == "K-SYSTEM") {
 		const auto nCols = this->v;
 		const auto nRows = (nCols - 1) / (k - 1);
-		const int reservedElement = nRows * nCols;
+		int reservedElement = nRows * nCols;
 		unsigned char* pSm = new unsigned char[reservedElement];
 
 		const auto& inputFile = strParam[t_input_file];
@@ -396,7 +396,7 @@ bool designParam::LaunchCanonization() {
 bool designParam::SemiSymByKSystems() {
 	const auto nCols = this->v;
 	const auto nRows = (nCols - 1) / (k - 1);
-	const auto lenMatr = nRows * nCols;
+	int lenMatr = nRows * nCols;
 	tchar* pSm = new tchar[2 * lenMatr];
 
 	auto pMatr = pSm;

@@ -388,8 +388,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					m_secondPlayerInRow4++;
 					if (!nRows4Day)
 					{
-						noMoreResults = true;
-						goto noResult;
+						m_secondPlayerInRow4 = nPrecalcRows + 1;
+						bPrevResult = true;
+						continue;
+						//noMoreResults = true;
+						//goto noResult;
 					}
 					nRows4Day = 0;
 					if (m_secondPlayerInRow4 <= numDaysResult())

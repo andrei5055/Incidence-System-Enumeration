@@ -59,14 +59,15 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 
 	// Define the number of first long long's we don't need to copy to the next row.
 	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
-	for (int i = m_numPreconstructedRows; i < m_numPlayers - 1; i++)
-		m_pNumLongs2Skip[i + 1] = m_pRowSolutionCntr[i] >> 6;
+	for (int i = m_numPreconstructedRows; i < m_numPlayers; i++)
+		m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
 
 	const auto jMax = m_lenMask >> 3;
 	auto* pFullIncludeTable = (tmask*)m_fullExcludeTable;
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
 	int i = m_numPreconstructedRows;
+#if 1
 	while (i < m_numPlayers) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
@@ -97,6 +98,35 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 			pFullIncludeTable += m_numSolutionTotalB / sizeof(tmask);
 		}
 	}
+#else
+	int cntrs[8]; 
+	memset(cntrs, 0, sizeof(cntrs));
+	unsigned long long fff = 0;
+	while (i < m_numPlayers - 1) {
+		auto first = last;
+		last = m_pRowSolutionCntr[i];
+		i++;
+		while (first < last) {
+			auto* rm = (const long long*)m_pMaskStorage->getObject(first);
+			const auto pRow = getObject(first++);
+			ASSERT(pRow[1] != i);
+			const auto pNeighbors = pRow + m_numPlayers;
+			auto idx = last - 1;
+			while (++idx < m_pRowSolutionCntr[i]) {
+				// Let's check if the masks are mutually compatible
+				auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
+				int j = jMax;
+				while (j-- && !(rm[j] & pMask[j]));
+
+				if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers))
+					cntrs[i / 2]++;
+			}
+		}
+		fff += cntrs[i / 2];
+		last = m_pRowSolutionCntr[i++];
+	}
+
+#endif
 	delete m_pMaskStorage;
 	m_pMaskStorage = NULL;
 }
@@ -111,13 +141,15 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 	ASSERT(iRow < numPreconstructedRows);
 	const auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
 	auto& first = m_pRowSolutionIdx[iRow];
+	const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
 #if NEW_GET_ROW
 
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
 			return 0;
 
-		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
+		const auto shift =  numLongs2Skip << 3;
+		memcpy(m_pCompatibleSolutions + shift, ((const tchar *)m_pRowStorage->getSolutionMask(first)) + shift, m_numSolutionTotalB - shift);
 		first += m_step;
 		return 1;
 	}
@@ -156,7 +188,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-			const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
 			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
 			auto pToA = (long long*)(pPrevA + (m_numSolutionTotalB >> 3));
 			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;

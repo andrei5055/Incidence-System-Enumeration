@@ -55,6 +55,7 @@ int TopGunBase::getStartMatrices() const
 	nMatricesFromOneFile = nMatricesAll = nfr = 0;
 	int nMax = nMatricesMax();
 	auto* pStartMat = startMatrix;
+	int reserved = nMatricesMax();
 	std::string path_name;
 	createFolderAndFileName(path_name, paramPtr(), t_StartFolder, nRowsStart());
 
@@ -78,7 +79,8 @@ int TopGunBase::getStartMatrices() const
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		if ((nMatricesFromOneFile = readStartData(sfn, &pStartMat, nMax)) == 0)
+		nMatricesFromOneFile = readStartData(sfn, &pStartMat, nMax, reserved);
+		if (!nMatricesFromOneFile)
 		{
 			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());
 			break;

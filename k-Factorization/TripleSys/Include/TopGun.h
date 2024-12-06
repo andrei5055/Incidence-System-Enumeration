@@ -38,8 +38,8 @@ protected:
 	std::string m_reportInfo;
 private:
 	int getStartMatrices() const;
-	int readStartData(const std::string& fn, tchar** pSm, int nm) const {
-		return readTable(fn, nRowsStart(), numPlayers(), pSm, nm);
+	int readStartData(const std::string& fn, tchar** pSm, int nm, int& reserved) const {
+		return readTable(fn, nRowsStart(), numPlayers(), pSm, nm, reserved);
 	}
 };
 

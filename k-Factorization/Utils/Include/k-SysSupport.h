@@ -66,6 +66,6 @@ inline void trim(std::string& s) {
 	rtrim(s);
 }
 
-UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, tchar** pSm, int nmax, int reservedElement = 0, char infoSymb = '\"');
+UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, tchar** pSm, int nmax, int& reservedElement, uint** ppGroupOrders = NULL, char infoSymb = '\"');
 K_SYS_LIBRARY_API void speakText(LPCWSTR text);
 
