@@ -35,9 +35,19 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pRowSolutionCntr[i] += m_pRowSolutionCntr[i - 1];
 
+	// Define the number of first long long's we don't need to copy to the next row.
+	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
+	int i = m_numPreconstructedRows;
+	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
+	m_numRecAdj = NEW? m_pRowSolutionCntr[i] : 0;
+
+	while (++i < m_numPlayers)
+		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
+
 	const auto& numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
 	delete[] m_fullExcludeTable;
-	m_numSolutionTotalB = ((numSolutionTotal + 7) / 8 + 7) / 8 * 8;
+	m_numSolutionTotalB = ((numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
+
 	auto len = numSolutionTotal * m_numSolutionTotalB;
 	m_fullExcludeTable = new tchar[len];
 	memset(m_fullExcludeTable, 0, len);
@@ -57,22 +67,19 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	// Define the number of first long long's we don't need to copy to the next row.
-	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
-	for (int i = m_numPreconstructedRows; i < m_numPlayers; i++)
-		m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
-
 	const auto jMax = m_lenMask >> 3;
 	auto* pFullIncludeTable = (tmask*)m_fullExcludeTable;
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
-	int i = m_numPreconstructedRows;
+	i = m_numPreconstructedRows;
+	const auto shift = m_numSolutionTotalB / sizeof(tmask);
 #if 1
 	while (i < m_numPlayers) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
-		m_pRowSolutionMasksIdx[i] = last >> SHIFT;
-		const auto rem = REM(last);
+		const auto lastAdj = last - m_numRecAdj;
+		m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
+		const auto rem = REM(lastAdj);
 		if (rem)
 			m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
 
@@ -91,13 +98,20 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 
 				if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
 					// The masks are compatible and the length of the cycle is equal to m_numPlayers
-					SET_MASK_BIT(pFullIncludeTable, idx);     // 1 - means OK
+					const auto newIdx = idx - m_numRecAdj;
+					SET_MASK_BIT(pFullIncludeTable, newIdx);     // 1 - means OK
 				}
 			}
 
-			pFullIncludeTable += m_numSolutionTotalB / sizeof(tmask);
+			pFullIncludeTable += shift;
 		}
 	}
+
+	if (m_numRecAdj) {
+		for (int i = m_numPreconstructedRows; i < m_numPlayers; i++)
+			m_pRowSolutionCntr[i] -= m_numRecAdj;
+	}
+
 #else
 	int cntrs[8]; 
 	memset(cntrs, 0, sizeof(cntrs));
@@ -145,17 +159,19 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #if NEW_GET_ROW
 
 	if (iRow == numPreconstructedRows) {
-		if (first >= last)
+		if (first >= last + m_pRowStorage->numRecAdj())
 			return 0;
 
-		const auto shift =  numLongs2Skip << 3;
-		memcpy(m_pCompatibleSolutions + shift, ((const tchar *)m_pRowStorage->getSolutionMask(first)) + shift, m_numSolutionTotalB - shift);
+		const auto shift = NEW? 0 : numLongs2Skip << 3;
+		memcpy(m_pCompatibleSolutions + shift, ((const tchar*)m_pRowStorage->getSolutionMask(first)) + shift, m_numSolutionTotalB - shift);
 		first += m_step;
 		return 1;
 	}
 
 	auto* pCompSol = (tmask*)(m_pCompatibleSolutions + (iRow - numPreconstructedRows - 1) * m_numSolutionTotalB);
+#if UseIPX
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
+#endif
 	const auto lastB = IDX(last);
 
 #if UseSolutionMasks || UseIPX
@@ -189,10 +205,10 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
 			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
-			auto pToA = (long long*)(pPrevA + (m_numSolutionTotalB >> 3));
-			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
-
-			const auto len = (m_numSolutionTotalB >> 3) - numLongs2Skip;
+			const auto shift = m_numSolutionTotalB >> 3;
+			auto pToA = (long long*)(pPrevA + shift);
+			auto pFromA = m_pRowStorage->getSolutionMask(first + m_pRowStorage->numRecAdj()) + numLongs2Skip;
+			const auto len = shift - numLongs2Skip;
 #if USE_INTRINSIC
 			bitwise_multiply(pPrevA, pFromA, pToA, len);
 #else

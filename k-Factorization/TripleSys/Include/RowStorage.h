@@ -3,6 +3,8 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
+#define NEW					1
+
 #define NEW_GET_ROW			1
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionMasks	1
@@ -13,12 +15,12 @@
 typedef long long tmask;
 #define SHIFT					6 
 #define IDX(n)					(n + 63) >> 6
-#define SET_MASK_BIT(mask, idx)	mask[idx >> 6] |= (tmask)1 << (idx & 0x3f)
+#define SET_MASK_BIT(mask, idx)	mask[(idx) >> 6] |= (tmask)1 << ((idx) & 0x3f)
 #else
 typedef tchar tmask;
 #define SHIFT					3 
 #define IDX(n)					(n + 7) >> 3
-#define SET_MASK_BIT(mask, idx)	mask[idx >> 3] |= (tmask)1 << (idx & 0x07)
+#define SET_MASK_BIT(mask, idx)	mask[(idx) >> 3] |= (tmask)1 << ((idx) & 0x07)
 #endif
 #define REM(n)					(n % ((tmask)1<<SHIFT))	// remainder from division
 
@@ -74,11 +76,24 @@ public:
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
 	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
+	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
+	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, int iStep, const uint* pRowSolutionIdx) const {
+		size_t shift = numPreconstructedRows() * m_numPlayers;
+		const int adj = numRecAdj();
+		for (int iRow = numPreconstructedRows(); iRow < nRows; iRow++) {
+			const auto* pObj = getObject(pRowSolutionIdx[iRow] - iStep);
+			iStep = 1 - adj;
+			memcpy(row + shift, pObj, m_numPlayers);
+			memcpy(neighbors + shift, pObj + m_numPlayers, m_numPlayers);
+			shift += m_numPlayers;
+		}
+	}
 #if !(USE_64_BIT_MASK && NEW_GET_ROW)
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
 #endif
+
 private:
 	CC void row2bitmask(ctchar* pRow, tmask* bm, bool bAdd)
 	{
@@ -97,6 +112,7 @@ private:
 		memset(m_pRowSolutionCntr, 0, m_numPlayers * sizeof(m_pRowSolutionCntr[0]));
 		m_numObjects = 0;
 	}
+
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numPlayers;
 	const kSysParam* m_pSysParam;
@@ -122,6 +138,7 @@ private:
 	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 	int m_useCliquesAfterRow;
+	int m_numRecAdj = 0;
 };
 
 class CRowUsage : public CompSolStorage {
@@ -148,16 +165,7 @@ public:
 		return completeMatrix(row, neighbors, nRows, iRow);
 	}
 	CC void getMatrix(tchar * row, tchar * neighbors, int nRows) {
-		const auto numPlayers = m_pRowStorage->numPlayers();
-		auto iStep = m_step;
-		size_t shift = m_pRowStorage->numPreconstructedRows() * numPlayers;
-		for (int iRow = m_pRowStorage->numPreconstructedRows(); iRow < nRows; iRow++) {
-			const auto* pObj = m_pRowStorage->getObject(m_pRowSolutionIdx[iRow] - iStep);
-			iStep = 1;
-			memcpy(row + shift, pObj, numPlayers);
-			memcpy(neighbors + shift, pObj + numPlayers, numPlayers);
-			shift += numPlayers;
-		}
+		m_pRowStorage->getMatrix(row, neighbors, nRows, m_step, m_pRowSolutionIdx);
 	}
 	CC int getRow(int iRow, int ipx);
 private:
