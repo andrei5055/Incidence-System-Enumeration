@@ -13,7 +13,7 @@ void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param,
 	fn = std::format("{}{}x{}x{}{}/", folder, m_numPlayers, nr, m_groupSize, uf);
 	if (fs::create_directories(fn))
 	{
-		printfRed("*** Error: Cant create folder %s\n", fn.c_str());
+		printfRed("*** Error: Unable to create folder \"%s\"\n", fn.c_str());
 		myExit(1);
 	}
 	if (fName)

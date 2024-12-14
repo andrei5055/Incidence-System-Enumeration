@@ -10,7 +10,12 @@ typedef struct {
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
-	virtual ~TopGunBase()					{ free(startMatrix); delete[] cnt(); }
+	virtual ~TopGunBase()					{ 
+		free(startMatrix); 
+		delete[] cnt();
+		delete[] m_pMatrixAutOrder;
+		delete[] m_pMatrixPerm;
+	}
 	int virtual Run() = 0;
 	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt") const;
 	inline auto numPlayers() const			{ return m_numPlayers; }
@@ -27,19 +32,22 @@ protected:
 	bool readStartMatrices();
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
-	void orderMatrices() const;
+	inline auto nMatricesReserved() const	{ return 100; } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	void orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;
 	int mStartMatrixSize;
 	tchar* startMatrix;
+	uint* m_pMatrixAutOrder = NULL;
+	uint* m_pMatrixPerm = NULL;
 	int nMatrices;
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
 private:
-	int getStartMatrices() const;
-	int readStartData(const std::string& fn, tchar** pSm, int nm, int& reserved) const {
-		return readTable(fn, nRowsStart(), numPlayers(), pSm, nm, reserved);
+	int getStartMatrices();
+	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, uint ** ppGroupOrders = NULL) const {
+		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, ppGroupOrders);
 	}
 };
 

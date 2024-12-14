@@ -350,11 +350,11 @@ bool designParam::LaunchCanonization() {
 	if (strParam[t_objSubType] == "K-SYSTEM") {
 		const auto nCols = this->v;
 		const auto nRows = (nCols - 1) / (k - 1);
-		int reservedElement = nRows * nCols;
-		unsigned char* pSm = new unsigned char[reservedElement];
+		int reservedElement = 1;
+		unsigned char* pSm = new unsigned char[nRows * nCols];
 
 		const auto& inputFile = strParam[t_input_file];
-		const auto retVal = readTable(inputFile, nRows, nCols, &pSm, 1, reservedElement);
+		const auto retVal = readTable(inputFile, nRows, nCols, 1, 0, &pSm, reservedElement);
 		if (retVal) {
 			this->b = nRows * v / k;
 			// An additional matrix row will be used to store the indices 
@@ -400,9 +400,11 @@ bool designParam::SemiSymByKSystems() {
 	tchar* pSm = new tchar[2 * lenMatr];
 
 	auto pMatr = pSm;
+	int numMatr = 2;
+	int i = 0;
 	for (auto file : { t_input_file, t_extraStrParam }) {
 		const auto& inputFile = strParam[file];
-		if (!readTable(inputFile, nRows, nCols, &pMatr, 1, lenMatr)) {
+		if (!readTable(inputFile, nRows, nCols, 1, i++, &pSm, numMatr)) {
 			delete[] pSm;
 			return false;
 		}

@@ -28,6 +28,7 @@
 #define K_SYS_LIBRARY_API
 #endif
 
+#define AUT		"|Aut(M)| = "
 
 #define RedText "\x1b[1;31m"
 #define GreenText "\x1b[1;32m"
@@ -66,6 +67,6 @@ inline void trim(std::string& s) {
 	rtrim(s);
 }
 
-UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, tchar** pSm, int nmax, int& reservedElement, uint** ppGroupOrders = NULL, char infoSymb = '\"');
+UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nTotal, tchar** ppSm, int& reservedElement, uint** ppGroupOrders = NULL, char infoSymb = '"');
 K_SYS_LIBRARY_API void speakText(LPCWSTR text);
 

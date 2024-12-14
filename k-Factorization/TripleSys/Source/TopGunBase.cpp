@@ -6,7 +6,15 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 	m_param(param) {
 	m_nRowsOut = param.val[t_nRowsInResultMatrix];
 	mStartMatrixSize = m_numPlayers * nRowsStart();
-	startMatrix = (tchar*)malloc(nMatricesMax() * mStartMatrixSize);
+	startMatrix = (tchar*)malloc(nMatricesReserved() * mStartMatrixSize);
+
+	const auto orderMatrixMode = param.val[t_orderMatrices];
+	// orderMatrixMode: 0 - No matrix reordering will be performed.
+    //                  1 - Matrix reordering will be performed, but |Aut(M)| will not be needed.
+    //                  2 - Matrix reordering will be performed AND |Aut(M)| will be used. 
+	if (orderMatrixMode == 2)
+		m_pMatrixAutOrder = new uint[nMatricesReserved()];
+
 	if (m_nRowsOut == 0)
 		m_nRowsOut = m_numDays;
 
@@ -34,7 +42,7 @@ bool TopGunBase::readStartMatrices() {
 	return true;
 }
 
-int TopGunBase::getStartMatrices() const
+int TopGunBase::getStartMatrices()
 {
 	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[U1FName]/MatrixID.txt
 	// StartFolder, Columns, Rows, GroupSize, U1FName - input parameters
@@ -44,7 +52,6 @@ int TopGunBase::getStartMatrices() const
 	//   Logs/16x15x2_4444_88/U0123456789.txt
 	//   Logs/27x13x2_999/U0123456789.txt
 	//
-
 	const std::string ch(getFileNameAttr(paramPtr()));
 	const std::string ext(".txt");
 	const auto extLen = ext.length();
@@ -54,8 +61,9 @@ int TopGunBase::getStartMatrices() const
 	int nMatricesFromOneFile, nMatricesAll, nfr;
 	nMatricesFromOneFile = nMatricesAll = nfr = 0;
 	int nMax = nMatricesMax();
-	auto* pStartMat = startMatrix;
-	int reserved = nMatricesMax();
+	int nReserved = nMatricesReserved();
+	auto* pAutOrder = m_pMatrixAutOrder;
+
 	std::string path_name;
 	createFolderAndFileName(path_name, paramPtr(), t_StartFolder, nRowsStart());
 
@@ -79,7 +87,7 @@ int TopGunBase::getStartMatrices() const
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		nMatricesFromOneFile = readStartData(sfn, &pStartMat, nMax, reserved);
+		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, &pAutOrder);
 		if (!nMatricesFromOneFile)
 		{
 			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());
@@ -89,7 +97,7 @@ int TopGunBase::getStartMatrices() const
 		nfr++;
 		printf("\n%d %d-rows 'Start Matrices' loaded from file %s", nMatricesFromOneFile, nRowsStart(), sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
-		pStartMat += nMatricesFromOneFile * mStartMatrixSize;
+		m_pMatrixAutOrder = pAutOrder;
 		nMax -= nMatricesFromOneFile;
 		if (nMax <= 0)
 			break;
@@ -165,12 +173,30 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 }
 
 int matrixSize;
+tchar* pStartMatrix;
 
 int compare_matr_fn(const void* pA, const void* pB) {
 	return memcmp(pA, pB, matrixSize);
 }
 
-void TopGunBase::orderMatrices() const {
+int compare_matr_fn_perm(const void* pA, const void* pB) {
+	const auto pA_ = pStartMatrix + matrixSize * *(uint*)pA;
+	const auto pB_ = pStartMatrix + matrixSize * *(uint*)pB;
+	return memcmp(pA_, pB_, matrixSize);
+}
+
+void TopGunBase::orderMatrices(int orderMatrixMode) {
 	matrixSize = mStartMatrixSize;
-	std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
+	if (orderMatrixMode == 2) {
+		delete[] m_pMatrixPerm;
+		m_pMatrixPerm = new uint[nMatrices];
+		for (int i = 0; i < nMatrices; i++)
+			m_pMatrixPerm[i] = i;
+
+		pStartMatrix = pntrStartMatrix();
+		std::qsort(m_pMatrixPerm, nMatrices, sizeof(m_pMatrixPerm[0]), compare_matr_fn_perm);
+	}
+	else {
+		std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
+	}
 }

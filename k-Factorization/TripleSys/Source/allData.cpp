@@ -317,7 +317,7 @@ bool alldata::FindIsomorphicBaseElements(const string& fn) {
 	auto const lenSet = m_numPlayers / 3;
 	CStorage<tchar> baseElements(2, lenSet);
 	int reserved = 2;
-	const auto nSets = readTable(fn, -1, lenSet, baseElements.getObjectsPntr(), 1, reserved);
+	const auto nSets = readTable(fn, -1, lenSet, 1, 0, baseElements.getObjectsPntr(), reserved);
 	if (!nSets) {
 		printfRed("Cannot read file \"%s\"\n", fn.c_str());
 		return false;

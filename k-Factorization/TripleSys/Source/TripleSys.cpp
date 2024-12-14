@@ -537,7 +537,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #else			// record result without print on screen
 				Result.printTable(result(), true, ResultFile.c_str(), false, numDaysResult());
 				if (bPrint) {
-					printf("%5zd: |Aut(M)| = %d, %s\n", nLoops, groupOrder(), stat);
+					printf("%5zd: " AUT "%d, % s\n", nLoops, groupOrder(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
 				}

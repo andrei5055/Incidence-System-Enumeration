@@ -1,4 +1,5 @@
 #include "TopGun.h"
+#include "Table.h"
 #include "data.h"
 
 TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
@@ -45,17 +46,33 @@ int TopGun::Run()
 			myExit(1);
 
 		//myTemporaryCheck();
-
+		const auto orderMatrixMode = param(t_orderMatrices);
+		if (orderMatrixMode) {
+			orderMatrices(orderMatrixMode);
+			printfGreen("%d 'Start Matrices' sorted\n", nMatrices);
+			if (orderMatrixMode == 2) {
+				TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+				Result.allocateBuffer(32);
+				std::string ResultFile;
+				std::string fileName("_OrderedMatrices.txt");
+				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), &fileName);
+				for (int i = 0; i < nMatrices; i++) {
+					const auto idx = m_pMatrixPerm[i];
+					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;
+					Result.setGroupOrder(m_pMatrixAutOrder[idx]);
+					Result.printTable(pMatr, true, ResultFile.c_str(), false, nRowsStart());
+				}
+				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
+				reportEOJ(0);
+				return 0;
+			}
+		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
 		if (nMatrices <= firstIndexOfStartMatrices)
 		{
-			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n", 
+			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n",
 				firstIndexOfStartMatrices, nMatrices);
 			myExit(1);
-		}
-		if (param(t_orderMatrices)) {
-			orderMatrices();
-			printfGreen("%d 'Start Matrices' sorted\n", nMatrices);
 		}
 		if (!param(t_MultiThreading) == 1) {
 			if (numThreads > nMatrices - firstIndexOfStartMatrices)

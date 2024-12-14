@@ -88,9 +88,11 @@ private:
 	size_t m_nLenBuffer = 0;
 };
 
+#if OUTPUT_VECTOR_STAT
 static size_t nMatr = 0;
 static size_t nMatrMax = 0;
 unsigned char *pMatrixStorage = NULL;
+#endif
 
 template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, const char *fileName, bool outToScreen, int nl, const int *idx)
