@@ -33,6 +33,29 @@ CC CompSolStorage::~CompSolStorage() {
 	delete[] m_idxUsedSol;
 }
 
+#if 1
+void out64bits(FILE* f, const char* prefix, const void *pntr, const char* postFix) {
+	if (prefix)
+		fprintf(f, prefix);
+
+	fprintf(f, "%016llx", *(tmask*)pntr);
+	if (postFix)
+		fprintf(f, postFix);
+}
+#else
+void out64bits(FILE* f, const char* prefix, const void* pntr, const char* postFix) {
+	if (prefix)
+		fprintf(f, prefix);
+
+	const auto pChar = (unsigned char*)pntr;
+	for (int i = 0; i < 8; i++)
+		fprintf(f, "%02x", pChar[i]);
+
+	if (postFix)
+		fprintf(f, postFix);
+}
+#endif
+
 CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax)
 {
 	long long solMask;
@@ -45,7 +68,7 @@ CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax
 		int k = 0;
 		for (; k < kMax; k++) {         // for all previously constructed groups of solutions
 			for (const auto& sol : m_solDB[k]) {	// for all solutions of current group
-				if (solMask & m_pRowStorage->getSolutionMask(sol->solIdx())[jBase]) {
+				if (solMask & m_pRowStorage->getSolutionMask(sol->solIdx() + m_pRowStorage->numRecAdj())[jBase]) {
 					if (!pCompSol)
 						pCompSol = compatibleSolutions(solID, kMax);
 
@@ -200,7 +223,7 @@ CC bool CompSolStorage::completeMatrix(tchar* row, tchar* neighbors, int nRows, 
 
 		m_idxUsedSol[i] = j;
 		j = -1; // When moving to the next matrix row, always start with the first solution.
-		const auto* pObj = m_pRowStorage->getObject(sol->solIdx());
+		const auto* pObj = m_pRowStorage->getObject(sol->solIdx() + m_pRowStorage->numRecAdj());
 		const auto shift = (iRow + i) * numPlayers;
 		memcpy(row + shift, pObj, numPlayers);
 		memcpy(neighbors + shift, pObj + numPlayers, numPlayers);
