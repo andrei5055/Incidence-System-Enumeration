@@ -77,11 +77,22 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	while (i < m_numPlayers) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
-		const auto lastAdj = last - m_numRecAdj;
-		m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-		const auto rem = REM(lastAdj);
-		if (rem)
-			m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
+		if (m_pRowSolutionMasksIdx && i < m_numPlayers - 1) {
+			const auto lastAdj = last - m_numRecAdj;
+			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
+			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i-1]) {
+				const auto rem = REM(lastAdj);
+				if (rem)
+					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
+			}
+			else {
+				// We cannot use code for UseSolutionMasks, because now our code is not ready for such cases
+				delete[] m_pRowSolutionMasksIdx;
+				delete[] m_pRowSolutionMasks;
+				m_pRowSolutionMasksIdx = NULL;
+				m_pRowSolutionMasks = NULL;
+			}
+		}
 
 		i++;
 		while (first < last) {
@@ -204,7 +215,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
+			auto pPrevA = (const long long*)(pCompSol)+numLongs2Skip;
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (long long*)(pPrevA + shift);
 			auto pFromA = m_pRowStorage->getSolutionMask(first + m_pRowStorage->numRecAdj()) + numLongs2Skip;
@@ -217,51 +228,52 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 
 #if UseSolutionMasks
-			auto *pToASol = (tmask *)(pToA - numLongs2Skip);
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
-			auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
-			
-			int i = iRow + 1;
-			auto jMax = pRowSolutionMasksIdx[iRow];
-			for (; i <= m_nRowMax; i++) {
-				auto j = jMax;
-				jMax = pRowSolutionMasksIdx[i];
+			if (pRowSolutionMasksIdx) {
+				auto* pToASol = (tmask*)(pToA - numLongs2Skip);
+				auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
 
-				// Check left, middle and right parts of the solution interval for i-th row
-				auto mask = pRowSolutionMasks[i-1];
-				if (mask && (mask & pToASol[j++]))
-					continue;  // at least one solution masked by left part of the interval is still valid
+				int i = iRow + 1;
+				auto jMax = pRowSolutionMasksIdx[iRow];
+				for (; i <= m_nRowMax; i++) {
+					auto j = jMax;
+					jMax = pRowSolutionMasksIdx[i];
 
-				// middle part
-				while (j < jMax && !pToASol[j])
-					j++;
+					// Check left, middle and right parts of the solution interval for i-th row
+					auto mask = pRowSolutionMasks[i - 1];
+					if (mask && (mask & pToASol[j++]))
+						continue;  // at least one solution masked by left part of the interval is still valid
 
-				if (j < jMax)
-					continue;   // at least one solution masked by middle part of the interval is still valid
+					// middle part
+					while (j < jMax && !pToASol[j])
+						j++;
 
-				// There are no valid solutions with the indices inside 
-				// the interval defined by set of long longs
-				mask = pRowSolutionMasks[i];
-				// If mask != 0, we need to check the right side of the intervals.
-				if (!mask || !((~mask) & pToASol[jMax]))
-					break;
-			}
+					if (j < jMax)
+						continue;   // at least one solution masked by middle part of the interval is still valid
 
-			if (i <= m_nRowMax) {
-				first++;
-				continue;
-			}
+					// There are no valid solutions with the indices inside 
+					// the interval defined by set of long longs
+					mask = pRowSolutionMasks[i];
+					// If mask != 0, we need to check the right side of the intervals.
+					if (!mask || !((~mask) & pToASol[jMax]))
+						break;
+				}
+
+				if (i <= m_nRowMax) {
+					first++;
+					continue;
+				}
 
 #if UseSolutionCliques
-			if (m_pRowStorage->useCliques(iRow)) {
-				first++;
-				if (ConstructCompatibleSolutionGraph(pToASol, iRow))
-					return 2;   // Ready to proceed with the getMatrix2() call.
+				if (m_pRowStorage->useCliques(iRow)) {
+					first++;
+					if (ConstructCompatibleSolutionGraph(pToASol, iRow))
+						return 2;   // Ready to proceed with the getMatrix2() call.
 
-				continue;
-			}
+					continue;
+				}
 #endif  // UseSolutionCliques
-
+			}
 #endif  // UseSolutionMasks
 		}
 #if UseSolutionMasks || UseIPX
