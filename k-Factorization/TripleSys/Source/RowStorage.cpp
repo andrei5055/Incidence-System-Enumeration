@@ -29,6 +29,25 @@ void bitwise_multiply(const long long* a, const long long* b, long long* result,
 }
 #endif
 
+CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, unsigned int solIdx, unsigned int idx) const
+{
+	auto* rm = (const long long*)m_pMaskStorage->getObject(solIdx);
+	const auto pNeighbors = getObject(solIdx) + m_numPlayers;
+	const auto jMax = m_lenMask >> 3;
+	do {
+		// Let's check if the masks are mutually compatible
+		auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
+		int j = jMax;
+		while (j-- && !(rm[j] & pMask[j]));
+
+		if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
+			// The masks are compatible and the length of the cycle is equal to m_numPlayers
+			const auto newIdx = idx - m_numRecAdj;
+			SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
+		}
+	} while (++idx < m_numSolutionTotal);
+}
+
 CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 {
 	m_u1fCycles = u1fCycles;
@@ -39,16 +58,16 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
 	int i = m_numPreconstructedRows;
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
-	m_numRecAdj = NEW? m_pRowSolutionCntr[i] : 0;
+	m_numRecAdj = m_pRowSolutionCntr[i];
 
 	while (++i < m_numPlayers)
 		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
 
-	const auto& numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
+	m_numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
 	delete[] m_fullExcludeTable;
-	m_numSolutionTotalB = ((numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
+	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
 
-	auto len = numSolutionTotal * m_numSolutionTotalB;
+	auto len = m_numSolutionTotal * m_numSolutionTotalB;
 	m_fullExcludeTable = new tchar[len];
 	memset(m_fullExcludeTable, 0, len);
 
@@ -67,7 +86,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	const auto jMax = m_lenMask >> 3;
 	auto* pFullIncludeTable = (tmask*)m_fullExcludeTable;
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
@@ -95,25 +113,16 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 		}
 
 		i++;
+#if NEW
+		if (!first) {
+			// Skip construction of masks for the first set of solutions.
+			// The threads will do this latter.
+			pFullIncludeTable += last * shift;
+			continue;
+		}
+#endif
 		while (first < last) {
-			auto* rm = (const long long*)m_pMaskStorage->getObject(first);
-			const auto pRow = getObject(first++);
-			ASSERT(pRow[1] != i);
-			const auto pNeighbors = pRow + m_numPlayers;
-			auto idx = last - 1;
-			while (++idx < numSolutionTotal) {
-				// Let's check if the masks are mutually compatible
-				auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-				int j = jMax;
-				while (j-- && !(rm[j] & pMask[j]));
-
-				if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
-					// The masks are compatible and the length of the cycle is equal to m_numPlayers
-					const auto newIdx = idx - m_numRecAdj;
-					SET_MASK_BIT(pFullIncludeTable, newIdx);     // 1 - means OK
-				}
-			}
-
+			generateCompatibilityMasks(pFullIncludeTable, first++, last);
 			pFullIncludeTable += shift;
 		}
 	}
@@ -152,8 +161,10 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	}
 
 #endif
+#if !NEW
 	delete m_pMaskStorage;
 	m_pMaskStorage = NULL;
+#endif
 }
 
 long long cntr = 0;
@@ -170,11 +181,16 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #if NEW_GET_ROW
 
 	if (iRow == numPreconstructedRows) {
-		if (first >= last + m_pRowStorage->numRecAdj())
+		const auto firstNextGroup = last + m_pRowStorage->numRecAdj();
+		if (first >= firstNextGroup)
 			return 0;
 
-		const auto shift = NEW? 0 : numLongs2Skip << 3;
-		memcpy(m_pCompatibleSolutions + shift, ((const tchar*)m_pRowStorage->getSolutionMask(first)) + shift, m_numSolutionTotalB - shift);
+#if NEW
+		memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
+		m_pRowStorage->generateCompatibilityMasks((tmask *)m_pCompatibleSolutions, first, firstNextGroup);
+#else
+		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
+#endif
 		first += m_step;
 		return 1;
 	}

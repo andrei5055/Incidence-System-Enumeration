@@ -45,6 +45,7 @@ public:
 		delete[] m_pRowSolutionMasks;
 		delete[] m_pRowSolutionMasksIdx;
 	}
+	CC void generateCompatibilityMasks(tmask* pMask, unsigned int solIdx, unsigned int idx) const;
 	CC void init() {
 		initMaskStorage(m_numObjectsMax);
 	}
@@ -117,6 +118,7 @@ private:
 	const int m_numPlayers;
 	const kSysParam* m_pSysParam;
 	CStorage<tchar>* m_pMaskStorage = NULL;
+
 #if 0
 	long long cnt1 = 0;
 	long long cnt2[18] = { 0 };
@@ -128,6 +130,7 @@ private:
 	uint m_numObjectsMax;
 	int m_lenMask;
 	uint* m_pRowSolutionCntr = NULL;
+	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
 	tchar* m_fullExcludeTable = NULL;
 	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
