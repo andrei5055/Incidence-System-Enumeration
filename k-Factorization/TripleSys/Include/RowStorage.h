@@ -89,7 +89,7 @@ public:
 			shift += m_numPlayers;
 		}
 	}
-#if !(USE_64_BIT_MASK && NEW_GET_ROW)
+#if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
@@ -176,7 +176,4 @@ private:
 	uint* m_pRowSolutionIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
-#if NEW_GET_ROW == 0
-	tchar* m_excludeForRow[MAX_PLAYER_NUMBER];
-#endif
 };

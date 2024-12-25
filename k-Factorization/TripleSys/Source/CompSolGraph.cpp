@@ -68,7 +68,7 @@ CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax
 		int k = 0;
 		for (; k < kMax; k++) {         // for all previously constructed groups of solutions
 			for (const auto& sol : m_solDB[k]) {	// for all solutions of current group
-				if (solMask & m_pRowStorage->getSolutionMask(sol->solIdx() + m_pRowStorage->numRecAdj())[jBase]) {
+				if (solMask & m_pRowStorage->getSolutionMask(sol->solIdx())[jBase]) {
 					if (!pCompSol)
 						pCompSol = compatibleSolutions(solID, kMax);
 

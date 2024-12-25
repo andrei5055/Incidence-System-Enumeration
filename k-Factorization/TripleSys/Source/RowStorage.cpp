@@ -67,7 +67,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	delete[] m_fullExcludeTable;
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
 
-	auto len = m_numSolutionTotal * m_numSolutionTotalB;
+	auto len = (m_numSolutionTotal - m_numRecAdj) * m_numSolutionTotalB;
 	m_fullExcludeTable = new tchar[len];
 	memset(m_fullExcludeTable, 0, len);
 
@@ -79,7 +79,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	m_pRowSolutionMasks = new tmask[len];
 	memset(m_pRowSolutionMasks, 0, len * sizeof(m_pRowSolutionMasks[0]));
 
-#if !USE_64_BIT_MASK || !NEW_GET_ROW
+#if !USE_64_BIT_MASK
 	// Filling the lookup table m_FirstOnePosition
 	memset(m_FirstOnePosition, 0, sizeof(m_FirstOnePosition));
 	for (int i = 2; i < 256; i += 2)
@@ -117,7 +117,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 		if (!first) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
-			pFullIncludeTable += last * shift;
 			continue;
 		}
 #endif
@@ -178,8 +177,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 	const auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
 	auto& first = m_pRowSolutionIdx[iRow];
 	const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
-#if NEW_GET_ROW
-
 	if (iRow == numPreconstructedRows) {
 		const auto firstNextGroup = last + m_pRowStorage->numRecAdj();
 		if (first >= firstNextGroup)
@@ -234,7 +231,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 			auto pPrevA = (const long long*)(pCompSol)+numLongs2Skip;
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (long long*)(pPrevA + shift);
-			auto pFromA = m_pRowStorage->getSolutionMask(first + m_pRowStorage->numRecAdj()) + numLongs2Skip;
+			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
 			const auto len = shift - numLongs2Skip;
 #if USE_INTRINSIC
 			bitwise_multiply(pPrevA, pFromA, pToA, len);
@@ -295,49 +292,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #if UseSolutionMasks || UseIPX
 		break;
 	}
-#endif
-#else
-	if (iRow == numPreconstructedRows) {
-		if (first >= last)
-			return 0;
-		m_excludeForRow[iRow] = (tchar*)m_pRowStorage->getSolutionMask(first);
-		first += m_step;
-		return 1;
-	}
-#if UseIPX
-	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
-	while (true) {
-#endif
-		while (first < last) {
-			unsigned int firstB = first >> 3;
-			tchar shift = first & 0x7;
-			tchar msk = !shift ? 0xff : ~((1 << shift) - 1);
-			for (int j = numPreconstructedRows; j < iRow; j++)
-			{
-				msk &= (m_excludeForRow[j])[firstB];
-				//if (!msk)
-				//	break;
-			}
-			if (!msk)
-				first = (first + 8) & 0xfffffff8;
-			else {
-				first = first + m_pRowStorage->firstOnePosition(msk) - shift;
-				break;
-			}
-		}
-
-		if (first >= last)
-			return 0;
-#if UseIPX
-		// Previous solution should be different in first ipx bytes
-		if (!pPrevSolution || memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1))
-			break;
-
-		first++; // We need to try next solution 
-	}
-#endif
-
-	m_excludeForRow[iRow] = (tchar *)m_pRowStorage->getSolutionMask(first);
 #endif
 
 	first++;
