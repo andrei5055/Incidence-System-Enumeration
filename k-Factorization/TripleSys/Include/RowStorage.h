@@ -78,6 +78,7 @@ public:
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
 	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
+	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, int iStep, const uint* pRowSolutionIdx) const {
 		size_t shift = numPreconstructedRows() * m_numPlayers;
 		const int adj = numRecAdj();
@@ -142,6 +143,7 @@ private:
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 	int m_useCliquesAfterRow;
 	int m_numRecAdj = 0;
+	int m_lastInFirstSet;
 };
 
 class CRowUsage : public CompSolStorage {
@@ -150,6 +152,7 @@ public:
 		const auto numPlayers = pRowStorage->numPlayers();
 		m_pRowSolutionIdx = new uint[numPlayers + 1];
 		memset(m_pRowSolutionIdx, 0, numPlayers * sizeof(m_pRowSolutionIdx[0]));
+		m_bUseCombinedSolutions = pRowStorage->sysParam()->val[t_useCombinedSolutions];
 	}
 
 	CC ~CRowUsage() {
@@ -176,4 +179,5 @@ private:
 	uint* m_pRowSolutionIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
+	bool m_bUseCombinedSolutions;
 };

@@ -50,6 +50,7 @@ typedef enum {
 	t_autGroupNumb,
 	t_autSaveTestedTrs,
 	t_useImproveMatrix,
+	t_useCombinedSolutions,
 	t_outAutomorphismGroup,
 	t_nestedGroups,
 	t_gridSize,

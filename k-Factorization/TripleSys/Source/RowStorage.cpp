@@ -58,7 +58,9 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
 	int i = m_numPreconstructedRows;
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
-	m_numRecAdj = m_pRowSolutionCntr[i];
+	m_lastInFirstSet = m_numRecAdj = m_pRowSolutionCntr[i];
+	if (NEW && sysParam()->val[t_useCombinedSolutions])
+		m_lastInFirstSet *= m_pRowSolutionCntr[i+1];
 
 	while (++i < m_numPlayers)
 		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
@@ -178,13 +180,18 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 	auto& first = m_pRowSolutionIdx[iRow];
 	const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
 	if (iRow == numPreconstructedRows) {
-		const auto firstNextGroup = last + m_pRowStorage->numRecAdj();
-		if (first >= firstNextGroup)
+		if (first >= m_pRowStorage->lastInFirstSet())
 			return 0;
 
 #if NEW
-		memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
-		m_pRowStorage->generateCompatibilityMasks((tmask *)m_pCompatibleSolutions, first, firstNextGroup);
+		if (m_bUseCombinedSolutions) {
+			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
+			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, m_pRowStorage->lastInFirstSet());
+		}
+		else {
+			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
+			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, m_pRowStorage->lastInFirstSet());
+		}
 #else
 		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
 #endif
