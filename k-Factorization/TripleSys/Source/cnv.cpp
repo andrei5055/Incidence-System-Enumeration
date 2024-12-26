@@ -276,7 +276,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				p[i]--;             // decrease index "weight" for i by one
 				const auto j = (i % 2) ? p[i] : 0;   // IF i is odd then j = p[i] otherwise j = 0
 				SWAP(a[i], a[j]);
-				if (!cnvCheckTgNew(a, nrows))
+				if (!cnvCheckTgNew(a, nrows, ng))
 				{
 					ret = false;
 					break;////

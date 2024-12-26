@@ -90,13 +90,13 @@ CC bool alldata::cnvCheck2U1F(int nrows)
 				Stat_cnvCheckKm1("cmp(2)", 2, icmp == 2);
 				Stat_cnvCheckKm1("cmp(all)", 3, true);
 
-				if (icmp <= 0)
+				if (icmp == 0)
 				{
 					updateGroup(tr);
-					if (icmp < 0) {
-					  bRet = false;
-					  goto ret;
-				    }
+				} else
+				if (icmp < 0) {
+					bRet = false;
+					goto ret;
 				}
 
 			} while (ProceedToNextMapping());
