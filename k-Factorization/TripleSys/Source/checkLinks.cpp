@@ -37,7 +37,7 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 
 CC bool CChecklLink::checkLinks(tchar *pLinks, int id, bool printLinksStatTime)
 {
-	int idMin = 3;
+	int idMin = m_numPlayers < 27 ? 3 : 5;
 	if (id < idMin) return true;
 
 	bool ret = true;

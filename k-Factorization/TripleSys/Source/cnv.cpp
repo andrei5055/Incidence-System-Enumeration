@@ -66,8 +66,12 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		return 1; // print only
 	}
 #endif
+	//if (!(m_TrInd % 100000))
+	//	printf("%d ", m_TrInd);
+	//bool first = false;
 	if (!m_TrInd && !groupOrder())
 	{
+		//first = true;
 		//printf("cnvCheckStart\n");
 		updateGroup(res);
 		day = 1;
@@ -84,6 +88,14 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		}
 
 		const auto icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n);
+		/**
+		if (first)
+		{
+			printf("d=%d icmp=%d ", day, icmp);
+			printTable("result", res, nrows, m_numPlayers, m_groupSize);
+			printTable("tr\n", ttr, 1, m_numPlayers, m_groupSize);
+			printTable("processed", m_Km, nrows, m_numPlayers, m_groupSize);
+		}**/
 #if !USE_CUDA
 		//TestkmProcessMatrix(nrows, n, tr, ttr, icmp);
 #endif
@@ -144,7 +156,7 @@ CC bool alldata::cnvCheckKm(ctchar* tr, ctchar* tg, int nrows)
 	m_TrInd++;
 	return ret;
 }
-CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows)
+CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 {
 	tchar tg[MAX_GROUP_NUMBER];
 	bool ret = true;
@@ -161,7 +173,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows)
 		{
 			tg[i] = 0;
 		}
-		if (i < 0)
+		if (i < m_nGroups - ngroups)
 			break;
 	}
 	return ret;
@@ -243,7 +255,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		m_cnvMode = iMode;
 
 		// change "ng = m_nGroups;" below (for "fast version" of cnfCheckNew) to: 
-		//int ng = m_nGroups > 4 ? 8 : m_nGroups; // check permutations for the first ng groups only
+		//int ng = m_nGroups > 4 ? 3 : m_nGroups; // check permutations for the first ng groups only
 		int ng = m_nGroups; // "full check"
 
 		// Head Permutations Using a Linear Array Without Recursion by Phillip Paul Fuchs
@@ -251,7 +263,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		{
 			a[i] = (p[i] = i) * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		}
-		if (!cnvCheckTgNew(a, nrows))
+		if (!cnvCheckTgNew(a, nrows, ng))
 		{
 			ret = false;
 		}

@@ -30,7 +30,7 @@
 #define NRBase					  2
 #define UseP1fCheckGroups         1
 #define USE_BINARY_CANONIZER	  0
-#define AllowNotP1FRows    1 // Only for 3U1F. if 0 - all rows pairs must be p1f for all common sets combinations.
+#define AllowNotP1FRows    0 // Only for 3U1F. if 0 - all rows pairs must be p1f for all common sets combinations.
 									// 1 - no check for rows pairs related to number of cycles.
 #define Any2RowsConvertToFirst2   1 // Only for 3U1F. (*) If 1, then any two rows must be converted to first 2 rows.
 									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
@@ -191,7 +191,7 @@ private:
 	bool CheckMatrix(ctchar* matrix, int nl, int nc, int gs, bool printError, int* errDay, int* errGroup, int* dubLine);
 	CC bool cnvCheckKm(ctchar* tr, ctchar* tg, int nrows);
 	CC void cnvInit();
-	CC bool cnvCheckTgNew(ctchar* tr, int nrows);
+	CC bool cnvCheckTgNew(ctchar* tr, int nrows, int ngroups);
 	CC bool cnvCheckNew(int iMode, int nrows, bool useAutomorphisms = true);
 	CC bool cnvCheck2U1F(int nrows);
 	CC bool cnvCheck2P1F(int nrows);

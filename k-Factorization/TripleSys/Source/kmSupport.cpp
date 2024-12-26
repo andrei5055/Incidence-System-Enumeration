@@ -126,10 +126,10 @@ CC void alldata::kmSortGroups(tchar* mi, int nr) const
 {
 	for (int i = nr * m_nGroups; i--; mi += m_groupSize)
 	{
-		bool ex = true;
 		for (int j = 1; j < m_groupSize; j++)
 		{
-			for (int k = m_groupSize - j; k--;)
+			bool ex = true;
+			for (int k = 0; k < m_groupSize - j; k++)
 			{
 				if (mi[k] > mi[k + 1])
 				{

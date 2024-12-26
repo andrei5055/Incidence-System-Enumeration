@@ -179,8 +179,8 @@ CC void alldata::updateIndexPlayerMinMax()
 {
 	if (iDay > 0)
 	{
-		if (m_groupSize == 2)
-		{
+		switch (m_groupSize){
+			case 2:
 			if (m_numPlayers >= 4)
 			{
 				m_indexPlayerMin[1] = m_indexPlayerMax[1] = iDay + 1;
@@ -189,20 +189,33 @@ CC void alldata::updateIndexPlayerMinMax()
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 			}
-		}
-		else if (m_groupSize == 3)
-		{
+				break;
+			case 3:
 			if (m_numPlayers >= 9)
 			{
 				int ip1 = 3;
-				int ip1Max = m_numPlayers - m_numDays + iDay - 3;
-				for (; ip1 < ip1Max; ip1++)
+					for (; ip1 < m_numPlayers; ip1++)
 					if (links()[ip1] == unset)
 						break;
 				m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 				m_indexPlayerMax[3] = 1;
 				m_indexPlayerMax[6] = 2;
+				}
+				break;
+			default: {
+				int ip1 = m_groupSize + iDay - 1;
+				if (m_numPlayers != m_groupSize * m_groupSize)
+				{
+					for (; ip1 < m_numPlayers; ip1++)
+						if (links()[ip1] == unset)
+							break;
+				}
+				m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
+				for (int i = 1; i < m_groupSize; i++)
+					m_indexPlayerMax[m_groupSize * i] = i;
+				break;
 			}
 		}
 	}

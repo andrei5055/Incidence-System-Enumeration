@@ -287,7 +287,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 
 	memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
 
-	if (m_use2RowsCanonization && !param(t_u1f) && m_groupSize == 3 && !pNeedOutput)
+	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3 && !pNeedOutput)
 	{
 		m_p1f_counter++;
 		if (!(m_p1f_counter % 10000000))
@@ -365,6 +365,8 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
 {
 	if (ncr != 1)
 		return false;
+	if (!ncycles)
+		return true;
 	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
 		return ncycles == 1 && length[0] != m_numPlayers;
