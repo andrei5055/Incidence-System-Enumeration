@@ -38,6 +38,7 @@ const char* intParamNames[]{
 	"AutSaveTestedTrs", // 0 - not saving; 1 - saving only while testing on groups ; 
 	                    // 2 - saving only while testing paths; 3 - saving while testing on groups OR paths
 	"UseImproveMatrix",
+	"UseCombinedSolutions",
 	"OutAutomorphismGroup",
 	"NestedGroups",
 	"GridSize",

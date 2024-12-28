@@ -29,27 +29,73 @@ void bitwise_multiply(const long long* a, const long long* b, long long* result,
 }
 #endif
 
-CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, unsigned int solIdx, unsigned int idx) const
-{
+CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
+	uint checked = 0;
+	for (tchar m = 0; m < m_numPlayers; m++)
+	{
+		if (!(checked & (1 << m))) {
+			tchar k = m;
+			for (int i = 2; i <= m_numPlayers; i += 2)
+			{
+				if ((k = neighborsj[neighborsi[k]]) == m)
+					return i == m_numPlayers;
+
+				checked |= 1 << k;
+			}
+		}
+	}
+	return false;
+}
+
+CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm, uint idx) const {
+	// Let's check if the masks are mutually compatible
+	auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
+	int j = m_lenMask;
+	while (j-- && !(rm[j] & pMask[j]));
+
+	return j < 0 && p1fCheck2(neighborsi, getObject(idx) + m_numPlayers);
+}
+
+CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx, uint last, uint step, uint *pIdx2) const {
+	// Constructing mask for "combined" solution, that is combination of solutions for of 2 rows;
+	const auto n = m_numRec[1];
+	do {
+		auto idx1 = solIdx / n;
+		auto idx2 = solIdx % n + m_numRecAdj;
+
+		auto* rm1 = (const long long*)m_pMaskStorage->getObject(idx1);
+		const auto pNeighbors1 = getObject(idx1) + m_numPlayers;
+		if (checkCompatibility(pNeighbors1, rm1, idx2)) {
+			auto* rm2 = (const long long*)m_pMaskStorage->getObject(idx2);
+			const auto pNeighbors2 = getObject(idx2) + m_numPlayers;
+			auto idx = m_numRecAdj2;
+			do {
+				if (checkCompatibility(pNeighbors1, rm1, idx) && checkCompatibility(pNeighbors2, rm2, idx)) {
+					const auto newIdx = idx - m_numRecAdj;
+					SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
+				}
+			} while (++idx < m_numSolutionTotal);
+
+			*pIdx2 = idx2 + 1;
+			return true;
+		}
+	} while ((solIdx += step) < last);
+
+	return false;
+}
+
+CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, uint idx) const {
 	auto* rm = (const long long*)m_pMaskStorage->getObject(solIdx);
 	const auto pNeighbors = getObject(solIdx) + m_numPlayers;
-	const auto jMax = m_lenMask >> 3;
 	do {
-		// Let's check if the masks are mutually compatible
-		auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-		int j = jMax;
-		while (j-- && !(rm[j] & pMask[j]));
-
-		if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers)) {
-			// The masks are compatible and the length of the cycle is equal to m_numPlayers
+		if (checkCompatibility(pNeighbors, rm, idx)) {
 			const auto newIdx = idx - m_numRecAdj;
 			SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
 		}
 	} while (++idx < m_numSolutionTotal);
 }
 
-CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
-{
+CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	m_u1fCycles = u1fCycles;
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pRowSolutionCntr[i] += m_pRowSolutionCntr[i - 1];
@@ -60,7 +106,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
 	m_lastInFirstSet = m_numRecAdj = m_pRowSolutionCntr[i];
 	if (NEW && sysParam()->val[t_useCombinedSolutions])
-		m_lastInFirstSet *= m_pRowSolutionCntr[i+1];
+		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[i+1]) - m_numRecAdj));
 
 	while (++i < m_numPlayers)
 		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
@@ -93,6 +139,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
 	const auto shift = m_numSolutionTotalB / sizeof(tmask);
+	m_lenMask >>= 3;  // Length of the mask in long long's 
+
 #if 1
 	while (i < m_numPlayers) {
 		auto first = last;
@@ -137,6 +185,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 	int cntrs[8]; 
 	memset(cntrs, 0, sizeof(cntrs));
 	unsigned long long fff = 0;
+	int a = 0;
 	while (i < m_numPlayers - 1) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
@@ -150,17 +199,19 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles)
 			while (++idx < m_pRowSolutionCntr[i]) {
 				// Let's check if the masks are mutually compatible
 				auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-				int j = jMax;
+				int j = m_lenMask;
 				while (j-- && !(rm[j] & pMask[j]));
 
-				if (j < 0 && p1fCheck2(m_u1fCycles, pNeighbors, getObject(idx) + m_numPlayers, m_numPlayers))
+				if (j < 0 && p1fCheck2(pNeighbors, getObject(idx) + m_numPlayers)) {
 					cntrs[i / 2]++;
+					if (first <= m_numRecAdj && idx < m_numRecAdj2)
+						a++;
+				}
 			}
 		}
 		fff += cntrs[i / 2];
 		last = m_pRowSolutionCntr[i++];
 	}
-
 #endif
 #if !NEW
 	delete m_pMaskStorage;
@@ -176,21 +227,25 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows);
-	const auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
+	auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
 	auto& first = m_pRowSolutionIdx[iRow];
-	const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
 	if (iRow == numPreconstructedRows) {
-		if (first >= m_pRowStorage->lastInFirstSet())
+		if (first >= (last = m_pRowStorage->lastInFirstSet()))
 			return 0;
 
+		
 #if NEW
 		if (m_bUseCombinedSolutions) {
-			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
-			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, m_pRowStorage->lastInFirstSet());
+			const auto shift = m_numSolutionTotalB >> 3;
+			auto pToA = m_pCompatibleSolutions + m_numSolutionTotalB;
+			memset(pToA, 0, m_numSolutionTotalB);
+			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions((tmask*)pToA, first, last, m_step, m_pRowSolutionIdx + iRow + 1);
+			if (!m_bSolutionReady)
+				return 0;
 		}
 		else {
 			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
-			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, m_pRowStorage->lastInFirstSet());
+			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, last);
 		}
 #else
 		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
@@ -199,7 +254,17 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 		return 1;
 	}
 
-	auto* pCompSol = (tmask*)(m_pCompatibleSolutions + (iRow - numPreconstructedRows - 1) * m_numSolutionTotalB);
+	const auto nRow = iRow - numPreconstructedRows - 1;
+	if (m_bUseCombinedSolutions && !nRow) {
+		if (m_bSolutionReady) {
+			m_bSolutionReady = false;
+			return 1;
+		}
+
+		return 0;
+	}
+
+	auto* pCompSol = (tmask*)(m_pCompatibleSolutions + nRow * m_numSolutionTotalB);
 #if UseIPX
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
 #endif
@@ -222,6 +287,16 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #else
 		const auto iBit = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
 #endif
+		/*
+		void out64bits(FILE * f, const char* prefix, const void* pntr, const char* postFix);
+		FOPEN_F(f1, "aaa.txt", "a");
+		fprintf(f1, "pCompSol = %p\n", pCompSol);
+		for (int i = 0; i < 16; i++)
+			out64bits(f1, " ", pCompSol + (first >> SHIFT) + i, NULL);
+		
+		fprintf(f1, "\n first = %4d  firstB = %d->%d  iBit = %d\n\n", first, (first >> SHIFT), firstB, iBit);
+		FCLOSE_F(f1);
+		*/
 		if ((first = (firstB << SHIFT) + iBit) >= last)
 			return 0;
 
@@ -235,7 +310,8 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-			auto pPrevA = (const long long*)(pCompSol)+numLongs2Skip;
+			const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
+			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (long long*)(pPrevA + shift);
 			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;

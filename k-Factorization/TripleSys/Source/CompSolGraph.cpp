@@ -33,28 +33,21 @@ CC CompSolStorage::~CompSolStorage() {
 	delete[] m_idxUsedSol;
 }
 
-#if 1
+
 void out64bits(FILE* f, const char* prefix, const void *pntr, const char* postFix) {
 	if (prefix)
 		fprintf(f, prefix);
-
+#if 0
 	fprintf(f, "%016llx", *(tmask*)pntr);
-	if (postFix)
-		fprintf(f, postFix);
-}
 #else
-void out64bits(FILE* f, const char* prefix, const void* pntr, const char* postFix) {
-	if (prefix)
-		fprintf(f, prefix);
-
 	const auto pChar = (unsigned char*)pntr;
 	for (int i = 0; i < 8; i++)
 		fprintf(f, "%02x", pChar[i]);
-
+#endif
 	if (postFix)
 		fprintf(f, postFix);
 }
-#endif
+
 
 CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax)
 {
