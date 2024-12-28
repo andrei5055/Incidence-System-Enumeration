@@ -12,16 +12,19 @@
 
 #if USE_64_BIT_MASK
 typedef long long tmask;
-#define SHIFT					6 
-#define IDX(n)					(n + 63) >> 6
-#define SET_MASK_BIT(mask, idx)	mask[(idx) >> 6] |= (tmask)1 << ((idx) & 0x3f)
+#define SHIFT						6
+#define LEFT_SHIFT(idx)				((idx) & 0x3f)	
+#define IDX(n)						(n + 63) >> 6
 #else
 typedef tchar tmask;
-#define SHIFT					3 
-#define IDX(n)					(n + 7) >> 3
-#define SET_MASK_BIT(mask, idx)	mask[(idx) >> 3] |= (tmask)1 << ((idx) & 0x07)
+#define SHIFT						3
+#define LEFT_SHIFT(idx)				((idx) & 0x07)	
+#define IDX(n)						(n + 7) >> 3
 #endif
-#define REM(n)					(n % ((tmask)1<<SHIFT))	// remainder from division
+#define SET_MASK_BIT(mask, idx)		mask[(idx) >> SHIFT] |= (tmask)1 << LEFT_SHIFT(idx)
+#define RESET_MASK_BIT(mask, idx)	mask[(idx) >> SHIFT] ^= (tmask)1 << LEFT_SHIFT(idx)
+#define CHECK_MASK_BIT(mask, idx)	(mask[(idx) >> SHIFT] & (tmask)1 << LEFT_SHIFT(idx))
+#define REM(n)						(n % ((tmask)1<<SHIFT))	// remainder from division
 
 #include "CompSolGraph.h"
 
@@ -48,7 +51,7 @@ public:
 		delete[] m_pRowSolutionMasksIdx;
 	}
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
-	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx, uint last, uint step, uint *pIdx2) const;
+	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC void init() {
 		initMaskStorage(m_numObjectsMax);
 	}

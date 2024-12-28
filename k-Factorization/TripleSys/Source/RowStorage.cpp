@@ -56,30 +56,26 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm,
 	return j < 0 && p1fCheck2(neighborsi, getObject(idx) + m_numPlayers);
 }
 
-CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx, uint last, uint step, uint *pIdx2) const {
+CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) const {
 	// Constructing mask for "combined" solution, that is combination of solutions for of 2 rows;
 	const auto n = m_numRec[1];
 	do {
-		auto idx1 = solIdx / n;
-		auto idx2 = solIdx % n + m_numRecAdj;
-
+		const auto idx1 = solIdx / n;
 		auto* rm1 = (const long long*)m_pMaskStorage->getObject(idx1);
 		const auto pNeighbors1 = getObject(idx1) + m_numPlayers;
-		if (checkCompatibility(pNeighbors1, rm1, idx2)) {
-			auto* rm2 = (const long long*)m_pMaskStorage->getObject(idx2);
-			const auto pNeighbors2 = getObject(idx2) + m_numPlayers;
+		if (checkCompatibility(pNeighbors1, rm1, solIdx % n + m_numRecAdj)) {
+			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
 			auto idx = m_numRecAdj2;
 			do {
-				if (checkCompatibility(pNeighbors1, rm1, idx) && checkCompatibility(pNeighbors2, rm2, idx)) {
-					const auto newIdx = idx - m_numRecAdj;
-					SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
+				const auto newIdx = idx - m_numRecAdj;
+				if (CHECK_MASK_BIT(pMaskOut, newIdx) && !checkCompatibility(pNeighbors1, rm1, idx)) {
+					RESET_MASK_BIT(pMaskOut, newIdx);     //  reset bit
 				}
 			} while (++idx < m_numSolutionTotal);
 
-			*pIdx2 = idx2 + 1;
 			return true;
 		}
-	} while ((solIdx += step) < last);
+	} while ((solIdx += m_step) < m_lastInFirstSet);
 
 	return false;
 }
@@ -232,14 +228,10 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 	if (iRow == numPreconstructedRows) {
 		if (first >= (last = m_pRowStorage->lastInFirstSet()))
 			return 0;
-
-		
+	
 #if NEW
 		if (m_bUseCombinedSolutions) {
-			const auto shift = m_numSolutionTotalB >> 3;
-			auto pToA = m_pCompatibleSolutions + m_numSolutionTotalB;
-			memset(pToA, 0, m_numSolutionTotalB);
-			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions((tmask*)pToA, first, last, m_step, m_pRowSolutionIdx + iRow + 1);
+			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions((tmask*)(m_pCompatibleSolutions + m_numSolutionTotalB), first);
 			if (!m_bSolutionReady)
 				return 0;
 		}
@@ -287,16 +279,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #else
 		const auto iBit = m_pRowStorage->firstOnePosition(pCompSol[firstB]);
 #endif
-		/*
-		void out64bits(FILE * f, const char* prefix, const void* pntr, const char* postFix);
-		FOPEN_F(f1, "aaa.txt", "a");
-		fprintf(f1, "pCompSol = %p\n", pCompSol);
-		for (int i = 0; i < 16; i++)
-			out64bits(f1, " ", pCompSol + (first >> SHIFT) + i, NULL);
-		
-		fprintf(f1, "\n first = %4d  firstB = %d->%d  iBit = %d\n\n", first, (first >> SHIFT), firstB, iBit);
-		FCLOSE_F(f1);
-		*/
 		if ((first = (firstB << SHIFT) + iBit) >= last)
 			return 0;
 
