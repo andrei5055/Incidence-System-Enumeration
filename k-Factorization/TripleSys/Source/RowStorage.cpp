@@ -66,7 +66,7 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 		const auto pNeighbors1 = getObject(idx1) + m_numPlayers;
 		if (checkCompatibility(pNeighbors1, rm1, solIdx % n + m_numRecAdj)) {
 			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
-			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>3);
+			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>(SHIFT - 3));
 			memcpy(pCompSol, pMaskOut, m_numSolutionTotalB);
 
 			const auto last = m_numSolutionTotal - m_numRecAdj;

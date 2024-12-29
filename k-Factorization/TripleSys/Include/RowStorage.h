@@ -7,7 +7,8 @@
 
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionMasks	1
-#define UseSolutionCliques	!USE_CUDA	// The graph whose vertices are the remaining solutions must have a maximum 
+#define UseSolutionCliques	USE_64_BIT_MASK && !USE_CUDA	
+										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
 #if USE_64_BIT_MASK
 typedef long long tmask;
