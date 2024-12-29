@@ -96,8 +96,16 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 			m_pRowUsage = new CRowUsage(m_pRowStorage);
 	}
 	bool bp1f = (!u1fPntr || u1fPntr[1] == m_numPlayers);
+	m_pCheckFunc = NULL;
+	if (m_use2RowsCanonization) {
+		if (m_groupSize == 2)
+			m_pCheckFunc = bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
+		else if (m_groupSize == 3)
+			m_pCheckFunc = &alldata::cnvCheck3U1F;
+	}
+	else if ((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5))
+		m_pCheckFunc = &alldata::cnvCheck45;
 
-	m_pCheckU1F = m_use2RowsCanonization ? ((m_groupSize == 2) ? (bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F) : &alldata::cnvCheck3U1F) : NULL;
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);

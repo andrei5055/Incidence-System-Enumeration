@@ -14,6 +14,7 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "cnv.cpp"
 #include "cnvSupport.cpp"
 #include "cnvSupport2.cpp"
+#include "cnvSupport3.cpp"
 #include "kmSupport.cpp"
 #include "checkLinks.cpp"
 #include "checkLinksV.cpp"

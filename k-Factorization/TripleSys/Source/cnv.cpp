@@ -66,8 +66,12 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		return 1; // print only
 	}
 #endif
-	//if (!(m_TrInd % 100000))
-	//	printf("%d ", m_TrInd);
+	if (m_TrInd == 100000000)
+	{
+		printf("%d ", m_TrInd);
+		m_TrInd = 1;
+	}
+	//return 1;
 	//bool first = false;
 	if (!m_TrInd && !groupOrder())
 	{
@@ -196,7 +200,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				auto* m_pRowGroup = rowGroup(i += step);
 				if (!m_pRowGroup || (j = m_pRowGroup->groupOrder()) < 1)
 					continue;
-				int i1 = i; 
+				int i1 = i;
 				//i = 0;
 				const auto nRowsToTest = nrows - i;
 				if (nRowsToTest < 1)
@@ -244,16 +248,19 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				return false;
 		}
 	}
-
+	return canonizator(iMode, nrows);
+}
+CC bool alldata::canonizator(int iMode, int nrows)
+{
 	bool ret = true;
-	if (m_use2RowsCanonization && iMode >= 0) { // leo && !param(t_u1f)) {
-		ret = (this->*m_pCheckU1F)(nrows);
+	initCheckByGroup(nrows, 1);
+	m_cnvMode = iMode;
+
+	if (m_pCheckFunc && iMode >= 0) {
+		ret = (this->*m_pCheckFunc)(nrows);
 	}
 	else {
 		tchar a[MAX_GROUP_NUMBER + 1], p[MAX_GROUP_NUMBER + 1];
-		initCheckByGroup(nrows, 1);
-		m_cnvMode = iMode;
-
 		// change "ng = m_nGroups;" below (for "fast version" of cnfCheckNew) to: 
 		//int ng = m_nGroups > 4 ? 3 : m_nGroups; // check permutations for the first ng groups only
 		int ng = m_nGroups; // "full check"

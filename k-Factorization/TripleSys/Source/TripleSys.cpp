@@ -336,9 +336,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if !USE_CUDA
-						cTime = clock() - iTime;
+						cTime = clock();
 						for (int i = nPrecalcRows + 3; i < iDay; i++)
-							m_rowTime[i] = cTime;
+							m_rowTime[i] = cTime - iTime;
 #endif
 						iDay--;
 						goto checkCurrentMatrix;

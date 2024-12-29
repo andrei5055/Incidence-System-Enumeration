@@ -93,8 +93,9 @@ CC bool alldata::cnvCheck2U1F(int nrows)
 				if (icmp == 0)
 				{
 					updateGroup(tr);
-				} else
-				if (icmp < 0) {
+				}
+				else if (icmp < 0)
+				{
 					bRet = false;
 					goto ret;
 				}

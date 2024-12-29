@@ -158,6 +158,7 @@
     <ClCompile Include="Source\cnv.cpp" />
     <ClCompile Include="Source\cnvSupport.cpp" />
     <ClCompile Include="Source\cnvSupport2.cpp" />
+    <ClCompile Include="Source\cnvSupport3.cpp" />
     <ClCompile Include="Source\CompSolGraph.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />

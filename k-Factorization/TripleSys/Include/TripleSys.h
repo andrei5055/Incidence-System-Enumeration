@@ -193,6 +193,8 @@ private:
 	CC void cnvInit();
 	CC bool cnvCheckTgNew(ctchar* tr, int nrows, int ngroups);
 	CC bool cnvCheckNew(int iMode, int nrows, bool useAutomorphisms = true);
+	CC bool canonizator(int iMode, int nrows);
+	CC bool cnvCheck45(int nrows);
 	CC bool cnvCheck2U1F(int nrows);
 	CC bool cnvCheck2P1F(int nrows);
 	CC bool cnvCheck3U1F(int nrows);
@@ -325,7 +327,7 @@ private:
 	void* m_pRes;
 	TrCycles m_TrCycles;
 	TrCycles m_TrCyclesAll[MAX_CYCLE_SETS];
-	checkU1F m_pCheckU1F;
+	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
 	checkInvalidCycle m_pInvalidCycle;
