@@ -330,7 +330,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 									goto ProcessPrecalculatedRow;
 
-							if (NDEBUG)
+							if (NDEBUG && nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
 								continue;
 						}
 
