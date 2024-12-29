@@ -9,22 +9,21 @@
 #define UseSolutionMasks	1
 #define UseSolutionCliques	!USE_CUDA	// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
-
 #if USE_64_BIT_MASK
 typedef long long tmask;
 #define SHIFT						6
-#define LEFT_SHIFT(idx)				((idx) & 0x3f)	
-#define IDX(n)						(n + 63) >> 6
 #else
 typedef tchar tmask;
 #define SHIFT						3
-#define LEFT_SHIFT(idx)				((idx) & 0x07)	
-#define IDX(n)						(n + 7) >> 3
 #endif
-#define SET_MASK_BIT(mask, idx)		mask[(idx) >> SHIFT] |= (tmask)1 << LEFT_SHIFT(idx)
-#define RESET_MASK_BIT(mask, idx)	mask[(idx) >> SHIFT] ^= (tmask)1 << LEFT_SHIFT(idx)
-#define CHECK_MASK_BIT(mask, idx)	(mask[(idx) >> SHIFT] & (tmask)1 << LEFT_SHIFT(idx))
-#define REM(n)						(n % ((tmask)1<<SHIFT))	// remainder from division
+
+#define MASK_BIT(idx)				(tmask)1 << ((idx) & ((1<<SHIFT) - 1))	
+#define IDX(n)						(n + (1<<SHIFT) - 1) >> SHIFT
+#define REM(n)						(n % ((tmask)1<<SHIFT))			// remainder from division
+#define SET_MASK_BIT(mask, idx)		mask[(idx) >> SHIFT] |= MASK_BIT(idx)
+#define RESET_MASK_BIT(mask, idx)	mask[(idx) >> SHIFT] ^= MASK_BIT(idx)
+#define CHECK_MASK_BIT(mask, idx)	(mask[(idx) >> SHIFT] & MASK_BIT(idx))
+
 
 #include "CompSolGraph.h"
 

@@ -57,7 +57,8 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm,
 }
 
 CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) const {
-	// Constructing mask for "combined" solution, that is combination of solutions for of 2 rows;
+	// Constructing a mask for the "combined" solution, which represents 
+	// the combination of solutions for the first two "non-predefined" rows.
 	const auto n = m_numRec[1];
 	do {
 		const auto idx1 = solIdx / n;
@@ -65,13 +66,33 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 		const auto pNeighbors1 = getObject(idx1) + m_numPlayers;
 		if (checkCompatibility(pNeighbors1, rm1, solIdx % n + m_numRecAdj)) {
 			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
-			auto idx = m_numRecAdj2;
-			do {
-				const auto newIdx = idx - m_numRecAdj;
-				if (CHECK_MASK_BIT(pMaskOut, newIdx) && !checkCompatibility(pNeighbors1, rm1, idx)) {
-					RESET_MASK_BIT(pMaskOut, newIdx);     //  reset bit
-				}
-			} while (++idx < m_numSolutionTotal);
+			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>3);
+			memcpy(pCompSol, pMaskOut, m_numSolutionTotalB);
+
+			const auto last = m_numSolutionTotal - m_numRecAdj;
+			auto first = m_numRecAdj2 - m_numRecAdj;
+			const auto lastB = last >> 3;
+			while (true) {
+				// Skip all bytes/longs equal to 0
+				auto firstB = first >> SHIFT;
+				while (firstB < lastB && !pCompSol[firstB])
+					firstB++;
+
+				if (firstB >= lastB)
+					break;
+#if USE_64_BIT_MASK
+				unsigned long iBit;
+				_BitScanForward64(&iBit, pCompSol[firstB]);
+#else
+				const auto iBit = this->firstOnePosition(pCompSol[firstB]);
+#endif
+				if ((first = (firstB << SHIFT) + iBit) >= last)
+					break;
+
+				pCompSol[firstB] ^= (tmask)1 << iBit;
+				if (!checkCompatibility(pNeighbors1, rm1, first + m_numRecAdj))
+					RESET_MASK_BIT(pMaskOut, first);     //  reset bit
+			}
 
 			return true;
 		}
@@ -178,6 +199,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	}
 
 #else
+	// Calculate the number of mutually compatible pairs of solutions
 	int cntrs[8]; 
 	memset(cntrs, 0, sizeof(cntrs));
 	unsigned long long fff = 0;
@@ -229,7 +251,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 		if (first >= (last = m_pRowStorage->lastInFirstSet()))
 			return 0;
 	
-#if NEW
 		if (m_bUseCombinedSolutions) {
 			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions((tmask*)(m_pCompatibleSolutions + m_numSolutionTotalB), first);
 			if (!m_bSolutionReady)
@@ -239,9 +260,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
 			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, last);
 		}
-#else
-		memcpy(m_pCompatibleSolutions, m_pRowStorage->getSolutionMask(first), m_numSolutionTotalB);
-#endif
+
 		first += m_step;
 		return 1;
 	}
