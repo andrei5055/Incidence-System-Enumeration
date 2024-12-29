@@ -320,8 +320,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 							m_rowTime[iDay] = cTime - iTime;
 						}
 #endif
-						iDay++;
-						if (iDay < numDaysResult() && !checkCanonicity()) {
+						if (++iDay < numDaysResult() && !checkCanonicity()) {
 #if 1
 							m_p1f_counter++;
 							if (!param(t_p1f_counter) || (m_p1f_counter % param(t_p1f_counter)))
@@ -330,7 +329,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 								if (cTime - rTime < ReportInterval)
 #endif
 									goto ProcessPrecalculatedRow;
+
+							if (NDEBUG)
+								continue;
 						}
+
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if !USE_CUDA
 						cTime = clock() - iTime;

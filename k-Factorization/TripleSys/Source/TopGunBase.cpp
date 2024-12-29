@@ -87,7 +87,7 @@ int TopGunBase::getStartMatrices()
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, &pAutOrder);
+		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, m_pMatrixAutOrder? &pAutOrder : NULL);
 		if (!nMatricesFromOneFile)
 		{
 			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());

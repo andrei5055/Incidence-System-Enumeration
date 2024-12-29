@@ -51,12 +51,16 @@ void out64bits(FILE* f, const char* prefix, const void *pntr, const char* postFi
 
 CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax)
 {
-	long long solMask;
-	unsigned long iBit = 0;
+	tmask solMask;
 	do {
+#if USE_64_BIT_MASK
+		unsigned long iBit = 0;
 		_BitScanForward64(&iBit, mask);
-		const auto solID = (uint)(((long long)jBase << 6) + iBit);
-		solMask = (long long)1 << iBit;
+#else
+		const auto iBit = m_pRowStorage->firstOnePosition(mask);
+#endif
+		const auto solID = (uint)(((tmask)jBase << SHIFT) + iBit);
+		solMask = (tmask)1 << iBit;
 		CompSol* pCompSol = kMax? NULL : compatibleSolutions(solID, 0);
 		int k = 0;
 		for (; k < kMax; k++) {         // for all previously constructed groups of solutions
