@@ -69,10 +69,16 @@ typedef enum {
 } paramID;
 
 typedef struct {
+	const char** paramNames;
+	int numParams;
+} paramDescr;
+
+typedef struct {
 	int val[t_lastParam];
 	int groupSizeFactorial;
 	std::string* strVal[t_lastStrParam];
 	tchar* u1fCycles[1];
+	paramDescr* pParamDescr;
 } kSysParam;
 
 

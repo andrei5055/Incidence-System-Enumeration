@@ -2,7 +2,7 @@
 #include <filesystem>
 #include "TopGun.h"
 
-void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param, int tFolder, int nr, const std::string* fName) const
+void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param, int tFolder, int nr, const std::string& fName) const
 {
 	namespace fs = std::filesystem;
 	const char* folder = param->strVal[tFolder]->c_str();
@@ -16,6 +16,6 @@ void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param,
 		printfRed("*** Error: Unable to create folder \"%s\"\n", fn.c_str());
 		myExit(1);
 	}
-	if (fName)
-		fn += fhdr + *fName;
+	if (!fName.empty())
+		fn += fhdr + fName;
 }

@@ -396,6 +396,7 @@ int main(int argc, const char* argv[])
 	}
 
 	kSysParam param;
+	param.pParamDescr = params;
 	// Set default integer parameters:
 	auto& val = param.val;
 	memset(val, 0, sizeof(val));
@@ -531,6 +532,7 @@ int main(int argc, const char* argv[])
 					topGun = new TopGunGPU(param);
 
 
+				topGun->outputIntegratedResults(NULL, 0);
 				if (topGun->Run())
 					testOK = false;
 

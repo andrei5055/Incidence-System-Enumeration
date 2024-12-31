@@ -9,14 +9,14 @@ CC void SizeParam::linksFromMatrix(tchar* lnk, tchar* iv, int nr) const
 		for (int j = 0; j < np; j++)
 		{
 			const auto ivId = iv_id[j];
-			ASSERT(ivId == unset,
+			ASSERT_(ivId == unset,
 				printfRed("*** Init: value for day %d position %d not defined\n", i, j);
 				printTable("Initial result", iv, nr, np, m_groupSize);
 				myExit(1)
 			)
 
 			const auto linksOK = setLinksForOnePlayer(i, lnk, iv_id, j, ivId);
-			ASSERT(!linksOK,
+			ASSERT_(!linksOK,
 				printfRed("*** Init: value of %d (for day %d position %d) already defined in links table\n", ivId, i, j);
 				printTable("Initial result", iv, nr, np, m_groupSize);
 				myExit(1)

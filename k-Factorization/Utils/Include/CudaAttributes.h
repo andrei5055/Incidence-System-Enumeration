@@ -24,14 +24,21 @@
 #define CUDA_PRINTF(x, ...)
 //#define CUDA_PRINTF(x, ...) printf(x, __VA_ARGS__)
 
-#if USE_CUDA || NDEBUG
+#if USE_CUDA
 #define ASSERT(c,...)
+#define ASSERT_(c,...)
 #else
-#define ASSERT_FUNC         myAssert  
-#define ASSERT(c,...)        if (c) { \
+#define ASSERT_FUNC         myAssert
+#define ASSERT_(c,...)       if (c) { \
                                  __VA_ARGS__; \
                                  ASSERT_FUNC(c, __FILE__, __LINE__); \
                              }
+#if NDEBUG
+#define ASSERT(c,...)
+#else
+
+#define ASSERT              ASSERT_
+#endif
 #endif
 
 

@@ -2,6 +2,8 @@
 #include <string> 
 #include <vector>
 
+#define DATE_TIME_TAG   "===>>"
+
 class MatrDescr {
 public:
 	MatrDescr(size_t groupOrder, const char *cyclesDescr, size_t numMatrix);

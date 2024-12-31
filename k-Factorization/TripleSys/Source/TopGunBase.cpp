@@ -116,14 +116,31 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	if (!nRows)
 		nRows = m_numDays;
 
-	std::string fileName(pResFileName);
-	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, &fileName);
-	FOPEN_F(f, IntegratedResults.c_str(), "w");
+	const auto finalReport = pParSet != NULL;
+	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, pResFileName);
+	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
 	
-	reportResult(f);
-
-	if (!m_reportInfo.empty())
-		fprintf(f, m_reportInfo.c_str());
+	if (finalReport) {
+		reportResult(f);
+		if (!m_reportInfo.empty())
+			fprintf(f, m_reportInfo.c_str());
+	}
+	else {
+		if (numParamSet) {
+			char buffer[16], *pStr = NULL;
+			while (fgets(buffer, sizeof(buffer), f) && !(pStr = strstr(buffer, DATE_TIME_TAG))); 
+			
+			if (pStr) {
+				const auto offset = (long)strlen(pStr) + 2;
+				fseek(f, -offset, SEEK_CUR);
+			}
+			numParamSet = 0;
+		}
+		else {
+			numParamSet = 3;
+			pParSet = paramPtr()->pParamDescr;
+		}
+	}
 
 	for (int j = 0; j < numParamSet; j++) {
 		auto* paramNames = pParSet[j].paramNames;
@@ -167,6 +184,12 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			}
 			break;
 		}
+	}
+
+	if (!finalReport) {
+		reportResult(f);
+		if (!m_reportInfo.empty())
+			fprintf(f, m_reportInfo.c_str());
 	}
 
 	FCLOSE_F(f);

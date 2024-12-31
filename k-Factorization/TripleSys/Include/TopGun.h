@@ -2,11 +2,6 @@
 #include <thread>
 #include "TripleSys.h"
 
-typedef struct {
-	const char** paramNames;
-	int numParams;
-} paramDescr;
-
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);

@@ -105,10 +105,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	if (m_improveResult) {
 		const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
 		bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
-		createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, numDaysResult(), &fName);
+		createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, numDaysResult(), fName);
 	}
 
-	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), &fName);
+	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), fName);
 
 	TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
@@ -329,9 +329,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 								if (cTime - rTime < ReportInterval)
 #endif
 									goto ProcessPrecalculatedRow;
-
-							if (NDEBUG && nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
+#if NDEBUG
+							if (!bPrint && nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
 								continue;
+#endif
 						}
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
@@ -549,8 +550,8 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 
 				if (pAutGroup) {
 					pAutGroup->setGroupOrder(groupOrder());
-					string outFile, fName("_AutPermut.txt");
-					createFolderAndFileName(outFile, sysParam(), t_ResultFolder, numDaysResult(), &fName);
+					string outFile;
+					createFolderAndFileName(outFile, sysParam(), t_ResultFolder, numDaysResult(), "_AutPermut.txt");
 					pAutGroup->printTable(getObject(), true, outFile.c_str(), false, groupOrder(), getIndices());
 				}
 			}

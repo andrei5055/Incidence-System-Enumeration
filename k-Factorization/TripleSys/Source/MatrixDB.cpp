@@ -1,4 +1,5 @@
 #include "MatrixDB.h"
+#include <ctime>
 
 MatrDescr::MatrDescr(size_t groupOrder, const char *cyclesDescr, size_t numMatrix) : m_groupOrder(groupOrder) {
 	m_numMatrix = numMatrix;
@@ -62,14 +63,25 @@ void MatrixDB::addMatrix(size_t groupOrder, const char* cyclesDescr, size_t numM
 		descrStorage()->push_back(new MatrDescr(groupOrder, cyclesDescr, numMatrix));
 }
 
+void out_date_time(FILE* f) {
+	time_t timestamp = time(NULL);
+	struct tm datetime;
+	localtime_s(&datetime, &timestamp);
+
+	char output[50];
+	strftime(output, sizeof(output), "%m/%d/%y: %H:%M:%S", &datetime);
+	fprintf(f, "\n%s %s\n", DATE_TIME_TAG, output);
+}
+
 void MatrixDB::reportResult(FILE* f) const {
+	out_date_time(f);
 	if (descrStorage()) {
 		char line[61];
 		memset(line, '-', sizeof(line));
 		line[sizeof(line) - 1] = '\0';
 #define My_FPRINTF(f, format, ...) fprintf(f, "     "##format, __VA_ARGS__)
 		My_FPRINTF(f, "%s\n", line);
-		My_FPRINTF(f, "  |Auto(M)|:              Cycles:            # of matrices:\n");
+		My_FPRINTF(f, "  |Aut(M)|:              Cycles:            # of matrices:\n");
 		My_FPRINTF(f, "%s\n", line);
 		size_t total = 0;
 		for (const auto& record : *descrStorage()) {

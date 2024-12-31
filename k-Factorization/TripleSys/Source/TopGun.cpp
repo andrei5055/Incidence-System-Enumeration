@@ -54,8 +54,7 @@ int TopGun::Run()
 				TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 				Result.allocateBuffer(32);
 				std::string ResultFile;
-				std::string fileName("_OrderedMatrices.txt");
-				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), &fileName);
+				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), "_OrderedMatrices.txt");
 				for (int i = 0; i < nMatrices; i++) {
 					const auto idx = m_pMatrixPerm[i];
 					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;

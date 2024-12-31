@@ -73,10 +73,10 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	if (bPrintSetup)
 	{
 		char buffer[256], *pBuf = buffer;
-		const auto lenBuf = countof(buffer);
+		const auto lenBuf = sizeof(buffer);
 		for (int i = 0; i < numThreads; i++)
 		{
-			if ((i % 12) == 0)
+			if ((i % 20) == 0)
 				SPRINTFS(pBuf, buffer, lenBuf, "\n");
 
 			const auto j = i * 2;
@@ -88,6 +88,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 		m_reportInfo += std::format("Thread:Matrices generated{}\n", buffer);
 	}
 	std::cout << m_reportInfo;
+	outputIntegratedResults(NULL, 3);
 	return sum1;
 }
 void printTransformed(int nrows, int ncols, int groupSize, const tchar* tr, const tchar* ttr, const tchar* pImatr, const tchar* pTmatr, int numRow, sLongLong nLoops, int finalKMindex)

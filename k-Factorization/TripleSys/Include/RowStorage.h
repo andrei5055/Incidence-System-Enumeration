@@ -63,8 +63,12 @@ public:
 
 		row2bitmask(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)), false);
 		auto* pntr = getObject(m_numObjects++);
-		ASSERT(m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
-			pRow[1] != *(pntr - 2 * m_numPlayers + 1) + 1);
+		ASSERT_((m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
+			pRow[1] != *(pntr - 2 * m_numPlayers + 1) + 1),
+			printfRed("\nError in code: m_numObjects(%d)>1, and pRow[1](%d) != %d, and pRow[1] != %d\n",
+				m_numObjects, pRow[1], *(pntr - 2 * m_numPlayers + 1), *(pntr - 2 * m_numPlayers + 1) + 1);
+			exit(1)
+		);
 		memset(pntr, 0, m_lenObj);
 		memcpy(pntr, pRow, m_numPlayers);
 		memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);

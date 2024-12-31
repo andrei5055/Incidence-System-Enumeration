@@ -16,7 +16,7 @@ public:
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
 	CC bool setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const;
-	void createFolderAndFileName(std::string& fnn, const kSysParam* param, int tFolder, int nr, const std::string* fName = NULL) const;
+	void createFolderAndFileName(std::string& fnn, const kSysParam* param, int tFolder, int nr, const std::string& fName = "") const;
 	const int m_numPlayers;
 	const int m_groupSize;
 	const int m_use2RowsCanonization;
