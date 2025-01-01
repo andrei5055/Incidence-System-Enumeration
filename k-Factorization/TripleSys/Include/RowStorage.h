@@ -80,7 +80,7 @@ public:
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
-	CC inline auto getSolutionMask(uint solNumb) const	{ return (const long long *)(m_fullExcludeTable + solNumb * m_numSolutionTotalB); }
+	CC inline auto getSolutionMask(uint solNumb) const	{ return (const long long *)(m_fullExcludeTable + (solNumb + m_solAdj) * m_numSolutionTotalB); }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
@@ -175,6 +175,7 @@ private:
 	uint m_lastInFirstSet;
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
+	int m_solAdj = 0;
 };
 
 class CRowUsage : public CompSolStorage {

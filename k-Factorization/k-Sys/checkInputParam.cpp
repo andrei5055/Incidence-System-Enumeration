@@ -29,13 +29,14 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		return false;
 	}
 
-	if (/*val[t_u1f] */ param.u1fCycles[0]) {
-		auto pU1F = param.u1fCycles[0] + 1;
-		if (*param.u1fCycles[0] != 1) {
+	const auto pCycles = param.u1fCycles[0];
+	if (/*val[t_u1f] */ pCycles) {
+		auto pU1F = pCycles + 1;
+		if (*pCycles != 1) {
 			printfRed("*** Incorrect parameter 'U1FCycles': this version supports only one cycles set definition, Exit\n");
 			return false;
 		}
-		for (tchar i = 0; i < *param.u1fCycles[0]; i++) {
+		for (tchar j = 0; j < *pCycles; j++) {
 			// Iterating through all prescribed combinations of cycle versions. 
 			int nElem = 0;
 			for (int i = 0; i < MAX_UNIFOM_CONF_LENGTH; i++) {

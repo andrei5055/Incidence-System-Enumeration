@@ -62,9 +62,10 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 	const auto n = m_numRec[1];
 	do {
 		const auto idx1 = solIdx / n;
-		auto* rm1 = (const long long*)m_pMaskStorage->getObject(idx1);
-		const auto pNeighbors1 = getObject(idx1) + m_numPlayers;
-		if (checkCompatibility(pNeighbors1, rm1, solIdx % n + m_numRecAdj)) {
+		auto* rm1 = getSolutionMask(idx1 - m_numRecAdj);
+		const auto idx2 = solIdx % n;
+		ctchar* pNeighbors1 = NULL;
+		if (CHECK_MASK_BIT(rm1, idx2)) {
 			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
 			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>(SHIFT - 3));
 			memcpy(pCompSol, pMaskOut, m_numSolutionTotalB);
@@ -90,7 +91,7 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 					break;
 
 				pCompSol[firstB] ^= (tmask)1 << iBit;
-				if (!checkCompatibility(pNeighbors1, rm1, first + m_numRecAdj))
+				if (!CHECK_MASK_BIT(rm1, first))
 					RESET_MASK_BIT(pMaskOut, first);     //  reset bit
 			}
 
@@ -122,7 +123,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	int i = m_numPreconstructedRows;
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
 	m_lastInFirstSet = m_numRecAdj = m_pRowSolutionCntr[i];
-	if (NEW && sysParam()->val[t_useCombinedSolutions])
+	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
+	if (NEW && useCombinedSolutions)
 		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[i+1]) - m_numRecAdj));
 
 	while (++i < m_numPlayers)
@@ -132,7 +134,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	delete[] m_fullExcludeTable;
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
 
-	auto len = (m_numSolutionTotal - m_numRecAdj) * m_numSolutionTotalB;
+	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
+	auto len = (m_numSolutionTotal - (m_solAdj - m_numRecAdj)) * m_numSolutionTotalB;
 	m_fullExcludeTable = new tchar[len];
 	memset(m_fullExcludeTable, 0, len);
 
@@ -181,7 +184,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 		i++;
 #if NEW
-		if (!first) {
+		if (!first && !useCombinedSolutions) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
 			continue;
@@ -231,10 +234,11 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		last = m_pRowSolutionCntr[i++];
 	}
 #endif
-#if !NEW
-	delete m_pMaskStorage;
-	m_pMaskStorage = NULL;
-#endif
+
+	if (useCombinedSolutions) {
+		delete m_pMaskStorage;
+		m_pMaskStorage = NULL;
+	}
 }
 
 long long cntr = 0;
