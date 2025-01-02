@@ -319,7 +319,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 			auto pPrevA = (const long long*)(pCompSol) + numLongs2Skip;
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (long long*)(pPrevA + shift);
-			auto pFromA = m_pRowStorage->getSolutionMask(first) + numLongs2Skip;
+			auto pFromA = (const long long*)(m_pRowStorage->getSolutionMask(first)) + numLongs2Skip;
 			const auto len = shift - numLongs2Skip;
 #if USE_INTRINSIC
 			bitwise_multiply(pPrevA, pFromA, pToA, len);

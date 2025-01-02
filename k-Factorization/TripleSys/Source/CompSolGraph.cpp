@@ -49,8 +49,7 @@ void out64bits(FILE* f, const char* prefix, const void *pntr, const char* postFi
 }
 
 
-CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax)
-{
+CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax) {
 	tmask solMask;
 	do {
 #if USE_64_BIT_MASK
@@ -59,7 +58,7 @@ CC void CompSolStorage::addCompatibleSolutions(uint jBase, tmask& mask, int kMax
 #else
 		const auto iBit = m_pRowStorage->firstOnePosition(mask);
 #endif
-		const auto solID = (uint)(((tmask)jBase << SHIFT) + iBit);
+		const auto solID = (uint)((jBase << SHIFT) + iBit);
 		solMask = (tmask)1 << iBit;
 		CompSol* pCompSol = kMax? NULL : compatibleSolutions(solID, 0);
 		int k = 0;
@@ -135,8 +134,7 @@ bool CompSolStorage::removeUnreachableVertices(int rowIdx) {
 	return true;
 }
 
-bool CompSolStorage::ConstructCompatibleSolutionGraph(tmask* pToA, int iRow)
-{
+bool CompSolStorage::ConstructCompatibleSolutionGraph(tmask* pToA, int iRow) {
 	auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 	auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
 	releaseSolDB();

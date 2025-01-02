@@ -7,7 +7,7 @@
 
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionMasks	1
-#define UseSolutionCliques	USE_64_BIT_MASK && !USE_CUDA	
+#define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
 #if USE_64_BIT_MASK
@@ -80,7 +80,7 @@ public:
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
-	CC inline auto getSolutionMask(uint solNumb) const	{ return (const long long *)(m_fullExcludeTable + (solNumb + m_solAdj) * m_numSolutionTotalB); }
+	CC inline auto getSolutionMask(uint solNumb) const	{ return (const tmask *)(m_fullExcludeTable + (solNumb + m_solAdj) * m_numSolutionTotalB); }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
