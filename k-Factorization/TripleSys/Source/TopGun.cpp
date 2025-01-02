@@ -93,7 +93,6 @@ int TopGun::Run()
 		{
 			int icode = 0;
 			while (m_iMatrix < nMatrices) {
-				nMatricesProc++;
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), nRowsOut(), NULL, &m_reportInfo)) {
 					printfRed("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
@@ -102,10 +101,41 @@ int TopGun::Run()
 					for (int iTask = 0; iTask < numThreads; iTask++)
 						startThread(iTask, eCalculateMatrices, true, sys.RowStorage());
 
+					while (1) {
+
+						std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+						int iTask = 0;
+						nThreadsRunning = 0;
+						for (auto& t : threads)
+						{
+							if (threadActive[iTask])
+							{
+								nThreadsRunning++;
+								if (m_cnt[iTask * 2] >= 0)
+								{
+									//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
+									// thread finished
+									t.join();
+									threadStopped(iTask);
+								}
+							}
+							iTask++;
+						}
+						if (clock() - cTime > 20000)
+						{
+							printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+							cTime = clock();
+						}
+						if (!nThreadsRunning)
+							break;
+					}
 					waitAllThreadFinished();
 
 					for (int iTask = 0; iTask < numThreads; iTask++)
 						threadStopped(iTask);
+
+					nMatricesProc++;
 
 					if (clock() - cTime > 20000)
 					{

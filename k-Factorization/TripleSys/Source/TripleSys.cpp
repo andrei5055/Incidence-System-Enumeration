@@ -238,6 +238,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 
 	bPrevResult = false;
+	const auto p1f_counter = param(t_p1f_counter);
 
 	if (iCalcMode == eCalculateMatrices)
 		m_pRowUsage->init(iThread, param(t_numThreads));
@@ -321,18 +322,16 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						}
 #endif
 						if (++iDay < numDaysResult() && !checkCanonicity()) {
+
 #if 1
-							m_p1f_counter++;
-							if (!param(t_p1f_counter) || (m_p1f_counter % param(t_p1f_counter)))
+							if (!p1f_counter || ((++m_p1f_counter) % p1f_counter))
 #endif
 #if !USE_CUDA
 								if (cTime - rTime < ReportInterval)
 #endif
 									goto ProcessPrecalculatedRow;
-#if NDEBUG
-							if (!bPrint && nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
-								continue;
-#endif
+
+							continue;
 						}
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
