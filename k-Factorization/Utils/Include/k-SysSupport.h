@@ -45,6 +45,9 @@ typedef unsigned int uint;
 template<typename T>
 CC T* reallocStorageMemory(T** pObjects, size_t lenObj) {
 	auto* pNewObjMemory = new T[lenObj];
+	if (!pNewObjMemory)
+		return NULL;
+
 	memcpy(pNewObjMemory, *pObjects, lenObj >>= 1);
 	delete[] * pObjects;
 	return (*pObjects = pNewObjMemory) + lenObj;

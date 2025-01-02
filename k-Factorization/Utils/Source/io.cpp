@@ -22,9 +22,28 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 		while (getline(mf, line)) {
 			nl++;
 			if (!j && i == reservedElement) {
-				sm = reallocStorageMemory(ppSm, lenMatr * (reservedElement <<= 1));
+				const auto prevReserved = reservedElement;
+				reservedElement <<= 1;
+				while (!(sm = reallocStorageMemory(ppSm, lenMatr * reservedElement))) {
+					if (prevReserved == (reservedElement >> 1))
+						reservedElement = 110 * prevReserved / 100;
+					else
+						if (reservedElement == 110 * prevReserved / 100)
+							reservedElement = 105 * prevReserved / 100;
+					else {
+						printfRed("*** Failed to allocate memory for %d matrices while reading the file: %s\n", reservedElement, fn.c_str());
+						mf.close();
+						return 0;
+					}
+				}
+
 				if (pGroupOrders) {
-					reallocStorageMemory(ppGroupOrders, reservedElement);
+					if (!reallocStorageMemory(ppGroupOrders, reservedElement)) {
+						printfRed("*** Failed to allocate memory for %d grop orders while reading the file: %s\n", reservedElement, fn.c_str());
+						mf.close();
+						return 0;
+					}
+
 					pGroupOrders = *ppGroupOrders + nUsed;
 				}
 			}
