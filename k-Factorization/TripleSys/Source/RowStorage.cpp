@@ -134,7 +134,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
-	auto len = (m_numSolutionTotal - (m_solAdj - m_numRecAdj)) * m_numSolutionTotalB;
+	auto len = (m_numSolutionTotal - (m_numRecAdj - m_solAdj)) * m_numSolutionTotalB;
 	m_fullExcludeTable = new tchar[len];
 	memset(m_fullExcludeTable, 0, len);
 
@@ -319,11 +319,10 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (long long*)(pPrevA + shift);
 			auto pFromA = (const long long*)(m_pRowStorage->getSolutionMask(first)) + numLongs2Skip;
-			const auto len = shift - numLongs2Skip;
 #if USE_INTRINSIC
-			bitwise_multiply(pPrevA, pFromA, pToA, len);
+			bitwise_multiply(pPrevA, pFromA, pToA, shift - numLongs2Skip);
 #else
-			for (auto j = len; j--;)
+			for (auto j = shift - numLongs2Skip; j--;)
 				pToA[j] = pPrevA[j] & pFromA[j];
 #endif
 
