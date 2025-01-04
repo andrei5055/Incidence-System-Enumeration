@@ -64,7 +64,6 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 		const auto idx1 = solIdx / n;
 		auto* rm1 = getSolutionMask(idx1 - m_numRecAdj);
 		const auto idx2 = solIdx % n;
-		ctchar* pNeighbors1 = NULL;
 		if (CHECK_MASK_BIT(rm1, idx2)) {
 			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
 			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>(SHIFT - 3));

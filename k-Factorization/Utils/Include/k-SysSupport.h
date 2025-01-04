@@ -43,14 +43,17 @@ typedef const tchar  ctchar;
 typedef unsigned int uint;
 
 template<typename T>
-CC T* reallocStorageMemory(T** pObjects, size_t lenObj) {
+CC T* reallocStorageMemory(T** pObjects, size_t lenObj, size_t lenObjPrev = 0) {
 	auto* pNewObjMemory = new T[lenObj];
 	if (!pNewObjMemory)
 		return NULL;
 
-	memcpy(pNewObjMemory, *pObjects, lenObj >>= 1);
+	if (!lenObjPrev)
+		lenObjPrev = lenObj >> 1;
+
+	memcpy(pNewObjMemory, *pObjects, lenObjPrev);
 	delete[] * pObjects;
-	return (*pObjects = pNewObjMemory) + lenObj;
+	return (*pObjects = pNewObjMemory) + lenObjPrev;
 }
 
 // trim from start (in place)
@@ -70,6 +73,6 @@ inline void trim(std::string& s) {
 	rtrim(s);
 }
 
-UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nTotal, tchar** ppSm, int& reservedElement, uint** ppGroupOrders = NULL, char infoSymb = '"');
+UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nTotal, tchar** ppSm, int& reservedElement, int nMatricesMax, uint** ppGroupOrders = NULL, char infoSymb = '"');
 K_SYS_LIBRARY_API void speakText(LPCWSTR text);
 

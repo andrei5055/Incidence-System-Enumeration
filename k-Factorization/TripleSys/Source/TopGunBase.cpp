@@ -6,7 +6,7 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 	m_param(param) {
 	m_nRowsOut = param.val[t_nRowsInResultMatrix];
 	mStartMatrixSize = m_numPlayers * nRowsStart();
-	startMatrix = (tchar*)malloc(nMatricesReserved() * mStartMatrixSize);
+	startMatrix = new tchar[nMatricesReserved() * mStartMatrixSize];
 
 	const auto orderMatrixMode = param.val[t_orderMatrices];
 	// orderMatrixMode: 0 - No matrix reordering will be performed.
@@ -38,7 +38,12 @@ bool TopGunBase::readStartMatrices() {
 		return false;
 	}
 
-	startMatrix = (tchar*)realloc(startMatrix, nMatrices * mStartMatrixSize);
+	const auto totalLen = nMatrices * mStartMatrixSize;
+	if (!reallocStorageMemory(&startMatrix, totalLen, totalLen)) {
+		printfRed("*** Memory allocation issue encountered while reading the initial matrices\n");
+		return false;
+	}
+
 	return true;
 }
 

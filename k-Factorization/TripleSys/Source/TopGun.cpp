@@ -9,7 +9,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 	mLinksSize = numPlayers() * numPlayers();
 	if (!startMatrix)
 	{
-		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesMax());
+		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesReserved());
 		myExit(1);
 	}
 

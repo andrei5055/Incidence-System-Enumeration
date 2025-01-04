@@ -1,7 +1,8 @@
 #include <fstream>
 #include "k-SysSupport.h"
 
-int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, tchar** ppSm, int& reservedElement, uint** ppGroupOrders, char infoSymb) {
+int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, tchar** ppSm, 
+	int& reservedElement, int nMatricesMax, uint** ppGroupOrders, char infoSymb) {
 	if (fn.length() == 0)
 		return 0;
 
@@ -21,25 +22,24 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 		int j = 0;
 		while (getline(mf, line)) {
 			nl++;
-			if (!j && i == reservedElement) {
+			if (!j && i + nUsed == reservedElement) {
 				const auto prevReserved = reservedElement;
 				reservedElement <<= 1;
-				while (!(sm = reallocStorageMemory(ppSm, lenMatr * reservedElement))) {
-					if (prevReserved == (reservedElement >> 1))
-						reservedElement = 110 * prevReserved / 100;
-					else
-						if (reservedElement == 110 * prevReserved / 100)
-							reservedElement = 105 * prevReserved / 100;
-					else {
-						printfRed("*** Failed to allocate memory for %d matrices while reading the file: %s\n", reservedElement, fn.c_str());
-						mf.close();
-						return 0;
-					}
+				if (reservedElement > nMatricesMax)
+					reservedElement = nMatricesMax;
+				if (i + nUsed == reservedElement) {
+					mf.close();
+					return i;
+				}
+				if (!(sm = reallocStorageMemory(ppSm, lenMatr * reservedElement, lenMatr * prevReserved))) {
+					printfRed("*** Failed to allocate memory for %d matrices while reading the file: %s\n", reservedElement, fn.c_str());
+					mf.close();
+					return 0;
 				}
 
 				if (pGroupOrders) {
-					if (!reallocStorageMemory(ppGroupOrders, reservedElement)) {
-						printfRed("*** Failed to allocate memory for %d grop orders while reading the file: %s\n", reservedElement, fn.c_str());
+					if (!reallocStorageMemory(ppGroupOrders, reservedElement, prevReserved)) {
+						printfRed("*** Failed to allocate memory for %d group orders while reading the file: %s\n", reservedElement, fn.c_str());
 						mf.close();
 						return 0;
 					}

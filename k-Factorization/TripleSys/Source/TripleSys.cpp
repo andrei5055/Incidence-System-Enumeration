@@ -323,15 +323,13 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #endif
 						if (++iDay < numDaysResult() && !checkCanonicity()) {
 
-#if 1
+#if 0   // Temporary
 							if (!p1f_counter || ((++m_p1f_counter) % p1f_counter))
 #endif
 #if !USE_CUDA
-								if (cTime - rTime < ReportInterval)
+								if (!bPrint || cTime - rTime < ReportInterval)
 #endif
 									goto ProcessPrecalculatedRow;
-
-							continue;
 						}
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);

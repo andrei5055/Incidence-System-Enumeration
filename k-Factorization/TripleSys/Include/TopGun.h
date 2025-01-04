@@ -27,7 +27,7 @@ protected:
 	bool readStartMatrices();
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
-	inline auto nMatricesReserved() const	{ return 100; } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100 ? 100 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
 	void orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;
@@ -42,7 +42,7 @@ protected:
 private:
 	int getStartMatrices();
 	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, uint ** ppGroupOrders = NULL) const {
-		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, ppGroupOrders);
+		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), ppGroupOrders);
 	}
 };
 
