@@ -50,7 +50,7 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm, uint idx) const {
 	// Let's check if the masks are mutually compatible
 	auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-	int j = m_lenMask;
+	int j = m_lenMask >> 3;
 	while (j-- && !(rm[j] & pMask[j]));
 
 	return j < 0 && p1fCheck2(neighborsi, getObject(idx) + m_numPlayers);
@@ -123,7 +123,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
 	m_lastInFirstSet = m_numRecAdj = m_pRowSolutionCntr[i];
 	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
-	if (NEW && useCombinedSolutions)
+	if (useCombinedSolutions)
 		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[i+1]) - m_numRecAdj));
 
 	while (++i < m_numPlayers)
@@ -158,7 +158,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
 	const auto shift = m_numSolutionTotalB / sizeof(tmask);
-	m_lenMask >>= 3;  // Length of the mask in long long's 
 
 #if 1
 	while (i < m_numPlayers) {
@@ -182,13 +181,13 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		}
 
 		i++;
-#if NEW
+
 		if (!first && !useCombinedSolutions) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
 			continue;
 		}
-#endif
+
 		while (first < last) {
 			generateCompatibilityMasks(pFullIncludeTable, first++, last);
 			pFullIncludeTable += shift;
@@ -205,6 +204,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	int cntrs[8]; 
 	memset(cntrs, 0, sizeof(cntrs));
 	unsigned long long fff = 0;
+	const auto jMax = m_lenMask >> 3;
 	int a = 0;
 	while (i < m_numPlayers - 1) {
 		auto first = last;
@@ -219,7 +219,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 			while (++idx < m_pRowSolutionCntr[i]) {
 				// Let's check if the masks are mutually compatible
 				auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));
-				int j = m_lenMask;
+				int j = jMax;
 				while (j-- && !(rm[j] & pMask[j]));
 
 				if (j < 0 && p1fCheck2(pNeighbors, getObject(idx) + m_numPlayers)) {

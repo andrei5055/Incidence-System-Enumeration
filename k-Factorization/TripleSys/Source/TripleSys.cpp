@@ -391,6 +391,16 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					{
 						m_secondPlayerInRow4 = nPrecalcRows + 1;
 						bPrevResult = true;
+						if (nRows4) {
+							nRows4 = 0;
+							if (iCalcMode == eCalculateRows) {
+								nLoops = nRows4;
+								noMoreResults = true;
+								goto noResult;
+							}
+							m_pRowUsage->init();
+							m_pRowStorage->reset();
+						}
 						continue;
 						//noMoreResults = true;
 						//goto noResult;
@@ -413,6 +423,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 							goto noResult;
 						}
 						m_pRowUsage->init();
+						m_pRowStorage->reset();
 						nRows4 = 0;
 						continue;
 					}
