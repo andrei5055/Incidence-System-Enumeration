@@ -43,7 +43,8 @@ public:
 	}
 	CC ~CRowStorage() {
 		delete[] m_pRowSolutionCntr;
-		delete[] m_fullExcludeTable;
+		delete[] m_pRowsCompatMasks;
+		delete[] m_pFirstRowsCompatMasks;
 		delete m_pMaskStorage;
 		delete[] m_pRowSolutionMasks;
 		delete[] m_pRowSolutionMasksIdx;
@@ -77,7 +78,6 @@ public:
 			exit(1);
 		}
 #endif
-		memset(pntr, 0, m_lenObj);
 		memcpy(pntr, pRow, m_numPlayers);
 		memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
 		m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
@@ -88,7 +88,7 @@ public:
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
-	CC inline auto getSolutionMask(uint solNumb) const	{ return (const tmask *)(m_fullExcludeTable + (solNumb + m_solAdj) * m_numSolutionTotalB); }
+	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
@@ -168,7 +168,9 @@ private:
 	uint* m_pRowSolutionCntr = NULL;
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
-	tchar* m_fullExcludeTable = NULL;
+	uint m_lenSolutionMask;
+	tmask* m_pRowsCompatMasks = NULL;
+    tmask* m_pFirstRowsCompatMasks = NULL;
 	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
 	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
 	tmask* m_pRowSolutionMasks = NULL;

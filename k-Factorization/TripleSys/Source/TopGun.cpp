@@ -95,7 +95,7 @@ int TopGun::Run()
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), nRowsOut(), NULL, &m_reportInfo)) {
-					printfRed("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
+					printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {
 					for (int iTask = 0; iTask < numThreads; iTask++)
@@ -103,7 +103,7 @@ int TopGun::Run()
 
 					while (1) {
 
-						std::this_thread::sleep_for(std::chrono::milliseconds(50));
+						std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 						int iTask = 0;
 						nThreadsRunning = 0;

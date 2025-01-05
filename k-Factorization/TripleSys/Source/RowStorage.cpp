@@ -130,13 +130,14 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
 
 	m_numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
-	delete[] m_fullExcludeTable;
+	delete[] m_pRowsCompatMasks;
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
+	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
-	auto len = (m_numSolutionTotal - (m_numRecAdj - m_solAdj)) * m_numSolutionTotalB;
-	m_fullExcludeTable = new tchar[len];
-	memset(m_fullExcludeTable, 0, len);
+	auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
+	m_pRowsCompatMasks = new tmask[len * m_lenSolutionMask];
+	memset(m_pRowsCompatMasks, 0, len * m_numSolutionTotalB);
 
 	delete[] m_pRowSolutionMasksIdx;
 	delete[] m_pRowSolutionMasks;
@@ -153,7 +154,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	auto* pFullIncludeTable = (tmask*)m_fullExcludeTable;
+	auto* pFullIncludeTable = (tmask*)m_pRowsCompatMasks;
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
