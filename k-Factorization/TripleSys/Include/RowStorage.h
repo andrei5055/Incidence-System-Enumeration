@@ -4,7 +4,6 @@
 #include "Storage.h"
 
 #define USE_64_BIT_MASK		!USE_CUDA
-#define UseSolutionMasks	1
 #define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
@@ -63,7 +62,7 @@ public:
 
 		row2bitmask(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)), false);
 		auto* pntr = getObject(m_numObjects++);
-#if 0
+#if 1
 		ASSERT_((m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
 			pRow[1] != *(pntr - 2 * m_numPlayers + 1) + 1),
 			printfRed("\nError in code: m_numObjects(%d)>1, and pRow[1](%d) != %d, and pRow[1] != %d\n",
@@ -71,10 +70,11 @@ public:
 			exit(1)
 		);
 #else
-		if (m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
-			pRow[1] != *(pntr - 2 * m_numPlayers + 1) + 1) {
+		const auto ptr = pntr - 2 * m_numPlayers + 1;
+		if (m_numObjects > 1 && pRow[1] != *ptr &&
+			pRow[1] != *ptr + 1) {
 			printfRed("\nError in code: m_numObjects(%d)>1, and pRow[1](%d) != %d, and pRow[1] != %d\n",
-				m_numObjects, pRow[1], *(pntr - 2 * m_numPlayers + 1), *(pntr - 2 * m_numPlayers + 1) + 1);
+				m_numObjects, pRow[1], *ptr, *ptr + 1);
 			exit(1);
 		}
 #endif

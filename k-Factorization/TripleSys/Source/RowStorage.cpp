@@ -64,13 +64,17 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 		auto* rm1 = getSolutionMask(solIdx / n - m_numRecAdj);
 		const auto idx2 = solIdx % n;
 		if (CHECK_MASK_BIT(rm1, idx2)) {
-			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
-			const auto pCompSol = pMaskOut - (m_numSolutionTotalB >>(SHIFT - 3));
-			memcpy(pCompSol, pMaskOut, m_numSolutionTotalB);
+			const auto numLongs2Skip = m_pNumLongs2Skip[numPreconstructedRows()];
+			const auto numBites2Skip = numLongs2Skip << 3;
+			const auto len = m_numSolutionTotalB - numBites2Skip;
+			auto pMaskOutStart = (tmask *)((tchar *)pMaskOut + numBites2Skip);
+			auto pCompSol = (tmask*)((tchar *)pMaskOut - m_numSolutionTotalB);
+			memcpy(pMaskOutStart, ((const long long*)getSolutionMask(solIdx % n)) + numLongs2Skip, len);
+			memcpy((long long*)pCompSol + numLongs2Skip, pMaskOutStart, len);
 
 			const auto last = m_numSolutionTotal - m_numRecAdj;
 			auto first = m_numRecAdj2 - m_numRecAdj;
-			const auto lastB = last >> 3;
+			const auto lastB = IDX(last);
 			while (true) {
 				// Skip all bytes/longs equal to 0
 				auto firstB = first >> SHIFT;
@@ -286,9 +290,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 	const auto lastB = IDX(last);
 
-#if UseSolutionMasks || UseIPX
 	while (true) {
-#endif
 		// Skip all bytes/longs equal to 0
 		auto firstB = first >> SHIFT;
 		while (firstB < lastB && !pCompSol[firstB])
@@ -328,7 +330,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 				pToA[j] = pPrevA[j] & pFromA[j];
 #endif
 
-#if UseSolutionMasks
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				auto* pToASol = (tmask*)(pToA - numLongs2Skip);
@@ -375,12 +376,10 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 				}
 #endif  // UseSolutionCliques
 			}
-#endif  // UseSolutionMasks
 		}
-#if UseSolutionMasks || UseIPX
+
 		break;
 	}
-#endif
 
 	first++;
 	return 1;
