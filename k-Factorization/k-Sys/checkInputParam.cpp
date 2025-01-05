@@ -89,6 +89,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			return false;
 		}
 	}
-
+	if (val[t_MultiThreading] == 2 && val[t_nRowsInStartMatrix] != val[t_useRowsPrecalculation]) {
+		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], val[t_MultiThreading],
+			paramNames[t_nRowsInStartMatrix], val[t_nRowsInStartMatrix], paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+		return false;
+	}
 	return true;
 }

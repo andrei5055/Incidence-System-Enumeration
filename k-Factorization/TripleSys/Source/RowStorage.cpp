@@ -61,8 +61,7 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 	// the combination of solutions for the first two "non-predefined" rows.
 	const auto n = m_numRec[1];
 	do {
-		const auto idx1 = solIdx / n;
-		auto* rm1 = getSolutionMask(idx1 - m_numRecAdj);
+		auto* rm1 = getSolutionMask(solIdx / n - m_numRecAdj);
 		const auto idx2 = solIdx % n;
 		if (CHECK_MASK_BIT(rm1, idx2)) {
 			memcpy(pMaskOut, getSolutionMask(solIdx % n), m_numSolutionTotalB);
@@ -122,20 +121,23 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	int i = m_numPreconstructedRows;
 	m_pNumLongs2Skip[i] = m_pRowSolutionCntr[i] >> 6;
 	m_lastInFirstSet = m_numRecAdj = m_pRowSolutionCntr[i];
-	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
-	if (useCombinedSolutions)
-		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[i+1]) - m_numRecAdj));
-
 	while (++i < m_numPlayers)
 		m_pNumLongs2Skip[i] = ((m_pRowSolutionCntr[i] - m_numRecAdj) >> 6);
 
 	m_numSolutionTotal = m_pRowSolutionCntr[m_numPlayers - 1];
-	delete[] m_pRowsCompatMasks;
+
+	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
+	if (useCombinedSolutions) {
+		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[m_numPreconstructedRows + 1]) - m_numRecAdj));
+		delete [] m_pFirstRowsCompatMasks;
+	}
+
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
 	auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
+	delete[] m_pRowsCompatMasks;
 	m_pRowsCompatMasks = new tmask[len * m_lenSolutionMask];
 	memset(m_pRowsCompatMasks, 0, len * m_numSolutionTotalB);
 
@@ -158,7 +160,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
-	const auto shift = m_numSolutionTotalB / sizeof(tmask);
 
 #if 1
 	while (i < m_numPlayers) {
@@ -191,7 +192,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 		while (first < last) {
 			generateCompatibilityMasks(pFullIncludeTable, first++, last);
-			pFullIncludeTable += shift;
+			pFullIncludeTable += m_lenSolutionMask;
 		}
 	}
 
