@@ -39,11 +39,13 @@ public:
 		m_lenMask = m_pMaskStorage->lenObject();
 		const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 		m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
+		memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
 	}
 	CC ~CRowStorage() {
 		delete[] m_pRowSolutionCntr;
-		delete[] m_pRowsCompatMasks;
-		delete[] m_pFirstRowsCompatMasks;
+		for (int i = countof(m_pRowsCompatMasks); i--;)
+			delete[] m_pRowsCompatMasks[i];
+
 		delete m_pMaskStorage;
 		delete[] m_pRowSolutionMasks;
 		delete[] m_pRowSolutionMasksIdx;
@@ -51,9 +53,7 @@ public:
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline void init()						{ initMaskStorage(m_numObjectsMax); }
-	CC inline void reset()						{ 
-		m_numObjects = 0; 
-	}
+	CC inline void reset()						{ m_numObjects = 0; }
 	CC void addRow(ctchar* pRow, ctchar* pNeighbors) {
 		if (m_numObjects == m_numObjectsMax) {
 			reallocStorageMemory(m_numObjectsMax <<= 1);
@@ -88,7 +88,7 @@ public:
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
-	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks + (solNumb + m_solAdj) * m_lenSolutionMask; }
+	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks[1] + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
@@ -169,8 +169,7 @@ private:
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
 	uint m_lenSolutionMask;
-	tmask* m_pRowsCompatMasks = NULL;
-    tmask* m_pFirstRowsCompatMasks = NULL;
+	tmask* m_pRowsCompatMasks[2];
 	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
 	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
 	tmask* m_pRowSolutionMasks = NULL;

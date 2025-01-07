@@ -41,7 +41,7 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 	{
 		if (!checkLinksV2(links(), iDay))
 			return -1;
-		if (m_use2RowsCanonization && !param(t_u1f)) {
+		if (m_use2RowsCanonization) {
 			if (iDay == 2)
 			{
 				switch (p1fCheck2ndRow()) {

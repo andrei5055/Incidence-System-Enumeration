@@ -80,7 +80,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 		m_file = f;
 	}
 #endif
-	if ((param(t_u1f)) && m_groupSize == 3)
+	if (param(t_u1f) && m_groupSize == 3)
 		InitCycleSupport(m_nGroups);
 
 	const auto u1fPntr = sysParam()->u1fCycles[0];

@@ -133,7 +133,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
 	if (useCombinedSolutions) {
 		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pRowSolutionCntr[m_numPreconstructedRows + 1]) - m_numRecAdj));
-		delete [] m_pFirstRowsCompatMasks;
+		delete [] m_pRowsCompatMasks[0];
 	}
 
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
@@ -141,9 +141,9 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
 	auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
-	delete[] m_pRowsCompatMasks;
-	m_pRowsCompatMasks = new tmask[len * m_lenSolutionMask];
-	memset(m_pRowsCompatMasks, 0, len * m_numSolutionTotalB);
+	delete[] m_pRowsCompatMasks[1];
+	m_pRowsCompatMasks[1] = new tmask[len * m_lenSolutionMask];
+	memset(m_pRowsCompatMasks[1], 0, len * m_numSolutionTotalB);
 
 	delete[] m_pRowSolutionMasksIdx;
 	delete[] m_pRowSolutionMasks;
@@ -160,7 +160,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	auto* pFullIncludeTable = (tmask*)m_pRowsCompatMasks;
+	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
+	int idx = 1;
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
@@ -195,8 +196,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		}
 
 		while (first < last) {
-			generateCompatibilityMasks(pFullIncludeTable, first++, last);
-			pFullIncludeTable += m_lenSolutionMask;
+			generateCompatibilityMasks(pRowsCompatMasks[idx], first++, last);
+			pRowsCompatMasks[idx] += m_lenSolutionMask;
 		}
 	}
 

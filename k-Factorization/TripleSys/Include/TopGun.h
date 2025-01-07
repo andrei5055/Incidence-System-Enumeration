@@ -6,7 +6,7 @@ class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase()					{ 
-		free(startMatrix); 
+		delete[] startMatrix;
 		delete[] cnt();
 		delete[] m_pMatrixAutOrder;
 		delete[] m_pMatrixPerm;
@@ -27,7 +27,7 @@ protected:
 	bool readStartMatrices();
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
-	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100 ? 100 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
 	void orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;

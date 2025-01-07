@@ -338,6 +338,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						for (int i = nPrecalcRows + 3; i < iDay; i++)
 							m_rowTime[i] = cTime - iTime;
 #endif
+						//printf("\nn=%d ", iDay);
 						iDay--;
 						goto checkCurrentMatrix;
 					case 0:

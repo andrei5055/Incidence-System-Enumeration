@@ -408,7 +408,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			continue;
 		iRet = kmProcessOneNot1stRow2(mi, i, tb, tr, nr, 3);
 		row2ndValue = tb[0];
-		if (row2ndValue == 3)
+		if (row2ndValue == 3 && (!bPrecalcRow || nrr > 2))
 		{
 			if (iRet)
 			{
@@ -439,7 +439,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		}
 		tm[row2ndValue] = i;
 	}
-	if (!bProc3)
+	if (!bProc3 && (!bPrecalcRow || nrr > 2))
 	{
 		return 2;
 	}

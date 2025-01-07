@@ -278,13 +278,6 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		if (bCurrentSet)
 			break;
 	}
-	if (!bCurrentSet)
-	{
-#if !USE_CUDA
-		printfRed("*** Error in cnvSupport(1) %d %d\n", ip1, m_p3fNumSecondRows);
-		myExit(1);
-#endif
-	}
 ret:
 	Stat_cnvCheckKm1("can(all)", 0, true);
 	Stat_cnvCheckKm1("(-1)", 1, !bRet);
