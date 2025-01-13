@@ -68,7 +68,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize], groupSize);
 			return false;
 		}
-
 		if (!val[t_u1f])
 		{
 			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_u1f], val[t_u1f]);

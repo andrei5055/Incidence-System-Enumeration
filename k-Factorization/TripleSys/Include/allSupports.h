@@ -127,5 +127,5 @@ void myExit(int code);
 void reportEOJ(int code);
 void setConsoleOutputMode();
 CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len);
-CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, const tchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn);
+CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn);
 

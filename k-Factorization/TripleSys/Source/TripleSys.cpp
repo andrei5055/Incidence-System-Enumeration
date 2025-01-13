@@ -85,10 +85,12 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	int iDaySaved = 0;
 	const auto nPrecalcRows = param(t_useRowsPrecalculation);
 	if (iCalcMode == eCalcResult)
-		m_useRowsPrecalculation = (nPrecalcRows && m_groupSize == 2 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
+		m_useRowsPrecalculation = (nPrecalcRows == 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
 		m_useRowsPrecalculation = iCalcMode;
-	m_secondPlayerInRow4 = nPrecalcRows ? nPrecalcRows + 1 : 0; // used only if UseRowsPrecalculation not 0
+	tchar secondPlayerInRow4First = m_groupSize + 2;
+	tchar secondPlayerInRow4Last = m_numPlayers - m_groupSize/3*3 - 1;
+	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
 	int nRows4Day = 0;
 	const auto bPrint = !iThread && param(t_printMatrices);
@@ -366,7 +368,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 			if (bPrevResult)
 			{
-				if (iDay == 2 && m_groupSize == 2 && (m_use2RowsCanonization || param(t_u1f)))
+				if (iDay == 2 && m_groupSize <= 3 && (m_use2RowsCanonization || param(t_u1f)))
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -388,9 +390,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			{
 				if (nPrecalcRows && nPrecalcRows == iDay && m_useRowsPrecalculation == eCalculateRows) {
 					m_secondPlayerInRow4++;
-					if (!nRows4Day)
+					if (!nRows4Day && m_groupSize == 2)
 					{
-						m_secondPlayerInRow4 = nPrecalcRows + 1;
+						m_secondPlayerInRow4 = secondPlayerInRow4First;
 						bPrevResult = true;
 						if (nRows4) {
 							nRows4 = 0;
@@ -407,9 +409,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						//goto noResult;
 					}
 					nRows4Day = 0;
-					if (m_secondPlayerInRow4 <= numDaysResult())
+					if (m_secondPlayerInRow4 <= secondPlayerInRow4Last)
 						continue;
-					m_secondPlayerInRow4 = nPrecalcRows + 1;
+					m_secondPlayerInRow4 = secondPlayerInRow4First;
 					if (nRows4) {
 						iDay = nPrecalcRows;
 						if (bPrint) {
@@ -455,7 +457,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				if (bFirstThread)
 					reportCheckLinksData();
 #endif
-				StatReportPeriodically(ResetStat, "Stat current. iDay", iDay, bFirstThread);
+				StatReportPeriodically(ResetStat, "Stat current. iDay", iDay, iThread == 0);
 				rTime = cTime;
 				maxDays = iDay;
 			}
@@ -497,6 +499,14 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					nRows4Day++;
 					//printf("%6d:", nRows4);
 					//printTable("", result(3), 1, m_numPlayers, 2);
+#if 0
+					bool bP1F = p1fCheck3(result(0), result(nPrecalcRows), neighbors(0), neighbors(nPrecalcRows));
+					if (!bP1F)
+						printf("not p1f\n");
+					bP1F = p1fCheck3(result(2), result(nPrecalcRows), neighbors(2), neighbors(nPrecalcRows));
+					if (!bP1F)
+						printf("not p1f\n");
+#endif
 					m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
 					bPrevResult = true;
 					continue;

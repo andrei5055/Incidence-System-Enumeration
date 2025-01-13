@@ -25,42 +25,40 @@ typedef tchar tmask;
 
 #include "CompSolGraph.h"
 
-class CRowStorage : public CStorage<tchar> {
-public:
-	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000) : m_pSysParam(pSysParam), m_numPlayers(numPlayers),
-		m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
-		m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
-		m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
-		CStorage<tchar>(numObjects, 2 * numPlayers) {
-		m_numObjectsMax = numObjects;
-		m_pRowSolutionCntr = new uint[2*numPlayers];
-		m_pNumLongs2Skip = m_pRowSolutionCntr + numPlayers;
-		initMaskStorage(numObjects);
-		m_lenMask = m_pMaskStorage->lenObject();
-		const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
-		m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
-		memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
-	}
-	CC ~CRowStorage() {
-		delete[] m_pRowSolutionCntr;
-		for (int i = countof(m_pRowsCompatMasks); i--;)
-			delete[] m_pRowsCompatMasks[i];
+class alldata;
 
-		delete m_pMaskStorage;
-		delete[] m_pRowSolutionMasks;
-		delete[] m_pRowSolutionMasksIdx;
-	}
+class CRowStorage : public CStorage<tchar> {
+	typedef void(CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
+public:
+	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, alldata* pAllData = NULL);
+	CC ~CRowStorage();
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline void init()						{ initMaskStorage(m_numObjectsMax); }
 	CC inline void reset()						{ m_numObjects = 0; }
+	CC inline bool usingGroupSize2() const		{ return m_bUsingGroupSize2;}
 	CC void addRow(ctchar* pRow, ctchar* pNeighbors) {
 		if (m_numObjects == m_numObjectsMax) {
 			reallocStorageMemory(m_numObjectsMax <<= 1);
 			m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 		}
+#if 0
+#define FOPEN_W(x, y, z, w)	 FILE *x = w; \
+                             if (!x && y && strlen(y)) fopen_s(&x, y, z)
+#define FOPEN_F(x, y, z)	 FOPEN_W(x, y, z, NULL)
+#define SPRINTFS(x, y, size,...)	 x += sprintf_s(x, size - (x - y), __VA_ARGS__)
+#define SPRINTFD(x, y, ...)	 SPRINTFS(x, y, sizeof(y), __VA_ARGS__)
+#define FCLOSE_W(f, w)		 if (f != w) fclose(f)
+#define FCLOSE_F(f)			 FCLOSE_W(f, NULL)
+		FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
+		char buf[256], * pBuf = buf;
+		for (int i = 0; i < m_numPlayers; i++)
+			SPRINTFD(pBuf, buf, "%2d ", pRow[i]);
 
-		row2bitmask(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)), false);
+		fprintf(f, "%3d: %s\n", m_numObjects, buf);
+		FCLOSE_F(f);
+#endif
+		(this->*m_pRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
 		auto* pntr = getObject(m_numObjects++);
 #if 1
 		ASSERT_((m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
@@ -70,6 +68,7 @@ public:
 			exit(1)
 		);
 #else
+
 		const auto ptr = pntr - 2 * m_numPlayers + 1;
 		if (m_numObjects > 1 && pRow[1] != *ptr &&
 			pRow[1] != *ptr + 1) {
@@ -87,7 +86,7 @@ public:
 
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
-	CC inline auto numRowSolutions(int nRow) const		{ return m_pRowSolutionCntr[nRow]; }
+	CC inline auto numRowSolutionsPtr() const			{ return m_pRowSolutionCntr; }
 	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks[1] + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
@@ -98,6 +97,7 @@ public:
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
+	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const {
 		auto iRow = numPreconstructedRows();
 		uint savedIdx;
@@ -129,17 +129,34 @@ private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
 #endif
 
+
+#define SetMask(bm, ir, ic) \
+	const int ib = ir * m_numPlayers + ic - (1 + ir) * (2 + ir) / 2; \
+	ASSERT(ib / 8 >= m_lenMask); \
+	SET_MASK_BIT(bm, ib)
+
+#define SetMaskWithOffset(bm, iOffset, ic) \
+	ib = iOffset + ic; \
+	ASSERT(ib / 8 >= m_lenMask); \
+	SET_MASK_BIT(bm, ib)
+
 private:
-	CC void row2bitmask(ctchar* pRow, tmask* bm, bool bAdd)
+	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
-		if (!bAdd)
-			memset(bm, 0, m_lenMask);
+		memset(bm, 0, m_lenMask);
 		for (int i = 0; i < m_numPlayers; i += 2) {
-			auto ir = pRow[i];
-			auto ic = pRow[i + 1];
-			auto ib = ir * m_numPlayers + ic - (1 + ir) * (2 + ir) / 2;
-			ASSERT(ib / 8 >= m_lenMask);
-			SET_MASK_BIT(bm, ib);
+			SetMask(bm, pRow[i], pRow[i + 1]);
+		}
+	}
+	CC void rowToBitmask3(ctchar* pRow, tmask* bm) const
+	{
+		int ib;
+		memset(bm, 0, m_lenMask);
+		for (int i = 0; i < m_numPlayers; i += 3, pRow += 3) {
+			const int iOffset = pRow[0] * m_numPlayers - (1 + pRow[0]) * (2 + pRow[0]) / 2;
+			SetMaskWithOffset(bm, iOffset, pRow[1]);
+			SetMaskWithOffset(bm, iOffset, pRow[2]);
+			SetMask(bm, pRow[1], pRow[2]);
 		}
 	}
 	CC void initMaskStorage(uint numObjects) {
@@ -164,7 +181,9 @@ private:
 #endif
 	uint m_numObjects;
 	uint m_numObjectsMax;
+	alldata* m_pAllData;
 	int m_lenMask;
+	rowToBitmask m_pRowToBitmask;
 	uint* m_pRowSolutionCntr = NULL;
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
@@ -185,17 +204,19 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
+	int m_numDaysResult;
+	bool m_bUsingGroupSize2;
 };
 
 class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
-		const auto numPlayers = pRowStorage->numPlayers();
-		m_pRowSolutionIdx = new uint[numPlayers + 1];
-		memset(m_pRowSolutionIdx, 0, numPlayers * sizeof(m_pRowSolutionIdx[0]));
+		const auto len = 2 * m_pRowStorage->numDaysResult();
+		m_pRowSolutionIdx = new uint[len];
+		memset(m_pRowSolutionIdx, 0, len * sizeof(m_pRowSolutionIdx[0]));
+		m_pRowSolutionLastIdx = m_pRowSolutionIdx + (len >> 1);
 		m_bUseCombinedSolutions = pRowStorage->sysParam()->val[t_useCombinedSolutions];
 	}
-
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
 		delete[] m_pCompatibleSolutions;
@@ -205,19 +226,21 @@ public:
 		const auto len = (m_pRowStorage->numPlayers() - m_pRowStorage->numPreconstructedRows() - 1) * m_numSolutionTotalB;
 		m_pCompatibleSolutions = new tchar[len];
 		m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
+		memcpy(m_pRowSolutionLastIdx, m_pRowStorage->numRowSolutionsPtr(), m_pRowStorage->numDaysResult() * sizeof(m_pRowSolutionLastIdx[0]));
 		m_step = numThreads;
 	}
-	CC bool getMatrix2(tchar* row, tchar* neighbors, int nRows, int iRow) {
+	CC inline bool getMatrix2(tchar* row, tchar* neighbors, int nRows, int iRow) {
 		getMatrix(row, neighbors, ++iRow);
 		return completeMatrix(row, neighbors, nRows, iRow);
 	}
-	CC void getMatrix(tchar* row, tchar* neighbors, int nRows) {
+	CC inline void getMatrix(tchar* row, tchar* neighbors, int nRows) {
 		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx);
 	}
 	CC int getRow(int iRow, int ipx);
 private:
 	uint m_numSolutionTotalB;
 	uint* m_pRowSolutionIdx = NULL;
+	uint* m_pRowSolutionLastIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
 	bool m_bUseCombinedSolutions;

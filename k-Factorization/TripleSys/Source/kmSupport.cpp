@@ -187,7 +187,13 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	auto miFrom = mi;
 	coi = mo;
 	int nrr = param(t_useRowsPrecalculation);
-	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
+	bool bPrecalcRow = false;
+	if (m_useRowsPrecalculation == eCalculateRows) {
+		switch (m_groupSize) {
+		case 2: bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != nrr + 1; break;
+		case 3: bPrecalcRow = nrr == 3 && nr > nrr && *(mi + nc * 2 + 1) != 5; break;
+		}
+	}
 	if (bPrecalcRow)
 		nr = nrr;
 	for (int i = 0; i < nr; i++, coi += nc, mi += nc)
@@ -558,6 +564,10 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 	tb[0] = 1; // to make compiler happy
 	const auto nc = m_numPlayers;
 	memset(tm, unset, nc);
+	int nrr = param(t_useRowsPrecalculation);
+	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nrr == 3 && nr == 4 && *(mi + nc * 2 + 1) != 5;
+	if (bPrecalcRow)
+		nr = nrr;
 	auto rowMax = tm[0] = ind; // indices of input rows in result matrices
 	auto r2ind = m_Km2ndRowInd[ind];
 	if (r2ind >= nr)

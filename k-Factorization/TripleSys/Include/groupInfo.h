@@ -71,8 +71,8 @@ public:
 	CC CChecklLink(const SizeParam& sizeParam, const kSysParam* p);
 	CC ~CChecklLink();
 	CC bool checkLinks(tchar* c, int id, bool printLinksStatTime = false);
-	CC bool cycleLengthOk(tchar length);
-	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles);
+	CC bool cycleLengthOk(tchar length) const;
+	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles) const;
 	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;

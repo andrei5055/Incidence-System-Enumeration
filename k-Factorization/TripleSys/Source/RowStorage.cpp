@@ -29,6 +29,34 @@ void bitwise_multiply(const long long* a, const long long* b, long long* result,
 }
 #endif
 
+CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, alldata* pAllData) :
+	m_pSysParam(pSysParam), m_numPlayers(numPlayers), m_pAllData(pAllData), m_bUsingGroupSize2(pSysParam->val[t_groupSize] == 2),
+	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
+	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
+	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
+	CStorage<tchar>(numObjects, 2 * numPlayers) {
+	m_numObjectsMax = numObjects;
+	m_pRowSolutionCntr = new uint[2 * numPlayers];
+	m_pNumLongs2Skip = m_pRowSolutionCntr + numPlayers;
+	initMaskStorage(numObjects);
+	m_lenMask = m_pMaskStorage->lenObject();
+	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
+	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
+	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
+	m_pRowToBitmask = m_bUsingGroupSize2 ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
+	m_numDaysResult = m_pAllData ? m_pAllData->numDaysResult() : m_numPlayers - 1;
+}
+
+CC CRowStorage::~CRowStorage() {
+	delete[] m_pRowSolutionCntr;
+	for (int i = countof(m_pRowsCompatMasks); i--;)
+		delete[] m_pRowsCompatMasks[i];
+
+	delete m_pMaskStorage;
+	delete[] m_pRowSolutionMasks;
+	delete[] m_pRowSolutionMasksIdx;
+}
+
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 	uint checked = 0;
 	for (tchar m = 0; m < m_numPlayers; m++)
@@ -53,7 +81,14 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm,
 	int j = m_lenMask >> 3;
 	while (j-- && !(rm[j] & pMask[j]));
 
-	return j < 0 && p1fCheck2(neighborsi, getObject(idx) + m_numPlayers);
+	if (j >= 0)
+		return false;
+
+	const auto pObj = getObject(idx);
+	if (m_pAllData)
+		return m_pAllData->p1fCheck3(neighborsi - m_numPlayers, pObj, neighborsi, pObj + m_numPlayers);
+
+	return p1fCheck2(neighborsi, pObj + m_numPlayers);
 }
 
 CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) const {
@@ -255,7 +290,7 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows);
-	auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowStorage->numRowSolutions(iRow);
+	auto last = m_pRowSolutionIdx[iRow + 1] = m_pRowSolutionLastIdx[iRow];
 	auto& first = m_pRowSolutionIdx[iRow];
 	if (iRow == numPreconstructedRows) {
 		if (first >= (last = m_pRowStorage->lastInFirstSet()))

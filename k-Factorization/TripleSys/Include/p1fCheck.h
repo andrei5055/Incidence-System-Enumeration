@@ -64,9 +64,9 @@
 	P3Cycle1End(); } \
 	P3Cycle1End(); } \
 	P3Cycles7EndAndReturn(ret)
-#define P3CyclesCheck()	\
-			ncycles = p3Cycles(ncr, t1, t2, v, res1, res2); \
-			if (cyclesNotOk(ncr, ncycles, m_TrCycles.length)) \
+#define P3CyclesCheck(trc)	\
+			ncycles = p3Cycles(trc, ncr, t1, t2, v, res1, res2); \
+			if (cyclesNotOk(ncr, ncycles, trc->length)) \
 				return ncycles
 
 // expected second row

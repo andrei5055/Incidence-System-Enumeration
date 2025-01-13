@@ -13,7 +13,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 
 	if (l0[iPlayerNumber] != unset)
 		return iPlayerNumber + 1;
-	if (iPlayer == 1)
+	if (iPlayer == 1 && (m_useRowsPrecalculation != eCalculateRows || iDay != 3))
 	{
 		// AI statement #15
 		for (int i = 1; i < iPlayerNumber; i++)

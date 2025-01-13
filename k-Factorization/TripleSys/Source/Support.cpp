@@ -193,11 +193,15 @@ CC void alldata::updateIndexPlayerMinMax()
 			case 3:
 			if (m_numPlayers >= 9)
 			{
-				int ip1 = 3;
+				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
+				else {
+					int ip1 = 3;
 					for (; ip1 < m_numPlayers; ip1++)
-					if (links()[ip1] == unset)
-						break;
-				m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+						if (links()[ip1] == unset)
+							break;
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+				}
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 				m_indexPlayerMax[3] = 1;
 				m_indexPlayerMax[6] = 2;

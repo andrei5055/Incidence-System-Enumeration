@@ -88,7 +88,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	const auto nPreconstructedRows = param(t_useRowsPrecalculation);
 	if (nPreconstructedRows) {
 		if (m_bRowStorageOwner = (pRowStorage == NULL))
-			m_pRowStorage = new CRowStorage(sysParam(), m_numPlayers, 30000);
+			m_pRowStorage = new CRowStorage(sysParam(), m_numPlayers, 30000, m_groupSize > 2? this : NULL);
 		else
 			m_pRowStorage = pRowStorage;
 

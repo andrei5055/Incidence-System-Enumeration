@@ -72,6 +72,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	auto* neigbors0 = neighbors(0);
 	tchar* p1;
 	bool bCurrentSet = false;
+	const auto nRowStart = param(t_nRowsInStartMatrix);
 	//if (result(1)[5] == 9 && iDay == 4)
 	//	printf("%d ", iDay);
 #if GenerateSecondRowsFor3U1F
@@ -95,8 +96,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		}
 	}
 #endif
-	//const auto u1fCycles = sysParam()->u1fCycles[0];
-	const int maxv0 = MAX_3PF_SETS; //u1fCycles[0] != 1 || u1fCycles[1] != m_numPlayers) ? MAX_3PF_SETS : 1;
+	const auto u1fCycles = sysParam()->u1fCycles[0];
+	const int maxv0 = (u1fCycles && (u1fCycles[0] != 1 || u1fCycles[1] != m_numPlayers)) ? MAX_3PF_SETS : 1;
+	//const int maxv0 = MAX_3PF_SETS;
 	const int maxv1 = MAX_3PF_SETS;
 
 #define _StatAdd(x, y, z)  // StatAdd(x, y, z)
@@ -133,15 +135,17 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		for (int i = 0; i < nv0; i++)
 		{
 			ctchar* vtr = v0 + m_nGroups * i; // Common Values ANDREI
-			const auto ncycles = p3Cycles(MAX_CYCLE_SETS, neighbors(0), neigbors1, vtr, result(0), p1);
+			const auto ncycles = p3Cycles(&m_TrCycles, MAX_CYCLE_SETS, neighbors(0), neigbors1, vtr, result(0), p1);
+			collectCyclesAndPath(&m_TrCycles);
 		}
 
 		// get first row
 		for (int indRow0 = 0; indRow0 < nrows; indRow0++)
 		{
 			// get second row
-			for (int indRow1 = 0; indRow1 < nrows; indRow1++)
+			for (int indRow11 = nRowStart; indRow11 < nrows + nRowStart; indRow11++) 
 			{
+				int indRow1 = indRow11 % nrows;
 				if (indRow0 == indRow1)
 					continue;
 				const int nv1 = getAllV(v1, maxv1, indRow0, indRow1);
@@ -169,7 +173,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 							_StatAdd("create3U1FTr", 11, true);
 							
 							const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
-
+							/**if (btr)
+								bPair = true;
+							continue;**/
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
 							if (!btr && indRow0 >= 1 && indRow1 >= 2)
 							{

@@ -166,6 +166,8 @@ public:
 		orbits()->resetOrbits((ctchar*)result());
 #endif
 	}
+	CC bool p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const;
+	CC inline auto numDaysResult() const { return m_numDaysResult; }
 private:
 	CC void Init();
 	inline auto numDays() const					{ return m_numDays; }
@@ -181,7 +183,6 @@ private:
 	CC bool processOneDay();
 	CC int checkPlayer1(int iPlayerNumber);
 	CC int checkPlayer3(int iPlayerNumber, int lastPlayer);
-	CC inline auto numDaysResult() const	     { return m_numDaysResult; }
 #if !USE_CUDA && PrintImprovedResults
 	void outputResults(int iDay, const unsigned char* pResult, int cntr = 0) const;
 #else
@@ -203,12 +204,13 @@ private:
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
 	char *matrixStatOutput(char* str, int maxStr) const;
-	CC int p3Cycles(int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2);
-	CC int u1fGetCycleLength(int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0);
-	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles);
+	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2) const;
+	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
+	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
+	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
 	CC int collectCyclesAndPath(TrCycles* trc);
-	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1);
-	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL);
+	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
+	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL) const;
 	CC int checkCurrentResult(bool bPrint, void* pIS_Canonizer = NULL);
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
@@ -294,6 +296,7 @@ private:
 	int m_cnvMode;
 	int m_useRowsPrecalculation;
 	int m_secondPlayerInRow4;
+	int m_secondPlayerInRow4Last;
 
 	tchar* m_Km;
 	tchar* m_Km2;

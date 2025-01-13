@@ -51,7 +51,7 @@ CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int
 	return false;
 }
 
-CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles)
+CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles) const
 {
 	for (int j = 1; j < ncycles; j++) {
 		for (int i = 0; i < ncycles - j; i++) {
@@ -124,7 +124,7 @@ CC void alldata::adjustPlayerPosition(tchar* path, tchar length, tchar nrows)
 	if (diff > 0)
 		m_playerIndex -= diff;
 }
-CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4)
+CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4) const
 {
 	// calculate cycle(s) between two rows for group size 2 or 3.
 	// return number of cycles calculated
@@ -167,6 +167,8 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 			if (ncr == 1 && !cycleLengthOk(length))
 			{
 				// in check mode (ncr == 1) report only one (first) cycle with incorrect length
+				if (length > m_numPlayers / 2) // if length > np then there is another cycle with less length
+					continue;
 				trc->start[0] = trc->start[ncycles];
 				trc->length[0] = length;
 				trc->ncycles = 1;
@@ -178,41 +180,38 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 	ASSERT(ncycles == 0);
 	trc->ncycles = ncycles;
 	sortCycles(trc->length, trc->start, ncycles);
-	if (ncr > 1)
-		collectCyclesAndPath(trc);
 	return ncycles;
 }
-CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, const tchar* v, const tchar* t1, const tchar* t2, const tchar* res1, const tchar* res2, int gn)
+CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn)
 {
+	res1 -= 2;
+	res2 -= 2;
 	for (int i = 0; i < gn; i++)
 	{
 		const auto iv = v[i];
-		auto ig = t1[iv];
-		auto res = res1 + ig;
+		tt2[iv] = tt4[iv] = tt1[iv] = tt3[iv] = iv;
+		auto res = res1 + t1[iv];
 		//tt1[*res] = unset;
-		tt1[iv] = iv;
-		tt3[iv] = iv;
-		switch (ig % 3) {
-		case 0: tt1[tt1[*(res + 1)] = *(res + 2)] = *(res + 1); tt3[*(res + 1)] = tt3[*(res + 2)] = iv; break;
-		case 1: tt1[tt1[*(res - 1)] = *(res + 1)] = *(res - 1); tt3[*(res - 1)] = tt3[*(res + 1)] = iv; break;
-		case 2: tt1[tt1[*(res - 2)] = *(res - 1)] = *(res - 2); tt3[*(res - 2)] = tt3[*(res - 1)] = iv; break;
+		switch (t1[iv] % 3) {
+		case 0: res += 3;  
+		case 2: tt1[tt1[*res] = *(res + 1)] = *res; tt3[*res] = tt3[*(res + 1)] = iv; break;
+		case 1: res++;  tt1[tt1[*res] = *(res + 2)] = *res; tt3[*res] = tt3[*(res + 2)] = iv; break;
 		}
-		//printf("i=%d iv=%d ig=%d %d %d %d\n", i, iv, ig, tt1[res1[ig / 3 * 3]], tt1[res1[ig / 3 * 3 + 1]], tt1[res1[ig / 3 * 3 + 2]]);
-		ig = t2[iv];
-		res = res2 + ig;
+		//const auto ig = t1[iv];
+		//printf("i=%d iv=%d ig=%d %d %d %d\n", i, iv, ig, tt1[res1[ig / 3 * 3 + 2]], tt1[res1[ig / 3 * 3 + 3]], tt1[res1[ig / 3 * 3 + 4]]);
+		res = res2 + t2[iv];
 		//tt2[*res] = unset;
-		tt2[iv] = iv;
-		tt4[iv] = iv;
-		switch (ig % 3) {
-		case 0: tt2[tt2[*(res + 1)] = *(res + 2)] = *(res + 1); tt4[*(res + 1)] = tt4[*(res + 2)] = iv; break;
-		case 1: tt2[tt2[*(res - 1)] = *(res + 1)] = *(res - 1); tt4[*(res - 1)] = tt4[*(res + 1)] = iv; break;
-		case 2: tt2[tt2[*(res - 2)] = *(res - 1)] = *(res - 2); tt4[*(res - 2)] = tt4[*(res - 1)] = iv; break;
+		switch (t2[iv] % 3) {
+		case 0: res += 3;  
+		case 2: tt2[tt2[*res] = *(res + 1)] = *res; tt4[*res] = tt4[*(res + 1)] = iv; break;
+		case 1: res++;  tt2[tt2[*res] = *(res + 2)] = *res; tt4[*res] = tt4[*(res + 2)] = iv; break;
 		}
-		//printf("i=%d iv=%d ig=%d %d %d %d\n", i, iv, ig, tt2[res2[ig / 3 * 3]], 
-		// tt2[res2[ig / 3 * 3 + 1]], tt2[res2[ig / 3 * 3 + 2]]);
+		//ig = t1[iv];
+		//printf("i=%d iv=%d ig=%d %d %d %d\n", i, iv, ig, tt2[res2[ig / 3 * 3 + 2]], 
+		// tt2[res2[ig / 3 * 3 + 3]], tt2[res2[ig / 3 * 3 + 4]]);
 	}
 }
-CC int alldata::p3Cycles(int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2)
+CC int alldata::p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2) const
 {
 	ASSERT(m_groupSize != 3);
 	tchar tt1[MAX_PLAYER_NUMBER], tt2[MAX_PLAYER_NUMBER];
@@ -220,63 +219,76 @@ CC int alldata::p3Cycles(int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res
 
 	getTT14ForG3(tt1, tt2, tt3, tt4, v, t1, t2, res1, res2, m_nGroups);
 	int iret;
-	iret = getCyclesAndPath(&m_TrCycles, ncr, tt1, tt2, tt3, tt4);
+	iret = getCyclesAndPath(trc, ncr, tt1, tt2, tt3, tt4);
 #if 0
 	printf("\niret=%b", iret);
 	printTable("ri", res1, 1, m_numPlayers, m_groupSize);
 	printTable("rm", res2, 1, m_numPlayers, m_groupSize);
 	printTable("v", v, 1, m_nGroups, 0);
-	printTable("fullPath", m_TrCycles.fullPath, 1, m_numPlayers * 2, m_groupSize);
-	printTable("length", m_TrCycles.length, 1, MAX_CYCLES_PER_SET, 0);
-	printTable("start", m_TrCycles.start, 1, MAX_CYCLES_PER_SET, 0);
+	printTable("fullPath", trc->fullPath, 1, m_numPlayers * 2, m_groupSize);
+	printTable("length", trc->length, 1, MAX_CYCLES_PER_SET, 0);
+	printTable("start", trc->start, 1, MAX_CYCLES_PER_SET, 0);
 #endif
 	return iret;
 }
-CC int alldata::u1fGetCycleLength(int ncr, const tchar* t1, const tchar* t2, const tchar* res1, const tchar* res2, int ind)
+CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind) const
 {
 	// calculate cycle(s) length for rows res1, res2.
 	// t1, t2 - precalculated arrays with 
-	// for group size = 2: neighbor for each player (t1[7] - neighbor of player 7 in row res1)
-	// for group size = 3: position of player (t1[7] - position of player 7 in row res2)
-	int ncycles = 0;
+	// for group size = 2: neighbor for each player (for example t1[7] - neighbor of player 7 in row res1)
+	// for group size = 3: position of player (for example t2[3] - position of player 3 in row res2)
 	switch (m_groupSize) {
-		case 2:
-			return getCyclesAndPath(&m_TrCycles, ncr, t1, t2);
-		case 3: {
-			tchar us[MAX_PLAYER_NUMBER];
-			tchar v[MAX_GROUP_NUMBER];
-			tchar t2d3[MAX_PLAYER_NUMBER];
-			for (int it2 = m_numPlayers; it2--;)
-				t2d3[it2] = t2[it2] / 3; // used in macros below
-			//printTable("t1", t1, 1, m_numPlayers, 3);
-			//printTable("t2", t2, 1, m_numPlayers, 3);
-			memset(us, 0, m_numPlayers);
-			switch (m_numPlayers) {
-				case 9: {
-					P3Cycles3();
-					P3CyclesCheck();
-					P3Cycles3EndAndReturn(ncycles);
-				}
-				case 15: {
-					P3Cycles5();
-					P3CyclesCheck();
-					P3Cycles5EndAndReturn(ncycles);
-				}
-				case 21: {
-					P3Cycles7();
-					P3CyclesCheck();
-					P3Cycles7EndAndReturn(ncycles);
-				}
-				case 27: {
-					P3Cycles9();
-					P3CyclesCheck();
-					P3Cycles9EndAndReturn(ncycles);
-				}
-			}
-		}
+	case 2:
+		return getCyclesAndPath(trc, ncr, t1, t2);
+	case 3:
+		return u1fGetCycleLength3(trc, ncr, t1, t2, res1, res2, ind);
 	}
 	return 0;
 }
+CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2, int ind) const
+{
+	tchar us[MAX_PLAYER_NUMBER];
+	tchar v[MAX_GROUP_NUMBER];
+	tchar t2d3[MAX_PLAYER_NUMBER];
+	for (int it2 = m_numPlayers; it2--;)
+		t2d3[it2] = t2[it2] / 3; // used in macros below
+	//printTable("t1", t1, 1, m_numPlayers, 3);
+	//printTable("t2", t2, 1, m_numPlayers, 3);
+	int ncycles = 0;
+	memset(us, 0, m_numPlayers);
+	switch (m_numPlayers) {
+		case 9: {
+			P3Cycles3();
+			P3CyclesCheck(trc);
+			P3Cycles3EndAndReturn(ncycles);
+		}
+		case 15: {
+			P3Cycles5();
+			P3CyclesCheck(trc);
+			P3Cycles5EndAndReturn(ncycles);
+		}
+		case 21: {
+			P3Cycles7();
+			P3CyclesCheck(trc);
+			P3Cycles7EndAndReturn(ncycles);
+		}
+		case 27: {
+			P3Cycles9();
+			P3CyclesCheck(trc);
+			P3Cycles9EndAndReturn(ncycles);
+		}
+	}
+
+	return 0;
+}
+
+CC bool alldata::p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const {
+	TrCycles trc;
+	const auto ncycles = u1fGetCycleLength3(&trc, 1, neighborsi, neighborsj, rowi, rowj);
+	// in case of incorrect cycle length u1fGetCycleLength reports only one cycle (with error)
+	return (ncycles == 1 && trc.length[0] == m_numPlayers);
+}
+
 CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
@@ -290,9 +302,9 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3 && !pNeedOutput)
 	{
 		m_p1f_counter++;
-		if (!(m_p1f_counter % 10000000))
-			printTable("LR", result(nr - 1), 1, nc, m_groupSize);
-		if (!(m_p1f_counter % param(t_p1f_counter)) && nr > 2)
+		//if (!(m_p1f_counter % 10000000))
+		//	printTable("LR", result(nr - 1), 1, nc, m_groupSize);
+		if (param(t_p1f_counter) && !(m_p1f_counter % param(t_p1f_counter)) && nr > 2)
 			return true;
 	}
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only
@@ -305,7 +317,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 #if 1
 			if (ncr == 1)
 			{
-				const auto ncycles = u1fGetCycleLength(ncr, rowi, rowm, result(i), result(m));
+				const auto ncycles = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
 				// in case of incorrect cycle length u1fGetCycleLength reports only one cycle (with error)
 				if (ncycles == 1 && !cycleLengthOk(m_TrCycles.length[0]))
 				{
@@ -324,7 +336,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 			else
 #endif
 			{
-				int ncycle = u1fGetCycleLength(ncr, rowi, rowm, result(i), result(m));
+				int ncycle = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
 #if 0
 				printTable("ri", result(i), 1, m_numPlayers, m_groupSize);
 				printTable("rm", result(m), 1, m_numPlayers, m_groupSize);
@@ -361,7 +373,7 @@ char *alldata::matrixStatOutput(char* str, int maxStr) const
 	return retVal;
 }
 
-CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
+CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 {
 	if (ncr != 1)
 		return false;
@@ -380,10 +392,10 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length)
 	return true;
 }
 
-CC bool CChecklLink::cycleLengthOk(tchar length)
+CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
 	auto pntr = m_param->u1fCycles[0];
-	if (!pntr)
+	if (!pntr || (pntr[0] == 1 && pntr[1] == m_numPlayers))
 		return length == m_numPlayers;
 	const auto ngrp = pntr[0];
 	pntr++;
@@ -566,7 +578,9 @@ CC int alldata::p1fCheck2ndRow() const
 	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,14, 13,16, 15,17 },
 	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,14, 13,16, 15,18, 17,19 }
 	};
-
+	if (param(t_u1f) && sysParam()->u1fCycles[0] && 
+		(sysParam()->u1fCycles[0][0] != 1 || sysParam()->u1fCycles[0][1] != m_numPlayers))
+		return 0;
 	if (nc < 4 || nc > 20)
 		return 0;
 	return MEMCMP(p2ndRow, expectedSecondRow[(nc - 4) / 2], nc);
