@@ -208,7 +208,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		delete [] m_pRowsCompatMasks[0];
 	}
 
-	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8;
+	// Adding additional long long when m_bUsingGroupSize2 is false
+	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (m_bUsingGroupSize2? 0 : 8);
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
@@ -234,20 +235,22 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	int idx = 1;
+	auto& pCompatMask = pRowsCompatMasks[idx];
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
 	i = m_numPreconstructedRows;
-
+	const auto iMax = numDaysResult();
 #if 1
-	while (i < m_numPlayers) {
+	unsigned int rem;
+	while (i < iMax) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
-		if (m_pRowSolutionMasksIdx && i < m_numPlayers - 1) {
+		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
 			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i-1]) {
-				const auto rem = REM(lastAdj);
-				if (rem)
+				rem = REM(lastAdj);
+				if (rem = REM(lastAdj))
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
 			}
 			else {
@@ -268,13 +271,13 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		}
 
 		while (first < last) {
-			generateCompatibilityMasks(pRowsCompatMasks[idx], first++, last);
-			pRowsCompatMasks[idx] += m_lenSolutionMask;
+			generateCompatibilityMasks(pCompatMask, first++, last);
+			pCompatMask += m_lenSolutionMask;
 		}
 	}
 
 	if (m_numRecAdj) {
-		for (int i = m_numPreconstructedRows; i < m_numPlayers; i++)
+		for (int i = m_numPreconstructedRows; i < iMax; i++)
 			m_pRowSolutionCntr[i] -= m_numRecAdj;
 	}
 
@@ -285,7 +288,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	unsigned long long fff = 0;
 	const auto jMax = m_lenMask >> 3;
 	int a = 0;
-	while (i < m_numPlayers - 1) {
+	while (i < iMax) {
 		auto first = last;
 		last = m_pRowSolutionCntr[i];
 		i++;
