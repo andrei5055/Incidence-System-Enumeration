@@ -36,10 +36,11 @@ public:
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC inline void reset()								{ m_numObjects = 0; }
-	CC inline bool usingGroupSize2() const				{ return m_bUsingGroupSize2;}
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
+	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC void addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
+	CC int initRowUsage(tchar** ppCompatibleSolutions, uint* pRowSolutionLastIdx) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutionsPtr() const			{ return m_pRowSolutionCntr; }
@@ -53,7 +54,6 @@ public:
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
-	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const {
 		auto iRow = numPreconstructedRows();
 		uint savedIdx;
@@ -123,9 +123,12 @@ private:
 	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const long long* rm, uint idx) const;
 
-	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
-	const int m_numPlayers;
 	const kSysParam* m_pSysParam;
+	const int m_numPlayers;
+	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
+	const int m_numDaysResult;
+	const alldata* m_pAllData;
+
 	CStorage<tchar>* m_pMaskStorage = NULL;
 
 #if 0
@@ -137,7 +140,7 @@ private:
 #endif
 	uint m_numObjects;
 	uint m_numObjectsMax;
-	alldata* m_pAllData;
+
 	int m_lenMask;
 	rowToBitmask m_pRowToBitmask;
 	uint* m_pRowSolutionCntr = NULL;
@@ -160,8 +163,6 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
-	int m_numDaysResult;
-	bool m_bUsingGroupSize2;
 };
 
 class CRowUsage : public CompSolStorage {
@@ -177,14 +178,8 @@ public:
 		delete[] m_pRowSolutionIdx;
 		delete[] m_pCompatibleSolutions;
 	}
-	CC void init(int iThread = 0, int numThreads = 1) {
-		m_numSolutionTotalB = m_pRowStorage->numSolutionTotalB();
-		const auto len = (m_pRowStorage->numPlayers() - m_pRowStorage->numPreconstructedRows() - 1) * m_numSolutionTotalB;
-		m_pCompatibleSolutions = new tchar[len];
-		m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
-		memcpy(m_pRowSolutionLastIdx, m_pRowStorage->numRowSolutionsPtr(), m_pRowStorage->numDaysResult() * sizeof(m_pRowSolutionLastIdx[0]));
-		m_step = numThreads;
-	}
+	CC void init(int iThread = 0, int numThreads = 1);
+	CC int getRow(int iRow, int ipx);
 	CC inline bool getMatrix2(tchar* row, tchar* neighbors, int nRows, int iRow) {
 		getMatrix(row, neighbors, ++iRow);
 		return completeMatrix(row, neighbors, nRows, iRow);
@@ -192,7 +187,6 @@ public:
 	CC inline void getMatrix(tchar* row, tchar* neighbors, int nRows) {
 		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx);
 	}
-	CC int getRow(int iRow, int ipx);
 private:
 	uint m_numSolutionTotalB;
 	uint* m_pRowSolutionIdx = NULL;

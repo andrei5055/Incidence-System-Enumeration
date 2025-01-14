@@ -150,9 +150,10 @@ public:
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);
 	CC int cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits=NULL);
-	GroupOrbits* orbits() const					{ return m_pOrbits; }
+	inline GroupOrbits* orbits() const			{ return m_pOrbits; }
 	CC inline auto numPlayers() const			{ return m_numPlayers; }
-	CC auto RowStorage() const					{ return m_pRowStorage; }
+	CC inline auto RowStorage() const			{ return m_pRowStorage; }
+	inline auto groupSize()	const				{ return m_groupSize; }
 #if !USE_CUDA
 	inline MatrixDB* matrixDB()					{ return &m_matrixDB; }
 #endif

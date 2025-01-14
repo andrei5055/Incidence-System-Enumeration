@@ -30,8 +30,9 @@ void bitwise_multiply(const long long* a, const long long* b, long long* result,
 #endif
 
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, alldata* pAllData) :
-	m_pSysParam(pSysParam), m_numPlayers(numPlayers), m_pAllData(pAllData), m_bUsingGroupSize2(pSysParam->val[t_groupSize] == 2),
+	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
+	m_numDaysResult(pAllData ? pAllData->numDaysResult() : numPlayers - 1), m_pAllData(pAllData),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
 	CStorage<tchar>(numObjects, 2 * numPlayers) {
@@ -43,8 +44,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numPlayers;
 	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
-	m_pRowToBitmask = m_bUsingGroupSize2 ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
-	m_numDaysResult = m_pAllData ? m_pAllData->numDaysResult() : m_numPlayers - 1;
+	m_pRowToBitmask = m_pAllData ? &CRowStorage::rowToBitmask3 : &CRowStorage::rowToBitmask2;
 }
 
 CC CRowStorage::~CRowStorage() {
@@ -93,17 +93,17 @@ CC void CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 	auto* pntr = getObject(m_numObjects++);
 	const auto ptr = pntr - 2 * m_numPlayers + 1;
 #if 1
-	ASSERT_(m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (usingGroupSize2() || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1)),
+	ASSERT_(m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (!m_pAllData || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1)),
 		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and (groupSize2 = %d or pRow[1] != 7 or %d\n",
-			pRow[1], *ptr, *ptr + 1, usingGroupSize2(), m_pAllData->result(2)[2] + 1);
+			pRow[1], *ptr, *ptr + 1, !m_pAllData, m_pAllData->result(2)[2] + 1);
 		exit(1)
 	);
 #else
 	// NOTE: This conditions are valid for groupSize == 2 or groupSize == 3 and m_numPreconstructedRows == 3.
 	//       For the other cases they are more complicated.
-	if (m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (usingGroupSize2() || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1))) {
+	if (m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (!m_pAllData || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1))) {
 		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and (groupSize2 = %d or pRow[1] != 7 or %d)\n",
-			pRow[1], *ptr, *ptr + 1, usingGroupSize2(), m_pAllData->result(2)[2] + 1);
+			pRow[1], *ptr, *ptr + 1, !m_pAllData, m_pAllData->result(2)[2] + 1);
 		exit(1);
 	}
 #endif
@@ -178,13 +178,24 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 
 CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, uint idx) const {
 	auto* rm = (const long long*)m_pMaskStorage->getObject(solIdx);
-	const auto pNeighbors = getObject(solIdx) + m_numPlayers;
+	ctchar* pSolution;
+	const auto pNeighbors = (pSolution = getObject(solIdx)) + m_numPlayers;
 	do {
 		if (checkCompatibility(pNeighbors, rm, idx)) {
 			const auto newIdx = idx - m_numRecAdj;
 			SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
 		}
 	} while (++idx < m_numSolutionTotal);
+
+	if (m_pAllData) {
+		// If groupSize > 2, we also need to create mask which will keep  
+		// the information regarding the players used by current solution.
+		// We will store it as 0's of corresponding bites.
+		auto* pMaskOutLong = (long long*)pMaskOut + m_lenSolutionMask - 1;
+		*pMaskOutLong = -1;
+		for (auto i = m_pAllData->groupSize() - 1; i--;)
+			*pMaskOutLong ^= (long long)1 << pSolution[i];
+	}
 }
 
 CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
@@ -208,8 +219,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		delete [] m_pRowsCompatMasks[0];
 	}
 
-	// Adding additional long long when m_bUsingGroupSize2 is false
-	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (m_bUsingGroupSize2? 0 : 8);
+	// Adding additional long long when we use groupSize > 2
+	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (m_pAllData ? 8 : 0);
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
@@ -248,7 +259,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i-1]) {
+			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
 				rem = REM(lastAdj);
 				if (rem = REM(lastAdj))
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
@@ -283,7 +294,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 #else
 	// Calculate the number of mutually compatible pairs of solutions
-	int cntrs[8]; 
+	int cntrs[8];
 	memset(cntrs, 0, sizeof(cntrs));
 	unsigned long long fff = 0;
 	const auto jMax = m_lenMask >> 3;
@@ -320,6 +331,33 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		delete m_pMaskStorage;
 		m_pMaskStorage = NULL;
 	}
+}
+
+CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions, uint *pRowSolutionLastIdx) const {
+	const auto len = (numDaysResult() - numPreconstructedRows()) * m_numSolutionTotalB;
+	*ppCompatibleSolutions = new tchar[len];
+	memcpy(pRowSolutionLastIdx, numRowSolutionsPtr(), numDaysResult() * sizeof(pRowSolutionLastIdx[0]));
+
+	if (m_pAllData) {
+		// Create a mask to manage players utilized in the predefined rows of the matrix.
+		auto* pMaskOutLong = (long long*)*ppCompatibleSolutions + m_lenSolutionMask - 1;
+		const auto groupSize = m_pAllData->groupSize();
+		// Excluding players of the first group from of ...
+		*pMaskOutLong = (long long)(-1) << groupSize;  // first row
+		auto const * pSolution = m_pAllData->result();
+		for (int j = numPreconstructedRows(); --j;) {  // remaining pre-constructed rows
+			pSolution += m_numPlayers;
+			for (auto i = groupSize; i-- > 1;)
+				*pMaskOutLong ^= (long long)1 << pSolution[i];
+		}
+	}
+	return m_numSolutionTotalB;
+}
+
+CC void CRowUsage::init(int iThread, int numThreads) {
+	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, m_pRowSolutionLastIdx);
+	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
+	m_step = numThreads;
 }
 
 long long cntr = 0;
