@@ -497,8 +497,8 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 				if (iDay == nPrecalcRows + 1) {
 					nRows4++;
 					nRows4Day++;
-					//printf("%6d:", nRows4);
-					//printTable("", result(3), 1, m_numPlayers, 2);
+					printf("%6d:", nRows4);
+					printTable("", result(3), 1, m_numPlayers, 2);
 #if 0
 					bool bP1F = p1fCheck3(result(0), result(nPrecalcRows), neighbors(0), neighbors(nPrecalcRows));
 					if (!bP1F)

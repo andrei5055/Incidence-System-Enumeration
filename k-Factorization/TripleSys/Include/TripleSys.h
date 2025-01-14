@@ -167,12 +167,12 @@ public:
 #endif
 	}
 	CC bool p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const;
-	CC inline auto numDaysResult() const { return m_numDaysResult; }
+	CC inline auto numDaysResult() const		{ return m_numDaysResult; }
+	CC inline tchar* result(int nDay = 0) const { return m_pResults + nDay * m_numPlayers; }
 private:
 	CC void Init();
 	inline auto numDays() const					{ return m_numDays; }
 	CC bool initPrevDay();
-	CC inline tchar* result(int nDay = 0) const { return m_pResults + nDay * m_numPlayers; }
 	CC inline tchar* links(int nPlayer = 0) const	{ return m_pLinks + nPlayer * m_numPlayers; }
 	CC void getUnselected(tchar* v, int nv) const;
 	CC void getPrevPlayer();

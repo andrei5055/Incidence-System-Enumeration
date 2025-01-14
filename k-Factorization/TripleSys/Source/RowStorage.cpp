@@ -75,6 +75,43 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 	return false;
 }
 
+CC void CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
+	if (m_numObjects == m_numObjectsMax) {
+		reallocStorageMemory(m_numObjectsMax <<= 1);
+		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
+	}
+#if 0
+	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
+	char buf[256], * pBuf = buf;
+	for (int i = 0; i < m_numPlayers; i++)
+		SPRINTFD(pBuf, buf, "%2d ", pRow[i]);
+
+	fprintf(f, "%3d: %s\n", m_numObjects, buf);
+	FCLOSE_F(f);
+#endif
+	(this->*m_pRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
+	auto* pntr = getObject(m_numObjects++);
+	const auto ptr = pntr - 2 * m_numPlayers + 1;
+#if 1
+	ASSERT_(m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (usingGroupSize2() || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1)),
+		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and (groupSize2 = %d or pRow[1] != 7 or %d\n",
+			pRow[1], *ptr, *ptr + 1, usingGroupSize2(), m_pAllData->result(2)[2] + 1);
+		exit(1)
+	);
+#else
+	// NOTE: This conditions are valid for groupSize == 2 or groupSize == 3 and m_numPreconstructedRows == 3.
+	//       For the other cases they are more complicated.
+	if (m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (usingGroupSize2() || (pRow[1] != 7 && pRow[1] != m_pAllData->result(2)[2] + 1))) {
+		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and (groupSize2 = %d or pRow[1] != 7 or %d)\n",
+			pRow[1], *ptr, *ptr + 1, usingGroupSize2(), m_pAllData->result(2)[2] + 1);
+		exit(1);
+	}
+#endif
+	memcpy(pntr, pRow, m_numPlayers);
+	memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
+	m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
+}
+
 CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const long long* rm, uint idx) const {
 	// Let's check if the masks are mutually compatible
 	auto* pMask = (const long long*)(m_pMaskStorage->getObject(idx));

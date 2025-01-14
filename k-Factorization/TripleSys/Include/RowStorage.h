@@ -34,56 +34,12 @@ public:
 	CC ~CRowStorage();
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC inline void init()						{ initMaskStorage(m_numObjectsMax); }
-	CC inline void reset()						{ m_numObjects = 0; }
-	CC inline bool usingGroupSize2() const		{ return m_bUsingGroupSize2;}
-	CC void addRow(ctchar* pRow, ctchar* pNeighbors) {
-		if (m_numObjects == m_numObjectsMax) {
-			reallocStorageMemory(m_numObjectsMax <<= 1);
-			m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
-		}
-#if 0
-#define FOPEN_W(x, y, z, w)	 FILE *x = w; \
-                             if (!x && y && strlen(y)) fopen_s(&x, y, z)
-#define FOPEN_F(x, y, z)	 FOPEN_W(x, y, z, NULL)
-#define SPRINTFS(x, y, size,...)	 x += sprintf_s(x, size - (x - y), __VA_ARGS__)
-#define SPRINTFD(x, y, ...)	 SPRINTFS(x, y, sizeof(y), __VA_ARGS__)
-#define FCLOSE_W(f, w)		 if (f != w) fclose(f)
-#define FCLOSE_F(f)			 FCLOSE_W(f, NULL)
-		FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
-		char buf[256], * pBuf = buf;
-		for (int i = 0; i < m_numPlayers; i++)
-			SPRINTFD(pBuf, buf, "%2d ", pRow[i]);
-
-		fprintf(f, "%3d: %s\n", m_numObjects, buf);
-		FCLOSE_F(f);
-#endif
-		(this->*m_pRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
-		auto* pntr = getObject(m_numObjects++);
-#if 1
-		ASSERT_((m_numObjects > 1 && pRow[1] != *(pntr - 2 * m_numPlayers + 1) &&
-			pRow[1] != *(pntr - 2 * m_numPlayers + 1) + 1),
-			printfRed("\nError in code: m_numObjects(%d)>1, and pRow[1](%d) != %d, and pRow[1] != %d\n",
-				m_numObjects, pRow[1], *(pntr - 2 * m_numPlayers + 1), *(pntr - 2 * m_numPlayers + 1) + 1);
-			exit(1)
-		);
-#else
-
-		const auto ptr = pntr - 2 * m_numPlayers + 1;
-		if (m_numObjects > 1 && pRow[1] != *ptr &&
-			pRow[1] != *ptr + 1) {
-			printfRed("\nError in code: m_numObjects(%d)>1, and pRow[1](%d) != %d, and pRow[1] != %d\n",
-				m_numObjects, pRow[1], *ptr, *ptr + 1);
-			exit(1);
-		}
-#endif
-		memcpy(pntr, pRow, m_numPlayers);
-		memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
-		m_pRowSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for (pRow[1]-1)-th row
-	}
+	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
+	CC inline void reset()								{ m_numObjects = 0; }
+	CC inline bool usingGroupSize2() const				{ return m_bUsingGroupSize2;}
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
+	CC void addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
-
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numRowSolutionsPtr() const			{ return m_pRowSolutionCntr; }
