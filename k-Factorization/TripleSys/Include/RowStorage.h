@@ -7,8 +7,10 @@
 #define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
+typedef long long ll;
+
 #if USE_64_BIT_MASK
-typedef long long tmask;
+typedef ll tmask;
 #define SHIFT						6
 #else
 typedef tchar tmask;
@@ -34,7 +36,7 @@ public:
 	CC ~CRowStorage();
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
+	CC void init();
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
@@ -163,6 +165,7 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
+	long long m_playersMask = 0;       // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 };
 
 class CRowUsage : public CompSolStorage {
