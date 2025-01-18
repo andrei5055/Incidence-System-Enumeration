@@ -36,13 +36,14 @@ public:
 	CC ~CRowStorage();
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
+	CC uint& getSolutionInterval(uint* pRowSolutionIdx, int iRow, uint* pLast) const;
 	CC void init();
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC void addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
-	CC int initRowUsage(tchar** ppCompatibleSolutions, uint* pRowSolutionLastIdx) const;
+	CC int initRowUsage(tchar** ppCompatibleSolutions) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
@@ -159,22 +160,21 @@ private:
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 	int m_useCliquesAfterRow;
 	uint m_numRecAdj = 0;
-	uint m_numRec[2];				   // Number of solutions for first and second nonfixed rows.
+	uint m_numRec[2];			   // Number of solutions for first and second nonfixed rows.
 	uint m_numRecAdj2;
 	uint m_lastInFirstSet;
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
-	long long m_playersMask = 0;       // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	ll m_playersMask = 0;          // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 };
 
 class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
-		const auto len = m_pRowStorage->numDaysResult() + m_pRowStorage->numPlayers();
+		const auto len = m_pRowStorage->numDaysResult();
 		m_pRowSolutionIdx = new uint[len];
 		memset(m_pRowSolutionIdx, 0, len * sizeof(m_pRowSolutionIdx[0]));
-		m_pPlayerSolutionLastIdx = m_pRowSolutionIdx + m_pRowStorage->numDaysResult();
 		m_bUseCombinedSolutions = pRowStorage->sysParam()->val[t_useCombinedSolutions];
 	}
 	CC ~CRowUsage() {
@@ -193,7 +193,6 @@ public:
 private:
 	uint m_numSolutionTotalB;
 	uint* m_pRowSolutionIdx = NULL;
-	uint* m_pPlayerSolutionLastIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
 	bool m_bUseCombinedSolutions;
