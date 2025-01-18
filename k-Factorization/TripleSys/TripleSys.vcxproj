@@ -178,6 +178,7 @@
     <ClCompile Include="Source\processOneDay.cpp" />
     <ClCompile Include="Source\reportCheckLinksData.cpp" />
     <ClCompile Include="Source\RowStorage.cpp" />
+    <ClCompile Include="Source\RowUsage.cpp" />
     <ClCompile Include="Source\Stat.cpp" />
     <ClCompile Include="Source\Support.cpp" />
     <ClCompile Include="Source\Tests.cpp" />
