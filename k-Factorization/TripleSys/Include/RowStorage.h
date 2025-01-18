@@ -45,7 +45,7 @@ public:
 	CC int initRowUsage(tchar** ppCompatibleSolutions, uint* pRowSolutionLastIdx) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
-	CC inline auto numRowSolutionsPtr() const			{ return m_pRowSolutionCntr; }
+	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
 	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks[1] + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
@@ -119,11 +119,11 @@ private:
 	}
 	CC void initMaskStorage(uint numObjects) {
 		m_pMaskStorage = new CStorage<tchar>(numObjects, (((m_numPlayers * (m_numPlayers - 1) / 2) + 63) / 64) * 8);
-		memset(m_pRowSolutionCntr, 0, m_numPlayers * sizeof(m_pRowSolutionCntr[0]));
+		memset(m_pPlayerSolutionCntr, 0, m_numPlayers * sizeof(m_pPlayerSolutionCntr[0]));
 		reset();
 	}
 	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
-	CC bool checkCompatibility(ctchar* neighborsi, const long long* rm, uint idx) const;
+	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
@@ -134,18 +134,18 @@ private:
 	CStorage<tchar>* m_pMaskStorage = NULL;
 
 #if 0
-	long long cnt1 = 0;
-	long long cnt2[18] = { 0 };
-	long long cnt3[18] = { 0 };
-	long long cnt4[18] = { 0 };
-	long long cnt5[18] = { 0 };
+	ll cnt1 = 0;
+	ll cnt2[18] = { 0 };
+	ll cnt3[18] = { 0 };
+	ll cnt4[18] = { 0 };
+	ll cnt5[18] = { 0 };
 #endif
 	uint m_numObjects;
 	uint m_numObjectsMax;
 
 	int m_lenMask;
 	rowToBitmask m_pRowToBitmask;
-	uint* m_pRowSolutionCntr = NULL;
+	uint* m_pPlayerSolutionCntr = NULL;
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
 	uint m_lenSolutionMask;
@@ -171,10 +171,10 @@ private:
 class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
-		const auto len = 2 * m_pRowStorage->numDaysResult();
+		const auto len = m_pRowStorage->numDaysResult() + m_pRowStorage->numPlayers();
 		m_pRowSolutionIdx = new uint[len];
 		memset(m_pRowSolutionIdx, 0, len * sizeof(m_pRowSolutionIdx[0]));
-		m_pRowSolutionLastIdx = m_pRowSolutionIdx + (len >> 1);
+		m_pPlayerSolutionLastIdx = m_pRowSolutionIdx + m_pRowStorage->numDaysResult();
 		m_bUseCombinedSolutions = pRowStorage->sysParam()->val[t_useCombinedSolutions];
 	}
 	CC ~CRowUsage() {
@@ -193,7 +193,7 @@ public:
 private:
 	uint m_numSolutionTotalB;
 	uint* m_pRowSolutionIdx = NULL;
-	uint* m_pRowSolutionLastIdx = NULL;
+	uint* m_pPlayerSolutionLastIdx = NULL;
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
 	bool m_bUseCombinedSolutions;

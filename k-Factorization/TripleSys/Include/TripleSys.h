@@ -153,7 +153,7 @@ public:
 	inline GroupOrbits* orbits() const			{ return m_pOrbits; }
 	CC inline auto numPlayers() const			{ return m_numPlayers; }
 	CC inline auto RowStorage() const			{ return m_pRowStorage; }
-	inline auto groupSize()	const				{ return m_groupSize; }
+	CC inline auto groupSize()	const			{ return m_groupSize; }
 #if !USE_CUDA
 	inline MatrixDB* matrixDB()					{ return &m_matrixDB; }
 #endif
