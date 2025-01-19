@@ -12,6 +12,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_bCheckLinkT(m_groupSize == 3 && useCheckLinksT),
 	m_nLenResults(m_numDays * numPlayers()) {
 	m_improveResult = improveResult;
+	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
+		m_numDaysResult = m_numDays;
+
 	m_rowTime = new clock_t[m_numDays];
 	m_rowTime[0] = 0;
 	m_pResults = new tchar[m_nLenResults];

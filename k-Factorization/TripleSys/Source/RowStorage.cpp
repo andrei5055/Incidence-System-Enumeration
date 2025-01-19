@@ -1,6 +1,6 @@
 #include "TripleSys.h"
 
-CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, alldata* pAllData) :
+CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
 	m_numDaysResult(pAllData ? pAllData->numDaysResult() : numPlayers - 1), m_pAllData(pAllData),
@@ -15,7 +15,8 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : m_numDaysResult;
 	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
-	m_pRowToBitmask = m_pAllData ? &CRowStorage::rowToBitmask3 : &CRowStorage::rowToBitmask2;
+	m_fRowToBitmask = m_pAllData ? &CRowStorage::rowToBitmask3 : &CRowStorage::rowToBitmask2;
+	m_fSolutionInterval = m_pAllData ? &CRowStorage::solutionInterval3 : &CRowStorage::solutionInterval2;
 }
 
 CC CRowStorage::~CRowStorage() {
@@ -26,24 +27,6 @@ CC CRowStorage::~CRowStorage() {
 	delete m_pMaskStorage;
 	delete[] m_pRowSolutionMasks;
 	delete[] m_pRowSolutionMasksIdx;
-}
-
-CC void CRowStorage::init() { 
-	initMaskStorage(m_numObjectsMax);
-	if (m_pAllData) {
-		// Create a mask to manage players utilized in the predefined rows of the matrix.
-		const auto groupSize = m_pAllData->groupSize();
-		// Excluding players of the first group from of ...
-		m_playersMask = (ll)(-1) << groupSize;  // first row
-		auto const* pSolution = m_pAllData->result();
-		for (int j = numPreconstructedRows(); --j;) {  // remaining pre-constructed rows
-			pSolution += m_numPlayers;
-			for (auto i = groupSize; i-- > 1;)
-				m_playersMask ^= (ll)1 << pSolution[i];
-		}
-	}
-	else
-		m_playersMask = -1;
 }
 
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
@@ -78,7 +61,7 @@ CC void CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 	fprintf(f, "%3d: %s\n", m_numObjects, buf);
 	FCLOSE_F(f);
 #endif
-	(this->*m_pRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
+	(this->*m_fRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
 	auto* pntr = getObject(m_numObjects++);
 #if !USE_CUDA
 	const auto ptr = pntr - 2 * m_numPlayers + 1;
@@ -226,18 +209,34 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
-	auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
+	const auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
 	delete[] m_pRowsCompatMasks[1];
 	m_pRowsCompatMasks[1] = new tmask[len * m_lenSolutionMask];
 	memset(m_pRowsCompatMasks[1], 0, len * m_numSolutionTotalB);
 
 	delete[] m_pRowSolutionMasksIdx;
 	delete[] m_pRowSolutionMasks;
-	len = numPlayers();
-	m_pRowSolutionMasksIdx = new uint[len];
 
-	m_pRowSolutionMasks = new tmask[len];
-	memset(m_pRowSolutionMasks, 0, len * sizeof(m_pRowSolutionMasks[0]));
+	const auto iMax = numDaysResult();
+	m_pRowSolutionMasksIdx = new uint[iMax];
+
+	m_pRowSolutionMasks = new tmask[iMax];
+	memset(m_pRowSolutionMasks, 0, iMax * sizeof(m_pRowSolutionMasks[0]));
+
+	if (m_pAllData) {
+		// Create a mask to manage players utilized in the predefined rows of the matrix.
+		const auto groupSize = m_pAllData->groupSize();
+		// Excluding players of the first group from ...
+		m_playersMask = (ll)(-1) << groupSize;			// ...first row
+		auto const* pSolution = m_pAllData->result();
+		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
+			pSolution += m_numPlayers;
+			for (auto i = groupSize; i-- > 1;)
+				m_playersMask ^= (ll)1 << pSolution[i];
+		}
+	}
+	else
+		m_playersMask = -1;
 
 #if !USE_64_BIT_MASK
 	// Filling the lookup table m_FirstOnePosition
@@ -251,7 +250,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	auto& pCompatMask = pRowsCompatMasks[idx];
 	unsigned int last = 0;
 	m_pRowSolutionMasksIdx[0] = 0;
-	const auto iMax = numDaysResult();
 	i = m_numPreconstructedRows;
 #if 1
 	unsigned int rem;
@@ -335,6 +333,32 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	}
 }
 
+CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const {
+	auto iRow = numPreconstructedRows();
+	uint savedIdx;
+	if (m_bUseCombinedSolutions) {
+		const auto ind = (savedIdx = pRowSolutionIdx[iRow]) - m_step;
+		pRowSolutionIdx[iRow] = ind / numRec(1) + m_step;
+		pRowSolutionIdx[iRow + 1] = ind % numRec(1) + 1;
+	}
+
+	size_t shift = iRow * m_numPlayers;
+	const int adj = numRecAdj() - 1;
+	auto* pObj = getObject(pRowSolutionIdx[iRow] - m_step);
+	while (true) {
+		memcpy(row + shift, pObj, m_numPlayers);
+		memcpy(neighbors + shift, pObj + m_numPlayers, m_numPlayers);
+		if (++iRow == nRows)
+			break;
+
+		pObj = getObject(pRowSolutionIdx[iRow] + adj);
+		shift += m_numPlayers;
+	}
+
+	if (m_bUseCombinedSolutions)
+		pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
+}
+
 CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions) const {
 	const auto len = (numDaysResult() - numPreconstructedRows()) * m_numSolutionTotalB;
 	*ppCompatibleSolutions = new tchar[len];
@@ -347,14 +371,14 @@ CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions) const {
 	return m_numSolutionTotalB;
 }
 
-CC uint& CRowStorage::getSolutionInterval(uint* pRowSolutionIdx, int iRow, uint* pLast) const {
+CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
+	ASSERT(iRow >= numDaysResult());
 	*pLast = pRowSolutionIdx[iRow + 1] = m_pPlayerSolutionCntr[iRow];
 	return pRowSolutionIdx[iRow];
 }
 
-CC void CRowUsage::init(int iThread, int numThreads) {
-	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions);
-	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
-	m_step = numThreads;
+CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
+	ASSERT(iRow >= numDaysResult());
+	*pLast = pRowSolutionIdx[iRow + 1] = m_pPlayerSolutionCntr[iRow];
+	return pRowSolutionIdx[iRow];
 }
-

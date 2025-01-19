@@ -70,7 +70,7 @@ void alldata::outputError() const {
 #endif
 
 CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
-	tchar* mStart0, tchar* mStart, int nrowsStart, int nrowsOut, sLongLong* pcnt, string* pOutResult, int iThread) {
+	tchar* mStart0, tchar* mStart, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 #if !USE_CUDA
 	const auto iTime = clock();
@@ -95,11 +95,6 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	int nRows4Day = 0;
 	const auto bPrint = !iThread && param(t_printMatrices);
 	int minRows = nrowsStart;
-	if (!nrowsOut)
-		nrowsOut = m_numDays;
-	m_numDaysResult = nrowsOut;
-
-	CUDA_PRINTF("*** threadNumber = %d nrowsOut = %d, numDaysResult = %d \n", threadNumber, nrowsOut, m_numDaysResult);
 
 #if !USE_CUDA
 	unsigned char* bResults = NULL;

@@ -4,7 +4,7 @@ void RunThread(int threadNumber, int iMode,
 	TopGun *pMaster, tchar* mstart0, tchar* mstart, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), pRowStorage);
-	sys.Run(threadNumber, iMode, mstart0, mstart, pMaster->nRowsStart(), pMaster->nRowsOut(), pcnt, 0, iThread);
+	sys.Run(threadNumber, iMode, mstart0, mstart, pMaster->nRowsStart(), pcnt, 0, iThread);
 	if (pMaster->descrStorage())
 		pMaster->addMatrixDB(sys.matrixDB());
 	else

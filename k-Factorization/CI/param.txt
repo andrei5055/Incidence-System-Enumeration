@@ -49,6 +49,14 @@ UseUniform1Factorization=0
 ExpectedResult=1
 RUN_JOB
 
+TestName = "K1F_25x6x5_SingleThread"
+nPlayers=25
+GroupSize=5
+Use2RowsCanonization=0
+UseUniform1Factorization=0
+ExpectedResult=1
+RUN_JOB
+
 // Preparing starting matrices for multithreaded tests
 TestName = "K1F_10x3x2_SingleThread"
 GroupSize=2

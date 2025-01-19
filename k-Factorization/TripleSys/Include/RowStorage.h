@@ -30,14 +30,17 @@ typedef tchar tmask;
 class alldata;
 
 class CRowStorage : public CStorage<tchar> {
-	typedef void(CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
+	typedef void (CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
+	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
 public:
-	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, alldata* pAllData = NULL);
+	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
+	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC uint& getSolutionInterval(uint* pRowSolutionIdx, int iRow, uint* pLast) const;
-	CC void init();
+	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
+		return (this->*m_fSolutionInterval)(pRowSolutionIdx, iRow, pLast, availablePlayers);
+	}
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
@@ -57,37 +60,17 @@ public:
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
-	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const {
-		auto iRow = numPreconstructedRows();
-		uint savedIdx;
-		if (m_bUseCombinedSolutions) {
-			const auto ind = (savedIdx = pRowSolutionIdx[iRow]) - m_step;
-			pRowSolutionIdx[iRow] = ind / numRec(1) + m_step;
-			pRowSolutionIdx[iRow + 1] = ind % numRec(1) + 1;
-		}
-
-		size_t shift = iRow * m_numPlayers;
-		const int adj = numRecAdj() - 1;
-		auto* pObj = getObject(pRowSolutionIdx[iRow] - m_step);
-		while (true) {
-			memcpy(row + shift, pObj, m_numPlayers);
-			memcpy(neighbors + shift, pObj + m_numPlayers, m_numPlayers);
-			if (++iRow == nRows)
-				break;
-
-			pObj = getObject(pRowSolutionIdx[iRow] + adj);
-			shift += m_numPlayers;
-		}
-
-		if (m_bUseCombinedSolutions)
-			pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
+	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
+		*ppRowSolutionIdx = new uint[numDaysResult() + 1];
+		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
+		return sysParam()->val[t_useCombinedSolutions];
 	}
+	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const;
 #if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
 #endif
-
 
 #define SetMask(bm, ir, ic) \
 	const int ib = ir * m_numPlayers + ic - (1 + ir) * (2 + ir) / 2; \
@@ -125,6 +108,8 @@ private:
 	}
 	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
+	CC uint& solutionInterval2(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
+	CC uint& solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
@@ -145,7 +130,9 @@ private:
 	uint m_numObjectsMax;
 
 	int m_lenMask;
-	rowToBitmask m_pRowToBitmask;
+	rowToBitmask m_fRowToBitmask;
+	solutionInterval m_fSolutionInterval;
+
 	uint* m_pPlayerSolutionCntr = NULL;
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
@@ -172,10 +159,7 @@ private:
 class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
-		const auto len = m_pRowStorage->numDaysResult();
-		m_pRowSolutionIdx = new uint[len];
-		memset(m_pRowSolutionIdx, 0, len * sizeof(m_pRowSolutionIdx[0]));
-		m_bUseCombinedSolutions = pRowStorage->sysParam()->val[t_useCombinedSolutions];
+		m_bUseCombinedSolutions = pRowStorage->initRowSolution(&m_pRowSolutionIdx);
 	}
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;

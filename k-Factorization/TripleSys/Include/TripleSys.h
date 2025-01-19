@@ -144,8 +144,7 @@ public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult,
-		tchar* mstart0=NULL, tchar* mstart=NULL, int nrowsStart=0, 
+	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult, tchar* mstart0 = NULL, tchar* mstart = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);

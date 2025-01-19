@@ -1,6 +1,6 @@
 rmdir "../Logs_CI/" /s /q
-copy ..\x64\Release\k-Sys.exe .
-copy ..\x64\Release\*.dll .
+copy ..\..\CDTools\x64\Release\k-Sys.exe .
+copy ..\..\CDTools\x64\Release\*.dll .
 @echo off
 SET _free=1000
 SET _used=2000

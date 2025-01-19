@@ -28,6 +28,7 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "getUnselected.cpp"
 #include "groupInfo.cpp"
 #include "RowStorage.cpp"
+#include "RowUsage.cpp"
 
 #include "CheckMatrix.cpp"
 #include "TrCycles.cpp"

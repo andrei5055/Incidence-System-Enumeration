@@ -37,7 +37,7 @@ int TopGun::Run()
 	{
 		alldata sys(*this, paramPtr());
 		sys.initStartValues(ivc);// can be used to start from previous result
-		resultMatr = sys.Run(1, eCalcResult, NULL, NULL, nRowsStart(), nRowsOut(), NULL, &m_reportInfo);
+		resultMatr = sys.Run(1, eCalcResult, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		transferMatrixDB(sys.matrixDB());
 	}
 	else
@@ -94,7 +94,7 @@ int TopGun::Run()
 			int icode = 0;
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
-				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), nRowsOut(), NULL, &m_reportInfo)) {
+				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), NULL, &m_reportInfo)) {
 					printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {

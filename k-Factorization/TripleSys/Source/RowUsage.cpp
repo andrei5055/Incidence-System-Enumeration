@@ -29,16 +29,24 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 }
 #endif
 
+CC void CRowUsage::init(int iThread, int numThreads) {
+	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions);
+	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
+	m_step = numThreads;
+}
+
 ll cntr = 0;
-CC int CRowUsage::getRow(int iRow, int ipx)
-{
+CC int CRowUsage::getRow(int iRow, int ipx) {
 #if !USE_CUDA
 	//cntr++;
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows);
+
+	const auto nRow = iRow - numPreconstructedRows - 1;
+	auto pAvalablePlayerMask = (const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1;
 	uint last;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last);
+	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, *pAvalablePlayerMask);
 	if (iRow == numPreconstructedRows) {
 		if (first >= (last = m_pRowStorage->lastInFirstSet()))
 			return 0;
@@ -57,7 +65,6 @@ CC int CRowUsage::getRow(int iRow, int ipx)
 		return 1;
 	}
 
-	const auto nRow = iRow - numPreconstructedRows - 1;
 	if (m_bUseCombinedSolutions && !nRow) {
 		if (m_bSolutionReady) {
 			m_bSolutionReady = false;
