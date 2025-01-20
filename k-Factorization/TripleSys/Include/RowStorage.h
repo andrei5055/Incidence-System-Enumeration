@@ -46,7 +46,7 @@ public:
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC void addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
-	CC int initRowUsage(tchar** ppCompatibleSolutions) const;
+	CC int initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
@@ -61,7 +61,7 @@ public:
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
-		*ppRowSolutionIdx = new uint[numDaysResult() + 1];
+		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_pAllData? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
@@ -128,6 +128,7 @@ private:
 #endif
 	uint m_numObjects;
 	uint m_numObjectsMax;
+	int m_lenDayResults;
 
 	int m_lenMask;
 	rowToBitmask m_fRowToBitmask;
@@ -180,5 +181,6 @@ private:
 	tchar* m_pCompatibleSolutions = NULL;
 	int m_step;
 	bool m_bUseCombinedSolutions;
-	bool m_bSolutionReady;   // true, when solution was prepared ar a part of combined solution.  
+	bool m_bSolutionReady;   // true, when solution was prepared ar a part of combined solution. 
+	bool m_bUsePlayersMask;
 };
