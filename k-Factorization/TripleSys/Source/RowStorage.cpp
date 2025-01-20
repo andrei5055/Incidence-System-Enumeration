@@ -17,6 +17,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
 	m_fRowToBitmask = m_pAllData ? &CRowStorage::rowToBitmask3 : &CRowStorage::rowToBitmask2;
 	m_fSolutionInterval = m_pAllData ? &CRowStorage::solutionInterval3 : &CRowStorage::solutionInterval2;
+	m_lenDayResults = m_numDaysResult + 1;
 }
 
 CC CRowStorage::~CRowStorage() {
@@ -177,8 +178,8 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 		// the information regarding the players used by current solution.
 		// We will store it as 0's of corresponding bites.
 		auto* pMaskOutLong = (ll*)pMaskOut + m_lenSolutionMask - 1;
-		*pMaskOutLong = -1;
-		for (auto i = m_pAllData->groupSize() - 1; i--;)
+		*pMaskOutLong = m_playersMask;
+		for (auto i = m_pAllData->groupSize(); --i;)
 			*pMaskOutLong ^= (ll)1 << pSolution[i];
 	}
 }
@@ -228,10 +229,11 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		const auto groupSize = m_pAllData->groupSize();
 		// Excluding players of the first group from ...
 		m_playersMask = (ll)(-1) << groupSize;			// ...first row
+		m_playersMask ^= (ll)(-1) << numPlayers();
 		auto const* pSolution = m_pAllData->result();
 		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
 			pSolution += m_numPlayers;
-			for (auto i = groupSize; i-- > 1;)
+			for (auto i = groupSize; --i;)
 				m_playersMask ^= (ll)1 << pSolution[i];
 		}
 	}
@@ -359,10 +361,11 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 		pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
 }
 
-CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions) const {
+CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const {
 	const auto len = (numDaysResult() - numPreconstructedRows()) * m_numSolutionTotalB;
 	*ppCompatibleSolutions = new tchar[len];
 
+	*pUsePlayersMask = m_pAllData != NULL;
 	if (m_pAllData) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		auto* pMaskOutLong = (ll*)*ppCompatibleSolutions + m_lenSolutionMask - 1;
@@ -374,11 +377,27 @@ CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions) const {
 CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
 	ASSERT(iRow >= numDaysResult());
 	*pLast = pRowSolutionIdx[iRow + 1] = m_pPlayerSolutionCntr[iRow];
+	if (iRow == numPreconstructedRows())
+		*pLast = lastInFirstSet();
+
 	return pRowSolutionIdx[iRow];
 }
 
 CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
 	ASSERT(iRow >= numDaysResult());
-	*pLast = pRowSolutionIdx[iRow + 1] = m_pPlayerSolutionCntr[iRow];
+	if (iRow == numPreconstructedRows())
+		availablePlayers = m_playersMask;
+
+	pRowSolutionIdx[iRow + 1] = 0;
+	if (pRowSolutionIdx[iRow]) {
+		*pLast = pRowSolutionIdx[iRow + m_lenDayResults];
+		return pRowSolutionIdx[iRow];
+	}
+
+	unsigned long iBit;
+	_BitScanForward64(&iBit, availablePlayers);
+
+	*pLast = pRowSolutionIdx[iRow + m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
+	pRowSolutionIdx[iRow] = m_pPlayerSolutionCntr[iBit - 2];
 	return pRowSolutionIdx[iRow];
 }

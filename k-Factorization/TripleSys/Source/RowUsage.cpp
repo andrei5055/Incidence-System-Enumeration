@@ -30,7 +30,7 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 #endif
 
 CC void CRowUsage::init(int iThread, int numThreads) {
-	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions);
+	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bUsePlayersMask);
 	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
 	m_step = numThreads;
 }
@@ -44,11 +44,11 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	ASSERT(iRow < numPreconstructedRows);
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
-	auto pAvalablePlayerMask = (const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1;
+	auto pAvailablePlayerMask = (const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1;
 	uint last;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, *pAvalablePlayerMask);
+	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, *pAvailablePlayerMask);
 	if (iRow == numPreconstructedRows) {
-		if (first >= (last = m_pRowStorage->lastInFirstSet()))
+		if (first >= last)
 			return 0;
 
 		if (m_bUseCombinedSolutions) {
@@ -109,7 +109,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
 			const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
-			auto pPrevA = (const ll*)(pCompSol)+numLongs2Skip;
+			auto pPrevA = (const ll*)(pCompSol) + numLongs2Skip;
 			const auto shift = m_numSolutionTotalB >> 3;
 			auto pToA = (ll*)(pPrevA + shift);
 			auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first)) + numLongs2Skip;
@@ -119,6 +119,12 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			for (auto j = shift - numLongs2Skip; j--;)
 				pToA[j] = pPrevA[j] & pFromA[j];
 #endif
+
+			if (m_bUsePlayersMask && !*(pAvailablePlayerMask + (m_numSolutionTotalB >> 3))) {
+				// Player's mask is empty
+				first++;
+				continue;
+			}
 
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
