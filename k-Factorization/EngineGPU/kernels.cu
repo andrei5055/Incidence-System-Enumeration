@@ -77,7 +77,7 @@ __global__ void releaseKernel(alldata** proc)
 }
 
 __global__ void enumerateKernel(alldata** pProc, sLongLong* pMatrNumb, int nMatrixToProcess, 
-                                tchar* pMstart, int nRowsStart, int nRowOut)
+                                tchar* pMstart, int nRowsStart)
 {
     const int treadIndex = threadIdx.x + blockIdx.x * blockDim.x;
     const auto numThreads = blockDim.x * gridDim.x;
@@ -97,7 +97,7 @@ __global__ void enumerateKernel(alldata** pProc, sLongLong* pMatrNumb, int nMatr
 #endif
     while (matrIdx < nMatrixToProcess) {
         auto* mstart = pMstart + matrIdx * lenMatr;
-        pMatrNumb[treadIndex] = proc->Run(treadIndex, 1, mstart, NULL, nRowsStart, nRowOut);
+        pMatrNumb[treadIndex] = proc->Run(treadIndex, 1, mstart, NULL, nRowsStart);
         matrIdx += numThreads;
     }
     KERNEL_SYNCHRONIZE()
@@ -229,7 +229,7 @@ __declspec(dllexport) sLongLong runWithCuda(const TopGunGPU* pTG)
     TIME_STAMP_T(ssTime, "Preparing for enumerateKernel");
     for (int j = 0; j < nn; j++) {
         enumerateKernel << < gridSize, blockSize >> > (dev_proc + j * nProc, matr_res + j * nProc, matrToProceed * numSets,
-            inMatrices, pTG->nRowsStart(), pTG->nRowsOut());
+            inMatrices, pTG->nRowsStart());
 
         // Check for any errors launching the kernel
         TIME_STAMP("enumerateKernel launch");
