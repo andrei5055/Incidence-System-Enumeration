@@ -250,7 +250,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	int idx = 1;
-	m_pRowSolutionMasksIdx[0] = 0;
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
