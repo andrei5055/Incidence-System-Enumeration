@@ -248,12 +248,15 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
+	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
+	int idx = 1;
+	m_pRowSolutionMasksIdx[0] = 0;
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
 	auto availablePlayers = m_playersMask;
 	unsigned int rem;
-	const auto iMax = m_numPlayers;
+	const auto iMax = m_numPlayers - 1;
 	while (++i < iMax && availablePlayers) {
 		first = last;
 		if (m_pAllData) {
@@ -287,10 +290,18 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 			continue;
 		}
 
-		auto pCompatMask = getSolutionMask(first);
-		while (first < last) {
-			generateCompatibilityMasks(pCompatMask, first++, last);
-			pCompatMask += m_lenSolutionMask;
+		if (m_pAllData) {
+			auto pCompatMask = getSolutionMask(first);
+			while (first < last) {
+				generateCompatibilityMasks(pCompatMask, first++, last);
+				pCompatMask += m_lenSolutionMask;
+			}
+		}
+		else {
+			while (first < last) {
+				generateCompatibilityMasks(pRowsCompatMasks[idx], first++, last);
+				pRowsCompatMasks[idx] += m_lenSolutionMask;
+			}
 		}
 	}
 
