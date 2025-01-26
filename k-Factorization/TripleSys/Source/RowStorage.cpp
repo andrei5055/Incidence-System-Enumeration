@@ -218,12 +218,6 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	delete[] m_pRowSolutionMasksIdx;
 	delete[] m_pRowSolutionMasks;
 
-	const auto iMax = numDaysResult();
-	m_pRowSolutionMasksIdx = new uint[iMax];
-
-	m_pRowSolutionMasks = new tmask[iMax];
-	memset(m_pRowSolutionMasks, 0, iMax * sizeof(m_pRowSolutionMasks[0]));
-
 	if (m_pAllData) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		const auto groupSize = m_pAllData->groupSize();
@@ -237,8 +231,15 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 				m_playersMask ^= (ll)1 << pSolution[i];
 		}
 	}
-	else
+	else {
+		const auto numDays = numDaysResult();
+		m_pRowSolutionMasksIdx = new uint[numDays];
+
+		m_pRowSolutionMasks = new tmask[numDays];
+		memset(m_pRowSolutionMasks, 0, numDays * sizeof(m_pRowSolutionMasks[0]));
+		m_pRowSolutionMasksIdx[0] = 0;
 		m_playersMask = -1;
+	}
 
 #if !USE_64_BIT_MASK
 	// Filling the lookup table m_FirstOnePosition
@@ -247,22 +248,27 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
-	int idx = 1;
-	auto& pCompatMask = pRowsCompatMasks[idx];
-	unsigned int last = 0;
-	m_pRowSolutionMasksIdx[0] = 0;
-	i = m_numPreconstructedRows;
+	unsigned int first, last = 0;
+	i = m_numPreconstructedRows - 1;
 #if 1
+	auto availablePlayers = m_playersMask;
 	unsigned int rem;
-	while (i < iMax) {
-		auto first = last;
-		last = m_pPlayerSolutionCntr[i];
+	const auto iMax = m_numPlayers;
+	while (++i < iMax && availablePlayers) {
+		first = last;
+		if (m_pAllData) {
+			unsigned long iBit;
+			_BitScanForward64(&iBit, availablePlayers);
+			last = m_pPlayerSolutionCntr[iBit - 1];
+			availablePlayers ^= (ll)1 << iBit;
+		}
+		else {
+			last = m_pPlayerSolutionCntr[i];
+		}
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
 			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
-				rem = REM(lastAdj);
 				if (rem = REM(lastAdj))
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
 			}
@@ -275,14 +281,13 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 			}
 		}
 
-		i++;
-
 		if (!first && !useCombinedSolutions) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
 			continue;
 		}
 
+		auto pCompatMask = getSolutionMask(first);
 		while (first < last) {
 			generateCompatibilityMasks(pCompatMask, first++, last);
 			pCompatMask += m_lenSolutionMask;
@@ -394,8 +399,12 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* p
 		return pRowSolutionIdx[iRow];
 	}
 
+#if USE_64_BIT_MASK
 	unsigned long iBit;
 	_BitScanForward64(&iBit, availablePlayers);
+#else
+	const auto iBit = this->firstOnePosition(availablePlayers);
+#endif
 
 	*pLast = pRowSolutionIdx[iRow + m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
 	pRowSolutionIdx[iRow] = m_pPlayerSolutionCntr[iBit - 2];

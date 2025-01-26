@@ -119,13 +119,6 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			for (auto j = shift - numLongs2Skip; j--;)
 				pToA[j] = pPrevA[j] & pFromA[j];
 #endif
-
-			if (m_bUsePlayersMask && !*(pAvailablePlayerMask + (m_numSolutionTotalB >> 3))) {
-				// Player's mask is empty
-				first++;
-				continue;
-			}
-
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				auto* pToASol = (tmask*)(pToA - numLongs2Skip);

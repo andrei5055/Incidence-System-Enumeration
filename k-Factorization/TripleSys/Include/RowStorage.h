@@ -83,6 +83,7 @@ private:
 	SET_MASK_BIT(bm, ib)
 
 private:
+	CC uint& solInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
 	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
 		memset(bm, 0, m_lenMask);
