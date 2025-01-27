@@ -60,6 +60,7 @@ public:
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
+	CC inline const auto getPlayersMask() const			{ return m_playersMask; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_pAllData? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;

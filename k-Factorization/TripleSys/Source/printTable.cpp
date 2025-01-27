@@ -66,9 +66,23 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	}
 
 	const char* fhdr = getFileNameAttr(paramPtr());
+	int time[4];
+	const int multTime[] = { 60, 60, 24 };
+	auto *pUnitTime = "smhd";
+	time[0] = (int)((clock() - iTime) / 1000. + 0.5);
+	for (int i = 0; i < countof(multTime); i++) {
+		time[i + 1] = time[i] / multTime[i];
+		time[i] %= multTime[i];
+	}
+	
+	char timeBuf[256], * pTime = timeBuf;
+	for (int i = countof(time); i--;)
+		if (time[i] || pTime != timeBuf)
+			SPRINTFD(pTime, timeBuf, " %d%c", time[i], pUnitTime[i]);
+
 	m_reportInfo = std::format(
-		"T = {:.0f}sec: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
-		(clock() - iTime) / 1000., nProccesed, nMatrices, fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
+		"T ={}: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
+		timeBuf, nProccesed, nMatrices, fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
 
 	if (bPrintSetup)
 	{

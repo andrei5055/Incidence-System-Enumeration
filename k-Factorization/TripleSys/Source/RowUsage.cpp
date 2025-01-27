@@ -31,7 +31,14 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 
 CC void CRowUsage::init(int iThread, int numThreads) {
 	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bUsePlayersMask);
-	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = iThread;
+	const auto iRow = m_pRowStorage->numPreconstructedRows();
+	if (iThread) {
+		m_pRowSolutionIdx[iRow] = 0;
+		uint last;
+		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, m_pRowStorage->getPlayersMask());
+	}
+
+	m_pRowSolutionIdx[iRow] = iThread;
 	m_step = numThreads;
 }
 
@@ -41,12 +48,15 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	//cntr++;
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
-	ASSERT(iRow < numPreconstructedRows);
+	ASSERT(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
-	auto pAvailablePlayerMask = (const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1;
+	const ll availablePlayers = nRow >= 0
+		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1)
+		: m_pRowStorage->getPlayersMask();
+
 	uint last;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, *pAvailablePlayerMask);
+	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, availablePlayers);
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
 			return 0;
