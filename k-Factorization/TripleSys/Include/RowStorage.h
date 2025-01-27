@@ -31,15 +31,15 @@ class alldata;
 
 class CRowStorage : public CStorage<tchar> {
 	typedef void (CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
-	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
+	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
-		return (this->*m_fSolutionInterval)(pRowSolutionIdx, iRow, pLast, availablePlayers);
+	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
@@ -110,8 +110,8 @@ private:
 	}
 	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
-	CC uint& solutionInterval2(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
-	CC uint& solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
+	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;

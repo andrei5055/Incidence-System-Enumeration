@@ -377,19 +377,20 @@ CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayer
 	return m_numSolutionTotalB;
 }
 
-CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
-	*pLast = pRowSolutionIdx[iRow + 1] = m_pPlayerSolutionCntr[iRow];
+CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+	const auto iRow = *pLast;
+	*pLast = pRowSolutionIdx[1] = m_pPlayerSolutionCntr[iRow];
 	if (iRow == numPreconstructedRows())
 		*pLast = lastInFirstSet();
 
-	return pRowSolutionIdx[iRow];
+	return *pRowSolutionIdx;
 }
 
-CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const {
-	pRowSolutionIdx[iRow + 1] = 0;
-	if (pRowSolutionIdx[iRow]) {
-		*pLast = pRowSolutionIdx[iRow + m_lenDayResults];
-		return pRowSolutionIdx[iRow];
+CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+	pRowSolutionIdx[1] = 0;
+	if (*pRowSolutionIdx) {
+		*pLast = pRowSolutionIdx[m_lenDayResults];
+		return *pRowSolutionIdx;
 	}
 
 #if USE_64_BIT_MASK
@@ -399,6 +400,6 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, int iRow, uint* p
 	const auto iBit = this->firstOnePosition(availablePlayers);
 #endif
 
-	*pLast = pRowSolutionIdx[iRow + m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
-	return pRowSolutionIdx[iRow] = m_pPlayerSolutionCntr[iBit - 2];
+	*pLast = pRowSolutionIdx[m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
+	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }

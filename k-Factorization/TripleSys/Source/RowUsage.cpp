@@ -34,8 +34,8 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 	const auto iRow = m_pRowStorage->numPreconstructedRows();
 	if (iThread) {
 		m_pRowSolutionIdx[iRow] = 0;
-		uint last;
-		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, m_pRowStorage->getPlayersMask());
+		uint last = iRow;
+		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, &last, m_pRowStorage->getPlayersMask());
 	}
 
 	m_pRowSolutionIdx[iRow] = iThread;
@@ -55,8 +55,8 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1)
 		: m_pRowStorage->getPlayersMask();
 
-	uint last;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, iRow, &last, availablePlayers);
+	uint last = iRow;
+	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx+iRow, &last, availablePlayers);
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
 			return 0;
