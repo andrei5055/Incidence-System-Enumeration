@@ -36,6 +36,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
+	CC void initPlayerMask();
 	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
@@ -44,7 +45,7 @@ public:
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
-	CC void addRow(ctchar* pRow, ctchar* pNeighbors);
+	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
 	CC int initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
@@ -60,7 +61,7 @@ public:
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
-	CC inline const auto getPlayersMask() const			{ return m_playersMask; }
+	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_pAllData? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
@@ -103,15 +104,20 @@ private:
 			SetMask(bm, pRow[1], pRow[2]);
 		}
 	}
-	CC void initMaskStorage(uint numObjects) {
-		m_pMaskStorage = new CStorage<tchar>(numObjects, (((m_numPlayers * (m_numPlayers - 1) / 2) + 63) / 64) * 8);
-		memset(m_pPlayerSolutionCntr, 0, m_numPlayers * sizeof(m_pPlayerSolutionCntr[0]));
-		reset();
-	}
+	CC void initMaskStorage(uint numObjects);
 	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	CC inline unsigned long minPlayer(ll availablePlayers) const {
+#if USE_64_BIT_MASK
+		unsigned long iBit;
+		_BitScanForward64(&iBit, availablePlayers);
+		return iBit;
+#else
+		return this->firstOnePosition(availablePlayers);
+#endif
+	}
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
@@ -156,7 +162,7 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
-	ll m_playersMask = 0;          // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	ll m_playersMask[2] = { 0, 0 };          // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 };
 
 class CRowUsage : public CompSolStorage {

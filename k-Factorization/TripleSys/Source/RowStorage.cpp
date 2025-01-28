@@ -30,6 +30,34 @@ CC CRowStorage::~CRowStorage() {
 	delete[] m_pRowSolutionMasksIdx;
 }
 
+CC void CRowStorage::initMaskStorage(uint numObjects) {
+	m_pMaskStorage = new CStorage<tchar>(numObjects, (((m_numPlayers * (m_numPlayers - 1) / 2) + 63) / 64) * 8);
+	memset(m_pPlayerSolutionCntr, 0, m_numPlayers * sizeof(m_pPlayerSolutionCntr[0]));
+	reset();
+}
+
+CC void CRowStorage::initPlayerMask() {
+	ll playersMask = -1;
+	if (m_pAllData) {
+		// Create a mask to manage players utilized in the predefined rows of the matrix.
+		const auto groupSize = m_pAllData->groupSize();
+		// Excluding players of the first group from ...
+		playersMask <<= groupSize;						// ...first row
+		auto const* pSolution = m_pAllData->result();
+		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
+			pSolution += m_numPlayers;
+			for (auto i = groupSize; --i;)
+				playersMask ^= (ll)1 << pSolution[i];
+		}
+	}
+	else {
+		// Predefined rows for groupSuze = 2, are assumed to be correct.
+		playersMask <<= (numPreconstructedRows() + 1);
+	}
+
+	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << m_numPlayers);
+}
+
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 	uint checked = 0;
 	for (tchar m = 0; m < m_numPlayers; m++)
@@ -48,12 +76,19 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 	return false;
 }
 
-CC void CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
+#define USE_EXIT	0
+#if USE_EXIT
+#define EXIT    exit(1)
+#else
+#define EXIT    return false;
+#endif
+
+CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 	if (m_numObjects == m_numObjectsMax) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if 0
+#if 1
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[256], * pBuf = buf;
 	for (int i = 0; i < m_numPlayers; i++)
@@ -66,36 +101,64 @@ CC void CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 	auto* pntr = getObject(m_numObjects++);
 #if !USE_CUDA
 	const auto ptr = pntr - 2 * m_numPlayers + 1;
-#endif
-#if 1
-	ASSERT_(m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (m_playersMask && (ll) 1 << *ptr),
-		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and m_playersMask = %llx & (1 << %d) != 0\n",
-			pRow[1], *ptr, *ptr + 1, m_playersMask, *ptr);
-		exit(1)
-	);
-#else
-	// NOTE: This conditions are valid for groupSize == 2 or groupSize == 3 and m_numPreconstructedRows == 3.
-	//       For the other cases they are more complicated.
-	if (m_numObjects > 1 && (pRow[1] != *ptr && pRow[1] != *ptr + 1) && (m_playersMask && (ll)1 << *ptr) {
-		printfRed("\nError in code: and pRow[1](%d) != %d, and pRow[1] != %d and m_playersMask = %x & (1 << %d) != 0\n",
-			pRow[1], *ptr, *ptr + 1, m_playersMask, *ptr);
-		exit(1);
+
+	auto i = m_pAllData ? m_pAllData->groupSize() : 2;
+	while (--i) {
+		if (!(getPlayersMask() & ((ll)1 << pRow[i]))) {
+			printfRed("\nSolution rejected : Player %d was already assigned to one of predefined rows, violating constraints.\n", pRow[i]);
+			EXIT;
+		}
+	}
+
+	if (m_pAllData && m_playersMask[1] && pRow[1] > (i = minPlayer(m_playersMask[1]))) {
+		printfRed("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
+		EXIT;
+	}
+
+	if (m_numObjects > 1) {
+		if (pRow[1] != *ptr && pRow[1] != *ptr + 1) {
+			char buf[256], *pBuf = buf;
+			SPRINTFD(pBuf, buf, "Error in code: pRow[1](%d) != %d, and pRow[1] != %d", pRow[1], *ptr, *ptr + 1);
+			if (m_pAllData) {
+				// Calculate the number of non-referenced players
+				int counter = 0;
+				for (auto i = (*ptr + 1); i < pRow[1]; i++) {
+					if (m_playersMask[1] & ((ll)1 << i))
+						counter++;
+				}
+
+				if (counter) {
+					SPRINTFD(pBuf, buf, ".\nPlayer%s#", counter > 1 ? "s" : "");
+					for (auto i = (*ptr + 1); i < pRow[1]; i++) {
+						if (m_playersMask[1] & ((ll)1 << i))
+							SPRINTFD(pBuf, buf, " %d", i);
+					}
+
+					SPRINTFD(pBuf, buf, " %s not referenced in any previous solutions", counter > 1 ? "were" : "was");
+				}
+				else
+					pBuf = buf;
+			}
+
+			if (pBuf != buf) {
+				printfRed("\n%s\n", buf);
+				EXIT;
+			}
+		}
+	}
+
+	if (m_pAllData) {
+		// Mark referenced players:
+		for (int i = m_pAllData->groupSize(); --i;)
+			m_playersMask[1] &= ((ll)-1 ^ ((ll)1 << pRow[i]));
 	}
 #endif
-#if 0
-	static int cntr = 0;
-	FOPEN_F(f, "aaa.txt", cntr? "a" : "w");
-	char buf[256], *pBuf = buf;
-	for (int i = 0; i < m_numPlayers; i++)
-		SPRINTFD(pBuf, buf, "%2d ", pRow[i]);
 
-	fprintf(f, " %2d:  %s\n", ++cntr, buf);
-	FCLOSE_F(f);
-#endif
 	memcpy(pntr, pRow, m_numPlayers);
 	memcpy(pntr + m_numPlayers, pNeighbors, m_numPlayers);
 	m_pPlayerSolutionCntr[pRow[1] - 1]++;  // Increasing the number of solutions for player pRow[1] 
 	                                       // NOTE: for groupSize = 2, this number is equal to the number of solutions for (pRow[1]-1)-th row
+	return true;
 }
 
 CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const {
@@ -178,7 +241,7 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 		// the information regarding the players used by current solution.
 		// We will store it as 0's of corresponding bites.
 		auto* pMaskOutLong = (ll*)pMaskOut + m_lenSolutionMask - 1;
-		*pMaskOutLong = m_playersMask;
+		*pMaskOutLong = getPlayersMask();
 		for (auto i = m_pAllData->groupSize(); --i;)
 			*pMaskOutLong ^= (ll)1 << pSolution[i];
 	}
@@ -218,27 +281,14 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	delete[] m_pRowSolutionMasksIdx;
 	delete[] m_pRowSolutionMasks;
 
-	if (m_pAllData) {
-		// Create a mask to manage players utilized in the predefined rows of the matrix.
-		const auto groupSize = m_pAllData->groupSize();
-		// Excluding players of the first group from ...
-		m_playersMask = (ll)(-1) << groupSize;			// ...first row
-		m_playersMask ^= (ll)(-1) << numPlayers();
-		auto const* pSolution = m_pAllData->result();
-		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
-			pSolution += m_numPlayers;
-			for (auto i = groupSize; --i;)
-				m_playersMask ^= (ll)1 << pSolution[i];
-		}
-	}
-	else {
+	//initPlayerMask();
+	if (!m_pAllData) {
 		const auto numDays = numDaysResult();
 		m_pRowSolutionMasksIdx = new uint[numDays];
 
 		m_pRowSolutionMasks = new tmask[numDays];
 		memset(m_pRowSolutionMasks, 0, numDays * sizeof(m_pRowSolutionMasks[0]));
 		m_pRowSolutionMasksIdx[0] = 0;
-		m_playersMask = -1;
 	}
 
 #if !USE_64_BIT_MASK
@@ -253,7 +303,7 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
-	auto availablePlayers = m_playersMask;
+	auto availablePlayers = getPlayersMask();
 	unsigned int rem;
 	const auto iMax = m_numPlayers - 1;
 	while (++i < iMax && availablePlayers) {
@@ -393,13 +443,7 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll a
 		return *pRowSolutionIdx;
 	}
 
-#if USE_64_BIT_MASK
-	unsigned long iBit;
-	_BitScanForward64(&iBit, availablePlayers);
-#else
-	const auto iBit = this->firstOnePosition(availablePlayers);
-#endif
-
+	const auto iBit = minPlayer(availablePlayers);
 	*pLast = pRowSolutionIdx[m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }

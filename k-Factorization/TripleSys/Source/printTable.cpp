@@ -77,7 +77,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	
 	char timeBuf[256], * pTime = timeBuf;
 	for (int i = countof(time); i--;)
-		if (time[i] || pTime != timeBuf)
+		if (time[i] || pTime != timeBuf || !i)
 			SPRINTFD(pTime, timeBuf, " %d%c", time[i], pUnitTime[i]);
 
 	m_reportInfo = std::format(

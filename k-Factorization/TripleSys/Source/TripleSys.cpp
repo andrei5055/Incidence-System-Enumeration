@@ -241,6 +241,9 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 		m_pRowUsage->init(iThread, param(t_numThreads));
 
 	else if (iDay > 0) {
+		if (m_useRowsPrecalculation == eCalculateRows)
+			m_pRowStorage->initPlayerMask();
+
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
 		iDay--;
@@ -490,7 +493,8 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					//printf("nm=%d\n", ++nmatr);
 				}
 				if (iDay == nPrecalcRows + 1) {
-					nRows4++;
+					if (!nRows4++)
+						m_pRowStorage->initPlayerMask();
 					nRows4Day++;
 					//printf("%6d:", nRows4);
 					//printTable("", result(3), 1, m_numPlayers, 2);
@@ -502,7 +506,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 					if (!bP1F)
 						printf("not p1f\n");
 #endif
-					m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
+					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
 					bPrevResult = true;
 					continue;
 				}
