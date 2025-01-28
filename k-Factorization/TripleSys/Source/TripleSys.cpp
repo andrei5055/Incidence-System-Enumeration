@@ -507,6 +507,11 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						printf("not p1f\n");
 #endif
 					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
+					if (!retVal){
+						iDay = nPrecalcRows;
+						m_pRowStorage->init();
+						nRows4 = nRows4Day = 0;
+					}
 					bPrevResult = true;
 					continue;
 				}

@@ -337,6 +337,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 #endif
 			{
 				int ncycle = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
+				collectCyclesAndPath(&m_TrCycles);
 #if 0
 				printTable("ri", result(i), 1, m_numPlayers, m_groupSize);
 				printTable("rm", result(m), 1, m_numPlayers, m_groupSize);

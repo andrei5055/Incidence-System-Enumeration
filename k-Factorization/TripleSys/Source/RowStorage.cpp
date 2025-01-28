@@ -78,9 +78,16 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 
 #define USE_EXIT	0
 #if USE_EXIT
-#define EXIT    exit(1)
+#define EXIT	exit(1)
 #else
-#define EXIT    return false;
+#define EXIT	return false
+#endif
+
+#define USE_PRINT_RED	0
+#if USE_PRINT_RED
+#define PRINT_RED(format, ...) printfRed(format, __VA_ARGS__)
+#else
+#define PRINT_RED(format, ...)
 #endif
 
 CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
@@ -88,7 +95,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if 1
+#if 0
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[256], * pBuf = buf;
 	for (int i = 0; i < m_numPlayers; i++)
@@ -105,13 +112,13 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 	auto i = m_pAllData ? m_pAllData->groupSize() : 2;
 	while (--i) {
 		if (!(getPlayersMask() & ((ll)1 << pRow[i]))) {
-			printfRed("\nSolution rejected : Player %d was already assigned to one of predefined rows, violating constraints.\n", pRow[i]);
+			PRINT_RED("\nSolution rejected : Player %d was already assigned to one of predefined rows, violating constraints.\n", pRow[i]);
 			EXIT;
 		}
 	}
 
 	if (m_pAllData && m_playersMask[1] && pRow[1] > (i = minPlayer(m_playersMask[1]))) {
-		printfRed("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
+		PRINT_RED("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
 		EXIT;
 	}
 
@@ -141,7 +148,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 			}
 
 			if (pBuf != buf) {
-				printfRed("\n%s\n", buf);
+				PRINT_RED("\n%s\n", buf);
 				EXIT;
 			}
 		}
