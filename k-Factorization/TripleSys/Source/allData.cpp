@@ -49,9 +49,8 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_trmk = new tchar[m_numPlayers];
 	m_groups = new tchar[m_groupSizeFactorial * m_groupSize];
 	m_pLinks = new tchar[np2];
-	m_p3fSecondRows = new tchar[m_numPlayers * MAX_3PF_SECOND_ROWS];
-	m_p3fNumSecondRows = 0;
-	m_p3fNumSecondRowsAct = 0;
+	m_pSecondRowsDB = NULL;
+	m_createSecondRow = 0;
 	m_DayIdx = new tchar[m_numDays];
 	m_numCycles = 0;
 	m_firstNotSel = 0;
@@ -112,41 +111,6 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
-
-	expected2ndRow3p1f(-1);
-
-	typedef struct {
-		int numPlayer;
-		tchar u1fCycles[20];
-		int size;
-		alldata::checkInvalidCycle pFunc;
-	} SpecialCaseFuncDescr;
-
-
-	SpecialCaseFuncDescr invCyclesFunc[2] = { 
-		{27, {1, 9, 9, 9}, 4, &alldata::CycleIsInvalid_27_999},
-		{21, {2, 6, 6, 9, 0, 9, 12}, 7, &alldata::CycleIsInvalid_21_669_912}
-	};
-
-	// Assign the special case function for determination of the invalid cycles.
-	m_pInvalidCycle = &alldata::CycleIsInvalid;
-	const auto u1f_in = pSysParam->u1fCycles[0];
-	if (u1f_in) {
-		for (int i = countof(invCyclesFunc); i--;) {
-			const auto& specCase = invCyclesFunc[i];
-			if (numPlayers() != specCase.numPlayer)
-				continue;
-
-			const auto& u1fCycles = specCase.u1fCycles;
-			int j = specCase.size;
-			while (j-- && u1fCycles[j] == u1f_in[j]);
-			if (j < 0) {
-				m_pInvalidCycle = specCase.pFunc;
-				expected2ndRow3p1f(-2);
-				break;
-			}
-		}
-	}
 
 #if !USE_CUDA
 	const auto* binaryCanonRows = sysParam()->strVal[t_binaryCanonizer];
@@ -282,7 +246,6 @@ CC alldata::~alldata() {
 	delete[] m_trmk;
 	delete[] m_groups;
 	delete[] m_DayIdx;
-	delete[] m_p3fSecondRows;
 	delete m_pCheckCanon;
 	delete m_pOrbits;
 	delete[] m_tx;

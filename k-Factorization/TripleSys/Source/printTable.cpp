@@ -3,11 +3,12 @@
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, clock_t* t)
 {
 	int ind = 0;
-	if (!name && !name[0]) {
+	if (name && name[0]) {
 		printf("%s:", name);
 		if (t)
-			printfGreen("     Last column: Row change time stamp (sec)");
-		printf("\n");
+			printfGreen("     Last column: Row change time stamp (sec)\n");
+		else if (nl > 1)
+			printf("\n");
 	}
 	for (int j = 0; j < nl; j++, ind += nc)
 	{
@@ -78,7 +79,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	char timeBuf[256], * pTime = timeBuf;
 	for (int i = countof(time); i--;)
 		if (time[i] || pTime != timeBuf || !i)
-			SPRINTFD(pTime, timeBuf, " %d%c", time[i], pUnitTime[i]);
+			SPRINTFD(pTime, timeBuf, "%2d%c", time[i], pUnitTime[i]);
 
 	m_reportInfo = std::format(
 		"T ={}: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",

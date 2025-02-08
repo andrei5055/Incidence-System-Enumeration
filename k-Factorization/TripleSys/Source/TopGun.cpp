@@ -26,6 +26,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 TopGun::~TopGun() {
 	delete[] m_cntTotal;
 	delete[] threadActive;
+	delete m_pSecondRowsDB;
 }
 
 int TopGun::Run()
@@ -33,11 +34,23 @@ int TopGun::Run()
 	iTime = clock();
 	sLongLong resultMatr = 0;
 	bool bUsePm = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
+
+	if (m_groupSize <= 3 && m_use2RowsCanonization) {
+		alldata sys(*this, paramPtr());
+		m_pSecondRowsDB = new CStorageSet<tchar>(10, numPlayers());
+		// Use:
+		// a) pntr = m_pSecondRowsDB->getNextObject()     for adding new element (second row), use memcpy(pntr, second row, numPlayers())
+		// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
+		// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
+		// 
+		resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
+	}
+
 	if (!param(t_MultiThreading))
 	{
 		alldata sys(*this, paramPtr());
 		sys.initStartValues(ivc);// can be used to start from previous result
-		resultMatr = sys.Run(1, eCalcResult, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		transferMatrixDB(sys.matrixDB());
 	}
 	else
@@ -94,7 +107,7 @@ int TopGun::Run()
 			int icode = 0;
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
-				if (!sys.Run(1, eCalculateRows, mstart, mstart, nRowsStart(), NULL, &m_reportInfo)) {
+				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mstart, nRowsStart(), NULL, &m_reportInfo)) {
 					printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {

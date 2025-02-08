@@ -63,7 +63,7 @@ CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles) const
 		}
 	}
 }
-CC int alldata::collectCyclesAndPath(TrCycles* trc)
+CC int alldata::collectCyclesAndPath(TrCycles* trc) const
 {
 	int ncr = MAX_CYCLE_SETS;
 	int iLength = sizeof(TrCycles);
@@ -167,8 +167,9 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 			if (ncr == 1 && !cycleLengthOk(length))
 			{
 				// in check mode (ncr == 1) report only one (first) cycle with incorrect length
-				if (length > m_numPlayers / 2) // if length > np then there is another cycle with less length
-					continue;
+				// 
+				//if (length > m_numPlayers / 2) // if length > np then there is another cycle with less length
+				//	continue;  unfortunatly the "another cycle" can be good 
 				trc->start[0] = trc->start[ncycles];
 				trc->length[0] = length;
 				trc->ncycles = 1;
@@ -177,9 +178,13 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 			trc->length[ncycles++] = length;
 		}
 	}
-	ASSERT(ncycles == 0);
+	//???ASSERT(ncycles == 0);
 	trc->ncycles = ncycles;
-	sortCycles(trc->length, trc->start, ncycles);
+	if (ncycles > 0) {
+		sortCycles(trc->length, trc->start, ncycles);
+		if (ncr > 1)
+			collectCyclesAndPath(trc);
+	}
 	return ncycles;
 }
 CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn)
@@ -337,7 +342,6 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 #endif
 			{
 				int ncycle = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
-				collectCyclesAndPath(&m_TrCycles);
 #if 0
 				printTable("ri", result(i), 1, m_numPlayers, m_groupSize);
 				printTable("rm", result(m), 1, m_numPlayers, m_groupSize);
@@ -472,93 +476,21 @@ CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, c
 	nextPlayer6 : return iv + 1;
 #endif
 }
-CC ctchar* alldata::expected2ndRow3p1f(int iSet) const
-{
-	static tchar _expected2ndRow3p1f_9[9] =
-	{ 0,  3,  6,   1,  4,  7,   2,  5,  8 };
-	static tchar _expected2ndRow3p1f_15[2*15] = {
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 11, 14, //only this row is pure 3P1F
-	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 10, 13,   8, 11, 14
-	};
-	static tchar _expected2ndRow3p1f_21[] = {
-	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20, // Use3U1F_21_669_912
-#if AllowNotP1FRows
-	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20,
-	  0,  3,  6,   1,  4,  7,   2,  5,  9,   8, 10, 12,  11, 15, 18,  13, 16, 19,  14, 17, 20,
-	  0,  3,  6,   1,  4,  7,   2,  5,  9,   8, 12, 15,  10, 13, 18,  11, 16, 19,  14, 17, 20,
-#endif
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 15, 18,  11, 16, 19,  14, 17, 20, // all cycles 21, has tr to r1, r2
-#if Any2RowsConvertToFirst2 == 0
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 11, 18,  13, 16, 19,  14, 17, 20, // all cycles 21
-#endif
-#if AllowNotP1FRows
-#if Any2RowsConvertToFirst2 == 0
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 13, 18,  11, 16, 19,  14, 17, 20,
-#endif
-	  0,  3,  6,   1,  4,  9,   2,  7, 10,   5, 12, 15,   8, 13, 18,  11, 16, 19,  14, 17, 20,
-	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 10, 15,   8, 13, 18,  11, 16, 19,  14, 17, 20,
-	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 10, 15,   8, 16, 18,  11, 13, 19,  14, 17, 20,
-	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 13, 15,   8, 16, 18,  10, 14, 19,  11, 17, 20,
-	  0,  3,  6,   1,  4,  9,   2,  7, 12,   5, 15, 18,   8, 16, 19,  10, 13, 17,  11, 14, 20,
-#endif
-	  0,  3,  6,   1,  9, 12,   2, 15, 18,   4, 10, 16,   5, 13, 19,   7, 11, 20,   8, 14, 17, // all cycles 21, has tr to r1, r2
-	};
-	static tchar _expected2ndRow3p1f_27[] = { 
-		// below: one 3U1F {9,9,9} and three pure 3U1F second rows.
-	  0,  3,  6,   1,  4,  7,   2,  5,  8,   9, 12, 15,  10, 13, 16,  11, 14, 17,  18, 21, 24,  19, 22, 25,  20, 23, 26, // Use3U1F_27_999
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 15, 18,  11, 16, 19,  14, 21, 24,  17, 22, 25,  20, 23, 26,
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 13,   8, 15, 18,  11, 21, 24,  14, 22, 25,  16, 19, 23,  17, 20, 26,
-	  0,  3,  6,   1,  4,  7,   2,  9, 12,   5, 10, 15,   8, 11, 18,  13, 16, 19,  14, 21, 24,  17, 22, 25,  20, 23, 26
-	};
-
-	static tchar* _expected2ndRow3p1f[4] = { 
-		_expected2ndRow3p1f_9, _expected2ndRow3p1f_15, _expected2ndRow3p1f_21, _expected2ndRow3p1f_27 
-	};
-
-	static int _expectedNumSets3p1f[] = {
-		sizeof(_expected2ndRow3p1f_9),
-		sizeof(_expected2ndRow3p1f_15),
-		sizeof(_expected2ndRow3p1f_21),
-		sizeof(_expected2ndRow3p1f_27)
-	};
-
-	static int iexp = 0;
-	static ctchar* pExpected2ndRow3p1f = NULL;
-	if (iSet < 0) {
-		const auto nc = m_numPlayers;
-		const int ind = (nc - 9) / 6;
-		if (ind < countof(_expected2ndRow3p1f)) {
-			if (iSet == -1) {
-				iexp = (nc >= 9 && nc <= 27 && (nc % 3) == 0) ? _expectedNumSets3p1f[ind]/nc - (nc >= 21 ? 1 : 0) : 0;
-				pExpected2ndRow3p1f = _expected2ndRow3p1f[ind] + (nc >= 21? nc : 0);
-			}
-			else {
-				iexp = 1;
-				pExpected2ndRow3p1f -= nc;
-			}
-		}
-		return NULL;
-	}
-
-	return (iexp > iSet) ? pExpected2ndRow3p1f + m_numPlayers * iSet : NULL;
-}
 CC int alldata::p1fCheck2ndRow() const
 {
 	if (m_groupSize > 3)
+		return 0;
+
+	if (m_createSecondRow)
 		return 0;
 
 	const auto nc = m_numPlayers;
 	const tchar* p2ndRow = result(1);
 	if (m_groupSize == 3)
 	{
-		if (nc < 9 || nc > 27)
-			return 0;
-#if GenerateSecondRowsFor3U1F
-		return 0;
-#endif
 		ctchar* p;
 		int is = 0;
-		while ((p = expected2ndRow3p1f(is++)))
+		while ((p = m_pSecondRowsDB->getObject(is++)))
 		{
 			const int icmp = MEMCMP(p2ndRow, p, nc);
 			if (icmp <= 0)
@@ -567,24 +499,7 @@ CC int alldata::p1fCheck2ndRow() const
 		return 1;
 	}
 
-	static char expectedSecondRow[][MAX_PLAYER_NUMBER] = {
-	   { 0, 2,  1, 3},
-	   { 0, 2,  1, 4,  3, 5},
-	   { 0, 2,  1, 4,  3, 6,  5, 7},
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7, 9},
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,11 },
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,13 },
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,14, 13,15 }, // p1f
-//     { 0, 2,  1, 3,  4, 6,  5, 7,  8,10,  9,11, 12,14, 13,15 }, // 4444
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,14, 13,16, 15,17 },
-	   { 0, 2,  1, 4,  3, 6,  5, 8,  7,10,  9,12, 11,14, 13,16, 15,18, 17,19 }
-	};
-	if (param(t_u1f) && sysParam()->u1fCycles[0] && 
-		(sysParam()->u1fCycles[0][0] != 1 || sysParam()->u1fCycles[0][1] != m_numPlayers))
-		return 0;
-	if (nc < 4 || nc > 20)
-		return 0;
-	return MEMCMP(p2ndRow, expectedSecondRow[(nc - 4) / 2], nc);
+	return MEMCMP(p2ndRow, m_pSecondRowsDB->getObject(0), nc); // only one second row for group size = 2
 }
 
 CC void alldata::p1fCheckStartMatrix(int nr) 

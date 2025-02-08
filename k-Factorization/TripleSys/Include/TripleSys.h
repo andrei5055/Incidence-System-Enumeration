@@ -35,9 +35,6 @@
 #define Any2RowsConvertToFirst2   1 // Only for 3U1F. (*) If 1, then any two rows must be converted to first 2 rows.
 									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
 									// If 2, then a. no requirement (*), b. same as (*) set of first 2 rows pairs used
-#define GenerateSecondRowsFor3U1F 0 // Only for 3U1F. Use 1 in single thread mode only with NRowsInResultMatrix=2. 
-									// SW will use on the fly calculated 2nd rows (instead of precalculated '_expected2ndRow3p1f')
-									// Calculated rows will be printed at the end
 #define UseUniform1Factorization  0
 #define U1FName ""
 
@@ -101,6 +98,7 @@
 #define SWAP(a, b)          a ^= (b ^= (a ^= b))
 
 typedef enum {
+	eCalcSecondRow,
 	eCalcResult,
 	eCalculateRows,
 	eCalculateMatrices,
@@ -144,7 +142,8 @@ public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult, tchar* mstart0 = NULL, tchar* mstart = NULL,
+	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL, 
+		tchar* mstart0 = NULL, tchar* mstart = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);
@@ -208,7 +207,7 @@ private:
 	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
-	CC int collectCyclesAndPath(TrCycles* trc);
+	CC int collectCyclesAndPath(TrCycles* trc) const;
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
 	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL) const;
 	CC int checkCurrentResult(bool bPrint, void* pIS_Canonizer = NULL);
@@ -226,7 +225,6 @@ private:
 
 	CC int getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
 	CC int p1fCheck2ndRow() const;
-	CC ctchar* expected2ndRow3p1f(int iSet) const;
 	CC void updateIndexPlayerMinMax();
 	void cnvPrintAuto(ctchar* tr, int nrows);
 
@@ -282,9 +280,8 @@ private:
 	tchar* m_indexPlayerMax;
 	tchar* m_h = NULL;
 	tchar* m_ho = NULL;
-	tchar* m_p3fSecondRows;
-	int m_p3fNumSecondRows;
-	int m_p3fNumSecondRowsAct;
+	CStorageSet<tchar>* m_pSecondRowsDB = NULL;
+	int m_createSecondRow;
 	int m_p3fV01nv;
 	int  iPlayer, iPlayerIni, iDay;
 	int m_firstNotSel;
@@ -320,8 +317,8 @@ private:
 	bool m_checkForUnexpectedCycle;
 	int m_matrixCanonInterval;   // 0 - Canonicity will be verified only for fully constructed matrices.
 	                             // != 0 Canonicality will be checked on lines with numbers proportional to m_matrixCanonInterval
-#if !USE_CUDA
 	int m_finalKMindex;
+#if !USE_CUDA
 	std::string ImprovedResultFile;
 	std::string ResultFile;
 	FILE* m_file = NULL;    // File for output of improved matrices.
@@ -329,11 +326,10 @@ private:
 #endif
 	void* m_pRes;
 	TrCycles m_TrCycles;
-	TrCycles m_TrCyclesAll[MAX_CYCLE_SETS];
+	mutable TrCycles m_TrCyclesAll[MAX_CYCLE_SETS];
 	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
-	checkInvalidCycle m_pInvalidCycle;
 	CBinaryMatrixStorage** m_ppBinMatrStorage = NULL;
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;

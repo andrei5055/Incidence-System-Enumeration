@@ -70,32 +70,11 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	auto v1 = getV1();
 	int ip1 = 0;
 	auto* neigbors0 = neighbors(0);
-	tchar* p1;
+	tchar* p1 = NULL;
 	bool bCurrentSet = false;
 	const auto nRowStart = param(t_nRowsInStartMatrix);
 	//if (result(1)[5] == 9 && iDay == 4)
 	//	printf("%d ", iDay);
-#if GenerateSecondRowsFor3U1F
-	if (!m_p3fNumSecondRows) {
-		memcpy(m_p3fSecondRows, result(1), m_numPlayers);
-		m_p3fNumSecondRows++;
-		//m_autLevelMin = m_p3fNumSecondRows++;
-	}
-	p1 = m_p3fSecondRows + (m_p3fNumSecondRows - 1) * m_numPlayers;
-	if (nrows == 2 && (MEMCMP(p1, result(1), m_numPlayers) < 0)) {
-		if (m_p3fNumSecondRows >= MAX_3PF_SECOND_ROWS) {
-#if !USE_CUDA
-			printfRed("*** Number of 2nd rows > %d(MAX_3PF_SECOND_ROWS)\n", MAX_3PF_SECOND_ROWS);
-			myExit(1);
-#endif
-		}
-		else {
-			m_p3fNumSecondRows++;
-			p1 += m_numPlayers;
-			memcpy(p1, result(1), m_numPlayers);
-		}
-	}
-#endif
 	const auto u1fCycles = sysParam()->u1fCycles[0];
 	const int maxv0 = (u1fCycles && (u1fCycles[0] != 1 || u1fCycles[1] != m_numPlayers)) ? MAX_3PF_SETS : 1;
 	//const int maxv0 = MAX_3PF_SETS;
@@ -109,15 +88,14 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	//	ip1 = ip1;
 	while (1)
 	{
-#if GenerateSecondRowsFor3U1F
-		if (ip1 >= m_p3fNumSecondRows)
+		if (m_pSecondRowsDB->numObjects() > ip1)
+			p1 = m_pSecondRowsDB->getObject(ip1);
+		else if (m_createSecondRow)
+			p1 = result(1);
+		else {
+			bRet = false;
 			break;
-		p1 = m_p3fSecondRows + ip1 * m_numPlayers;
-#else
-		p1 = (tchar *)expected2ndRow3p1f(ip1);
-		if (!p1)
-			break;
-#endif
+		}
 		ip1++;
 		tchar neigbors1[MAX_PLAYER_NUMBER];
 		memset(&m_TrCycles, 0, sizeof(m_TrCycles));
@@ -136,7 +114,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		{
 			ctchar* vtr = v0 + m_nGroups * i; // Common Values ANDREI
 			const auto ncycles = p3Cycles(&m_TrCycles, MAX_CYCLE_SETS, neighbors(0), neigbors1, vtr, result(0), p1);
-			collectCyclesAndPath(&m_TrCycles);
+			//collectCyclesAndPath(&m_TrCycles);
 		}
 
 		// get first row
@@ -177,7 +155,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 								bPair = true;
 							continue;**/
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
-							if (!btr && indRow0 >= 1 && indRow1 >= 2)
+							if (btr)// && indRow0 >= 1 && indRow1 >= 2)
 							{
 								int numCycles1 = m_TrCyclesAll[itr0].ncycles, numCycles2 = trCycles.ncycles;
 								printf("\nnCycles=(%d,%d) indRow0=%d indRow1=%d iv1=%d\nrows01:",
@@ -290,16 +268,8 @@ ret:
 	if (bRet)
 	{
 		//printf("Trs total=%d\n", m_TrInd); Andrei 
-		if (nrows == numDaysResult())
-			m_p3fNumSecondRowsAct = m_p3fNumSecondRows;
-		    //printTable("in", result(), nrows, 21, 3); ANDREI
-	}
-	else
-	{
-#if GenerateSecondRowsFor3U1F
-		if (nrows == 2 && m_p3fNumSecondRows)
-			m_p3fNumSecondRows--;
-#endif
+		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1))
+			memcpy(m_pSecondRowsDB->getNextObject(), p1, m_numPlayers);
 	}
 	return bRet;
 }

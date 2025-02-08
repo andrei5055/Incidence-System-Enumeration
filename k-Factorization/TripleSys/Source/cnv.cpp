@@ -200,8 +200,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				auto* m_pRowGroup = rowGroup(i += step);
 				if (!m_pRowGroup || (j = m_pRowGroup->groupOrder()) < 1)
 					continue;
-				int i1 = i;
-				//i = 0;
+				const auto i1 = i;
 				const auto nRowsToTest = nrows - i;
 				if (nRowsToTest < 1)
 					continue;

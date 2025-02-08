@@ -69,6 +69,7 @@ private:
 	int m_iPrintCount;
 	int m_iTaskSeq;
 	std::vector<std::thread> threads;//(NThreads);
+	CStorageSet<tchar>* m_pSecondRowsDB = NULL;
 };
 
 class TopGunGPU : public TopGunBase {

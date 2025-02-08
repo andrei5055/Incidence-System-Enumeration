@@ -137,6 +137,7 @@ bool CompSolStorage::removeUnreachableVertices(int rowIdx) {
 bool CompSolStorage::ConstructCompatibleSolutionGraph(tmask* pToA, int iRow) {
 	auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 	auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
+	auto testCompl = m_pRowStorage->maskTestingCompleted();
 	releaseSolDB();
 	int kMax = 0;
 	auto i = iRow + 1;
@@ -153,20 +154,23 @@ bool CompSolStorage::ConstructCompatibleSolutionGraph(tmask* pToA, int iRow) {
 			addCompatibleSolutions(j - 1, mask, kMax);
 		}
 
-		// middle part
-		while (true) {
-			while (j < jMax && !pToA[j])
-				j++;
+		if (!testCompl || !testCompl[i - 1]) {
 
-			if (j >= jMax)
-				break;
+			// middle part
+			while (true) {
+				while (j < jMax && !pToA[j])
+					j++;
 
-			addCompatibleSolutions(j, pToA[j], kMax);
+				if (j >= jMax)
+					break;
+
+				addCompatibleSolutions(j, pToA[j], kMax);
+			}
+
+			mask = pRowSolutionMasks[i];
+			if (mask && (mask = (~mask) & pToA[jMax]))
+				addCompatibleSolutions(j, mask, kMax);
 		}
-
-		mask = pRowSolutionMasks[i];
-		if (mask && (mask = (~mask) & pToA[jMax]))
-			addCompatibleSolutions(j, mask, kMax);
 
 		if (kMax > 1 && !removeUnreachableVertices(kMax))
 			return false;

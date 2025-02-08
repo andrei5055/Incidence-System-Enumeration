@@ -3,10 +3,13 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
+#define SAME_MASK_IDX		0			// We allow the same mask index to be used for tree consecutive row. 
+                                        // If 0, we will not apply the acceleration method that analyzes valid solutions for the remaining rows in such situations. 
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
+
 typedef long long ll;
 
 #if USE_64_BIT_MASK
@@ -42,6 +45,7 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
+	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
@@ -62,11 +66,18 @@ public:
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
+	CC inline auto maskTestingCompleted() const			{ return m_pMaskTestingCompleted; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_pAllData? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
+	CC void releaseSolMaskInfo() {
+		delete[] m_pRowSolutionMasks;
+		delete[] m_pRowSolutionMasksIdx;
+		delete[] m_pMaskTestingCompleted;
+	}
+
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const;
 #if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
@@ -151,7 +162,8 @@ private:
 	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
 	tmask* m_pRowSolutionMasks = NULL;
 	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
-	uint* m_pRowSolutionMasksIdx = NULL; 
+	uint* m_pRowSolutionMasksIdx = NULL;
+	bool* m_pMaskTestingCompleted = NULL;
 	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 	int m_useCliquesAfterRow;

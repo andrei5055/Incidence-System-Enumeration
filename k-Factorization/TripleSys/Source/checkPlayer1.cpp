@@ -46,11 +46,8 @@ PlayerOk1:
 	case 2:
 		if (iPlayer < 3)// for indices=0,1,2 and group size=2 m_indexPlayerMin equal m_indexPlayerMax
 			return iPlayerNumber;
-
 		if (m0 && m_checkForUnexpectedCycle)
 			iPlayerNumber = checkForUnexpectedCycle(iPlayerNumber, iPlayer, m_numPlayers, links(), tmpPlayers);
-
-		return iPlayerNumber;
 		break;
 	case 3:
 		if (iDay == 1)

@@ -1,10 +1,10 @@
 #include "TopGun.h"
 
 void RunThread(int threadNumber, int iMode,
-	TopGun *pMaster, tchar* mstart0, tchar* mstart, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
+	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, tchar* mstart0, tchar* mstart, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), pRowStorage);
-	sys.Run(threadNumber, iMode, mstart0, mstart, pMaster->nRowsStart(), pcnt, 0, iThread);
+	sys.Run(threadNumber, iMode, secondRowsDB, mstart0, mstart, pMaster->nRowsStart(), pcnt, 0, iThread);
 	if (pMaster->descrStorage())
 		pMaster->addMatrixDB(sys.matrixDB());
 	else
@@ -37,7 +37,7 @@ void TopGun::startThread(int iTask, int iMode, bool bOnlyStart, CRowStorage* pRo
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
 	threads[iTask] = std::thread{ RunThread, ++m_iTaskSeq, iMode,
-		this, mstart, mstart, m_cnt + iTask * 2, iTask, pRowStorage};
+		this,  m_pSecondRowsDB, mstart, mstart, m_cnt + iTask * 2, iTask, pRowStorage};
 	threadActive[iTask] = true;
 #if 0
 	printfRed("*** Thread %d ", iTask + 1);

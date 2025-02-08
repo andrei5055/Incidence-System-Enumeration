@@ -69,7 +69,7 @@ void alldata::outputError() const {
 #endif
 #endif
 
-CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
+CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	tchar* mStart0, tchar* mStart, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 #if !USE_CUDA
@@ -82,8 +82,20 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 	int startMatrixCount = 0;
 	int nBytesInStartMatrix = nrowsStart * m_numPlayers;
 #endif
+	int nDaysResult = numDaysResult();
 	int iDaySaved = 0;
-	const auto nPrecalcRows = param(t_useRowsPrecalculation);
+	auto nPrecalcRows = param(t_useRowsPrecalculation);
+	m_pSecondRowsDB = secondRowsDB;
+	if (iCalcMode == eCalcSecondRow) {
+		iCalcMode = eCalcResult;
+		m_createSecondRow = 1;
+		m_numDaysResult = 2;
+		nPrecalcRows = 0;
+		nrowsStart = 0;
+	}
+	else
+		m_createSecondRow = 0;
+
 	if (iCalcMode == eCalcResult)
 		m_useRowsPrecalculation = (nPrecalcRows == 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
@@ -161,7 +173,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 #if 1 // preset automorphism groups
 	if (param(t_autGroupNumb)) {
 
-		int iCalc = m_useRowsPrecalculation;
+		const auto iCalc = m_useRowsPrecalculation;
 		m_useRowsPrecalculation = eCalcResult;
 		for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
 			auto* pGroupInfo = groupInfo(i);
@@ -338,7 +350,6 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						for (int i = nPrecalcRows + 3; i < iDay; i++)
 							m_rowTime[i] = cTime - iTime;
 #endif
-						//printf("\nn=%d ", iDay);
 						iDay--;
 						goto checkCurrentMatrix;
 					case 0:
@@ -366,7 +377,12 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 			if (bPrevResult)
 			{
-				if (iDay == 2 && m_groupSize <= 3 && (m_use2RowsCanonization || param(t_u1f)))
+				if (iDay < minRows)
+				{
+					noMoreResults = true;
+					goto noResult;
+				}
+				if (iDay == 2 && m_groupSize <= 2 && m_use2RowsCanonization)
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -488,10 +504,6 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 #endif
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
-				if (iDay == nPrecalcRows) {
-					//static int nmatr = 0;
-					//printf("nm=%d\n", ++nmatr);
-				}
 				if (iDay == nPrecalcRows + 1) {
 					if (!nRows4++)
 						m_pRowStorage->initPlayerMask();
@@ -507,10 +519,18 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 						printf("not p1f\n");
 #endif
 					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
-					if (!retVal){
-						iDay = nPrecalcRows;
-						m_pRowStorage->init();
+					if (!retVal){/**
+						if (param(t_MultiThreading))
+						{
+							noMoreResults = true;
+							goto noResult;
+						}**/
+						m_playerIndex = nPrecalcRows * m_numPlayers;
+						goBack();
+						m_secondPlayerInRow4 = secondPlayerInRow4First;
+						m_playerIndex = 0;
 						nRows4 = nRows4Day = 0;
+						bPrevResult = true;
 					}
 					bPrevResult = true;
 					continue;
@@ -531,12 +551,19 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			}
 #endif
 			nLoops++;
-#if !USE_CUDA
 			m_finalKMindex++;
+#if !USE_CUDA
+			if (m_createSecondRow) {
+				if (m_groupSize == 2)
+					memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
+				if (bPrint)
+					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
+				goto cont1;
+			}
+
 			if (bPrint)
 			{
-				cTime = clock();
-				rTime = cTime;
+				rTime = cTime = clock();
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
@@ -584,7 +611,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode,
 			//Result.printTable(neighbors(), true, ResultFile, bPrint, numDaysResult());
 			//reportCheckLinksData();
 			//printTable("p1f", neighbors(), iDay, m_numPlayers, 2);
-
+cont1:
 			StatReportAfterEachResult(ResetStat, "Stat for matrix result. iDay", iDay, bPrint); // see stat.h to activate
 			if (pcnt) {
 				*pcnt = -m_finalKMindex - 1;
@@ -640,9 +667,6 @@ noResult:
 			auto str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
 				threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
 
-#if GenerateSecondRowsFor3U1F
-			printTable("Calculated second rows set", m_p3fSecondRows, m_p3fNumSecondRowsAct, m_numPlayers, m_groupSize);
-#endif
 			str += format("Thread execution time = {} ms\n", clock() - iTime);
 			printf(str.c_str());
 			if (pOutResult)

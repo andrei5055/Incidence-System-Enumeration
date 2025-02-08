@@ -97,7 +97,7 @@ __global__ void enumerateKernel(alldata** pProc, sLongLong* pMatrNumb, int nMatr
 #endif
     while (matrIdx < nMatrixToProcess) {
         auto* mstart = pMstart + matrIdx * lenMatr;
-        pMatrNumb[treadIndex] = proc->Run(treadIndex, 1, mstart, NULL, nRowsStart);
+        pMatrNumb[treadIndex] = proc->Run(treadIndex, 1, NULL, mstart, NULL, nRowsStart);
         matrIdx += numThreads;
     }
     KERNEL_SYNCHRONIZE()

@@ -26,8 +26,7 @@ CC CRowStorage::~CRowStorage() {
 		delete[] m_pRowsCompatMasks[i];
 
 	delete m_pMaskStorage;
-	delete[] m_pRowSolutionMasks;
-	delete[] m_pRowSolutionMasksIdx;
+	releaseSolMaskInfo();
 }
 
 CC void CRowStorage::initMaskStorage(uint numObjects) {
@@ -284,18 +283,20 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	delete[] m_pRowsCompatMasks[1];
 	m_pRowsCompatMasks[1] = new tmask[len * m_lenSolutionMask];
 	memset(m_pRowsCompatMasks[1], 0, len * m_numSolutionTotalB);
-
-	delete[] m_pRowSolutionMasksIdx;
-	delete[] m_pRowSolutionMasks;
-
-	//initPlayerMask();
 	if (!m_pAllData) {
+		releaseSolMaskInfo();
 		const auto numDays = numDaysResult();
 		m_pRowSolutionMasksIdx = new uint[numDays];
+		memset(m_pRowSolutionMasksIdx, 0, numDays * sizeof(m_pRowSolutionMasksIdx[0]));
 
 		m_pRowSolutionMasks = new tmask[numDays];
 		memset(m_pRowSolutionMasks, 0, numDays * sizeof(m_pRowSolutionMasks[0]));
 		m_pRowSolutionMasksIdx[0] = 0;
+
+#if SAME_MASK_IDX
+		m_pMaskTestingCompleted = new bool[numDays];
+		memset(m_pMaskTestingCompleted, 0, numDays * sizeof(m_pMaskTestingCompleted[0]));
+#endif
 	}
 
 #if !USE_64_BIT_MASK
@@ -316,8 +317,12 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 	while (++i < iMax && availablePlayers) {
 		first = last;
 		if (m_pAllData) {
-			unsigned long iBit;
+			unsigned long iBit = 0;
+#if !USE_CUDA
 			_BitScanForward64(&iBit, availablePlayers);
+#else
+			#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
+#endif
 			last = m_pPlayerSolutionCntr[iBit - 1];
 			availablePlayers ^= (ll)1 << iBit;
 		}
@@ -327,17 +332,40 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-			if (i == m_numPreconstructedRows || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
-				if (rem = REM(lastAdj))
+			if (i == m_numPreconstructedRows || m_pMaskTestingCompleted || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
+				if (rem = REM(lastAdj)) {
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
+					if (m_pRowSolutionMasksIdx[i - 1] == m_pRowSolutionMasksIdx[i]) {
+						// At this point, the solutions for three consecutive rows are masked by the same `tmask` element
+						// Clear the bits in the previous mask that do not correspond to the solutions of the previous row
+						m_pRowSolutionMasks[i - 1] ^= m_pRowSolutionMasksIdx[i];
+						m_pMaskTestingCompleted[i - 1] = 1;
+					}
+				}
 			}
 			else {
 				// We cannot use code for UseSolutionMasks, because now our code is not ready for such cases
-				delete[] m_pRowSolutionMasksIdx;
-				delete[] m_pRowSolutionMasks;
+				// Actually, in that case m_pRowSolutionMasks for the start and the end of the interval are stored in the same element of the array m_pRowSolutionMasks. 
+				releaseSolMaskInfo();
 				m_pRowSolutionMasksIdx = NULL;
 				m_pRowSolutionMasks = NULL;
+				m_pMaskTestingCompleted = NULL;
 			}
+
+#if 0
+			FOPEN_F(f, "aaa.txt", "w");
+			char buf[256], * pBuf = buf;
+			for (int j = 0; j <= i; j++)
+				SPRINTFD(pBuf, buf, "%18d", m_pRowSolutionMasksIdx[j]);
+
+			fprintf(f, "%s\n", buf);
+			pBuf = buf;
+			for (int j = 0; j <= i; j++)
+				SPRINTFD(pBuf, buf, "  %016llx", m_pRowSolutionMasks[j]);
+
+			fprintf(f, "%s\n", buf);
+			FCLOSE_F(f);
+#endif
 		}
 
 		if (!first && !useCombinedSolutions) {
@@ -399,6 +427,41 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		delete m_pMaskStorage;
 		m_pMaskStorage = NULL;
 	}
+}
+
+CC bool CRowStorage::checkSolutionByMask(int iRow, const tmask* pToASol) const {
+	auto jMax = *(rowSolutionMasksIdx() + iRow);
+	const auto iMax = numPlayers() - 2;
+	for (int i = iRow + 1; i <= iMax; i++) {
+		auto j = jMax;
+		jMax = *(rowSolutionMasksIdx() + i);
+
+		// Check left, middle and right parts of the solution interval for i-th row
+		auto mask = *(rowSolutionMasks() + i - 1);
+		if (mask && (mask & pToASol[j++]))
+			continue;  // at least one solution masked by left part of the interval is still valid
+
+#if NEW
+		if (m_pMaskTestingCompleted[i - 1])
+			return false;
+#endif
+
+		// middle part
+		while (j < jMax && !pToASol[j])
+			j++;
+
+		if (j < jMax)
+			continue;   // at least one solution masked by middle part of the interval is still valid
+
+		// There are no valid solutions with the indices inside 
+		// the interval defined by set of long longs
+		mask = *(rowSolutionMasks() + i);
+		// If mask != 0, we need to check the right side of the intervals.
+		if (!mask || !((~mask) & pToASol[jMax]))
+			return false;
+	}
+
+	return true;
 }
 
 CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const {

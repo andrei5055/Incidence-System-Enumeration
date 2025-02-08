@@ -45,7 +45,7 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 ll cntr = 0;
 CC int CRowUsage::getRow(int iRow, int ipx) {
 #if !USE_CUDA
-	//cntr++;
+//	cntr++;
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
@@ -132,7 +132,15 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				auto* pToASol = (tmask*)(pToA - numLongs2Skip);
+
+#if NEW
+				if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
+					first++;
+					continue;
+				}
+#else
 				auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
+				auto testCompl = m_pRowStorage->maskTestingCompleted();
 
 				int i = iRow + 1;
 				auto jMax = pRowSolutionMasksIdx[iRow];
@@ -144,7 +152,10 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 					auto mask = pRowSolutionMasks[i - 1];
 					if (mask && (mask & pToASol[j++]))
 						continue;  // at least one solution masked by left part of the interval is still valid
-
+#if 0
+					if (testCompl[i - 1])
+						break;
+#endif
 					// middle part
 					while (j < jMax && !pToASol[j])
 						j++;
@@ -164,6 +175,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 					first++;
 					continue;
 				}
+#endif
 
 #if UseSolutionCliques
 				if (m_pRowStorage->useCliques(iRow)) {
