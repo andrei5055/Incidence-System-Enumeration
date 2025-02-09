@@ -394,7 +394,6 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 				continue;
 
 		ProcessOneDay:
-			//CUDA_PRINTF("   *** ProcessOneDay\n");
 			if (iDay < minRows)
 			{
 				noMoreResults = true;
@@ -433,7 +432,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->initCompatibilityMasks(sysParam()->u1fCycles[0]);
+						m_pRowStorage->initCompatibilityMasks(groupInfo(nPrecalcRows));
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;

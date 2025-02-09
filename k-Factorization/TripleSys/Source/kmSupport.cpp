@@ -23,19 +23,19 @@
 		sort3bytes(a, b, c); \
 		ta[a] = a; tb[a] = b; tc[a] = c
 
-CC void kmSortGroupsByFirstValue(tchar* mo, ctchar* mi, tchar nr, tchar nc, tchar np)
+CC void alldata::kmSortGroupsByFirstValue(ctchar* mi, tchar * mo) const
 {
 	ctchar* pmi[MAX_PLAYER_NUMBER];
-	memset(pmi, 0, np * sizeof(pmi[0]));
+	memset(pmi, 0, m_numPlayers * sizeof(pmi[0]));
 	auto* mic = mi;
 
-	for (tchar ir = 0; ir < nr; ir++)
+	for (tchar ir = 0; ir < m_nGroups; ir++)
 	{
 		pmi[*mic] = mic;
-		mic += nc;
+		mic += m_groupSize;
 	}
-	const auto iMax = np - nc + 1;
-	switch (nc)
+	const auto iMax = m_numPlayers - m_groupSize + 1;
+	switch (m_groupSize)
 	{
 		case 2: {
 			auto* mos = (short int*)mo;
@@ -77,8 +77,8 @@ CC void kmSortGroupsByFirstValue(tchar* mo, ctchar* mi, tchar nr, tchar nc, tcha
 			{
 				if (mic = pmi[i])
 				{
-					memcpy(moc, mic, nc);
-					moc += nc;
+					memcpy(moc, mic, m_groupSize);
+					moc += m_groupSize;
 				}
 			}
 		}
@@ -170,10 +170,9 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 
 	auto* cii = mo;
 	auto* coi = m_Ktmp;
-	const auto numGroups = nc / m_groupSize;
 	for (int i = 0; i < nr; i++, coi += nc, cii += nc)
 	{
-		kmSortGroupsByFirstValue(coi, cii, numGroups, m_groupSize, nc);
+		kmSortGroupsByFirstValue(cii, coi);
 	}
 	if (param(t_nestedGroups) > 1)
 	{

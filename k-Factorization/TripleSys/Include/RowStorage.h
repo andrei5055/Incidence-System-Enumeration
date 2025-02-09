@@ -50,7 +50,7 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
-	CC void initCompatibilityMasks(ctchar* u1fCycles = NULL);
+	CC void initCompatibilityMasks(const CGroupInfo* pGroupInfo = NULL);
 	CC int initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
@@ -120,6 +120,8 @@ private:
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	CC int findSolution(ctchar* tr, int maxIdx) const;
+	CC void updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const;
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK
 		unsigned long iBit;
@@ -164,7 +166,6 @@ private:
 	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
 	uint* m_pRowSolutionMasksIdx = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
-	ctchar* m_u1fCycles = NULL;
 	uint *m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 	int m_useCliquesAfterRow;
 	uint m_numRecAdj = 0;
@@ -174,7 +175,8 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	int m_solAdj = 0;
-	ll m_playersMask[2] = { 0, 0 };          // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 };
 
 class CRowUsage : public CompSolStorage {

@@ -18,6 +18,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_fRowToBitmask = m_pAllData ? &CRowStorage::rowToBitmask3 : &CRowStorage::rowToBitmask2;
 	m_fSolutionInterval = m_pAllData ? &CRowStorage::solutionInterval3 : &CRowStorage::solutionInterval2;
 	m_lenDayResults = m_numDaysResult + 1;
+	m_pSolMemory = new tchar[2 * numPlayers];
 }
 
 CC CRowStorage::~CRowStorage() {
@@ -26,6 +27,7 @@ CC CRowStorage::~CRowStorage() {
 		delete[] m_pRowsCompatMasks[i];
 
 	delete m_pMaskStorage;
+	delete[] m_pSolMemory;
 	releaseSolMaskInfo();
 }
 
@@ -253,8 +255,43 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 	}
 }
 
-CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
-	m_u1fCycles = u1fCycles;
+CC void CRowStorage::updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const {
+	if (pGroupInfo && m_pAllData) {  // For now we will use it only for triples.
+		int idx;// , idxMax = m_pPlayerSolutionCntr[m_numPreconstructedRows + 1];  // m_lastInFirstSet ??
+		auto pPermSolution = m_pSolMemory + numPlayers();
+		for (auto i = pGroupInfo->numObjects(); --i;) { // For all nontrivial automorphisms
+			auto* pntr = pGroupInfo->getObject(i);
+			for (auto j = numPlayers(); j--;)
+				m_pSolMemory[j] = 0;// pSolution[pntr[j]];
+
+			(m_pAllData->sortGroupsFn)(m_pSolMemory);
+			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+			idx = findSolution(pPermSolution, idxMax);
+		}
+	}
+}
+
+CC int CRowStorage::findSolution(ctchar* tr, int maxIdx) const {
+	// search for element 	
+	int low = 0;
+	const auto nElem = maxIdx;
+	auto high = nElem - 1;
+	while (low <= high) {
+		auto itr = low + ((high - low) >> 1);
+		const auto cmp = MEMCMP(getObject(itr), tr, m_numPlayers);
+		if (!cmp)
+			return itr;
+
+		if (cmp < 0)
+			low = itr + 1;  // ignore left half
+		else
+			high = itr - 1; // ignore right half
+	}
+
+	return -1;   // not found
+}
+
+CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
@@ -308,6 +345,9 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	tmask* pCompatMask = pRowsCompatMasks[1];
+	if (pGroupInfo && pGroupInfo->numObjects() <= 1)
+		pGroupInfo = NULL;   // Trivial groups will not be used.
+
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
@@ -326,9 +366,9 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 			last = m_pPlayerSolutionCntr[iBit - 1];
 			availablePlayers ^= (ll)1 << iBit;
 		}
-		else {
+		else
 			last = m_pPlayerSolutionCntr[i];
-		}
+
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
@@ -377,8 +417,8 @@ CC void CRowStorage::initCompatibilityMasks(ctchar* u1fCycles) {
 		if (m_pAllData)
 			pCompatMask = getSolutionMask(first);
 
-		while (first < last) {
-			generateCompatibilityMasks(pCompatMask, first++, last);
+		for (; first < last; first++) {
+			generateCompatibilityMasks(pCompatMask, first, last);
 			pCompatMask += m_lenSolutionMask;
 		}
 	}
