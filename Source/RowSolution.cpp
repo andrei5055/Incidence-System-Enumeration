@@ -177,7 +177,7 @@ FClass2(CRowSolution, size_t)::moveNoncanonicalSolutions(const T *pSolution, siz
 			// Let's try to find it AFTER this interval
 			if (!lenOrbitOfSolution()) {
 				// The length of the current solution group was not defined yet
-				// When we are here, it could happend only when this group was merged with the next one
+				// When we are here, it could happen only when this group was merged with the next one
 				// during previous call of current function
 				curCanon--;
 				setLenOrbitOfSolution(curCanon - findStartingIndex(curCanon, pCanonFlags));
