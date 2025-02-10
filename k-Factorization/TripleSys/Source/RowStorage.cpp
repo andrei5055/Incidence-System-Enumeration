@@ -96,7 +96,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if 0
+#if !USE_CUDA
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[256], * pBuf = buf;
 	for (int i = 0; i < m_numPlayers; i++)
@@ -256,13 +256,18 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 }
 
 CC void CRowStorage::updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const {
-	if (pGroupInfo && m_pAllData) {  // For now we will use it only for triples.
+	uint last = 0;
+	auto availablePlayers = getPlayersMask();
+	getSolutionRange(last, availablePlayers, m_numPreconstructedRows);
+	uint solIdx = -1;
+	while (++solIdx < last) {
+		const auto pSolution = getObject(solIdx);
 		int idx;// , idxMax = m_pPlayerSolutionCntr[m_numPreconstructedRows + 1];  // m_lastInFirstSet ??
 		auto pPermSolution = m_pSolMemory + numPlayers();
 		for (auto i = pGroupInfo->numObjects(); --i;) { // For all nontrivial automorphisms
 			auto* pntr = pGroupInfo->getObject(i);
 			for (auto j = numPlayers(); j--;)
-				m_pSolMemory[j] = 0;// pSolution[pntr[j]];
+				m_pSolMemory[j] = pSolution[pntr[j]];
 
 			(m_pAllData->sortGroupsFn)(m_pSolMemory);
 			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
@@ -315,6 +320,9 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (m_pAllData ? 8 : 0);
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
+	// Trivial groups will not be used.
+	const auto useAut = m_pAllData && pGroupInfo && pGroupInfo->numObjects() > 1;
+
 	m_solAdj = useCombinedSolutions ? m_numRecAdj : 0;
 	const auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
 	delete[] m_pRowsCompatMasks[1];
@@ -345,8 +353,6 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	tmask* pCompatMask = pRowsCompatMasks[1];
-	if (pGroupInfo && pGroupInfo->numObjects() <= 1)
-		pGroupInfo = NULL;   // Trivial groups will not be used.
 
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
@@ -355,20 +361,7 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	unsigned int rem;
 	const auto iMax = m_numPlayers - 1;
 	while (++i < iMax && availablePlayers) {
-		first = last;
-		if (m_pAllData) {
-			unsigned long iBit = 0;
-#if !USE_CUDA
-			_BitScanForward64(&iBit, availablePlayers);
-#else
-			#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
-#endif
-			last = m_pPlayerSolutionCntr[iBit - 1];
-			availablePlayers ^= (ll)1 << iBit;
-		}
-		else
-			last = m_pPlayerSolutionCntr[i];
-
+		first = getSolutionRange(last, availablePlayers, i);
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
@@ -463,10 +456,31 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	}
 #endif
 
+	if (useAut) // For now we will use it only for triples.
+		updateMasksByAut(0/*int idxMax*/, pGroupInfo);
+
 	if (useCombinedSolutions) {
 		delete m_pMaskStorage;
 		m_pMaskStorage = NULL;
 	}
+}
+
+CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) const {
+	const uint first = last;
+	if (m_pAllData) {
+		unsigned long iBit = 0;
+#if !USE_CUDA
+		_BitScanForward64(&iBit, availablePlayers);
+#else
+		#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
+#endif
+		last = m_pPlayerSolutionCntr[iBit - 1];
+			availablePlayers ^= (ll)1 << iBit;
+	}
+	else
+		last = m_pPlayerSolutionCntr[i];
+
+	return first;
 }
 
 CC bool CRowStorage::checkSolutionByMask(int iRow, const tmask* pToASol) const {

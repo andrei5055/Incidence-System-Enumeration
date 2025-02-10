@@ -44,6 +44,10 @@ int TopGun::Run()
 		// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
 		// 
 		resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
+		if (resultMatr == 0) {
+			printfRed("*** Cannot create second row(s) with these parameters. Exit\n");
+			myExit(1);
+		}
 	}
 
 	if (!param(t_MultiThreading))

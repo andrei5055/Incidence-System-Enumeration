@@ -1,4 +1,31 @@
 #include "TopGun.h"
+void alldata::printPermutationMatrices(const int iMode) const {
+	if (m_groupSize != 3)
+		return;
+	auto v = getV0();
+	tchar ceTable0[MAX_GROUP_NUMBER * MAX_GROUP_NUMBER * 2];
+	tchar ceTable[(MAX_3PF_SETS + 1) * MAX_GROUP_NUMBER * MAX_GROUP_NUMBER];
+	for (int i = 1; i < iDay; i++) {
+		int i0 = i - 1;
+		auto nv = getAllV(v, MAX_3PF_SETS, i0, i);
+		memset(ceTable0, 0, sizeof(ceTable0));
+		memset(ceTable, 0, sizeof(ceTable));
+		for (int j = 0; j < nv; j++) {
+			for (int k = 0; k < m_nGroups; k++) {
+				int m = neighbors(i)[v[j * m_nGroups + k]];
+				int n = result(i)[m];
+				ceTable[j * m_nGroups + m / m_groupSize + k * nv * m_nGroups] = 1; //iMode == 0 ? 1 : n;
+				ceTable0[m / m_groupSize + k * m_nGroups * 2] = n;// iMode == 0 ? 1 : n;
+				ceTable0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;// iMode == 0 ? 1 : n;
+			}
+		}
+		printf("\nPermutation matrices for rows %d,%d\n", i0, i);
+
+		printTableColor("", ceTable0, m_nGroups, m_nGroups * 2, m_nGroups);
+		printf("\n");
+		printTableColor("", ceTable, m_nGroups, m_nGroups * nv, m_nGroups);
+	}
+}
 
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, clock_t* t)
 {
@@ -26,8 +53,12 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 			}
 			else if (v >= 0 && v < 67)
 			{
-				printf("\x1b[38;5;%dm%2d", 28 + v * 3, v);
-				printf("\x1b[0m");
+				if (v == 1)
+					printf(" 1");
+				else {
+					printf("\x1b[38;5;%dm%2d", 28 + v * 3, v);
+					printf("\x1b[0m");
+				}
 			}
 			else
 				printf("%2d", v);

@@ -122,6 +122,7 @@ private:
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC int findSolution(ctchar* tr, int maxIdx) const;
 	CC void updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const;
+	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK
 		unsigned long iBit;

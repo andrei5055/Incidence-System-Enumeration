@@ -154,6 +154,7 @@ public:
 	CC inline auto groupSize()	const			{ return m_groupSize; }
 #if !USE_CUDA
 	inline MatrixDB* matrixDB()					{ return &m_matrixDB; }
+	void printPermutationMatrices(const int iMode) const;
 #endif
 	CC inline void initCheckByGroup(tchar iDay, tchar iMode) {
 		// Creating the sequences 0,1,2,3,... as the day's indices.

@@ -593,6 +593,8 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 					printf("%5zd: " AUT "%d, % s\n", nLoops, groupOrder(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
+					if (param(t_printMatrices) == 2)
+						printPermutationMatrices(1);
 				}
 #endif
 				//cnvCheckNew(2, iDay);
