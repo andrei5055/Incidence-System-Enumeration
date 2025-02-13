@@ -52,9 +52,11 @@ CC void alldata::kmSortGroupsByFirstValue(ctchar* mi, tchar * mo) const
 			auto* moc = mo;
 			for (tchar i = 0; i < iMax; i++)
 			{
-				if (auto* mii = (int*)(pmi[i]))
+				if (auto* mic = pmi[i])
 				{
-					*(int *)moc = *mii;
+					*moc = *mic;
+					*(moc + 1) = *(mic + 1);
+					*(moc + 2) = *(mic + 2);
 					moc += 3;
 				}
 			}

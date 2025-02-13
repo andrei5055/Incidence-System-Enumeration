@@ -20,7 +20,7 @@ typedef tchar tmask;
 #define SHIFT						3
 #endif
 
-#define MASK_BIT(idx)				(tmask)1 << ((idx) & ((1<<SHIFT) - 1))	
+#define MASK_BIT(idx)				((tmask)1 << ((idx) & ((1<<SHIFT) - 1)))	
 #define IDX(n)						(n + (1<<SHIFT) - 1) >> SHIFT
 #define REM(n)						(n % ((tmask)1<<SHIFT))			// remainder from division
 #define SET_MASK_BIT(mask, idx)		mask[(idx) >> SHIFT] |= MASK_BIT(idx)
@@ -120,8 +120,8 @@ private:
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
-	CC int findSolution(ctchar* tr, int maxIdx) const;
-	CC void updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const;
+	CC uint findSolution(ctchar* tr, uint low, uint high) const;
+	CC void updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK

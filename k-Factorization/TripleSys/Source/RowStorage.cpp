@@ -96,7 +96,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if !USE_CUDA
+#if 0//!USE_CUDA
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[256], * pBuf = buf;
 	for (int i = 0; i < m_numPlayers; i++)
@@ -255,32 +255,52 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 	}
 }
 
-CC void CRowStorage::updateMasksByAut(int idxMax, const CGroupInfo* pGroupInfo) const {
+CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo) const {
 	uint last = 0;
 	auto availablePlayers = getPlayersMask();
 	getSolutionRange(last, availablePlayers, m_numPreconstructedRows);
+	const auto solIdxLast = last - 1;
 	uint solIdx = -1;
-	while (++solIdx < last) {
+	auto pMask = m_pRowsCompatMasks[1];
+	while (++solIdx < solIdxLast) {
 		const auto pSolution = getObject(solIdx);
-		int idx;// , idxMax = m_pPlayerSolutionCntr[m_numPreconstructedRows + 1];  // m_lastInFirstSet ??
 		auto pPermSolution = m_pSolMemory + numPlayers();
-		for (auto i = pGroupInfo->numObjects(); --i;) { // For all nontrivial automorphisms
+		// For all non-trivial automorphisms:
+		for (auto i = pGroupInfo->numObjects(); --i;) { 
 			auto* pntr = pGroupInfo->getObject(i);
 			for (auto j = numPlayers(); j--;)
-				m_pSolMemory[j] = pSolution[pntr[j]];
+				m_pSolMemory[j] = pntr[pSolution[j]];
+
 
 			(m_pAllData->sortGroupsFn)(m_pSolMemory);
 			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-			idx = findSolution(pPermSolution, idxMax);
+			const auto idx = findSolution(pPermSolution, 0, idxMax);
+			if (idx < last) {
+				if (idx == solIdx)
+					continue;
+
+				// The solution # idx is not canonical, because there 
+				// is an automorphism converting it to solution # < solIdx.
+				if (idx < solIdx)
+					break;
+
+				memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
+			} else {
+				// All solutions: solIdx < solutionIdx <= solIdxLast cannot use the solution #idx
+				// otherwise, the matrix will be non-canonical.
+				auto pMaskOut = pMask + (idx >> SHIFT);
+				const auto exMask = ~MASK_BIT(idx);
+				for (auto j = solIdx; ++j < last;)
+					*(pMaskOut += m_lenSolutionMask) &= exMask;
+			}
 		}
+		pMask += m_lenSolutionMask;
 	}
 }
 
-CC int CRowStorage::findSolution(ctchar* tr, int maxIdx) const {
+CC uint CRowStorage::findSolution(ctchar* tr, uint low, uint high) const {
 	// search for element 	
-	int low = 0;
-	const auto nElem = maxIdx;
-	auto high = nElem - 1;
+	high--;
 	while (low <= high) {
 		auto itr = low + ((high - low) >> 1);
 		const auto cmp = MEMCMP(getObject(itr), tr, m_numPlayers);
@@ -293,7 +313,8 @@ CC int CRowStorage::findSolution(ctchar* tr, int maxIdx) const {
 			high = itr - 1; // ignore right half
 	}
 
-	return -1;   // not found
+	ASSERT(true);	// Shouls not happen
+	return -1;		// not found
 }
 
 CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
@@ -354,6 +375,7 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	tmask* pCompatMask = pRowsCompatMasks[1];
 
+	const bool skipFirstAllowed = !(useCombinedSolutions || useAut || m_pAllData);
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
@@ -401,7 +423,7 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 #endif
 		}
 
-		if (!first && !useCombinedSolutions) {
+		if (skipFirstAllowed && !first) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
 			continue;
@@ -457,7 +479,7 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 #endif
 
 	if (useAut) // For now we will use it only for triples.
-		updateMasksByAut(0/*int idxMax*/, pGroupInfo);
+		updateMasksByAut(last, pGroupInfo);
 
 	if (useCombinedSolutions) {
 		delete m_pMaskStorage;
