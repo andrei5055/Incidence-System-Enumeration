@@ -44,8 +44,8 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 
 ll cntr = 0;
 CC int CRowUsage::getRow(int iRow, int ipx) {
-#if !USE_CUDA
-//	cntr++;
+#if 0 && !USE_CUDA
+	cntr++;
 #endif
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
@@ -57,6 +57,9 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 
 	uint last = iRow;
 	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx+iRow, &last, availablePlayers);
+	if (last == -1)
+		return 0;
+
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
 			return 0;
@@ -67,8 +70,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				return 0;
 		}
 		else {
-			memset(m_pCompatibleSolutions, 0, m_numSolutionTotalB);
-			m_pRowStorage->generateCompatibilityMasks((tmask*)m_pCompatibleSolutions, first, last);
+			m_pRowStorage->passCompatibilityMask((tmask*)m_pCompatibleSolutions, first, last);
 		}
 
 		first += m_step;

@@ -40,11 +40,11 @@ public:
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC void initPlayerMask();
-	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
+	CC void passCompatibilityMask(tmask* m_pCompatibleSolutions, uint first, uint last) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
@@ -97,6 +97,7 @@ private:
 
 private:
 	CC uint& solInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
+	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
 	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
 		memset(bm, 0, m_lenMask);
@@ -178,6 +179,7 @@ private:
 	int m_solAdj = 0;
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
+	bool m_bUseAut;
 };
 
 class CRowUsage : public CompSolStorage {
