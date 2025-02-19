@@ -96,6 +96,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 	else
 		m_createSecondRow = 0;
 
+	const auto groupSize_2 = m_groupSize == 2;
 	if (iCalcMode == eCalcResult)
 		m_useRowsPrecalculation = (nPrecalcRows == 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
@@ -159,7 +160,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
-		if (m_groupSize == 2) // need to be implemented for 3?
+		if (groupSize_2)		// need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
 #if 0 // print group order for each submatrix
@@ -254,7 +255,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
-			m_pRowStorage->initPlayerMask();
+			m_pRowStorage->initPlayerMask(groupSize_2);
 
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
@@ -382,7 +383,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 					noMoreResults = true;
 					goto noResult;
 				}
-				if (iDay == 2 && m_groupSize <= 2 && m_use2RowsCanonization)
+				if (iDay == 2 && groupSize_2 && m_use2RowsCanonization)
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -403,7 +404,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 			{
 				if (nPrecalcRows && nPrecalcRows == iDay && m_useRowsPrecalculation == eCalculateRows) {
 					m_secondPlayerInRow4++;
-					if (!nRows4Day && m_groupSize == 2)
+					if (!nRows4Day && groupSize_2)
 					{
 						m_secondPlayerInRow4 = secondPlayerInRow4First;
 						bPrevResult = true;
@@ -505,7 +506,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (iDay == nPrecalcRows + 1) {
 					if (!nRows4++)
-						m_pRowStorage->initPlayerMask();
+						m_pRowStorage->initPlayerMask(groupSize_2);
 					nRows4Day++;
 					//printf("%6d:", nRows4);
 					//printTable("", result(3), 1, m_numPlayers, 2);
@@ -553,7 +554,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 			m_finalKMindex++;
 #if !USE_CUDA
 			if (m_createSecondRow) {
-				if (m_groupSize == 2)
+				if (groupSize_2)
 					memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
 				if (bPrint)
 					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
@@ -678,9 +679,12 @@ noResult:
 	delete[] bResults;
 	delete pAutGroup;
 #endif
-#if !USE_CUDA
-	extern long long cntr;
-	//printf("********** cntr = %lld\n", cntr);
+#if 0 && !USE_CUDA
+	extern ll cntr;
+	static int nMatr;
+	static ll cntrTotal;
+	printf("Matr# %4d: ********** cntr = %lld  = %lld\n", ++nMatr, cntr, cntrTotal += cntr);
+	cntr = 0;
 #endif
 	return nLoops;
 }

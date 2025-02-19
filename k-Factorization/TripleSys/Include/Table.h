@@ -1,11 +1,11 @@
 
 template<typename T>
-void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString, bool toScreen, int cntr=-1, const unsigned char* pDayPerm=NULL) {
+void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, const unsigned char* pDayPerm=NULL) {
 	char buffer[512];
 	const auto* endLine = makeString ? " \"\n" : "\n";
 	for (int j = 0; j < nl; j++) {
 		char* pBuf = buffer;
-		SPRINTFD(pBuf, buffer, " \"");
+		SPRINTFD(pBuf, buffer, pStartLine);
 		for (int i = 0; i < nc; i++, c++) {
 			if (np && !(i % np))
 				SPRINTFD(pBuf, buffer, " ");

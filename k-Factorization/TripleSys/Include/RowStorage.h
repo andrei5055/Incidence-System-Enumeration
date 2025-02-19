@@ -39,7 +39,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
-	CC void initPlayerMask();
+	CC void initPlayerMask(bool groupSize_2);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
@@ -68,7 +68,7 @@ public:
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto maskTestingCompleted() const			{ return m_pMaskTestingCompleted; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
-		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_pAllData? 2 : 1)];
+		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_bGroupSize2 ? 1 : 2)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
@@ -139,6 +139,9 @@ private:
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numDaysResult;
 	const alldata* m_pAllData;
+	const bool m_bGroupSize2;
+	const bool m_bUseCombinedSolutions;
+	const int m_step;
 
 	CStorage<tchar>* m_pMaskStorage = NULL;
 
@@ -174,8 +177,6 @@ private:
 	uint m_numRec[2];			   // Number of solutions for first and second nonfixed rows.
 	uint m_numRecAdj2;
 	uint m_lastInFirstSet;
-	const bool m_bUseCombinedSolutions;
-	const int m_step;
 	int m_solAdj = 0;
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
