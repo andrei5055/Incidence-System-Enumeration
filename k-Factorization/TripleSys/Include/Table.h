@@ -1,3 +1,4 @@
+#pragma once
 
 template<typename T>
 void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, const unsigned char* pDayPerm=NULL) {
