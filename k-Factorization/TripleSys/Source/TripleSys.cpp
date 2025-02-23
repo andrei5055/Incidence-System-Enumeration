@@ -255,7 +255,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
-			m_pRowStorage->initPlayerMask(groupSize_2);
+			m_pRowStorage->initPlayerMask();
 
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
@@ -506,7 +506,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (iDay == nPrecalcRows + 1) {
 					if (!nRows4++)
-						m_pRowStorage->initPlayerMask(groupSize_2);
+						m_pRowStorage->initPlayerMask();
 					nRows4Day++;
 					//printf("%6d:", nRows4);
 					//printTable("", result(3), 1, m_numPlayers, 2);

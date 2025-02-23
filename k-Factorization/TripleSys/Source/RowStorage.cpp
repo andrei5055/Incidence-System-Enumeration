@@ -39,9 +39,9 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 	reset();
 }
 
-CC void CRowStorage::initPlayerMask(bool groupSize_2) {
+CC void CRowStorage::initPlayerMask() {
 	ll playersMask = -1;
-	if (!groupSize_2) {
+	if (!m_bGroupSize2) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		const auto groupSize = m_pAllData->groupSize();
 		// Excluding players of the first group from ...
@@ -391,7 +391,7 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 #if 1
 	auto availablePlayers = getPlayersMask();
 	unsigned int rem;
-	const auto iMax = m_numPlayers - 1;
+	const auto iMax = numDaysResult();
 	while (++i < iMax && availablePlayers) {
 		first = getSolutionRange(last, availablePlayers, i);
 		if (m_pRowSolutionMasksIdx) {
