@@ -41,6 +41,7 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 
 CC void CRowStorage::initPlayerMask() {
 	ll playersMask = -1;
+	int shift = m_numPlayers;
 	if (!m_bGroupSize2) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		const auto groupSize = m_pAllData->groupSize();
@@ -56,9 +57,10 @@ CC void CRowStorage::initPlayerMask() {
 	else {
 		// Predefined rows for groupSuze = 2, are assumed to be correct.
 		playersMask <<= (numPreconstructedRows() + 1);
+		shift = numDaysResult() + 1;
 	}
 
-	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << m_numPlayers);
+	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << shift);
 }
 
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
@@ -390,14 +392,13 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	i = m_numPreconstructedRows - 1;
 #if 1
 	auto availablePlayers = getPlayersMask();
-	unsigned int rem;
-	const auto iMax = numDaysResult();
-	while (++i < iMax && availablePlayers) {
-		first = getSolutionRange(last, availablePlayers, i);
+	while (availablePlayers) {
+		first = getSolutionRange(last, availablePlayers, ++i);
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
 			if (i == m_numPreconstructedRows || m_pMaskTestingCompleted || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
+				unsigned int rem;
 				if (rem = REM(lastAdj)) {
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
 					if (m_pRowSolutionMasksIdx[i - 1] == m_pRowSolutionMasksIdx[i]) {
@@ -459,8 +460,9 @@ CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
 	// Calculate the number of mutually compatible pairs of solutions
 	int cntrs[8];
 	memset(cntrs, 0, sizeof(cntrs));
-	unsigned ll fff = 0;
+	ll fff = 0;
 	const auto jMax = m_lenMask >> 3;
+	const auto iMax = numDaysResult();
 	int a = 0;
 	while (i < iMax) {
 		auto first = last;
@@ -511,8 +513,10 @@ CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) c
 		last = m_pPlayerSolutionCntr[iBit - 1];
 			availablePlayers ^= (ll)1 << iBit;
 	}
-	else
+	else {
 		last = m_pPlayerSolutionCntr[i];
+		availablePlayers &= (availablePlayers - 1);
+	}
 
 	return first;
 }
