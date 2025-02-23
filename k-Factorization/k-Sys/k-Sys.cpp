@@ -23,6 +23,8 @@ const char* intParamNames[]{
 	"UseCheckLinksV",
 	"UseRowsPrecalculation",
 	"UseSolutionCliquesAfterRow",
+	"UseAutForPrecRows",	// Use the Automorphism group of precalculated rows.
+	"LastRowSecondPlayer",	// Stop invoking addRow after processing all row solutions for this second player
 	"PrintMatrices",
 	"SavingMatricesToDisk",
 	"MatrixCanonInterval",

@@ -239,7 +239,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				saveGroup(*this, nrows);
 				if (nrows < numDaysResult())
 				{
-					m_playerIndex = 0;
+					//m_playerIndex = 0;
 					return true;
 				}
 			}
@@ -297,7 +297,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 	}
 
 	if (ret) {
-		m_playerIndex = 0;
+		//m_playerIndex = 0;
 		if (m_useRowsPrecalculation != eCalculateRows || nrows < param(t_useRowsPrecalculation))
 			saveGroup(*this, nrows);
 	}

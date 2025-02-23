@@ -35,6 +35,8 @@ typedef enum {
 	t_useCheckLinksV,
 	t_useRowsPrecalculation,
 	t_useSolutionCliquesAfterRow,
+	t_useAutForPrecRows,
+	t_lastRowSecondPlayer,
 	t_printMatrices,
 	t_savingMatricesToDisk,
 	t_matrixCanonInterval,

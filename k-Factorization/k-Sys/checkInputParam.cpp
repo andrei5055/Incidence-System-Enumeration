@@ -93,5 +93,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			paramNames[t_nRowsInStartMatrix], val[t_nRowsInStartMatrix], paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 		return false;
 	}
+	if (val[t_useRowsPrecalculation] && val[t_useRowsPrecalculation] != 3) {
+		printfRed("*** In this version of SW the value of UseRowsPrecalculation(%d), can be 0 or 3. Exit\n", val[t_useRowsPrecalculation]);
+		return false;
+	}
+
 	return true;
 }

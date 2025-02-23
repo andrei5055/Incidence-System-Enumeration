@@ -102,7 +102,10 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 	else
 		m_useRowsPrecalculation = iCalcMode;
 	tchar secondPlayerInRow4First = m_groupSize + 2;
-	tchar secondPlayerInRow4Last = m_numPlayers - m_groupSize/3*3 - 1;
+	tchar secondPlayerInRow4Last = param(t_lastRowSecondPlayer);
+	if (!secondPlayerInRow4Last)
+		secondPlayerInRow4Last = m_numPlayers - m_groupSize / 3 * 3 - 1;
+
 	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
 	int nRows4Day = 0;
@@ -172,40 +175,31 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 	printf("\n");
 #endif
 #if 1 // preset automorphism groups
-	if (param(t_autGroupNumb)) {
-
-		const auto iCalc = m_useRowsPrecalculation;
-		m_useRowsPrecalculation = eCalcResult;
+	const auto iCalc = m_useRowsPrecalculation;
+	m_useRowsPrecalculation = eCalcResult;
+	if (!param(t_autGroupNumb)) {
+		if (param(t_useAutForPrecRows)) {
+			auto* pGroupInfo = groupInfo(3);
+			ASSERT(!pGroupInfo);
+			ASSERT(iDay < 3);
+			cnvCheckNew(0, 3, false); // create initial set of tr for first i rows
+			pGroupInfo->copyIndex(*this);
+			resetGroupOrder();
+		}
+	}
+	else {
 		for (int i = firstGroupIdx(); i <= lastGroupIdx(); i++) {
 			auto* pGroupInfo = groupInfo(i);
 			if (!pGroupInfo)
 				break;
-
 			if (iDay < i)
 				break;
-
 			cnvCheckNew(0, i, false); // create initial set of tr for first i rows
 			pGroupInfo->copyIndex(*this);
 			resetGroupOrder();
-#if 0
-			int grOrder = 0;
-			if (i > 2) {
-				auto* pPrevGroup = groupInfo(i - 1);
-				auto* pTmp = pPrevGroup;
-				pPrevGroup = pGroupInfo;
-				pGroupInfo = pTmp;
-				grOrder = pGroupInfo->groupOrder();
-				auto* cmpTr = pPrevGroup->getObject();
-				for (int j = pPrevGroup->groupOrder(); --j;) {
-					cmpTr += m_numPlayers;
-					pGroupInfo->updateGroupOrder(cmpTr);
-				}
-				grOrder = pGroupInfo->groupOrder() - grOrder;
-			}
-#endif
 		}
-		m_useRowsPrecalculation = iCalc;
 	}
+	m_useRowsPrecalculation = iCalc;
 #endif
 
 #if !USE_CUDA

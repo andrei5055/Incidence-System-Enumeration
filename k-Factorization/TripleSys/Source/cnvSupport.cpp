@@ -76,7 +76,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	//if (result(1)[5] == 9 && iDay == 4)
 	//	printf("%d ", iDay);
 	const auto u1fCycles = sysParam()->u1fCycles[0];
-	const int maxv0 = (u1fCycles && (u1fCycles[0] != 1 || u1fCycles[1] != m_numPlayers)) ? MAX_3PF_SETS : 1;
+	int maxv0 = (u1fCycles && (u1fCycles[0] != 1 || u1fCycles[1] != m_numPlayers)) ? MAX_3PF_SETS : 1;
+	if (u1fCycles && u1fCycles[0] == 1 && u1fCycles[1] == 9 && u1fCycles[2] == 9 && u1fCycles[3] == 9)
+		maxv0 = 1;
 	//const int maxv0 = MAX_3PF_SETS;
 	const int maxv1 = MAX_3PF_SETS;
 
