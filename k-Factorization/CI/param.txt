@@ -5,23 +5,13 @@ PrintMatrices=0
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 
-TestName = "P1F_10x3x2_SingleThread"
-nPlayers=14
-GroupSize=3
-NRowsInStartMatrix=0
-NRowsInResultMatrix=3
-Use2RowsCanonization=1
-UseUniform1Factorization=1
-//ExpectedResult=6
-RUN_JOB
-END_JOB
-
 FirstIndexOfStartMatrices=0
+MaxNumberOfStartMatrices=100000
+
 // Single thread tests:
 USE_GPU=0
 TestName = "K1F_10x9x2_SingleThread"
 GroupSize=2
-MaxNumberOfStartMatrices=100000
 Use2RowsCanonization=0
 UseUniform1Factorization=0
 NRowsInStartMatrix=0
@@ -69,20 +59,27 @@ ExpectedResult=1
 RUN_JOB
 
 // Preparing starting matrices for multithreaded tests
-TestName = "K1F_10x3x2_SingleThread"
 GroupSize=2
-nPlayers=10
 NRowsInStartMatrix=0
 NRowsInResultMatrix=3
+
+TestName = "K1F_10x3x2_SingleThread"
+nPlayers=10
 Use2RowsCanonization=0
 UseUniform1Factorization=0
 ExpectedResult=12
 RUN_JOB
 
-TestName = "P1F_10x3x2_SingleThread"
 Use2RowsCanonization=1
 UseUniform1Factorization=1
+
+TestName = "P1F_10x3x2_SingleThread"
 ExpectedResult=6
+RUN_JOB
+
+TestName = "P1F_14x3x2_SingleThread"
+nPlayers=14
+ExpectedResult=174
 RUN_JOB
 
 TestName = "K1F_15x4x3_SingleThread"
@@ -103,22 +100,36 @@ RUN_JOB
 // Execute the multithreaded tests
 NThreads=10
 UseMultiThreading=1
+NRowsInStartMatrix=3
 NRowsInResultMatrix=0
+GroupSize=2
 
 TestName = "K1F_10x9x2_10_Threads"
-GroupSize=2
 nPlayers=10
-NRowsInStartMatrix=3
 Use2RowsCanonization=0
 UseUniform1Factorization=0
 ExpectedResult=396
 RUN_JOB
-	
-TestName = "P1F_10x9x2_10_Threads"
+
 Use2RowsCanonization=1
 UseUniform1Factorization=1
+
+TestName = "P1F_10x9x2_10_Threads"
 ExpectedResult=1
 RUN_JOB
+
+UseRowsPrecalculation=3
+
+TestName = "P1F_14x13x2_10Threads"
+nPlayers=14
+ExpectedResult=23
+RUN_JOB
+
+TestName = "P1F_14x13x2_10ThreadsMultThred_2"
+UseMultiThreading=2
+RUN_JOB
+
+UseMultiThreading=1
 
 TestName = "K1F_15x7x3_10_Threads"
 nPlayers=15
@@ -133,7 +144,7 @@ TestName = "P1F_15x7x3_10_Threads"
 Use2RowsCanonization=1
 UseUniform1Factorization=1
 ExpectedResult=2
-RUN_JOB  //END_JOB
+RUN_JOB
 
 END_JOB
 
