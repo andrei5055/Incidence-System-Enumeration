@@ -98,13 +98,13 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 
 	const auto groupSize_2 = m_groupSize == 2;
 	if (iCalcMode == eCalcResult)
-		m_useRowsPrecalculation = (nPrecalcRows == 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
+		m_useRowsPrecalculation = (nPrecalcRows && nPrecalcRows <= 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
 		m_useRowsPrecalculation = iCalcMode;
-	tchar secondPlayerInRow4First = m_groupSize + 2;
+	tchar secondPlayerInRow4First = groupSize_2 ? nPrecalcRows + 1 : m_groupSize + 2;
 	tchar secondPlayerInRow4Last = param(t_lastRowSecondPlayer);
 	if (!secondPlayerInRow4Last)
-		secondPlayerInRow4Last = m_numPlayers - m_groupSize / 3 * 3 - 1;
+		secondPlayerInRow4Last = groupSize_2 ? m_numDaysResult : m_numPlayers - 4;
 
 	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
@@ -178,13 +178,13 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 	const auto iCalc = m_useRowsPrecalculation;
 	m_useRowsPrecalculation = eCalcResult;
 	if (!param(t_autGroupNumb)) {
-		if (param(t_useAutForPrecRows)) {
-			auto* pGroupInfo = groupInfo(3);
-			ASSERT(!pGroupInfo);
-			ASSERT(iDay < 3);
-			cnvCheckNew(0, 3, false); // create initial set of tr for first i rows
-			pGroupInfo->copyIndex(*this);
-			resetGroupOrder();
+		if (param(t_useAutForPrecRows) > 1 && iDay >= param(t_useAutForPrecRows)) {
+			auto* pGroupInfo = groupInfo(param(t_useAutForPrecRows));
+			if (pGroupInfo) {
+				cnvCheckNew(0, param(t_useAutForPrecRows), false); // create initial set of tr for first i rows
+				pGroupInfo->copyIndex(*this);
+				resetGroupOrder();
+			}
 		}
 	}
 	else {
@@ -201,7 +201,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 	}
 	m_useRowsPrecalculation = iCalc;
 #endif
-
+	m_playerIndex = 0;
 #if !USE_CUDA
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
@@ -308,7 +308,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 						m_playerIndex = 0;
 						if (iDay < nPrecalcRows || iDay >= numDaysResult())
 						{
-							ASSERT(1);
+							//ASSERT(1);
 							noMoreResults = true;
 							goto noResult;
 						}
@@ -427,7 +427,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->initCompatibilityMasks(groupInfo(nPrecalcRows));
+						m_pRowStorage->initCompatibilityMasks(groupInfo(param(t_useAutForPrecRows)));
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;

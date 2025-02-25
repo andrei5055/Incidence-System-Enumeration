@@ -5,6 +5,17 @@ PrintMatrices=0
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 
+TestName = "P1F_10x3x2_SingleThread"
+nPlayers=14
+GroupSize=3
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+//ExpectedResult=6
+RUN_JOB
+END_JOB
+
 FirstIndexOfStartMatrices=0
 // Single thread tests:
 USE_GPU=0
