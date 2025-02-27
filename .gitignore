@@ -31,9 +31,8 @@ slnx.*
 /k-Factorization/Logs2/15x7x3/P_Results.txt
 /k-Factorization/Utils/x64/Release
 /k-Factorization/Utils/x64/Release/Utils.dll.recipe
-/k-Factorization/CI/CDTools.dll
-/k-Factorization/CI/EngineGPU.dll
-/k-Factorization/CI/TripleSys.dll
-/k-Factorization/CI/Utils.dll
 /k-Factorization/Logs_CI
 /k-Factorization/Utils/x64/Debug/Utils.dll.recipe
+/Logs11
+/Logs9
+/Logs_CI

@@ -1,14 +1,20 @@
 #include "TripleSys.h"
 
 #define UseIPX				0 // works faster with 0
-#define USE_INTRINSIC		!USE_CUDA
+#define USE_INTRINSIC		0 //!USE_CUDA // with 0 we can calculate ptoa on the fly
+
+#if USE_INTRINSIC
+#define CalculatePtoAOnTheFly 0 // do not change, must be 0
+#else
+#define CalculatePtoAOnTheFly 0
+#endif
 
 #if USE_INTRINSIC || USE_64_BIT_MASK
 #include <immintrin.h> // Header for AVX2 intrinsics
 
 void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 	size_t i = 0;
-
+	/**
 	// Process 4 `long long` elements at a time using AVX2
 	for (; i + 4 <= size; i += 4) {
 		// Load 4 `long long` elements from each array
@@ -21,7 +27,7 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 		// Store the result back to the result array
 		_mm256_storeu_si256((__m256i*) & result[i], vec_result);
 	}
-
+	**/
 	// Handle the remainder elements (if `size` is not a multiple of 4)
 	for (; i < size; ++i) {
 		result[i] = a[i] & b[i];
@@ -120,20 +126,32 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-			const auto numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
-			auto pPrevA = (const ll*)(pCompSol) + numLongs2Skip;
-			const auto shift = m_numSolutionTotalB >> 3;
-			auto pToA = (ll*)(pPrevA + shift);
-			auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first)) + numLongs2Skip;
-#if USE_INTRINSIC
-			bitwise_multiply(pPrevA, pFromA, pToA, shift - numLongs2Skip);
+#define multiplyAll() 	for (auto j = m_pRowStorage->numLongs2Skip(iRow); j < shift; j++) \
+							pToA[j] = pPrevA[j] & pFromA[j];
+
+#if CalculatePtoAOnTheFly
+#define ptoa(j) (pToA[j] = pPrevA[j] & pFromA[j])
+#define multiply(j, jMax)  while (++j <= jMax) ptoa(j)
+#define multiply_1()
+#define multiply_2()    multiplyAll()
 #else
-			for (auto j = shift - numLongs2Skip; j--;)
-				pToA[j] = pPrevA[j] & pFromA[j];
+#define ptoa(j) pToA[j]
+#define multiply(j, jMax)  // empty macro
+#define multiply_1()	multiplyAll()
+#define multiply_2()    
+#endif
+			auto pPrevA = (const ll*)(pCompSol);
+			const auto shift = m_numSolutionTotalB >> 3;
+			auto pToA = (ll*)pPrevA + shift;
+			auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first));
+#if USE_INTRINSIC
+			unsigned int numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
+			bitwise_multiply(pPrevA + numLongs2Skip, pFromA + numLongs2Skip, pToA + numLongs2Skip, shift - numLongs2Skip);
+#else
+			multiply_1();
 #endif
 			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
-				auto* pToASol = (tmask*)(pToA - numLongs2Skip);
 
 #if NEW
 				if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
@@ -142,35 +160,38 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				}
 #else
 				auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
-				auto testCompl = m_pRowStorage->maskTestingCompleted();
-
-				int i = iRow + 1;
+				int i = iRow;
 				auto jMax = pRowSolutionMasksIdx[iRow];
-				for (; i <= m_nRowMax; i++) {
+				for (; ++i <= m_nRowMax;) {
 					auto j = jMax;
 					jMax = pRowSolutionMasksIdx[i];
 
 					// Check left, middle and right parts of the solution interval for i-th row
 					auto mask = pRowSolutionMasks[i - 1];
-					if (mask && (mask & pToASol[j++]))
-						continue;  // at least one solution masked by left part of the interval is still valid
-#if 0
-					if (testCompl[i - 1])
-						break;
-#endif
+					if (mask) {
+						if (mask & ptoa(j)) {
+							multiply(j, jMax);
+							continue;  // at least one solution masked by left part of the interval is still valid
+						}
+						j++;
+					}
+
 					// middle part
-					while (j < jMax && !pToASol[j])
+					while (j < jMax && !ptoa(j))
 						j++;
 
-					if (j < jMax)
+					if (j < jMax) {
+						multiply(j, jMax);
 						continue;   // at least one solution masked by middle part of the interval is still valid
+					}
 
 					// There are no valid solutions with the indices inside 
 					// the interval defined by set of long longs
 					mask = pRowSolutionMasks[i];
 					// If mask != 0, we need to check the right side of the intervals.
-					if (!mask || !((~mask) & pToASol[jMax]))
+					if (!mask || !(ptoa(jMax) && ~mask)) {
 						break;
+					}
 				}
 
 				if (i <= m_nRowMax) {
@@ -182,13 +203,15 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #if UseSolutionCliques
 				if (m_pRowStorage->useCliques(iRow)) {
 					first++;
-					if (ConstructCompatibleSolutionGraph(pToASol, iRow))
+					if (ConstructCompatibleSolutionGraph((tmask*)(pToA), iRow))
 						return 2;   // Ready to proceed with the getMatrix2() call.
 
 					continue;
 				}
 #endif  // UseSolutionCliques
 			}
+			else
+				multiply_2();
 		}
 
 		break;
