@@ -1,0 +1,53 @@
+
+===>> 03/01/25: 02:23:11
+      *** Resulting matrix DB is empty *** 
+T = 6h12m28s: 1340 (from 1340) P-matrices (21x3) processed by 15 threads. 0 P-matrices (21x10) generated
+Thread:Matrices generated
+ 1:0 2:0 3:0 4:0 5:0 6:0 7:0 8:0 9:0 10:0 11:0 12:0 13:0 14:0 15:0
+Total time=22348218ms (including prep time=19ms)
+
+Main parameters:
+                      nPlayers: 21
+                     GroupSize: 3
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 15
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 1000000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 1
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 4500
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 1
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+
+Parameters of string type:
+                   StartFolder: ../../Logs_CI/
+                  ResultFolder: ../../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/

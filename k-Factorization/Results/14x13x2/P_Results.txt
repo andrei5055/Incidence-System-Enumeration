@@ -1,0 +1,68 @@
+
+===>> 02/23/25: 11:33:08
+     ------------------------------------------------------------
+       |Aut(M)|:              Cycles:            # of matrices:
+     ------------------------------------------------------------
+           1                             78(14)          2
+           2                             78(14)          3
+           3                             78(14)          5
+           4                             78(14)          1
+           6                             78(14)          5
+          12                             78(14)          5
+          84                             78(14)          1
+         156                             78(14)          1
+     ------------------------------------------------------------
+                                         Total:         23
+     ------------------------------------------------------------
+
+
+T =22s: 174 (from 174) P-matrices (14x3) processed by 15 threads. 23 P-matrices (14x13) generated
+Thread:Matrices generated
+ 1:17 2:2 3:0 4:3 5:1 6:0 7:0 8:0 9:0 10:0 11:0 12:0 13:0 14:0 15:0
+Total time=21769ms (including prep time=2ms)
+
+Main parameters:
+                      nPlayers: 14
+                     GroupSize: 2
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 15
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 1000000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 3
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 500
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 0
+               AutGroupsToTest: 1
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 1
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+
+Parameters of string type:
+                   StartFolder: ../../Logs_CI/
+                  ResultFolder: ../../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/
