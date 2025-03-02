@@ -167,13 +167,14 @@ public:
 #endif
 	}
 	CC bool p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const;
-	CC inline auto numDaysResult() const		{ return m_numDaysResult; }
-	CC inline tchar* result(int nDay = 0) const { return m_pResults + nDay * m_numPlayers; }
-	CC auto sortGroupsFn(tchar *pntr)	const	{ return (this->*m_pSortGroups)(pntr, 1); }
+	CC inline auto numDaysResult() const			{ return m_numDaysResult; }
+	CC inline auto result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
+	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
+	CC inline auto groupsInfo() const				{ return m_ppAutGroups; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 private:
 	CC void Init();
-	inline auto numDays() const					{ return m_numDays; }
+	inline auto numDays() const						{ return m_numDays; }
 	CC bool initPrevDay();
 	CC inline tchar* links(int nPlayer = 0) const	{ return m_pLinks + nPlayer * m_numPlayers; }
 	CC void getUnselected(tchar* v, int nv) const;

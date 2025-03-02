@@ -427,7 +427,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->initCompatibilityMasks(groupInfo(param(t_useAutForPrecRows)));
+						m_pRowStorage->initCompatibilityMasks(/*groupInfo(param(t_useAutForPrecRows))*/);
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;

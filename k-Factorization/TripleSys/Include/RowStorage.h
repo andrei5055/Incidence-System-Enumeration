@@ -50,7 +50,7 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
-	CC void initCompatibilityMasks(const CGroupInfo* pGroupInfo = NULL);
+	CC void initCompatibilityMasks();
 	CC int initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }

@@ -170,9 +170,10 @@ protected:
 	CC inline auto firstGroupIdx() const			{ return m_autLevelDef[0]; }
 	CC inline auto lastGroupIdx() const				{ return m_autLevelDef[1]; }
 	CC inline auto testedTRs() const				{ return m_pTestedTrs; }
+
+	CGroupInfo** m_ppAutGroups = NULL;
 private:
 	CGroupInfo* m_pTestedTrs = NULL;
-	CGroupInfo** m_ppAutGroups = NULL;
 	const int m_autLevelDef[2];
 	const int m_autLevel[2];
 	const bool m_bDirection;

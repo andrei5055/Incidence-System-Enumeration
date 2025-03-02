@@ -327,7 +327,8 @@ CC uint CRowStorage::findSolution(ctchar* tr, uint low, uint high) const {
 	return UINT_MAX;		// not found 
 }
 
-CC void CRowStorage::initCompatibilityMasks(const CGroupInfo *pGroupInfo) {
+CC void CRowStorage::initCompatibilityMasks() {
+	const auto pGroupInfo = m_pAllData->groupsInfo()[sysParam()->val[t_useAutForPrecRows]];
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
