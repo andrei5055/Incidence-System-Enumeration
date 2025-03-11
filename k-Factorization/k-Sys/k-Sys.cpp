@@ -509,28 +509,27 @@ int main(int argc, const char* argv[])
 					printfGreen(" 2 rows canonization\n");
 
 				const auto uf_code = param.u1fCycles[0];
+				auto& ufName = strVal[t_UFname];
 				if (uf_code) {
 					const auto uf = getUF(uf_code);
-					if (!strVal[t_UFname]) {
-						auto& ufName = strVal[t_UFname] = new string("_u1f");
+					if (!ufName) {
+						ufName = new string("_u1f");
 						auto lenCycles = uf_code + 1;
 						for (int i = 0; i < *uf_code; i++, lenCycles += 8) {
 							*ufName += '_';
 							auto lenCycle = lenCycles;
-							while (1) {
+							while (*lenCycle)
 								*ufName += std::to_string(*lenCycle++);
-								if (*lenCycle)
-									*ufName += '+';
-								else
-									break;
-							}
 						}
-
 					}
-					printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), strVal[t_UFname]->c_str(), uf.c_str());
+					printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), ufName->c_str(), uf.c_str());
 				}
-				else
+				else {
+					if (!ufName)
+						ufName = new string("");
+
 					printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), val[t_numPlayers]);
+				}
 			}
 			else {
 				printfGreen("%s-matrices ", getFileNameAttr(&param));
