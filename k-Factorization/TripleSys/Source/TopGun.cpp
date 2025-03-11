@@ -100,6 +100,7 @@ int TopGun::Run()
 		int nThreadsRunning = 1;
 		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices;
 		mstart = startMatrix + m_iMatrix * mStartMatrixSize;
+		mfirst = startMatrix;
 		mTime = clock() - iTime;
 
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
@@ -111,7 +112,7 @@ int TopGun::Run()
 			int icode = 0;
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
-				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mstart, nRowsStart(), NULL, &m_reportInfo)) {
+				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mfirst, nRowsStart(), NULL, &m_reportInfo)) {
 					printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {

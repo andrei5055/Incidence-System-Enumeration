@@ -39,7 +39,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
-	CC void initPlayerMask();
+	CC void initPlayerMask(ctchar* pFirstMatr = NULL);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
@@ -144,6 +144,7 @@ private:
 	const int m_step;
 
 	CStorage<tchar>* m_pMaskStorage = NULL;
+	CRepository* m_pIS_Storage = NULL;		// Storage for I(nadmissible) S(olutions)
 
 #if 0
 	ll cnt1 = 0;
@@ -210,3 +211,6 @@ private:
 	bool m_bSolutionReady;   // true, when solution was prepared ar a part of combined solution. 
 	bool m_bUsePlayersMask;
 };
+
+#define PERMUTATION_OF_PLAYERS(numPlayers, pLayersIn, permut, pLayersOut)	for (auto j = numPlayers; j--;) \
+																				pLayersOut[j] = permut[pLayersIn[j]];

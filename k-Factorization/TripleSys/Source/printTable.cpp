@@ -1,29 +1,53 @@
 #include "TopGun.h"
 void alldata::printPermutationMatrices(const int iMode) const {
-	if (m_groupSize != 3)
+	if (m_groupSize != 3 || iMode < 2)
 		return;
+	int maxStr = 144;
 	auto v = getV0();
-	tchar ceTable0[MAX_GROUP_NUMBER * MAX_GROUP_NUMBER * 2];
-	tchar ceTable[(MAX_3PF_SETS + 1) * MAX_GROUP_NUMBER * MAX_GROUP_NUMBER];
+	tchar cycles[MAX_3PF_SETS * MAX_GROUP_NUMBER];
+	tchar pm0[MAX_GROUP_NUMBER * MAX_GROUP_NUMBER * 2];
+	tchar pm[MAX_3PF_SETS * MAX_GROUP_NUMBER * MAX_GROUP_NUMBER];
 	for (int i = 1; i < iDay; i++) {
-		int i0 = i - 1;
-		auto nv = getAllV(v, MAX_3PF_SETS, i0, i);
-		memset(ceTable0, 0, sizeof(ceTable0));
-		memset(ceTable, 0, sizeof(ceTable));
-		for (int j = 0; j < nv; j++) {
-			for (int k = 0; k < m_nGroups; k++) {
-				int m = neighbors(i)[v[j * m_nGroups + k]];
-				int n = result(i)[m];
-				ceTable[j * m_nGroups + m / m_groupSize + k * nv * m_nGroups] = 1; //iMode == 0 ? 1 : n;
-				ceTable0[m / m_groupSize + k * m_nGroups * 2] = n;// iMode == 0 ? 1 : n;
-				ceTable0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;// iMode == 0 ? 1 : n;
+		for (int i0 = 0; i0 < i; i0++) {
+			if (i0 == i)
+				continue;
+			if (iMode == 2 && i0 != 0)
+				break;
+			//if (iMode == 3 && i0 != 1 && i != 4)
+			if (iMode == 3 && i0 != i - 1)
+				continue;
+			auto nv = getAllV(v, MAX_3PF_SETS, i0, i);
+			memset(pm0, 0, sizeof(pm0));
+			memset(pm, 0, sizeof(pm));
+			memset(cycles, unset, sizeof(cycles));
+			memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
+			for (int j = 0; j < nv; j++) {
+				for (int k = 0; k < m_nGroups; k++) {
+					int m = neighbors(i)[v[j * m_nGroups + k]];
+					int n = result(i)[m];
+					pm[j * m_nGroups + m / m_groupSize + k * nv * m_nGroups] = 1; //iMode == 0 ? 1 : n;
+					pm0[m / m_groupSize + k * m_nGroups * 2] = n;// iMode == 0 ? 1 : n;
+					pm0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;// iMode == 0 ? 1 : n;
+				}
+				TrCycles trc;
+				const auto ncycles = p3Cycles(&trc, 2, neighbors(i0), neighbors(i), v + j * m_nGroups, result(i0), result(i));
+				memcpy(cycles + j * m_nGroups, trc.length, ncycles);
+			}
+			printf("\nResult rows (%d,%d), cycles and corresponding Permutation matrices\n", i0, i);
+			printTableColor("", result(i0), 1, m_numPlayers, m_groupSize);
+			printTableColor("", result(i), 1, m_numPlayers, m_groupSize);
+			printf("\n");
+			printTableColor("", pm0, m_nGroups, m_nGroups * 2, m_nGroups);
+			int istr = 0;
+			int nvMax = 6;//maxStr / (m_nGroups * 2 + 2);
+			for (int inv = 0; inv < nv; inv += nvMax) {
+				printf("\n");
+				printTableColor("c", cycles + inv * m_nGroups, 1, m_nGroups * min((nv - inv), nvMax), m_nGroups);
+				for (int k = 0; k < m_nGroups; k++) {
+					printTableColor("", pm + (inv + k * nv) * m_nGroups, 1, m_nGroups * min((nv - inv), nvMax), m_nGroups);
+				}
 			}
 		}
-		printf("\nPermutation matrices for rows %d,%d\n", i0, i);
-
-		printTableColor("", ceTable0, m_nGroups, m_nGroups * 2, m_nGroups);
-		printf("\n");
-		printTableColor("", ceTable, m_nGroups, m_nGroups * nv, m_nGroups);
 	}
 }
 
@@ -42,7 +66,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 		if (makeString) printf("\"");
 		for (int i = 0; i < nc; i++)
 		{
-			char v = c[ind + i];
+			ctchar v = c[ind + i];
 			if (np > 0 && (i % np) == 0 && i > 0)
 				printf(" ");
 			if (co) {
@@ -51,7 +75,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 				else
 					nc > 16 ? printfYellow("%2d", v) : printfYellow("%3d", v);
 			}
-			else if (v >= 0 && v < 67)
+			else if (v < 67)
 			{
 				if (v == 1)
 					printf(" 1");
@@ -60,6 +84,8 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 					printf("\x1b[0m");
 				}
 			}
+			else if (v == unset)
+				printf("  ");
 			else
 				printf("%2d", v);
 		}

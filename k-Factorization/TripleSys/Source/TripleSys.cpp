@@ -69,8 +69,8 @@ void alldata::outputError() const {
 #endif
 #endif
 
-CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* secondRowsDB,
-	tchar* mStart0, tchar* mStart, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
+CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
+	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 #if !USE_CUDA
 	const auto iTime = clock();
@@ -90,8 +90,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 		iCalcMode = eCalcResult;
 		m_createSecondRow = 1;
 		m_numDaysResult = 2;
-		nPrecalcRows = 0;
-		nrowsStart = 0;
+		nrowsStart = nPrecalcRows = 0;
 	}
 	else
 		m_createSecondRow = 0;
@@ -249,7 +248,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
-			m_pRowStorage->initPlayerMask();
+			m_pRowStorage->initPlayerMask(mfirst);
 
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
@@ -427,7 +426,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->initCompatibilityMasks(/*groupInfo(param(t_useAutForPrecRows))*/);
+						m_pRowStorage->initCompatibilityMasks();
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;
@@ -589,7 +588,7 @@ CC sLongLong alldata::Run(int threadNumber, int iCalcMode, CStorageSet<tchar>* s
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
 					if (param(t_printMatrices) == 2)
-						printPermutationMatrices(1);
+						printPermutationMatrices(2);
 				}
 #endif
 				//cnvCheckNew(2, iDay);

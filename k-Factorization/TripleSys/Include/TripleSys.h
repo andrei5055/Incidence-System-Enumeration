@@ -133,7 +133,7 @@ typedef struct TrCycles {
 
 typedef CRepository CBinaryMatrixStorage;
 
-class alldata : private CGroupInfo, CGroupUtilisation, CycleSupport, CChecklLink {
+class alldata : public CGroupUtilisation, private CGroupInfo, CycleSupport, CChecklLink {
 	typedef bool(alldata::*checkU1F)(int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
@@ -142,8 +142,8 @@ public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	CC sLongLong Run(int threadNumber=0, int iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL, 
-		tchar* mstart0 = NULL, tchar* mstart = NULL,
+	CC sLongLong Run(int threadNumber=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
+		tchar* mstart0 = NULL, ctchar* mfirst = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);
@@ -168,9 +168,8 @@ public:
 	}
 	CC bool p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const;
 	CC inline auto numDaysResult() const			{ return m_numDaysResult; }
-	CC inline auto result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
+	CC inline tchar *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
-	CC inline auto groupsInfo() const				{ return m_ppAutGroups; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 private:
 	CC void Init();
@@ -298,6 +297,7 @@ private:
 	int m_useRowsPrecalculation;
 	int m_secondPlayerInRow4;
 	int m_secondPlayerInRow4Last;
+	int m_numDaysResult;
 
 	tchar* m_Km;
 	tchar* m_Km2;

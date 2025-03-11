@@ -102,14 +102,13 @@ public:
 	CC CRepository(int lenObj, int numObjects = 0) :
 		CStorageIdx<tchar>(numObjects, lenObj) {}
 
+	CC int getElementIndex(ctchar* tr) const;
 	CC int updateRepo(ctchar* tr);
 	CC inline auto isProcessed(ctchar* tr) {
 		const auto numRegisteredTrs = numObjects();
 		updateRepo(tr);
 		return numRegisteredTrs == numObjects();
 	}
-
-	int m_numDaysResult;
 };
 
 typedef CRepository CGroupInfo;
@@ -119,6 +118,14 @@ typedef CRepository CGroupInfo;
 #define updateGroup(x)		updateRepo(x)
 
 class CGroupUtilisation {
+public:
+	CC inline CGroupInfo* groupInfo(int nRow) const {
+		const int idx = nRow - m_autLevelDef[0];
+		if (idx < 0 || nRow > m_autLevelDef[1])
+			return NULL;
+
+		return m_ppAutGroups[idx];
+	}
 protected:
 	CC CGroupUtilisation(const kSysParam* p) : 
 		m_autLevelDef{ p->val[t_autLevelMinDef], p->val[t_autLevelMaxDef] },
@@ -144,13 +151,6 @@ protected:
 		delete m_pTestedTrs;
 	}
 
-	CC inline CGroupInfo* groupInfo(int nRow) const {
-		const int idx = nRow - m_autLevelDef[0];
-		if (idx < 0 || nRow > m_autLevelDef[1])
-			return NULL;
-
-		return m_ppAutGroups[idx];
-	}
 	CC void saveGroup(const CGroupInfo& grInfo, int nRows) {
 		auto* pRowGroup = groupInfo(nRows);
 		if (pRowGroup)
@@ -171,8 +171,8 @@ protected:
 	CC inline auto lastGroupIdx() const				{ return m_autLevelDef[1]; }
 	CC inline auto testedTRs() const				{ return m_pTestedTrs; }
 
-	CGroupInfo** m_ppAutGroups = NULL;
 private:
+	CGroupInfo** m_ppAutGroups = NULL;
 	CGroupInfo* m_pTestedTrs = NULL;
 	const int m_autLevelDef[2];
 	const int m_autLevel[2];

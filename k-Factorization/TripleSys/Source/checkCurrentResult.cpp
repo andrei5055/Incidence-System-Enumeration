@@ -95,6 +95,11 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 					bPrev = !cnvCheckNew(0, iDay);
 #else
 				bPrev = cnvCheckNew(0, iDay);
+
+#if !USE_CUDA
+				if (param(t_printMatrices) == 3 && iDay > 2)
+					printPermutationMatrices(3);
+#endif
 #endif
 			}
 #endif

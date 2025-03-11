@@ -507,8 +507,26 @@ int main(int argc, const char* argv[])
 					printfYellow(" 1 row canonization %s\n", val[t_groupSize] > 3 || val[t_numPlayers] < 12  ? "" : "(can be slow)");
 				else
 					printfGreen(" 2 rows canonization\n");
-				if (param.u1fCycles[0]) {
-					const auto uf = getUF(param.u1fCycles[0]);
+
+				const auto uf_code = param.u1fCycles[0];
+				if (uf_code) {
+					const auto uf = getUF(uf_code);
+					if (!strVal[t_UFname]) {
+						auto& ufName = strVal[t_UFname] = new string("_u1f");
+						auto lenCycles = uf_code + 1;
+						for (int i = 0; i < *uf_code; i++, lenCycles += 8) {
+							*ufName += '_';
+							auto lenCycle = lenCycles;
+							while (1) {
+								*ufName += std::to_string(*lenCycle++);
+								if (*lenCycle)
+									*ufName += '+';
+								else
+									break;
+							}
+						}
+
+					}
 					printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), strVal[t_UFname]->c_str(), uf.c_str());
 				}
 				else

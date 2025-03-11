@@ -129,6 +129,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 				if (indRow0 == indRow1)
 					continue;
 				const int nv1 = getAllV(v1, maxv1, indRow0, indRow1);
+				//if (nv1 > 53)
+				//	indRow1 = indRow1;
 				bool bPair = false;
 				//bool bLastRow = indRow0 == nrows - 1 || indRow1 == nrows - 1;
 				const auto* pV1 = v1;

@@ -1,0 +1,64 @@
+
+===>> 03/08/25: 08:58:59
+     ------------------------------------------------------------
+       |Aut(M)|:              Cycles:            # of matrices:
+     ------------------------------------------------------------
+           1                            144(27)     140321
+           2                            144(27)       1270
+           3                            144(27)         95
+           4                            144(27)         45
+           6                            144(27)         18
+           8                            144(27)          4
+     ------------------------------------------------------------
+                                         Total:     141753
+     ------------------------------------------------------------
+
+
+T =16d12h 3m41s: 3 (from 3) P-matrices (27x2) processed by 10 threads. 141753 P-matrices (27x3) generated
+Thread:Matrices generated
+ 1:88994 2:10860 3:41899 4:0 5:0 6:0 7:0 8:0 9:0 10:0
+Total time=1425821084ms (including prep time=14311ms)
+
+Main parameters:
+                      nPlayers: 27
+                     GroupSize: 3
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 10
+            NRowsInStartMatrix: 2
+      MaxNumberOfStartMatrices: 1000000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 3
+                ExpectedResult: -1
+                UseCheckLinksV: 0
+         UseRowsPrecalculation: 3
+    UseSolutionCliquesAfterRow: 0
+                 PrintMatrices: 1
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 4500
+                AutLevelMinDef: 3
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 1
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+
+Parameters of string type:
+                   StartFolder: ../../Logs_CI/
+                  ResultFolder: ../../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/

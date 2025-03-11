@@ -1,6 +1,10 @@
 #include "TripleSys.h"
 #include "Table.h"
 
+#define USE_GROUP_4_2_ROWS			1
+#define USE_PREVIOUS_SOLUTIONS		0
+#define STATISTIC_4_SOLUTION_PAIRS  0
+
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
@@ -31,6 +35,7 @@ CC CRowStorage::~CRowStorage() {
 	delete m_pMaskStorage;
 	delete[] m_pSolMemory;
 	releaseSolMaskInfo();
+	delete m_pIS_Storage;
 }
 
 CC void CRowStorage::initMaskStorage(uint numObjects) {
@@ -39,9 +44,9 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 	reset();
 }
 
-CC void CRowStorage::initPlayerMask() {
+CC void CRowStorage::initPlayerMask(ctchar *pFirstMatr) {
 	ll playersMask = -1;
-	int shift = m_numPlayers;
+	int shift = numPlayers();
 	if (!m_bGroupSize2) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		const auto groupSize = m_pAllData->groupSize();
@@ -49,18 +54,58 @@ CC void CRowStorage::initPlayerMask() {
 		playersMask <<= groupSize;						// ...first row
 		auto const* pSolution = m_pAllData->result();
 		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
-			pSolution += m_numPlayers;
+			pSolution += numPlayers();
 			for (auto i = groupSize; --i;)
 				playersMask ^= (ll)1 << pSolution[i];
 		}
 	}
 	else {
-		// Predefined rows for groupSuze = 2, are assumed to be correct.
+		// Predefined rows for groupSize = 2, are assumed to be correct.
 		playersMask <<= (numPreconstructedRows() + 1);
 		shift = numDaysResult() + 1;
 	}
 
 	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << shift);
+	if (pFirstMatr && USE_GROUP_4_2_ROWS) {
+		const auto pGroupInfo = m_pAllData->groupInfo(2);
+		const auto groupOrder = pGroupInfo->groupOrder();
+		if (groupOrder > 1) {
+			ASSERT(m_pIS_Storage != NULL)
+			m_pIS_Storage = new CRepository(numPlayers(), 64);
+			shift = (numPreconstructedRows() - 1) * numPlayers();
+			const auto pCurrentMatr = m_pAllData->result() + shift;
+			auto pPermSolution = m_pSolMemory + numPlayers();
+#if USE_PREVIOUS_SOLUTIONS
+			// Populate the database with all solutions that the previous 
+			// solutions of the 3rd row transform into.
+			const auto lenRecord = shift + numPlayers();
+			auto pSolution = pFirstMatr + shift;
+			while (memcmp(pSolution, pCurrentMatr, numPlayers()) < 0) {
+				// For all non-trivial automorphisms:
+				for (auto i = 0; ++i < groupOrder;) {
+					auto* pntr = pGroupInfo->getObject(i);
+					PERMUTATION_OF_PLAYERS(numPlayers(), pSolution, pntr, m_pSolMemory);
+					(m_pAllData->sortGroupsFn)(m_pSolMemory);
+					m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+					m_pIS_Storage->updateRepo(pPermSolution);
+				}
+
+				pSolution += lenRecord;
+			}
+#else
+			// Populate the database with all solutions that the current 
+			// solution of the 3rd row transforms into.
+			// For all non-trivial automorphisms:
+			for (auto i = 0; ++i < groupOrder;) {
+				auto* pntr = pGroupInfo->getObject(i);
+				PERMUTATION_OF_PLAYERS(numPlayers(), pCurrentMatr, pntr, m_pSolMemory);
+				(m_pAllData->sortGroupsFn)(m_pSolMemory);
+				m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+				m_pIS_Storage->updateRepo(pPermSolution);
+			}
+#endif
+		}
+	}
 }
 
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
@@ -96,6 +141,10 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 #endif
 
 CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
+#if 0
+	if (m_pIS_Storage && m_pIS_Storage->numObjects() > 0 && m_pIS_Storage->getElementIndex(pRow) < 0)
+		return true;
+#endif
 	if (m_numObjects == m_numObjectsMax) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
@@ -274,12 +323,9 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 		const auto pSolution = getObject(solIdx);
 		auto pPermSolution = m_pSolMemory + numPlayers();
 		// For all non-trivial automorphisms:
-		for (auto i = pGroupInfo->numObjects(); --i;) { 
+		for (auto i = pGroupInfo->groupOrder(); --i;) {
 			auto* pntr = pGroupInfo->getObject(i);
-			for (auto j = numPlayers(); j--;)
-				m_pSolMemory[j] = pntr[pSolution[j]];
-
-
+			PERMUTATION_OF_PLAYERS(numPlayers(), pSolution, pntr, m_pSolMemory);
 			(m_pAllData->sortGroupsFn)(m_pSolMemory);
 			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
 			const auto idx = findSolution(pPermSolution, 0, idxMax);
@@ -310,7 +356,7 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 }
 
 CC uint CRowStorage::findSolution(ctchar* tr, uint low, uint high) const {
-	// search for element 
+	// search for element
 	high--;
 	while (low <= high) {
 		const auto itr = low + ((high - low) >> 1);
@@ -328,7 +374,7 @@ CC uint CRowStorage::findSolution(ctchar* tr, uint low, uint high) const {
 }
 
 CC void CRowStorage::initCompatibilityMasks() {
-	const auto pGroupInfo = m_pAllData->groupsInfo()[sysParam()->val[t_useAutForPrecRows]];
+	const auto pGroupInfo = m_pAllData->groupInfo(sysParam()->val[t_useAutForPrecRows]);
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
@@ -345,7 +391,31 @@ CC void CRowStorage::initCompatibilityMasks() {
 
 	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
 
+#if 0 // Output of all solutions which were expected to be removed and all constructed solutions for matrix #50
+#include "Table.h"
+	static int bbb = 0;
+	if (m_pIS_Storage && bbb++ == 50) {
+		const auto groupSize = sysParam()->val[t_groupSize];
+		FOPEN_F(f, "bbb.txt", "w");
+		fprintf(f, "============= Excluded solutions ============\n");
+		for (int i = 0; i < m_pIS_Storage->numObjects(); i++)
+			outMatrix(m_pIS_Storage->getObjPntr(i), 1, m_numPlayers, groupSize, 0, f);
 
+		fprintf(f, "\n============= Remaining solutions ============\n");
+		for (int i = 0; i < m_numSolutionTotal; i++)
+			outMatrix(getObject(i), 1, m_numPlayers, groupSize, 0, f);
+
+		FCLOSE_F(f);
+	}
+#endif
+#if 0   // Output of table with total numbers of solutions for different input matrices 
+	static int ccc = 0;
+	FOPEN_F(f, "aaa.txt", ccc ? "a" : "w");
+	if (!ccc++)
+		fprintf(f, "Matrix#:     Num.Solutions:\n");
+	fprintf(f, " %5d:          %6d\n", ccc, m_numSolutionTotal);
+	FCLOSE_F(f);
+#endif
 
 	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
 	if (useCombinedSolutions) {
@@ -440,6 +510,69 @@ CC void CRowStorage::initCompatibilityMasks() {
 		if (skipFirstAllowed && !first) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
+#if STATISTIC_4_SOLUTION_PAIRS      
+			// Let's count the number of pairs of solutions that can be excluded.
+			const auto pGroupInfo = m_pAllData->groupsInfo()[0];
+			const auto groupOrder = pGroupInfo->groupOrder();
+			const auto pThirdRow = m_pAllData->result() + 2 * m_numPlayers;
+			tchar transformedThirdRow[21];
+			int cntr1 = 0;
+#define FOURTH_TO_THIRD		0
+
+#if !FOURTH_TO_THIRD
+			// Find the solution that the 3rd row will be transformed into.
+			auto pRowTransfStorage = new CRepository(numPlayers(), 64);
+			for (auto i = 0; ++i < groupOrder;) {
+				auto* pntr = pGroupInfo->getObject(i);
+				PERMUTATION_OF_PLAYERS(numPlayers(), pThirdRow, pntr, m_pSolMemory);
+				(m_pAllData->sortGroupsFn)(m_pSolMemory);
+				m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, transformedThirdRow);
+				pRowTransfStorage->updateRepo(transformedThirdRow);
+			}
+			const auto numSol3rd = pRowTransfStorage->numObjects();
+#endif
+			while (++first < last) {
+				const auto pCurrentMatr = getObject(first);
+				auto pPermSolution = m_pSolMemory + numPlayers();
+				// For all non-trivial automorphisms:
+				for (auto i = 0; ++i < groupOrder;) {
+					auto* pntr = pGroupInfo->getObject(i);
+#if FOURTH_TO_THIRD
+					PERMUTATION_OF_PLAYERS(numPlayers(), pCurrentMatr, pntr, m_pSolMemory);
+					(m_pAllData->sortGroupsFn)(m_pSolMemory);
+					m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+					const auto cmp = MEMCMP(pPermSolution, pThirdRow, m_numPlayers);
+					ASSERT(cmp < 0);
+					if (cmp > 0)  // 4-th row was not transformed into 3-rd
+						continue;
+
+					PERMUTATION_OF_PLAYERS(numPlayers(), pThirdRow, pntr, m_pSolMemory);
+					(m_pAllData->sortGroupsFn)(m_pSolMemory);
+					m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, transformedThirdRow);
+#else
+					pRowTransfStorage->releaseAllObjects();
+#endif
+					// Loop over all solutions of the 4-th raw which are lexicographically smaller than the current one.
+					for (int i1 = 0; i1 < first; i1++) {
+						const auto pFourthRow = getObject(i1);
+						PERMUTATION_OF_PLAYERS(numPlayers(), pFourthRow, pntr, m_pSolMemory);
+						(m_pAllData->sortGroupsFn)(m_pSolMemory);
+						m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+#if FOURTH_TO_THIRD
+						if (!MEMCMP(pPermSolution, transformedThirdRow, m_numPlayers))
+							cntr1++;
+#endif
+					}
+				}
+			}
+
+			static int ccc = 0;
+			FOPEN_F(f, "aaa.txt", ccc ? "a" : "w");
+			if (!ccc++)
+				fprintf(f, "Matrix#:     Num.Pairs:\n");
+			fprintf(f, " %5d:          %6d\n", ccc, cntr1);
+			FCLOSE_F(f);
+#endif
 			continue;
 		}
 

@@ -55,7 +55,7 @@ public:
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	void myTemporaryCheck();
-	void startThread(int iTask, int iMode = eCalcResult, bool bOnlyStart = false, CRowStorage* pRowStorage = NULL);
+	void startThread(int iTask, eThreadStartMode iMode = eCalcResult, bool bOnlyStart = false, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
 	sLongLong *m_cntTotal = NULL;
@@ -63,7 +63,7 @@ private:
 	bool *threadActive = NULL;
 	int mLinksSize;
 	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
-	tchar* mstart = NULL;
+	tchar* mstart = NULL, *mfirst = NULL;
 	int numThreads;
 	int m_iMatrix;
 	int m_iPrintCount;

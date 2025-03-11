@@ -1,6 +1,6 @@
 #include "GroupInfo.h"
 
-CC int CRepository::updateRepo(ctchar* tr) {
+CC int CRepository::getElementIndex(ctchar* tr) const {
 	// search for element 	
 	int itr;
 	int low = 0;
@@ -22,6 +22,16 @@ CC int CRepository::updateRepo(ctchar* tr) {
 	if (cmp < 0)
 		itr++;
 
+	return itr;
+}
+
+CC int CRepository::updateRepo(ctchar* tr) {
+	// search for element 	
+	const auto itr = getElementIndex(tr);
+	if (itr < 0)
+		return itr;
+
+	const auto nElem = numObjects();
 	auto* cmpTr = getObjAddr(nElem);
 
 	if (itr < nElem)

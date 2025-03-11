@@ -43,7 +43,6 @@ bool TopGunBase::readStartMatrices() {
 		printfRed("*** Memory allocation issue encountered while reading the initial matrices\n");
 		return false;
 	}
-
 	return true;
 }
 

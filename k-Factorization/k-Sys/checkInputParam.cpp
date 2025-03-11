@@ -1,5 +1,7 @@
 #include "TripleSys.h"
 
+extern const char* arrayParamNames[];
+
 bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto& val = param.val;
 	const auto numPlayers = val[t_numPlayers];
@@ -33,7 +35,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	if (/*val[t_u1f] */ pCycles) {
 		auto pU1F = pCycles + 1;
 		if (*pCycles != 1) {
-			printfRed("*** Incorrect parameter 'U1FCycles': this version supports only one cycles set definition, Exit\n");
+			printfRed("*** Incorrect parameter '%s': this version supports only one cycles set definition, Exit\n", arrayParamNames[0]);
 			return false;
 		}
 		for (tchar j = 0; j < *pCycles; j++) {
@@ -43,8 +45,8 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				if (pU1F[i])
 				{
 					if (i > 0 && pU1F[i - 1] > pU1F[i]) {
-						printfRed("*** Incorrect parameter 'U1FCycles': cycle length(%d) is less than next cycle length(%d), Exit\n",
-							pU1F[i - 1], pU1F[i]);
+						printfRed("*** Incorrect parameter '%s': cycle length(%d) is less than next cycle length(%d), Exit\n",
+							arrayParamNames[0], pU1F[i - 1], pU1F[i]);
 						return false;
 					}
 					nElem += pU1F[i];
@@ -77,7 +79,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 
 	const auto nRowStart = val[t_nRowsInStartMatrix];
 	if (nRowStart && !val[t_MultiThreading]) {
-		printfRed("*** %s=%d should be 0 if UseMultiThreading=0. Exit\n", paramNames[t_nRowsInStartMatrix], nRowStart);
+		printfRed("*** %s=%d should be 0 if %s=0. Exit\n", paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading]);
 		return false;
 	}
 
@@ -93,9 +95,18 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			paramNames[t_nRowsInStartMatrix], val[t_nRowsInStartMatrix], paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 		return false;
 	}
-	if (val[t_useRowsPrecalculation] && groupSize == 3 && val[t_useRowsPrecalculation] != 3) {
-		printfRed("*** With GroupSize = 3 the value of UseRowsPrecalculation(%d), can be 0 or 3. Exit\n", val[t_useRowsPrecalculation]);
-		return false;
+
+	if (val[t_useRowsPrecalculation]) {
+		if (groupSize == 3 && val[t_useRowsPrecalculation] != 3) {
+			printfRed("*** With GroupSize = 3 the value of %s(%d), can be 0 or 3. Exit\n", paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+			return false;
+		}
+
+		if (val[t_useAutForPrecRows] != 3 && groupSize != val[t_useAutForPrecRows]) {
+			printfRed("*** With %s = %d the value of %s(%d), must be %s3. Exit\n", 
+				paramNames[t_groupSize], groupSize, paramNames[t_useAutForPrecRows], val[t_useRowsPrecalculation], groupSize == 2? "2 or " : "");
+			return false;
+		}
 	}
 
 	return true;

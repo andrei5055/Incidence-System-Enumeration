@@ -1,0 +1,63 @@
+
+===>> 03/05/25: 11:41:22
+     ------------------------------------------------------------
+       |Aut(M)|:              Cycles:            # of matrices:
+     ------------------------------------------------------------
+          28                              1(14)          1
+     ------------------------------------------------------------
+                                         Total:          1
+     ------------------------------------------------------------
+
+
+
+Thread 1: 1 non-isomorphic matrices (14,2,2) created
+Thread execution time = 7 ms
+
+Thread 1: 1 non-isomorphic matrices (14,2,2) created
+Thread execution time = 9 ms
+
+Main parameters:
+                      nPlayers: 14
+                     GroupSize: 2
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 0
+                      NThreads: 1
+            NRowsInStartMatrix: 0
+      MaxNumberOfStartMatrices: 1000000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 2
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 1
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 500
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 0
+               AutGroupsToTest: 1
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 1
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+
+Parameters of string type:
+                   StartFolder: ../../Logs_CI/
+                  ResultFolder: ../../Logs11/
+          ImprovedResultFolder: ../ImprovedResults/

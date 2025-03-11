@@ -6,7 +6,7 @@
 #if USE_INTRINSIC
 #define CalculatePtoAOnTheFly 0 // do not change, must be 0
 #else
-#define CalculatePtoAOnTheFly 0
+#define CalculatePtoAOnTheFly 1
 #endif
 
 #if USE_INTRINSIC || USE_64_BIT_MASK
@@ -189,7 +189,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 					// the interval defined by set of long longs
 					mask = pRowSolutionMasks[i];
 					// If mask != 0, we need to check the right side of the intervals.
-					if (!mask || !(ptoa(jMax) && ~mask)) {
+					if (!mask || !((~mask) & ptoa(jMax))) {
 						break;
 					}
 				}
