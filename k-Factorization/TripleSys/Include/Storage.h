@@ -4,64 +4,54 @@ template<typename T>
 class CStorage {
 public:
 	CC CStorage(int numObjects, int lenObj = 1) : m_lenObj(lenObj) {
+		setLenCompare(lenObj);
 		if (numObjects)
 			m_pObjects = new T[numObjects * m_lenObj];
 	}
 	CC ~CStorage()								{ delete[] m_pObjects; }
-	CC T* reallocStorageMemory(int numObjects)	{
+	CC inline T* reallocStorageMemory(int numObjects) {
 		return ::reallocStorageMemory(&m_pObjects, m_lenObj * numObjects);
 	}
 	CC virtual T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
 	CC inline T** getObjectsPntr()				{ return &m_pObjects; }
 	CC inline auto lenObject() const			{ return m_lenObj; }
 	CC inline void setLenCompare(int len)		{ m_lenCompare = len; }
-	CC T& operator[](int i) const				{ return *getObject(i); }
-	CC uint findObject(const T *pObj, uint low, uint high) const {
-		// search for element
-		high--;
-		while (low <= high) {
-			const auto itr = low + ((high - low) >> 1);
-			const auto cmp = compareObjects(itr, pObj);
-			if (!cmp)
-				return itr;
-
-			if (low == high)
-				break;
-
-			if (cmp < 0)
-				low = itr + 1;  // ignore left half
-			else
-				high = itr - 1; // ignore right half
-		}
-
-		return UINT_MAX;		// not found 
+	CC inline T& operator[](int i) const		{ return *getObject(i); }
+	CC inline uint findObject(const T* pObj, uint low, uint high) const {
+		return static_cast<uint>(binarySearch(pObj, low, high, false));
 	}
-	CC int getElementIndex(const T* tr, uint nElem) const {
-		// search for element 	
-		int itr;
-		int low = 0;
-		auto high = itr = nElem - 1;
-		int cmp = -1;
-		while (low <= high) {
-			itr = low + ((high - low) >> 1);
-			cmp = MEMCMP(getObject(itr), tr, m_lenObj);
-			if (!cmp)
-				return -itr - 1;
-
-			if (cmp < 0)
-				low = itr + 1;  // ignore left half
-			else
-				high = itr - 1; // ignore right half
-		}
-
-		if (cmp < 0)
-			itr++;
-
-		return itr;
+	CC inline int getElementIndex(const T* obj, uint nElem) const {
+		return binarySearch(obj, 0, nElem, true);
 	}
 protected:
 	const int m_lenObj;
 private:
+	CC int binarySearch(const T* pObj, uint low, uint high, bool returnInsertionPoint) const {
+		if (high-- == 0 || low > high)  // Guard against invalid ranges
+			return returnInsertionPoint ? 1 : UINT_MAX;
+
+		int mid = 0;
+		int cmp = -1;
+		while (low <= high) {
+			mid = low + ((high - low) >> 1);
+			cmp = compareObjects(mid, pObj);
+
+			if (cmp == 0)
+				return returnInsertionPoint ? -mid - 1 : mid;
+
+			if (cmp < 0)
+				low = mid + 1;
+			else
+				high = mid - 1;
+		}
+
+		// Not found
+		if (returnInsertionPoint)
+			return (cmp < 0) ? mid + 1 : mid;
+		else
+			return UINT_MAX;
+	}
+
 	CC int compareObjects(uint idx, const T* obj) const;
 	T* m_pObjects = NULL;
 	int m_lenCompare;
