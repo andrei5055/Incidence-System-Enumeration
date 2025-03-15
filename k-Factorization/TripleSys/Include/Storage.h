@@ -14,12 +14,45 @@ public:
 	CC inline T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
 	CC inline T** getObjectsPntr()				{ return &m_pObjects; }
 	CC inline auto lenObject() const			{ return m_lenObj; }
+	CC inline void setLenCompare(int len)		{ m_lenCompare = len; }
 	CC T& operator[](int i) const				{ return *getObject(i); }
+	CC uint findObject(const T *pObj, uint low, uint high) const {
+		// search for element
+		high--;
+		while (low <= high) {
+			const auto itr = low + ((high - low) >> 1);
+			const auto cmp = compareObjects(itr, pObj);
+			if (!cmp)
+				return itr;
+
+			if (low == high)
+				break;
+
+			if (cmp < 0)
+				low = itr + 1;  // ignore left half
+			else
+				high = itr - 1; // ignore right half
+		}
+
+		return UINT_MAX;		// not found 
+	}
 protected:
 	const int m_lenObj;
 private:
+	CC int compareObjects(uint idx, const T* obj) const;
 	T* m_pObjects = NULL;
+	int m_lenCompare;
 };
+
+template<>
+inline int CStorage<tchar>::compareObjects(uint idx, const tchar* obj) const {
+	return MEMCMP(getObject(idx), obj, m_lenCompare);
+}
+
+template<>
+inline int CStorage<uint>::compareObjects(uint idx, const uint *obj) const {
+	return (int)(*getObject(idx)) - *obj;
+}
 
 template<typename T>
 class CStorageSet : public CStorage<T> {

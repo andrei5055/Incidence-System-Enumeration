@@ -26,7 +26,6 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "checkPlayer3.cpp"
 #include "checkCurrentResult.cpp"
 #include "getUnselected.cpp"
-#include "groupInfo.cpp"
 #include "RowStorage.cpp"
 #include "RowUsage.cpp"
 

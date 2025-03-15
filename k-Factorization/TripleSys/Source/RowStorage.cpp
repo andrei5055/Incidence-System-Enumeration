@@ -1,7 +1,7 @@
 #include "TripleSys.h"
 #include "Table.h"
 
-#define USE_GROUP_4_2_ROWS			1
+#define USE_GROUP_4_2_ROWS			0
 #define USE_PREVIOUS_SOLUTIONS		0
 #define STATISTIC_4_SOLUTION_PAIRS  0
 
@@ -25,6 +25,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_fSolutionInterval = m_bGroupSize2 ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
 	m_lenDayResults = m_numDaysResult + 1;
 	m_pSolMemory = new tchar[2 * numPlayers];
+	setLenCompare(m_numPlayers);
 }
 
 CC CRowStorage::~CRowStorage() {
@@ -36,6 +37,7 @@ CC CRowStorage::~CRowStorage() {
 	delete[] m_pSolMemory;
 	releaseSolMaskInfo();
 	delete m_pIS_Storage;
+	delete m_pTRTSN_Storage;
 }
 
 CC void CRowStorage::initMaskStorage(uint numObjects) {
@@ -44,7 +46,7 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 	reset();
 }
 
-CC void CRowStorage::initPlayerMask(ctchar *pFirstMatr) {
+CC void CRowStorage::initPlayerMask() {
 	ll playersMask = -1;
 	int shift = numPlayers();
 	if (!m_bGroupSize2) {
@@ -66,46 +68,6 @@ CC void CRowStorage::initPlayerMask(ctchar *pFirstMatr) {
 	}
 
 	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << shift);
-	if (pFirstMatr && USE_GROUP_4_2_ROWS) {
-		const auto pGroupInfo = m_pAllData->groupInfo(2);
-		const auto groupOrder = pGroupInfo->groupOrder();
-		if (groupOrder > 1) {
-			ASSERT(m_pIS_Storage != NULL)
-			m_pIS_Storage = new CRepository(numPlayers(), 64);
-			shift = (numPreconstructedRows() - 1) * numPlayers();
-			const auto pCurrentMatr = m_pAllData->result() + shift;
-			auto pPermSolution = m_pSolMemory + numPlayers();
-#if USE_PREVIOUS_SOLUTIONS
-			// Populate the database with all solutions that the previous 
-			// solutions of the 3rd row transform into.
-			const auto lenRecord = shift + numPlayers();
-			auto pSolution = pFirstMatr + shift;
-			while (memcmp(pSolution, pCurrentMatr, numPlayers()) < 0) {
-				// For all non-trivial automorphisms:
-				for (auto i = 0; ++i < groupOrder;) {
-					auto* pntr = pGroupInfo->getObject(i);
-					PERMUTATION_OF_PLAYERS(numPlayers(), pSolution, pntr, m_pSolMemory);
-					(m_pAllData->sortGroupsFn)(m_pSolMemory);
-					m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-					m_pIS_Storage->updateRepo(pPermSolution);
-				}
-
-				pSolution += lenRecord;
-			}
-#else
-			// Populate the database with all solutions that the current 
-			// solution of the 3rd row transforms into.
-			// For all non-trivial automorphisms:
-			for (auto i = 0; ++i < groupOrder;) {
-				auto* pntr = pGroupInfo->getObject(i);
-				PERMUTATION_OF_PLAYERS(numPlayers(), pCurrentMatr, pntr, m_pSolMemory);
-				(m_pAllData->sortGroupsFn)(m_pSolMemory);
-				m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-				m_pIS_Storage->updateRepo(pPermSolution);
-			}
-#endif
-		}
-	}
 }
 
 CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
@@ -141,10 +103,6 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 #endif
 
 CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
-#if 0
-	if (m_pIS_Storage && m_pIS_Storage->numObjects() > 0 && m_pIS_Storage->getElementIndex(pRow) < 0)
-		return true;
-#endif
 	if (m_numObjects == m_numObjectsMax) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
@@ -328,7 +286,7 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 			PERMUTATION_OF_PLAYERS(numPlayers(), pSolution, pntr, m_pSolMemory);
 			(m_pAllData->sortGroupsFn)(m_pSolMemory);
 			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-			const auto idx = findSolution(pPermSolution, 0, idxMax);
+			const auto idx = findObject(pPermSolution, 0, idxMax);
 			if (idx < last) {
 				if (idx == solIdx)
 					continue;
@@ -353,24 +311,6 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 		}
 		pMask += m_lenSolutionMask;
 	}
-}
-
-CC uint CRowStorage::findSolution(ctchar* tr, uint low, uint high) const {
-	// search for element
-	high--;
-	while (low <= high) {
-		const auto itr = low + ((high - low) >> 1);
-		const auto cmp = MEMCMP(getObject(itr), tr, m_numPlayers);
-		if (!cmp)
-			return itr;
-
-		if (cmp < 0)
-			low = itr + 1;  // ignore left half
-		else
-			high = itr - 1; // ignore right half
-	}
-
-	return UINT_MAX;		// not found 
 }
 
 CC void CRowStorage::initCompatibilityMasks() {
@@ -625,6 +565,36 @@ CC void CRowStorage::initCompatibilityMasks() {
 		last = m_pPlayerSolutionCntr[i++];
 	}
 #endif
+
+	if (USE_GROUP_4_2_ROWS) {
+		const auto pGroupInfo = m_pAllData->groupInfo(2);
+		const auto groupOrder = pGroupInfo->groupOrder();
+		if (groupOrder > 1) {
+			ASSERT(m_pIS_Storage != NULL);
+			m_pIS_Storage = new CRepository<tchar>(numPlayers(), 64);
+			m_pTRTSN_Storage = new CRepository<uint>(sizeof(uint), 32);
+			const auto shift = (numPreconstructedRows() - 1) * numPlayers();
+			const auto pCurrentMatr = m_pAllData->result() + shift;
+			auto pPermSolution = m_pSolMemory + numPlayers();
+
+			// Populate the database with all solutions that the current 
+			// solution of the 3rd row transforms into.
+			// For all non-trivial automorphisms:
+			for (auto i = 0; ++i < groupOrder;) {
+				auto* pntr = pGroupInfo->getObject(i);
+				PERMUTATION_OF_PLAYERS(numPlayers(), pCurrentMatr, pntr, m_pSolMemory);
+				(m_pAllData->sortGroupsFn)(m_pSolMemory);
+				m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+				const auto idx = findObject(pPermSolution, 0, last);
+
+				if (idx != UINT_MAX)
+					m_pTRTSN_Storage->findObject(&idx, 0, 10);
+					;// m_pTRTSN_Storage->updateRepo(idx);
+
+//				m_pIS_Storage->updateRepo(pPermSolution);
+			}
+		}
+	}
 
 	if (m_bUseAut)
 		updateMasksByAut(last, pGroupInfo);

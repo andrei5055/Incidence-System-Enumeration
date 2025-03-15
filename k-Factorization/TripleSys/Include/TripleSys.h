@@ -131,7 +131,7 @@ typedef struct TrCycles {
 } TrCycles;
 
 
-typedef CRepository CBinaryMatrixStorage;
+typedef CRepository<tchar> CBinaryMatrixStorage;
 
 class alldata : public CGroupUtilisation, private CGroupInfo, CycleSupport, CChecklLink {
 	typedef bool(alldata::*checkU1F)(int);

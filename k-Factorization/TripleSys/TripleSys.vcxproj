@@ -165,7 +165,6 @@
     <ClCompile Include="Source\cycles.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
     <ClCompile Include="Source\getUnselected.cpp" />
-    <ClCompile Include="Source\groupInfo.cpp" />
     <ClCompile Include="Source\improveMatrix.cpp" />
     <ClCompile Include="Source\initStartValues.cpp" />
     <ClCompile Include="Source\ioSupport.cpp" />

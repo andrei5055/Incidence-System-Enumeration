@@ -97,21 +97,61 @@ private:
 #endif
 };
 
-class CRepository : public CStorageIdx<tchar> {
+template<typename T>
+class CRepository : public CStorageIdx<T> {
 public:
 	CC CRepository(int lenObj, int numObjects = 0) :
-		CStorageIdx<tchar>(numObjects, lenObj) {}
+		CStorageIdx<T>(numObjects, lenObj) {}
 
-	CC int getElementIndex(ctchar* tr) const;
-	CC int updateRepo(ctchar* tr);
+	CC int getElementIndex(ctchar* tr) const {
+		// search for element 	
+		int itr;
+		int low = 0;
+		const auto nElem = CStorageSet<tchar>::numObjects();
+		auto high = itr = nElem - 1;
+		int cmp = -1;
+		while (low <= high) {
+			itr = low + ((high - low) >> 1);
+			cmp = MEMCMP(CStorageIdx<tchar>::getObjPntr(itr), tr, CStorageSet<tchar>::lenObject());
+			if (!cmp)
+				return -itr - 1;
+
+			if (cmp < 0)
+				low = itr + 1;  // ignore left half
+			else
+				high = itr - 1; // ignore right half
+		}
+
+		if (cmp < 0)
+			itr++;
+
+		return itr;
+	}
+	CC int updateRepo(ctchar* tr) {
+		// search for element 	
+		const auto itr = getElementIndex(tr);
+		if (itr < 0)
+			return itr;
+
+		const auto nElem = CStorageSet<tchar>::numObjects();
+		auto* cmpTr = CStorageIdx<tchar>::getObjAddr(nElem);
+
+		if (itr < nElem)
+			CStorageIdx<tchar>::insert(itr, nElem);
+		else
+			CStorageIdx<tchar>::push_back(nElem);
+
+		memcpy(cmpTr, tr, CStorageSet<tchar>::lenObject());
+		return itr;
+	}
 	CC inline auto isProcessed(ctchar* tr) {
-		const auto numRegisteredTrs = numObjects();
+		const auto numRegisteredTrs = CStorageSet<T>::numObjects();
 		updateRepo(tr);
-		return numRegisteredTrs == numObjects();
+		return numRegisteredTrs == CStorageSet<T>::numObjects();
 	}
 };
 
-typedef CRepository CGroupInfo;
+typedef CRepository<tchar> CGroupInfo;
 #define incGroupOrder()		m_numObjects++
 #define resetGroupOrder()	m_numObjects = 0
 #define groupOrder()		numObjects()

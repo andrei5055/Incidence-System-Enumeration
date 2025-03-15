@@ -248,7 +248,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
-			m_pRowStorage->initPlayerMask(mfirst);
+			m_pRowStorage->initPlayerMask();
 
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);

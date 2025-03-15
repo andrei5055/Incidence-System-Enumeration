@@ -39,7 +39,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
-	CC void initPlayerMask(ctchar* pFirstMatr = NULL);
+	CC void initPlayerMask();
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
@@ -121,7 +121,6 @@ private:
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
-	CC uint findSolution(ctchar* tr, uint low, uint high) const;
 	CC void updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
@@ -144,7 +143,8 @@ private:
 	const int m_step;
 
 	CStorage<tchar>* m_pMaskStorage = NULL;
-	CRepository* m_pIS_Storage = NULL;		// Storage for I(nadmissible) S(olutions)
+	CRepository<tchar>* m_pIS_Storage = NULL;	// Storage for I(nadmissible) S(olutions)
+	CRepository<uint>* m_pTRTSN_Storage = NULL;  // Storage for T(hird) R(ow) T(ransformed) S(olution) N(numbers)
 
 #if 0
 	ll cnt1 = 0;
