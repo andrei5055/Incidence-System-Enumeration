@@ -11,7 +11,7 @@ public:
 	CC T* reallocStorageMemory(int numObjects)	{
 		return ::reallocStorageMemory(&m_pObjects, m_lenObj * numObjects);
 	}
-	CC inline T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
+	CC virtual T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
 	CC inline T** getObjectsPntr()				{ return &m_pObjects; }
 	CC inline auto lenObject() const			{ return m_lenObj; }
 	CC inline void setLenCompare(int len)		{ m_lenCompare = len; }
@@ -35,6 +35,29 @@ public:
 		}
 
 		return UINT_MAX;		// not found 
+	}
+	CC int getElementIndex(const T* tr, uint nElem) const {
+		// search for element 	
+		int itr;
+		int low = 0;
+		auto high = itr = nElem - 1;
+		int cmp = -1;
+		while (low <= high) {
+			itr = low + ((high - low) >> 1);
+			cmp = MEMCMP(getObject(itr), tr, m_lenObj);
+			if (!cmp)
+				return -itr - 1;
+
+			if (cmp < 0)
+				low = itr + 1;  // ignore left half
+			else
+				high = itr - 1; // ignore right half
+		}
+
+		if (cmp < 0)
+			itr++;
+
+		return itr;
 	}
 protected:
 	const int m_lenObj;
@@ -88,6 +111,7 @@ public:
 	}
 	CC ~CStorageIdx() { delete[] m_pIdx; }
 	CC inline T* getObjPntr(int idx) const { return CStorage<T>::getObject(m_pIdx[idx]); }
+	CC virtual T* getObject(int idx = 0) const { return CStorage<T>::getObject(m_pIdx[idx]); }
 	CC T* reallocStorageMemory() {
 		const auto retVal = CStorageSet<T>::reallocStorageMemory();
 		::reallocStorageMemory(&m_pIdx, CStorageSet<T>::m_numObjectsMax * sizeof(m_pIdx[0]));
@@ -110,14 +134,38 @@ public:
 		CStorageSet<T>::m_numObjectsMax = CStorageSet<T>::m_numObjects = other.numObjects();
 		const auto len = CStorageSet<T>::m_numObjects * CStorage<T>::m_lenObj;
 		*ppStorage = new T[len];
-		memcpy(*ppStorage, other.getObject(), len);
+		memcpy(*ppStorage, other.CStorage<T>::getObject(), len);
 		return *this;
 	}
 	CC void copyIndex(const CStorageIdx& other) {
 		m_pIdx = new int[other.numObjects()];
 		memcpy(m_pIdx, other.getIndices(), CStorageSet<T>::m_numObjects * sizeof(m_pIdx[0]));
 	}
+/*
+	CC int getElementIndex(const T* tr, uint nElem) const {
+		// search for element 	
+		int itr;
+		int low = 0;
+		auto high = itr = nElem - 1;
+		int cmp = -1;
+		while (low <= high) {
+			itr = low + ((high - low) >> 1);
+			cmp = MEMCMP(getObject(itr), tr, CStorage<T>::lenObject());
+			if (!cmp)
+				return -itr - 1;
 
+			if (cmp < 0)
+				low = itr + 1;  // ignore left half
+			else
+				high = itr - 1; // ignore right half
+		}
+
+		if (cmp < 0)
+			itr++;
+
+		return itr;
+	}
+	*/
 private:
 	int* m_pIdx = NULL;
 };
