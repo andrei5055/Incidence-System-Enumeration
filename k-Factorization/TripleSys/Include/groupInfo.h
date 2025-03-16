@@ -102,29 +102,6 @@ class CRepository : public CStorageIdx<T> {
 public:
 	CC CRepository(int lenObj, int numObjects = 0) :
 		CStorageIdx<T>(numObjects, lenObj) {}
-
-	CC int updateRepo(ctchar* tr) {
-		// search for element 	
-		const auto itr = CStorageIdx<tchar>::getElementIndex(tr, CStorageSet<tchar>::numObjects());
-		if (itr < 0)
-			return itr;
-
-		const auto nElem = CStorageSet<tchar>::numObjects();
-		auto* cmpTr = CStorageIdx<tchar>::getObjAddr(nElem);
-
-		if (itr < nElem)
-			CStorageIdx<tchar>::insert(itr, nElem);
-		else
-			CStorageIdx<tchar>::push_back(nElem);
-
-		memcpy(cmpTr, tr, CStorageSet<tchar>::lenObject());
-		return itr;
-	}
-	CC inline auto isProcessed(ctchar* tr) {
-		const auto numRegisteredTrs = CStorageSet<T>::numObjects();
-		updateRepo(tr);
-		return numRegisteredTrs == CStorageSet<T>::numObjects();
-	}
 };
 
 typedef CRepository<tchar> CGroupInfo;

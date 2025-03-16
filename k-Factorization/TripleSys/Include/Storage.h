@@ -26,11 +26,11 @@ public:
 protected:
 	const int m_lenObj;
 private:
-	CC int binarySearch(const T* pObj, uint low, uint high, bool returnInsertionPoint) const {
+	CC int binarySearch(const T* pObj, long low, long high, bool returnInsertionPoint) const {
 		if (high-- == 0 || low > high)  // Guard against invalid ranges
 			return returnInsertionPoint ? 1 : UINT_MAX;
 
-		int mid = 0;
+		long mid = 0;
 		int cmp = -1;
 		while (low <= high) {
 			mid = low + ((high - low) >> 1);
@@ -107,11 +107,10 @@ public:
 		::reallocStorageMemory(&m_pIdx, CStorageSet<T>::m_numObjectsMax * sizeof(m_pIdx[0]));
 		return retVal;
 	}
-	CC void push_back(int idx) { m_pIdx[CStorageSet<T>::m_numObjects++] = idx; }
-	CC void insert(int idx, int value) {
-		const auto len = (CStorageSet<T>::m_numObjects++ - idx) * sizeof(m_pIdx[0]);
+	CC inline void push_back(int idx) { m_pIdx[CStorageSet<T>::m_numObjects++] = idx; }
+	CC inline void insert(int idx, int value) {
 		const auto pSrc = m_pIdx + idx;
-		MEMMOVE((void*)(pSrc + 1), pSrc, len);
+		MEMMOVE((void*)(pSrc + 1), pSrc, (CStorageSet<T>::m_numObjects++ - idx) * sizeof(m_pIdx[0]));
 		m_pIdx[idx] = value;
 	}
 	CC T* getObjAddr(int idx) { return idx < CStorageSet<T>::m_numObjectsMax ? CStorage<T>::getObject(idx) : reallocStorageMemory(); }
@@ -127,35 +126,33 @@ public:
 		memcpy(*ppStorage, other.CStorage<T>::getObject(), len);
 		return *this;
 	}
-	CC void copyIndex(const CStorageIdx& other) {
+	CC inline void copyIndex(const CStorageIdx& other) {
 		m_pIdx = new int[other.numObjects()];
 		memcpy(m_pIdx, other.getIndices(), CStorageSet<T>::m_numObjects * sizeof(m_pIdx[0]));
 	}
-/*
-	CC int getElementIndex(const T* tr, uint nElem) const {
-		// search for element 	
-		int itr;
-		int low = 0;
-		auto high = itr = nElem - 1;
-		int cmp = -1;
-		while (low <= high) {
-			itr = low + ((high - low) >> 1);
-			cmp = MEMCMP(getObject(itr), tr, CStorage<T>::lenObject());
-			if (!cmp)
-				return -itr - 1;
+	CC inline auto isProcessed(ctchar* tr) {
+		const auto numRegisteredTrs = CStorageSet<T>::numObjects();
+		updateRepo(tr);
+		return numRegisteredTrs == CStorageSet<T>::numObjects();
+	}
+	CC int updateRepo(const T* tr) {
+		// search for element 
+		const auto nElem = CStorageSet<T>::numObjects();
+		const auto itr = CStorageSet<T>::getElementIndex(tr, nElem);
+		if (itr < 0)
+			return itr;
 
-			if (cmp < 0)
-				low = itr + 1;  // ignore left half
-			else
-				high = itr - 1; // ignore right half
-		}
+		auto* cmpTr = getObjAddr(nElem);
 
-		if (cmp < 0)
-			itr++;
+		if (itr < nElem)
+			insert(itr, nElem);
+		else
+			push_back(nElem);
 
+		memcpy(cmpTr, tr, CStorageSet<T>::lenObject());
 		return itr;
 	}
-	*/
+
 private:
 	int* m_pIdx = NULL;
 };

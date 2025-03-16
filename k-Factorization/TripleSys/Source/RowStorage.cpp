@@ -588,8 +588,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 				const auto idx = findObject(pPermSolution, 0, last);
 
 				if (idx != UINT_MAX)
-					m_pTRTSN_Storage->findObject(&idx, 0, 10);
-					;// m_pTRTSN_Storage->updateRepo(idx);
+					m_pTRTSN_Storage->updateRepo(&idx);
 
 //				m_pIS_Storage->updateRepo(pPermSolution);
 			}
