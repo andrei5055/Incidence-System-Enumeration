@@ -279,14 +279,9 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 	auto pMask = m_pRowsCompatMasks[1];
 	for (uint solIdx = 0; solIdx < solIdxLast; solIdx++) {
 		const auto pSolution = getObject(solIdx);
-		auto pPermSolution = m_pSolMemory + numPlayers();
 		// For all non-trivial automorphisms:
 		for (auto i = pGroupInfo->groupOrder(); --i;) {
-			auto* pntr = pGroupInfo->getObject(i);
-			PERMUTATION_OF_PLAYERS(numPlayers(), pSolution, pntr, m_pSolMemory);
-			(m_pAllData->sortGroupsFn)(m_pSolMemory);
-			m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-			const auto idx = findObject(pPermSolution, 0, idxMax);
+			const auto idx = getTransformerSolIndex(pSolution, pGroupInfo->getObject(i), idxMax);
 			if (idx < last) {
 				if (idx == solIdx)
 					continue;
@@ -398,7 +393,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	tmask* pCompatMask = pRowsCompatMasks[1];
 
-	const bool skipFirstAllowed = m_bGroupSize2 && !(useCombinedSolutions || m_bUseAut);
+	bool skipAllowed = m_bGroupSize2 && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
@@ -447,7 +442,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 #endif
 		}
 
-		if (skipFirstAllowed && !first) {
+		if (skipAllowed) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
 #if STATISTIC_4_SOLUTION_PAIRS      
@@ -513,6 +508,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 			fprintf(f, " %5d:          %6d\n", ccc, cntr1);
 			FCLOSE_F(f);
 #endif
+			skipAllowed = false;
 			continue;
 		}
 
@@ -572,23 +568,21 @@ CC void CRowStorage::initCompatibilityMasks() {
 		if (groupOrder > 1) {
 			ASSERT(m_pIS_Storage != NULL);
 			m_pIS_Storage = new CRepository<tchar>(numPlayers(), 64);
-			m_pTRTSN_Storage = new CRepository<uint>(sizeof(uint), 32);
+			m_pTRTSN_Storage = new CRepository<uint>(2 * sizeof(uint), 32);
 			const auto shift = (numPreconstructedRows() - 1) * numPlayers();
 			const auto pCurrentMatr = m_pAllData->result() + shift;
-			auto pPermSolution = m_pSolMemory + numPlayers();
 
 			// Populate the database with all solutions that the current 
 			// solution of the 3rd row transforms into.
 			// For all non-trivial automorphisms:
+			uint solInfo[2];
 			for (auto i = 0; ++i < groupOrder;) {
-				auto* pntr = pGroupInfo->getObject(i);
-				PERMUTATION_OF_PLAYERS(numPlayers(), pCurrentMatr, pntr, m_pSolMemory);
-				(m_pAllData->sortGroupsFn)(m_pSolMemory);
-				m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
-				const auto idx = findObject(pPermSolution, 0, last);
+				solInfo[0] = getTransformerSolIndex(pCurrentMatr, pGroupInfo->getObject(i), last);
 
-				if (idx != UINT_MAX)
-					m_pTRTSN_Storage->updateRepo(&idx);
+				if (solInfo[0] != UINT_MAX) {
+					solInfo[1] = i;
+					m_pTRTSN_Storage->updateRepo(solInfo);
+				}
 
 //				m_pIS_Storage->updateRepo(pPermSolution);
 			}
@@ -718,7 +712,7 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll a
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }
 
-CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last) const {
+CC void CRowStorage::passCompatibilityMask(tchar* pCompatibleSolutions, uint first, uint last) const {
 	if (!m_bUseAut) {
 		memset(pCompatibleSolutions, 0, m_numSolutionTotalB);
 		generateCompatibilityMasks((tmask*)pCompatibleSolutions, first, last);
@@ -726,4 +720,24 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 	else {
 		memcpy(pCompatibleSolutions, m_pRowsCompatMasks[1] + first * m_lenSolutionMask, m_numSolutionTotalB);
 	}
+
+	if (m_pTRTSN_Storage && first--) {
+		// Using the group of automorphisms on two rows of matrix.
+		// For previous solution of 4-th row:
+		const auto pGroupInfo = m_pAllData->groupInfo(2);
+		const uint* p;
+		for (int i = 0; i < m_pTRTSN_Storage->numObjects(); i++) {
+			p = (const uint * )m_pTRTSN_Storage->getObject(i);
+			auto* pntr = pGroupInfo->getObject(p[1]);
+
+		}
+	}
+}
+
+CC uint CRowStorage::getTransformerSolIndex(ctchar* pSol, ctchar *pPerm, uint last, uint first) const {
+	auto* pPermSolution = m_pSolMemory + numPlayers();
+	PERMUTATION_OF_PLAYERS(numPlayers(), pSol, pPerm, m_pSolMemory);
+	(m_pAllData->sortGroupsFn)(m_pSolMemory);
+	m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+	return findObject(pPermSolution, first, last);
 }

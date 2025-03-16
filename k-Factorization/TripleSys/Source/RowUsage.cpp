@@ -76,7 +76,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				return 0;
 		}
 		else {
-			m_pRowStorage->passCompatibilityMask((tmask*)m_pCompatibleSolutions, first, last);
+			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last);
 		}
 
 		first += m_step;

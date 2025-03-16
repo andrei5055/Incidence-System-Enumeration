@@ -64,7 +64,8 @@ inline int CStorage<tchar>::compareObjects(uint idx, const tchar* obj) const {
 
 template<>
 inline int CStorage<uint>::compareObjects(uint idx, const uint *obj) const {
-	return (int)(*getObject(idx)) - *obj;
+	const auto val = *getObject(idx);
+	return val > *obj? 1 : (val < *obj? -1 : 0);
 }
 
 template<typename T>

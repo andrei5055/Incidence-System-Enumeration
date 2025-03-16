@@ -44,7 +44,7 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
-	CC void passCompatibilityMask(tmask* m_pCompatibleSolutions, uint first, uint last) const;
+	CC void passCompatibilityMask(tchar *m_pCompatibleSolutions, uint first, uint last) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
@@ -132,6 +132,7 @@ private:
 		return this->firstOnePosition(availablePlayers);
 #endif
 	}
+	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
@@ -143,8 +144,9 @@ private:
 	const int m_step;
 
 	CStorage<tchar>* m_pMaskStorage = NULL;
-	CRepository<tchar>* m_pIS_Storage = NULL;	// Storage for I(nadmissible) S(olutions)
+	CRepository<tchar>* m_pIS_Storage = NULL;	  // Storage for I(nadmissible) S(olutions)
 	CRepository<uint>* m_pTRTSN_Storage = NULL;  // Storage for T(hird) R(ow) T(ransformed) S(olution) N(numbers)
+	                                              // Each solution number is stored alongside its corresponding permutation number
 
 #if 0
 	ll cnt1 = 0;
