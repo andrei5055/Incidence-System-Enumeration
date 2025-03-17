@@ -567,21 +567,37 @@ CC void CRowStorage::initCompatibilityMasks() {
 		const auto groupOrder = pGroupInfo->groupOrder();
 		if (groupOrder > 1) {
 			ASSERT(m_pIS_Storage != NULL);
+			ASSERT(m_numSolutionTotal != m_numObjects);
 			m_pIS_Storage = new CRepository<tchar>(numPlayers(), 64);
-			m_pTRTSN_Storage = new CRepository<uint>(2 * sizeof(uint), 32);
-			const auto shift = (numPreconstructedRows() - 1) * numPlayers();
-			const auto pCurrentMatr = m_pAllData->result() + shift;
+			m_pTRTSN_Storage = new CRepository<uint>(3 * sizeof(uint), 32);
+			const auto pRow = m_pAllData->result(numPreconstructedRows() - 1);
 
 			// Populate the database with all solutions that the current 
 			// solution of the 3rd row transforms into.
 			// For all non-trivial automorphisms:
-			uint solInfo[2];
+			uint solInfo[3];
+			// This will be used for triples
+			//auto availablePlayers = getPlayersMask();
+			//first = getSolutionRange(m_lastInFirstSet, availablePlayers, 2);
 			for (auto i = 0; ++i < groupOrder;) {
-				solInfo[0] = getTransformerSolIndex(pCurrentMatr, pGroupInfo->getObject(i), last);
+				// Transform the 3rd row solution and search results among all solutions.
+				solInfo[0] = getTransformerSolIndex(pRow, pGroupInfo->getObject(i), m_numSolutionTotal, m_lastInFirstSet);
 
 				if (solInfo[0] != UINT_MAX) {
 					solInfo[1] = i;
-					m_pTRTSN_Storage->updateRepo(solInfo);
+					auto idx = m_pTRTSN_Storage->updateRepo(solInfo);
+					if (idx < 0)
+						continue;
+
+					// Define the matrix row for 
+					auto pObj = m_pTRTSN_Storage->getObject(idx);
+					idx = solInfo[0];
+					ASSERT(pObj[0] != idx);
+					int j = 0;
+					while (m_pPlayerSolutionCntr[j] < idx)
+						j++;
+
+					pObj[2] = j;
 				}
 
 //				m_pIS_Storage->updateRepo(pPermSolution);
@@ -608,7 +624,7 @@ CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) c
 		#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
 #endif
 		last = m_pPlayerSolutionCntr[iBit - 1];
-			availablePlayers ^= (ll)1 << iBit;
+		availablePlayers ^= (ll)1 << iBit;
 	}
 	else {
 		last = m_pPlayerSolutionCntr[i];
@@ -721,15 +737,26 @@ CC void CRowStorage::passCompatibilityMask(tchar* pCompatibleSolutions, uint fir
 		memcpy(pCompatibleSolutions, m_pRowsCompatMasks[1] + first * m_lenSolutionMask, m_numSolutionTotalB);
 	}
 
-	if (m_pTRTSN_Storage && first--) {
+	if (m_pTRTSN_Storage && first) {
 		// Using the group of automorphisms on two rows of matrix.
-		// For previous solution of 4-th row:
 		const auto pGroupInfo = m_pAllData->groupInfo(2);
-		const uint* p;
-		for (int i = 0; i < m_pTRTSN_Storage->numObjects(); i++) {
-			p = (const uint * )m_pTRTSN_Storage->getObject(i);
-			auto* pntr = pGroupInfo->getObject(p[1]);
+		// For all previous solution of 4-th row which were NOT yet used for 2-row Aut elimination 
+		for (uint solIdx = first - m_step; solIdx < first; solIdx++) {
+			auto* pSol = getObject(solIdx);
+			uint minIdxTr;
+			for (int i = 0; i < m_pTRTSN_Storage->numObjects(); i++) {
+				const auto *p = (const uint*)m_pTRTSN_Storage->getObject(i);
+				uint solIdxTr = getTransformerSolIndex(pSol, pGroupInfo->getObject(p[1]), m_numSolutionTotal, m_lastInFirstSet);
+				if (UINT_MAX)
+					continue;
 
+				if (solIdxTr < (minIdxTr = p[0])) {
+					minIdxTr = solIdxTr;
+					solIdxTr = p[0];
+				}
+
+				auto pMask = m_pRowsCompatMasks[1];
+			}
 		}
 	}
 }

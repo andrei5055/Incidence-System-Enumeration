@@ -145,7 +145,7 @@ private:
 
 	CStorage<tchar>* m_pMaskStorage = NULL;
 	CRepository<tchar>* m_pIS_Storage = NULL;	  // Storage for I(nadmissible) S(olutions)
-	CRepository<uint>* m_pTRTSN_Storage = NULL;  // Storage for T(hird) R(ow) T(ransformed) S(olution) N(numbers)
+	CRepository<uint>* m_pTRTSN_Storage = NULL;   // Storage for T(hird) R(ow) T(ransformed) S(olution) N(numbers)
 	                                              // Each solution number is stored alongside its corresponding permutation number
 
 #if 0

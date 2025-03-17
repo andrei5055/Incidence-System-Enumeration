@@ -27,9 +27,10 @@ protected:
 	const int m_lenObj;
 private:
 	CC int binarySearch(const T* pObj, long low, long high, bool returnInsertionPoint) const {
-		if (high-- == 0 || low > high)  // Guard against invalid ranges
-			return returnInsertionPoint ? 1 : UINT_MAX;
+		if (high == 0 || low > high)  // Guard against invalid ranges
+			return returnInsertionPoint && !high ? 0 : UINT_MAX;
 
+		high--;
 		long mid = 0;
 		int cmp = -1;
 		while (low <= high) {
