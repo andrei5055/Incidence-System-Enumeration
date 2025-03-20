@@ -48,11 +48,15 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 	m_step = numThreads;
 }
 
+#if COUNT_GET_ROW_CALLS && !USE_CUDA
 ll cntr = 0;
-CC int CRowUsage::getRow(int iRow, int ipx) {
-#if 0 && !USE_CUDA
-	cntr++;
+#define increaseGetRowCounter()  cntr++
+#else
+#define increaseGetRowCounter()
 #endif
+
+CC int CRowUsage::getRow(int iRow, int ipx) {
+	increaseGetRowCounter();
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
 

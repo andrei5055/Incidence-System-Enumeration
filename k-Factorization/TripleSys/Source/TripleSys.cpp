@@ -672,7 +672,8 @@ noResult:
 	delete[] bResults;
 	delete pAutGroup;
 #endif
-#if 0 && !USE_CUDA
+
+#if COUNT_GET_ROW_CALLS && !USE_CUDA
 	extern ll cntr;
 	static int nMatr;
 	static ll cntrTotal;
