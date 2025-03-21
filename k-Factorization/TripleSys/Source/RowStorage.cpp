@@ -12,7 +12,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
 	CStorage<tchar>(numObjects, 2 * numPlayers) {
 	m_numObjectsMax = numObjects;
-	m_pPlayerSolutionCntr = new uint[2 * numPlayers];
+	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
 	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
 	initMaskStorage(numObjects);
 	m_lenMask = m_pMaskStorage->lenObject();
@@ -312,14 +312,14 @@ CC void CRowStorage::initCompatibilityMasks() {
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
 	// Define the number of first long long's we don't need to copy to the next row.
-	memset(m_pNumLongs2Skip, 0, m_numPlayers * sizeof(m_pNumLongs2Skip[0]));
+	memset(m_pNumLongs2Skip, 0, m_numDaysResult * sizeof(m_pNumLongs2Skip[0]));
 	int i = m_numPreconstructedRows;
-	m_pNumLongs2Skip[i] = m_pPlayerSolutionCntr[i] >> 6;
-	m_lastInFirstSet = m_pPlayerSolutionCntr[i];
+	m_pNumLongs2Skip[i] = (m_lastInFirstSet = m_pPlayerSolutionCntr[i]) >> 6;
+
 	// Trivial groups will not be used.
 	m_bUseAut = pGroupInfo && pGroupInfo->numObjects() > 1;
 	m_numRecAdj = !m_bUseAut ? m_lastInFirstSet : 0;
-	while (++i < m_numPlayers)
+	while (++i < m_numDaysResult)
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - m_numRecAdj) >> 6);
 
 	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
