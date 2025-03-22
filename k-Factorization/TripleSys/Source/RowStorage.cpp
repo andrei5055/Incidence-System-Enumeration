@@ -1,8 +1,6 @@
 #include "TripleSys.h"
 #include "Table.h"
 
-#define USE_GROUP_4_2_ROWS			0
-
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),

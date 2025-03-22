@@ -119,6 +119,7 @@ ExpectedResult=1
 RUN_JOB
 
 UseRowsPrecalculation=3
+UseAutForPrecRows=3
 
 TestName = "P1F_14x13x2_10Threads"
 nPlayers=14

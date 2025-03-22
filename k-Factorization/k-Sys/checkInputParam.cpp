@@ -107,6 +107,11 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				paramNames[t_groupSize], groupSize, paramNames[t_useAutForPrecRows], val[t_useRowsPrecalculation], groupSize == 2? "2 or " : "");
 			return false;
 		}
+
+		if (USE_GROUP_4_2_ROWS && val[t_MultiThreading] == 2) {
+			printfRed("*** With %s=%d the use of the Aut(M) on 2 rows is not implemented. Exit\n", paramNames[t_MultiThreading], val[t_MultiThreading]);
+			return false;
+		}
 	}
 
 	return true;
