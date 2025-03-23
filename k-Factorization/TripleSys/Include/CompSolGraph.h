@@ -32,7 +32,7 @@ public:
 	inline void setUnused()							{ m_bUsed = false; }
 	inline auto isUsed() const						{ return m_bUsed; }
 private:
-	uint m_solIdx;
+	uint m_solIdx = 0;
 	bool m_bUsed = false;						// true, if the solution is compatible with at least one solution of next level. 
 	std::vector<CompSol *>* m_ppCompatibleSol;	// Solutions from previous groups, that are compatible with the solution indexed by m_solIdx
 };

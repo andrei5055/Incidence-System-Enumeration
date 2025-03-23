@@ -183,10 +183,21 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		return false;
 
 	const auto pObj = getObject(idx);
-	if (m_bGroupSize2)
-		return p1fCheck2(neighborsi, pObj + m_numPlayers);
-
-	return m_pAllData->p1fCheck3(neighborsi - m_numPlayers, pObj, neighborsi, pObj + m_numPlayers);
+	ASSERT(!pObj);
+	TrCycles tcs;
+	const auto ncycles = m_pAllData->u1fGetCycleLength(&tcs, 1, neighborsi, pObj + m_numPlayers,
+		neighborsi - m_numPlayers, pObj);
+	if (ncycles <= 0)
+		return false;
+	for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+	{
+		TrCycles* tc = &m_pAllData->m_TrCyclesFirst2Rows[itr0];
+		if (tc->counter == 0)
+			break;
+		if (!MEMCMP(tc->length, tcs.length, MAX_CYCLES_PER_SET))
+			return true;
+	}
+	return false;
 }
 
 CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) const {
@@ -241,13 +252,13 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 	auto* rm = (const ll*)m_pMaskStorage->getObject(solIdx);
 	bool compSolFound = false;
 	const auto pNeighbors = getObject(solIdx) + m_numPlayers;
-	do {
+	for (;  idx < m_numSolutionTotal; idx++) {
 		if (checkCompatibility(pNeighbors, rm, idx)) {
 			const auto newIdx = idx - m_numRecAdj;
 			SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
 			compSolFound = true;
 		}
-	} while (++idx < m_numSolutionTotal);
+	}
 
 	if (!m_bGroupSize2 && compSolFound) {
 		// If groupSize > 2, we also need to create mask which will keep  
@@ -595,11 +606,12 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 		pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
 }
 
-CC int CRowStorage::initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const {
-	const auto len = (numDaysResult() - numPreconstructedRows()) * m_numSolutionTotalB;
-	*ppCompatibleSolutions = new tchar[len];
+CC int CRowStorage::initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const {
+	const auto lenMask = m_numSolutionTotalB >> (SHIFT - 3);
+	const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
+	*ppCompatibleSolutions = new tmask[len];
 	*pUsePlayersMask = !m_bGroupSize2;
-	return m_numSolutionTotalB;
+	return lenMask;
 }
 
 CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
@@ -628,10 +640,10 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll a
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }
 
-CC void CRowStorage::passCompatibilityMask(tchar* pCompatibleSolutions, uint first, uint last) const {
+CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last) const {
 	if (!m_bUseAut) {
 		memset(pCompatibleSolutions, 0, m_numSolutionTotalB);
-		generateCompatibilityMasks((tmask*)pCompatibleSolutions, first, last);
+		generateCompatibilityMasks(pCompatibleSolutions, first, last);
 	}
 	else {
 		memcpy(pCompatibleSolutions, m_pRowsCompatMasks[1] + first * m_lenSolutionMask, m_numSolutionTotalB);
@@ -656,7 +668,7 @@ CC void CRowStorage::passCompatibilityMask(tchar* pCompatibleSolutions, uint fir
 				}
 
 				auto pMaskOut = m_pRowsCompatMasks[1] + m_lenSolutionMask * minIdxTr + (solIdxTr >> SHIFT);
-				const auto exMask = ~MASK_BIT(solIdxTr);
+				//const auto exMask = ~MASK_BIT(solIdxTr);
 				*pMaskOut &= ~MASK_BIT(solIdxTr);
 			}
 		}

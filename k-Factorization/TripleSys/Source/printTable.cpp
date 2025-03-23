@@ -25,13 +25,14 @@ void alldata::printPermutationMatrices(const int iMode) const {
 				for (int k = 0; k < m_nGroups; k++) {
 					int m = neighbors(i)[v[j * m_nGroups + k]];
 					int n = result(i)[m];
-					pm[j * m_nGroups + m / m_groupSize + k * nv * m_nGroups] = 1; //iMode == 0 ? 1 : n;
-					pm0[m / m_groupSize + k * m_nGroups * 2] = n;// iMode == 0 ? 1 : n;
-					pm0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;// iMode == 0 ? 1 : n;
+					pm[j * m_nGroups + m / m_groupSize + k * nv * m_nGroups] = 1;
+					pm0[m / m_groupSize + k * m_nGroups * 2] = n;
+					pm0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;
 				}
 				TrCycles trc;
 				const auto ncycles = p3Cycles(&trc, 2, neighbors(i0), neighbors(i), v + j * m_nGroups, result(i0), result(i));
-				memcpy(cycles + j * m_nGroups, trc.length, ncycles);
+				if (ncycles > 0)
+					memcpy(cycles + j * m_nGroups, trc.length, ncycles);
 			}
 			printf("\nResult rows (%d,%d), cycles and corresponding Permutation matrices\n", i0, i);
 			printTableColor("", result(i0), 1, m_numPlayers, m_groupSize);
@@ -39,7 +40,7 @@ void alldata::printPermutationMatrices(const int iMode) const {
 			printf("\n");
 			printTableColor("", pm0, m_nGroups, m_nGroups * 2, m_nGroups);
 			int istr = 0;
-			int nvMax = 6;//maxStr / (m_nGroups * 2 + 2);
+			int nvMax = 6;
 			for (int inv = 0; inv < nv; inv += nvMax) {
 				printf("\n");
 				printTableColor("c", cycles + inv * m_nGroups, 1, m_nGroups * min((nv - inv), nvMax), m_nGroups);

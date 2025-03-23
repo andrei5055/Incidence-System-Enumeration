@@ -1,5 +1,77 @@
-#include "TripleSys.h"
+#include "TripleSys.h"  
+void aq()
+{
+#define N 28
+	tchar v[N];
+	tchar vk[N];
+	tchar tr[N];
+	int trib[N];
+	int cnt[N*2];
+	trib[0] = 0;
+	trib[1] = 1;
+	trib[2] = 1;
+	double nsOld = 1;
+	for (int i = 3; i < N; i++)
+		trib[i] = trib[i - 1] + trib[i - 2] + trib[i - 3];
+	for (int i = 0;i < N;i++)
+		v[i] = i + 1;
+	for (int nv = 3; nv <= 8; nv++) {
+		int nvm2 = nv - 1;
+		int n2 = 1 << nvm2;
+		int ns = 0;
+		int nlast = 0;
+		memset(cnt, 0, sizeof(cnt));
+		for (int j = 0; j < n2; j++) {
+			int km = nv;
+			int k1 = 0;
+			for (int n = 0; n < nv; n++) {
+				if (j & (1 << n))
+					vk[--km] = n + 1;
+				else
+					vk[k1++] = n + 1;
+			}
+			k1 = 0;
 
+			for (int n = 0; n < nv; n++)
+				tr[vk[n] - 1] = n + 1;
+			
+			//printTableColor("tr", tr, 1, nv, 1);
+			//printTableColor("vks", vk, 1, nv, 1);
+			for (int n = 0; n < nv; n++) {
+				if (tr[k1] == 0)
+					goto err1;
+				int k0 = k1;
+				k1 = tr[k1] - 1;
+				tr[k0] = 0;
+			}
+			ns++;
+			printf(" %d", j);
+			if (vk[1] == nv)
+				nlast++;
+			//cnt[vk[0] - 1]++;
+			for (int ic = 1; ic < nv; ic++)
+				cnt[(vk[ic] - vk[ic-1] + nv)]++;
+			//printTableColor("vkr", vk, 1, nv, 1);
+		err1: continue;
+		}
+		int is = 0;
+		trib[0] = 1;
+		for (int ic = nv - 3; ic >= 0; ic--)
+			is += trib[ic];
+
+		//printf("N=%2d S=%6d %6d TF=%6d nl=%d", nv, ns, trib[nv - 2], is, nlast);
+		//printf("N=%2d S=%6d R=%.3f log2=%.3f", nv, ns, ns / nsOld, log2(ns) - nv + 6);
+		printf("\nN=%2d S=%6d R=%.3f log2=%.3f", nv, ns, ns / nsOld, log2(ns) - nv + 6);
+		nsOld = ns;
+		/**
+		for (int ic = 0; ic < sizeof(cnt) / sizeof(cnt[0]); ic++)
+			if (cnt[ic])
+				printf(" %d:%d", ic - nv, cnt[ic]);**/
+		printf("\n");
+		//printf("N=%2d S=%6d approximation=%.0f\n", nv, ns, pow(1.74, nv-2));
+	}
+	exit(0);
+}
 bool addRow(tchar* allPaths, int maxP, int* pnp, tchar* path, int pathLength)
 {
 	int np = *pnp;

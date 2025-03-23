@@ -240,7 +240,7 @@ CC bool alldata::getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar*
 	tchar tt3[MAX_PLAYER_NUMBER], tt4[MAX_PLAYER_NUMBER];
 
 	getTT14ForG3(tt1, tt2, tt3, tt4, v, t0, t1, res0, res1, m_nGroups);
-	return getCyclesAndPath(trc, 1, tt1, tt2, tt3, tt4);
+	return getCyclesAndPath(trc, 1, tt1, tt2, tt3, tt4) > 0;
 }
 
 CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,

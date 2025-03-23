@@ -32,6 +32,30 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 	int ind = 0, lastInd = 0;
 	int id = iDay = 0;
 	memset(iv, unset, m_nLenResults);
+	if (memcmp(ivcb, " 0 1 ", 4) == 0) {
+		tchar cv = 0, ip0, ip1;
+		for (id = 0; id < m_numDays; id++) {
+			for (ind = 0; ind < m_numPlayers; ind++) {
+				ip0 = *ivcb;
+				if (ip0 != ' ' && (ip0 < '1' || ip0 > '9'))
+					goto doneInit;
+				ip1 = *(ivcb + 1);
+				if (ip1 != ' ' && (ip1 < '0' || ip1 > '9'))
+					goto doneInit;
+				cv = (ip0 == ' ' ? 0 : ip0 - '0') * 10 + (ip1 - '0');
+				if (cv >= m_numPlayers)
+					goto doneInit;
+				result(id)[ind] = cv;
+				lastInd = ind;
+				ivcb += 2;
+				if (*ivcb == 0 || *(ivcb + 1) == 0)
+					goto doneInit;
+				if (!((ind + 1) % m_groupSize))
+					ivcb++;
+			}
+		}
+		goto doneInit;
+	}
 
 	for (ind = 0; ; ind++)
 	{

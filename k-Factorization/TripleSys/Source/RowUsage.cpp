@@ -36,7 +36,7 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 #endif
 
 CC void CRowUsage::init(int iThread, int numThreads) {
-	m_numSolutionTotalB = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bUsePlayersMask);
+	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bUsePlayersMask);
 	const auto iRow = m_pRowStorage->numPreconstructedRows();
 	if (iThread) {
 		m_pRowSolutionIdx[iRow] = 0;
@@ -62,7 +62,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	const ll availablePlayers = nRow >= 0
-		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_numSolutionTotalB) - 1)
+		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_lenMask) - 1)
 		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
@@ -75,7 +75,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			return 0;
 
 		if (m_bUseCombinedSolutions) {
-			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions((tmask*)(m_pCompatibleSolutions + m_numSolutionTotalB), first);
+			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions(m_pCompatibleSolutions + m_lenMask, first);
 			if (!m_bSolutionReady)
 				return 0;
 		}
@@ -96,7 +96,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 		return 0;
 	}
 
-	auto* pCompSol = (tmask*)(m_pCompatibleSolutions + nRow * m_numSolutionTotalB);
+	auto* pCompSol = m_pCompatibleSolutions + nRow * m_lenMask;
 #if UseIPX
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
 #endif
@@ -130,7 +130,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-#define multiplyAll() 	for (auto j = m_pRowStorage->numLongs2Skip(iRow); j < shift; j++) \
+#define multiplyAll() 	for (auto j = m_pRowStorage->numLongs2Skip(iRow); j < m_lenMask; j++) \
 							pToA[j] = pPrevA[j] & pFromA[j];
 
 #if CalculatePtoAOnTheFly
@@ -145,12 +145,11 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #define multiply_2()    
 #endif
 			auto pPrevA = (const ll*)(pCompSol);
-			const auto shift = m_numSolutionTotalB >> 3;
-			auto pToA = (ll*)pPrevA + shift;
+			auto pToA = (ll*)(pCompSol + m_lenMask);
 			auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first));
 #if USE_INTRINSIC
 			unsigned int numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
-			bitwise_multiply(pPrevA + numLongs2Skip, pFromA + numLongs2Skip, pToA + numLongs2Skip, shift - numLongs2Skip);
+			bitwise_multiply(pPrevA + numLongs2Skip, pFromA + numLongs2Skip, pToA + numLongs2Skip, m_lenMask - numLongs2Skip);
 #else
 			multiply_1();
 #endif

@@ -33,7 +33,7 @@ CC void alldata::goBack()
 	}
 	m_playerIndex = 0;
 }
-CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
+CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 {
 	// function returns : -1 - prev result, 0 - continue, 1 - eoj
 	m_playerIndex = iDay * m_numPlayers - m_groupSize - 1;
@@ -95,9 +95,14 @@ CC int alldata::checkCurrentResult(bool bPrint, void* pIS_Canonizer)
 					bPrev = !cnvCheckNew(0, iDay);
 #else
 				bPrev = cnvCheckNew(0, iDay);
-
+				if (iPrintMatrices & 16) {
+					if (!bPrev)
+						printf(" %d", m_playerIndex);
+					else
+						printf(".");
+				}
 #if !USE_CUDA
-				if (param(t_printMatrices) == 3 && iDay > 2)
+				if ((iPrintMatrices & 4) && iDay > 2)
 					printPermutationMatrices(3);
 #endif
 #endif

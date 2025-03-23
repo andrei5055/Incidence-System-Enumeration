@@ -45,14 +45,14 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
-	CC void passCompatibilityMask(tchar *m_pCompatibleSolutions, uint first, uint last) const;
+	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
 	CC void initCompatibilityMasks();
-	CC int initRowUsage(tchar** ppCompatibleSolutions, bool *pUsePlayersMask) const;
+	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
@@ -130,7 +130,7 @@ private:
 		_BitScanForward64(&iBit, availablePlayers);
 		return iBit;
 #else
-		return this->firstOnePosition(availablePlayers);
+		return this->firstOnePosition((tchar)availablePlayers);
 #endif
 	}
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
@@ -204,13 +204,13 @@ public:
 		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx);
 	}
 private:
-	uint m_numSolutionTotalB;
+	uint m_lenMask = 0;				// Count of tmask elements, each encoding mutually compatible solutions
 	uint* m_pRowSolutionIdx = NULL;
-	tchar* m_pCompatibleSolutions = NULL;
-	int m_step;
+	tmask* m_pCompatibleSolutions = NULL;
+	int m_step = 0;
 	bool m_bUseCombinedSolutions;
-	bool m_bSolutionReady;   // true, when solution was prepared ar a part of combined solution. 
-	bool m_bUsePlayersMask;
+	bool m_bSolutionReady = false;   // true, when solution was prepared ar a part of combined solution. 
+	bool m_bUsePlayersMask = false;
 };
 
 #define PERMUTATION_OF_PLAYERS(numPlayers, pLayersIn, permut, pLayersOut)	for (auto j = numPlayers; j--;) \

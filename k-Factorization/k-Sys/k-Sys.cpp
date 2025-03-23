@@ -469,12 +469,10 @@ int main(int argc, const char* argv[])
 				break;
 		}
 
-		if (!testToRun || testName && *testToRun == *testName) {
+		if (!testToRun || (testName && *testToRun == *testName)) {
 			const auto numPlayers = val[t_numPlayers];
 			const auto groupSize = val[t_groupSize];
 			const auto useGPU = val[t_useGPU];
-			//leoif (!param.u1fCycles[0])
-			//leo	val[t_u1f] = 0;
 
 			char buffer[64];
 			if (testName)
@@ -513,7 +511,7 @@ int main(int argc, const char* argv[])
 				if (uf_code) {
 					const auto uf = getUF(uf_code);
 					if (!ufName) {
-						ufName = new string("_u1f");
+						ufName = new string("");
 						auto lenCycles = uf_code + 1;
 						for (int i = 0; i < *uf_code; i++, lenCycles += 8) {
 							*ufName += '_';

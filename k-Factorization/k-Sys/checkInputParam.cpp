@@ -34,7 +34,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto pCycles = param.u1fCycles[0];
 	if (/*val[t_u1f] */ pCycles) {
 		auto pU1F = pCycles + 1;
-		if (*pCycles != 1) {
+		if (0) {//??? leo if (*pCycles != 1) {
 			printfRed("*** Incorrect parameter '%s': this version supports only one cycles set definition, Exit\n", arrayParamNames[0]);
 			return false;
 		}
@@ -98,18 +98,24 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 
 	if (val[t_useRowsPrecalculation]) {
 		if (groupSize == 3 && val[t_useRowsPrecalculation] != 3) {
-			printfRed("*** With GroupSize = 3 the value of %s(%d), can be 0 or 3. Exit\n", paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+			printfRed("*** With GroupSize = 3 the value of %s(%d), can be 0 or 3. Exit\n",
+				paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 			return false;
 		}
 
-		if (val[t_useAutForPrecRows] != 3 && groupSize != val[t_useAutForPrecRows]) {
-			printfRed("*** With %s = %d the value of %s(%d), must be %s3. Exit\n", 
-				paramNames[t_groupSize], groupSize, paramNames[t_useAutForPrecRows], val[t_useRowsPrecalculation], groupSize == 2? "2 or " : "");
+		if (groupSize == 3 && val[t_useAutForPrecRows] != 3) {
+			printfRed("*** With GroupSize = 3 the value of %s(%d), must be 3. Exit\n", 
+				paramNames[t_useAutForPrecRows], val[t_useAutForPrecRows]);
 			return false;
 		}
-
+		if (groupSize == 2 && val[t_useAutForPrecRows] != 2 && val[t_useAutForPrecRows] != 3) {
+			printfRed("*** With GroupSize = 2 the value of %s(%d), can be 2 or 3. Exit\n", 
+				paramNames[t_useAutForPrecRows], val[t_useAutForPrecRows]);
+			return false;
+		}
 		if (USE_GROUP_4_2_ROWS && val[t_MultiThreading] == 2) {
-			printfRed("*** With %s=%d the use of the Aut(M) on 2 rows is not implemented. Exit\n", paramNames[t_MultiThreading], val[t_MultiThreading]);
+			printfRed("*** With %s=%d the use of the Aut(M) on 2 rows (USE_GROUP_4_2_ROWS) is not implemented. Exit\n", 
+				paramNames[t_MultiThreading], val[t_MultiThreading]);
 			return false;
 		}
 	}

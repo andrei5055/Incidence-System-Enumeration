@@ -113,7 +113,8 @@ int TopGun::Run()
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mfirst, nRowsStart(), NULL, &m_reportInfo)) {
-					printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
+					if (param(t_printMatrices))
+						printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {
 					for (int iTask = 0; iTask < numThreads; iTask++)

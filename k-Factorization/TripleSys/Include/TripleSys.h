@@ -123,11 +123,11 @@ template<typename T> class CGroupOrbits;
 #define GroupOrbits CGroupOrbits<unsigned __int8>
 
 typedef struct TrCycles {
-	int counter;
-	int ncycles;
-	tchar start[MAX_CYCLES_PER_SET];
 	tchar length[MAX_CYCLES_PER_SET];
+	tchar start[MAX_CYCLES_PER_SET];
 	tchar fullPath[MAX_PLAYER_NUMBER * 2];
+	int ncycles;
+	int counter;
 } TrCycles;
 
 
@@ -171,6 +171,7 @@ public:
 	CC inline tchar *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
+	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 private:
 	CC void Init();
 	inline auto numDays() const						{ return m_numDays; }
@@ -206,14 +207,16 @@ private:
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
 	char *matrixStatOutput(char* str, int maxStr) const;
-	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2) const;
-	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
+	CC void cyclesFor2Rows(ctchar* p1);
+	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
+		bool bWithoutPath = true) const;
 	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
-	CC int collectCyclesAndPath(TrCycles* trc) const;
+	CC int collectCyclesAndPath(TrCycles* trc, bool bWithoutPath = true) const;
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
-	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL) const;
-	CC int checkCurrentResult(bool bPrint, void* pIS_Canonizer = NULL);
+	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL, 
+		bool bWithoutPath = true) const;
+	CC int checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer = NULL);
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
 	CC void p1fCheckStartMatrix(int nr);
@@ -330,7 +333,7 @@ private:
 #endif
 	void* m_pRes;
 	TrCycles m_TrCycles;
-	mutable TrCycles m_TrCyclesAll[MAX_CYCLE_SETS];
+	mutable TrCycles m_TrCyclesAll[MAX_3PF_SETS];
 	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
@@ -338,6 +341,8 @@ private:
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;
 	CRowUsage* m_pRowUsage = NULL;
+	public:
+	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
 };
 
 inline bool is_number(const std::string& s)

@@ -72,7 +72,12 @@ void alldata::outputError() const {
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
+	int iPrintMatrices = 0;
 #if !USE_CUDA
+	iPrintMatrices = iThread == 0 ? param(t_printMatrices) : 0;
+	int* edges = NULL;
+	if (iPrintMatrices & 32)
+		edges = new int[numDaysResult() * m_numPlayers * m_numPlayers]();
 	const auto iTime = clock();
 	const char* fHdr = getFileNameAttr(sysParam());
 	auto rTime = iTime;
@@ -80,7 +85,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto bSavingMatricesToDisk = param(t_savingMatricesToDisk);
 	int nMatricesMax = 0;
 	int startMatrixCount = 0;
-	int nBytesInStartMatrix = nrowsStart * m_numPlayers;
 #endif
 	int nDaysResult = numDaysResult();
 	int iDaySaved = 0;
@@ -108,10 +112,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
 	int nRows4Day = 0;
-	const auto bPrint = !iThread && param(t_printMatrices);
+	const auto bPrint = iPrintMatrices != 0;
 	int minRows = nrowsStart;
 
 #if !USE_CUDA
+	//extern void aq();
+	//aq();
 	unsigned char* bResults = NULL;
 	string fName = format("{:0>10}.txt", threadNumber);
 	if (m_improveResult) {
@@ -165,13 +171,21 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		if (groupSize_2)		// need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
-#if 0 // print group order for each submatrix
-	printf("Rows-Group Order: ");
-	for (int i = 2; i <= iDay; i++) {
-		cnvCheckNew(0, i, false);
-		printf("%d-%d ", i, groupOrder());
+#if 1 && !USE_CUDA // print group order for each submatrix
+	if (iPrintMatrices & 16) {
+		printf("Submatrices Automorphism and Cycles:\n");
+		for (int i = 2; i <= iDay; i++) {
+			char stat[128];
+			cnvCheckNew(0, i, false);
+			bool needOutput = false;
+			matrixStat(neighbors(), i, &needOutput);
+			if (needOutput) {
+				matrixStatOutput(stat, sizeof(stat));
+				printf("%d rows: AUT=%d, %s\n", i, groupOrder(), stat);
+			}
+		}
+		printf("\n");
 	}
-	printf("\n");
 #endif
 #if 1 // preset automorphism groups
 	const auto iCalc = m_useRowsPrecalculation;
@@ -423,6 +437,29 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						iDay = nPrecalcRows;
 						if (bPrint) {
 							printf("Total number of precalculated row solutions = %5d\n", nRows4);
+#if !USE_CUDA
+							if (iPrintMatrices & 32) {
+								for (int j = 0; j < m_numPlayers; j++) {
+									bool bnl = true;
+									for (int k = j + 1; k < m_numPlayers; k++) {
+										if (links(j)[k] == unset) {
+											if (bnl) {
+												bnl = false;
+												printf("\n\n     ");
+												for (int i = nPrecalcRows; i < numDaysResult(); i++)
+													printf(" R%-2d ", i);
+											}
+											printf("\n%2d:%-2d", j, k);
+											for (int i = nPrecalcRows; i < numDaysResult(); i++)
+												printf(" %-4d", edges[(j * m_numPlayers + k) * numDaysResult() + i]);
+										}
+									}
+								}
+								printf("\n");
+								delete[] edges;
+								exit(0);
+							}
+#endif
 						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
@@ -483,7 +520,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 
 #if 1
-			switch (checkCurrentResult(bPrint, pIS_Canonizer)) {
+			switch (checkCurrentResult(iPrintMatrices, pIS_Canonizer)) {
 			case -1:  
 				if (nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices) {
 					goto ProcessPrecalculatedRow;
@@ -498,11 +535,20 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (iDay == nPrecalcRows + 1) {
-					if (!nRows4++)
+					if (!nRows4++) {
 						m_pRowStorage->initPlayerMask();
+						if (iDay >= 2) {
+							cyclesFor2Rows(result(1));
+							memcpy(m_TrCyclesFirst2Rows, m_TrCyclesAll, sizeof(m_TrCyclesFirst2Rows));
+						}
+					}
+
 					nRows4Day++;
-					//printf("%6d:", nRows4);
-					//printTable("", result(3), 1, m_numPlayers, 2);
+#if 0
+					printf("%6d:", nRows4);
+					printTable("", neighbors(3), 1, m_numPlayers, 2);
+					printTable("r", result(3), 1, m_numPlayers, 2);
+#endif
 #if 0
 					bool bP1F = p1fCheck3(result(0), result(nPrecalcRows), neighbors(0), neighbors(nPrecalcRows));
 					if (!bP1F)
@@ -512,6 +558,20 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						printf("not p1f\n");
 #endif
 					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
+
+#if !USE_CUDA
+					if (iPrintMatrices & 32) {
+						tchar* c = result(nPrecalcRows);
+						for (int i = 0;i < m_numPlayers;i += m_groupSize) {
+							int j = c[1] - 1 + (c[i] * m_numPlayers + c[i + 1]) * numDaysResult();
+							edges[j]++;
+							if (m_groupSize > 2) {
+								j = c[1] - 1 + (c[i + 1] * m_numPlayers + c[i + 2]) * numDaysResult();
+								edges[j]++;
+							}
+						}
+					}
+#endif
 					if (!retVal){/**
 						if (param(t_MultiThreading))
 						{
@@ -587,7 +647,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					printf("%5zd: " AUT "%d, % s\n", nLoops, groupOrder(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
-					if (param(t_printMatrices) == 2)
+					if (iPrintMatrices & 2)
 						printPermutationMatrices(2);
 				}
 #endif
@@ -672,7 +732,6 @@ noResult:
 	delete[] bResults;
 	delete pAutGroup;
 #endif
-
 #if COUNT_GET_ROW_CALLS && !USE_CUDA
 	extern ll cntr;
 	static int nMatr;

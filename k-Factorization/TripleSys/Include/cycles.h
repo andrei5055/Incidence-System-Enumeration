@@ -4,7 +4,7 @@ class Cycles {
 public:
 	bool defined = false;
 	tchar rowInd[2];
-	tchar cycles[MAX_CYCLE_SETS * MAX_CYCLES_PER_SET];
+	tchar cycles[MAX_3PF_SETS * MAX_CYCLES_PER_SET];
 	int nCycleSets = 0;
 	tchar* cycleStart(int ic) {
 		return (ic >= nCycleSets) ? NULL : cycles + ic * MAX_CYCLES_PER_SET + 1;
