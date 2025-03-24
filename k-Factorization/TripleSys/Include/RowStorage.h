@@ -40,7 +40,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
-	CC void initPlayerMask();
+	CC void initPlayerMask(ctchar* pFirstMatr = NULL);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
@@ -122,7 +122,8 @@ private:
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
-	CC void updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo) const;
+	CC void updateMasksByAut(const CGroupInfo* pGroupInfo) const;
+	CC void updateMasksByAutForSolution(ctchar* pSolution, const CGroupInfo* pGroupInfo, tmask* pMask, uint solIdx, uint last, uint idxMin = 0) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK
@@ -130,7 +131,8 @@ private:
 		_BitScanForward64(&iBit, availablePlayers);
 		return iBit;
 #else
-		return this->firstOnePosition((tchar)availablePlayers);
+		#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
+		return 0;
 #endif
 	}
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
@@ -144,6 +146,7 @@ private:
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 
+	ctchar* m_pFirstMatr = NULL;                         // Pointer to the array of initial matrices
 	CStorage<tchar>* m_pMaskStorage = NULL;
 	CRepository<uint>* m_pTRTSN_Storage = NULL;   // Storage for T(hird) R(ow) T(ransformed) S(olution) N(numbers)
 	                                              // Each solution number is stored alongside its corresponding permutation number

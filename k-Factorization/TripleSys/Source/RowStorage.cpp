@@ -41,7 +41,8 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 	reset();
 }
 
-CC void CRowStorage::initPlayerMask() {
+CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
+	m_pFirstMatr = pFirstMatr;
 	ll playersMask = -1;
 	int shift = numPlayers();
 	if (!m_bGroupSize2) {
@@ -272,7 +273,38 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 	}
 }
 
-CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo) const {
+CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroupInfo* pGroupInfo, tmask *pMask, uint solIdx, uint last, uint idxMin) const {
+	// For all non-trivial automorphisms:
+	int i = 0;
+	while (++i < pGroupInfo->groupOrder()) {
+		const auto idx = getTransformerSolIndex(pSolution, pGroupInfo->getObject(i), m_numSolutionTotal, idxMin);
+		if (idx == solIdx || idx == UINT_MAX)
+			continue;
+
+		if (idx < last) {
+			// The solution #idx is not canonical, because there 
+			// is an automorphism converting it to solution # < solIdx.
+			if (idx < solIdx)
+				break;
+
+			// Should never happen if all first non-fixed row solutions are canonical. 
+			ASSERT(true);
+			// Just in case, we'll reset the mask.
+			memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
+		}
+		else {
+			// All solutions: solIdx < solutionIdx <= solIdxLast cannot use 
+			// the solution #idx, otherwise, the matrix will be non-canonical.
+			// Mark the solution #idx as noncompatible with these solutions 
+			auto pMaskOut = pMask + (idx >> SHIFT);
+			const auto exMask = ~MASK_BIT(idx);
+			for (auto j = solIdx; ++j < last;)
+				*(pMaskOut += m_lenSolutionMask) &= exMask;
+		}
+	}
+}
+
+CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 	uint last = 0;
 	if (!m_bGroupSize2) {
 		auto availablePlayers = getPlayersMask();
@@ -285,35 +317,15 @@ CC void CRowStorage::updateMasksByAut(uint idxMax, const CGroupInfo* pGroupInfo)
 	auto pMask = m_pRowsCompatMasks[1];
 	for (uint solIdx = 0; solIdx < solIdxLast; solIdx++) {
 		const auto pSolution = getObject(solIdx);
-		// For all non-trivial automorphisms:
-		for (auto i = pGroupInfo->groupOrder(); --i;) {
-			const auto idx = getTransformerSolIndex(pSolution, pGroupInfo->getObject(i), idxMax);
-			if (idx == solIdx || idx == UINT_MAX)
-				continue;
-
-			if (idx < last) {
-				// The solution #idx is not canonical, because there 
-				// is an automorphism converting it to solution # < solIdx.
-				if (idx < solIdx)
-					break;
-
-				// Should never happen if all first non-fixed row solutions are canonical. 
-				ASSERT(true);
-				// Just in case, we'll reset the mask.
-				memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
-			} else {
-				// All solutions: solIdx < solutionIdx <= solIdxLast cannot use 
-				// the solution #idx, otherwise, the matrix will be non-canonical.
-				// Mark the solution #idx as noncompatible with these solutions 
-				auto pMaskOut = pMask + (idx >> SHIFT);
-				const auto exMask = ~MASK_BIT(idx);
-				for (auto j = solIdx; ++j < last;)
-					*(pMaskOut += m_lenSolutionMask) &= exMask;
-			}
-		}
+		updateMasksByAutForSolution(pSolution, pGroupInfo, pMask, solIdx, last);
 		pMask += m_lenSolutionMask;
 	}
 }
+
+#define USE_PREVIOUS_SOLUTIONS	0
+#if USE_PREVIOUS_SOLUTIONS
+int my_counter = 0;
+#endif
 
 CC void CRowStorage::initCompatibilityMasks() {
 	const auto pGroupInfo = m_pAllData->groupInfo(sysParam()->val[t_useAutForPrecRows]);
@@ -332,6 +344,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - m_numRecAdj) >> 6);
 
 	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
+	ASSERT(m_numSolutionTotal != m_numObjects);
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
 	static int ccc = 0;
@@ -488,12 +501,11 @@ CC void CRowStorage::initCompatibilityMasks() {
 		last = m_pPlayerSolutionCntr[i++];
 	}
 #endif
-
+	ASSERT(last != m_numSolutionTotal);
 	if (USE_GROUP_4_2_ROWS) {
 		const auto pGroupInfo = m_pAllData->groupInfo(2);
 		const auto groupOrder = pGroupInfo->groupOrder();
 		if (groupOrder > 1) {
-			ASSERT(m_numSolutionTotal != m_numObjects);
 			m_pTRTSN_Storage = new CRepository<uint>(2 * sizeof(uint), 32);
 			const auto pRow = m_pAllData->result(numPreconstructedRows() - 1);
 
@@ -513,11 +525,24 @@ CC void CRowStorage::initCompatibilityMasks() {
 					m_pTRTSN_Storage->updateRepo(solInfo);
 				}
 			}
+
+#if USE_PREVIOUS_SOLUTIONS
+			const auto shift = (numPreconstructedRows() - 1) * numPlayers();
+			const auto pCurrentMatr = m_pAllData->result() + shift;
+
+			// The transformed solutions of the 3rd row which are smaller than 
+			// the current one cannot be compatible with any solution of the 4th row
+			const auto lenRecord = shift + numPlayers();
+			auto const * pSolution = m_pFirstMatr - numPlayers();
+			my_counter = 0;
+			while (memcmp(pSolution += lenRecord, pCurrentMatr, numPlayers()) < 0)
+				updateMasksByAutForSolution(pSolution, pGroupInfo, m_pRowsCompatMasks[1], 0, m_lastInFirstSet, m_lastInFirstSet);
+#endif
 		}
 	}
 
 	if (m_bUseAut)
-		updateMasksByAut(last, pGroupInfo);
+		updateMasksByAut(pGroupInfo);
 
 	if (useCombinedSolutions) {
 		delete m_pMaskStorage;
@@ -528,12 +553,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) const {
 	const uint first = last;
 	if (!m_bGroupSize2) {
-		unsigned long iBit = 0;
-#if !USE_CUDA
-		_BitScanForward64(&iBit, availablePlayers);
-#else
-		#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
-#endif
+		const auto iBit = minPlayer(availablePlayers);
 		last = m_pPlayerSolutionCntr[iBit - 1];
 		availablePlayers ^= (ll)1 << iBit;
 	}
@@ -668,7 +688,6 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 				}
 
 				auto pMaskOut = m_pRowsCompatMasks[1] + m_lenSolutionMask * minIdxTr + (solIdxTr >> SHIFT);
-				//const auto exMask = ~MASK_BIT(solIdxTr);
 				*pMaskOut &= ~MASK_BIT(solIdxTr);
 			}
 		}
@@ -680,5 +699,12 @@ CC uint CRowStorage::getTransformerSolIndex(ctchar* pSol, ctchar *pPerm, uint la
 	PERMUTATION_OF_PLAYERS(numPlayers(), pSol, pPerm, m_pSolMemory);
 	(m_pAllData->sortGroupsFn)(m_pSolMemory);
 	m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+#if USE_PREVIOUS_SOLUTIONS && !USE_CUDA
+	FOPEN_F(f, "bbb.txt", my_counter ? "a" : "w");
+	char buf[32];
+	sprintf_s(buf, "%3d: ", ++my_counter);
+	outMatrix(pPermSolution, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf);
+	FCLOSE_F(f);
+#endif
 	return findObject(pPermSolution, first, last);
 }

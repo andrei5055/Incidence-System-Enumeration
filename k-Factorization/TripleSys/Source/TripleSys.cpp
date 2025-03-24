@@ -262,7 +262,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
-			m_pRowStorage->initPlayerMask();
+			m_pRowStorage->initPlayerMask(mfirst);
 
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
@@ -535,12 +535,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (iDay == nPrecalcRows + 1) {
-					if (!nRows4++) {
-						m_pRowStorage->initPlayerMask();
-						if (iDay >= 2) {
-							cyclesFor2Rows(result(1));
-							memcpy(m_TrCyclesFirst2Rows, m_TrCyclesAll, sizeof(m_TrCyclesFirst2Rows));
-						}
+					if (!nRows4++ && iDay >= 2) {
+						cyclesFor2Rows(result(1));
+						memcpy(m_TrCyclesFirst2Rows, m_TrCyclesAll, sizeof(m_TrCyclesFirst2Rows));
 					}
 
 					nRows4Day++;

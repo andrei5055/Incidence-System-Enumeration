@@ -131,6 +131,7 @@ UseMultiThreading=2
 RUN_JOB
 
 UseMultiThreading=1
+UseRowsPrecalculation=0
 
 TestName = "K1F_15x7x3_10_Threads"
 nPlayers=15
