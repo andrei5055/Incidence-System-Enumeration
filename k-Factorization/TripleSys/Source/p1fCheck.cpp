@@ -190,12 +190,15 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 	}
 	//???ASSERT(ncycles == 0);
 	trc->ncycles = ncycles;
-	if (ncr == 1)
-		return cyclesNotOk(ncr, ncycles, trc->length) ? -1 : 1;
-
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		collectCyclesAndPath(trc, bWithoutPath);
+		if (ncr == 1)
+		{
+			if (cyclesNotOk(ncr, ncycles, trc->length))
+				return -1;
+		}
+		if (ncr > 1)
+			collectCyclesAndPath(trc, bWithoutPath);
 	}
 	return ncycles;
 }

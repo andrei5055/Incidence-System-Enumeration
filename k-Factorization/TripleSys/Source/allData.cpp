@@ -56,8 +56,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_firstNotSel = 0;
 	m_matrixCanonInterval = param(t_matrixCanonInterval);
 	m_checkForUnexpectedCycle = UseP1fCheckGroups && m_groupSize == 2 && m_numPlayers > 4 && 
-		param(t_u1f) && (pSysParam->u1fCycles[0] && pSysParam->u1fCycles[0][1] > 4);
-	//param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4);
+		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); // assume all cycle sets are sorted
 
 	iPlayerIni = m_numPlayers - 1;
 	if (m_numPlayers > m_groupSize)

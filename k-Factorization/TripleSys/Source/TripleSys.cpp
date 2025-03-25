@@ -326,13 +326,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 							goto noResult;
 						}
 					}
-					switch (m_pRowUsage->getRow(iDay, ipx)) {
+					const auto retVal = m_pRowUsage->getRow(iDay, ipx);
+					switch (retVal) {
 					case 2:
 						iDaySaved = iDay;
 						break;
 					case 1:
 						///m_pRowUsage->getMatrix(result(), neighbors(), iDay + 1);
-						//printTable("tbl", result(), iDay + 1, m_numPlayers, 2);
+						//printTable("tbl", result(), iDay + 1, m_numPlayers, groupSize());
 
 						m_playerIndex = 0;
 #if !USE_CUDA
@@ -360,6 +361,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 						iDay--;
 						goto checkCurrentMatrix;
+#if !USE_CUDA
+					case -1:
+						if (bPrint) {
+							printfRed("**** Failing getRow(%d) = %d ****\n", iDay, retVal);
+							m_pRowUsage->getMatrix(result(), neighbors(), iDay);
+							printTable("tbl", result(), iDay, m_numPlayers, groupSize());
+							// exit(1);
+						}
+#endif					
 					case 0:
 						iDay--;
 						break;

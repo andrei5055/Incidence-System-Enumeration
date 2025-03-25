@@ -94,8 +94,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	{
 		if (m_pSecondRowsDB->numObjects() > ip1)
 			p1 = m_pSecondRowsDB->getObject(ip1);
-		else if (m_createSecondRow)
+		else if (m_createSecondRow) {
 			p1 = result(1);
+		}
 		else {
 			bRet = false;
 			break;
@@ -103,6 +104,29 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		ip1++;
 		memset(&m_TrCycles, 0, sizeof(m_TrCycles));
 		cyclesFor2Rows(p1); // result is in m_TrCyclesAll
+		// check that all and only requested cycles are present
+		if (nrows == 2) {
+			bool bAllCyclesOk = false;
+			auto u1fPntr = sysParam()->u1fCycles[0];
+			if (!u1fPntr)
+				bAllCyclesOk = m_TrCyclesAll[0].length[0] == m_numPlayers && !m_TrCyclesAll[1].counter;
+			else {
+				for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+				{
+					if (m_TrCyclesAll[itr0].counter == 0) {
+						bAllCyclesOk = itr0 == *u1fPntr;
+						break;
+					}
+					if (itr0 >= *u1fPntr || 
+						MEMCMP(m_TrCyclesAll[itr0].length, u1fPntr + 1 + itr0 * MAX_CYCLES_PER_SET, MAX_CYCLES_PER_SET))
+						break;
+				}
+			}
+			if (!bAllCyclesOk) {
+				bRet = false;
+				break;
+			}
+		}
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
 			bCurrentSet = true; 
 		//for (int isw = 1; isw >= 0; isw--)
@@ -123,20 +147,22 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					bool bPair = false;
 					//bool bLastRow = indRow0 == nrows - 1 || indRow1 == nrows - 1;
 					const auto* pV1 = v1;
-					for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)  // Andrei nv1 is equal to 1
+					for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)
 					{
 						TrCycles trCycles;
-
-						if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1)))
-							continue;
-
+						if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1))) {
+							//continue;
+							bRet = false;
+							goto ret;
+						}
+						bool bCycleSelected = false; //??? need it?
 						for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
 						{
 							if (m_TrCyclesAll[itr0].counter == 0)
 								break;
 							if (MEMCMP(m_TrCyclesAll[itr0].length, trCycles.length, MAX_CYCLES_PER_SET))
 								continue;
-
+							bCycleSelected = true;
 							ctchar* pDir, * pStartOut;
 							auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 3, &pDir, &pStartOut);
 
@@ -144,9 +170,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 								_StatAdd("create3U1FTr", 11, true);
 
 								const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
-								/**if (btr)
-									bPair = true;
-								continue;**/
+								if (!btr)
+									bPair = bPair;
+								//continue;
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
 								if (btr && indRow0 == 2 && indRow1 == 3)
 								{
@@ -178,7 +204,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 								if (btr) {
 									_StatAdd("TR_created", 12, true);
 									bPair = true;
-									m_TrInd++;
+ 									m_TrInd++;
 #if !USE_CUDA 
 									if (0)//indRow0 == 2 && indRow1 == 3)
 									{
@@ -244,6 +270,10 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 
 							} while (ProceedToNextMapping());
 						}
+						if (!bCycleSelected) {
+							bRet = false;
+							goto ret;
+						}
 					}
 					if (bCurrentSet)
 					{
@@ -251,8 +281,10 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 						//	printf("indRow0=%d indRow1=%d can be converted to 0,1\n", indRow0, indRow1);
 						if (!bPair)
 						{
+							//printf("indRow0=%d indRow1=%d can't be converted to 0,1\n", indRow0, indRow1);
+							//bPair = bPair;
 #if Any2RowsConvertToFirst2 == 1
-							bRet = false;
+							bRet = false; 
 							goto ret;
 #endif
 						}

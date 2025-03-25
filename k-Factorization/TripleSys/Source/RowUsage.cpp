@@ -68,7 +68,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	uint last = iRow;
 	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx+iRow, &last, availablePlayers);
 	if (last == UINT_MAX)
-		return 0;
+		return availablePlayers? 0 : -1;
 
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
