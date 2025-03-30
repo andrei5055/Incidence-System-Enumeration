@@ -12,7 +12,8 @@ public:
 		m_groupSize(p.val[t_groupSize]),
 		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
-		m_numDays((m_numPlayers - 1) / (m_groupSize - 1)) {}
+		m_numDays((m_numPlayers - 1) / (m_groupSize - 1)),
+		m_allowMissingCycles(p.val[t_allowMissingCycles]) {}
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
 	CC bool setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const;
@@ -22,6 +23,7 @@ protected:
 	const int m_use2RowsCanonization;
 	const int m_groupSizeFactorial;
 	const int m_numDays;
+	const int m_allowMissingCycles;
 };
 
 #if ReportCheckLinksData
@@ -76,10 +78,12 @@ public:
 	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;
-	CC inline auto* neighbors(int nDay = 0) const { return m_pU1Ftable + nDay * m_numPlayers; }
-	CC inline void set_kSysParam(const kSysParam* p) { m_param = p; }
-	CC inline int param(paramID id)	const { return m_param->val[id]; }
-	CC inline const kSysParam* sysParam() const { return m_param; }
+	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
+	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
+	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
+	CC inline const kSysParam* sysParam() const			{ return m_param; }
+	CC inline void setAllowNotSelectedCycles(int val)	{ m_AllowNotSelectedCycles = val; }
+	CC inline bool allowNotSelectedCycles() const		{ return m_AllowNotSelectedCycles; }
 private:
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
 
@@ -88,6 +92,7 @@ private:
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;
 	const kSysParam* m_param;
+	int m_AllowNotSelectedCycles = 0;
 #if PrintNVminmax
 	char* m_nvmn = NULL;
 	char* m_nvmx = NULL;

@@ -183,7 +183,7 @@ bool setParameter(tchar** pValue, const string& str, size_t* pos) {
 	}
 
 	delete[] *pValue;
-	const auto len = MAX_UNIFOM_CONF_LENGTH * ngrp;
+	const auto len = MAX_CYCLES_PER_SET * ngrp;
 	*pValue = new tchar[len + ngrp + 1];
 	**pValue = ngrp;
 	auto pTo = *pValue + 1;
@@ -208,7 +208,7 @@ bool setParameter(tchar** pValue, const string& str, size_t* pos) {
 					tmp.clear();
 				}
 
-				if (k < MAX_UNIFOM_CONF_LENGTH && val) {
+				if (k < MAX_CYCLES_PER_SET && val) {
 					*(pTo + k++) = val;
 				}
 				else
@@ -218,7 +218,7 @@ bool setParameter(tchar** pValue, const string& str, size_t* pos) {
 				retVal = false;
 		}
 
-		pTo += MAX_UNIFOM_CONF_LENGTH;
+		pTo += MAX_CYCLES_PER_SET;
 		delete groups[j];
 	}
 
@@ -344,7 +344,7 @@ string getUF(const tchar * pU1F) {
 	auto nu = *pU1F++;
 	while (nu--) {
 		group[k] = '{';
-		for (int i = 0; i < MAX_UNIFOM_CONF_LENGTH && (val = pU1F[i]); i++) {
+		for (int i = 0; i < MAX_CYCLES_PER_SET && (val = pU1F[i]); i++) {
 			int j = val < 10 ? 1 : val < 100 ? 10 : 100;
 			do {
 				group[++k] = '0' + val / j;
@@ -352,13 +352,12 @@ string getUF(const tchar * pU1F) {
 			} while (j /= 10);
 
 			group[++k] = ',';
-			group[++k] = ' ';
 		}
-		pU1F += MAX_UNIFOM_CONF_LENGTH;
-		group[k - 1] = '}';
-		group[k] = '\0';
+		pU1F += MAX_CYCLES_PER_SET;
+		group[k] = '}';
+		group[k + 1] = '\0';
 		str.append(group);
-		group[0] = ' ';
+		group[0] = ',';
 		k = 1;
 	}
 	str.append("}");
@@ -426,6 +425,7 @@ int main(int argc, const char* argv[])
 	val[t_useImproveMatrix] = UseImproveMatrix;
 	val[t_gridSize] = 32;
 	val[t_blockSize] = 24;
+	val[t_any2RowsConvertToFirst2] = Any2RowsConvertToFirst2;
 
 	// Set default string parameters:
 	auto* strVal = param.strVal;
@@ -513,7 +513,7 @@ int main(int argc, const char* argv[])
 					if (!ufName) {
 						ufName = new string("");
 						auto lenCycles = uf_code + 1;
-						for (int i = 0; i < *uf_code; i++, lenCycles += 8) {
+						for (int i = 0; i < *uf_code; i++, lenCycles += MAX_CYCLES_PER_SET) {
 							*ufName += '_';
 							auto lenCycle = lenCycles;
 							while (*lenCycle)

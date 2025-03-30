@@ -2,9 +2,12 @@
 #define FastMode 0
 CC bool alldata::cnvCheck2P1F(int nrows)
 {
-	if (nrows < 2)
+	if (nrows < 2) // || (m_useRowsPrecalculation == eCalculateRows && nrows != m_numDaysResult))
+	//if (nrows < 2)
 		return true;
 
+	if (nrows == 3)
+		nrows = nrows;
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 
@@ -64,7 +67,8 @@ ret:
 }
 CC bool alldata::cnvCheck3U1F(int nrows)
 {
-	if (nrows < 2)
+#define Test1 0
+	if (nrows < 2)// || (m_useRowsPrecalculation == eCalculateRows && nrows != m_numDaysResult))
 		return true;
 	tchar trLocal[MAX_PLAYER_NUMBER];
 	tchar* tr = trLocal;
@@ -78,6 +82,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	//if (result(1)[5] == 9 && iDay == 4)
 	//	printf("%d ", iDay);
 	const int maxv1 = MAX_3PF_SETS;
+	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 
 #define _StatAdd(x, y, z)  // StatAdd(x, y, z)
 	_StatAdd("AllcnvCheck3U1F", 10, true);
@@ -92,11 +97,12 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		iRowStart = 0;
 	while (1)
 	{
-		if (m_pSecondRowsDB->numObjects() > ip1)
-			p1 = m_pSecondRowsDB->getObject(ip1);
-		else if (m_createSecondRow) {
+		if (!m_pSecondRowsDB)
 			p1 = result(1);
-		}
+		else if (m_pSecondRowsDB->numObjects() > ip1)
+			p1 = m_pSecondRowsDB->getObject(ip1);
+		else if (m_createSecondRow) // do not merge with first if 
+			p1 = result(1);
 		else {
 			bRet = false;
 			break;
@@ -108,10 +114,13 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		if (nrows == 2) {
 			bool bAllCyclesOk = false;
 			auto u1fPntr = sysParam()->u1fCycles[0];
-			if (!u1fPntr)
+			int itr0 = 0;
+			if (!u1fPntr) {
 				bAllCyclesOk = m_TrCyclesAll[0].length[0] == m_numPlayers && !m_TrCyclesAll[1].counter;
+				itr0 = 1;
+			}
 			else {
-				for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+				for (; itr0 < MAX_3PF_SETS; itr0++)
 				{
 					if (m_TrCyclesAll[itr0].counter == 0) {
 						bAllCyclesOk = itr0 == *u1fPntr;
@@ -122,7 +131,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 						break;
 				}
 			}
-			if (!bAllCyclesOk) {
+			if (itr0 != MAX_3PF_SETS && !bAllCyclesOk) {
 				bRet = false;
 				break;
 			}
@@ -151,11 +160,12 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					{
 						TrCycles trCycles;
 						if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1))) {
-							//continue;
-							bRet = false;
-							goto ret;
+							ASSERT(1);
+							continue;
+							//bRet = false;
+							//goto ret;
 						}
-						bool bCycleSelected = false; //??? need it?
+						bool bCycleSelected = false;
 						for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
 						{
 							if (m_TrCyclesAll[itr0].counter == 0)
@@ -170,8 +180,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 								_StatAdd("create3U1FTr", 11, true);
 
 								const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
-								if (!btr)
-									bPair = bPair;
+								//if (!btr)
+								//	bPair = bPair;
 								//continue;
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
 								if (btr && indRow0 == 2 && indRow1 == 3)
@@ -203,6 +213,14 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 #endif
 								if (btr) {
 									_StatAdd("TR_created", 12, true);
+									if (Test1) {
+										int imax = MAX2(indRow0, indRow1);
+										int imin = MIN2(indRow0, indRow1);
+										if (bCurrentSet && (imax != 1 && imax != 6) || imin > 1) {
+											bRet = false;
+											//goto ret;
+										}
+									}
 									bPair = true;
  									m_TrInd++;
 #if !USE_CUDA 
@@ -267,10 +285,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 										goto ret;
 									}
 								}
-
 							} while (ProceedToNextMapping());
 						}
-						if (!bCycleSelected) {
+						if (!bCycleSelected && !allowNotSelectedCycles()) {
 							bRet = false;
 							goto ret;
 						}
@@ -281,12 +298,13 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 						//	printf("indRow0=%d indRow1=%d can be converted to 0,1\n", indRow0, indRow1);
 						if (!bPair)
 						{
+							//if (nrows == 10)
 							//printf("indRow0=%d indRow1=%d can't be converted to 0,1\n", indRow0, indRow1);
 							//bPair = bPair;
-#if Any2RowsConvertToFirst2 == 1
-							bRet = false; 
-							goto ret;
-#endif
+							if (any2RowsConvertToFirst2) {
+								bRet = false;
+								goto ret;
+							}
 						}
 					}
 				}

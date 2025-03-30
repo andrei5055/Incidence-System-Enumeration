@@ -5,17 +5,19 @@ CC bool alldata::processOneDay()
 		return true;
 	while (iPlayer < m_numPlayers)
 	{
-		/**
-		if (iDay == 3) {
-			tchar c[] = { 0,4,9,  1,5,11,  2,7,13, 3,8,12, 6,10,14 };
-			tchar d[] = { 0,6,13, 1,10,12, 2,4,14, 3,7,11, 5,6,9 };
-			printf(" %2d:%2d ", iDay, iPlayer);
-			printTable("p", tmpPlayers, 1, m_numPlayers, 3);
-			if (memcmp(c, result(2), m_numPlayers) == 0)
-				iDay = iDay;
-			if (memcmp(d, tmpPlayers, m_numPlayers - 13) == 0)
-				iDay = iDay;
-		}**/
+#if 0
+		if (iDay == 2) {
+			tchar c[] = { 0,4,9, 1,3,15, 2,6,20, 5,12,16, 7,14,18, 8,10,19, 11,13,17 };
+			if (memcmp(c, tmpPlayers, 15) == 0) {
+				printf(" %2d:%2d ", iDay, iPlayer);
+				printTable("p", tmpPlayers, 1, m_numPlayers, 3);
+				if (iPlayer == 14 && memcmp(c, tmpPlayers, 14) == 0)
+					iDay = iDay;
+				if (iPlayer > 14 && memcmp(c, tmpPlayers, 15) <= 0)
+					iDay = iDay;
+			}
+		}
+#endif
 		if (iPlayer < 0)
 			return false;
 		/**

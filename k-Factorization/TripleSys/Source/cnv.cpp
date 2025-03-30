@@ -7,7 +7,8 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 
 	fhdr = "K";
 	if (param->val[t_u1f]) {
-		if (!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers]))
+		if (!param->val[t_allowMissingCycles] &&
+			(!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers])))
 			fhdr = "P";
 		else {
 			fhdr = "U";
@@ -184,7 +185,8 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 }
 CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 {
-	int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
+	const int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
+	setAllowNotSelectedCycles(m_groupSize == 2 || nrows == 2 ? 0 : m_allowMissingCycles);
 	m_TrInd = 0;
 	resetGroupOrder();
 	auto* pTestedTRs = testedTRs();

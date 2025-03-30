@@ -4,6 +4,8 @@ StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 // Single thread  u1f tests:
 TestName="U1F_44"
+U1FName="_44"
+
 USE_GPU=0
 GroupSize=2
 
@@ -13,28 +15,27 @@ NRowsInStartMatrix=0
 NRowsInResultMatrix=0
 UseMultiThreading=0
 
-U1FName="_u1f_44"
 nPlayers=8
 U1FCycles={{4,4}}
 ExpectedResult=1
 RUN_JOB
 
 TestName="U1F_46"
-U1FName="_u1f_46"
+U1FName="_46"
 nPlayers=10
 U1FCycles={{4,6}}
 ExpectedResult=1
 RUN_JOB
 
 TestName="U1F_66"
-U1FName="_u1f_66"
+U1FName="_66"
 nPlayers=12
 U1FCycles={{6,6}}
 ExpectedResult=1
 RUN_JOB
 /*
 TestName="U1F_444_48_66"
-U1FName="_u1f_444_48_66"
+U1FName="_444_48_66"
 nPlayers=12
 U1FCycles={{4, 4, 4}, {4, 8}, {6, 6}}
 ExpectedResult=1
@@ -43,7 +44,7 @@ ExpectedResult=1
 RUN_JOB
 
 TestName="U1F_4444"
-U1FName="_u1f_4444"
+U1FName="_4444"
 nPlayers=16
 U1FCycles={{4,4,4,4}}
 ExpectedResult=1

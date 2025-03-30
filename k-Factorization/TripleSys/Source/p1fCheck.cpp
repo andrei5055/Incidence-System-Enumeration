@@ -23,7 +23,7 @@ CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int
 	unsigned int checked = 0;
 	int ncycles = 0;
 	if (u1fCycles) {
-		while (ncycles < MAX_UNIFOM_CONF_LENGTH && u1fCycles[1 + ncycles])
+		while (ncycles < MAX_CYCLES_PER_SET && u1fCycles[1 + ncycles])
 			cyclesBitsDef |= 1 << u1fCycles[1 + ncycles++];
 	}
 	else {
@@ -116,6 +116,7 @@ CC void alldata::adjustPlayerPosition(tchar* path, tchar length, tchar nrows)
 			maxPlayer = ipPos;
 		}
 	}
+	maxPlayer = maxPlayer / m_groupSize * m_groupSize + m_groupSize - 1;
 	int diff = m_playerIndex - (nrows - 1) * m_numPlayers - maxPlayer;
 #if 0
 	StatAdd("CErr", 1, true);
@@ -192,7 +193,7 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		if (ncr == 1)
+		if (ncr == 1 && !allowNotSelectedCycles())
 		{
 			if (cyclesNotOk(ncr, ncycles, trc->length))
 				return -1;
@@ -315,6 +316,9 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
 		return true;
+	setAllowNotSelectedCycles(m_groupSize == 2 || nr == 2 ? 0 : m_allowMissingCycles);
+	if (!pNeedOutput && allowNotSelectedCycles())
+		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
 	const auto ncr = pNeedOutput ? MAX_3PF_SETS : 1;
@@ -326,7 +330,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		m_p1f_counter++;
 		//if (!(m_p1f_counter % 10000000))
 		//	printTable("LR", result(nr - 1), 1, nc, m_groupSize);
-		if (param(t_p1f_counter) && !(m_p1f_counter % param(t_p1f_counter)) && nr > 2)
+		if (ncr == 1 && param(t_p1f_counter) && !(m_p1f_counter % param(t_p1f_counter)) && nr > 2)
 			return true;
 	}
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only
@@ -403,6 +407,8 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 		return false;
 	if (ncycles <= 0)
 		return true;
+	if (m_AllowNotSelectedCycles)
+		return false;
 	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
 		return ncycles == 1 && length[0] != m_numPlayers;
@@ -411,13 +417,15 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 	for (int i = 0; i < ngrp; i++) {
 		if (!MEMCMP(pntr, length, ncycles))
 			return false;
-		pntr += MAX_UNIFOM_CONF_LENGTH;
+		pntr += MAX_CYCLES_PER_SET;
 	}
 	return true;
 }
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
+	if (m_AllowNotSelectedCycles)
+		return true;
 	auto pntr = m_param->u1fCycles[0];
 
 	if (!pntr || (pntr[0] == 1 && pntr[1] == m_numPlayers))
@@ -430,7 +438,7 @@ CC bool CChecklLink::cycleLengthOk(tchar length) const
 		while (symb = pntr[k++])
 			if (symb == length)
 				return true;
-		pntr += MAX_UNIFOM_CONF_LENGTH;
+		pntr += MAX_CYCLES_PER_SET;
 	}
 	return false;
 }

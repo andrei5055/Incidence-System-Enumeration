@@ -41,7 +41,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		for (tchar j = 0; j < *pCycles; j++) {
 			// Iterating through all prescribed combinations of cycle versions. 
 			int nElem = 0;
-			for (int i = 0; i < MAX_UNIFOM_CONF_LENGTH; i++) {
+			for (int i = 0; i < MAX_CYCLES_PER_SET; i++) {
 				if (pU1F[i])
 				{
 					if (i > 0 && pU1F[i - 1] > pU1F[i]) {
@@ -60,7 +60,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 					nElem, paramNames[t_numPlayers], numPlayers);
 				return false;
 			}
-			pU1F += MAX_UNIFOM_CONF_LENGTH;
+			pU1F += MAX_CYCLES_PER_SET;
 		}
 	}
 

@@ -6,7 +6,8 @@
 //#include <thrust/device_vector.h>
 
 #define CC __host__ __device__		// CUDA_CALLABLE
-#define MAX2(x, y)              ((x) >= (y)? (x) : (y))
+#define MIN2(x, y)              ((x) < (y)? (x) : (y))
+#define MAX2(x, y)              ((x) > (y)? (x) : (y))
 #define MEMCMP(s1, s2, n)       memcmp_gpu(s1, s2, n)
 // Copying overlapping array                              
 #define MEMMOVE(dest, src, len) { auto* pTmp = new tchar[len];  \
@@ -16,6 +17,7 @@
                                 }
 #else
 #define CC
+#define MIN2(x, y)              min(x, y)
 #define MAX2(x, y)              max(x, y)
 #define MEMCMP(s1, s2, n)       std::memcmp(s1, s2, n)
 #define MEMMOVE(dest, src, len) memmove(dest, src, len)

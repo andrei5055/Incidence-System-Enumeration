@@ -146,6 +146,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		}
 	}
 
+	const auto allowNotSelectedCycles = paramPtr()->val[t_allowMissingCycles];
 	for (int j = 0; j < numParamSet; j++) {
 		auto* paramNames = pParSet[j].paramNames;
 		const int iMax = pParSet[j].numParams;
@@ -166,8 +167,14 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			break;
 		default:
 		{
-			auto pntr = paramPtr()->u1fCycles[0];
-			if (pntr && (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
+			auto pntr0 = paramPtr()->u1fCycles[0];
+			tchar cyclesDefault[3] = { 1, 0, 0 };
+			tchar* pntr = pntr0;
+			if (!pntr) {
+				cyclesDefault[1] = m_numPlayers;
+				pntr = cyclesDefault;
+			}
+			if (allowNotSelectedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
 				fprintf(f, "\nU1F configurations:\n");
 				char buffer[128], * pBuf = buffer;
 				const auto lenBuf = countof(buffer);
@@ -176,13 +183,13 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 				pntr++;
 				tchar symb;
 				for (int i = 0; i < ngrp; i++) {
-					SPRINTFS(pBuf, buffer, lenBuf, i ? ", {" : "{");
+					SPRINTFS(pBuf, buffer, lenBuf, i ? ",{" : "{");
 					int k = 0;
 					while (symb = pntr[k])
-						SPRINTFS(pBuf, buffer, lenBuf, k++ ? ", %d" : "%d", symb);
+						SPRINTFS(pBuf, buffer, lenBuf, k++ ? ",%d" : "%d", symb);
 
 					SPRINTFS(pBuf, buffer, lenBuf, "}");
-					pntr += MAX_UNIFOM_CONF_LENGTH;
+					pntr += MAX_CYCLES_PER_SET;
 				}
 				SPRINTFS(pBuf, buffer, lenBuf, "}");
 				fprintf(f, "%30s: %s\n", paramNames[0], buffer);

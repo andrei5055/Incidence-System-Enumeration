@@ -103,7 +103,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if 1 && !USE_CUDA
+#if 0 && !USE_CUDA
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[32];
 	sprintf_s(buf, "%3d: ", m_numObjects);

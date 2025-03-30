@@ -95,7 +95,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 					bPrev = !cnvCheckNew(0, iDay);
 #else
 				bPrev = cnvCheckNew(0, iDay);
-				if (iPrintMatrices & 16) {
+				if (iPrintMatrices & 8) {
 					if (!bPrev)
 						printf(" %d", m_playerIndex);
 					else

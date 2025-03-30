@@ -104,10 +104,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		m_useRowsPrecalculation = (nPrecalcRows && nPrecalcRows <= 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
 		m_useRowsPrecalculation = iCalcMode;
+	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : m_groupSize + 1 + m_numDays - m_numDaysResult);
 	tchar secondPlayerInRow4First = groupSize_2 ? nPrecalcRows + 1 : m_groupSize + 2;
-	tchar secondPlayerInRow4Last = param(t_lastRowSecondPlayer);
+	tchar secondPlayerInRow4Last = MIN2(param(t_lastRowSecondPlayer), secondPlayerMax);
 	if (!secondPlayerInRow4Last)
-		secondPlayerInRow4Last = groupSize_2 ? m_numDaysResult : m_numPlayers - 4;
+		secondPlayerInRow4Last = groupSize_2 ? m_numDaysResult : secondPlayerMax;
 
 	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
@@ -159,7 +160,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		linksFromMatrix(links(), mStart0, nrowsStart);
 	}
 
-	if (iDay > numDaysResult())
+	if (iDay > numDaysResult() && !(iPrintMatrices & 16))
 		iDay = numDaysResult(); // warning?
 
 	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
@@ -174,17 +175,21 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if 1 && !USE_CUDA // print group order for each submatrix
 	if (iPrintMatrices & 16) {
 		printf("Submatrices Automorphism and Cycles:\n");
+		m_numDaysResult = iDay;
 		for (int i = 2; i <= iDay; i++) {
 			char stat[128];
-			cnvCheckNew(0, i, false);
+			bool bRet = cnvCheckNew(0, i, false);
+			bool bRet2 = matrixStat(neighbors(), i, NULL);
 			bool needOutput = false;
 			matrixStat(neighbors(), i, &needOutput);
 			if (needOutput) {
 				matrixStatOutput(stat, sizeof(stat));
-				printf("%d rows: AUT=%d, %s\n", i, groupOrder(), stat);
+				printf("%d rows: Last row %s, cnvCheckNew=%s, AUT=%d, %s\n", i,
+					bRet2 ? "Ok" : "Not Ok", bRet ? "Ok" : "Not Ok", groupOrder(), stat);
 			}
 		}
 		printf("\n");
+		exit(1);
 	}
 #endif
 #if 1 // preset automorphism groups
@@ -354,22 +359,36 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						}
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
+						if (m_bCheckLinkV && iDay < m_numDays) {
+							linksFromMatrix(links(), result(), iDay);
+							if (!checkLinks(links(), iDay)) {
+								iDay--;
+								goto ProcessPrecalculatedRow;
+							}
+						}
+						iDay--;
 #if !USE_CUDA
 						cTime = clock();
-						for (int i = nPrecalcRows + 3; i < iDay; i++)
+						for (int i = nPrecalcRows + 3; i <= iDay; i++)
 							m_rowTime[i] = cTime - iTime;
 #endif
-						iDay--;
 						goto checkCurrentMatrix;
-#if !USE_CUDA
-					case -1:
-						if (bPrint) {
-							printfRed("**** Failing getRow(%d) = %d ****\n", iDay, retVal);
+					case -1: // reported if requested row not in solution (can happen only if LastRowSecondPlayer is incorrect)
+					{
+						if (secondPlayerInRow4Last < secondPlayerMax) {
 							m_pRowUsage->getMatrix(result(), neighbors(), iDay);
-							printTable("tbl", result(), iDay, m_numPlayers, groupSize());
-							// exit(1);
-						}
+							linksFromMatrix(links(), result(), iDay);
+							if (cnvCheckNew(0, iDay, false) && (m_groupSize != 3 || checkLinks(links(), iDay))) {
+								// matrix ok, error cannot be ignored
+#if !USE_CUDA
+								printfRed("*** Failing getRow(%d) = %d ***\n", iDay, retVal);
+								printTable("Current result", result(), iDay, m_numPlayers, groupSize());
+								exit(1);
 #endif					
+							}
+						}
+						// continue to case 0:
+					}
 					case 0:
 						iDay--;
 						break;
@@ -494,6 +513,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
+			if (0 && m_bCheckLinkV && /* m_useRowsPrecalculation != eCalculateRows && */ !checkLinks(links(), iDay + 1)) {
+				bPrevResult = true;
+				continue;
+			}
 		checkCurrentMatrix:
 
 #if ReportPeriodically && !USE_CUDA

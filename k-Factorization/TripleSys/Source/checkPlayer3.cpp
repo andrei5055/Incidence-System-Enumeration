@@ -30,7 +30,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			return iPlayerNumber + 1;
 		l1[iPlayerNumber] = li[i1] = day;
 		l0[iPlayerNumber] = li[i0] = day;
-		if (m_bCheckLinkV && !checkLinks(links(), iDay))
+		if (m_bCheckLinkV && m_useRowsPrecalculation != eCalculateRows /* && iPlayerNumber == 11 */ && !checkLinks(links(), iDay))
 		{
 			selPlayers[iPlayerNumber] = unset;
 			tmpPlayers[iPlayer] = unset;

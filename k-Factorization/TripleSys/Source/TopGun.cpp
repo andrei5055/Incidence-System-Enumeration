@@ -35,6 +35,14 @@ int TopGun::Run()
 	sLongLong resultMatr = 0;
 	bool bUsePm = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 
+	if (param(t_printMatrices) & 16)
+	{
+		alldata sys(*this, paramPtr());
+		sys.initStartValues(ivc);// can be used to report info for matrix from data.h
+		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+		myExit(0);
+	}
+
 	if (m_groupSize <= 3 && m_use2RowsCanonization) {
 		alldata sys(*this, paramPtr());
 		m_pSecondRowsDB = new CStorageSet<tchar>(10, numPlayers());

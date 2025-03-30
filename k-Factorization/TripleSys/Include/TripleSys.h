@@ -24,17 +24,14 @@
 #define NThreads 1
 #define NRowsInStartMatrix 0 // must be 0
 #define NRowsInResultMatrix 2
-#define MaxNumberOfStartMatrices 1
+#define MaxNumberOfStartMatrices  1
 #define FirstIndexOfStartMatrices 0
 #endif
+
 #define NRBase					  2
 #define UseP1fCheckGroups         1
 #define USE_BINARY_CANONIZER	  0
-#define AllowNotP1FRows    0 // Only for 3U1F. if 0 - all rows pairs must be p1f for all common sets combinations.
-									// 1 - no check for rows pairs related to number of cycles.
-#define Any2RowsConvertToFirst2   1 // Only for 3U1F. (*) If 1, then any two rows must be converted to first 2 rows.
-									// If 0, then a. no requirement (*), b. more than (*) first 2 rows pairs used 
-									// If 2, then a. no requirement (*), b. same as (*) set of first 2 rows pairs used
+#define Any2RowsConvertToFirst2   1 // If 1, then any two rows can be converted to first 2 rows.
 #define UseUniform1Factorization  0
 #define U1FName ""
 
