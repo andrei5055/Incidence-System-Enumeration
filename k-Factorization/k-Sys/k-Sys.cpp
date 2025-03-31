@@ -46,6 +46,8 @@ const char* intParamNames[]{
 	"GridSize",
 	"BlockSize",
 	"OrderMatrices",
+	"AllowMissingCycles", // 1  - Not all cycles need to be represented.
+	"Any2RowsConvertToFirst2",
 };
 
 const char* strParamNames[]{
