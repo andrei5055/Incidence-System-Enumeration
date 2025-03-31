@@ -63,7 +63,7 @@ CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles) const
 		}
 	}
 }
-CC int alldata::collectCyclesAndPath(TrCycles* trc, bool bWithoutPath) const
+CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, bool bWithoutPath) const
 {
 	int ncr = MAX_3PF_SETS;
 	int iLength = sizeof(TrCycles);
@@ -71,25 +71,25 @@ CC int alldata::collectCyclesAndPath(TrCycles* trc, bool bWithoutPath) const
 	int j;
 	for (j = 0; j < ncr; j++)
 	{
-		if (m_TrCyclesAll[j].counter == 0)
+		if (trcAll[j].counter == 0)
 		{
-			memcpy(&m_TrCyclesAll[j], trc, iLength);
-			m_TrCyclesAll[j].counter = 1;
+			memcpy(&trcAll[j], trc, iLength);
+			trcAll[j].counter = 1;
 			break;
 		}
 
 		// add cycle to array of all cycles
 		ASSERT(!bWithoutPath); // to allow use of bWithoutPath=false you need to change code to create correct m_TrCyclesFirst2Rows
-		int ic = bWithoutPath ? (MEMCMP(trc->length, m_TrCyclesAll[j].length, ncc)) :
-			(MEMCMP(trc, &m_TrCyclesAll[j], iLength - sizeof(trc->counter)));
+		int ic = bWithoutPath ? (MEMCMP(trc->length, trcAll[j].length, ncc)) :
+			(MEMCMP(trc, &trcAll[j], iLength - sizeof(trc->counter)));
 		 switch (ic) {
 		case -1:
 			for (int i = ncr - 2; i >= j; i--) 
-				memcpy(&m_TrCyclesAll[i + 1], &m_TrCyclesAll[i], iLength);
-			memcpy(&m_TrCyclesAll[j], trc, iLength);
-			m_TrCyclesAll[j].counter = 1;
+				memcpy(&trcAll[i + 1], &trcAll[i], iLength);
+			memcpy(&trcAll[j], trc, iLength);
+			trcAll[j].counter = 1;
 			break;
-		case 0: m_TrCyclesAll[j].counter++; break;
+		case 0: trcAll[j].counter++; break;
 		case 1: continue;
 		}
 		break;
@@ -199,7 +199,7 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 				return -1;
 		}
 		if (ncr > 1)
-			collectCyclesAndPath(trc, bWithoutPath);
+			collectCyclesAndPath(m_TrCyclesAll, trc, bWithoutPath);
 	}
 	return ncycles;
 }
@@ -316,7 +316,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
 		return true;
-	setAllowNotSelectedCycles(m_groupSize == 2 || nr == 2 ? 0 : m_allowMissingCycles);
+	setAllowNotSelectedCycles(nr);
 	if (!pNeedOutput && allowNotSelectedCycles())
 		return true;
 	bool ret = true;
@@ -407,7 +407,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 		return false;
 	if (ncycles <= 0)
 		return true;
-	if (m_AllowNotSelectedCycles)
+	if (allowNotSelectedCycles())
 		return false;
 	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
@@ -424,7 +424,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
-	if (m_AllowNotSelectedCycles)
+	if (allowNotSelectedCycles())
 		return true;
 	auto pntr = m_param->u1fCycles[0];
 

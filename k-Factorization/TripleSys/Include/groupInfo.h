@@ -82,7 +82,7 @@ protected:
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
-	CC inline void setAllowNotSelectedCycles(int val)	{ m_AllowNotSelectedCycles = val; }
+	CC inline void setAllowNotSelectedCycles(int nrows)	{ m_AllowNotSelectedCycles = m_groupSize != 2 && nrows == 2 && m_allowMissingCycles; }
 	CC inline bool allowNotSelectedCycles() const		{ return m_AllowNotSelectedCycles; }
 private:
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
@@ -92,7 +92,7 @@ private:
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;
 	const kSysParam* m_param;
-	int m_AllowNotSelectedCycles = 0;
+	bool m_AllowNotSelectedCycles = false;
 #if PrintNVminmax
 	char* m_nvmn = NULL;
 	char* m_nvmx = NULL;

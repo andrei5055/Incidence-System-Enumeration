@@ -97,7 +97,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		iRowStart = 0;
 	while (1)
 	{
-		if (!m_pSecondRowsDB)
+		//if (!m_pSecondRowsDB)
+		if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
 			p1 = result(1);
 		else if (m_pSecondRowsDB->numObjects() > ip1)
 			p1 = m_pSecondRowsDB->getObject(ip1);
@@ -155,7 +156,32 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					//	indRow1 = indRow1;
 					bool bPair = false;
 					//bool bLastRow = indRow0 == nrows - 1 || indRow1 == nrows - 1;
-					const auto* pV1 = v1;
+					auto* pV1 = v1;
+					if (any2RowsConvertToFirst2 && nrows != 2 && (indRow0 > 2 || indRow1 > 2)) {
+						TrCycles trCycles;
+						memset(m_TrCyclesPair, 0, sizeof(m_TrCyclesPair));
+						for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)
+						{
+							if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1))) {
+								ASSERT(1);
+								continue;
+							}
+							collectCyclesAndPath(m_TrCyclesPair, &trCycles, true);
+						}
+
+						for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+						{
+							if (m_TrCyclesAll[itr0].counter != m_TrCyclesPair[itr0].counter ||
+								memcmp(m_TrCyclesAll[itr0].length, m_TrCyclesPair[itr0].length, sizeof(m_TrCyclesAll[0].length))) {
+								bRet = false;
+								//printf("+");
+								goto ret;
+							}
+							if (m_TrCyclesAll[itr0].counter == 0)
+								break;
+						}
+					}
+					pV1 = v1;
 					for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)
 					{
 						TrCycles trCycles;
@@ -180,8 +206,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 								_StatAdd("create3U1FTr", 11, true);
 
 								const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
-								//if (!btr)
-								//	bPair = bPair;
+								if (btr)
+									bPair = bPair;
 								//continue;
 #if 0 && !USE_CUDA 			// if btr == false, print tr, cycles and full pathes for rows (0, 1) and (indRow0, indRow1)
 								if (btr && indRow0 == 2 && indRow1 == 3)
@@ -245,7 +271,12 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 										continue; // print only
 									}
 #endif
-									const int icmp = !bCurrentSet ? -1 : kmProcessMatrix(result(), tr, nrows);
+									if (!bCurrentSet)
+										bCurrentSet = bCurrentSet;
+
+
+									const int icmp = kmProcessMatrix(result(), tr, nrows);
+									//const int icmp = !bCurrentSet ? -1 : kmProcessMatrix(result(), tr, nrows);
 									//TestkmProcessMatrix(nrows, nrows, tr, tr, icmp);
 
 									_StatAdd("kmProcessMatrix", 13, bCurrentSet);

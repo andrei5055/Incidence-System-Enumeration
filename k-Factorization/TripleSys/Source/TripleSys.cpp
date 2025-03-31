@@ -436,6 +436,18 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				noMoreResults = true;
 				goto noResult;
 			}
+			// temporary
+#if !USE_CUDA
+			if (!iPlayer && iDay){
+				tchar* l = links(0);
+				for (int i = 0;i < m_numPlayers * m_numPlayers; i++) {
+					if (l[i] == iDay) {
+						printfRed("Bad link(%d) at %dx%d\n", l[i], i / m_numPlayers, i % m_numPlayers);
+						//exit(1);
+					}
+				}
+			}
+#endif
 			if (!processOneDay())
 			{
 				if (nPrecalcRows && nPrecalcRows == iDay && m_useRowsPrecalculation == eCalculateRows) {
@@ -613,7 +625,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						m_secondPlayerInRow4 = secondPlayerInRow4First;
 						m_playerIndex = 0;
 						nRows4 = nRows4Day = 0;
-						bPrevResult = true;
 					}
 					bPrevResult = true;
 					continue;

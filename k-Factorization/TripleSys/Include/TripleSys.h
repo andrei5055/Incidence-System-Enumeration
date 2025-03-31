@@ -209,7 +209,7 @@ private:
 		bool bWithoutPath = true) const;
 	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
-	CC int collectCyclesAndPath(TrCycles* trc, bool bWithoutPath = true) const;
+	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, bool bWithoutPath = true) const;
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
 	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL, 
 		bool bWithoutPath = true) const;
@@ -331,6 +331,7 @@ private:
 	void* m_pRes;
 	TrCycles m_TrCycles;
 	mutable TrCycles m_TrCyclesAll[MAX_3PF_SETS];
+	mutable TrCycles m_TrCyclesPair[MAX_3PF_SETS];
 	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;

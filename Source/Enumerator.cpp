@@ -1516,7 +1516,7 @@ FClass2(CEnumerator, void)::UpdateEnumerationDB(char **pInfo, int len)
 
 	char key[32], adjustedKey[64];// , keyCmp[64];
 	this->getEnumerationObjectKey(key, countof(key));
-	// the lexicografical order of key's could be adjusted for some type of designs using:
+	// the lexicographical order of key's could be adjusted for some type of designs using:
 	const char *pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey)/2);
 
 	if (i) {
