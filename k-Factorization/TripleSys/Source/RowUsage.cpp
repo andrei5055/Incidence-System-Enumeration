@@ -153,8 +153,8 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #else
 			multiply_1();
 #endif
-			auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
-			if (pRowSolutionMasksIdx) {
+			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
+			if (m_bGroupSize2 && pRowSolutionMasksIdx) {
 
 #if NEW
 				if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {

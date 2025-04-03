@@ -68,6 +68,7 @@ public:
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto maskTestingCompleted() const			{ return m_pMaskTestingCompleted; }
+	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_bGroupSize2 ? 1 : 2)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
@@ -192,6 +193,7 @@ class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
 		m_bUseCombinedSolutions = pRowStorage->initRowSolution(&m_pRowSolutionIdx);
+		m_bGroupSize2 = pRowStorage->groupSize2();
 	}
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
@@ -214,6 +216,7 @@ private:
 	bool m_bUseCombinedSolutions;
 	bool m_bSolutionReady = false;   // true, when solution was prepared ar a part of combined solution. 
 	bool m_bUsePlayersMask = false;
+	bool m_bGroupSize2 = false;
 };
 
 #define PERMUTATION_OF_PLAYERS(numPlayers, pLayersIn, permut, pLayersOut)	for (auto j = numPlayers; j--;) \

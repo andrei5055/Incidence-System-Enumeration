@@ -17,8 +17,8 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : m_numDaysResult;
 	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
-	m_fRowToBitmask = m_bGroupSize2 ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
-	m_fSolutionInterval = m_bGroupSize2 ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
+	m_fRowToBitmask = groupSize2() ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
+	m_fSolutionInterval = groupSize2() ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
 	m_lenDayResults = m_numDaysResult + 1;
 	m_pSolMemory = new tchar[2 * numPlayers];
 	setLenCompare(m_numPlayers);
@@ -45,7 +45,7 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
 	m_pFirstMatr = pFirstMatr;
 	ll playersMask = -1;
 	int shift = numPlayers();
-	if (!m_bGroupSize2) {
+	if (!groupSize2()) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		const auto groupSize = m_pAllData->groupSize();
 		// Excluding players of the first group from ...
@@ -70,15 +70,16 @@ CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
 	uint checked = 0;
 	for (tchar m = 0; m < m_numPlayers; m++)
 	{
-		if (!(checked & (1 << m))) {
-			tchar k = m;
-			for (int i = 2; i <= m_numPlayers; i += 2)
-			{
-				if ((k = neighborsj[neighborsi[k]]) == m)
-					return i == m_numPlayers;
+		if (checked & (1 << m))
+			continue;
 
-				checked |= 1 << k;
-			}
+		tchar k = m;
+		for (int i = 2; i <= m_numPlayers; i += 2)
+		{
+			if ((k = neighborsj[neighborsi[k]]) == m)
+				return i == m_numPlayers;
+
+			checked |= 1 << k;
 		}
 	}
 	return false;
@@ -123,7 +124,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		}
 	}
 
-	if (!m_bGroupSize2 && m_playersMask[1] && pRow[1] > (i = minPlayer(m_playersMask[1]))) {
+	if (!groupSize2() && m_playersMask[1] && pRow[1] > (i = minPlayer(m_playersMask[1]))) {
 		PRINT_RED("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
 		EXIT;
 	}
@@ -132,7 +133,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		if (pRow[1] != *ptr && pRow[1] != *ptr + 1) {
 			char buf[256], *pBuf = buf;
 			SPRINTFD(pBuf, buf, "Error in code: pRow[1](%d) != %d, and pRow[1] != %d", pRow[1], *ptr, *ptr + 1);
-			if (!m_bGroupSize2) {
+			if (!groupSize2()) {
 				// Calculate the number of non-referenced players
 				int counter = 0;
 				for (auto i = (*ptr + 1); i < pRow[1]; i++) {
@@ -160,7 +161,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors) {
 		}
 	}
 
-	if (!m_bGroupSize2) {
+	if (!groupSize2()) {
 		// Mark referenced players:
 		for (int i = m_pAllData->groupSize(); --i;)
 			m_playersMask[1] &= ((ll)-1 ^ ((ll)1 << pRow[i]));
@@ -261,7 +262,7 @@ CC void CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 		}
 	}
 
-	if (!m_bGroupSize2 && compSolFound) {
+	if (!groupSize2() && compSolFound) {
 		// If groupSize > 2, we also need to create mask which will keep  
 		// the information regarding the players used by current solution.
 		// We will store it as 0's of corresponding bites.
@@ -288,7 +289,7 @@ CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroup
 				break;
 
 			// Should never happen if all first non-fixed row solutions are canonical. 
-			ASSERT(true);
+	//		ASSERT(true);
 			// Just in case, we'll reset the mask.
 			memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
 		}
@@ -306,7 +307,7 @@ CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroup
 
 CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 	uint last = 0;
-	if (!m_bGroupSize2) {
+	if (!groupSize2()) {
 		auto availablePlayers = getPlayersMask();
 		getSolutionRange(last, availablePlayers, m_numPreconstructedRows);
 	}
@@ -362,7 +363,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 	}
 
 	// Adding additional long long when we use groupSize > 2
-	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (m_bGroupSize2 ? 0 : 8);
+	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (groupSize2() ? 0 : 8);
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions || m_bUseAut ? m_numRecAdj : 0;
@@ -370,7 +371,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 	delete[] m_pRowsCompatMasks[1];
 	m_pRowsCompatMasks[1] = new tmask[len * m_lenSolutionMask];
 	memset(m_pRowsCompatMasks[1], 0, len * m_numSolutionTotalB);
-	if (m_bGroupSize2) {
+	if (groupSize2()) {
 		releaseSolMaskInfo();
 		const auto numDays = numDaysResult();
 		m_pRowSolutionMasksIdx = new uint[numDays];
@@ -396,7 +397,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
 	tmask* pCompatMask = pRowsCompatMasks[1];
 
-	bool skipAllowed = m_bGroupSize2 && !(useCombinedSolutions || m_bUseAut);
+	bool skipAllowed = groupSize2() && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
@@ -452,7 +453,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 			continue;
 		}
 
-		if (!m_bGroupSize2)
+		if (!groupSize2())
 			pCompatMask = getSolutionMask(first);
 
 		for (; first < last; first++) {
@@ -552,7 +553,7 @@ CC void CRowStorage::initCompatibilityMasks() {
 
 CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) const {
 	const uint first = last;
-	if (!m_bGroupSize2) {
+	if (!groupSize2()) {
 		const auto iBit = minPlayer(availablePlayers);
 		last = m_pPlayerSolutionCntr[iBit - 1];
 		availablePlayers ^= (ll)1 << iBit;
@@ -577,7 +578,7 @@ CC bool CRowStorage::checkSolutionByMask(int iRow, const tmask* pToASol) const {
 		if (mask && (mask & pToASol[j++]))
 			continue;  // at least one solution masked by left part of the interval is still valid
 
-#if NEW
+#if SAME_MASK_IDX
 		if (m_pMaskTestingCompleted[i - 1])
 			return false;
 #endif
@@ -630,7 +631,7 @@ CC int CRowStorage::initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayer
 	const auto lenMask = m_numSolutionTotalB >> (SHIFT - 3);
 	const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
 	*ppCompatibleSolutions = new tmask[len];
-	*pUsePlayersMask = !m_bGroupSize2;
+	*pUsePlayersMask = !groupSize2();
 	return lenMask;
 }
 

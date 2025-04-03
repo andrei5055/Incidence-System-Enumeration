@@ -1,9 +1,33 @@
-#include <string.h>
-#include <stdio.h>
-
+#include "TripleSys.h"
 #include "ResultDB.h"
 
-#define countof(x) sizeof(x)/sizeof(x[0])
+#define SNPRINTF(x, len, ...)	static_cast<size_t>(snprintf(x, len, __VA_ARGS__))
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <direct.h>
+#define MKDIR(x) _mkdir(x)
+#elif defined(__linux__)
+#define MKDIR(x)  mkdir(dirName, 0777)
+#else
+"Please define corresponding method for making directory"
+#endif
+
+#define SET_DIRECTORY(dirName)	if (fileExists(dirName, false) ? 0 : MKDIR(dirName)) \
+									return 0;		// Directory could not be used
+
+
+
+bool ResultDB::fileExists(const char* path, bool file) const
+{
+	struct stat info;
+	if (stat(path, &info))
+		return false;
+
+	if (!file)
+		return info.st_mode & S_IFDIR;
+
+	return outFileIsValid(info, path);
+}
 
 void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 {
@@ -31,14 +55,14 @@ void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 	FILE* dbFile = NULL;
 	int i = -1;
 	while (!dbFile && ++i < 2) {
-		FOPEN(file, enumerationDB, i ? "w" : "r");
+		FOPEN_F(file, enumerationDB, i ? "w" : "r");
 		dbFile = file;
 	}
 
 	if (!dbFile)
 		return;
 
-	char key[32], adjustedKey[64];// , keyCmp[64];
+	char key[32], adjustedKey[64];
 	this->getEnumerationObjectKey(key, countof(key));
 	// the lexicographical order of key's could be adjusted for some type of designs using:
 	const char* pAdjKey = this->getEnumerationObjectKeyA(adjustedKey, countof(adjustedKey) / 2);
@@ -46,7 +70,7 @@ void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 	if (i) {
 		this->outputTitle(dbFile);
 		outKeyInfo(key, pInfo, dbFile);
-		fclose(dbFile);
+		FCLOSE_F(dbFile);
 		return;
 	}
 
@@ -55,7 +79,7 @@ void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 	// EnumerationDB file exists
 	// We need to find a record which corresponds to the key
 	sprintf_s(tmpFile, "%s_tmp", enumerationDB);
-	FOPEN(f, tmpFile, "w");
+	FOPEN_F(f, tmpFile, "w");
 	bool compareFlag = true;
 	const auto lenKey = strlen(key);
 	const auto lenKeyAdj = pAdjKey ? strlen(pAdjKey) : 0;
@@ -81,8 +105,8 @@ void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 
 		firstLine = false;
 		if (f && fputs(buffer, f) < 0) {
-			FCLOSE(dbFile);
-			FCLOSE(f);
+			FCLOSE_F(dbFile);
+			FCLOSE_F(f);
 			return; // Something wrong
 		}
 	}
@@ -90,8 +114,8 @@ void ResultDB::UpdateEnumerationDB(char** pInfo, int len)
 	if (compareFlag)
 		outKeyInfo(key, pInfo, f);
 
-	FCLOSE(dbFile);
-	FCLOSE(f);
+	FCLOSE_F(dbFile);
+	FCLOSE_F(f);
 
 	std::string error;
 	if (remove(enumerationDB) != 0) {
@@ -124,7 +148,7 @@ size_t ResultDB::getDirectory(char* dirName, size_t lenBuffer, bool rowNeeded) c
 		len += SNPRINTF(dirName + len, lenBuffer - len, "%s/", pDirName);
 		SET_DIRECTORY(dirName);
 	}
-
+/*
 	if (rowNeeded) {
 		auto rowNumb = getInSys()->rowNumbExt();
 		if (pParam->objType == t_objectType::t_SemiSymmetricGraph)
@@ -133,6 +157,6 @@ size_t ResultDB::getDirectory(char* dirName, size_t lenBuffer, bool rowNeeded) c
 		len += SNPRINTF(dirName + len, lenBuffer - len, "V =%4d/", rowNumb);
 		SET_DIRECTORY(dirName);
 	}
-
+*/
 	return len;
 }
