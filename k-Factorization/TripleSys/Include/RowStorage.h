@@ -51,7 +51,7 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
-	CC void initCompatibilityMasks();
+	CC bool initCompatibilityMasks();
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
@@ -99,7 +99,7 @@ private:
 
 private:
 	CC uint& solInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
-	CC void generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx) const;
+	CC bool generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx, ll* pUsedPlayers = NULL) const;
 	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
 		memset(bm, 0, m_lenMask);

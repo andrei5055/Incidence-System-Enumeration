@@ -502,9 +502,22 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 							}
 #endif
 						}
+						if (false && m_secondPlayerInRow4 < numDaysResult()) {
+							noMoreResults = true;
+							goto noResult;
+						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
-						m_pRowStorage->initCompatibilityMasks();
+
+						if (!m_pRowStorage->initCompatibilityMasks()) {
+#if !USE_CUDA
+							//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
+							//ASSERT(1);
+#endif
+							noMoreResults = true;
+							goto noResult;
+						}
+
 						if (iCalcMode == eCalculateRows) {
 							nLoops = nRows4;
 							noMoreResults = true;
