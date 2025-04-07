@@ -232,6 +232,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	} while (ProceedToNextMapping());
 #endif
 #endif
+	m_pTrRepo = new CTrRepo(m_numDays, m_numPlayers);
 }
 
 CC alldata::~alldata() {
@@ -254,6 +255,7 @@ CC alldata::~alldata() {
 		delete m_pRowStorage;
 	delete m_pRowUsage;
 	releaseBinaryMatricesStorage();
+	delete m_pTrRepo;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

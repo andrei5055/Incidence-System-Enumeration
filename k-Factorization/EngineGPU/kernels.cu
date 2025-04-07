@@ -32,6 +32,7 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "CheckMatrix.cpp"
 #include "TrCycles.cpp"
 #include "cycles.cpp"
+#include "TrRepo.cpp"
 
 
 #define GLOBAL_SYNCHRONIZE  1

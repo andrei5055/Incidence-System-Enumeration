@@ -172,7 +172,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 						for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
 						{
 							if (m_TrCyclesAll[itr0].counter != m_TrCyclesPair[itr0].counter ||
-								memcmp(m_TrCyclesAll[itr0].length, m_TrCyclesPair[itr0].length, sizeof(m_TrCyclesAll[0].length))) {
+								MEMCMP(m_TrCyclesAll[itr0].length, m_TrCyclesPair[itr0].length, sizeof(m_TrCyclesAll[0].length))) {
 								bRet = false;
 								//printf("+");
 								goto ret;

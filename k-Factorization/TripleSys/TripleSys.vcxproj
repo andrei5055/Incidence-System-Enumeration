@@ -187,6 +187,7 @@
     <ClCompile Include="Source\TopGunGPU.cpp" />
     <ClCompile Include="Source\TrCycles.cpp" />
     <ClCompile Include="Source\TripleSys.cpp" />
+    <ClCompile Include="Source\TrRepo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\allSupports.h" />
@@ -197,6 +198,7 @@
     <ClInclude Include="Include\data.h" />
     <ClInclude Include="Include\Global.h" />
     <ClInclude Include="Include\groupInfo.h" />
+    <ClInclude Include="Include\ResultDB.h" />
     <ClInclude Include="Include\MatrixDB.h" />
     <ClInclude Include="Include\p1fCheck.h" />
     <ClInclude Include="Include\RowStorage.h" />
@@ -207,6 +209,7 @@
     <ClInclude Include="Include\TimerInfo.h" />
     <ClInclude Include="Include\TopGun.h" />
     <ClInclude Include="Include\TripleSys.h" />
+    <ClInclude Include="Include\TrRepo.h" />
     <ClInclude Include="Source\Combination.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

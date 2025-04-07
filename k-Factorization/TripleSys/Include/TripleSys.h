@@ -8,6 +8,7 @@
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
+#include "TrRepo.h"
 
 #define UseRowsPrecalculation  0 // The number of first rows of the matrix from which we start to pre-calculate the remaining rows. 
                                  // ntd: change to parameter, check input params that numbers of rows in input is 3 or less
@@ -339,7 +340,8 @@ private:
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;
 	CRowUsage* m_pRowUsage = NULL;
-	public:
+	CTrRepo* m_pTrRepo = NULL;
+public:
 	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
 };
 
