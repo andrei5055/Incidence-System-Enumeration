@@ -327,11 +327,12 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 
 	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3 && !pNeedOutput)
 	{
-		m_p1f_counter++;
 		//if (!(m_p1f_counter % 10000000))
 		//	printTable("LR", result(nr - 1), 1, nc, m_groupSize);
-		if (ncr == 1 && param(t_p1f_counter) && !(m_p1f_counter % param(t_p1f_counter)) && nr > 2)
+		if (ncr == 1 && param(t_p1f_counter) && (++m_p1f_counter >= param(t_p1f_counter)) && nr > 2) {
+			m_p1f_counter = 0;
 			return true;
+		}
 	}
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only
 	{
@@ -381,15 +382,15 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		*pNeedOutput = true;
 	return ret;
 }
-char *alldata::matrixStatOutput(char* str, int maxStr) const 
+char *alldata::matrixStatOutput(char* str, int maxStr, TrCycles* trs) const
 {
 	char* pOut = str;
 	SPRINTFS(pOut, str, maxStr, "Cycles:");
 	const auto retVal = pOut;
-	for (int i = 0; i < MAX_3PF_SETS && m_TrCyclesAll[i].counter; i++)
+	for (int i = 0; i < MAX_3PF_SETS && trs[i].counter; i++)
 	{
-		SPRINTFS(pOut, str, maxStr, "%d(", m_TrCyclesAll[i].counter);
-		auto pCycles = m_TrCyclesAll[i].length;
+		SPRINTFS(pOut, str, maxStr, "%d(", trs[i].counter);
+		auto pCycles = trs[i].length;
 		for (int j = 0; j < MAX_3PF_SETS && pCycles[j]; j++)
 		{
 			if (j)

@@ -209,7 +209,6 @@
     <ClInclude Include="Include\TimerInfo.h" />
     <ClInclude Include="Include\TopGun.h" />
     <ClInclude Include="Include\TripleSys.h" />
-    <ClInclude Include="Include\TrRepo.h" />
     <ClInclude Include="Source\Combination.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

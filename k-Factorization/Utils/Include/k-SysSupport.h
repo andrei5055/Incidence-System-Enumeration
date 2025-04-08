@@ -38,6 +38,8 @@
 #define printfGreen(fmt, ...) printf(GreenText fmt ResetTextColor, __VA_ARGS__)
 #define printfYellow(fmt, ...) printf(YellowText fmt ResetTextColor, __VA_ARGS__)
 
+void myAssert(int code, const char* file, int line);
+
 typedef unsigned char tchar;
 typedef const tchar  ctchar;
 typedef unsigned int uint;

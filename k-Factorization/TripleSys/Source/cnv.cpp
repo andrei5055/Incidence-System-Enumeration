@@ -189,9 +189,6 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 	setAllowNotSelectedCycles(nrows);
 	m_TrInd = 0;
 	resetGroupOrder();
-	auto* pTestedTRs = testedTRs();
-	if (pTestedTRs)
-		pTestedTRs->resetGroupOrder();
 	m_playerIndex = playerIndexCycle;
 
 	if (m_useRowsPrecalculation != eCalculateRows) {
@@ -210,11 +207,6 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				const auto* pMatrToTest = result(i);
 				auto* cmpTr = m_pRowGroup->getObject();
 				while (j--) {
-					if (pTestedTRs && pTestedTRs->isProcessed(cmpTr))
-					{
-						cmpTr += m_numPlayers;
-						continue;
-					}
 					m_playerIndex = playerIndexCycle - i * m_numPlayers;
 					const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
 					if (cmp < 0) {

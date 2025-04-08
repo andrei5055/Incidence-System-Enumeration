@@ -119,7 +119,7 @@ private:
 		}
 	}
 	CC void initMaskStorage(uint numObjects);
-	CC bool p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const;
+	CC bool p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;

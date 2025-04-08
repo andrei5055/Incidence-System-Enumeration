@@ -66,23 +66,14 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
 	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << shift);
 }
 
-CC bool CRowStorage::p1fCheck2(ctchar* neighborsi, ctchar* neighborsj) const {
-	uint checked = 0;
-	for (tchar m = 0; m < m_numPlayers; m++)
+CC bool CRowStorage::p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const {
+	tchar k = 0;
+	for (tchar i = 2; i < (tchar)m_numPlayers; i += 2)
 	{
-		if (checked & (1 << m))
-			continue;
-
-		tchar k = m;
-		for (int i = 2; i <= m_numPlayers; i += 2)
-		{
-			if ((k = neighborsj[neighborsi[k]]) == m)
-				return i == m_numPlayers;
-
-			checked |= 1 << k;
-		}
+		if ((k = neighborsj[neighborsi[k]]) == 0)
+			return false;
 	}
-	return false;
+	return true;
 }
 
 #define USE_EXIT	0
@@ -191,14 +182,16 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 	ASSERT(idx >= m_numSolutionTotal);
 	const auto pObj = getObject(idx);
 	ASSERT(!pObj);
+	TrCycles* tc = &m_pAllData->m_TrCyclesFirst2Rows[0];
+	if (groupSize2() && tc->length[0] == m_numPlayers)
+		return p1fCheck2P1F(neighborsi, pObj + m_numPlayers);
 	TrCycles tcs;
 	const auto ncycles = m_pAllData->u1fGetCycleLength(&tcs, 1, neighborsi, pObj + m_numPlayers,
 		neighborsi - m_numPlayers, pObj);
 	if (ncycles <= 0)
 		return false;
-	for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+	for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++, tc++)
 	{
-		const auto* tc = &m_pAllData->m_TrCyclesFirst2Rows[itr0];
 		if (tc->counter == 0)
 			break;
 		if (!MEMCMP(tc->length, tcs.length, MAX_CYCLES_PER_SET))

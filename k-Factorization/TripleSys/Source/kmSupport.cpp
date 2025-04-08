@@ -207,7 +207,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 		case 1: return coi[1] == mi[1] ? 1 : 2;
 		}
 	}
-	return (bPrecalcRow || param(t_nestedGroups) > 1) ? 1 : 0;
+	return (bPrecalcRow || param(t_nestedGroups) > 1) ? 3 : 0;
 }
 CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayMax, int iDayCurrent, int nc, int ip) const
 {

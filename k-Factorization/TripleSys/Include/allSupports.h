@@ -122,7 +122,6 @@ void printTransformed(int nrows, int ncols, int groupSize, ctchar* tr, ctchar* t
 void createStartFolderAndFileName(char* fn, size_t fns, const char* folder, const char* fileNameFmt, int np, int nr, int gs);
 CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neigborsi, ctchar* neighborsj, int nc);
 CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, ctchar* v);
-void myAssert(int code, const char* file, int line);
 void myExit(int code);
 void reportEOJ(int code);
 void setConsoleOutputMode();

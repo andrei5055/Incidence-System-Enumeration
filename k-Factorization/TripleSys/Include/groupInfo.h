@@ -4,6 +4,7 @@
 #include "Stat.h"
 #include "GroupOrder.h"
 #include "Storage.h"
+#include "TrRepo.h"
 
 class SizeParam {
 public:
@@ -82,7 +83,7 @@ protected:
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
-	CC inline void setAllowNotSelectedCycles(int nrows)	{ m_AllowNotSelectedCycles = m_groupSize != 2 && nrows == 2 && m_allowMissingCycles; }
+	CC inline void setAllowNotSelectedCycles(int nrows)	{ m_AllowNotSelectedCycles = m_groupSize != 2 && nrows != 2 && m_allowMissingCycles; }
 	CC inline bool allowNotSelectedCycles() const		{ return m_AllowNotSelectedCycles; }
 private:
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
@@ -134,19 +135,31 @@ protected:
 			return;
 
 		const auto numPlayers = p->val[t_numPlayers];
+		const auto groupSize = p->val[t_groupSize];
+		const auto nRows = (numPlayers - 1) / (groupSize - 1);
+		m_numTrGroups = nRows * nRows;
 		m_ppAutGroups = new CGroupInfo* [m_numLevels];
+		m_ppTestedTrs = new CGroupInfo * [m_numTrGroups];
+
 		for (int i = 0; i < m_numLevels; i++)
 			m_ppAutGroups[i] = new CGroupInfo(numPlayers);
 
-		if (p->val[t_autSaveTestedTrs])
-			m_pTestedTrs = new CGroupInfo(numPlayers, 32000);
+		for (int i = 0; i < m_numTrGroups; i++)
+			m_ppTestedTrs[i] = new CGroupInfo(numPlayers, 32);
+
+		m_pTrRepo = new CTrRepo(nRows, numPlayers);
 	}
 	CC ~CGroupUtilisation() {
 		for (int i = 0; i < m_numLevels; i++)
 			delete m_ppAutGroups[i];
 
 		delete[] m_ppAutGroups;
-		delete m_pTestedTrs;
+
+		for (int i = 0; i < m_numTrGroups; i++)
+			delete m_ppTestedTrs[i];
+
+		delete[] m_ppTestedTrs;
+		delete m_pTrRepo;
 	}
 
 	CC void saveGroup(const CGroupInfo& grInfo, int nRows) {
@@ -167,14 +180,16 @@ protected:
 	CC inline auto utilizeGroups(int nRow) const	{ return m_autLevel[0] <= nRow && nRow <= m_autLevel[1]; }
 	CC inline auto firstGroupIdx() const			{ return m_autLevelDef[0]; }
 	CC inline auto lastGroupIdx() const				{ return m_autLevelDef[1]; }
-	CC inline auto testedTRs() const				{ return m_pTestedTrs; }
+	CC inline auto testedTRs(int ind) const         { return m_ppTestedTrs ? m_ppTestedTrs[ind] : NULL; }
 
 private:
 	CGroupInfo** m_ppAutGroups = NULL;
-	CGroupInfo* m_pTestedTrs = NULL;
+	CGroupInfo** m_ppTestedTrs = NULL;
+	CTrRepo* m_pTrRepo = NULL;
 	const int m_autLevelDef[2];
 	const int m_autLevel[2];
 	const bool m_bDirection;
 	int m_numLevels;
+	int m_numTrGroups;
 };
 

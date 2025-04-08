@@ -183,7 +183,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			bool needOutput = false;
 			matrixStat(neighbors(), i, &needOutput);
 			if (needOutput) {
-				matrixStatOutput(stat, sizeof(stat));
+				matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
 				printf("%d rows: Last row %s, cnvCheckNew=%s, AUT=%d, %s\n", i,
 					bRet2 ? "Ok" : "Not Ok", bRet ? "Ok" : "Not Ok", groupOrder(), stat);
 			}
@@ -502,10 +502,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 							}
 #endif
 						}
-						if (false && m_secondPlayerInRow4 < numDaysResult()) {
-							noMoreResults = true;
-							goto noResult;
-						}
 						m_useRowsPrecalculation = eCalculateMatrices;
 						m_playerIndex = 0;
 
@@ -687,7 +683,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
-					m_matrixDB.addMatrix(groupOrder(), matrixStatOutput(stat, sizeof(stat)));
+					m_matrixDB.addMatrix(groupOrder(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				else
 					stat[0] = '\0';
 

@@ -8,7 +8,6 @@
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
-#include "TrRepo.h"
 
 #define UseRowsPrecalculation  0 // The number of first rows of the matrix from which we start to pre-calculate the remaining rows. 
                                  // ntd: change to parameter, check input params that numbers of rows in input is 3 or less
@@ -204,7 +203,7 @@ private:
 	void testRightNeighbor(int nr);
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
-	char *matrixStatOutput(char* str, int maxStr) const;
+	char *matrixStatOutput(char* str, int maxStr, TrCycles* trs) const;
 	CC void cyclesFor2Rows(ctchar* p1);
 	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
 		bool bWithoutPath = true) const;
@@ -230,6 +229,8 @@ private:
 	CC int getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
 	CC int p1fCheck2ndRow() const;
 	CC void updateIndexPlayerMinMax();
+	void printCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
+	void printCyclesInfoSummary(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
@@ -318,7 +319,7 @@ private:
 	const bool m_bCheckLinkT;
 	CheckCanon *m_pCheckCanon = NULL;
 	GroupOrbits *m_pOrbits = NULL;
-	unsigned int m_p1f_counter = 0;
+	int m_p1f_counter = 0;
 	bool m_checkForUnexpectedCycle;
 	int m_matrixCanonInterval;   // 0 - Canonicity will be verified only for fully constructed matrices.
 	                             // != 0 Canonicality will be checked on lines with numbers proportional to m_matrixCanonInterval
@@ -340,7 +341,6 @@ private:
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;
 	CRowUsage* m_pRowUsage = NULL;
-	CTrRepo* m_pTrRepo = NULL;
 public:
 	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
 };
