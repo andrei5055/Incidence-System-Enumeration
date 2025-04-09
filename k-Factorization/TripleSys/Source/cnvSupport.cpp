@@ -51,13 +51,14 @@ CC bool alldata::cnvCheck2P1F(int nrows)
 ret:
 	return bRet;
 }
+
 CC bool alldata::cnvCheck3U1F(int nrows)
 {
 	if (nrows < 2)
 		return true;
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
-	bool bCollectInfo = param(t_printMatrices) & 16;
+	const bool bCollectInfo = param(t_printMatrices) & 16;
 	bool bPrintInfo = (nrows == numDaysResult()) && bCollectInfo;
 	auto v1 = getV1();
 	int ip1 = 0;
@@ -67,10 +68,6 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 	setAllowNotSelectedCycles(nrows);
-
-	int nrr = param(t_useRowsPrecalculation);
-	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nrows > nrr;
-	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0 && !bCollectInfo;
 
 	//static tchar a[] = {0,3,6, 1,9,12, 2,15,18, 4,10,16, 5,13,19, 7,11,20, 8,14,17, };
 	//if (memcmp(a, result(1), sizeof(a)) == 0)
@@ -107,7 +104,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 						break;
 					}
 					// warning! cycles defined in params must be sorted
-					if (itr0 >= *u1fPntr || 
+					if (itr0 >= *u1fPntr ||
 						MEMCMP(m_TrCyclesAll[itr0].length, u1fPntr + 1 + itr0 * MAX_CYCLES_PER_SET, MAX_CYCLES_PER_SET))
 						break;
 				}
@@ -118,28 +115,31 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 			}
 		}
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
-			bCurrentSet = true; 
-		//for (int isw = 1; isw >= 0; isw--)
-		{
-			TrCycles trCycles;
-			// get first row
-			for (int indRow0 = 0; indRow0 < nrows; indRow0++)
+			bCurrentSet = true;
+
+		const bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0 && !bCollectInfo && bCurrentSet;
+		TrCycles trCycles;
+		// get first row
+		for (int iRowLast = 1; iRowLast < nrows; iRowLast++) {
+			const bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
+			for (int indRow = 0; indRow < iRowLast; indRow++)
 			{
 				// get second row
-				for (int indRow1 = 0; indRow1 < nrows; indRow1++)
+				for (int iRowSwap = 0; iRowSwap < 2; iRowSwap++)
 				{
-					if (indRow0 == indRow1)
-						continue;
+					const int indRow1 = iRowSwap ? indRow : iRowLast;
+					const int indRow0 = iRowSwap ? iRowLast : indRow;
 					int nv1 = 0;
 					int nTrsForPair = 0;
-					CGroupInfo* pTestedTRs = testedTRs(indRow0 * m_numDays + indRow1);
-					int nTrs = pTestedTRs->numObjects();
-					if (indRow0 < nrows - 1 && indRow1 < nrows - 1 && bUseTestedTrs && !bPrecalcRow && nrows > 2) {
+					auto* pTestedTRs = m_pTrRepo->getTrSet(indRow0, indRow1);
+					if ((iRowLast <= m_lastRowWithTestedTrs) && bUseTestedTrs) {
+						const auto nTrs = pTestedTRs->numObjects();
 						for (int itr = 0; itr < nTrs; itr++) {
-							tchar* trt = tr;
-							trt = pTestedTRs->getObject(itr);
-#if 0    // To take tr's in order of their 
-							trt = pTestedTRs->CStorage<tchar>::getObject(itr);
+#if 1
+							const auto * trt = pTestedTRs->getObject(itr);
+#else    
+							// Take tr in the order they were added to the database
+							const auto* trt = pTestedTRs->CStorage<tchar>::getObject(itr);
 #endif
 							m_TrInd++;
 							nTrsForPair++;
@@ -161,9 +161,9 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					else {
 						//if (nv1 > 53)
 						//	indRow1 = indRow1
-						bool bSaveTestedTr = (indRow0 < m_numDays - 1) && (indRow1 < m_numDays - 1) && !bPrecalcRow && bUseTestedTrs;
 						auto* pV1 = v1;
-						pTestedTRs->resetGroupOrder();
+						if (bSaveTestedTrs)
+							pTestedTRs->resetGroupOrder();
 						nv1 = getAllV(v1, maxv1, indRow0, indRow1);
 #if !USE_CUDA
 						if (bPrintInfo) {
@@ -192,8 +192,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 										nTrsForPair++;
 										const int icmp = kmProcessMatrix(result(), tr, nrows);
 
-										switch (icmp) {
-										case -1:
+										if (icmp == -1) {
 #if !USE_CUDA
 											if (bCollectInfo) {
 												printCyclesInfoSummary(&trCycles, tr, indRow0, indRow1, nrows);
@@ -205,11 +204,11 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 #endif
 											bRet = false;
 											goto ret;
-										case 1: continue;
-										default: break;
 										}
-										if (bSaveTestedTr && pTestedTRs->isProcessed(tr))
+										// save Tr if icmp is not -1; continue if it was already processed
+										if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
 											continue;
+
 										if (icmp == 0)
 											updateGroup(tr);
 									}
@@ -255,6 +254,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					}
 				}
 			}
+			if (bSaveTestedTrs && m_lastRowWithTestedTrs < iRowLast)
+				m_lastRowWithTestedTrs = iRowLast;
 		}
 		if (bCurrentSet)
 			break;

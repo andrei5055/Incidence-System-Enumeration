@@ -244,8 +244,8 @@ private:
 	CC int kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
 	CC int kmProcessOneNot1stRow3(tchar* mo, ctchar* mi, int mind, tchar* tb, tchar* tc, ctchar* tr, int nr) const;
 	CC int kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow = 2) const;
-	CC void setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom, int nc) const;
-	CC void setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayMax, int iDayCurrent, int nc, int ip) const;
+	CC void setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom) const;
+	CC void setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayCurrent, int ip) const;
 	CC void releaseBinaryMatricesStorage();
 	bool FindIsomorphicBaseElements(const std::string& fileName);
 	void checkCommonValues(ctchar* pBaseValues, int numSets);
@@ -300,6 +300,7 @@ private:
 	int m_secondPlayerInRow4;
 	int m_secondPlayerInRow4Last;
 	int m_numDaysResult;
+	int m_lastRowWithTestedTrs;
 
 	tchar* m_Km;
 	tchar* m_Km2;
@@ -341,7 +342,7 @@ private:
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;
 	CRowUsage* m_pRowUsage = NULL;
-public:
+	public:
 	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
 };
 

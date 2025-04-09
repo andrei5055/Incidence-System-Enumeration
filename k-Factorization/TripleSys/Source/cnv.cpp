@@ -205,8 +205,9 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 					continue;
 
 				const auto* pMatrToTest = result(i);
-				auto* cmpTr = m_pRowGroup->getObject();
+
 				while (j--) {
+					auto* cmpTr = m_pRowGroup->getObject(j);
 					m_playerIndex = playerIndexCycle - i * m_numPlayers;
 					const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
 					if (cmp < 0) {
@@ -216,7 +217,6 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 
 					if (!cmp)
 						updateGroup(cmpTr);
-					cmpTr += m_numPlayers;
 				}
 				i = i1;
 				if (++nGroupsTested == param(t_autGroupNumb))
@@ -263,11 +263,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		{
 			a[i] = (p[i] = i) * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		}
-		if (!cnvCheckTgNew(a, nrows, ng))
-		{
-			ret = false;
-		}
-		else
+		if (ret = cnvCheckTgNew(a, nrows, ng))
 		{
 			p[m_nGroups] = ng;//m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
 			auto i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)

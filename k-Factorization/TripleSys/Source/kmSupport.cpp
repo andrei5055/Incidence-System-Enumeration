@@ -187,7 +187,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	auto dayMax = tm[0];
 	auto miFrom = mi;
 	coi = mo;
-	int nrr = param(t_useRowsPrecalculation);
+	const auto nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_useRowsPrecalculation == eCalculateRows) {
 		switch (m_groupSize) {
@@ -202,57 +202,53 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 		ASSERT(tm[i] >= nc);
 		switch (MEMCMP(coi, mi, nc))
 	    {
-		case -1: setPlayerIndex(tr, dayMax, tm[i], coi, mi, miFrom + nc * tm[i], nc); return -1;
+		case -1: setPlayerIndex(tr, dayMax, tm[i], coi, mi, miFrom + nc * tm[i]); return -1;
 		case 0: if (dayMax < tm[i]) { dayMax = tm[i]; } break;
 		case 1: return coi[1] == mi[1] ? 1 : 2;
 		}
 	}
 	return (bPrecalcRow || param(t_nestedGroups) > 1) ? 3 : 0;
 }
-CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayMax, int iDayCurrent, int nc, int ip) const
+CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayCurrent, int ip) const
 {
-	if (!tr)
-		return;
-	if (iDayMax <= iDayCurrent)
+	tchar ttr[MAX_PLAYER_NUMBER];
+	tchar tpr[MAX_PLAYER_NUMBER];
+	int i, j = 0;
+	for (i = 0; i < m_numPlayers; i++)
 	{
-		tchar ttr[MAX_PLAYER_NUMBER];
-		tchar tpr[MAX_PLAYER_NUMBER];
-		int i, j = 0;
-		for (i = 0; i < nc; i++)
-		{
-			tpr[ciFrom[i]] = ttr[tr[i]] = i;
-		}
-		for (i = 0; i <= ip; i++)
-		{
-			if (j < tpr[ttr[co[i]]])
-				j = tpr[ttr[co[i]]];
-		}
-		int playerIndex = iDayCurrent * m_numPlayers + j;
-		if (m_playerIndex > playerIndex)
-			m_playerIndex = playerIndex;
+		tpr[ciFrom[i]] = ttr[tr[i]] = i;
+	}
+	for (i = 0; i <= ip; i++)
+	{
+		if (j < tpr[ttr[co[i]]])
+			j = tpr[ttr[co[i]]];
+	}
+	const auto playerIndex = iDayCurrent * m_numPlayers + j;
+	if (m_playerIndex > playerIndex)
+		m_playerIndex = playerIndex;
 #define ProfilePlayerIndex 0 && !USE_CUDA
 #if ProfilePlayerIndex 
-		int ipMax = (iDayCurrent + 1) * m_numPlayers - m_groupSize - 1;
-		int n = ipMax - m_playerIndex;
-		Stat("0", 6, n == 0);
-		Stat("1-4", 7, n > 0 && n < 5);
-		Stat("5-10", 8, n > 4 && n < 11);
-		Stat("11-15", 9, n > 10 && n < 16);
-		Stat(">15", 10, n > 15);
+	int ipMax = (iDayCurrent + 1) * m_numPlayers - m_groupSize - 1;
+	int n = ipMax - m_playerIndex;
+	Stat("0", 6, n == 0);
+	Stat("1-4", 7, n > 0 && n < 5);
+	Stat("5-10", 8, n > 4 && n < 11);
+	Stat("11-15", 9, n > 10 && n < 16);
+	Stat(">15", 10, n > 15);
 #endif
-	}
 }
-CC void alldata::setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom, int nc) const
+CC void alldata::setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom) const
 {
-	if (iDayMax <= iDayCurrent)
+	if (iDayMax > iDayCurrent || !tr)
+		return;
+
+	const auto iMax = m_numPlayers - m_groupSize - 1;
+	for (int i = 0; i < iMax; i++)
 	{
-		int i = 0;
-		for (; i < nc - m_groupSize - 1; i++)
-		{
-			if (co[i] < ci[i])
-				break;
+		if (co[i] < ci[i]) {
+			setPlayerIndexByPos(tr, co, ciFrom, iDayCurrent, i);
+			return;
 		}
-		setPlayerIndexByPos(tr, co, ciFrom, iDayMax, iDayCurrent, nc, i);
 	}
 }
 CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow) const
@@ -407,8 +403,8 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	auto rowMax = (tchar)(MAX2(ind0, ind1));
 	char row2ndValue = 0;
 
-	int nrr = param(t_useRowsPrecalculation);
-	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
+	const int nrr = param(t_useRowsPrecalculation);
+	const bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
 	for (tchar i = 0; i < nr; i++)
 	{
 		if (i == ind0 || i == ind1)
@@ -421,7 +417,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			{
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 2, mi + nc * 2, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 2, mi + nc * 2, mi + nc * i);
 					return  -1;
 				}
 	//			printf("%d %d %d:", i, ind0, ind1);
@@ -437,7 +433,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 				iRet = MEMCMP(m_Ktmp + nc * 3, mi + nc * 3, nc);
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 3, mi + nc * 3, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 3, mi + nc * 3, mi + nc * i);
 					return -1;
 				}
 				else if (iRet == 1)
@@ -462,7 +458,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		iRet = MEMCMP(m_Ktmp + shift, mi + shift, nc);
 		switch (iRet)
 		{
-		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i], nc); return -1;
+		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i]); return -1;
 		case 0: rowMax = MAX2(tm[i], rowMax); continue;
 		case 1: return 1;
 		}
@@ -492,7 +488,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		{
 			if (iRet == -1)
 			{
-				setPlayerIndex(tr, rowMax, r2ind, m_Ktmp + nc, mi + nc, mi + nc * r2ind, nc);
+				setPlayerIndex(tr, rowMax, r2ind, m_Ktmp + nc, mi + nc, mi + nc * r2ind);
 				return -1;
 			}
 			return iRet;
@@ -515,7 +511,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 			{
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc, mi + nc, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc, mi + nc, mi + nc * i);
 					return -1;
 				}
 				return iRet;
@@ -530,7 +526,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 				iRet = MEMCMP(m_Ktmp + nc * 2, mi + nc * 2, nc);
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 2, mi + nc * 2, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 2, mi + nc * 2, mi + nc * i);
 					return -1;
 				}
 				else if (iRet == 1)
@@ -550,7 +546,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		const auto shift = nc * (i - 1);
 		switch (MEMCMP(m_Ktmp + shift, mi + shift, nc))
 		{
-		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i], nc); return -1;
+		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i]); return -1;
 		case 0: rowMax = MAX2(tm[i], rowMax); continue;
 		case 1: return 1;
 		}
@@ -575,7 +571,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		r2ind = 1;
 	if (r2ind == ind)
 		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow3 cant be used for 1st row
-	tchar* mo = m_Ktmp;
+	tchar* const mo = m_Ktmp;
 	iRet = kmProcessOneNot1stRow3(mo, mi, r2ind, tb, tc, tr, nr);
 	auto row2ndValue = tb[0];
 #if 0
@@ -589,7 +585,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		{
 			if (iRet == -1)
 			{
-				setPlayerIndex(tr, rowMax, r2ind, mo + nc * 2, mi + nc, mi + nc * r2ind , nc);
+				setPlayerIndex(tr, rowMax, r2ind, mo + nc * 2, mi + nc, mi + nc * r2ind);
 				return -1;
 			}
 			return iRet;
@@ -598,6 +594,9 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		bProc2 = true;
 	}
 	ASSERT(row2ndValue < 2);
+
+	auto* moi = mo + nc * 3;
+	auto* mii = mi + nc * 2;
 	tm[row2ndValue - 2] = r2ind;
 
 	for (tchar i = 0; i < nr; i++)
@@ -615,7 +614,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 			{
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, mo + nc * 2, mi + nc, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, moi - nc, mi + nc, mi + nc * i);
 					return -1;
 				}
 				return iRet;
@@ -627,10 +626,10 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		{
 			if (bProc2 && row2ndValue == 4) // 3rd row and 2nd row was processed cmp was equal 0
 			{
-				iRet = MEMCMP(mo + nc * 3, mi + nc * 2, nc);
+				iRet = MEMCMP(moi, mii, nc);
 				if (iRet == -1)
 				{
-					setPlayerIndex(tr, rowMax, i, mo + nc * 3, mi + nc * 2, mi + nc * i, nc);
+					setPlayerIndex(tr, rowMax, i, moi, mii, mi + nc * i);
 					return -1;
 				}
 				else if (iRet == 1)
@@ -646,8 +645,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 		return 2;
 	}
 	rowMax = MAX2(tm[0], tm[1]); // tm[0] - first row index, tm[1] - second row index
-	auto* moi = mo + nc * 3;
-	auto* mii = mi + nc * 2;
+
 	// following loop checks all rows starting from row 3 
 	for (int i = 2, j = 2; i < nc - 3 && j < nr; i++, moi += nc)
 	{
@@ -658,7 +656,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 
 		switch (MEMCMP(moi, mii, nc))
 		{
-		case -1: setPlayerIndex(tr, rowMax, tm[i], moi, mii, mi + nc * tm[i], nc); return -1;
+		case -1: setPlayerIndex(tr, rowMax, tm[i], moi, mii, mi + nc * tm[i]); return -1;
 		case 0: rowMax = MAX2(tm[i], rowMax); break;
 		case 1: return 1;
 		}

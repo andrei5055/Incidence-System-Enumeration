@@ -1,6 +1,8 @@
 #include "TripleSys.h"
 #include "Table.h"
 
+#define LATEST_IMPROVEMENT_FOR_TRIPLES   1
+
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
@@ -349,9 +351,12 @@ CC bool CRowStorage::initCompatibilityMasks() {
 
 	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
 	ASSERT(m_numSolutionTotal != m_numObjects);
+
+#if LATEST_IMPROVEMENT_FOR_TRIPLES
 	int numRowToConstruct = m_numDaysResult - m_numPreconstructedRows;
 	if (numRowToConstruct > (int)m_numSolutionTotal)
 		return false;
+#endif
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
 	static int ccc = 0;
@@ -406,7 +411,6 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	bool skipAllowed = groupSize2() && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
-	static int vvv = 0; vvv++;
 #if 1
 	int numRemainingSolution = m_numSolutionTotal;
 	ll playerMask;
@@ -463,10 +467,11 @@ CC bool CRowStorage::initCompatibilityMasks() {
 #endif
 		}
 
+#if LATEST_IMPROVEMENT_FOR_TRIPLES
 		numRemainingSolution -= last - first;
 		if (--numRowToConstruct > numRemainingSolution)
 			return false;
-
+#endif
 		if (skipAllowed) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
@@ -495,7 +500,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			pCompatMask += m_lenSolutionMask;
 		}
 
-		if (!flag)
+		if (LATEST_IMPROVEMENT_FOR_TRIPLES && !flag)
 			return false; 
 	}
 
@@ -504,7 +509,8 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			m_pPlayerSolutionCntr[i] -= m_numRecAdj;
 	}
 
-	if (pUsedPlayers && *pUsedPlayers)
+
+	if (LATEST_IMPROVEMENT_FOR_TRIPLES && pUsedPlayers && *pUsedPlayers)
 		return false;    // At least one player was not present with player 0 in any matrix row solution. 
 #else
 	// Calculate the number of mutually compatible pairs of solutions

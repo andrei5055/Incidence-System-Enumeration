@@ -13,81 +13,83 @@ CC bool alldata::cnvCheck2U1F(int nrows)
 	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
 
 	// get first row
-	for (int indRow0 = 0; indRow0 < nrows; indRow0++)
-	{
-		// get second row
-		for (int indRow1 = 0; indRow1 < nrows; indRow1++)
+	for (int iRowLast = 1; iRowLast < nrows; iRowLast++) {
+		bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
+		for (int indRow = 0; indRow < iRowLast; indRow++)
 		{
-			if (indRow0 == indRow1)
-				continue;
-			TrCycles trCycles;
-			CGroupInfo* pTestedTRs = bUseTestedTrs ? testedTRs(indRow1 * m_numDays + indRow0) : NULL;
-			if (bUseTestedTrs) {
-				if (indRow0 < nrows - 1 && indRow1 < nrows - 1) {
-					int nTrs = pTestedTRs->numObjects();
-					for (int itr = 0; itr < nTrs; itr++) {
-						tchar* trt = pTestedTRs->getObject(itr);
-						m_TrInd++;
-						if (pTestedTRs && pTestedTRs->isProcessed(trt))
-							continue;
-						const int icmp = kmProcessMatrix(result(), trt, nrows);
-						if (icmp == 0)
-							updateGroup(tr);
-						else if (icmp < 0)
-						{
-							bRet = false;
-							goto ret;
+			// get second row
+			for (int iRowSwap = 0; iRowSwap < 2; iRowSwap++)
+			{
+				const int indRow1 = iRowSwap ? indRow : iRowLast;
+				const int indRow0 = iRowSwap ? iRowLast : indRow;
+				TrCycles trCycles;
+				auto *pTestedTRs = bUseTestedTrs ? m_pTrRepo->getTrSet(indRow1, indRow0) : NULL;
+				if (bUseTestedTrs) {
+					if (iRowLast <= m_lastRowWithTestedTrs) {
+						int nTrs = pTestedTRs->numObjects();
+						for (int itr = 0; itr < nTrs; itr++) {
+							const auto* trt = pTestedTRs->getObject(itr);
+							const int icmp = kmProcessMatrix(result(), trt, nrows);
+							m_TrInd++;
+							if (icmp < 0)
+							{
+								bRet = false;
+								goto ret;
+							}
+							if (icmp == 0)
+								updateGroup(tr);
 						}
+						continue;
 					}
-					continue;
+					else
+						pTestedTRs->resetGroupOrder();
 				}
-				else
-					pTestedTRs->resetGroupOrder();
-			}
-			bool ok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0 &&
-				!MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET);
-			if (!ok) {
-				printTable("result", result(), nrows, m_numPlayers, 2);
-				printTable("resi", result(indRow0), 1, m_numPlayers, 2);
-				printTable("resj", result(indRow1), 1, m_numPlayers, 2);
-				printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
-				printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);
-			}
+				bool ok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0 &&
+					!MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET);
+				if (!ok) {
+					printTable("result", result(), nrows, m_numPlayers, 2);
+					printTable("resi", result(indRow0), 1, m_numPlayers, 2);
+					printTable("resj", result(indRow1), 1, m_numPlayers, 2);
+					printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
+					printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);
+				}
 
-			ASSERT(!ok);
-			ctchar *pDir, *pStartOut;
-			auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
+				ASSERT(!ok);
+				ctchar* pDir, * pStartOut;
+				auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
 
-			do {
-				const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
+				do {
+					const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
 
-				ASSERT(!btr);
+					ASSERT(!btr);
 
-				m_TrInd++;
+					m_TrInd++;
 #if !USE_CUDA
-				if (m_cnvMode) {
-					cnvPrintAuto(tr, nrows);
-					continue; // print only
-				}
+					if (m_cnvMode) {
+						cnvPrintAuto(tr, nrows);
+						continue; // print only
+					}
 #endif
-				const int icmp = kmProcessMatrix(result(), tr, nrows);
-				//TestkmProcessMatrix(nrows, nrows, tr, tr, icmp);
+					const int icmp = kmProcessMatrix(result(), tr, nrows);
+					//TestkmProcessMatrix(nrows, nrows, tr, tr, icmp);
 
-				if (icmp == 1 || (bUseTestedTrs && pTestedTRs->isProcessed(tr)))
-					continue;
+					if (icmp < 0)
+					{
+						bRet = false;
+						goto ret;
+					}
+					// save Tr if icmp is equal 0, 1, 2, or 3; continue if it was already processed
+					if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
+						continue;
 
-				if (icmp == 0)
-				{
-					updateGroup(tr);
-				}
-				else if (icmp < 0)
-				{
-					bRet = false;
-					goto ret;
-				}
+					if (icmp == 0)
+						updateGroup(tr);
 
-			} while (ProceedToNextMapping());
+				} while (ProceedToNextMapping());
+			}
 		}
+		if (bSaveTestedTrs && m_lastRowWithTestedTrs < iRowLast)
+			m_lastRowWithTestedTrs = iRowLast;
 	}
 ret:
 	return bRet;

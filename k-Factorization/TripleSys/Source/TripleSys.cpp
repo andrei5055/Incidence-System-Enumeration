@@ -73,6 +73,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	int iPrintMatrices = 0;
+	m_lastRowWithTestedTrs = 0;
 #if !USE_CUDA
 	iPrintMatrices = iThread == 0 ? param(t_printMatrices) : 0;
 	int* edges = NULL;
@@ -268,7 +269,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
 			m_pRowStorage->initPlayerMask(mfirst);
-
+		m_lastRowWithTestedTrs = 0;
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
 		iDay--;
@@ -331,6 +332,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 							goto noResult;
 						}
 					}
+
+					if (m_lastRowWithTestedTrs >= iDay)
+						m_lastRowWithTestedTrs = iDay - 1;
 					const auto retVal = m_pRowUsage->getRow(iDay, ipx);
 					switch (retVal) {
 					case 2:
@@ -478,6 +482,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						iDay = nPrecalcRows;
 						if (bPrint) {
 							printf("Total number of precalculated row solutions = %5d\n", nRows4);
+							m_lastRowWithTestedTrs = 0;
 #if !USE_CUDA
 							if (iPrintMatrices & 32) {
 								for (int j = 0; j < m_numPlayers; j++) {
@@ -534,6 +539,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
+			if (m_lastRowWithTestedTrs >= iDay)
+				m_lastRowWithTestedTrs = iDay - 1;
 			if (0 && m_bCheckLinkV && /* m_useRowsPrecalculation != eCalculateRows && */ !checkLinks(links(), iDay + 1)) {
 				bPrevResult = true;
 				continue;
