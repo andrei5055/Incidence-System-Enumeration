@@ -333,7 +333,21 @@ CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 int my_counter = 0;
 #endif
 
+#define TRACE_MASKS					1
+#if !USE_CUDA && TRACE_MASKS
+int ggg = 0;
+#define REPORT_REGECTION(reason)	fprintf(f, "  Rejected %d\n", reason); \
+									FCLOSE_F(f)
+#else
+#define REPORT_REGECTION(reason)
+#endif
+
+
 CC bool CRowStorage::initCompatibilityMasks() {
+#if !USE_CUDA && TRACE_MASKS
+	FOPEN_F(f, "aaa.txt", ggg++ ? "a" : "w");
+	fprintf(f, "Matrix #%4d", ggg);
+#endif
 	const auto pGroupInfo = m_pAllData->groupInfo(sysParam()->val[t_useAutForPrecRows]);
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
@@ -354,8 +368,10 @@ CC bool CRowStorage::initCompatibilityMasks() {
 
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
 	int numRowToConstruct = m_numDaysResult - m_numPreconstructedRows;
-	if (numRowToConstruct > (int)m_numSolutionTotal)
+	if (numRowToConstruct > (int)m_numSolutionTotal) {
+		REPORT_REGECTION(1);
 		return false;
+	}
 #endif
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
@@ -412,7 +428,9 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	unsigned int first, last = 0;
 	i = m_numPreconstructedRows - 1;
 #if 1
+#if LATEST_IMPROVEMENT_FOR_TRIPLES
 	int numRemainingSolution = m_numSolutionTotal;
+#endif
 	ll playerMask;
 	auto availablePlayers = playerMask = getPlayersMask();
 	ll* pUsedPlayers = groupSize2() ? NULL : &playerMask;
@@ -469,8 +487,10 @@ CC bool CRowStorage::initCompatibilityMasks() {
 
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
 		numRemainingSolution -= last - first;
-		if (--numRowToConstruct > numRemainingSolution)
+		if (--numRowToConstruct > numRemainingSolution) {
+			REPORT_REGECTION(2);
 			return false;
+		}
 #endif
 		if (skipAllowed) {
 			// Skip construction of masks for the first set of solutions.
@@ -500,8 +520,10 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			pCompatMask += m_lenSolutionMask;
 		}
 
-		if (LATEST_IMPROVEMENT_FOR_TRIPLES && !flag)
+		if (LATEST_IMPROVEMENT_FOR_TRIPLES && !flag) {
+			REPORT_REGECTION(3);
 			return false; 
+		}
 	}
 
 	if (m_numRecAdj) {
@@ -510,8 +532,10 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	}
 
 
-	if (LATEST_IMPROVEMENT_FOR_TRIPLES && pUsedPlayers && *pUsedPlayers)
+	if (LATEST_IMPROVEMENT_FOR_TRIPLES && pUsedPlayers && *pUsedPlayers) {
+		REPORT_REGECTION(4);
 		return false;    // At least one player was not present with player 0 in any matrix row solution. 
+	}
 #else
 	// Calculate the number of mutually compatible pairs of solutions
 	int cntrs[8];
@@ -595,6 +619,14 @@ CC bool CRowStorage::initCompatibilityMasks() {
 		m_pMaskStorage = NULL;
 	}
 
+#if !USE_CUDA && TRACE_MASKS
+	fprintf(f, "  EXIT OK\n");
+	FCLOSE_F(f);
+
+	FOPEN_F(f1, "bbb.txt", "a");
+	fprintf(f1, "Matrix #%4d is OK\n", ggg);
+	FCLOSE_F(f1);
+#endif
 	return true;
 }
 
