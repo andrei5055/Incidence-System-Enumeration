@@ -221,7 +221,8 @@ int compare_matr_fn_perm(const void* pA, const void* pB) {
 	return memcmp(pA_, pB_, matrixSize);
 }
 
-void TopGunBase::orderMatrices(int orderMatrixMode) {
+int TopGunBase::orderMatrices(int orderMatrixMode) {
+	int nDuplicate = 0;
 	matrixSize = mStartMatrixSize;
 	if (orderMatrixMode == 2) {
 		delete[] m_pMatrixPerm;
@@ -234,5 +235,18 @@ void TopGunBase::orderMatrices(int orderMatrixMode) {
 	}
 	else {
 		std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
+
+		auto* pMatrixDst = pntrStartMatrix();
+		auto* pMatrixSrc = pMatrixDst + mStartMatrixSize;
+		for (int i = 1; i < nMatrices; i++, pMatrixSrc += mStartMatrixSize) {
+			if (memcmp(pMatrixDst, pMatrixSrc, mStartMatrixSize)) {
+				pMatrixDst += mStartMatrixSize;
+				if (nDuplicate)
+					memcpy(pMatrixDst, pMatrixSrc, mStartMatrixSize);
+			}
+			else
+				nDuplicate++;
+		}
 	}
+	return nDuplicate;
 }

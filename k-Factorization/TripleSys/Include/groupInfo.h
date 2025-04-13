@@ -131,26 +131,29 @@ protected:
 		m_autLevelDef{ p->val[t_autLevelMinDef], p->val[t_autLevelMaxDef] },
 		m_autLevel{ p->val[t_autLevelMin], p->val[t_autLevelMax] },
 		m_bDirection(p->val[t_autDirection] == 0) {
-		m_numLevels = m_autLevelDef[1] - m_autLevelDef[0] + 1;
-		if (m_numLevels <= 0)
-			return;
-
 		const auto numPlayers = p->val[t_numPlayers];
 		const auto groupSize = p->val[t_groupSize];
 		const auto nRows = (numPlayers - 1) / (groupSize - 1);
+		if (p->val[t_autSaveTestedTrs])
+			m_pTrRepo = new CTrRepo(nRows, numPlayers);
+
+		m_numLevels = m_autLevelDef[1] - m_autLevelDef[0] + 1;
+		if (m_numLevels <= 0)
+			m_numLevels = 1;
+
 		m_numTrGroups = nRows * nRows;
 		m_ppAutGroups = new CGroupInfo* [m_numLevels];
 
 		for (int i = 0; i < m_numLevels; i++)
 			m_ppAutGroups[i] = new CGroupInfo(numPlayers);
-
-		m_pTrRepo = new CTrRepo(nRows, numPlayers);
 	}
 	CC ~CGroupUtilisation() {
-		for (int i = 0; i < m_numLevels; i++)
-			delete m_ppAutGroups[i];
+		if (m_ppAutGroups) {
+			for (int i = 0; i < m_numLevels; i++)
+				delete m_ppAutGroups[i];
 
-		delete[] m_ppAutGroups;
+			delete[] m_ppAutGroups;
+		}
 		delete m_pTrRepo;
 	}
 

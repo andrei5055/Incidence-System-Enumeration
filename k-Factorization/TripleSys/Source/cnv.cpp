@@ -232,10 +232,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 			if (groupOrder() >= param(t_nestedGroups)) {
 				saveGroup(*this, nrows);
 				if (nrows < numDaysResult())
-				{
-					//m_playerIndex = 0;
 					return true;
-				}
 			}
 			else
 				return false;
@@ -250,7 +247,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 	m_cnvMode = iMode;
 
 	if (m_pCheckFunc && iMode >= 0) {
-		ret = (this->*m_pCheckFunc)(nrows);
+		ret = (this->*m_pCheckFunc)(nrows, nrows);
 	}
 	else {
 		tchar a[MAX_GROUP_NUMBER + 1], p[MAX_GROUP_NUMBER + 1];

@@ -187,7 +187,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	auto dayMax = tm[0];
 	auto miFrom = mi;
 	coi = mo;
-	const auto nrr = param(t_useRowsPrecalculation);
+	int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_useRowsPrecalculation == eCalculateRows) {
 		switch (m_groupSize) {
@@ -223,7 +223,7 @@ CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int
 		if (j < tpr[ttr[co[i]]])
 			j = tpr[ttr[co[i]]];
 	}
-	const auto playerIndex = iDayCurrent * m_numPlayers + j;
+const auto playerIndex = iDayCurrent * m_numPlayers + j;
 	if (m_playerIndex > playerIndex)
 		m_playerIndex = playerIndex;
 #define ProfilePlayerIndex 0 && !USE_CUDA
@@ -240,16 +240,16 @@ CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int
 CC void alldata::setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom) const
 {
 	if (iDayMax > iDayCurrent || !tr)
-		return;
+	    return;
 
 	const auto iMax = m_numPlayers - m_groupSize - 1;
-	for (int i = 0; i < iMax; i++)
+	int i = 0;
+	for (; i < iMax; i++)
 	{
-		if (co[i] < ci[i]) {
-			setPlayerIndexByPos(tr, co, ciFrom, iDayCurrent, i);
-			return;
-		}
+		if (co[i] < ci[i])
+			break;
 	}
+	setPlayerIndexByPos(tr, co, ciFrom, iDayCurrent, i);
 }
 CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow) const
 {
@@ -463,7 +463,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		case 1: return 1;
 		}
 	}
-	return bPrecalcRow ? 1 : 0;
+	return bPrecalcRow ? 3 : 0;
 }
 CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 {

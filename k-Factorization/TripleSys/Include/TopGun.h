@@ -28,7 +28,7 @@ protected:
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
 	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
-	void orderMatrices(int orderMatrixMode);
+	int orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;
 	int mStartMatrixSize;
@@ -55,7 +55,7 @@ public:
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	void myTemporaryCheck();
-	void startThread(int iTask, eThreadStartMode iMode = eCalcResult, bool bOnlyStart = false, CRowStorage* pRowStorage = NULL);
+	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
 	sLongLong *m_cntTotal = NULL;
@@ -67,7 +67,6 @@ private:
 	int numThreads;
 	int m_iMatrix;
 	int m_iPrintCount;
-	int m_iTaskSeq;
 	std::vector<std::thread> threads;//(NThreads);
 	CStorageSet<tchar>* m_pSecondRowsDB = NULL;
 };

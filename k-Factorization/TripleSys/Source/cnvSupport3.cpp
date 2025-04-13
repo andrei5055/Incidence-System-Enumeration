@@ -1,6 +1,6 @@
 #include "TripleSys.h"
 
-CC bool alldata::cnvCheck45(int nrows)
+CC bool alldata::cnvCheck45(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;

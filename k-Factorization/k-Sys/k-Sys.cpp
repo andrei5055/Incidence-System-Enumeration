@@ -492,7 +492,7 @@ int main(int argc, const char* argv[])
 					if (!*pAutLevel)
 						*pAutLevel = (numPlayers - 1) / (groupSize - 1);
 
-					if (i == 2)
+					if (i == 2 && val[t_nRowsInResultMatrix] > 2)
 						--*pAutLevel;
 				}
 				else {

@@ -39,8 +39,8 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 	m_playerIndex = iDay * m_numPlayers - m_groupSize - 1;
 	if (iDay > 1)
 	{
-		if (!checkLinksV2(links(), iDay))
-			return -1;
+		//if (!checkLinksV2(links(), iDay))
+		//	return -1;
 		if (m_use2RowsCanonization) {
 			if (iDay == 2)
 			{

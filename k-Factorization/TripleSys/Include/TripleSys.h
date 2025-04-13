@@ -131,7 +131,7 @@ typedef struct TrCycles {
 typedef CRepository<tchar> CBinaryMatrixStorage;
 
 class alldata : public CGroupUtilisation, private CGroupInfo, CycleSupport, CChecklLink {
-	typedef bool(alldata::*checkU1F)(int);
+	typedef bool(alldata::*checkU1F)(int, int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
@@ -139,7 +139,7 @@ public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	CC sLongLong Run(int threadNumber=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
+	CC sLongLong Run(int threadId=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
 		tchar* mstart0 = NULL, ctchar* mfirst = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
@@ -195,10 +195,10 @@ private:
 	CC bool cnvCheckTgNew(ctchar* tr, int nrows, int ngroups);
 	CC bool cnvCheckNew(int iMode, int nrows, bool useAutomorphisms = true);
 	CC bool canonizator(int iMode, int nrows);
-	CC bool cnvCheck45(int nrows);
-	CC bool cnvCheck2U1F(int nrows);
-	CC bool cnvCheck2P1F(int nrows);
-	CC bool cnvCheck3U1F(int nrows);
+	CC bool cnvCheck45(int nrows, int nrowsToUseForTrs);
+	CC bool cnvCheck2U1F(int nrows, int nrowsToUseForTrs);
+	CC bool cnvCheck2P1F(int nrows, int nrowsToUseForTrs);
+	CC bool cnvCheck3U1F(int nrows, int nrowsToUseForTrs);
 	void testCanonizatorSpeed();
 	void testRightNeighbor(int nr);
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
@@ -235,7 +235,7 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkCanonicity() const		{ return iDay == m_matrixCanonInterval; }
+	CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;

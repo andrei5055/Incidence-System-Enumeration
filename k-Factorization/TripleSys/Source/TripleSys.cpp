@@ -435,13 +435,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				continue;
 
 		ProcessOneDay:
+			if (m_lastRowWithTestedTrs >= iDay)
+				m_lastRowWithTestedTrs = iDay - 1;
 			if (iDay < minRows)
 			{
 				noMoreResults = true;
 				goto noResult;
 			}
 			// temporary
-#if !USE_CUDA
+#if 0 //!USE_CUDA
 			if (!iPlayer && iDay){
 				tchar* l = links(0);
 				for (int i = 0;i < m_numPlayers * m_numPlayers; i++) {
@@ -539,13 +541,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
+
+		checkCurrentMatrix:
+
 			if (m_lastRowWithTestedTrs >= iDay)
 				m_lastRowWithTestedTrs = iDay - 1;
-			if (0 && m_bCheckLinkV && /* m_useRowsPrecalculation != eCalculateRows && */ !checkLinks(links(), iDay + 1)) {
-				bPrevResult = true;
-				continue;
-			}
-		checkCurrentMatrix:
 
 #if ReportPeriodically && !USE_CUDA
 			cTime = clock();
@@ -776,10 +776,17 @@ noResult:
 
 	else {
 		if (param(t_MultiThreading) <= 1) {
-			auto str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
-				threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
+			std::string str;
+			if (m_createSecondRow) {
+				str = format("{} row(s) calculated for '2nd rows DB' for matrices ({},{},{}), Execution time = {} ms\n",
+					m_finalKMindex, m_numPlayers, numDaysResult(), groupSize(), clock() - iTime);
+			}
+			else {
+				str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
+					threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
 
-			str += format("Thread execution time = {} ms\n", clock() - iTime);
+				str += format("Thread execution time = {} ms\n", clock() - iTime);
+			}
 			printf(str.c_str());
 			if (pOutResult)
 				*pOutResult += str;

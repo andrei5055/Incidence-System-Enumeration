@@ -66,7 +66,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx+iRow, &last, availablePlayers);
+	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx+last, &last, availablePlayers);
 	if (last == UINT_MAX)
 		return availablePlayers? 0 : -1;
 
@@ -154,66 +154,73 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			multiply_1();
 #endif
 			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
-			if (m_bGroupSize2 && pRowSolutionMasksIdx) {
+			if (pRowSolutionMasksIdx) {
+				if (m_bGroupSize2) {
 
 #if NEW
-				if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
-					first++;
-					continue;
-				}
+					if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
+						first++;
+						continue;
+					}
 #else
-				auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
-				int i = iRow;
-				auto jMax = pRowSolutionMasksIdx[iRow];
-				for (; ++i <= m_nRowMax;) {
-					auto j = jMax;
-					jMax = pRowSolutionMasksIdx[i];
+					auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
+					int i = iRow;
+					auto jMax = pRowSolutionMasksIdx[iRow];
+					for (; ++i <= m_nRowMax;) {
+						auto j = jMax;
+						jMax = pRowSolutionMasksIdx[i];
 
-					// Check left, middle and right parts of the solution interval for i-th row
-					auto mask = pRowSolutionMasks[i - 1];
-					if (mask) {
-						if (mask & ptoa(j)) {
-							multiply(j, jMax);
-							continue;  // at least one solution masked by left part of the interval is still valid
+						// Check left, middle and right parts of the solution interval for i-th row
+						auto mask = pRowSolutionMasks[i - 1];
+						if (mask) {
+							if (mask & ptoa(j)) {
+								multiply(j, jMax);
+								continue;  // at least one solution masked by left part of the interval is still valid
+							}
+							j++;
 						}
-						j++;
+
+						// middle part
+						while (j < jMax && !ptoa(j))
+							j++;
+
+						if (j < jMax) {
+							multiply(j, jMax);
+							continue;   // at least one solution masked by middle part of the interval is still valid
+						}
+
+						// There are no valid solutions with the indices inside 
+						// the interval defined by set of long longs
+						mask = pRowSolutionMasks[i];
+						// If mask != 0, we need to check the right side of the intervals.
+						if (!mask || !((~mask) & ptoa(jMax))) {
+							break;
+						}
 					}
 
-					// middle part
-					while (j < jMax && !ptoa(j))
-						j++;
-
-					if (j < jMax) {
-						multiply(j, jMax);
-						continue;   // at least one solution masked by middle part of the interval is still valid
+					if (i <= m_nRowMax) {
+						first++;
+						continue;
 					}
-
-					// There are no valid solutions with the indices inside 
-					// the interval defined by set of long longs
-					mask = pRowSolutionMasks[i];
-					// If mask != 0, we need to check the right side of the intervals.
-					if (!mask || !((~mask) & ptoa(jMax))) {
-						break;
-					}
-				}
-
-				if (i <= m_nRowMax) {
-					first++;
-					continue;
-				}
 #endif
 
 #if UseSolutionCliques
-				if (m_pRowStorage->useCliques(iRow)) {
-					first++;
-					if (ConstructCompatibleSolutionGraph((tmask*)(pToA), iRow))
-						return 2;   // Ready to proceed with the getMatrix2() call.
+					if (m_pRowStorage->useCliques(iRow)) {
+						first++;
+						if (ConstructCompatibleSolutionGraph((tmask*)(pToA), iRow))
+							return 2;   // Ready to proceed with the getMatrix2() call.
 
-					continue;
-				}
+						continue;
+					}
 #endif  // UseSolutionCliques
-			}
-			else
+				} else {
+					multiply_2(); /*
+					const auto availPlayers = *((const ll*)(m_pCompatibleSolutions + (nRow + 2) * m_lenMask) - 1);
+					uint last = iRow + 1;
+					const auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last, &last, availPlayers);
+					break; */
+				}
+			} else
 				multiply_2();
 		}
 

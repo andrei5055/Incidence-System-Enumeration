@@ -20,7 +20,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 		memset(threadActive, false, numThreads * sizeof(threadActive[0]));
 	}
 
-	m_iTaskSeq = m_iPrintCount = m_iMatrix = 0;
+	m_iPrintCount = m_iMatrix = 0;
 }
 
 TopGun::~TopGun() {
@@ -33,12 +33,15 @@ int TopGun::Run()
 {
 	iTime = clock();
 	sLongLong resultMatr = 0;
-	bool bUsePm = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
+	bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 
 	if (param(t_printMatrices) & 16)
 	{
 		alldata sys(*this, paramPtr());
-		sys.initStartValues(ivc);// can be used to report info for matrix from data.h
+		if (!sys.initStartValues(MatrixFromDatah)) {// matrix from data.h
+			printfRed("*** You can use PrintMatrices=16 only with matrix from data.h. Exit\n");
+			myExit(1);
+		}
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		myExit(0);
 	}
@@ -61,7 +64,7 @@ int TopGun::Run()
 	if (!param(t_MultiThreading))
 	{
 		alldata sys(*this, paramPtr());
-		sys.initStartValues(ivc);// can be used to start from previous result
+		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		transferMatrixDB(sys.matrixDB());
 	}
@@ -73,8 +76,9 @@ int TopGun::Run()
 		//myTemporaryCheck();
 		const auto orderMatrixMode = param(t_orderMatrices);
 		if (orderMatrixMode) {
-			orderMatrices(orderMatrixMode);
-			printfGreen("%d 'Start Matrices' sorted\n", nMatrices);
+			auto nDuplicate = orderMatrices(orderMatrixMode);
+			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
+			nMatrices -= nDuplicate;
 			if (orderMatrixMode == 2) {
 				TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 				Result.allocateBuffer(32);
@@ -115,7 +119,7 @@ int TopGun::Run()
 
 		cTime = clock();
 
-		if (bUsePm)
+		if (bUseMultiThread2)
 		{
 			int icode = 0;
 			while (m_iMatrix < nMatrices) {
@@ -126,7 +130,7 @@ int TopGun::Run()
 				}
 				else {
 					for (int iTask = 0; iTask < numThreads; iTask++)
-						startThread(iTask, eCalculateMatrices, true, sys.RowStorage());
+						startThread(iTask, m_iMatrix * numThreads + iTask + 1, eCalculateMatrices, sys.RowStorage());
 
 					while (1) {
 
@@ -187,7 +191,9 @@ int TopGun::Run()
 						if (m_iMatrix < nMatrices)
 						{
 							//printTable("Input matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
-							startThread(iTask);
+							startThread(iTask, m_iMatrix + 1);
+							mstart += mStartMatrixSize;
+							m_iMatrix += 1;
 							nThreadsRunning++;
 						}
 					}

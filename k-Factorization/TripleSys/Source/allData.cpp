@@ -67,7 +67,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	while (nDays--) m_DayIdx[nDays] = nDays;
 #endif
 
-	if (param(t_useCheckLinksV) || param(t_useCheckLinksV)) {
+	if (param(t_useImproveMatrix)) {
 #ifdef CD_TOOLS
 		m_pCheckCanon = new CCanonicityChecker<unsigned char, unsigned char>(m_numDays, numPlayers, groupSize, t_kSystems);
 #else

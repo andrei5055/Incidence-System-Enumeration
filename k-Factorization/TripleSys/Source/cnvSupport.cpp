@@ -1,68 +1,92 @@
 #include "TripleSys.h"
 
-CC bool alldata::cnvCheck2P1F(int nrows)
+CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 
-	auto* neighbors0 = neighbors(0);
-	auto* neighbors1 = neighbors(1);
+	const bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
+	const auto* neighbors0 = neighbors(0);
+	const auto* neighbors1 = neighbors(1);
 	// get first row
-	for (int indRow0 = 0; indRow0 < nrows; indRow0++)
-	{
-		auto* neighborsi = neighbors(indRow0);
-		// get second row
-		for (int indRow1 = 0; indRow1 < nrows; indRow1++)
+	for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
+		const bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
+		for (int indRow = 0; indRow < iRowLast; indRow++)
 		{
-			if (indRow0 == indRow1)
-				continue;
-			auto* neighborsj = neighbors(indRow1);
-			int nk = m_numPlayers;
-			for (int k = 0; k < nk; k++)
+			// get second row
+			for (int iRowSwap = 0; iRowSwap < 2; iRowSwap++)
 			{
-				if (!create2P1FTr(tr, k, neighbors0, neighbors1, neighborsi, neighborsj))
-					continue;
-				m_TrInd++;
+				const int indRow1 = iRowSwap ? indRow : iRowLast;
+				const int indRow0 = iRowSwap ? iRowLast : indRow;
+				auto* pTestedTRs = bUseTestedTrs ? m_pTrRepo->getTrSet(indRow0, indRow1) : NULL;
+				if (bUseTestedTrs) {
+					if (iRowLast <= m_lastRowWithTestedTrs) {
+						const int nTrs = pTestedTRs->numObjects();
+						for (int itr = 0; itr < nTrs; itr++) {
+							tchar* trt = pTestedTRs->getObject(itr);
+							const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
+							m_TrInd++;
+							if (icmp < 0)
+							{
+								bRet = false;
+								goto ret;
+							}
+							if (icmp == 0)
+								updateGroup(trt);
+						}
+						continue;
+					}
+					else if (bSaveTestedTrs)
+						pTestedTRs->resetGroupOrder();
+				}
+				const auto* neighborsi = neighbors(indRow0);
+				const auto* neighborsj = neighbors(indRow1);
+				for (int k = 0; k < m_numPlayers; k++)
+				{
+					if (!create2P1FTr(tr, k, neighbors0, neighbors1, neighborsi, neighborsj))
+						continue;
+					m_TrInd++;
 #if !USE_CUDA
-				if (m_cnvMode) {
-					cnvPrintAuto(tr, nrows);
-					continue; // print only
-				}
+					if (m_cnvMode) {
+						cnvPrintAuto(tr, nrows);
+						continue; // print only
+					}
 #endif
-				int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
-				//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
-				if (icmp == 0)
-				{
-					updateGroup(tr);
-				}
-				else if (icmp < 0)
-				{
+					const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
+					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
+					// save Tr if icmp not -1, and not 1; continue if it was already processed
+					if (icmp < 0) {
 #if PRINT_TRANSFORMED
-					printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Ktmp, 0, 0, 0);
+						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Ktmp, 0, 0, 0);
 #endif
-					bRet = false;
-					goto ret;
+						bRet = false;
+						goto ret;
+					}
+					if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
+						continue;
+					if (icmp == 0) {
+						updateGroup(tr);
+					}
 				}
 			}
 		}
+		if (bSaveTestedTrs && m_lastRowWithTestedTrs < iRowLast)
+			m_lastRowWithTestedTrs = iRowLast;
 	}
 ret:
 	return bRet;
 }
-
-CC bool alldata::cnvCheck3U1F(int nrows)
+CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
-	const bool bCollectInfo = param(t_printMatrices) & 16;
-	bool bPrintInfo = (nrows == numDaysResult()) && bCollectInfo;
 	auto v1 = getV1();
 	int ip1 = 0;
-	auto* neighbors0 = neighbors(0);
+	const auto* neighbors0 = neighbors(0);
 	tchar* p1 = NULL;
 	bool bCurrentSet = false;
 	const int maxv1 = MAX_3PF_SETS;
@@ -90,7 +114,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		// for second row check that all and only requested cycles are present
 		if (nrows == 2) {
 			bool bAllCyclesOk = false;
-			auto u1fPntr = sysParam()->u1fCycles[0];
+			const auto u1fPntr = sysParam()->u1fCycles[0];
 			int itr0 = 0;
 			if (!u1fPntr) {
 				bAllCyclesOk = m_TrCyclesAll[0].length[0] == m_numPlayers && !m_TrCyclesAll[1].counter;
@@ -116,12 +140,13 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 		}
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
 			bCurrentSet = true;
-
-		const bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0 && !bCollectInfo && bCurrentSet;
+		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
+		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
+		bool bUseTestedTrs = bCurrentSet && !bCollectInfo && (param(t_autSaveTestedTrs) > 0);
 		TrCycles trCycles;
 		// get first row
-		for (int iRowLast = 1; iRowLast < nrows; iRowLast++) {
-			const bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
+		for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
+			bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
 			for (int indRow = 0; indRow < iRowLast; indRow++)
 			{
 				// get second row
@@ -131,8 +156,8 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 					const int indRow0 = iRowSwap ? iRowLast : indRow;
 					int nv1 = 0;
 					int nTrsForPair = 0;
-					auto* pTestedTRs = m_pTrRepo->getTrSet(indRow0, indRow1);
-					if ((iRowLast <= m_lastRowWithTestedTrs) && bUseTestedTrs) {
+					auto* pTestedTRs = bUseTestedTrs ? m_pTrRepo->getTrSet(indRow1, indRow0) : NULL;
+					if (bUseTestedTrs && (iRowLast <= m_lastRowWithTestedTrs)) {
 						const auto nTrs = pTestedTRs->numObjects();
 						for (int itr = 0; itr < nTrs; itr++) {
 #if 1
@@ -190,7 +215,7 @@ CC bool alldata::cnvCheck3U1F(int nrows)
 									if (btr) {
 										m_TrInd++;
 										nTrsForPair++;
-										const int icmp = kmProcessMatrix(result(), tr, nrows);
+										const int icmp = !bCurrentSet ? -1 : kmProcessMatrix(result(), tr, nrows);
 
 										if (icmp == -1) {
 #if !USE_CUDA
@@ -264,7 +289,7 @@ ret:
 	if (bRet)
 	{
 		//printf("Trs total=%d\n", m_TrInd); Andrei 
-		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1))
+		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1) && nrows == nrowsToUseForTrs)
 			memcpy(m_pSecondRowsDB->getNextObject(), p1, m_numPlayers);
 	}
 	return bRet;
