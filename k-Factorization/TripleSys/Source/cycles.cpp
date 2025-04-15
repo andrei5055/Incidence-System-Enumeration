@@ -147,14 +147,22 @@ CC ctchar* CycleMapping::InitCycleMapping(ctchar * const pLenCycles, ctchar* pSt
 CC bool CycleMapping::ProceedToNextMapping() {
 	// Attempt to construct the next set of directions 
 	// for the current indices of the starting elements 
-	// and the current ordering of the cycles. 
-	auto i = m_nCycles;
-	while (i-- && m_pDirection[i])
-		m_pDirection[i] = 0;
+	// and the current ordering of the cycles.
+	if (!m_bBipartite) {
+		auto i = m_nCycles;
+		while (i-- && m_pDirection[i])
+			m_pDirection[i] = 0;
 
-	if (i >= 0) {
-		m_pDirection[i] = 1;
-		return true;			// managed to construct directions
+		if (i >= 0) {
+			m_pDirection[i] = 1;
+			return true;			// managed to construct directions
+		}
+	}
+	else {
+		const auto val = m_pDirection[0];
+		memset(m_pDirection, 1 - val, m_nCycles);
+		if (!val)
+			return true;
 	}
 
 	// Attempt to construct next set of indices

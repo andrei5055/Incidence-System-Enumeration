@@ -57,48 +57,50 @@ PlayerOk1:
 			if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
 				return 6;
 #endif
-			// AI #4 (part)
-			switch (iPlayer)
-			{
-			case 2: /*~1sec*/ return (iPlayerNumber <= 6) ? 6 : m_numPlayers;
-			case 4: /* AI #17 */ return (iPlayerNumber <= 4) ? 4 : (m_numPlayers > 9 && iPlayerNumber <= 9) ? 9 : m_numPlayers;
-			case 5: /* AI #14 */
-				if (prevPlayer == 4)
-					return (iPlayerNumber <= 7) ? 7 : (iPlayerNumber <= 9) ? 9 : m_numPlayers;
-				break;
-			case 7:
-				// AI #7 
-				if (iPlayerNumber <= tmpPlayers[4])
-					iPlayerNumber = tmpPlayers[4] + 1;
-				if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
-					return m_numPlayers;
-				// AI #19
-				if (tmpPlayers[4] != 4)
+			if (!param(t_bipartiteGraph)) {
+				// AI #4 (part)
+				switch (iPlayer)
 				{
-					if (iPlayerNumber <= 12)
-						iPlayerNumber = 12;
+				case 2: /*~1sec*/ return (iPlayerNumber <= 6) ? 6 : m_numPlayers;
+				case 4: /* AI #17 */ return (iPlayerNumber <= 4) ? 4 : (m_numPlayers > 9 && iPlayerNumber <= 9) ? 9 : m_numPlayers;
+				case 5: /* AI #14 */
+					if (prevPlayer == 4)
+						return (iPlayerNumber <= 7) ? 7 : (iPlayerNumber <= 9) ? 9 : m_numPlayers;
+					break;
+				case 7:
+					// AI #7 
+					if (iPlayerNumber <= tmpPlayers[4])
+						iPlayerNumber = tmpPlayers[4] + 1;
+					if (iPlayerNumber > 11 && tmpPlayers[4] <= 8)
+						return m_numPlayers;
+					// AI #19
+					if (tmpPlayers[4] != 4)
+					{
+						if (iPlayerNumber <= 12)
+							iPlayerNumber = 12;
+					}
+					break;
+				case 8:
+					if (prevPlayer == 5 && tmpPlayers[4] == 4 && iPlayerNumber <= tmpPlayers[5])
+					{
+						// AI #10
+						iPlayerNumber = tmpPlayers[5] + 1;
+					}
+					break;
+				case 9:
+					// AI #8,9a 
+					if (tmpPlayers[4] == 4 && tmpPlayers[7] != 5)
+					{
+						if (iPlayerNumber <= 5)
+							return 5; // not happened
+						return m_numPlayers; // not happened
+					}
+					break;
 				}
-				break;
-			case 8:
-				if (prevPlayer == 5 && tmpPlayers[4] == 4 && iPlayerNumber <= tmpPlayers[5])
-				{
-					// AI #10
-					iPlayerNumber = tmpPlayers[5] + 1;
-				}
-				break;
-			case 9:
-				// AI #8,9a 
-				if (tmpPlayers[4] == 4 && tmpPlayers[7] != 5)
-				{
-					if (iPlayerNumber <= 5)
-						return 5; // not happend
-					return m_numPlayers; // not happend
-				}
-				break;
 			}
 		}
 	}
-	if (iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)
+	if (!param(t_bipartiteGraph) && iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)
 		return iPlayerNumber + 1;
 	return iPlayerNumber;
 }

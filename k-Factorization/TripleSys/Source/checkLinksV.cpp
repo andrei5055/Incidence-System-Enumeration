@@ -94,6 +94,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 {
 	if (nv <= 0)
 		return true;
+	bool biGraph = param(t_bipartiteGraph) > 0;
 	if (nv == 2 && ind != -1)
 	{
 		ASSERT(vo + 1 - m_vo >= m_numPlayers,
@@ -103,18 +104,30 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 		case 0:
 			if (c[v[1] * m_numPlayers + v[2]] != unset)
 				return false;
+			if (biGraph) {
+				if ((v[1] % 3) == (v[2] % 3))
+					return false;
+			}
 			*vo = v[1];
 			*(vo + 1) = v[2];
 			return true;
 		case 1:
 			if (c[v[0] * m_numPlayers + v[2]] != unset)
 				return false;
+			if (biGraph) {
+				if ((v[0] % 3) == (v[2] % 3))
+					return false;
+			}
 			*vo = v[0];
 			*(vo + 1) = v[2];
 			return true;
 		case 2:
 			if (c[v[0] * m_numPlayers + v[1]] != unset)
 				return false;
+			if (biGraph) {
+				if ((v[0] % 3) == (v[1] % 3))
+					return false;
+			}
 			*vo = v[0];
 			*(vo + 1) = v[1];
 			return true;
@@ -135,6 +148,10 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 	const auto* ct0 = c + t[0] * m_numPlayers;
 	for (int i = 1; i < nv; i++)
 	{
+		if (biGraph) {
+			if ((t[0] % 3) == (t[i] % 3))
+				continue;
+		}
 		if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
 		{
 			ASSERT(vo + 1 - m_vo >= m_numPlayers);

@@ -5,9 +5,21 @@ CC int alldata::getNextPlayer()
 	int iPlayerNumber = indexPlayer[iPlayer];
 	int iRet;
 	int m0 = iPlayer % m_groupSize;
+	const auto useBipartite = param(t_bipartiteGraph);
 	for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
 	{
 	checkPlayerNumber:
+		if (useBipartite) {
+			checkPlayerNumber1:
+			int m1 = iPlayerNumber % m_groupSize;
+			for (int k = 1; k <= m0; k++) {
+				if ((tmpPlayers[iPlayer - k] % m_groupSize) == m1) {
+					iPlayerNumber++;
+					goto checkPlayerNumber1;
+				}
+			}
+		}
+		
 		if (iPlayerNumber > m_indexPlayerMax[iPlayer])
 			return m_numPlayers;
 

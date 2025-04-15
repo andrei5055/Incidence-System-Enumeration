@@ -553,7 +553,7 @@ CC void alldata::p1fCheckStartMatrix(int nr)
 		)
 	}
 }
-CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
+CC int alldata::getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
 {
 	// Get up to maxv sets of "common" values from rows ir1, ir2.
 	// Each value in one set of "common" values present only in one group of row ir1 and in one group of row ir2.
@@ -603,6 +603,28 @@ CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2)
 		}
 	}
 	return nv;
+}
+CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
+{
+	const auto nv = getAllV0(allv, maxv, ir1, ir2, pt2);
+	if (!param(t_bipartiteGraph))
+		return nv;
+	auto allvIn = allv;
+	auto allvOut = allv;
+	int nvout = 0;
+	const auto v0p3 = allvIn[0] % m_groupSize;
+	for (int i = 0; i < nv; i++, allvIn += m_nGroups) {
+		for (int j = 1; j < m_nGroups; j++) {
+			if (v0p3 != (allvIn[j] % m_groupSize)) {
+				goto endLoopi;
+			}
+		}
+		nvout++;
+		memcpy(allvOut, allvIn, m_nGroups);
+		allvOut += m_nGroups;
+	endLoopi: continue;
+	}
+	return nvout;
 }
 void alldata::cyclesFor2Rows(ctchar* p1)
 {

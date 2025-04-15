@@ -8,6 +8,7 @@
 const char* intParamNames[]{
 	"nPlayers",
 	"GroupSize",
+	"BipartiteGraph",
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
 	"SubmatrixGroupOrderMin",
@@ -432,7 +433,7 @@ int main(int argc, const char* argv[])
 	// Set default string parameters:
 	auto* strVal = param.strVal;
 	memset(strVal, 0, t_lastStrParam * sizeof(strVal[0]));
-	if (U1FName && strlen(U1FName))
+	if (U1FName)// && strlen(U1FName))
 		strVal[t_UFname] = new string(U1FName);
 
 	strVal[t_StartFolder] = new string(StartFolder);
@@ -490,7 +491,7 @@ int main(int argc, const char* argv[])
 				if (!*(++pAutLevel)) {
 					*pAutLevel = val[t_nRowsInResultMatrix];
 					if (!*pAutLevel)
-						*pAutLevel = (numPlayers - 1) / (groupSize - 1);
+						*pAutLevel = val[t_bipartiteGraph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
 
 					if (i == 2 && val[t_nRowsInResultMatrix] > 2)
 						--*pAutLevel;

@@ -13,7 +13,7 @@ public:
 		m_groupSize(p.val[t_groupSize]),
 		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
-		m_numDays((m_numPlayers - 1) / (m_groupSize - 1)),
+		m_numDays(p.val[t_bipartiteGraph] ? m_numPlayers / m_groupSize : (m_numPlayers - 1) / (m_groupSize - 1)),
 		m_allowMissingCycles(p.val[t_allowMissingCycles]) {}
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
@@ -133,8 +133,8 @@ protected:
 		m_bDirection(p->val[t_autDirection] == 0) {
 		const auto numPlayers = p->val[t_numPlayers];
 		const auto groupSize = p->val[t_groupSize];
-		const auto nRows = (numPlayers - 1) / (groupSize - 1);
-		if (p->val[t_autSaveTestedTrs])
+		const auto nRows = p->val[t_bipartiteGraph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+		if ((p->val[t_printMatrices] & 16) || p->val[t_autSaveTestedTrs])
 			m_pTrRepo = new CTrRepo(nRows, numPlayers);
 
 		m_numLevels = m_autLevelDef[1] - m_autLevelDef[0] + 1;

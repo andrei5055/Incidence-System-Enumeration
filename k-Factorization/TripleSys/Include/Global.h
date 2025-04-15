@@ -20,6 +20,7 @@ typedef enum {
 	// indices of parameters with the integer type values
 	t_numPlayers,			 
 	t_groupSize,
+	t_bipartiteGraph,
 	t_u1f,
 	t_use2RowsCanonization,
 	t_submatrixGroupOrderMin,

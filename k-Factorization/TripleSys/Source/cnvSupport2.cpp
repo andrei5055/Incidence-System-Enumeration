@@ -46,12 +46,13 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 				}
 				bool ok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0 &&
 					!MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET);
-				if (!ok) {
+				if (!ok) {/**
 					printTable("result", result(), nrows, m_numPlayers, 2);
 					printTable("resi", result(indRow0), 1, m_numPlayers, 2);
 					printTable("resj", result(indRow1), 1, m_numPlayers, 2);
 					printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
-					printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);
+					printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
+					continue;
 				}
 
 				ASSERT(!ok);
@@ -59,6 +60,13 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 				auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
 
 				do {
+#if 0
+					printTable("pDir", pDir, 1, 2, 2);
+					printTable("pIdx", pIdx, 1, 2, 2);
+					printTable("pStartOut", pStartOut, 1, 2, 2);
+#endif
+					//if (pDir[0])
+						//continue;
 					const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
 
 					ASSERT(!btr);

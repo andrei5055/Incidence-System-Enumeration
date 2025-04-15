@@ -26,7 +26,9 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						const int nTrs = pTestedTRs->numObjects();
 						for (int itr = 0; itr < nTrs; itr++) {
 							tchar* trt = pTestedTRs->getObject(itr);
-							const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
+
+							const int icmp = nrows < 3 ? 0 : param(t_bipartiteGraph) ? kmProcessMatrix(result(), trt, nrows) : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
+							//const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
 							m_TrInd++;
 							if (icmp < 0)
 							{
@@ -54,12 +56,12 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						continue; // print only
 					}
 #endif
-					const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
+					const int icmp = nrows < 3 ? 0 : param(t_bipartiteGraph) ? kmProcessMatrix(result(), tr, nrows) : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
 					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
 #if PRINT_TRANSFORMED
-						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Ktmp, 0, 0, 0);
+						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), param(t_bipartiteGraph) ?m_Km:m_Ktmp, 0, 0, 0);
 #endif
 						bRet = false;
 						goto ret;
@@ -116,6 +118,25 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			bool bAllCyclesOk = false;
 			const auto u1fPntr = sysParam()->u1fCycles[0];
 			int itr0 = 0;
+#if 1
+			int itr1 = 0;
+			int ntr1 = u1fPntr ? *u1fPntr : 1;
+			for (; itr0 < MAX_3PF_SETS; itr0++)
+			{
+				if (m_TrCyclesAll[itr0].counter == 0 || (itr1 >= ntr1)) {
+					bAllCyclesOk = itr1 == ntr1;
+					break;
+				}
+				// warning! cycles defined in params must be sorted
+				if ((!u1fPntr && m_TrCyclesAll[itr0].length[0] == m_numPlayers) ||
+					!MEMCMP(m_TrCyclesAll[itr0].length, u1fPntr + 1 + itr1 * MAX_CYCLES_PER_SET, MAX_CYCLES_PER_SET))
+					itr1++;
+			}
+			if (!bAllCyclesOk) {
+				bRet = false;
+				break;
+			}
+#else
 			if (!u1fPntr) {
 				bAllCyclesOk = m_TrCyclesAll[0].length[0] == m_numPlayers && !m_TrCyclesAll[1].counter;
 				itr0 = 1;
@@ -137,16 +158,17 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 				bRet = false;
 				break;
 			}
+#endif
 		}
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
 			bCurrentSet = true;
-		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
-		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
-		bool bUseTestedTrs = bCurrentSet && !bCollectInfo && (param(t_autSaveTestedTrs) > 0);
+		const auto bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
+		const auto bPrintInfo = bCollectInfo && (nrows == numDaysResult());
+		const auto bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
 		TrCycles trCycles;
 		// get first row
 		for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
-			bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
+			bool bSaveTestedTrs = bUseTestedTrs && ((iRowLast < m_numDaysResult - 1) || bCollectInfo);
 			for (int indRow = 0; indRow < iRowLast; indRow++)
 			{
 				// get second row
@@ -157,7 +179,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 					int nv1 = 0;
 					int nTrsForPair = 0;
 					auto* pTestedTRs = bUseTestedTrs ? m_pTrRepo->getTrSet(indRow1, indRow0) : NULL;
-					if (bUseTestedTrs && (iRowLast <= m_lastRowWithTestedTrs)) {
+					if (bUseTestedTrs && (iRowLast <= m_lastRowWithTestedTrs && !bCollectInfo)) {
 						const auto nTrs = pTestedTRs->numObjects();
 						for (int itr = 0; itr < nTrs; itr++) {
 #if 1
@@ -172,12 +194,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							if (icmp == 0)
 								updateGroup(trt);
 							else if (icmp < 0) {
-#if !USE_CUDA
-								if (bCollectInfo) {
-									printTable("Tr", trt, 1, m_numPlayers, m_groupSize);
-									printTable("Matrix with Tr applied", m_Ktmp, nrows, m_numPlayers, m_groupSize);
-								}
-#endif
 								bRet = false;
 								goto ret;
 							}
@@ -192,7 +208,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						nv1 = getAllV(v1, maxv1, indRow0, indRow1);
 #if !USE_CUDA
 						if (bPrintInfo) {
-							printCyclesInfo(v1, nv1, indRow0, indRow1);
+							collectCyclesInfo(v1, nv1, indRow0, indRow1);
 						}
 #endif
 						for (int itr = 0; itr < nv1; itr++, pV1 += m_nGroups) {
@@ -211,20 +227,32 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								ctchar* pDir, * pStartOut;
 								auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 3, &pDir, &pStartOut);
 								do {
+									//if (trCycles.length[0] != 21)
+									//	printTable("pDir", pDir, 1, 8, 0);
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
 										m_TrInd++;
 										nTrsForPair++;
-										const int icmp = !bCurrentSet ? -1 : kmProcessMatrix(result(), tr, nrows);
+										int icmp = -1;
+										if (bCurrentSet) {
+#if !USE_CUDA
+											if (bPrintInfo) {
+												tchar ts[MAX_PLAYER_NUMBER];
+												icmp = kmProcessMatrix(result(), tr, nrows, 0, ts);
+												if (!icmp)
+													printTable("Aut", ts, 1, nrows, 1);
+											}
+											else
+#endif
+											icmp = kmProcessMatrix(result(), tr, nrows);
+										}
 
 										if (icmp == -1) {
+											//if (nrows>2)
+											//printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Km, nrows, nLoops, m_finalKMindex);
 #if !USE_CUDA
 											if (bCollectInfo) {
-												printCyclesInfoSummary(&trCycles, tr, indRow0, indRow1, nrows);
-												printfRed("Not canonical matrix. See Tr below from Cycles(%d:%d:%d), rows %d,%d\n",
-													trCycles.length[0], trCycles.length[1], trCycles.length[2], indRow0, indRow1);
-												printTable(" Tr", tr, 1, m_numPlayers, m_groupSize);
-												printTable(" Matrix with Tr applied", m_Ktmp, nrows, m_numPlayers, m_groupSize);
+												printCyclesInfoNotCanonical(&trCycles, tr, indRow0, indRow1, nrows);
 											}
 #endif
 											bRet = false;
@@ -258,7 +286,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 					if (bPrintInfo) {
 						char stat[128];
 						matrixStatOutput(stat, sizeof(stat), m_TrCyclesPair);
-						printf("nTr=(%3d,%-3d) GroupOrder=%-2d Cycles for rows %d,%d: %s\n",
+						printf("nTr(generated=%-3d, new=%-3d) GroupOrder(accumulated)=%-2d Cycles for rows %d,%d: %s\n",
 							nTrsForPair, pTestedTRs->numObjects(), groupOrder(), indRow0, indRow1, stat);
 					}
 #endif
@@ -316,7 +344,7 @@ void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 		}
 	}
 }
-void alldata::printCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1) 
+void alldata::collectCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1) 
 {
 	TrCycles trCycles;
 	memset(m_TrCyclesPair, 0, sizeof(m_TrCyclesPair));
@@ -329,7 +357,7 @@ void alldata::printCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1)
 		collectCyclesAndPath(m_TrCyclesPair, &trCycles, true);
 	}
 }
-void alldata::printCyclesInfoSummary(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows)
+void alldata::printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows)
 {
 	printfRed("Not canonical matrix. See Tr below from Cycles(%d:%d:%d), rows %d,%d\n",
 		trCycles->length[0], trCycles->length[1], trCycles->length[2], indRow0, indRow1);

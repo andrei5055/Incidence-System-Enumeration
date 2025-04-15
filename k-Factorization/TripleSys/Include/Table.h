@@ -40,10 +40,15 @@ public:
 	Table(char const *name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		m_name(name), m_nl(nl), m_nc(nc), m_ns(ns), m_np(np), 
 		m_makeString(makeString), m_bOutCntr(outCntr) {}
-	void printTable(const T *c, bool outCntr = false, const char *fileName = NULL, bool outToScreen = true, int nl = 0, const int* idx = NULL);
+	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
 	virtual const char *name() 					{ return m_name; }
+	inline void setOutFileName(const char* pFileName, bool resetFile = true) {
+		m_pFileName = pFileName;
+		if (resetFile)
+			std::remove(pFileName);
+	}
 protected:
 	const char *m_name;
 private:
@@ -53,6 +58,7 @@ private:
 	const int m_np;
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
+	const char* m_pFileName = NULL;
 public:
 	size_t m_cntr = 0;
 };
@@ -63,9 +69,9 @@ public:
 	TableAut(char const* name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		Table<tchar>(name, nl, nc, ns, np, makeString, outCntr) {}
 	~TableAut()							{ delete[] m_pBuffer; }
-	void allocateBuffer(size_t len)		{ m_pBuffer = new char[m_nLenBuffer = len]; }
-	void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
-	void setInfo(const char* pInfo)		{ m_pInfo = pInfo; }
+	inline void allocateBuffer(size_t len)		{ m_pBuffer = new char[m_nLenBuffer = len]; }
+	inline void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
+	inline void setInfo(const char* pInfo)		{ m_pInfo = pInfo; }
 	virtual const char* name() {
 		const auto len = snprintf(m_pBuffer, m_nLenBuffer, "%s = %d", m_name, m_groupOrder);
 		if (m_pInfo) {
@@ -96,14 +102,14 @@ unsigned char *pMatrixStorage = NULL;
 #endif
 
 template<typename T>
-void Table<T>::printTable(const T *c, bool outCntr, const char *fileName, bool outToScreen, int nl, const int *idx)
+void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, const char* pStartLine, const int *idx)
 {
 	char buffer[512], *pBuf = buffer;
-	FOPEN_F(f, fileName, m_cntr ? "a" : "w");
+	FOPEN_F(f, m_pFileName, "a");
 	if (outCntr)
 		m_cntr++;
 
-	if (m_name && strlen(m_name) != 0) {
+	if (m_name && strlen(m_name)) {
 		if (outCntr && m_bOutCntr)
 			SPRINTFD(pBuf, buffer, "%5zd: %s\n", m_cntr, name());
 		else
@@ -113,9 +119,9 @@ void Table<T>::printTable(const T *c, bool outCntr, const char *fileName, bool o
 	_printf(f, outToScreen, buffer);
 	if (idx) {
 		for (int i = 0; i < nl; i++)
-			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen);
+			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
 	} else
-		outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen);
+		outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
 
 #if OUTPUT_VECTOR_STAT
 	// Output of a vector with the i-th coordinate equal to the number  

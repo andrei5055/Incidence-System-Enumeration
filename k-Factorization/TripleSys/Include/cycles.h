@@ -13,7 +13,7 @@ public:
 
 class CycleMapping {
 protected:
-	CC CycleMapping(int numPlayers) { 
+	CC CycleMapping(int numPlayers, bool bBipartiteGraph = false) : m_bBipartite(bBipartiteGraph) {
 		m_pNumCycles = new tchar[3 * numPlayers];
 	}
 	CC ~CycleMapping()				{ delete [] m_pNumCycles; }
@@ -22,6 +22,7 @@ protected:
 	CC auto permCycles() const		{ return m_permCycles; }
 	CC bool nextPerm(tchar* pPerm, int lenPerm) const;
 private:
+	const bool m_bBipartite;
 	tchar* m_pNumCycles = NULL;		// number of cycles in each group of cycles
 	tchar* m_permCycles;			// permutations of cycles of the same length
 	tchar* m_pIdxElem;				// indices of current elements in each cycle
@@ -34,11 +35,12 @@ private:
 	int m_numCycleGroups;
 	size_t m_totalVariants;
 	size_t m_currVariant;
+
 };
 
 class CycleSupport : protected CycleMapping {
 protected:
-	CC CycleSupport(int numPlayers) : CycleMapping(numPlayers) {}
+	CC CycleSupport(int numPlayers, bool bBipartiteGraph = false) : CycleMapping(numPlayers, bBipartiteGraph) {}
 	CC ~CycleSupport() { delete[] m_pV0; }
     CC void InitCycleSupport(int groupNumber) {
 		auto const len = groupNumber * MAX_3PF_SETS;

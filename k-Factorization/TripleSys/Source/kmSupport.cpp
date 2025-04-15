@@ -158,7 +158,7 @@ CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len)
 		mo[i] = tr[mi[i]];
 	}
 }
-CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
+CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
 {
 	tchar* mo = m_Km;
 	const auto nc = m_numPlayers;
@@ -184,6 +184,8 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind) const
 	// result of the loop above is in m_Ktmp, sort and send it to mo
 	tchar tm[MAX_PLAYER_NUMBER];
 	kmSortRowsBy2ndValue(mo, m_Ktmp, nr, nc, tm);
+	if (ts)
+		memcpy(ts, tm, nr);
 	auto dayMax = tm[0];
 	auto miFrom = mi;
 	coi = mo;
@@ -465,7 +467,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	}
 	return bPrecalcRow ? 3 : 0;
 }
-CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) const
+CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
 {
 	int iRet;
 	tchar tb[MAX_PLAYER_NUMBER], tm[MAX_PLAYER_NUMBER];
@@ -553,7 +555,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) cons
 	}
 	return 0;
 }
-CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) const
+CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
 {
 	int iRet;
 	tchar tb[MAX_PLAYER_NUMBER], tc[MAX_PLAYER_NUMBER], tm[MAX_PLAYER_NUMBER];

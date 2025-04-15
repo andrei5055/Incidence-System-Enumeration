@@ -1,4 +1,5 @@
 #include "TopGun.h"
+
 void alldata::printPermutationMatrices(const int iMode) const {
 	if (m_groupSize != 3 || iMode < 2)
 		return;

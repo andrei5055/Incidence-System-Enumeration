@@ -133,7 +133,7 @@ typedef CRepository<tchar> CBinaryMatrixStorage;
 class alldata : public CGroupUtilisation, private CGroupInfo, CycleSupport, CChecklLink {
 	typedef bool(alldata::*checkU1F)(int, int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
-	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
+	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
@@ -199,6 +199,8 @@ private:
 	CC bool cnvCheck2U1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck2P1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck3U1F(int nrows, int nrowsToUseForTrs);
+	void testPrintGroupRows();
+	bool testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode);
 	void testCanonizatorSpeed();
 	void testRightNeighbor(int nr);
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
@@ -225,12 +227,12 @@ private:
 	CC bool createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles,
 		ctchar* dir, ctchar* offset, ctchar* start, int iPrint = 0);
 
-
+	CC int getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
 	CC int getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
 	CC int p1fCheck2ndRow() const;
 	CC void updateIndexPlayerMinMax();
-	void printCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
-	void printCyclesInfoSummary(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
+	void collectCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
+	void printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
@@ -239,9 +241,9 @@ private:
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;
-	CC int kmProcessMatrix(ctchar* mi, ctchar* tm, int nr, tchar ind = 0) const;
-	CC int kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
-	CC int kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind) const;
+	CC int kmProcessMatrix(ctchar* mi, ctchar* tm, int nr, tchar ind = 0, tchar* ts = NULL) const;
+	CC int kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts = NULL) const;
+	CC int kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts = NULL) const;
 	CC int kmProcessOneNot1stRow3(tchar* mo, ctchar* mi, int mind, tchar* tb, tchar* tc, ctchar* tr, int nr) const;
 	CC int kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow = 2) const;
 	CC void setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom) const;

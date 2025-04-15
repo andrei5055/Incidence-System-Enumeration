@@ -281,7 +281,7 @@ void alldata::TestkmProcessMatrix(int nrows, unsigned char n, const tchar* tr, c
 		if (flag)
 			printfRed("TestkmProcessMatrix: m_playerIndex %d must be %d\n", playerIndex, m_playerIndex);
 		myExit(1);
-		icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n);
+		icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n, NULL);
 	}
 }
 void alldata::testCanonizatorSpeed()
@@ -376,3 +376,46 @@ void alldata::testCanonizatorSpeed()
 	//	(time2.QuadPart - time1.QuadPart) / nTests / 1000.0);
 	//	(double(time2.dwLowDateTime - time1.dwLowDateTime)) / nTests / 1000.0);
 }
+
+#if !USE_CUDA 
+bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode)
+{
+	if (!(iPrintMatrices & 16) || iCalcMode == eCalcSecondRow)
+		return false;
+	else {
+		printf("Submatrices Automorphism and Cycles:\n");
+		printTable("The Matrix", result(), iDay, m_numPlayers, m_groupSize);
+		m_numDaysResult = iDay;
+		for (int i = 2; i <= iDay; i++) {
+			char stat[128];
+			bool bRet = cnvCheckNew(0, i, false);
+			bool bRet2 = matrixStat(neighbors(), i, NULL);
+			bool needOutput = false;
+			matrixStat(neighbors(), i, &needOutput);
+			if (needOutput) {
+				matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
+				printf("%d rows: %s, AUT=%d, %s\n", i,
+					bRet ? "Canonical" : "Not canonical", groupOrder(), stat);
+			}
+		}
+		printf("\n");
+	}
+	return true;
+}
+
+/*
+void alldata::testPrintGroupRows()
+{
+	tchar trm[MAX_PLAYER_NUMBER];
+	for (int i = 0; i < m_numDays; i++) {
+
+	}
+		
+	for (int i = 0; i < numObjects(); i++) {
+		tchar* tr;
+
+
+	}
+}
+*/
+#endif

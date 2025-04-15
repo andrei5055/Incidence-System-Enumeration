@@ -86,6 +86,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto bSavingMatricesToDisk = param(t_savingMatricesToDisk);
 	int nMatricesMax = 0;
 	int startMatrixCount = 0;
+	const auto iCalcModeOrg = iCalcMode;
 #endif
 	int nDaysResult = numDaysResult();
 	int iDaySaved = 0;
@@ -132,12 +133,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
+	Result.setOutFileName(ResultFile.c_str());
 	m_pRes = &Result;
 
-	TableAut* pAutGroup = NULL;
+	Table<tchar>* pAutGroup = NULL;
 	if (param(t_outAutomorphismGroup)) {
-		pAutGroup = new TableAut("\nAutomorphisms of matrix with |Aut(M)|", groupOrder(), m_numPlayers, -1, m_groupSize, false, true);
-		pAutGroup->allocateBuffer(64);
+		pAutGroup = new Table<tchar>("\nAutomorphisms of matrix", groupOrder(), m_numPlayers, -1, m_groupSize, false, true);
+		pAutGroup->setOutFileName(ResultFile.c_str(), false);
 	}
 
 #endif
@@ -173,26 +175,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		if (groupSize_2)		// need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
-#if 1 && !USE_CUDA // print group order for each submatrix
-	if (iPrintMatrices & 16) {
-		printf("Submatrices Automorphism and Cycles:\n");
-		m_numDaysResult = iDay;
-		for (int i = 2; i <= iDay; i++) {
-			char stat[128];
-			bool bRet = cnvCheckNew(0, i, false);
-			bool bRet2 = matrixStat(neighbors(), i, NULL);
-			bool needOutput = false;
-			matrixStat(neighbors(), i, &needOutput);
-			if (needOutput) {
-				matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
-				printf("%d rows: Last row %s, cnvCheckNew=%s, AUT=%d, %s\n", i,
-					bRet2 ? "Ok" : "Not Ok", bRet ? "Ok" : "Not Ok", groupOrder(), stat);
-			}
-		}
-		printf("\n");
-		exit(1);
-	}
-#endif
 #if 1 // preset automorphism groups
 	const auto iCalc = m_useRowsPrecalculation;
 	m_useRowsPrecalculation = eCalcResult;
@@ -262,6 +244,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	bPrevResult = false;
 	const auto p1f_counter = param(t_p1f_counter);
+
+#if 1 && !USE_CUDA 
+	if (testGroupOrderEachSubmatrix(iPrintMatrices, iCalcModeOrg)) {
+		noMoreResults = true;
+		goto noResult;
+	}
+#endif
 
 	if (iCalcMode == eCalculateMatrices)
 		m_pRowUsage->init(iThread, param(t_numThreads));
@@ -697,9 +686,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				Result.setInfo(stat);
 				Result.setGroupOrder(groupOrder());
 #if 0			// record result and print on screen (if bPrint==true)
-				Result.printTable(result(), true, ResultFile.c_str(), bPrint, numDaysResult());
+				Result.printTable(result(), true, bPrint, numDaysResult());
 #else			// record result without print on screen
-				Result.printTable(result(), true, ResultFile.c_str(), false, numDaysResult());
+				Result.printTable(result(), true, false, numDaysResult());
+				if (pAutGroup && groupOrder() > 1)
+					pAutGroup->printTable(getObject(), false, false, groupOrder(), "", getIndices());
+
 				if (bPrint) {
 					printf("%5zd: " AUT "%d, % s\n", nLoops, groupOrder(), stat);
 					// print on screen result with highlighted differences from prev result
@@ -709,13 +701,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 #endif
 				//cnvCheckNew(2, iDay);
-
-				if (pAutGroup) {
-					pAutGroup->setGroupOrder(groupOrder());
-					string outFile;
-					createFolderAndFileName(outFile, sysParam(), t_ResultFolder, numDaysResult(), "_AutPermut.txt");
-					pAutGroup->printTable(getObject(), true, outFile.c_str(), false, groupOrder(), getIndices());
-				}
 			}
 
 			//checkCommonValues();

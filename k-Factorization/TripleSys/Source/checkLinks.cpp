@@ -44,17 +44,24 @@ CC bool CChecklLink::checkLinks(tchar *pLinks, int id, bool printLinksStatTime)
 	tchar* lnks = pLinks;
 
 	PrepareIDs();
+	bool biGraph = param(t_bipartiteGraph) > 0;
 	int iOffset = 5;
 	int ie = m_numPlayers;
 	for (int i0 = 0; i0 < ie; i0++)
 	{
 		int i = (i0 + iOffset) % m_numPlayers;
+		const auto ip3 = i % 3;
 		auto *ci = lnks + i * m_numPlayers;
 		int nv = 0;
 		for (int j = 0; j < m_numPlayers; j++)
 		{
-			if (ci[j] == unset && i != j)
+			if (ci[j] == unset && i != j) {
+				if (biGraph) {
+					if ((j % 3) == ip3)
+						continue;
+				}
 				m_v[nv++] = j;
+			}
 		}
 		if (!nv)
 			continue;

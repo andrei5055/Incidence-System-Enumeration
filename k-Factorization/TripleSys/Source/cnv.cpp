@@ -10,12 +10,11 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 		if (!param->val[t_allowMissingCycles] &&
 			(!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers])))
 			fhdr = "P";
-		else {
+		else
 			fhdr = "U";
-			if (uf)
-				*uf = param->strVal[t_UFname]->c_str();
-		}
 	}
+	if (uf)
+		*uf = param->strVal[t_UFname]->c_str();
 
 	if (param->val[t_nestedGroups])
 		return *fhdr == 'K' ? "KM" : *fhdr == 'P' ? "PM" : "UM";
@@ -86,13 +85,24 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		if (day) {
 			ttr = ttr1;
 			const auto* resn = result(n = m_DayIdx[day]);
-			for (int i = m_numPlayers; i--;)
-			{
-				ttr[resn[i]] = tr[i];
+			if (param(t_bipartiteGraph)) {
+				for (int i = 0; i < m_numPlayers; i += m_groupSize)
+				{
+					for (int j = 0; j < m_groupSize; j++) {
+						auto r1 = resn[i + j];
+						ttr[r1] = tr[i + (r1 % m_groupSize)];
+					}
+				}
+			}
+			else {
+				for (int i = m_numPlayers; i--;)
+				{
+					ttr[resn[i]] = tr[i];
+				}
 			}
 		}
 
-		const auto icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n);
+		const auto icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n, NULL);
 		/**
 		if (first)
 		{
@@ -134,7 +144,8 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 
 		if (icmp < 0) {
 #if PRINT_TRANSFORMED
-			printTransformed(nrows, m_numPlayers, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
+			if (nrows == 5)
+			printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 #endif
 			ret = -1;
 			break;
@@ -150,7 +161,8 @@ CC bool alldata::cnvCheckKm(ctchar* tr, ctchar* tg, int nrows)
 	for (int i = 0; i < m_nGroups; i++, trmk += m_groupSize)
 	{
 		const auto itr = tr[i];
-		const auto* pGroups = m_groups + tg[i] * m_groupSize;
+		auto ig = param(t_bipartiteGraph) ? 0 : i;
+		const auto* pGroups = m_groups + tg[ig] * m_groupSize;
 		for (int j = 0; j < m_groupSize; j++)
 		{
 			trmk[j] = itr + pGroups[j];
@@ -166,6 +178,8 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 	tchar tg[MAX_GROUP_NUMBER];
 	bool ret = true;
 	memset(tg, 0, m_nGroups);
+	auto ng = param(t_bipartiteGraph) ? 1 : m_nGroups;
+
 	while(1)
 	{
 		if (!cnvCheckKm(tr, tg, nrows))
@@ -173,7 +187,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 			ret = false;
 			break;
 		}
-		int i = m_nGroups;
+		int i = ng;
 		while (i-- && ++tg[i] >= m_groupSizeFactorial)
 		{
 			tg[i] = 0;

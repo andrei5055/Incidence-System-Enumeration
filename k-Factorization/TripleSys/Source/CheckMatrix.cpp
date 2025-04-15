@@ -28,17 +28,18 @@ bool checkMatrix1(tchar* lnks, int ln, int nc, int gs, const tchar* matrix, int 
 	lnks[a * nc + b] = lnks[b * nc + a] = ln;
 	return true;
 }
-bool _CheckMatrix(const tchar* matrix, int nl, int nc, int gs, tchar *lnks, bool printError, int* errLine, int* errGroup, int* dubLine)
+bool _CheckMatrix(const tchar* matrix, int nrows, int nc, int gs, tchar *lnks, bool printError, int* errLine, int* errGroup, int* dubLine, bool useBipartite)
 {
-	if (gs <= 1 || ((nc - 1) % (gs - 1)) != 0 || (nc - 1) / (gs - 1) < nl)
+	const auto nr = useBipartite ? nc / gs : (nc - 1) / (gs - 1);
+	if (gs <= 1 || (nr < nrows))
 	{
-		printf("CheckMatrix: incorrect parameters (nlines=%d, ncolumns=%d, group size=%d), job aborted\n", nl, nc, gs);
+		printf("CheckMatrix: incorrect parameters (nrows=%d, ncolumns=%d, group size=%d), job aborted\n", nrows, nc, gs);
 		abort();
 	}
 
 	memset(lnks, unset, nc * nc);
 
-	for (int j = 0; j < nl; j++)
+	for (int j = 0; j < nrows; j++)
 	{
 		for (int i = 0; i < nc; i = i + gs)
 		{
@@ -58,5 +59,5 @@ bool _CheckMatrix(const tchar* matrix, int nl, int nc, int gs, tchar *lnks, bool
 }
 bool alldata::CheckMatrix(const tchar* matrix, int nl, int nc, int gs, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	return _CheckMatrix(matrix, nl, nc, gs, links(), printError, errLine, errGroup, dubLine);
+	return _CheckMatrix(matrix, nl, nc, gs, links(), printError, errLine, errGroup, dubLine, param(t_bipartiteGraph));
 }

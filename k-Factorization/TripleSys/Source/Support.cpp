@@ -11,7 +11,8 @@ void speakText(LPCWSTR text)
 		printfRed("*** Error in COM init\n\7");
 		exit(1);
 	}
-	HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+	//HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+	HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_PPV_ARGS(&pVoice));
 	if (SUCCEEDED(hr))
 	{
 		pVoice->SetVolume(30);
@@ -186,7 +187,7 @@ CC void alldata::updateIndexPlayerMinMax()
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else
-					m_indexPlayerMin[1] = m_indexPlayerMax[1] = iDay + 1;
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = param(t_bipartiteGraph) ? iDay * 2 + 1 : iDay + 1;
 				m_indexPlayerMax[2] = 1;
 			}
 			break;
@@ -196,10 +197,19 @@ CC void alldata::updateIndexPlayerMinMax()
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {
-					int ip1 = 3;
-					for (; ip1 < m_numPlayers; ip1++)
-						if (links()[ip1] == unset)
-							break;
+					int ip1;
+					if (param(t_bipartiteGraph)) {
+						ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_bipartiteGraph) == 0) ?
+						for (; ip1 < m_numPlayers; ip1++)
+							if ((ip1 % 3) && (links()[ip1] == unset))
+								break;
+					}
+					else {
+						ip1 = 3;
+						for (; ip1 < m_numPlayers; ip1++)
+							if (links()[ip1] == unset)
+								break;
+					}
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 				}
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;

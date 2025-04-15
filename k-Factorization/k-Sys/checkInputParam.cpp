@@ -22,13 +22,24 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			MAX_GROUP_NUMBER, paramNames[t_numPlayers], paramNames[t_groupSize], numPlayers, groupSize, numGroups);
 		return false;
 	}
-
-	const auto numDays = (numPlayers - 1) / (groupSize - 1);
-	if (numDays < 1 || numDays * (groupSize - 1) != numPlayers - 1 ||
-		groupSize < 0 || numPlayers / groupSize * groupSize != numPlayers)
-	{
-		printfRed("*** Incorrect parameters: %s=%d %s=%d, Exit\n", paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize);
-		return false;
+	const auto useBipartite = val[t_bipartiteGraph];
+	if (useBipartite) {
+		const auto numDays = numPlayers / groupSize;
+		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)
+		{
+			printfRed("*** Incorrect parameters: %s=%d %s=%d %s=%d, Exit\n", 
+				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_bipartiteGraph], useBipartite);
+			return false;
+		}
+	}
+	else {
+		const auto numDays = (numPlayers - 1) / (groupSize - 1);
+		if (numDays < 1 || numDays * (groupSize - 1) != numPlayers - 1 ||
+			groupSize < 0 || numPlayers / groupSize * groupSize != numPlayers)
+		{
+			printfRed("*** Incorrect parameters: %s=%d %s=%d, Exit\n", paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize);
+			return false;
+		}
 	}
 
 	const auto pCycles = param.u1fCycles[0];
