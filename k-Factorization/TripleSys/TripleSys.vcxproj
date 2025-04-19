@@ -163,6 +163,7 @@
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
     <ClCompile Include="Source\cycles.cpp" />
+    <ClCompile Include="Source\Generators.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
     <ClCompile Include="Source\getUnselected.cpp" />
     <ClCompile Include="Source\improveMatrix.cpp" />

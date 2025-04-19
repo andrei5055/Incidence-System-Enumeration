@@ -287,7 +287,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						char stat[128];
 						matrixStatOutput(stat, sizeof(stat), m_TrCyclesPair);
 						printf("nTr(generated=%-3d, new=%-3d) GroupOrder(accumulated)=%-2d Cycles for rows %d,%d: %s\n",
-							nTrsForPair, pTestedTRs->numObjects(), groupOrder(), indRow0, indRow1, stat);
+							nTrsForPair, pTestedTRs->numObjects(), numObjects(), indRow0, indRow1, stat);
 					}
 #endif
 					if (bCurrentSet)
@@ -318,7 +318,7 @@ ret:
 	{
 		//printf("Trs total=%d\n", m_TrInd); Andrei 
 		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1) && nrows == nrowsToUseForTrs)
-			memcpy(m_pSecondRowsDB->getNextObject(), p1, m_numPlayers);
+			m_pSecondRowsDB->addObject(p1);
 	}
 	return bRet;
 }

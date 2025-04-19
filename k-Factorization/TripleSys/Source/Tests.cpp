@@ -325,9 +325,9 @@ void alldata::testCanonizatorSpeed()
 	int i, nTests = 1000;
 	for (i = 1; i <= nTests; i++)
 	{
+		const int order = orderOfGroup();
 		if (!cnvCheckNew(0, iDay))
 		{
-			int order = groupOrder();
 			printf("Group Order=%d\n", order);
 			iret = memcmp(bRes1, result(), iDay * m_numPlayers);
 			if (iret >= 0)
@@ -354,10 +354,9 @@ void alldata::testCanonizatorSpeed()
 		else
 		{
 			iret = iret;
-			int order = groupOrder();
 			printf("Group Order=%d\n", order);
 			//StatReportAfterEachResult(ResetStat, "Canonizator time", (int)((clock() - tTime)) / i, true);
-			//printf("order=%d\n",  groupOrder());
+			//printf("order=%d\n",  order);
 			break;
 		}
 	}
@@ -395,7 +394,7 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 			if (needOutput) {
 				matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
 				printf("%d rows: %s, AUT=%d, %s\n", i,
-					bRet ? "Canonical" : "Not canonical", groupOrder(), stat);
+					bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
 			}
 		}
 		printf("\n");

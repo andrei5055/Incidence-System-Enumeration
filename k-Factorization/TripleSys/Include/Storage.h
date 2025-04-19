@@ -83,6 +83,9 @@ public:
 		return CStorage<T>::getObject(m_numObjects++);
 	}
 
+	CC inline auto* addObject(const T* pObj) {
+		return (const T*)memcpy(getNextObject(), pObj, this->lenObject());
+	}
 	CC inline void releaseObject()			{ m_numObjects--; }
 	CC inline void releaseAllObjects()		{ m_numObjects = 0; }
 	int m_numObjects = 0;

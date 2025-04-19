@@ -113,9 +113,8 @@ public:
 typedef CRepository<tchar> CGroupInfo;
 #define incGroupOrder()		m_numObjects++
 #define resetGroupOrder()	m_numObjects = 0
-#define groupOrder()		numObjects()
+#define orderOfGroup()		numObjects()
 #define updateGroup(x)		updateRepo(x)
-
 
 class CGroupUtilisation {
 public:

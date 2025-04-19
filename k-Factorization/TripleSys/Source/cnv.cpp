@@ -73,7 +73,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 	}
 	//return 1;
 	//bool first = false;
-	if (!m_TrInd && !groupOrder())
+	if (!m_TrInd && !numObjects())
 	{
 		//first = true;
 		//printf("cnvCheckStart\n");
@@ -211,7 +211,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 			int i = setupIteratorByGroups(&lastVal, &step);
 			while (i != lastVal) {
 				auto* m_pRowGroup = rowGroup(i += step);
-				if (!m_pRowGroup || (j = m_pRowGroup->groupOrder()) < 1)
+				if (!m_pRowGroup || (j = m_pRowGroup->numObjects()) < 1)
 					continue;
 				const auto i1 = i;
 				const auto nRowsToTest = nrows - i;
@@ -243,7 +243,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 		if (m_useRowsPrecalculation != eCalculateRows && param(t_nestedGroups) > 1 && nrows > 2)
 		{
 			updateGroup(result(0));
-			if (groupOrder() >= param(t_nestedGroups)) {
+			if (orderOfGroup() >= param(t_nestedGroups)) {
 				saveGroup(*this, nrows);
 				if (nrows < numDaysResult())
 					return true;

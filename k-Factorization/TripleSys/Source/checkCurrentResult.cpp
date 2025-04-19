@@ -110,7 +110,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 #endif
 			// print stat result after all transitions applied
 			StatReportAfterAllTr(ResetStat, "Stat for one improvement. iDay", iDay, bPrint);
-			if (!bPrev || groupOrder() < param(t_submatrixGroupOrderMin))
+			if (!bPrev || orderOfGroup() < param(t_submatrixGroupOrderMin))
 				return -1;
 		}
 #endif

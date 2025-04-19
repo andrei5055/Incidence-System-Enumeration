@@ -131,15 +131,24 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), fName);
 
-	TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+	TableAut Result("\n\n|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
-	Result.setOutFileName(ResultFile.c_str());
+	const auto pResFile = ResultFile.c_str();
+	Result.setOutFileName(pResFile);
 	m_pRes = &Result;
 
 	Table<tchar>* pAutGroup = NULL;
+	Generators* pAutGroupGenerators = NULL;
 	if (param(t_outAutomorphismGroup)) {
-		pAutGroup = new Table<tchar>("\nAutomorphisms of matrix", groupOrder(), m_numPlayers, -1, m_groupSize, false, true);
-		pAutGroup->setOutFileName(ResultFile.c_str(), false);
+		if (param(t_outAutomorphismGroup) & 2) {
+			pAutGroup = new Table<tchar>("\nAutomorphisms of matrix", 0, m_numPlayers, -1, m_groupSize, false, true);
+			pAutGroup->setOutFileName(pResFile, false);
+		}
+
+		if (param(t_outAutomorphismGroup) & 1) {
+			pAutGroupGenerators = new Generators("\nOrbits and generators of the Aut(M)", m_numPlayers, -1, m_groupSize, false, true);
+			pAutGroupGenerators->setOutFileName(pResFile, false);
+		}
 	}
 
 #endif
@@ -637,7 +646,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			}
 		}
 		ASSERT(iDay < numDaysResult());
-		if (groupOrder() >= param(t_resultGroupOrderMin))
+		if (numObjects() >= param(t_resultGroupOrderMin))
 		{
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0
 			if (pIS_Canonizer) {
@@ -654,7 +663,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if !USE_CUDA
 			if (m_createSecondRow) {
 				if (groupSize_2)
-					memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
+					m_pSecondRowsDB->addObject(result(1));
 				if (bPrint)
 					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
 				goto cont1;
@@ -679,25 +688,30 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
-					m_matrixDB.addMatrix(groupOrder(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+					m_matrixDB.addMatrix(numObjects(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				else
 					stat[0] = '\0';
 
 				Result.setInfo(stat);
-				Result.setGroupOrder(groupOrder());
+				Result.setGroupOrder(orderOfGroup());
 #if 0			// record result and print on screen (if bPrint==true)
 				Result.printTable(result(), true, bPrint, numDaysResult());
 #else			// record result without print on screen
 				Result.printTable(result(), true, false, numDaysResult());
-				if (pAutGroup && groupOrder() > 1)
-					pAutGroup->printTable(getObject(), false, false, groupOrder(), "", getIndices());
-
 				if (bPrint) {
-					printf("%5zd: " AUT "%d, % s\n", nLoops, groupOrder(), stat);
+					printf("%5zd: " AUT "%d, % s\n", nLoops, orderOfGroup(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
 					if (iPrintMatrices & 2)
 						printPermutationMatrices(2);
+				}
+
+				if (orderOfGroup() > 1) {
+					if (pAutGroupGenerators)
+						pAutGroupGenerators->outputGenerators(this, bPrint);
+
+					if (pAutGroup)
+						pAutGroup->printTable(getObject(), false, bPrint, orderOfGroup(), "", getIndices());
 				}
 #endif
 				//cnvCheckNew(2, iDay);
@@ -780,6 +794,8 @@ noResult:
 	StatReportAfterThreadEnd(ResetStat, "Thread ended, processed", (int)nLoops, bFirstThread); // see stat.h to enable
 	delete[] bResults;
 	delete pAutGroup;
+	delete pAutGroupGenerators;
+
 #endif
 #if COUNT_GET_ROW_CALLS && !USE_CUDA
 	extern ll cntr;

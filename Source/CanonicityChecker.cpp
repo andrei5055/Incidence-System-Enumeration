@@ -82,9 +82,8 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 
 	return pCol;
 }
-CanonicityChecker(void)::addAutomorphism(const T numRow, const T *permRow, T *pOrbits, bool rowPermut, bool savePermut, bool calcGroupOrder)
-{
-	UpdateOrbits(permRow, numRow, pOrbits, rowPermut, calcGroupOrder);
+
+CanonicityChecker(void)::savePermutation(const T numRow, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {
 	if (!rowPermut) {
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow, permRow);

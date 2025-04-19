@@ -1,4 +1,5 @@
 #pragma once
+#include "TripleSys.h"
 
 template<typename T>
 void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, const unsigned char* pDayPerm=NULL) {
@@ -38,7 +39,7 @@ template<typename T>
 class Table {
 public:
 	Table(char const *name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
-		m_name(name), m_nl(nl), m_nc(nc), m_ns(ns), m_np(np), 
+		m_name(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
 		m_makeString(makeString), m_bOutCntr(outCntr) {}
 	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
@@ -51,9 +52,9 @@ public:
 	}
 protected:
 	const char *m_name;
+	const int m_nc;
 private:
 	const int m_nl;
-	const int m_nc;
 	const int m_ns;
 	const int m_np;
 	const bool m_makeString;
@@ -95,6 +96,18 @@ private:
 	size_t m_nLenBuffer = 0;
 };
 
+class Generators : public CGroupOrder<tchar>, public CStorageSet<tchar>, public Table<tchar> {
+public:
+	CC Generators(char const* name, int degree, int ns, int np, bool makeString = false, bool outCntr = false) :
+		CStorageSet<tchar>(10, degree),
+		Table<tchar>(name, 0, degree, ns, np, makeString, outCntr) {};
+	void outputGenerators(CGroupInfo* pGroup, bool outToScreen = false);
+private:
+	inline auto groupDegree() const { return m_nc; }
+	CC void savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut);
+	tchar m_lenStab;
+};
+	
 #if OUTPUT_VECTOR_STAT
 static size_t nMatr = 0;
 static size_t nMatrMax = 0;
@@ -110,8 +123,16 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 		m_cntr++;
 
 	if (m_name && strlen(m_name)) {
-		if (outCntr && m_bOutCntr)
-			SPRINTFD(pBuf, buffer, "%5zd: %s\n", m_cntr, name());
+		if (outCntr && m_bOutCntr) {
+			auto * pName = name();
+			// When pName starts with '\n', we need to place them before counter.
+			while (*pName == '\n') {
+				pName++;
+				SPRINTFD(pBuf, buffer, "\n");
+			}
+
+			SPRINTFD(pBuf, buffer, "%5zd: %s\n", m_cntr, pName);
+		}
 		else
 			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
 	}

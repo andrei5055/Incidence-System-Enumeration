@@ -25,7 +25,7 @@ void alldata::checkCommonValues()
 			if (*(vi += m_nGroups) == unset)
 				continue;
 			tchar vo[MAX_GROUP_NUMBER];
-			for (int j = 0; j < groupOrder(); j++)
+			for (int j = 0; j < orderOfGroup(); j++)
 			{
 				auto* cmpTr = getObjAddr(j);
 				kmTranslate(vo, vi, cmpTr, m_nGroups);
@@ -39,7 +39,7 @@ void alldata::checkCommonValues()
 			}
 		nexti: continue;
 		}
-		printf("v%2d of %2d canonical for all %d tr:", k, nv, groupOrder());
+		printf("v%2d of %2d canonical for all %d tr:", k, nv, orderOfGroup());
 		printTable("", vk, 1, m_nGroups, 0);
 	}
 	printf("\nEnd of comparision of %d sets of common values.\n\n", nv);
@@ -53,7 +53,7 @@ void alldata::checkCommonValues(ctchar* pBaseValues, int numSets) {
 	memset(pOrbits, unset, numSets);
 	auto* pCurrSet = pBaseValues;
 	for (int i = 0; i < numSets; i++, pCurrSet += m_nGroups) {
-		int j = groupOrder() - 1;
+		int j = numObjects() - 1;
 		auto* pPerm = getObjAddr(0);
 		while (j--) {
 			kmTranslate(pSet, pCurrSet, pPerm += m_numPlayers, m_nGroups);

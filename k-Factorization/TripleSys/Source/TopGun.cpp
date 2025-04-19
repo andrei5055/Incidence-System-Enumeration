@@ -39,7 +39,7 @@ int TopGun::Run()
 		alldata sys(*this, paramPtr());
 		m_pSecondRowsDB = new CStorageSet<tchar>(10, numPlayers());
 		// Use:
-		// a) pntr = m_pSecondRowsDB->getNextObject()     for adding new element (second row), use memcpy(pntr, second row, numPlayers())
+		// a) m_pSecondRowsDB->addObject(pSecondRow)
 		// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
 		// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
 		// 

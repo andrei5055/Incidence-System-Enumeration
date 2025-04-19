@@ -15,7 +15,6 @@
 #include "PermutStorage.h"
 #include "ColOrbits.h"
 #include "GroupOnParts.h"
-//#include "CheckCanon.h"
 #include "GroupOrder.h"
 
 
@@ -71,7 +70,7 @@ public:
 	CC auto stabiliserLengthExt() const				{ return m_nStabExtern; }
 	CK virtual CGroupOrder<T>* extraGroupOrder() const { return NULL; }
 	inline void addAutomorphism(const T* perm) {
-		addAutomorphism(numRow(), perm, getRowOrbits(0), true, true);
+		CGroupOrder<T>::addAutomorphism(numRow(), perm, getRowOrbits(0), true, true);
 	}
 	inline T next_permutation(T* perm, T idx) {
 		return CGroupOrder<T>::next_permutation(perm, getRowOrbits(0), numRow(), idx, stabiliserLengthExt());
@@ -88,7 +87,7 @@ public:
 		permStorage()->savePermut(numRow(), perm);
 	}
 	inline void updateOrderOfGroup() {
-		CGroupOrder<T>::updateGroupOrder(numRow(), getRowOrbits(0));
+		this->updateGroupOrder(numRow(), getRowOrbits(0));
 	}
 protected:
 	void updateCanonicityChecker(T rowNumb, T colNumb);
@@ -107,7 +106,7 @@ protected:
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr) { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const			{ return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
-	CC void addAutomorphism(const T nRow, const T *pRowPerm, T *pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true);
+	CC virtual void savePermutation(const T numRow, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut);
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;
@@ -473,7 +472,7 @@ CanonicityChecker(bool)::TestCanonicity(T nRowMax, const TestCanonParams<T, S>* 
 				break;
 			}
 
-			addAutomorphism(nRowMax, permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
+			CGroupOrder<T>::addAutomorphism(nRowMax, permRows, pOrbits, rowPermut, savePermut, calcGroupOrder);
 			nRow = IDX_MAX;
 		}
 
