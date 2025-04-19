@@ -53,7 +53,7 @@ void alldata::checkCommonValues(ctchar* pBaseValues, int numSets) {
 	memset(pOrbits, unset, numSets);
 	auto* pCurrSet = pBaseValues;
 	for (int i = 0; i < numSets; i++, pCurrSet += m_nGroups) {
-		int j = numObjects() - 1;
+		int j = orderOfGroup() - 1;
 		auto* pPerm = getObjAddr(0);
 		while (j--) {
 			kmTranslate(pSet, pCurrSet, pPerm += m_numPlayers, m_nGroups);

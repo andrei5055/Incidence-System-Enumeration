@@ -28,6 +28,7 @@ CC bool alldata::createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles
 					m_numCycles = 0;
 					return false;
 				}
+				ASSERT(i0 < 0 || i0 >= m_numPlayers);
 				tr[i0] = i1;
 				ntr++;
 			}

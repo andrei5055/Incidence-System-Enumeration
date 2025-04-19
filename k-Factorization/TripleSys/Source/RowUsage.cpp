@@ -213,11 +213,13 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 						continue;
 					}
 #endif  // UseSolutionCliques
-				} else {
+				}  else {
 					multiply_2();
+/*
 					const auto availPlayers = *((const ll*)(m_pCompatibleSolutions + (nRow + 2) * m_lenMask) - 1);
 					uint last1 = iRow + 1;
 					const auto& first1 = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last1, &last1, availPlayers);
+*/
 					break;
 				}
 			} else

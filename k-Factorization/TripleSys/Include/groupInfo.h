@@ -14,7 +14,7 @@ public:
 		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
 		m_numDays(p.val[t_bipartiteGraph] ? m_numPlayers / m_groupSize : (m_numPlayers - 1) / (m_groupSize - 1)),
-		m_allowMissingCycles(p.val[t_allowMissingCycles]) {}
+		m_allowUndefinedCycles(p.val[t_allowUndefinedCycles]) {}
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
 	CC bool setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const;
@@ -24,7 +24,7 @@ protected:
 	const int m_use2RowsCanonization;
 	const int m_groupSizeFactorial;
 	const int m_numDays;
-	const int m_allowMissingCycles;
+	const int m_allowUndefinedCycles;
 };
 
 #if ReportCheckLinksData
@@ -83,8 +83,8 @@ protected:
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
-	CC inline void setAllowNotSelectedCycles(int nrows)	{ m_AllowNotSelectedCycles = m_groupSize != 2 && nrows != 2 && m_allowMissingCycles; }
-	CC inline bool allowNotSelectedCycles() const		{ return m_AllowNotSelectedCycles; }
+	CC inline void setAllowUndefinedCycles(int nrows)	{ m_AllowUndefinedCycles = /**m_groupSize != 2 && nrows != 2 &&**/ m_allowUndefinedCycles; }
+	CC inline bool allowUndefinedCycles() const		{ return m_AllowUndefinedCycles; }
 private:
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
 
@@ -93,7 +93,7 @@ private:
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;
 	const kSysParam* m_param;
-	bool m_AllowNotSelectedCycles = false;
+	bool m_AllowUndefinedCycles = false;
 #if PrintNVminmax
 	char* m_nvmn = NULL;
 	char* m_nvmx = NULL;

@@ -146,7 +146,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		}
 	}
 
-	const auto allowNotSelectedCycles = paramPtr()->val[t_allowMissingCycles];
+	const auto allowUndefinedCycles = paramPtr()->val[t_allowUndefinedCycles];
 	for (int j = 0; j < numParamSet; j++) {
 		auto* paramNames = pParSet[j].paramNames;
 		const int iMax = pParSet[j].numParams;
@@ -174,7 +174,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 				cyclesDefault[1] = m_numPlayers;
 				pntr = cyclesDefault;
 			}
-			if (allowNotSelectedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
+			if (allowUndefinedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
 				fprintf(f, "\nU1F configurations:\n");
 				char buffer[128], * pBuf = buffer;
 				const auto lenBuf = countof(buffer);

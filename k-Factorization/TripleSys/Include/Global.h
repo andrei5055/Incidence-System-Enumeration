@@ -58,7 +58,7 @@ typedef enum {
 	t_gridSize,
 	t_blockSize,
 	t_orderMatrices,
-	t_allowMissingCycles,
+	t_allowUndefinedCycles,
 	t_any2RowsConvertToFirst2,
 	t_lastParam,
 	// indices of parameters with the string type values

@@ -93,18 +93,20 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	bool bCurrentSet = false;
 	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
-	setAllowNotSelectedCycles(nrows);
-
-	//static tchar a[] = {0,3,6, 1,9,12, 2,15,18, 4,10,16, 5,13,19, 7,11,20, 8,14,17, };
-	//if (memcmp(a, result(1), sizeof(a)) == 0)
-	//	ip1 = ip1;
+	setAllowUndefinedCycles(nrows);
+	/*
+	static tchar a[] = { 0, 4, 8,  1, 5, 6,  2, 9,13,  3,10,14,  7,11,12 };
+	//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
+	if (memcmp(a, result(1), sizeof(a)) == 0)
+		ip1 = ip1;*/
 	while (1)
 	{
-		if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
+		//if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
+		if (!m_pSecondRowsDB)
 			p1 = result(1);
 		else if (m_pSecondRowsDB->numObjects() > ip1)
 			p1 = m_pSecondRowsDB->getObject(ip1);
-		else if (m_createSecondRow) // do not merge with first if 
+		else if (m_createSecondRow) // do not merge with "first if" above
 			p1 = result(1);
 		else {
 			bRet = false;
@@ -112,59 +114,21 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 		}
 		ip1++;
 		memset(&m_TrCycles, 0, sizeof(m_TrCycles));
-		cyclesFor2Rows(p1); // result is in m_TrCyclesAll
-		// for second row check that all and only requested cycles are present
-		if (nrows == 2) {
-			bool bAllCyclesOk = false;
-			const auto u1fPntr = sysParam()->u1fCycles[0];
-			int itr0 = 0;
-#if 1
-			int itr1 = 0;
-			int ntr1 = u1fPntr ? *u1fPntr : 1;
-			for (; itr0 < MAX_3PF_SETS; itr0++)
-			{
-				if (m_TrCyclesAll[itr0].counter == 0 || (itr1 >= ntr1)) {
-					bAllCyclesOk = itr1 == ntr1;
-					break;
-				}
-				// warning! cycles defined in params must be sorted
-				if ((!u1fPntr && m_TrCyclesAll[itr0].length[0] == m_numPlayers) ||
-					!MEMCMP(m_TrCyclesAll[itr0].length, u1fPntr + 1 + itr1 * MAX_CYCLES_PER_SET, MAX_CYCLES_PER_SET))
-					itr1++;
-			}
-			if (!bAllCyclesOk) {
-				bRet = false;
-				break;
-			}
-#else
-			if (!u1fPntr) {
-				bAllCyclesOk = m_TrCyclesAll[0].length[0] == m_numPlayers && !m_TrCyclesAll[1].counter;
-				itr0 = 1;
-			}
-			else {
-				for (; itr0 < MAX_3PF_SETS; itr0++)
-				{
-					if (m_TrCyclesAll[itr0].counter == 0) {
-						bAllCyclesOk = itr0 == *u1fPntr;
-						break;
-					}
-					// warning! cycles defined in params must be sorted
-					if (itr0 >= *u1fPntr ||
-						MEMCMP(m_TrCyclesAll[itr0].length, u1fPntr + 1 + itr0 * MAX_CYCLES_PER_SET, MAX_CYCLES_PER_SET))
-						break;
-				}
-			}
-			if (itr0 != MAX_3PF_SETS && !bAllCyclesOk) {
-				bRet = false;
-				break;
-			}
-#endif
-		}
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
 			bCurrentSet = true;
-		const auto bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
-		const auto bPrintInfo = bCollectInfo && (nrows == numDaysResult());
-		const auto bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
+		cyclesFor2Rows(p1); // result is in m_TrCyclesAll 
+		if (nrows == 2) {
+			if (!cyclesOfTwoRowsOk(m_TrCyclesAll)) {
+				if (bCurrentSet) {
+					bRet = false;
+					break;
+				}
+				ASSERT(1);
+			}
+		}
+		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
+		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
+		bool bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
 		TrCycles trCycles;
 		// get first row
 		for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
@@ -190,7 +154,11 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 #endif
 							m_TrInd++;
 							nTrsForPair++;
-							const int icmp = kmProcessMatrix(result(), trt, nrows);
+							int icmp = kmProcessMatrix(result(), trt, nrows);
+							if (!bCurrentSet && icmp != -1) {
+								icmp = -1;
+								m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
+							}
 							if (icmp == 0)
 								updateGroup(trt);
 							else if (icmp < 0) {
@@ -227,26 +195,29 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								ctchar* pDir, * pStartOut;
 								auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 3, &pDir, &pStartOut);
 								do {
-									//if (trCycles.length[0] != 21)
-									//	printTable("pDir", pDir, 1, 8, 0);
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
 										m_TrInd++;
 										nTrsForPair++;
-										int icmp = -1;
-										if (bCurrentSet) {
-#if !USE_CUDA
+										int icmp;
+										if (1) {//bCurrentSet) {
+
 											if (bPrintInfo) {
 												tchar ts[MAX_PLAYER_NUMBER];
 												icmp = kmProcessMatrix(result(), tr, nrows, 0, ts);
+#if !USE_CUDA
 												if (!icmp)
 													printTable("Aut", ts, 1, nrows, 1);
-											}
-											else
 #endif
-											icmp = kmProcessMatrix(result(), tr, nrows);
+											}
+											else {
+												icmp = kmProcessMatrix(result(), tr, nrows);
+												if (!bCurrentSet && icmp != -1) {
+													icmp = -1;
+													m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
+												}
+											}
 										}
-
 										if (icmp == -1) {
 											//if (nrows>2)
 											//printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Km, nrows, nLoops, m_finalKMindex);
@@ -269,7 +240,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								break;
 							}
 							if (!bCycleSelected) {
-								if (!allowNotSelectedCycles()) {
+								if (!allowUndefinedCycles()) {
 #if !USE_CUDA
 									if (bCollectInfo)
 										printfRed("Cycles (%d:%d:%d) for rows %d,%d are present, but not selected\n",
@@ -287,7 +258,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						char stat[128];
 						matrixStatOutput(stat, sizeof(stat), m_TrCyclesPair);
 						printf("nTr(generated=%-3d, new=%-3d) GroupOrder(accumulated)=%-2d Cycles for rows %d,%d: %s\n",
-							nTrsForPair, pTestedTRs->numObjects(), numObjects(), indRow0, indRow1, stat);
+							nTrsForPair, pTestedTRs->numObjects(), orderOfGroup(), indRow0, indRow1, stat);
 					}
 #endif
 					if (bCurrentSet)
@@ -318,7 +289,7 @@ ret:
 	{
 		//printf("Trs total=%d\n", m_TrInd); Andrei 
 		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1) && nrows == nrowsToUseForTrs)
-			m_pSecondRowsDB->addObject(p1);
+			memcpy(m_pSecondRowsDB->getNextObject(), p1, m_numPlayers);
 	}
 	return bRet;
 }

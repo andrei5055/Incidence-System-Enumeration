@@ -231,6 +231,7 @@ private:
 	CC int getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
 	CC int p1fCheck2ndRow() const;
 	CC void updateIndexPlayerMinMax();
+	CC bool cyclesOfTwoRowsOk(TrCycles* trc) const;
 	void collectCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
 	void printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);

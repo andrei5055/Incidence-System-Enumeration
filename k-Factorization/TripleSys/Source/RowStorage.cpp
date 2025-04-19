@@ -281,7 +281,7 @@ CC bool CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroupInfo* pGroupInfo, tmask *pMask, uint solIdx, uint last, uint idxMin) const {
 	// For all non-trivial automorphisms:
 	int i = 0;
-	while (++i < pGroupInfo->numObjects()) {
+	while (++i < pGroupInfo->orderOfGroup()) {
 		const auto idx = getTransformerSolIndex(pSolution, pGroupInfo->getObject(i), m_numSolutionTotal, idxMin);
 		if (idx == solIdx || idx == UINT_MAX)
 			continue;
@@ -332,7 +332,7 @@ CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 int my_counter = 0;
 #endif
 
-#define TRACE_MASKS					1
+#define TRACE_MASKS					0
 #if !USE_CUDA && TRACE_MASKS
 int ggg = 0;
 #define REPORT_REGECTION(reason)	fprintf(f, "  Rejected %d\n", reason); \
@@ -573,7 +573,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	ASSERT(last != m_numSolutionTotal);
 	if (USE_GROUP_4_2_ROWS) {
 		const auto pGroupInfo = m_pAllData->groupInfo(2);
-		const auto groupOrder = pGroupInfo->numObjects();
+		const auto groupOrder = pGroupInfo->orderOfGroup();
 		if (groupOrder > 1) {
 			m_pTRTSN_Storage = new CRepository<uint>(2 * sizeof(uint), 32);
 			const auto pRow = m_pAllData->result(numPreconstructedRows() - 1);

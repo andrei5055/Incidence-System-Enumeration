@@ -533,6 +533,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bPrevResult = true;
 				continue;
 			}
+			/*
+			static tchar a[] = { 0, 4, 8,  1, 5, 6,  2, 9,13,  3,10,14,  7,11,12 };
+			//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
+			if (memcmp(a, result(1), sizeof(a)) == 0)
+				iDay = iDay;*/
 			if (m_useRowsPrecalculation == eCalculateMatrices) {
 				ASSERT(1);
 				noMoreResults = true;
@@ -646,7 +651,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			}
 		}
 		ASSERT(iDay < numDaysResult());
-		if (numObjects() >= param(t_resultGroupOrderMin))
+		if (orderOfGroup() >= param(t_resultGroupOrderMin))
 		{
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0
 			if (pIS_Canonizer) {
@@ -688,7 +693,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
-					m_matrixDB.addMatrix(numObjects(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+					m_matrixDB.addMatrix(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				else
 					stat[0] = '\0';
 

@@ -47,7 +47,7 @@ const char* intParamNames[]{
 	"GridSize",
 	"BlockSize",
 	"OrderMatrices",
-	"AllowMissingCycles", // 1  - Not all cycles need to be represented.
+	"AllowUndefinedCycles", // 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
 };
 

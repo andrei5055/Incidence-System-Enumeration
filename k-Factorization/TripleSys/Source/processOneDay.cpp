@@ -18,7 +18,7 @@ CC bool alldata::processOneDay()
 			}
 		}
 #endif
- 		if (iPlayer < 0)
+		if (iPlayer < 0)
 			return false;
 		/**
 		if (m_bCheckLinkT && !checkLinksT(links(), iDay))

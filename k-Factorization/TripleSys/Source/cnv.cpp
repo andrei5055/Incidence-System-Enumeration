@@ -7,7 +7,7 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 
 	fhdr = "K";
 	if (param->val[t_u1f]) {
-		if (!param->val[t_allowMissingCycles] &&
+		if (!param->val[t_allowUndefinedCycles] &&
 			(!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers])))
 			fhdr = "P";
 		else
@@ -73,7 +73,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 	}
 	//return 1;
 	//bool first = false;
-	if (!m_TrInd && !numObjects())
+	if (!m_TrInd && !orderOfGroup())
 	{
 		//first = true;
 		//printf("cnvCheckStart\n");
@@ -143,11 +143,13 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		}
 
 		if (icmp < 0) {
-#if PRINT_TRANSFORMED
-			if (nrows == 5)
-			printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
-#endif
 			ret = -1;
+#if !USE_CUDA //PRINT_TRANSFORMED
+			if (param(t_printMatrices) & 16) {
+				printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
+				//continue;
+			}
+#endif
 			break;
 		}
 	}
@@ -200,7 +202,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 {
 	const int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
-	setAllowNotSelectedCycles(nrows);
+	setAllowUndefinedCycles(nrows);
 	m_TrInd = 0;
 	resetGroupOrder();
 	m_playerIndex = playerIndexCycle;

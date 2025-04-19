@@ -193,7 +193,7 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		if (ncr == 1 && !allowNotSelectedCycles())
+		if (ncr == 1 && !allowUndefinedCycles())
 		{
 			if (cyclesNotOk(ncr, ncycles, trc->length))
 				return -1;
@@ -316,8 +316,8 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
 		return true;
-	setAllowNotSelectedCycles(nr);
-	if (!pNeedOutput && allowNotSelectedCycles())
+	setAllowUndefinedCycles(nr);
+	if (!pNeedOutput && allowUndefinedCycles())
 		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
@@ -409,7 +409,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 		return false;
 	if (ncycles <= 0)
 		return true;
-	if (allowNotSelectedCycles())
+	if (allowUndefinedCycles())
 		return false;
 	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
@@ -426,7 +426,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
-	if (allowNotSelectedCycles())
+	if (allowUndefinedCycles())
 		return true;
 	auto pntr = m_param->u1fCycles[0];
 
@@ -519,9 +519,9 @@ CC int alldata::p1fCheck2ndRow() const
 	if (m_groupSize == 3)
 	{
 		ctchar* p;
-		int is = 0;
-		while ((p = m_pSecondRowsDB->getObject(is++)))
+		for (int is = 0; is < m_pSecondRowsDB->numObjects(); is++)
 		{
+			p = m_pSecondRowsDB->getObject(is);
 			const int icmp = MEMCMP(p2ndRow, p, nc);
 			if (icmp <= 0)
 				return icmp;
@@ -606,25 +606,18 @@ CC int alldata::getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2
 }
 CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
 {
-	const auto nv = getAllV0(allv, maxv, ir1, ir2, pt2);
-	if (!param(t_bipartiteGraph))
+	if (!param(t_bipartiteGraph)) {
+		const auto nv = getAllV0(allv, maxv, ir1, ir2, pt2);
 		return nv;
-	auto allvIn = allv;
-	auto allvOut = allv;
-	int nvout = 0;
-	const auto v0p3 = allvIn[0] % m_groupSize;
-	for (int i = 0; i < nv; i++, allvIn += m_nGroups) {
-		for (int j = 1; j < m_nGroups; j++) {
-			if (v0p3 != (allvIn[j] % m_groupSize)) {
-				goto endLoopi;
-			}
-		}
-		nvout++;
-		memcpy(allvOut, allvIn, m_nGroups);
-		allvOut += m_nGroups;
-	endLoopi: continue;
 	}
-	return nvout;
+	// creat (groupSize x m_nGroups) array of values of row ir1 (sorted by color)
+	ctchar* r = result(ir1);
+	for (int i = 0, k = 0; i < m_numPlayers; i+= m_groupSize, k++) {
+		for (int j = 0; j < m_groupSize; j++) {
+			allv[(r[i + j] % m_groupSize) * m_nGroups + k] = r[i + j];
+		}
+	}
+	return m_groupSize;
 }
 void alldata::cyclesFor2Rows(ctchar* p1)
 {
