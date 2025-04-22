@@ -20,7 +20,7 @@ typedef enum {
 	// indices of parameters with the integer type values
 	t_numPlayers,			 
 	t_groupSize,
-	t_bipartiteGraph,
+	t_CMP_Graph,			// Complete Multi-Partite Graph
 	t_u1f,
 	t_use2RowsCanonization,
 	t_submatrixGroupOrderMin,
@@ -77,12 +77,35 @@ typedef struct {
 	int numParams;
 } paramDescr;
 
-typedef struct {
+class kSysParam {
+public:
+	kSysParam()				{ Init(NULL); }
+	kSysParam(const kSysParam* param) {
+		*this = *param;
+		Init(param->u1fCycles[0]);
+	}
+	~kSysParam()			{ 
+		if (m_b_dataOwner) 
+		   delete[] u1fCycles[0]; 
+	}
 	int val[t_lastParam];
 	int groupSizeFactorial;
 	std::string* strVal[t_lastStrParam];
 	tchar* u1fCycles[1];
 	paramDescr* pParamDescr;
-} kSysParam;
+private:
+	void Init(ctchar* pU1fCycles) {
+		pParamDescr = NULL;
+		memset(strVal, 0, sizeof(strVal));
+		if (m_b_dataOwner = (pU1fCycles != NULL)) {
+			const auto len = 1 + *pU1fCycles * MAX_CYCLES_PER_SET;
+			u1fCycles[0] = new tchar[len];
+			memcpy(u1fCycles[0], pU1fCycles, len);
+		}
+		else
+			u1fCycles[0] = NULL;
+	}
+	bool m_b_dataOwner;
+};
 
 

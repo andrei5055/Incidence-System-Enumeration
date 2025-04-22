@@ -8,7 +8,7 @@
 const char* intParamNames[]{
 	"nPlayers",
 	"GroupSize",
-	"BipartiteGraph",
+	"CMP_Graph",           // Complete Multi-Patrite Graph
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
 	"SubmatrixGroupOrderMin",
@@ -235,7 +235,7 @@ static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* 
 		return 0;		// keyWord was not found
 
 	const auto flg = pos == str.length();
-	if (!flg && str[pos] != ' ' && str[pos] != '=')
+	if (!flg && str[pos] != ' ' && (str[pos] != '=' && str[pos] != ':'))
 		return 0;
 
 	string tmp = str.substr(0, pos);
@@ -244,7 +244,7 @@ static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* 
 
 	tmp = str.substr(pos);
 	ltrim(tmp);
-	if (flg || tmp[0] != '=') {
+	if (flg || (tmp[0] != '=' && tmp[0] != ':')) {
 		// the value is determined by the presence of the keyword
 		setDefaultValue<T>(pValue);
 		if (!tmp.length())
@@ -292,7 +292,7 @@ bool getParameters(ifstream& infile, const paramDescr *par, int nDescr, kSysPara
 
 		}
 
-		pos = line.find("=");
+		pos = line.find_first_of("=:");
 		if (pos != string::npos) {
 			auto beg = line.substr(0, pos);
 			auto end = line.substr(pos + 1);
@@ -433,8 +433,8 @@ int main(int argc, const char* argv[])
 	// Set default string parameters:
 	auto* strVal = param.strVal;
 	memset(strVal, 0, t_lastStrParam * sizeof(strVal[0]));
-	if (U1FName)// && strlen(U1FName))
-		strVal[t_UFname] = new string(U1FName);
+	//if (U1FName)// && strlen(U1FName))
+	//	strVal[t_UFname] = new string(U1FName);
 
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
@@ -491,7 +491,7 @@ int main(int argc, const char* argv[])
 				if (!*(++pAutLevel)) {
 					*pAutLevel = val[t_nRowsInResultMatrix];
 					if (!*pAutLevel)
-						*pAutLevel = val[t_bipartiteGraph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+						*pAutLevel = val[t_CMP_Graph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
 
 					if (i == 2 && val[t_nRowsInResultMatrix] > 2)
 						--*pAutLevel;
@@ -522,6 +522,8 @@ int main(int argc, const char* argv[])
 							while (*lenCycle)
 								*ufName += std::to_string(*lenCycle++);
 						}
+						if (param.val[t_allowUndefinedCycles])
+							*ufName += "_all";
 					}
 					printfGreen(" %s-matrices with cycles(%s): %s ", getFileNameAttr(&param), ufName->c_str(), uf.c_str());
 				}
@@ -546,11 +548,10 @@ int main(int argc, const char* argv[])
 			if (testOK) {
 				param.groupSizeFactorial = factorial(groupSize);
 				TopGunBase* topGun;
-				if (!useGPU)
-					topGun = new TopGun(param);
-				else
+				if (useGPU)
 					topGun = new TopGunGPU(param);
-
+				else
+					topGun = new TopGun(param);
 
 				topGun->outputIntegratedResults(NULL, 0);
 				if (topGun->Run())
@@ -602,6 +603,7 @@ int main(int argc, const char* argv[])
 
 	delete infile;
 	delete testToRun;
+	delete TopGun::secondRowDB();
 	return numErrors;
 }
 

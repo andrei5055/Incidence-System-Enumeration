@@ -270,6 +270,24 @@ CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2
 }
 CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2, int ind) const
 {
+	if (param(t_CMP_Graph))
+	{
+		auto v0 = getV0();
+		ctchar* r = res1;
+		for (int i = 0, k = 0; i < m_numPlayers; i += m_groupSize, k++) {
+			for (int j = 0; j < m_groupSize; j++) {
+				v0[(r[i + j] % m_groupSize) * m_nGroups + k] = r[i + j];
+			}
+		}
+		ctchar* vtr = v0; // Common Values
+		for (int i = 0; i < m_groupSize; i++, vtr += m_nGroups)
+		{
+			auto ncycles = p3Cycles(trc, MAX_3PF_SETS, t1, t2, vtr, res1, res2, true);
+			if (cyclesNotOk(ncr, ncycles, trc->length))
+				return ncycles;
+		}
+		return 0;
+	}
 	tchar us[MAX_PLAYER_NUMBER];
 	tchar v[MAX_GROUP_NUMBER];
 	tchar t2d3[MAX_PLAYER_NUMBER];
@@ -606,7 +624,7 @@ CC int alldata::getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2
 }
 CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
 {
-	if (!param(t_bipartiteGraph)) {
+	if (!param(t_CMP_Graph)) {
 		const auto nv = getAllV0(allv, maxv, ir1, ir2, pt2);
 		return nv;
 	}
@@ -621,7 +639,6 @@ CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2)
 }
 void alldata::cyclesFor2Rows(ctchar* p1)
 {
-	auto v0 = getV0();
 	tchar neighbors1[MAX_PLAYER_NUMBER];
 	memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
 	if (MEMCMP(p1, result(1), m_numPlayers) == 0)
@@ -632,6 +649,7 @@ void alldata::cyclesFor2Rows(ctchar* p1)
 		u1fGetCycleLength(&m_TrCycles, 2,  neighbors(0), neighbors1, result(0), p1);
 	}
 	else {
+		auto v0 = getV0();
 		const int nv0 = getAllV(v0, MAX_3PF_SETS, 0, 1, neighbors1);
 		ASSERT(!nv0);
 		ctchar* vtr = v0; // Common Values

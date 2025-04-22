@@ -1343,7 +1343,7 @@ CheckerCanon(T)::nextPermutationA(T* perm, const T* pOrbits, T nElem, T idx, T l
 	return ELEMENT_MAX;
 }
 
-CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRows, bool useBipartite) {
+CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRows, bool cmpGraph) {
 	T* permPlayers = playersPerm();
 	memcpy(permPlayers, result, lenRow());
 	auto pOrbits = new T [numElem()];
@@ -1361,7 +1361,7 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 	printf(" I am going to the loop:\n");
 
 	while (true) {
-		if (_CheckMatrix((const tchar *)pMatrix, nRows, numElem(), groupSize(), lnks, true, &errLine, &errGroup, &dubLine, useBipartite)) {
+		if (_CheckMatrix((const tchar *)pMatrix, nRows, numElem(), groupSize(), lnks, true, &errLine, &errGroup, &dubLine, cmpGraph)) {
 			counter[0]++;
 			char buffer[256];
 			auto pntr = buffer;

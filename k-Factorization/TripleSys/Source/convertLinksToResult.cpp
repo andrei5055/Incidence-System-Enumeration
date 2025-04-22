@@ -1,9 +1,9 @@
 #include "TripleSys.h"
 
-void convertLinksToResult(const char *ci, char* res, int np, int gs, bool useBipartite)
+void convertLinksToResult(const char *ci, char* res, int np, int gs, bool cmpGraph)
 {
 	const auto len = np * np;
-	const int nd = useBipartite ? np / gs : (np - 1) / (gs - 1);
+	const int nd = cmpGraph ? np / gs : (np - 1) / (gs - 1);
 	char* co = res;
 	char *c = new char[len];
 	memcpy(c, ci, len);

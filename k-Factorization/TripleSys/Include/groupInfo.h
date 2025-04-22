@@ -13,7 +13,7 @@ public:
 		m_groupSize(p.val[t_groupSize]),
 		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
-		m_numDays(p.val[t_bipartiteGraph] ? m_numPlayers / m_groupSize : (m_numPlayers - 1) / (m_groupSize - 1)),
+		m_numDays(p.val[t_CMP_Graph] ? m_numPlayers / m_groupSize : (m_numPlayers - 1) / (m_groupSize - 1)),
 		m_allowUndefinedCycles(p.val[t_allowUndefinedCycles]) {}
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
@@ -130,10 +130,11 @@ protected:
 		m_autLevelDef{ p->val[t_autLevelMinDef], p->val[t_autLevelMaxDef] },
 		m_autLevel{ p->val[t_autLevelMin], p->val[t_autLevelMax] },
 		m_bDirection(p->val[t_autDirection] == 0) {
-		const auto numPlayers = p->val[t_numPlayers];
-		const auto groupSize = p->val[t_groupSize];
-		const auto nRows = p->val[t_bipartiteGraph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
-		if ((p->val[t_printMatrices] & 16) || p->val[t_autSaveTestedTrs])
+		const auto& val = p->val;
+		const auto numPlayers = val[t_numPlayers];
+		const auto groupSize = val[t_groupSize];
+		const auto nRows = val[t_CMP_Graph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+		if ((val[t_printMatrices] & 16) || val[t_autSaveTestedTrs])
 			m_pTrRepo = new CTrRepo(nRows, numPlayers);
 
 		m_numLevels = m_autLevelDef[1] - m_autLevelDef[0] + 1;

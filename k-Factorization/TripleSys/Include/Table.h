@@ -15,7 +15,7 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 			if (*c == -1 && !f)
 				printfGreen(" %3d", *c);
 			else */
-				SPRINTFD(pBuf, buffer, " %3d", *c);
+				SPRINTFD(pBuf, buffer, " %2d", *c);
 		}
 
 		if (cntr < 0) {
@@ -96,18 +96,44 @@ private:
 	size_t m_nLenBuffer = 0;
 };
 
-class Generators : public CGroupOrder<tchar>, public CStorageSet<tchar>, public Table<tchar> {
+class COutGroupHandle : public Table<tchar> {
 public:
-	CC Generators(char const* name, int degree, int ns, int np, bool makeString = false, bool outCntr = false) :
+	COutGroupHandle(int outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
+		Table<tchar>(name, 0, degree, -1, groupSize, false, true) {}
+	virtual ~COutGroupHandle()	{}
+	virtual void makeGroupOutput(const CGroupInfo* pGrpInfo, bool outToScreen = false) {
+		printTable(pGrpInfo->getObject(), false, outToScreen, pGrpInfo->orderOfGroup(), "", pGrpInfo->getIndices());
+	}
+protected: 
+	const int m_outGroupMask;
+};
+
+class Generators : public CGroupOrder<tchar>, public CStorageSet<tchar>, public COutGroupHandle {
+public:
+	Generators(int outGroupMask, char const* name, int degree, int groupSize) :
 		CStorageSet<tchar>(10, degree),
-		Table<tchar>(name, 0, degree, ns, np, makeString, outCntr) {};
-	void outputGenerators(CGroupInfo* pGroup, bool outToScreen = false);
-private:
+		COutGroupHandle(outGroupMask, name, degree, groupSize) {};
+	void makeGroupOutput(const CGroupInfo* pGroup, bool outToScreen = false) override;
+protected:
 	inline auto groupDegree() const { return m_nc; }
+private:
 	CC void savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut);
 	tchar m_lenStab;
 };
-	
+
+class RowGenerators : public Generators {
+public:
+	RowGenerators(int outGroupMask, char const* name, int rowNumb) : Generators(outGroupMask, name, rowNumb, 0) {}
+	~RowGenerators()					{ delete m_pRowGroup; }
+	void makeGroupOutput(const CGroupInfo* pGroup, bool outToScreen = false) override;
+	const char* name() override         { 
+		return m_sName.c_str(); 
+	}
+private:
+	CGroupInfo* m_pRowGroup = NULL;
+	std::string m_sName;
+};
+
 #if OUTPUT_VECTOR_STAT
 static size_t nMatr = 0;
 static size_t nMatrMax = 0;
@@ -122,9 +148,9 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 	if (outCntr)
 		m_cntr++;
 
-	if (m_name && strlen(m_name)) {
+	auto* pName = name();
+	if (pName && strlen(pName)) {
 		if (outCntr && m_bOutCntr) {
-			auto * pName = name();
 			// When pName starts with '\n', we need to place them before counter.
 			while (*pName == '\n') {
 				pName++;
@@ -134,7 +160,7 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 			SPRINTFD(pBuf, buffer, "%5zd: %s\n", m_cntr, pName);
 		}
 		else
-			SPRINTFD(pBuf, buffer, "%s:\n", m_name);
+			SPRINTFD(pBuf, buffer, "%s:\n", pName);
 	}
 
 	_printf(f, outToScreen, buffer);

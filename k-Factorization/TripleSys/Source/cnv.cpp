@@ -14,9 +14,15 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 			fhdr = "U";
 	}
 	if (uf)
-		*uf = param->strVal[t_UFname]->c_str();
+		*uf = param->strVal[t_UFname] ? param->strVal[t_UFname]->c_str() : "";
 
-	if (param->val[t_nestedGroups])
+	if (param->val[t_CMP_Graph]) {
+		if (param->val[t_nestedGroups])
+			return *fhdr == 'K' ? "KPN" : *fhdr == 'P' ? "PPN" : "UPN";
+		else
+			return *fhdr == 'K' ? "KP" : *fhdr == 'P' ? "PP" : "UP";
+	}
+	else if (param->val[t_nestedGroups])
 		return *fhdr == 'K' ? "KM" : *fhdr == 'P' ? "PM" : "UM";
 	return fhdr;
 }
@@ -80,12 +86,13 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		updateGroup(res);
 		day = 1;
 	}
+	const auto cmpGraph = param(t_CMP_Graph);
 	for (; day < m_NumDaysToTransform; day++)
 	{
 		if (day) {
 			ttr = ttr1;
 			const auto* resn = result(n = m_DayIdx[day]);
-			if (param(t_bipartiteGraph)) {
+			if (cmpGraph) {
 				for (int i = 0; i < m_numPlayers; i += m_groupSize)
 				{
 					for (int j = 0; j < m_groupSize; j++) {
@@ -160,11 +167,11 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 CC bool alldata::cnvCheckKm(ctchar* tr, ctchar* tg, int nrows)
 {
 	auto* trmk = m_trmk;
-	for (int i = 0; i < m_nGroups; i++, trmk += m_groupSize)
+	const auto step = param(t_CMP_Graph) ? 0 : 1;
+	for (int i = 0; i < m_nGroups; i++, trmk += m_groupSize, tg += step)
 	{
 		const auto itr = tr[i];
-		auto ig = param(t_bipartiteGraph) ? 0 : i;
-		const auto* pGroups = m_groups + tg[ig] * m_groupSize;
+		const auto* pGroups = m_groups + *tg * m_groupSize;
 		for (int j = 0; j < m_groupSize; j++)
 		{
 			trmk[j] = itr + pGroups[j];
@@ -180,7 +187,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 	tchar tg[MAX_GROUP_NUMBER];
 	bool ret = true;
 	memset(tg, 0, m_nGroups);
-	auto ng = param(t_bipartiteGraph) ? 1 : m_nGroups;
+	const auto ng = param(t_CMP_Graph) ? 1 : m_nGroups;
 
 	while(1)
 	{
@@ -223,7 +230,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 				const auto* pMatrToTest = result(i);
 
 				while (j--) {
-					auto* cmpTr = m_pRowGroup->getObject(j);
+					auto* cmpTr = m_pRowGroup->CStorage<tchar>::getObject(j);
 					m_playerIndex = playerIndexCycle - i * m_numPlayers;
 					const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
 					if (cmp < 0) {

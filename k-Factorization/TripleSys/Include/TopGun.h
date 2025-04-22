@@ -2,6 +2,30 @@
 #include <thread>
 #include "TripleSys.h"
 
+class RowDB : public CStorageSet<tchar>, public kSysParam {
+public:
+	RowDB(const kSysParam& param) : CStorageSet<tchar>(10, param.val[t_numPlayers]), kSysParam(param) {}
+	bool isValid(const kSysParam* param) {
+		ctchar* p0 = param->u1fCycles[0];
+		ctchar* p1 = u1fCycles[0];
+		if ((p0 && !p1) || (!p0 && p1))
+			return false;
+
+		if (p0 && p1 && (*p0 != *p1 || memcmp(p0+1, p1+1, (*p0) * MAX_CYCLES_PER_SET))) {
+			return false;
+		}
+
+		const paramID IDs[] = { t_numPlayers, t_groupSize, t_use2RowsCanonization, t_u1f, t_CMP_Graph, 
+			t_allowUndefinedCycles, t_any2RowsConvertToFirst2, t_binaryCanonizer };
+		for (int i = 0; i < countof(IDs); i++) {
+			const auto id = IDs[i];
+			if (param->val[id] != val[id])
+				return false;
+		}
+		return true;
+	}
+};
+
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
@@ -52,6 +76,7 @@ public:
 
 	K_SYS_LIBRARY_API ~TopGun();
 	int K_SYS_LIBRARY_API Run();
+	inline static K_SYS_LIBRARY_API auto secondRowDB()		{ return m_pSecondRowsDB; }
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	void myTemporaryCheck();
@@ -68,7 +93,7 @@ private:
 	int m_iMatrix;
 	int m_iPrintCount;
 	std::vector<std::thread> threads;//(NThreads);
-	CStorageSet<tchar>* m_pSecondRowsDB = NULL;
+	static RowDB* m_pSecondRowsDB;
 };
 
 class TopGunGPU : public TopGunBase {

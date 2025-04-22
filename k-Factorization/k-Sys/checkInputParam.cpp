@@ -17,18 +17,23 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 
 	const auto groupSize = val[t_groupSize];
 	const auto numGroups = numPlayers / groupSize;
+	if (numGroups < groupSize) {
+		printfRed("*** %s/%s (%d/%d) must be >= %s, Exit\n",
+			paramNames[t_numPlayers], paramNames[t_groupSize], numPlayers, groupSize, paramNames[t_groupSize]);
+		return false;
+	}
 	if (numGroups > MAX_GROUP_NUMBER) {
 		printfRed("*** Program is compiled for %d groups of players maximum, but %s/%s = %d/%d = %d is used\n",
 			MAX_GROUP_NUMBER, paramNames[t_numPlayers], paramNames[t_groupSize], numPlayers, groupSize, numGroups);
 		return false;
 	}
-	const auto useBipartite = val[t_bipartiteGraph];
-	if (useBipartite) {
+	const auto cmpGraph = val[t_CMP_Graph];
+	if (cmpGraph) {
 		const auto numDays = numPlayers / groupSize;
 		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)
 		{
 			printfRed("*** Incorrect parameters: %s=%d %s=%d %s=%d, Exit\n", 
-				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_bipartiteGraph], useBipartite);
+				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_CMP_Graph], cmpGraph);
 			return false;
 		}
 	}

@@ -83,12 +83,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const char* fHdr = getFileNameAttr(sysParam());
 	auto rTime = iTime;
 	auto cTime = iTime;
-	const auto bSavingMatricesToDisk = param(t_savingMatricesToDisk);
+	const auto iCalcModeOrg = iCalcMode;
+	const auto bSavingMatricesToDisk = iCalcModeOrg != eCalcSecondRow? param(t_savingMatricesToDisk) : false;
 	int nMatricesMax = 0;
 	int startMatrixCount = 0;
-	const auto iCalcModeOrg = iCalcMode;
 #endif
-	int nDaysResult = numDaysResult();
 	int iDaySaved = 0;
 	auto nPrecalcRows = param(t_useRowsPrecalculation);
 	m_pSecondRowsDB = secondRowsDB;
@@ -122,32 +121,40 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	//extern void aq();
 	//aq();
 	unsigned char* bResults = NULL;
-	string fName = format("{:0>10}.txt", threadNumber);
-	if (m_improveResult) {
-		const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
-		bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
-		createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, numDaysResult(), fName);
-	}
 
-	createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), fName);
-
+	COutGroupHandle* pAutGroup[3] = { NULL, NULL, NULL };
 	TableAut Result("\n\n|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
-	Result.allocateBuffer(32);
-	const auto pResFile = ResultFile.c_str();
-	Result.setOutFileName(pResFile);
-	m_pRes = &Result;
 
-	Table<tchar>* pAutGroup = NULL;
-	Generators* pAutGroupGenerators = NULL;
-	if (param(t_outAutomorphismGroup)) {
-		if (param(t_outAutomorphismGroup) & 2) {
-			pAutGroup = new Table<tchar>("\nAutomorphisms of matrix", 0, m_numPlayers, -1, m_groupSize, false, true);
-			pAutGroup->setOutFileName(pResFile, false);
+	if (bSavingMatricesToDisk) {
+		string fName = format("{:0>10}.txt", threadNumber);
+		if (m_improveResult) {
+			const auto lenResult = (m_numDays + 1) * (m_numPlayers + m_numDays);
+			bResults = new unsigned char[(m_improveResult > 1 ? 2 : 1) * lenResult];
+			createFolderAndFileName(ImprovedResultFile, sysParam(), t_ImprovedResultFolder, numDaysResult(), fName);
 		}
 
-		if (param(t_outAutomorphismGroup) & 1) {
-			pAutGroupGenerators = new Generators("\nOrbits and generators of the Aut(M)", m_numPlayers, -1, m_groupSize, false, true);
-			pAutGroupGenerators->setOutFileName(pResFile, false);
+		createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), fName);
+
+		Result.allocateBuffer(32);
+		const auto pResFile = ResultFile.c_str();
+		Result.setOutFileName(pResFile);
+		m_pRes = &Result;
+
+		const auto outAutGroup = param(t_outAutomorphismGroup);
+		if (outAutGroup) {
+			if (outAutGroup & 1) {
+				pAutGroup[0] = new Generators(outAutGroup, "\nOrbits and generators of the Aut(M) acting on elements", m_numPlayers, m_groupSize);
+				pAutGroup[0]->setOutFileName(pResFile, false);
+			}
+			if (outAutGroup & 2) {
+				pAutGroup[1] = new COutGroupHandle(outAutGroup, "\nAut(M) acting on elements", m_numPlayers, m_groupSize);
+				pAutGroup[1]->setOutFileName(pResFile, false);
+			}
+
+			if (outAutGroup & 12) {
+				pAutGroup[2] = new RowGenerators(outAutGroup, "", numDaysResult());
+				pAutGroup[2]->setOutFileName(pResFile, false);
+			}
 		}
 	}
 
@@ -712,11 +719,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 
 				if (orderOfGroup() > 1) {
-					if (pAutGroupGenerators)
-						pAutGroupGenerators->outputGenerators(this, bPrint);
-
-					if (pAutGroup)
-						pAutGroup->printTable(getObject(), false, bPrint, orderOfGroup(), "", getIndices());
+					for (int i = 0; i < countof(pAutGroup); i++) {
+						if (pAutGroup[i])
+							pAutGroup[i]->makeGroupOutput(this, bPrint);
+					}
 				}
 #endif
 				//cnvCheckNew(2, iDay);
@@ -798,8 +804,9 @@ noResult:
 	}
 	StatReportAfterThreadEnd(ResetStat, "Thread ended, processed", (int)nLoops, bFirstThread); // see stat.h to enable
 	delete[] bResults;
-	delete pAutGroup;
-	delete pAutGroupGenerators;
+
+	for (int i = 0; i < countof(pAutGroup); i++)
+		delete pAutGroup[i];
 
 #endif
 #if COUNT_GET_ROW_CALLS && !USE_CUDA

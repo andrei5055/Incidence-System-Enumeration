@@ -187,7 +187,7 @@ CC void alldata::updateIndexPlayerMinMax()
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else
-					m_indexPlayerMin[1] = m_indexPlayerMax[1] = param(t_bipartiteGraph) ? iDay * 2 + 1 : iDay + 1;
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = param(t_CMP_Graph) ? iDay * 2 + 1 : iDay + 1;
 				m_indexPlayerMax[2] = 1;
 			}
 			break;
@@ -198,19 +198,21 @@ CC void alldata::updateIndexPlayerMinMax()
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {
 					int ip1;
-					if (param(t_bipartiteGraph)) {
-						ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_bipartiteGraph) == 0) ?
+					if (param(t_CMP_Graph)) {
+						ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_CMP_Graph) == 0) ?
 						for (; ip1 < m_numPlayers; ip1++)
 							if ((ip1 % 3) && (links()[ip1] == unset))
 								break;
+						m_indexPlayerMin[1] = ip1;
+						m_indexPlayerMax[1] = m_numPlayers - m_groupSize - (m_numDays - iDay);
 					}
 					else {
 						ip1 = 3;
 						for (; ip1 < m_numPlayers; ip1++)
 							if (links()[ip1] == unset)
 								break;
+						m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 					}
-					m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 				}
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 				m_indexPlayerMax[3] = 1;
@@ -219,16 +221,28 @@ CC void alldata::updateIndexPlayerMinMax()
 			break;
 			default: {
 				int ip1 = m_groupSize + iDay - 1;
-				if (m_numPlayers != m_groupSize * m_groupSize)
-				{
+				if (param(t_CMP_Graph)) {
+					ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_partiteGraph) == 0) ?
 					for (; ip1 < m_numPlayers; ip1++)
-						if (links()[ip1] == unset)
+						if ((ip1 % m_groupSize) && (links()[ip1] == unset))
 							break;
+					m_indexPlayerMin[1] = ip1;
+					m_indexPlayerMax[1] = m_numPlayers - m_groupSize - (m_numDays - iDay);
 				}
-				m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+				else {
+					if (m_numPlayers != m_groupSize * m_groupSize)
+					{
+						for (; ip1 < m_numPlayers; ip1++)
+							if (links()[ip1] == unset)
+								break;
+					}
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+				}
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
-				for (int i = 1; i < m_groupSize; i++)
-					m_indexPlayerMax[m_groupSize * i] = i;
+				for (int i = 1; i < m_groupSize; i++) {
+					m_indexPlayerMin[m_groupSize * i] = m_indexPlayerMax[m_groupSize * i] = i;
+				}
+
 				break;
 			}
 		}

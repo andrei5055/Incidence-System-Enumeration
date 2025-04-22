@@ -86,11 +86,12 @@ CC void alldata::kmSortGroupsByFirstValue(ctchar* mi, tchar * mo) const
 		}
 	}
 }
-CC void kmSortRowsBy2ndValue(tchar* mo, ctchar* mi, char nr, char nc, tchar* tm)
+CC void alldata::kmSortRowsBy2ndValue(tchar nr, tchar* tm) const
 {
 	ctchar* pmi[MAX_PLAYER_NUMBER];
+	const auto nc = m_numPlayers;
 	memset(pmi, 0, nc * sizeof(pmi[0]));
-	auto* mic = mi;
+	const auto* mic = m_Ktmp;
 
 	for (char ir = 0; ir < nr; ir++)
 	{
@@ -100,7 +101,7 @@ CC void kmSortRowsBy2ndValue(tchar* mo, ctchar* mi, char nr, char nc, tchar* tm)
 		pmi[iv] = mic;
 		mic += nc;
 	}
-	auto* moc = mo;
+	auto* moc = m_Km;
 	for (char i = 0, j = 0; i < nc; i++)
 	{
 		mic = pmi[i];
@@ -109,6 +110,8 @@ CC void kmSortRowsBy2ndValue(tchar* mo, ctchar* mi, char nr, char nc, tchar* tm)
 			tm[j++] = tm[i];
 			memcpy(moc, mic, nc);
 			moc += nc;
+			if (j == nr)
+				break;
 		}
 	}
 }
@@ -158,14 +161,13 @@ CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len)
 		mo[i] = tr[mi[i]];
 	}
 }
-CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
-{
+CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups) const {
 	tchar* mo = m_Km;
 	const auto nc = m_numPlayers;
 	const auto len = nc * nr;
 	if (tr)
 		kmTranslate(mo, mi, tr, len);
-	else 
+	else
 		memcpy(mo, mi, len);
 
 	(this->*m_pSortGroups)(mo, nr);
@@ -173,23 +175,26 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	auto* cii = mo;
 	auto* coi = m_Ktmp;
 	for (int i = 0; i < nr; i++, coi += nc, cii += nc)
-	{
 		kmSortGroupsByFirstValue(cii, coi);
-	}
-	if (param(t_nestedGroups) > 1)
-	{
-		if (MEMCMP(mi, m_Ktmp, len) == 0)
-			return 0;
-	}
+
+	if (useNestedGroups && MEMCMP(mi, m_Ktmp, len) == 0)
+		return 0;
+
 	// result of the loop above is in m_Ktmp, sort and send it to mo
+	kmSortRowsBy2ndValue(nr, ts);
+	return 1;
+}
+CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
+{
 	tchar tm[MAX_PLAYER_NUMBER];
-	kmSortRowsBy2ndValue(mo, m_Ktmp, nr, nc, tm);
-	if (ts)
-		memcpy(ts, tm, nr);
-	auto dayMax = tm[0];
-	auto miFrom = mi;
-	coi = mo;
-	int nrr = param(t_useRowsPrecalculation);
+	if (!ts)
+		ts = tm;
+
+	if (!kmSortMatrixForReorderedPlayers(mi, nr, tr, ts, param(t_nestedGroups) > 1))
+		return 0;
+
+	const auto nc = m_numPlayers;
+	const int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_useRowsPrecalculation == eCalculateRows) {
 		switch (m_groupSize) {
@@ -199,13 +204,17 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	}
 	if (bPrecalcRow)
 		nr = nrr;
+
+	auto dayMax = ts[0];
+	auto miFrom = mi;
+	auto *coi = m_Km;
 	for (int i = 0; i < nr; i++, coi += nc, mi += nc)
 	{
-		ASSERT(tm[i] >= nc);
+		ASSERT(ts[i] >= nc);
 		switch (MEMCMP(coi, mi, nc))
 	    {
-		case -1: setPlayerIndex(tr, dayMax, tm[i], coi, mi, miFrom + nc * tm[i]); return -1;
-		case 0: if (dayMax < tm[i]) { dayMax = tm[i]; } break;
+		case -1: setPlayerIndex(tr, dayMax, ts[i], coi, mi, miFrom + nc * ts[i]); return -1;
+		case 0: if (dayMax < ts[i]) { dayMax = ts[i]; } break;
 		case 1: return coi[1] == mi[1] ? 1 : 2;
 		}
 	}

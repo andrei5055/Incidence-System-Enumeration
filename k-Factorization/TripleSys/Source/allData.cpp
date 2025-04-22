@@ -6,7 +6,7 @@ using namespace std;
 CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage,
 	bool useCheckLinksT, int improveResult, bool createImprovedMatrix) :
 	CGroupInfo(pSysParam->val[t_numPlayers], 200), CGroupUtilisation(pSysParam),
-	CycleSupport(pSysParam->val[t_numPlayers], pSysParam->val[t_bipartiteGraph]), CChecklLink(p, pSysParam),
+	CycleSupport(pSysParam->val[t_numPlayers], pSysParam->val[t_CMP_Graph]), CChecklLink(p, pSysParam),
 	m_nGroups(numPlayers() / m_groupSize),
 	m_bCheckLinkV(m_groupSize == 3 && param(t_useCheckLinksV)),
 	m_bCheckLinkT(m_groupSize == 3 && useCheckLinksT),
@@ -110,7 +110,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
-	if (param(t_bipartiteGraph))
+	if (param(t_CMP_Graph))
 		m_pProcessMatrix = &alldata::kmProcessMatrix;
 	else
 		m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);

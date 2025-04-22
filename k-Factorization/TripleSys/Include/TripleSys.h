@@ -167,7 +167,9 @@ public:
 	CC inline auto numDaysResult() const			{ return m_numDaysResult; }
 	CC inline tchar *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
+	CC inline auto transformedMatrix() const		{ return m_Km; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
+	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false) const;
 	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 private:
 	CC void Init();
@@ -247,6 +249,7 @@ private:
 	CC int kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts = NULL) const;
 	CC int kmProcessOneNot1stRow3(tchar* mo, ctchar* mi, int mind, tchar* tb, tchar* tc, ctchar* tr, int nr) const;
 	CC int kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow = 2) const;
+	CC void kmSortRowsBy2ndValue(tchar nr, tchar* tm) const;
 	CC void setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar* co, ctchar* ci, ctchar* ciFrom) const;
 	CC void setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayCurrent, int ip) const;
 	CC void releaseBinaryMatricesStorage();

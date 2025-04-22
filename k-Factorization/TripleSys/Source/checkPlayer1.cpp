@@ -57,7 +57,7 @@ PlayerOk1:
 			if (iPlayer > 5 && tmpPlayers[4] == 4 && iPlayerNumber == 5 && iPlayer < tmpPlayers[5])
 				return 6;
 #endif
-			if (!param(t_bipartiteGraph)) {
+			if (!param(t_CMP_Graph)) {
 				// AI #4 (part)
 				switch (iPlayer)
 				{
@@ -100,7 +100,7 @@ PlayerOk1:
 			}
 		}
 	}
-	if (!param(t_bipartiteGraph) && iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)
+	if (!param(t_CMP_Graph) && iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)
 		return iPlayerNumber + 1;
 	return iPlayerNumber;
 }

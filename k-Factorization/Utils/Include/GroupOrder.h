@@ -45,14 +45,13 @@ public:
 	CC inline auto groupOrder() const { return this ? m_nGroupOrder : 1; }
 	CC inline void setGroupOrder(size_t val) { m_nGroupOrder = val; }
     CC void addAutomorphism(const T degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
-        const T lenStab = UpdateOrbits(permRow, degree, pOrbits, rowPermut, calcGroupOrder);
+        UpdateOrbits(permRow, degree, pOrbits, rowPermut, calcGroupOrder);
         savePermutation(degree, permRow, pOrbits, rowPermut, savePermut);
     }
 protected:
-	T UpdateOrbits(const T* permut, const T lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
+	void UpdateOrbits(const T* permut, const T lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
 		const T lenStab = udpdateStabLength(permut, lenPerm, pOrb, calcGroupOrder, rowPermut);
 		Update_Orbits(permut, lenPerm, pOrb, lenStab);
-        return lenStab;
 	}
 
 	CC void updateGroupOrder(const T degree, const T * pOrb) {

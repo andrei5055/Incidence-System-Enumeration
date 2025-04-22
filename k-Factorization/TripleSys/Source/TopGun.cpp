@@ -2,6 +2,8 @@
 #include "Table.h"
 #include "data.h"
 
+RowDB* TopGun::m_pSecondRowsDB = NULL;
+
 TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 	numThreads = param.val[t_numThreads];
 
@@ -26,7 +28,6 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 TopGun::~TopGun() {
 	delete[] m_cntTotal;
 	delete[] threadActive;
-	delete m_pSecondRowsDB;
 }
 
 int TopGun::Run()
@@ -36,17 +37,24 @@ int TopGun::Run()
 	bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 
 	if (m_groupSize <= 3 && m_use2RowsCanonization) {
-		alldata sys(*this, paramPtr());
-		m_pSecondRowsDB = new CStorageSet<tchar>(10, numPlayers());
-		// Use:
-		// a) m_pSecondRowsDB->addObject(pSecondRow)
-		// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
-		// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
-		// 
-		resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
-		if (resultMatr == 0) {
-			printfRed("*** Cannot create second row(s) with these parameters. Exit\n");
-			myExit(1);
+		if (m_pSecondRowsDB && !m_pSecondRowsDB->isValid(paramPtr())) {
+			delete m_pSecondRowsDB;
+			m_pSecondRowsDB = NULL;
+		}
+
+		if (!m_pSecondRowsDB) {
+			alldata sys(*this, paramPtr());
+			m_pSecondRowsDB = new RowDB(*paramPtr());
+			// Use:
+			// a) m_pSecondRowsDB->addObject(pSecondRow)
+			// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
+			// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
+			// 
+			resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
+			if (resultMatr == 0) {
+				printfRed("*** Cannot create second row(s) with these parameters. Exit\n");
+				myExit(1);
+			}
 		}
 	}
 

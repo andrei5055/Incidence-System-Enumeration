@@ -53,7 +53,7 @@ public:
 											  delete[] m_pSubGroup;
 											}
 	bool CheckCanonicity(const T* result, int nLines, int *pGrpNumb, T *bResult=NULL);
-	bool CheckPermutations(const T* result, const T* pMatrix, int nRows, bool useBipartite);
+	bool CheckPermutations(const T* result, const T* pMatrix, int nRows, bool cmpGraph);
 	inline auto numDays() const				{ return m_numDays; }
 	inline auto comment() const				{ return m_pComment; }
 	inline bool improvedResultIsReady(t_bResultFlags flag = t_bResultFlags::t_readyCompletely) const {

@@ -148,7 +148,7 @@ CC bool CycleMapping::ProceedToNextMapping() {
 	// Attempt to construct the next set of directions 
 	// for the current indices of the starting elements 
 	// and the current ordering of the cycles.
-	if (!m_bBipartite) {
+	if (!m_bCMP_Graph) {
 		auto i = m_nCycles;
 		while (i-- && m_pDirection[i])
 			m_pDirection[i] = 0;
