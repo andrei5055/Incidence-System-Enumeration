@@ -180,7 +180,7 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 	if (useNestedGroups && MEMCMP(mi, m_Ktmp, len) == 0)
 		return 0;
 
-	// result of the loop above is in m_Ktmp, sort and send it to mo
+	// result of the loop above is in m_Ktmp, sort and send it to m_Km
 	kmSortRowsBy2ndValue(nr, ts);
 	return 1;
 }

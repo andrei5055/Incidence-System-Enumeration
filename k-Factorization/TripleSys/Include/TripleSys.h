@@ -237,6 +237,7 @@ private:
 	void collectCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
 	void printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);
+	void reportCurrentMatrix();
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
@@ -280,9 +281,10 @@ private:
 	int maxDaysPlayers;
 	sLongLong nLoops;
 	bool noMoreResults;
-	clock_t* m_rowTime;
+	int* m_rowTime;
 	tchar* m_pResults;
 	tchar* m_pResultsPrev;
+	tchar* m_pResultsPrev2;
 	tchar* m_pLinks;
 	tchar* selPlayers;
 	tchar* tmpPlayers;
@@ -348,6 +350,13 @@ private:
 	bool m_bRowStorageOwner;
 	CRowStorage* m_pRowStorage = NULL;
 	CRowUsage* m_pRowUsage = NULL;
+	clock_t m_iTime = 0;
+	clock_t m_rTime = 0;
+	clock_t m_cTime = 0;
+	const char* m_fHdr = NULL;
+	int m_threadNumber = 0;
+	bool m_bPrint = false;
+
 	public:
 	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
 };

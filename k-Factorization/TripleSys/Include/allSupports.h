@@ -6,7 +6,7 @@ typedef signed long long sLongLong;
 K_SYS_LIBRARY_API const char* getFileNameAttr(const kSysParam* param, const char** uf = NULL);
 void convertLinksToResult(const char* ci, char* res, int np, int gs, bool cmpGraph);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
-void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false, ctchar* co=NULL, clock_t* t=NULL);
+void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false, ctchar* co=NULL, int* t=NULL);
 
 template<typename T>
 CC void printValue(tchar v, double scale) {

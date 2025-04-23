@@ -349,8 +349,13 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		//	printTable("LR", result(nr - 1), 1, nc, m_groupSize);
 		if (ncr == 1 && param(t_p1f_counter) && (++m_p1f_counter >= param(t_p1f_counter)) && nr > 2) {
 			m_p1f_counter = 0;
-			if (!((this->*m_pCheckFunc)(nr, nr - 1)))
+			if (!((this->*m_pCheckFunc)(nr, nr - 1))) {
+#if !USE_CUDA
+				if (m_bPrint)
+					reportCurrentMatrix();
+#endif
 				return false;
+			}
 		}
 	}
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only

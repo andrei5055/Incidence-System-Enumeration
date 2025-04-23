@@ -15,10 +15,11 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
 		m_numDaysResult = m_numDays;
 
-	m_rowTime = new clock_t[m_numDays];
+	m_rowTime = new int[m_numDays];
 	m_rowTime[0] = 0;
 	m_pResults = new tchar[m_nLenResults];
-	m_pResultsPrev = new tchar[m_nLenResults];
+	m_pResultsPrev = new tchar[m_nLenResults * 2];
+	m_pResultsPrev2 = m_pResultsPrev + m_nLenResults;
 	int numPlayers64 = (m_numPlayers + 7) / 8 * 8;
 
 	selPlayers = new tchar[7 * numPlayers64];
@@ -264,10 +265,11 @@ CC alldata::~alldata() {
 
 CC void alldata::Init() {
 	memset(links(), unset, m_numPlayers * m_numPlayers);
-	memset(result()+ m_numPlayers, 0, m_nLenResults-m_numPlayers);
+	memset(result() + m_numPlayers, 0, m_nLenResults - m_numPlayers);
 	for (int i = 0; i < m_numPlayers; i++)
 		result()[i] = i;
 	memcpy(m_pResultsPrev, result(), m_nLenResults);
+	memcpy(m_pResultsPrev2, result(), m_nLenResults);
 	initCheckByGroup(1, 0);
 	u1fSetTableRow(neighbors(), result());
 

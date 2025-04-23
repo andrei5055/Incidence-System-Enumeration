@@ -1,4 +1,27 @@
 #include "TopGun.h"
+#if !USE_CUDA
+void alldata::reportCurrentMatrix()
+{
+	m_cTime = clock();
+	m_rowTime[iDay] = m_cTime - m_iTime;
+	if (maxDays < iDay || m_cTime - m_rTime > ReportInterval)
+	{
+		if (m_bPrint)
+		{
+			printf("Thread %d: Current data for %s-matrix %zd: rows=%d, build time=%d, time since start=%d\n",
+				m_threadNumber, m_fHdr, nLoops + 1, iDay + 1, m_cTime - m_rTime, m_cTime - m_iTime);
+			printResultWithHistory("Current matrix", iDay + 1);
+		}
+#if ReportCheckLinksData
+		if (bFirstThread)
+			reportCheckLinksData();
+#endif
+		StatReportPeriodically(ResetStat, "Stat current. iDay", iDay, bPrint);
+		m_rTime = m_cTime;
+		maxDays = iDay;
+	}
+}
+#endif
 
 void alldata::printPermutationMatrices(const int iMode) const {
 	if (m_groupSize != 3 || iMode < 2)
@@ -53,7 +76,7 @@ void alldata::printPermutationMatrices(const int iMode) const {
 	}
 }
 
-void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, clock_t* t)
+void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, int* t)
 {
 	int ind = 0;
 	if (name && name[0]) {
@@ -75,7 +98,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 				if (v == co[ind + i])
 					nc > 16 ? printf("%2d", v) : printf("%3d", v);
 				else
-					nc > 16 ? printfYellow("%2d", v) : printfYellow("%3d", v);
+					nc > 16 ? printfGreen("%2d", v) : printfGreen("%3d", v);
 			}
 			else if (v < 67)
 			{
@@ -96,7 +119,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 			if (makeString)
 				printf(" \"");
 			if (t)
-				printfGreen("//%7d", t[j] / 1000);
+				printfGreen("//%7d", (t[j] >= 0 ? t[j] : -(1 + t[j])) / 1000);
 			printf("\n");
 		}
 		else
@@ -107,10 +130,18 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 void alldata::printResultWithHistory(char const* name, int nRows)
 {
 	printTableColor(name, result(), nRows, m_numPlayers, m_groupSize, 0, true, m_pResultsPrev, m_rowTime);
-	memcpy(m_pResultsPrev, result(), m_nLenResults);
+	int offset = 0;
+	for (int i = 0; i < nRows; i++, offset += m_numPlayers) {
+		if (m_rowTime[i] >= 0) {
+			memcpy(m_pResultsPrev + offset, m_pResultsPrev2 + offset, m_numPlayers);
+			memcpy(m_pResultsPrev2 + offset, result() + offset, m_numPlayers);
+			m_rowTime[i] = -(m_rowTime[i] + 1);
+		}
+	}
+
 }
 
-sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t& iTime, bool bPrintSetup)
+sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t& m_iTime, bool bPrintSetup)
 {
 	const sLongLong* cntTotal = m_cntTotal;
 	const sLongLong* cnt = m_cnt;
@@ -129,7 +160,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	int time[4];
 	const int multTime[] = { 60, 60, 24 };
 	auto *pUnitTime = "smhd";
-	time[0] = (int)((clock() - iTime) / 1000. + 0.5);
+	time[0] = (int)((clock() - m_iTime) / 1000. + 0.5);
 	for (int i = 0; i < countof(multTime); i++) {
 		time[i + 1] = time[i] / multTime[i];
 		time[i] %= multTime[i];
