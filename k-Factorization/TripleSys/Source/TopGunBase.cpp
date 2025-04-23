@@ -50,7 +50,7 @@ int TopGunBase::getStartMatrices()
 {
 	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[U1FName]/MatrixID.txt
 	// StartFolder, Columns, Rows, GroupSize, U1FName - input parameters
-	// MatrixID: starts from prefix (P, K, U, PM, KM, UM), then 10 digits and extension ".txt"
+	// MatrixID: starts from prefix (P, K, U, PN, KN, UN, PC, KC, UC, PCN, KCN, UCN), then 10 digits and extension ".txt"
 	// Examples: 
 	//   Logs/16x15x2/PM0123456789.txt 
 	//   Logs/16x15x2_4444_88/U0123456789.txt
@@ -152,13 +152,13 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		const int iMax = pParSet[j].numParams;
 		switch (j) {
 		case 0:
-			fprintf(f, "\nMain parameters:\n");
+			fprintf(f, "\n%s\n", SECTION_PARAM_MAIN);
 			for (int i = 0; i < iMax; i++)
 				fprintf(f, "%30s: %d\n", paramNames[i], param(static_cast<paramID>(i)));
 			break;
 
 		case 1:
-			fprintf(f, "\nParameters of string type:\n");
+			fprintf(f, "\n%s\n", SECTION_PARAM_STRINGS);
 			for (int i = 0; i < iMax; i++) {
 				const auto ptr = paramPtr()->strVal[i];
 				if (ptr)
@@ -175,7 +175,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 				pntr = cyclesDefault;
 			}
 			if (allowUndefinedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
-				fprintf(f, "\nU1F configurations:\n");
+				fprintf(f, "\n%s\n", SECTION_PARAM_U1F_CONF);
 				char buffer[128], * pBuf = buffer;
 				const auto lenBuf = countof(buffer);
 				SPRINTFS(pBuf, buffer, lenBuf, "%c", '{');

@@ -18,12 +18,12 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 
 	if (param->val[t_CMP_Graph]) {
 		if (param->val[t_nestedGroups])
-			return *fhdr == 'K' ? "KPN" : *fhdr == 'P' ? "PPN" : "UPN";
+			return *fhdr == 'K' ? "KCN" : *fhdr == 'P' ? "PCN" : "UCN";
 		else
-			return *fhdr == 'K' ? "KP" : *fhdr == 'P' ? "PP" : "UP";
+			return *fhdr == 'K' ? "KC" : *fhdr == 'P' ? "PC" : "UC";
 	}
 	else if (param->val[t_nestedGroups])
-		return *fhdr == 'K' ? "KM" : *fhdr == 'P' ? "PM" : "UM";
+		return *fhdr == 'K' ? "KN" : *fhdr == 'P' ? "PN" : "UN";
 	return fhdr;
 }
 

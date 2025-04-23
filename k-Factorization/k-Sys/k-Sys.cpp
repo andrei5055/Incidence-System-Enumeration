@@ -97,7 +97,8 @@ static int getInteger(const string& str, size_t* pPos) {
 	if (!getValue(tmp, pPos))
 		return 1;
 
-	if (isdigit(tmp[0]))
+	const auto symb = tmp[0];
+	if (isdigit(symb) || symb == '-' || symb == '+')
 		return atoi(tmp.c_str());
 
 	return tmp == "YES" ? 1 : 0;
@@ -263,7 +264,48 @@ static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* 
 	return 1;
 }
 
-bool getParameters(ifstream& infile, const paramDescr *par, int nDescr, kSysParam &param, bool &endJob) {
+int getParameter(string &line, const paramDescr* par, int nDescr, kSysParam& param) {
+	const auto pos = line.find_first_of("=:");
+	if (pos != string::npos) {
+		auto beg = line.substr(0, pos);
+		auto end = line.substr(pos + 1);
+		rtrim(beg);
+		ltrim(end);
+		line = beg + "=" + end;
+	}
+
+	if (line.find("END_JOB") != string::npos)
+		return 2;
+
+	if (line.find("RUN_JOB") != string::npos)
+		return 1;
+
+	auto j = nDescr;
+	while (j--) {
+		auto paramNames = (par + j)->paramNames;
+		bool rc = false;
+		int i = (par + j)->numParams;
+		while (!rc && i--) {
+			if (j == 0)
+				rc = getParam<int>(line, paramNames[i], param.val + i);
+			else
+				if (j == 1)
+					rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
+				else
+					rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
+		}
+
+		if (i >= 0)
+			return 3;
+	}
+
+	if (j < 0)
+		printf("Sorry, the parameter for keyword '%s' was not found\n", line.c_str());
+
+	return 0;
+}
+
+bool getParameters(ifstream& infile, const paramDescr *par, int nDescr, kSysParam &param, bool &firstSet, bool &endJob) {
 	bool retVal = false;
 	string line;
 	while (getline(infile, line)) {		// For all the lines of the file
@@ -291,50 +333,40 @@ bool getParameters(ifstream& infile, const paramDescr *par, int nDescr, kSysPara
 				continue;
 
 		}
-
-		pos = line.find_first_of("=:");
-		if (pos != string::npos) {
-			auto beg = line.substr(0, pos);
-			auto end = line.substr(pos + 1);
-			rtrim(beg);
-			transform(beg.begin(), beg.end(), beg.begin(), ::toupper);
-			ltrim(end);
-			line = beg + "=" + end;
-		}
-		else
-			transform(line.begin(), line.end(), line.begin(), ::toupper);
-
-		if (line.find("END_JOB") != string::npos) {
-			endJob = true;
-			break;
-		}
-
-		if (line.find("RUN_JOB") != string::npos)
-			break;
 		
-		auto j = nDescr;
-		while (j--) {
-			auto paramNames = (par+j)->paramNames;
-			bool rc = false;
-			int i = (par+j)->numParams;
-			while (!rc && i--) {
-				if (j == 0)
-					rc = getParam<int>(line, paramNames[i], param.val + i);
-				else
-				if (j == 1)
-					rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
-				else
-					rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
-			}
-
-			if (i >= 0) {
-				retVal = true;  // at least one parameter has been changed
-				break;
+		if (firstSet) {
+			firstSet = !line.starts_with("PrintMatrices");
+			if (firstSet) {
+				firstSet = line != SECTION_PARAM_MAIN;
+				continue;
 			}
 		}
 
-		if (j < 0)
-			printf("Sorry, the parameter for keyword '%s' was not found\n", line.c_str());
+		if (line == SECTION_PARAM_STRINGS || line == SECTION_PARAM_U1F_CONF)
+			continue;
+
+		transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+		string subLine;
+		while (!line.empty()) {
+			const auto pos = line.find(";");
+			if (pos != string::npos) {
+				subLine = line.substr(0, pos);
+				line = line.substr(pos+1);
+			}
+			else {
+				subLine = line;
+				line = "";
+			}
+
+			trim(subLine);
+			switch (getParameter(subLine, par, nDescr, param)) {
+			case 2: endJob = true;
+			case 1: return retVal;
+			case 3: retVal = true;		// at least one parameter has been changed
+			default: continue;
+			}
+		}
 	}
 
 	return retVal;
@@ -465,10 +497,11 @@ int main(int argc, const char* argv[])
 	auto& testName = strVal[t_testName];
 	int numErrors = 0;
 	int numTests = 0;
+	bool firstSet = true;
 	bool endJob = false;
 	do {
 		if (infile) {
-			if (!getParameters(*infile, par, countof(par), param, endJob))
+			if (!getParameters(*infile, par, countof(par), param, firstSet, endJob))
 				break;
 		}
 

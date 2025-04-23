@@ -101,8 +101,8 @@ public:
 	COutGroupHandle(int outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
 		Table<tchar>(name, 0, degree, -1, groupSize, false, true) {}
 	virtual ~COutGroupHandle()	{}
-	virtual void makeGroupOutput(const CGroupInfo* pGrpInfo, bool outToScreen = false) {
-		printTable(pGrpInfo->getObject(), false, outToScreen, pGrpInfo->orderOfGroup(), "", pGrpInfo->getIndices());
+	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
+		printTable(pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected: 
 	const int m_outGroupMask;
@@ -113,9 +113,10 @@ public:
 	Generators(int outGroupMask, char const* name, int degree, int groupSize) :
 		CStorageSet<tchar>(10, degree),
 		COutGroupHandle(outGroupMask, name, degree, groupSize) {};
-	void makeGroupOutput(const CGroupInfo* pGroup, bool outToScreen = false) override;
+	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
 protected:
 	inline auto groupDegree() const { return m_nc; }
+	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2) const;
 private:
 	CC void savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut);
 	tchar m_lenStab;
@@ -125,7 +126,7 @@ class RowGenerators : public Generators {
 public:
 	RowGenerators(int outGroupMask, char const* name, int rowNumb) : Generators(outGroupMask, name, rowNumb, 0) {}
 	~RowGenerators()					{ delete m_pRowGroup; }
-	void makeGroupOutput(const CGroupInfo* pGroup, bool outToScreen = false) override;
+	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	const char* name() override         { 
 		return m_sName.c_str(); 
 	}

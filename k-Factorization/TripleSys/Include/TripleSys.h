@@ -130,7 +130,7 @@ typedef struct TrCycles {
 
 typedef CRepository<tchar> CBinaryMatrixStorage;
 
-class alldata : public CGroupUtilisation, private CGroupInfo, CycleSupport, CChecklLink {
+class alldata : public CGroupUtilisation, public CChecklLink , private CGroupInfo, CycleSupport{
 	typedef bool(alldata::*checkU1F)(int, int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;

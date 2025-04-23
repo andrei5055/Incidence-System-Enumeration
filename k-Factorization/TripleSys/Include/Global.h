@@ -108,4 +108,6 @@ private:
 	bool m_b_dataOwner;
 };
 
-
+#define SECTION_PARAM_MAIN		"Main parameters:"
+#define SECTION_PARAM_STRINGS	"Parameters of string type:"
+#define SECTION_PARAM_U1F_CONF	"U1F configurations:"

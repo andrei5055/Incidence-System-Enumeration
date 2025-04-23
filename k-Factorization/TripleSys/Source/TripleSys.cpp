@@ -687,10 +687,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
-				printf("%5zd: %s-Matrix, build time=%d, time since start=%d\n", nLoops, fHdr, cTime - mTime, cTime - iTime);
+				printf("\n%5zd: %s-Matrix, build time=%d, time since start=%d\n", nLoops, fHdr, cTime - mTime, cTime - iTime);
 #else
 				extern int matr_cntr;
-				printf("%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, fHdr, matr_cntr);
+				printf("\n%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, fHdr, matr_cntr);
 #endif
 			}
 

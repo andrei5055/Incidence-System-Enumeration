@@ -77,11 +77,11 @@ public:
 	CC bool cycleLengthOk(tchar length) const;
 	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles) const;
 	CC bool checkLinksV2(ctchar* lnks, int nr) const;
+	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;
 	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
-	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
 	CC inline void setAllowUndefinedCycles(int nrows)	{ m_AllowUndefinedCycles = /**m_groupSize != 2 && nrows != 2 &&**/ m_allowUndefinedCycles; }
 	CC inline bool allowUndefinedCycles() const		{ return m_AllowUndefinedCycles; }
