@@ -11,7 +11,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 	const auto* neighbors0 = neighbors(0);
 	const auto* neighbors1 = neighbors(1);
 	// get first row
-	const auto cmpGraph = param(t_CMP_Graph);
+	const auto cbmpGraph = !completeGraph();
 	for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
 		const bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
 		for (int indRow = 0; indRow < iRowLast; indRow++)
@@ -28,7 +28,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						for (int itr = 0; itr < nTrs; itr++) {
 							tchar* trt = pTestedTRs->getObject(itr);
 
-							const int icmp = nrows < 3 ? 0 : cmpGraph ? kmProcessMatrix(result(), trt, nrows) : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
+							const int icmp = nrows < 3 ? 0 : cbmpGraph ? kmProcessMatrix(result(), trt, nrows) : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
 							//const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
 							m_TrInd++;
 							if (icmp < 0)
@@ -57,7 +57,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						continue; // print only
 					}
 #endif
-					const int icmp = nrows < 3 ? 0 : cmpGraph ? kmProcessMatrix(result(), tr, nrows) : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
+					const int icmp = nrows < 3 ? 0 : cbmpGraph ? kmProcessMatrix(result(), tr, nrows) : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
 					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {

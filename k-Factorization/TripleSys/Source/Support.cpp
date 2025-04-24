@@ -187,7 +187,7 @@ CC void alldata::updateIndexPlayerMinMax()
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else
-					m_indexPlayerMin[1] = m_indexPlayerMax[1] = param(t_CMP_Graph) ? iDay * 2 + 1 : iDay + 1;
+					m_indexPlayerMin[1] = m_indexPlayerMax[1] = completeGraph() ? iDay + 1 : iDay * 2 + 1;
 				m_indexPlayerMax[2] = 1;
 			}
 			break;
@@ -198,8 +198,8 @@ CC void alldata::updateIndexPlayerMinMax()
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {
 					int ip1;
-					if (param(t_CMP_Graph)) {
-						ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_CMP_Graph) == 0) ?
+					if (!completeGraph()) {
+						ip1 = result(iDay - 1)[1] + 1; // must be the same for completeGraph() ?
 						for (; ip1 < m_numPlayers; ip1++)
 							if ((ip1 % 3) && (links()[ip1] == unset))
 								break;
@@ -221,7 +221,7 @@ CC void alldata::updateIndexPlayerMinMax()
 			break;
 			default: {
 				int ip1 = m_groupSize + iDay - 1;
-				if (param(t_CMP_Graph)) {
+				if (!completeGraph()) {
 					ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_partiteGraph) == 0) ?
 					for (; ip1 < m_numPlayers; ip1++)
 						if ((ip1 % m_groupSize) && (links()[ip1] == unset))

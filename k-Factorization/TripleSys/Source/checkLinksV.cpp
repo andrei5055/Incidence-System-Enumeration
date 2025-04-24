@@ -94,7 +94,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 {
 	if (nv <= 0)
 		return true;
-	const auto cmpGraph = param(t_CMP_Graph) > 0;
+	const auto cbmpGraph = !completeGraph();
 	if (nv == 2 && ind != -1)
 	{
 		ASSERT(vo + 1 - m_vo >= m_numPlayers,
@@ -104,7 +104,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 		case 0:
 			if (c[v[1] * m_numPlayers + v[2]] != unset)
 				return false;
-			if (cmpGraph) {
+			if (cbmpGraph) {
 				if ((v[1] % 3) == (v[2] % 3))
 					return false;
 			}
@@ -114,7 +114,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 		case 1:
 			if (c[v[0] * m_numPlayers + v[2]] != unset)
 				return false;
-			if (cmpGraph) {
+			if (cbmpGraph) {
 				if ((v[0] % 3) == (v[2] % 3))
 					return false;
 			}
@@ -124,7 +124,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 		case 2:
 			if (c[v[0] * m_numPlayers + v[1]] != unset)
 				return false;
-			if (cmpGraph) {
+			if (cbmpGraph) {
 				if ((v[0] % 3) == (v[1] % 3))
 					return false;
 			}
@@ -148,7 +148,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 	const auto* ct0 = c + t[0] * m_numPlayers;
 	for (int i = 1; i < nv; i++)
 	{
-		if (cmpGraph) {
+		if (cbmpGraph) {
 			if ((t[0] % 3) == (t[i] % 3))
 				continue;
 		}

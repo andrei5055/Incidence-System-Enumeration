@@ -36,7 +36,7 @@ bool alldata::improveMatrix(int improveResult, tchar* bResults, const int lenRes
 #if CHECK_PERMUTATIONS
 			int errLine, errGroup, dubLine;
 			char lnks[MAX_PLAYER_NUMBER * MAX_PLAYER_NUMBER];
-			if (!_CheckMatrix((char *)bRes1, nDays, numPlayers(), m_groupSize, lnks, true, &errLine, &errGroup, &dubLine, param(t_CMP_Graph)))
+			if (!_CheckMatrix((char *)bRes1, nDays, numPlayers(), m_groupSize, lnks, true, &errLine, &errGroup, &dubLine, sysParam()->numFactors()))
 				outputError();
 #endif
 			// Swap the the best results buffers
@@ -53,7 +53,7 @@ bool alldata::improveMatrix(int improveResult, tchar* bResults, const int lenRes
 			*pbRes1 = bestResult;
 
 #if CHECK_PERMUTATIONS && 0
-		if (!m_pCheckCanon->CheckPermutations(inputMatrix, bestResult, nDays, param(t_CMP_Graph))) {
+		if (!m_pCheckCanon->CheckPermutations(inputMatrix, bestResult, nDays, sysParam()->numFactors())) {
 			outputError();
 			abort();
 		}

@@ -44,7 +44,7 @@ CC bool CChecklLink::checkLinks(tchar *pLinks, int id, bool printLinksStatTime)
 	tchar* lnks = pLinks;
 
 	PrepareIDs();
-	const auto cmpGraph = param(t_CMP_Graph) > 0;
+	const auto cbmpGraph = !completeGraph();
 	int iOffset = 5;
 	int ie = m_numPlayers;
 	for (int i0 = 0; i0 < ie; i0++)
@@ -56,7 +56,7 @@ CC bool CChecklLink::checkLinks(tchar *pLinks, int id, bool printLinksStatTime)
 		for (int j = 0; j < m_numPlayers; j++)
 		{
 			if (ci[j] == unset && i != j) {
-				if (cmpGraph) {
+				if (cbmpGraph) {
 					if ((j % 3) == ip3)
 						continue;
 				}

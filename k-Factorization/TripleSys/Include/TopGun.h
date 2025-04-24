@@ -15,7 +15,7 @@ public:
 			return false;
 		}
 
-		const paramID IDs[] = { t_numPlayers, t_groupSize, t_use2RowsCanonization, t_u1f, t_CMP_Graph, 
+		const paramID IDs[] = { t_numPlayers, t_groupSize, t_use2RowsCanonization, t_u1f, t_CBMP_Graph,
 			t_allowUndefinedCycles, t_any2RowsConvertToFirst2, t_binaryCanonizer };
 		for (int i = 0; i < countof(IDs); i++) {
 			const auto id = IDs[i];

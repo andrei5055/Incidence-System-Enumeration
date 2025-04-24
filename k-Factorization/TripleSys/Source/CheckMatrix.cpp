@@ -28,9 +28,8 @@ bool checkMatrix1(tchar* lnks, int ln, int nc, int gs, const tchar* matrix, int 
 	lnks[a * nc + b] = lnks[b * nc + a] = ln;
 	return true;
 }
-bool _CheckMatrix(const tchar* matrix, int nrows, int nc, int gs, tchar *lnks, bool printError, int* errLine, int* errGroup, int* dubLine, bool cmpGraph)
+bool _CheckMatrix(const tchar* matrix, int nrows, int nc, int gs, tchar *lnks, bool printError, int* errLine, int* errGroup, int* dubLine, int nr)
 {
-	const auto nr = cmpGraph ? nc / gs : (nc - 1) / (gs - 1);
 	if (gs <= 1 || (nr < nrows))
 	{
 		printf("CheckMatrix: incorrect parameters (nrows=%d, ncolumns=%d, group size=%d), job aborted\n", nrows, nc, gs);
@@ -59,5 +58,5 @@ bool _CheckMatrix(const tchar* matrix, int nrows, int nc, int gs, tchar *lnks, b
 }
 bool alldata::CheckMatrix(const tchar* matrix, int nl, int nc, int gs, bool printError, int* errLine, int* errGroup, int* dubLine)
 {
-	return _CheckMatrix(matrix, nl, nc, gs, links(), printError, errLine, errGroup, dubLine, param(t_CMP_Graph));
+	return _CheckMatrix(matrix, nl, nc, gs, links(), printError, errLine, errGroup, dubLine, sysParam()->numFactors());
 }

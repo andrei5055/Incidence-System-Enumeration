@@ -13,7 +13,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 
 	if (l0[iPlayerNumber] != unset)
 		return iPlayerNumber + 1;
-	if (iPlayer == 1 && !param(t_CMP_Graph) && (m_useRowsPrecalculation != eCalculateRows || iDay != 3))
+	if (iPlayer == 1 && completeGraph() && (m_useRowsPrecalculation != eCalculateRows || iDay != 3))
 	{
 		// AI statement #15
 		for (int i = 1; i < iPlayerNumber; i++)

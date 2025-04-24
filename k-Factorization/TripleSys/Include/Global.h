@@ -20,7 +20,7 @@ typedef enum {
 	// indices of parameters with the integer type values
 	t_numPlayers,			 
 	t_groupSize,
-	t_CMP_Graph,			// Complete Multi-Partite Graph
+	t_CBMP_Graph,			// Complete Balanced Multi-Partite Graph
 	t_u1f,
 	t_use2RowsCanonization,
 	t_submatrixGroupOrderMin,
@@ -88,8 +88,15 @@ public:
 		if (m_b_dataOwner) 
 		   delete[] u1fCycles[0]; 
 	}
+	CC inline auto partiteNumb() const		{ return val[t_CBMP_Graph]; }
+	CC inline auto completeGraph() const	{ return partiteNumb() == 1; }
+	inline auto partitionSize() const		{ return val[t_numPlayers] / partiteNumb(); }
+	CC inline auto numFactors() const		{ return m_numFactors; }
+	void setup();
+
 	int val[t_lastParam];
 	int groupSizeFactorial;
+	int m_numFactors;
 	std::string* strVal[t_lastStrParam];
 	tchar* u1fCycles[1];
 	paramDescr* pParamDescr;

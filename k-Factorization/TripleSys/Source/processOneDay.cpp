@@ -1,8 +1,6 @@
 #include "TripleSys.h"
 CC bool alldata::processOneDay()
 {   // returns: false - go to prev day, true - day processed
-	if (iPlayer >= m_numPlayers)
-		return true;
 	while (iPlayer < m_numPlayers)
 	{
 #if 0
@@ -41,10 +39,8 @@ CC bool alldata::processOneDay()
 			//	printf("%d p=%d v=%d\n", iDay, iPlayer, iPlayerNumber);
 			if (iPlayer + 1 < m_numPlayers)// && iPlayerNumber != indexPlayer[iPlayer])
 				indexPlayer[iPlayer + 1] = m_indexPlayerMin[iPlayer + 1];
-			indexPlayer[iPlayer] = iPlayerNumber;
-			tmpPlayers[iPlayer] = iPlayerNumber;
-			selPlayers[iPlayerNumber] = iPlayer; // check values of selPlayers only for equal or not to unset (-1)
-			iPlayer++;
+			tmpPlayers[iPlayer] = indexPlayer[iPlayer] = iPlayerNumber;
+			selPlayers[iPlayerNumber] = iPlayer++; // check values of selPlayers only for equal or not to unset (-1)
 		}
 		else
 		{

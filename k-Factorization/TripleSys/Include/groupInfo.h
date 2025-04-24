@@ -13,7 +13,7 @@ public:
 		m_groupSize(p.val[t_groupSize]),
 		m_use2RowsCanonization(p.val[t_use2RowsCanonization]),
 		m_groupSizeFactorial(p.groupSizeFactorial),
-		m_numDays(p.val[t_CMP_Graph] ? m_numPlayers / m_groupSize : (m_numPlayers - 1) / (m_groupSize - 1)),
+		m_numDays(p.numFactors()),
 		m_allowUndefinedCycles(p.val[t_allowUndefinedCycles]) {}
 protected:
 	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
@@ -78,6 +78,7 @@ public:
 	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles) const;
 	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
+	CC inline auto completeGraph() const				{ return m_param->completeGraph();}
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;
 	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
@@ -132,8 +133,7 @@ protected:
 		m_bDirection(p->val[t_autDirection] == 0) {
 		const auto& val = p->val;
 		const auto numPlayers = val[t_numPlayers];
-		const auto groupSize = val[t_groupSize];
-		const auto nRows = val[t_CMP_Graph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+		const auto nRows = p->numFactors();
 		if ((val[t_printMatrices] & 16) || val[t_autSaveTestedTrs])
 			m_pTrRepo = new CTrRepo(nRows, numPlayers);
 

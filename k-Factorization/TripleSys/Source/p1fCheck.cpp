@@ -270,7 +270,7 @@ CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2
 }
 CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2, int ind) const
 {
-	if (param(t_CMP_Graph))
+	if (!completeGraph())
 	{
 		auto v0 = getV0();
 		ctchar* r = res1;
@@ -629,7 +629,7 @@ CC int alldata::getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2
 }
 CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2) const
 {
-	if (!param(t_CMP_Graph)) {
+	if (completeGraph()) {
 		const auto nv = getAllV0(allv, maxv, ir1, ir2, pt2);
 		return nv;
 	}

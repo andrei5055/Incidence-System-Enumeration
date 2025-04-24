@@ -6,9 +6,11 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 		*uf = "";
 
 	fhdr = "K";
-	if (param->val[t_u1f]) {
-		if (!param->val[t_allowUndefinedCycles] &&
-			(!param->u1fCycles[0] || (param->u1fCycles[0][0] == 1 && param->u1fCycles[0][1] == param->val[t_numPlayers])))
+	const auto& val = param->val;
+	if (val[t_u1f]) {
+		const auto u1fCycles = param->u1fCycles[0];
+		if (!val[t_allowUndefinedCycles] &&
+			(!u1fCycles || (u1fCycles[0] == 1 && u1fCycles[1] == val[t_numPlayers])))
 			fhdr = "P";
 		else
 			fhdr = "U";
@@ -16,13 +18,13 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 	if (uf)
 		*uf = param->strVal[t_UFname] ? param->strVal[t_UFname]->c_str() : "";
 
-	if (param->val[t_CMP_Graph]) {
-		if (param->val[t_nestedGroups])
+	if (!param->completeGraph()) {
+		if (val[t_nestedGroups])
 			return *fhdr == 'K' ? "KCN" : *fhdr == 'P' ? "PCN" : "UCN";
 		else
 			return *fhdr == 'K' ? "KC" : *fhdr == 'P' ? "PC" : "UC";
 	}
-	else if (param->val[t_nestedGroups])
+	else if (val[t_nestedGroups])
 		return *fhdr == 'K' ? "KN" : *fhdr == 'P' ? "PN" : "UN";
 	return fhdr;
 }
@@ -86,13 +88,13 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		updateGroup(res);
 		day = 1;
 	}
-	const auto cmpGraph = param(t_CMP_Graph);
+	const auto cbmpGraph = !completeGraph();
 	for (; day < m_NumDaysToTransform; day++)
 	{
 		if (day) {
 			ttr = ttr1;
 			const auto* resn = result(n = m_DayIdx[day]);
-			if (cmpGraph) {
+			if (cbmpGraph) {
 				for (int i = 0; i < m_numPlayers; i += m_groupSize)
 				{
 					for (int j = 0; j < m_groupSize; j++) {
@@ -167,7 +169,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 CC bool alldata::cnvCheckKm(ctchar* tr, ctchar* tg, int nrows)
 {
 	auto* trmk = m_trmk;
-	const auto step = param(t_CMP_Graph) ? 0 : 1;
+	const auto step = completeGraph() ? 1 : 0;
 	for (int i = 0; i < m_nGroups; i++, trmk += m_groupSize, tg += step)
 	{
 		const auto itr = tr[i];
@@ -187,7 +189,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 	tchar tg[MAX_GROUP_NUMBER];
 	bool ret = true;
 	memset(tg, 0, m_nGroups);
-	const auto ng = param(t_CMP_Graph) ? 1 : m_nGroups;
+	const auto ng = completeGraph() ? m_nGroups : 1;
 
 	while(1)
 	{

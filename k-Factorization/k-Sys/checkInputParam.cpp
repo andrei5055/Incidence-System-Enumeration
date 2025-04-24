@@ -27,13 +27,13 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			MAX_GROUP_NUMBER, paramNames[t_numPlayers], paramNames[t_groupSize], numPlayers, groupSize, numGroups);
 		return false;
 	}
-	const auto cmpGraph = val[t_CMP_Graph];
-	if (cmpGraph) {
+	const auto cbmpGraph = val[t_CBMP_Graph] > 1;
+	if (cbmpGraph) {
 		const auto numDays = numPlayers / groupSize;
 		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)
 		{
 			printfRed("*** Incorrect parameters: %s=%d %s=%d %s=%d, Exit\n", 
-				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_CMP_Graph], cmpGraph);
+				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_CBMP_Graph], cbmpGraph);
 			return false;
 		}
 	}

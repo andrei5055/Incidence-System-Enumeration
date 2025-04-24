@@ -8,7 +8,7 @@
 const char* intParamNames[]{
 	"nPlayers",
 	"GroupSize",
-	"CMP_Graph",           // Complete Multi-Patrite Graph
+	"CBMP_Graph",           // Complete Balanced Multi-Partite Graph
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
 	"SubmatrixGroupOrderMin",
@@ -401,6 +401,14 @@ string getUF(const tchar * pU1F) {
 int factorial(int n) {
 	return n > 2 ? n * factorial(n - 1) : n;
 }
+
+void kSysParam::setup() {
+	if (!val[t_CBMP_Graph])
+		val[t_CBMP_Graph] = 1;
+	groupSizeFactorial = factorial(val[t_groupSize]);
+	m_numFactors = (val[t_numPlayers] - (completeGraph() ? 1 : partitionSize())) / (val[t_groupSize] - 1);
+}
+
 int main(int argc, const char* argv[])
 {
 	std::cout << "k - Sys 10.61\n";
@@ -524,7 +532,7 @@ int main(int argc, const char* argv[])
 				if (!*(++pAutLevel)) {
 					*pAutLevel = val[t_nRowsInResultMatrix];
 					if (!*pAutLevel)
-						*pAutLevel = val[t_CMP_Graph] ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+						*pAutLevel = val[t_CBMP_Graph] > 1 ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
 
 					if (i == 2 && val[t_nRowsInResultMatrix] > 2)
 						--*pAutLevel;
@@ -579,7 +587,7 @@ int main(int argc, const char* argv[])
 
 			bool testOK = checkInputParam(param, intParamNames);
 			if (testOK) {
-				param.groupSizeFactorial = factorial(groupSize);
+				param.setup();
 				TopGunBase* topGun;
 				if (useGPU)
 					topGun = new TopGunGPU(param);
