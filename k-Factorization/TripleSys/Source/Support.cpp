@@ -203,8 +203,16 @@ CC void alldata::updateIndexPlayerMinMax()
 						for (; ip1 < m_numPlayers; ip1++)
 							if ((ip1 % 3) && (links()[ip1] == unset))
 								break;
-						m_indexPlayerMin[1] = ip1;
-						m_indexPlayerMax[1] = m_numPlayers - m_groupSize - (m_numDays - iDay);
+						m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+						if (iDay == 1) {
+							m_indexPlayerMin[2] = m_indexPlayerMax[2] = 8;
+							m_indexPlayerMax[4] = 11;
+						}
+						else {
+							m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
+							m_indexPlayerMax[2] = m_numPlayers - 1;
+							m_indexPlayerMax[4] = m_numPlayers - 1;
+						}
 					}
 					else {
 						ip1 = 3;
@@ -212,9 +220,9 @@ CC void alldata::updateIndexPlayerMinMax()
 							if (links()[ip1] == unset)
 								break;
 						m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
+						m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 					}
 				}
-				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 				m_indexPlayerMax[3] = 1;
 				m_indexPlayerMax[6] = 2;
 			}

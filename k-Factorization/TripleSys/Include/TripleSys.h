@@ -163,7 +163,6 @@ public:
 		orbits()->resetOrbits((ctchar*)result());
 #endif
 	}
-	CC bool p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const;
 	CC inline auto numDaysResult() const			{ return m_numDaysResult; }
 	CC inline tchar *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }

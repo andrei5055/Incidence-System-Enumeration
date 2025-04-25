@@ -81,6 +81,8 @@ int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowG
 void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	if (!m_pRowGroup)
 		m_pRowGroup = new CGroupInfo(lenObject(), 10);
+	else
+		m_pRowGroup->releaseAllObjects();
 
 	char errBuf[48], *pErr = NULL;
 	const auto retVal = testNestedGroups(pElemGroup, m_pRowGroup, lenObject());

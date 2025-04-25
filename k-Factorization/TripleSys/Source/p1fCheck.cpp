@@ -266,7 +266,7 @@ CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2
 	case 3:
 		return u1fGetCycleLength3(trc, ncr, t1, t2, res1, res2, ind);
 	}
-	return 0;
+	return -1;
 }
 CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2, int ind) const
 {
@@ -286,7 +286,7 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar 
 			if (cyclesNotOk(ncr, ncycles, trc->length))
 				return ncycles;
 		}
-		return 0;
+		return 1;
 	}
 	tchar us[MAX_PLAYER_NUMBER];
 	tchar v[MAX_GROUP_NUMBER];
@@ -320,20 +320,18 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar 
 		}
 	}
 
-	return 0;
-}
-
-CC bool alldata::p1fCheck3(ctchar* rowi, ctchar* rowj, ctchar* neighborsi, ctchar* neighborsj) const {
-	TrCycles trc;
-	const auto ncycles = u1fGetCycleLength3(&trc, 1, neighborsi, neighborsj, rowi, rowj);
-	// in case of incorrect cycle length u1fGetCycleLength reports only one cycle (with error)
-	return (ncycles == 1 && trc.length[0] == m_numPlayers);
+	return ncycles;
 }
 
 CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
 	if (m_groupSize > 3)
 		return true;
+	/**
+	static tchar a[] = { 0,4,8,1,3,11,2,6,10,5,7,9,12,16,20,13,17,18,14,21,25,15,22,26,19,23,24 };
+	//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
+	if (memcmp(a, result(1), sizeof(a)) == 0)
+		nr = nr;**/
 	setAllowUndefinedCycles(nr);
 	if (!pNeedOutput && allowUndefinedCycles())
 		return true;
@@ -341,7 +339,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 	const auto nc = m_numPlayers;
 	const auto ncr = pNeedOutput ? MAX_3PF_SETS : 1;
 
-	memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
+	memset(m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
 
 	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3 && !pNeedOutput)
 	{

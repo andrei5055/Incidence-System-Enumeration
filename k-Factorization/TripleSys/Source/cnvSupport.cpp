@@ -95,11 +95,11 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 	setAllowUndefinedCycles(nrows);
-	/*
-	static tchar a[] = { 0, 4, 8,  1, 5, 6,  2, 9,13,  3,10,14,  7,11,12 };
+	/**
+	static tchar a[] = {0,4,8,1,3,11,2,6,10,5,7,9,12,16,20,13,17,18,14,21,25,15,22,26,19,23,24};
 	//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
 	if (memcmp(a, result(1), sizeof(a)) == 0)
-		ip1 = ip1;*/
+		ip1 = ip1;**/
 	while (1)
 	{
 		//if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
@@ -198,6 +198,14 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								do {
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
+										auto a = tr[0] % 3, b = tr[1] % 3, c = tr[2] % 3;
+										auto i = 0;
+										for (i = 3; i < m_numPlayers; i += 3) {
+											if((tr[i] % 3) != a || (tr[i + 1] % 3) != b || (tr[i + 2] % 3) != c)
+												break;
+										}
+										if (i != m_numPlayers)
+											continue;
 										m_TrInd++;
 										nTrsForPair++;
 										int icmp;

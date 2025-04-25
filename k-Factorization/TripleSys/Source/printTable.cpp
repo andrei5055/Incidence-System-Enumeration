@@ -129,7 +129,6 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 
 void alldata::printResultWithHistory(char const* name, int nRows)
 {
-	printTableColor(name, result(), nRows, m_numPlayers, m_groupSize, 0, true, m_pResultsPrev, m_rowTime);
 	int offset = 0;
 	for (int i = 0; i < nRows; i++, offset += m_numPlayers) {
 		if (m_rowTime[i] >= 0) {
@@ -138,6 +137,7 @@ void alldata::printResultWithHistory(char const* name, int nRows)
 			m_rowTime[i] = -(m_rowTime[i] + 1);
 		}
 	}
+	printTableColor(name, result(), nRows, m_numPlayers, m_groupSize, 0, true, m_pResultsPrev, m_rowTime);
 
 }
 

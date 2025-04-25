@@ -19,12 +19,12 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 		*uf = param->strVal[t_UFname] ? param->strVal[t_UFname]->c_str() : "";
 
 	if (!param->completeGraph()) {
-		if (val[t_nestedGroups])
+		if (val[t_nestedGroups] > 1)
 			return *fhdr == 'K' ? "KCN" : *fhdr == 'P' ? "PCN" : "UCN";
 		else
 			return *fhdr == 'K' ? "KC" : *fhdr == 'P' ? "PC" : "UC";
 	}
-	else if (val[t_nestedGroups])
+	else if (val[t_nestedGroups] > 1)
 		return *fhdr == 'K' ? "KN" : *fhdr == 'P' ? "PN" : "UN";
 	return fhdr;
 }
