@@ -8,6 +8,7 @@
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
+#define TestOption1 3
 
 #define UseRowsPrecalculation  0 // The number of first rows of the matrix from which we start to pre-calculate the remaining rows. 
                                  // ntd: change to parameter, check input params that numbers of rows in input is 3 or less

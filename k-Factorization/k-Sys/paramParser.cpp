@@ -10,13 +10,25 @@ bool case_insensitive_match(char a, char b) {
         std::tolower(static_cast<unsigned char>(b));
 }
 
-bool case_insensitive_find(const std::string& haystack, const std::string& needle) {
-    auto it = std::search(
+size_t case_insensitive_find(const std::string& haystack, const std::string& needle) {
+    const auto it = std::search(
         haystack.begin(), haystack.end(),
         needle.begin(), needle.end(),
         case_insensitive_match
     );
-    return it != haystack.end();
+    
+	if (it != haystack.end())
+		return static_cast<size_t>(std::distance(haystack.begin(), it));
+	else
+		return string::npos;
+}
+
+bool iequals(const std::string& a, const std::string& b) {
+	return a.size() == b.size() &&
+		std::equal(a.begin(), a.end(), b.begin(), [](char c1, char c2) {
+		return std::tolower(static_cast<unsigned char>(c1)) ==
+			std::tolower(static_cast<unsigned char>(c2));
+			});
 }
 
 static size_t getValue(string& tmp, size_t* pPos) {
@@ -56,7 +68,7 @@ static int getInteger(const string& str, size_t* pPos) {
 
 static size_t find(const string& str, const char* strValue)
 {
-	const size_t pos = str.find(strValue);
+	const size_t pos = case_insensitive_find(str, strValue);
 	return pos != string::npos ? pos + strlen(strValue) : pos;
 }
 
@@ -191,7 +203,7 @@ static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* 
 		return 0;
 
 	string tmp = str.substr(0, pos);
-	if (tmp != pKeyWord)
+	if (!iequals(tmp, pKeyWord))
 		return 0;
 
 	tmp = str.substr(pos);
@@ -227,7 +239,7 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 
 	static const char* jobTask[] = { "RUN_JOB", "END_JOB" };
 	for (int j = 0; j < 2; j++) {
-		if (case_insensitive_find(line, jobTask[j]))
+		if (case_insensitive_find(line, jobTask[j]) != string::npos)
 			return j + 1;
 	}
 

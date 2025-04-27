@@ -663,6 +663,17 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					m_pSecondRowsDB->addObject(result(1));
 				if (m_bPrint)
 					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
+				/**
+				char stat[128];
+				bool needOutput = false;
+				matrixStat(neighbors(), iDay, &needOutput);
+				if (needOutput)
+					m_matrixDB.addMatrix(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+				else
+					stat[0] = '\0';
+				printf("%s\n", stat);**/
+				//if (nLoops > 2)
+					//goto noResult;
 				goto cont1;
 			}
 

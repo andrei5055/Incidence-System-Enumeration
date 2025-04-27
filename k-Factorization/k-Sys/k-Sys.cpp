@@ -194,6 +194,7 @@ int main(int argc, const char* argv[])
 				}
 			}
 
+			param.setup();
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
 			if (val[t_u1f]) {
 				if (!val[t_use2RowsCanonization])
@@ -238,7 +239,6 @@ int main(int argc, const char* argv[])
 
 			bool testOK = checkInputParam(param, intParamNames);
 			if (testOK) {
-				param.setup();
 				TopGunBase* topGun;
 				if (useGPU)
 					topGun = new TopGunGPU(param);

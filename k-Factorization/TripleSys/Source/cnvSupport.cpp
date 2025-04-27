@@ -198,14 +198,16 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								do {
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
-										auto a = tr[0] % 3, b = tr[1] % 3, c = tr[2] % 3;
-										auto i = 0;
-										for (i = 3; i < m_numPlayers; i += 3) {
-											if((tr[i] % 3) != a || (tr[i + 1] % 3) != b || (tr[i + 2] % 3) != c)
-												break;
+										if (!completeGraph()) {
+											auto a = tr[0] % 3, b = tr[1] % 3, c = tr[2] % 3;
+											auto i = 0;
+											for (i = 3; i < m_numPlayers; i += 3) {
+												if ((tr[i] % 3) != a || (tr[i + 1] % 3) != b || (tr[i + 2] % 3) != c)
+													break;
+											}
+											if (i != m_numPlayers)
+												continue;
 										}
-										if (i != m_numPlayers)
-											continue;
 										m_TrInd++;
 										nTrsForPair++;
 										int icmp;

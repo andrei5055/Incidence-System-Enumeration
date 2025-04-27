@@ -98,6 +98,28 @@ PlayerOk1:
 					break;
 				}
 			}
+#if (TestOption1 & 2)
+			else {
+				/*0  1  2   3  4  5   6  7  8   9 10 11  12 13 14
+				  0  4  8   1 3-11  */
+				switch (iPlayer)
+				{
+				case 4:
+					if (iPlayerNumber > 11)
+						return m_numPlayers;
+					break;
+				case 5:
+					switch (prevPlayer) {
+					case 3: return (iPlayerNumber <= 9) ? iPlayerNumber : m_numPlayers;
+					case 5: return (iPlayerNumber <= 9) ? iPlayerNumber : m_numPlayers;
+					case 6: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
+					case 9: return (iPlayerNumber <= 14) ? iPlayerNumber : m_numPlayers;
+					default: return iPlayerNumber + 1;
+					}
+					break;
+				}
+			}
+#endif
 		}
 	}
 	if (completeGraph() && iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)

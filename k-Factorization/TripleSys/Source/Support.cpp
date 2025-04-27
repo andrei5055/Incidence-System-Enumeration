@@ -199,20 +199,35 @@ CC void alldata::updateIndexPlayerMinMax()
 				else {
 					int ip1;
 					if (!completeGraph()) {
-						ip1 = result(iDay - 1)[1] + 1; // must be the same for completeGraph() ?
-						for (; ip1 < m_numPlayers; ip1++)
-							if ((ip1 % 3) && (links()[ip1] == unset))
-								break;
-						m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
-						if (iDay == 1) {
-							m_indexPlayerMin[2] = m_indexPlayerMax[2] = 8;
-							m_indexPlayerMax[4] = 11;
+						/*0  1  2   3  4  5   6  7  8   9 10 11  12 13 14
+						  0  4
+						  0  5
+						  0  7 or 0 10   */
+						switch (iDay) {
+						case 1:
+							m_indexPlayerMin[1] = m_indexPlayerMax[1] = 4;
+							break;
+						case 2:
+							m_indexPlayerMin[1] = m_indexPlayerMax[1] = 5;
+							break;
+#if (TestOption1 & 1)
+						case 3:
+							if (result(2)[2] == 7) {
+								m_indexPlayerMin[1] = m_indexPlayerMax[1] = 10;
+							}
+							else {
+								m_indexPlayerMin[1] = m_indexPlayerMax[1] = 7;
+							}
+							break;
+#endif
+						default:
+							ip1 = result(iDay - 1)[1] + 1; // must be the same for completeGraph() ?
+							for (; ip1 < m_numPlayers; ip1++)
+								if ((ip1 % 3) && (links()[ip1] == unset))
+									break;
+							m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 						}
-						else {
-							m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
-							m_indexPlayerMax[2] = m_numPlayers - 1;
-							m_indexPlayerMax[4] = m_numPlayers - 1;
-						}
+						m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 					}
 					else {
 						ip1 = 3;

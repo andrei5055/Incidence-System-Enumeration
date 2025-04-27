@@ -270,11 +270,11 @@ CC bool alldata::canonizator(int iMode, int nrows)
 	bool ret = true;
 	initCheckByGroup(nrows, 1);
 	m_cnvMode = iMode;
-
+	/**/
 	if (m_pCheckFunc && iMode >= 0) {
 		ret = (this->*m_pCheckFunc)(nrows, nrows);
 	}
-	else {
+	else /**/{
 		tchar a[MAX_GROUP_NUMBER + 1], p[MAX_GROUP_NUMBER + 1];
 		// change "ng = m_nGroups;" below (for "fast version" of cnfCheckNew) to: 
 		//int ng = m_nGroups > 4 ? 3 : m_nGroups; // check permutations for the first ng groups only

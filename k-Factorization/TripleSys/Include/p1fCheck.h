@@ -67,7 +67,7 @@
 #define P3CyclesCheck(trc)	\
 			ncycles = p3Cycles(trc, ncr, t1, t2, v, res1, res2); \
 			if (cyclesNotOk(ncr, ncycles, trc->length)) \
-				return ncycles
+				return ncycles ? -1: 0;
 
 // expected second row
 static tchar _expected2ndRow3uf_21[] = {

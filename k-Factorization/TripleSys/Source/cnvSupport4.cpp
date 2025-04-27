@@ -5,9 +5,8 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 	ctchar* u1fPntr = sysParam()->u1fCycles[0];
 	if (allowUndefinedCycles()) {
 		if (!u1fPntr)
-			return true; // all cycles are welcome //trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
+			return true;  //all cycles are welcome */ trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
 		else {
-			
 			// check that selected in params cycles are present
 			const int nc = *u1fPntr;
 			u1fPntr++;

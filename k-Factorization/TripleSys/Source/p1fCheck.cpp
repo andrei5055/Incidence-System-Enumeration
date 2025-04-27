@@ -131,7 +131,8 @@ CC void alldata::adjustPlayerPosition(tchar* path, tchar length, tchar nrows)
 CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4, bool bWithoutPath) const
 {
 	// calculate cycle(s) between two rows for group size 2 or 3.
-	// return number of cycles calculated
+	// return number of cycles calculated, 0 if one of the cycle not selected or -1 if full cycle set not selected.
+	//        if 0 trc->ncycles = 1 and trc->length[0] equal to incorrect cycle length
 	// tt1, tt2 contains values of "neighbor of player" (for not common elements), or value of common element
 	// tt3, tt4 contains values of same group common element for each player
 
@@ -189,7 +190,8 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 			trc->length[ncycles++] = length;
 		}
 	}
-	//???ASSERT(ncycles == 0);
+	if (ncycles == 0)
+		return -1;
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
@@ -284,7 +286,7 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar 
 		{
 			auto ncycles = p3Cycles(trc, MAX_3PF_SETS, t1, t2, vtr, res1, res2, true);
 			if (cyclesNotOk(ncr, ncycles, trc->length))
-				return ncycles;
+				return ncycles ? -1 : 0;
 		}
 		return 1;
 	}

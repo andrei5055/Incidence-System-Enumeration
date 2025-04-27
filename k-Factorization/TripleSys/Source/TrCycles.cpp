@@ -30,6 +30,8 @@ CC bool alldata::createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles
 				}
 				ASSERT(i0 < 0 || i0 >= m_numPlayers);
 				tr[i0] = i1;
+				if (tr[0] == 6 && tr[1] == 4 && tr[2] == 12)
+					i1 = i1;
 				ntr++;
 			}
 		}

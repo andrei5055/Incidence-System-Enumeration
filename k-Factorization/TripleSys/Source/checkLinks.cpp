@@ -37,14 +37,15 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 
 CC bool CChecklLink::checkLinks(tchar *pLinks, int id, bool printLinksStatTime)
 {
-	int idMin = m_numPlayers < 27 ? 3 : 5;
-	if (id < idMin) return true;
+	const auto cbmpGraph = !completeGraph();
+	int idMin = cbmpGraph ? 3 : (m_numPlayers < 27 ? 2 : 5);
+	if (id < idMin) 
+		return true;
 
 	bool ret = true;
 	tchar* lnks = pLinks;
 
 	PrepareIDs();
-	const auto cbmpGraph = !completeGraph();
 	int iOffset = 5;
 	int ie = m_numPlayers;
 	for (int i0 = 0; i0 < ie; i0++)
