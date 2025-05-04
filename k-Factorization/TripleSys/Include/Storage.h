@@ -126,23 +126,23 @@ public:
 		delete[] m_pIdx;
 		m_pIdx = NULL;	// We don't need indices for now 	
 		CStorageSet<T>::m_numObjectsMax = CStorageSet<T>::m_numObjects = other.numObjects();
-		const auto len = CStorageSet<T>::m_numObjects * CStorage<T>::m_lenObj;
+		const auto len = this->numObjects() * CStorage<T>::m_lenObj;
 		*ppStorage = new T[len];
 		memcpy(*ppStorage, other.CStorage<T>::getObject(), len);
 		return *this;
 	}
 	CC inline void copyIndex(const CStorageIdx& other) {
 		m_pIdx = new int[other.numObjects()];
-		memcpy(m_pIdx, other.getIndices(), CStorageSet<T>::m_numObjects * sizeof(m_pIdx[0]));
+		memcpy(m_pIdx, other.getIndices(), this->numObjects() * sizeof(m_pIdx[0]));
 	}
 	CC inline auto isProcessed(ctchar* tr) {
-		const auto numRegisteredTrs = CStorageSet<T>::numObjects();
+		const auto numRegisteredTrs = this->numObjects();
 		updateRepo(tr);
-		return numRegisteredTrs == CStorageSet<T>::numObjects();
+		return numRegisteredTrs == this->numObjects();
 	}
 	CC int updateRepo(const T* tr) {
 		// search for element 
-		const auto nElem = CStorageSet<T>::numObjects();
+		const auto nElem = this->numObjects();
 		const auto itr = CStorageSet<T>::getElementIndex(tr, nElem);
 		if (itr < 0)
 			return itr;
@@ -154,7 +154,7 @@ public:
 		else
 			push_back(nElem);
 
-		memcpy(cmpTr, tr, CStorageSet<T>::lenObject());
+		memcpy(cmpTr, tr, this->lenObject());
 		return itr;
 	}
 

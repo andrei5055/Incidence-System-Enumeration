@@ -1,6 +1,6 @@
 #include "TripleSys.h"
 
-CC bool alldata::createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles, ctchar* dir, ctchar* offset, ctchar* start, int iPrint)
+CC bool alldata::createU1FTr(tchar* tr, const TrCycles* trCycles01, const TrCycles* trCycles, ctchar* dir, ctchar* offset, ctchar* start, int iPrint)
 {
 	m_numCycles = 0;
 	if (MEMCMP(trCycles01->length, trCycles->length, MAX_CYCLES_PER_SET) != 0)

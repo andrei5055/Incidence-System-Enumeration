@@ -51,6 +51,8 @@ public:
 			std::remove(pFileName);
 	}
 protected:
+	inline auto groupSize() const				{ return m_np; }
+
 	const char *m_name;
 	const int m_nc;
 private:
@@ -98,25 +100,25 @@ private:
 
 class COutGroupHandle : public Table<tchar> {
 public:
-	COutGroupHandle(int outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
+	COutGroupHandle(uint outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
 		Table<tchar>(name, 0, degree, -1, groupSize, false, true) {}
 	virtual ~COutGroupHandle()	{}
 	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
 		printTable(pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected: 
-	const int m_outGroupMask;
-};
+	const uint m_outGroupMask;  // In what forms and what the group's information should be printed
+}; 
 
 class Generators : public CGroupOrder<tchar>, public CStorageSet<tchar>, public COutGroupHandle {
 public:
-	Generators(int outGroupMask, char const* name, int degree, int groupSize) :
+	Generators(uint outGroupMask, char const* name, int degree, int groupSize) :
 		CStorageSet<tchar>(10, degree),
 		COutGroupHandle(outGroupMask, name, degree, groupSize) {};
 	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
 protected:
-	inline auto groupDegree() const { return m_nc; }
-	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2) const;
+	inline auto groupDegree() const		{ return m_nc; }
+	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
 private:
 	CC void savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut);
 	tchar m_lenStab;
@@ -124,15 +126,18 @@ private:
 
 class RowGenerators : public Generators {
 public:
-	RowGenerators(int outGroupMask, char const* name, int rowNumb) : Generators(outGroupMask, name, rowNumb, 0) {}
+	RowGenerators(uint outGroupMask, int rowNumb, int groupSize = 0);
 	~RowGenerators()					{ delete m_pRowGroup; }
 	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
-	const char* name() override         { 
-		return m_sName.c_str(); 
+	const char* name() override         { return m_sName.c_str(); }
+protected:
+	virtual int createGroup(const CGroupInfo* pElemGroup) {
+		return testNestedGroups(pElemGroup, m_pRowGroup, lenObject());
 	}
-private:
 	CGroupInfo* m_pRowGroup = NULL;
 	std::string m_sName;
+	std::string m_sActionOn;
+	uint m_outMask;
 };
 
 #if OUTPUT_VECTOR_STAT

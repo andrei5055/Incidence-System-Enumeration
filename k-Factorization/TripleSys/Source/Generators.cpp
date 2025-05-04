@@ -48,12 +48,12 @@ void Generators::savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits,
 	m_lenStab = stabilizerLength();
 }
 
-int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin) const {
+int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits *pKOrb) const {
 	const auto pntr = (alldata*)pElemGroup;
 	if (pntr->param(t_nestedGroups) > 1)
 		rowMin = 2;
 	else
-		if (!pRowGroup)
+		if (!pRowGroup && !pKOrb)
 			return -1;
 
 	tchar ts[MAX_PLAYER_NUMBER];
@@ -62,12 +62,12 @@ int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowG
 	const auto groupOrder = pElemGroup->numObjects();
 	const auto rowMax = pntr->numDaysResult();
 	for (int j = rowMin; j <= rowMax; j++) {
-		if (j == rowMax && !(pRowGroupOut = pRowGroup))
+		if (j == rowMax && !(pRowGroupOut = pRowGroup) && !pKOrb)
 			break;
 
 		const auto len = pElemGroup->lenObject() * j;
 		for (int i = 0; i < groupOrder; i++) {
-			pntr->kmSortMatrixForReorderedPlayers(mi, j, pElemGroup->getObject(i), ts);
+			pntr->kmSortMatrixForReorderedPlayers(mi, j, pElemGroup->getObject(i), ts, false, pKOrb);
 			if (MEMCMP(mi, pntr->transformedMatrix(), len))
 				return j;
 
@@ -78,6 +78,12 @@ int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowG
 	return rowMin == rowMax? -1 : 0;
 }
 
+RowGenerators::RowGenerators(uint outGroupMask, int rowNumb, int groupSize)
+	: Generators(outGroupMask, "", rowNumb, groupSize), m_pRowGroup(NULL) {
+	m_outMask = 4;
+	m_sActionOn = "matrix rows, |Aut(R)|";
+}
+
 void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	if (!m_pRowGroup)
 		m_pRowGroup = new CGroupInfo(lenObject(), 10);
@@ -85,21 +91,21 @@ void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScre
 		m_pRowGroup->releaseAllObjects();
 
 	char errBuf[48], *pErr = NULL;
-	const auto retVal = testNestedGroups(pElemGroup, m_pRowGroup, lenObject());
+	const auto retVal = createGroup(pElemGroup);
 	if (retVal > 0)
 		snprintf(pErr = errBuf, sizeof(errBuf), "Nested groups check failed on row %d\n", retVal);
 
-	if (m_outGroupMask & 4) {
-		m_sName = std::format("\n{}Orbits and generators of Aut(M) acting on matrix rows, "
-			"|Aut(R)| = {}", (pErr ? pErr : ""), m_pRowGroup->orderOfGroup());
+	if (m_outGroupMask & m_outMask) {
+		m_sName = std::format("\n{}Orbits and generators of Aut(M) acting on {} = {}",
+			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
 		Generators::makeGroupOutput(m_pRowGroup, outToScreen, false);
 
 		// To avoid writing this error (if any) to the file twice
 		pErr = NULL; 
 	}
-	if (m_outGroupMask & 8) {
-		m_sName = std::format("\n{}Aut(M) acting on matrix rows, "
-			"|Aut(R)| = {}", (pErr ? pErr : ""), m_pRowGroup->orderOfGroup());
+	if (m_outGroupMask & (m_outMask << 1)) {
+		m_sName = std::format("\n{}Aut(M) acting on {} = {}",
+			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
 		COutGroupHandle::makeGroupOutput(m_pRowGroup, outToScreen, false);
 	}
 

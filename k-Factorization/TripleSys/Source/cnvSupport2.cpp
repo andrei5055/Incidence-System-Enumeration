@@ -78,11 +78,25 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						continue; // print only
 					}
 #endif
+					if (!completeGraph()) {
+						auto a = tr[0] % 2, b = tr[1] % 2;// , c = tr[2] % 3;
+						if (a == b) {
+							ASSERT(trCycles01.fullPath[12] % 2 == trCycles.fullPath[12] % 2);
+							continue;
+						}
+						auto i = 0;
+						for (i = 2; i < m_numPlayers; i += 2) {
+							if ((tr[i] % 2) != a || (tr[i + 1] % 2) != b)
+								break;
+						}
+						if (i != m_numPlayers)
+							continue;
+					}
 					const int icmp = kmProcessMatrix(result(), tr, nrows);
-					//TestkmProcessMatrix(nrows, nrows, tr, tr, icmp);
 
 					if (icmp < 0)
 					{
+						//TestkmProcessMatrix(nrows, nrows, tr, tr, 0/*icmp*/);
 						bRet = false;
 						goto ret;
 					}

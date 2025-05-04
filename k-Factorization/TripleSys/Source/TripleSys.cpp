@@ -1,6 +1,6 @@
 #include <iostream>
 #include "TripleSys.h"
-#include "Table.h"
+#include "kOrbits.h"
 
 #if !USE_CUDA && USE_BINARY_CANONIZER
 #include "k-SysSupport.h"
@@ -123,7 +123,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	//aq();
 	unsigned char* bResults = NULL;
 
-	COutGroupHandle* pAutGroup[3] = { NULL, NULL, NULL };
+	COutGroupHandle* pAutGroup[4] = { NULL };
 	TableAut Result("\n\n|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
 	if (bSavingMatricesToDisk) {
@@ -153,8 +153,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			}
 
 			if (outAutGroup & 12) {
-				pAutGroup[2] = new RowGenerators(outAutGroup, "", numDaysResult());
+				pAutGroup[2] = new RowGenerators(outAutGroup, numDaysResult());
 				pAutGroup[2]->setOutFileName(pResFile, false);
+			}
+
+			if (outAutGroup & 48) {
+				pAutGroup[3] = new CKOrbits(outAutGroup, m_numPlayers, m_groupSize, numDaysResult());
+				pAutGroup[3]->setOutFileName(pResFile, false);
 			}
 		}
 	}

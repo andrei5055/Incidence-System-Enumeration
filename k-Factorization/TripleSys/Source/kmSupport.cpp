@@ -1,5 +1,6 @@
 #include "TripleSys.h"
 #include "p1fCheck.h"
+#include "kOrbits.h"
 
 #define SetUpToTwoGroups2(i, m, j, ta, tb) \
 		if (ta[i]) \
@@ -161,7 +162,7 @@ CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len)
 		mo[i] = tr[mi[i]];
 	}
 }
-CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups) const {
+CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups, CKOrbits* pKOrb) const {
 	tchar* mo = m_Km;
 	const auto nc = m_numPlayers;
 	const auto len = nc * nr;
@@ -172,6 +173,9 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 
 	(this->*m_pSortGroups)(mo, nr);
 
+	if (pKOrb)
+		pKOrb->UpdateGroup(mo);
+
 	auto* cii = mo;
 	auto* coi = m_Ktmp;
 	for (int i = 0; i < nr; i++, coi += nc, cii += nc)
@@ -180,7 +184,7 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 	if (useNestedGroups && MEMCMP(mi, m_Ktmp, len) == 0)
 		return 0;
 
-	// result of the loop above is in m_Ktmp, sort and send it to m_Km
+	// Result of the loop above is in m_Ktmp, sort and send it to m_Km.
 	kmSortRowsBy2ndValue(nr, ts);
 	return 1;
 }

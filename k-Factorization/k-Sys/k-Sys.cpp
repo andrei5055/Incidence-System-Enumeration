@@ -40,7 +40,11 @@ const char* intParamNames[]{
 	                    // 2 - saving only while testing paths; 3 - saving while testing on groups OR paths
 	"UseImproveMatrix",
 	"UseCombinedSolutions",
-	"OutAutomorphismGroup",
+	"OutAutomorphismGroup",  // 0 - No output, 
+	                         // otherwise any combinations of:
+	                         //  1,  2 - generators and groups acting on elements
+							 //  4,  8 - generators and groups acting on the matrix rows
+							 // 16, 32 - generators ogroup acting on the k-sets
 	"NestedGroups",
 	"GridSize",
 	"BlockSize",

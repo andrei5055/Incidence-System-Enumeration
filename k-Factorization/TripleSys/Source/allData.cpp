@@ -20,7 +20,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_pResults = new tchar[m_nLenResults];
 	m_pResultsPrev = new tchar[m_nLenResults * 2];
 	m_pResultsPrev2 = m_pResultsPrev + m_nLenResults;
-	int numPlayers64 = (m_numPlayers + 7) / 8 * 8;
+	const auto numPlayers64 = (m_numPlayers + 7) / 8 * 8;
 
 	selPlayers = new tchar[7 * numPlayers64];
 	tmpPlayers = selPlayers + numPlayers64;
@@ -102,7 +102,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_pCheckFunc = NULL;
 	if (m_use2RowsCanonization) {
 		if (m_groupSize == 2)
-			m_pCheckFunc = bp1f ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
+			m_pCheckFunc = (bp1f && pSysParam->completeGraph()) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
 		else if (m_groupSize == 3)
 			m_pCheckFunc = &alldata::cnvCheck3U1F;
 	}

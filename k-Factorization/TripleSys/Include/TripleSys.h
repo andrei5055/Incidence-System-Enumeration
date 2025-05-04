@@ -130,6 +130,7 @@ typedef struct TrCycles {
 
 
 typedef CRepository<tchar> CBinaryMatrixStorage;
+class CKOrbits;
 
 class alldata : public CGroupUtilisation, public CChecklLink , private CGroupInfo, CycleSupport{
 	typedef bool(alldata::*checkU1F)(int, int);
@@ -169,7 +170,7 @@ public:
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
 	CC inline auto transformedMatrix() const		{ return m_Km; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
-	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false) const;
+	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
 	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
 private:
 	CC void Init();
@@ -226,7 +227,7 @@ private:
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0);
 	CC bool create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
 		ctchar* t0, ctchar* t1, ctchar* res1, tchar ir0, tchar ir1, int idir, int iPrint = 0) const;
-	CC bool createU1FTr(tchar* tr, TrCycles* trCycles01, TrCycles* trCycles,
+	CC bool createU1FTr(tchar* tr, const TrCycles* trCycles01, const TrCycles* trCycles,
 		ctchar* dir, ctchar* offset, ctchar* start, int iPrint = 0);
 
 	CC int getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
