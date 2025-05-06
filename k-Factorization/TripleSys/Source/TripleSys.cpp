@@ -72,11 +72,12 @@ void alldata::outputError() const {
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
+	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
 	int iPrintMatrices = 0;
 	m_lastRowWithTestedTrs = 0;
 	m_threadNumber = threadNumber;
 #if !USE_CUDA
-	iPrintMatrices = iThread == 0 ? param(t_printMatrices) : 0;
+	iPrintMatrices = (iThread == 0 || param(t_numThreads) < 2)? param(t_printMatrices) : 0;
 	int* edges = NULL;
 	if (iPrintMatrices & 32)
 		edges = new int[numDaysResult() * m_numPlayers * m_numPlayers]();
@@ -167,30 +168,48 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
 #if 0 // make 27 player matrix on the basis of first 5 rows
-	if (m_numPlayers != 27 || iDay != 13) {
-		printfRed("Can't create 27x13 matrix. Exit"); myExit(1);
+#define N m_numPlayers
+#define G m_groupSize
+#define M (N/G)
+	if (m_numPlayers != N || m_numDaysResult != M || m_groupSize != G) {
+		printfRed("Can't create %dx%dx%d matrix. Exit\n", N, M, G); 
+		myExit(1);
 	}
-	for (int i = 4; i < 13; i++) {
+	iDay = M;
+	nrowsStart = M;
+
+	for (int i = 0; i < N; i++)
+		result()[i] = i;
+
+	for (int i = 1; i < M; i++) {
 		tchar* r = result(i);
-		for (int j = 0; j < 27; j += 3, r += 3) {
-			r[0] = j / 3; r[1] = ((j / 3 + i + 5) % 9) + 9; r[2] = ((j / 3 + (i - 4) * 2) % 9) + 18;
+		for (int j = 0; j < N; j += G, r += G) {
+			for (int k = 0; k < G; k++)
+				r[k] = ((j / G + i * k) % M) + M * k;
 		}
 	}
-	printTable("circular matrix", result(), iDay, m_numPlayers, m_groupSize);
-#endif
+	linksFromMatrix(links(), result(), nrowsStart);
+	memcpy(m_pResultsPrev, result(), m_nLenResults);
+	memcpy(m_pResultsPrev2, result(), m_nLenResults);
+	printResultWithHistory("Generated KC-matrix", m_numDaysResult);
+	//printTableColor("circular matrix", result(), iDay, m_numPlayers, m_groupSize);
+#else
 	if (mStart0)
 	{
 		iDay = nrowsStart;
 		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
-		linksFromMatrix(links(), mStart0, nrowsStart);
+		linksFromMatrix(links(), result(), nrowsStart);
 	}
+#endif
+
 
 	if (iDay > numDaysResult() && !(iPrintMatrices & 16))
 		iDay = numDaysResult(); // warning?
 
-	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
+
+	setAllowUndefinedCycles(iDay);
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
@@ -429,7 +448,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			}
 			if (bPrevResult)
 			{
-				if (iDay < minRows)
+				if (iDay <= minRows || iDay < 2)
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -546,11 +565,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bPrevResult = true;
 				continue;
 			}
-			/*
-			static tchar a[] = { 0, 4, 8,  1, 5, 6,  2, 9,13,  3,10,14,  7,11,12 };
-			//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
-			if (memcmp(a, result(1), sizeof(a)) == 0)
-				iDay = iDay;*/
 			if (m_useRowsPrecalculation == eCalculateMatrices) {
 				ASSERT(1);
 				noMoreResults = true;
@@ -688,7 +702,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
-				printf("\n%5zd: %s-Matrix, build time=%d, time since start=%d\n", nLoops, m_fHdr, m_cTime - mTime, m_cTime - m_iTime);
+				printf("\n%d(%zd): %s-Matrix, build time=%d, time since start=%d\n", threadNumber, nLoops, m_fHdr, m_cTime - mTime, m_cTime - m_iTime);
 #else
 				extern int matr_cntr;
 				printf("\n%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, m_fHdr, matr_cntr);
@@ -712,7 +726,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #else			// record result without print on screen
 				Result.printTable(result(), true, false, numDaysResult());
 				if (m_bPrint) {
-					printf("%5zd: " AUT "%d, % s\n", nLoops, orderOfGroup(), stat);
+					printf("%d(%zd): " AUT "%d, % s\n", threadNumber, nLoops, orderOfGroup(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
 					if (iPrintMatrices & 2)

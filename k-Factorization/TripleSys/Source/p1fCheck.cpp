@@ -2,20 +2,29 @@
 #include "p1fCheck.h"
 CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri) const
 {
-	if (m_groupSize == 3)
-	{
+	switch (m_groupSize) {
+	case 3:
 		for (int i = 0; i < m_numPlayers; i += 3)
 		{
 			U1FT3(i);
 		}
-	}
-	else if (m_groupSize == 2)
-	{
-		for (int i = 0; i < m_numPlayers; i += 2)
-		{
-			U1FT(i);
+		break;
+	case 2:
+		if (completeGraph()) {
+			for (int i = 0; i < m_numPlayers; i += 2)
+			{
+				U1FT(i);
+			}
+			break;
 		}
+	default:
+		for (int i = 0; i < m_numPlayers; i++)
+		{
+			ro[ri[i]] = i;
+		}
+		break;
 	}
+
 }
 CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int nc)
 {
@@ -79,13 +88,14 @@ CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, bool bWith
 		}
 
 		// add cycle to array of all cycles
-		ASSERT(!bWithoutPath); // to allow use of bWithoutPath=false you need to change code to create correct m_TrCyclesFirst2Rows
-		int ic = bWithoutPath ? (MEMCMP(trc->length, trcAll[j].length, ncc)) :
+		//ASSERT(!bWithoutPath); // to allow use of bWithoutPath=false you need to change code to create correct m_TrCyclesFirst2Rows
+		int ic = (bWithoutPath || trc->length[0] == m_numPlayers) ? (MEMCMP(trc->length, trcAll[j].length, ncc)) :
 			(MEMCMP(trc, &trcAll[j], iLength - sizeof(trc->counter)));
 		 switch (ic) {
 		case -1:
 			for (int i = ncr - 2; i >= j; i--) 
-				memcpy(&trcAll[i + 1], &trcAll[i], iLength);
+				if (trcAll[i].counter)
+					memcpy(&trcAll[i + 1], &trcAll[i], iLength);
 			memcpy(&trcAll[j], trc, iLength);
 			trcAll[j].counter = 1;
 			break;
@@ -201,7 +211,7 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 				return -1;
 		}
 		if (ncr > 1)
-			collectCyclesAndPath(m_TrCyclesAll, trc, bWithoutPath);
+			collectCyclesAndPath(m_TrCyclesAll, trc, ncr != 2);
 	}
 	return ncycles;
 }
@@ -254,23 +264,26 @@ CC int alldata::p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar*
 #endif
 	return iret;
 }
-CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
-	int ind) const
+CC int alldata::u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const
 {
 	// returns > 0  ok, 0 - one of the cycle not in any list, -1 - cycle set not in list
 	// calculate cycle(s) length for rows res1, res2.
 	// t1, t2 - precalculated arrays with 
 	// for group size = 2: neighbor for each player (for example t1[7] - neighbor of player 7 in row res1)
 	// for group size = 3: position of player (for example t2[3] - position of player 3 in row res2)
-	switch (m_groupSize) {
-	case 2:
-		return getCyclesAndPath(trc, ncr, t1, t2);
-	case 3:
-		return u1fGetCycleLength3(trc, ncr, t1, t2, res1, res2, ind);
+	if (!completeGraph())
+		return u1fGetCycleLengthCBMP(trc, ncr, t1, t2, res1, res2);
+	else {
+		switch (m_groupSize) {
+		case 2:
+			return getCyclesAndPath(trc, ncr, t1, t2);
+		case 3:
+			return u1fGetCycleLength3(trc, ncr, t1, t2, res1, res2);
+		}
 	}
 	return -1;
 }
-CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2, int ind) const
+CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar * t2, ctchar * res1, ctchar * res2) const
 {
 	if (!completeGraph())
 	{
@@ -327,13 +340,9 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar 
 
 CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 {
-	if (m_groupSize > 3)
-		return true;
-	/**
-	static tchar a[] = { 0,4,8,1,3,11,2,6,10,5,7,9,12,16,20,13,17,18,14,21,25,15,22,26,19,23,24 };
-	//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
-	if (memcmp(a, result(1), sizeof(a)) == 0)
-		nr = nr;**/
+	/**???
+	if (m_groupSize > 3 && !pNeedOutput)
+		return true;**/
 	setAllowUndefinedCycles(nr);
 	if (!pNeedOutput && allowUndefinedCycles())
 		return true;
@@ -365,18 +374,15 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		int iend = m;
 		for (int i = 0; i < iend; i++, rowi += nc)
 		{
-#if 1
 			if (ncr == 1)
 			{
-				const auto ncycles = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
+				const auto ncycles = u1fGetCycleLength(&m_TrCycles, 1, rowi, rowm, result(i), result(m));
 				// in case of incorrect one cycle length u1fGetCycleLength reports only one cycle (with error)
 				if (ncycles == 0)
 				{
-					//if (m_groupSize == 2) { // ??? leo
-						tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
-						int fpLength = m_TrCycles.length[0] * 2;
-						adjustPlayerPosition(fp, fpLength, nr);
-					//}
+					tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
+					int fpLength = m_TrCycles.length[0] * 2;
+					adjustPlayerPosition(fp, fpLength, nr);
 					ret = false;
 					break;
 				}
@@ -387,7 +393,6 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 				}
 			}
 			else
-#endif
 			{
 				int ncycles = u1fGetCycleLength(&m_TrCycles, ncr, rowi, rowm, result(i), result(m));
 #if 0
@@ -561,7 +566,12 @@ CC void alldata::p1fCheckStartMatrix(int nr)
 	for (int i = 1; i < nr; i++)
 	{
 		TrCycles trCycles;
-		int iret = getCyclesAndPath(&trCycles, 1, neighbors(0), neighbors(i));
+		bool bCBMP = !completeGraph();
+		int iret;
+		if (bCBMP)
+			iret = getCyclesAndPathCBMP(&trCycles, 1, neighbors(0), neighbors(i), result(0), result(i), 0) > 0;
+		else
+			iret = getCyclesAndPath(&trCycles, 1, neighbors(0), neighbors(i)) > 0;
 #if 0
 		if (iret) {
 			if ((!u1fPntr && trCycles.ncycles != 1) || (u1fPntr && MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
@@ -650,17 +660,24 @@ void alldata::cyclesFor2Rows(ctchar* p1)
 		memcpy(neighbors1, neighbors(1), m_numPlayers);
 	else
 		u1fSetTableRow(neighbors1, p1);
-	if (m_groupSize == 2) {
-		u1fGetCycleLength(&m_TrCycles, 2,  neighbors(0), neighbors1, result(0), p1);
-	}
+	if (!completeGraph())
+		u1fGetCycleLengthCBMP(&m_TrCycles, 2, neighbors(0), neighbors1, result(0), p1);
 	else {
-		auto v0 = getV0();
-		const int nv0 = getAllV(v0, MAX_3PF_SETS, 0, 1, neighbors1);
-		ASSERT(!nv0);
-		ctchar* vtr = v0; // Common Values
-		for (int i = 0; i < nv0; i++, vtr += m_nGroups)
-		{
-			p3Cycles(&m_TrCycles, MAX_3PF_SETS, neighbors(0), neighbors1, vtr, result(0), p1, true);
+		switch (m_groupSize) {
+			case 2:
+				getCyclesAndPath(&m_TrCycles, 2, neighbors(0), neighbors1);
+				break;
+			case 3: {
+				auto v0 = getV0();
+				const int nv0 = getAllV(v0, MAX_3PF_SETS, 0, 1, neighbors1);
+				ASSERT(!nv0);
+				ctchar* vtr = v0; // Common Values
+				for (int i = 0; i < nv0; i++, vtr += m_nGroups)
+				{
+					p3Cycles(&m_TrCycles, 2, neighbors(0), neighbors1, vtr, result(0), p1);
+				}
+				break;
+			}
 		}
 	}
 }

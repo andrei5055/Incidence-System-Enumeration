@@ -102,24 +102,18 @@ CC bool alldata::unsetLinksForOnePlayer(ctchar* p, int ip) const
 CC bool alldata::initPrevDay()
 {
 	bPrevResult = false;
-	if (iDay >= 0 && iDay < m_numDays)
-	{
+	if (iDay >= 0 && iDay < m_numDays) {
 		memset(result(iDay), 0, m_numPlayers);
 	}
-
 	iDay--;
-	updateIndexPlayerMinMax();
 	m_firstNotSel = 0;
 
-	if (m_bCheckLinkV)
-	{
+	if (m_bCheckLinkV) {
 		if (iDay < 1) //0)
 			return false;
 	}
-	else
-	{
-		if (iDay < 1)  // keep first line (first day result)
-		{
+	else {
+		if (iDay < 1) { // keep first line (first day result)
 			iDay = -1;
 			return false;
 		}
@@ -130,6 +124,8 @@ CC bool alldata::initPrevDay()
 
 	const auto ind = indexPlayer[iPlayer = iPlayerIni];
 	ASSERT(ind == unset);
+
+	updateIndexPlayerMinMax();
 
 	for (int j = 0; j < m_numPlayers; j++)
 	{
@@ -191,13 +187,13 @@ CC void alldata::updateIndexPlayerMinMax()
 				m_indexPlayerMax[2] = 1;
 			}
 			break;
-			case 3:
+			default:
 			if (m_numPlayers >= 9)
 			{
 				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {
-					int ip1;
+					int ip1 = result(iDay - 1)[1] + 1;
 					if (!completeGraph()) {
 						/*0  1  2   3  4  5   6  7  8   9 10 11  12 13 14
 						  0  4
@@ -205,67 +201,40 @@ CC void alldata::updateIndexPlayerMinMax()
 						  0  7 or 0 10   */
 						switch (iDay) {
 						case 1:
-							m_indexPlayerMin[1] = m_indexPlayerMax[1] = 4;
+							m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_groupSize + 1;
 							break;
 						case 2:
-							m_indexPlayerMin[1] = m_indexPlayerMax[1] = 5;
+							m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_groupSize + 2;
 							break;
-#if (TestOption1 & 1)
-						case 3:
-							if (result(2)[2] == 7) {
-								m_indexPlayerMin[1] = m_indexPlayerMax[1] = 10;
-							}
-							else {
-								m_indexPlayerMin[1] = m_indexPlayerMax[1] = 7;
-							}
-							break;
-#endif
 						default:
-							ip1 = result(iDay - 1)[1] + 1; // must be the same for completeGraph() ?
-							for (; ip1 < m_numPlayers; ip1++)
-								if ((ip1 % 3) && (links()[ip1] == unset))
+							for (; ip1 < m_numPlayers; ip1++) {
+								auto const ld = links()[ip1];
+								ASSERT(ld != unset && ld > iDay);
+								if ((ld == unset || ld >= iDay) && (ip1 % m_groupSize))
 									break;
+							}/**
+							if (ip1 == 11 && iDay == 3) {
+								printTableColor("l", links(), 3, 24, 0);
+								printTableColor("r", result(), 3, 24, 0);
+								ip1 = ip1;
+							}**/
 							m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 						}
-						m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 					}
 					else {
-						ip1 = 3;
-						for (; ip1 < m_numPlayers; ip1++)
-							if (links()[ip1] == unset)
+						for (; ip1 < m_numPlayers; ip1++) {
+							auto const ld = links()[ip1];
+							ASSERT(ld != unset && ld > iDay);
+							if (ld == unset || ld >= iDay)
 								break;
+						}
 						m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
-						m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 					}
-				}
-				m_indexPlayerMax[3] = 1;
-				m_indexPlayerMax[6] = 2;
-			}
-			break;
-			default: {
-				int ip1 = m_groupSize + iDay - 1;
-				if (!completeGraph()) {
-					ip1 = result(iDay - 1)[1] + 1; // must be the same for (param(t_partiteGraph) == 0) ?
-					for (; ip1 < m_numPlayers; ip1++)
-						if ((ip1 % m_groupSize) && (links()[ip1] == unset))
-							break;
-					m_indexPlayerMin[1] = ip1;
-					m_indexPlayerMax[1] = m_numPlayers - m_groupSize - (m_numDays - iDay);
-				}
-				else {
-					if (m_numPlayers != m_groupSize * m_groupSize)
-					{
-						for (; ip1 < m_numPlayers; ip1++)
-							if (links()[ip1] == unset)
-								break;
-					}
-					m_indexPlayerMin[1] = m_indexPlayerMax[1] = ip1;
 				}
 				m_indexPlayerMin[2] = m_indexPlayerMin[1] + 1;
 				for (int i = 1; i < m_groupSize; i++) {
 					m_indexPlayerMin[m_groupSize * i] = m_indexPlayerMax[m_groupSize * i] = i;
 				}
-
 				break;
 			}
 		}

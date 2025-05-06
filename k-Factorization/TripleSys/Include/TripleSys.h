@@ -171,7 +171,7 @@ public:
 	CC inline auto transformedMatrix() const		{ return m_Km; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
-	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
+	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
 private:
 	CC void Init();
 	inline auto numDays() const						{ return m_numDays; }
@@ -212,10 +212,12 @@ private:
 	CC void cyclesFor2Rows(ctchar* p1);
 	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
 		bool bWithoutPath = true) const;
-	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int ind = 0) const;
+	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
+	CC int u1fGetCycleLengthCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
 	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, bool bWithoutPath = true) const;
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
+	CC int getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart) const;
 	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL, 
 		bool bWithoutPath = true) const;
 	CC int checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer = NULL);

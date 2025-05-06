@@ -50,10 +50,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto pCycles = param.u1fCycles[0];
 	if (/*val[t_u1f] */ pCycles) {
 		auto pU1F = pCycles + 1;
-		if (0) {//??? leo if (*pCycles != 1) {
-			printfRed("*** Incorrect parameter '%s': this version supports only one cycles set definition, Exit\n", arrayParamNames[0]);
-			return false;
-		}
 		for (tchar j = 0; j < *pCycles; j++) {
 			// Iterating through all prescribed combinations of cycle versions. 
 			int nElem = 0;
@@ -81,9 +77,9 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	if (val[t_use2RowsCanonization]) {
-		if (groupSize > 3)
+		if (groupSize > 3 && val[t_CBMP_Graph] <= 1)
 		{
-			printfRed("*** %s cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize], groupSize);
+			printfRed("*** %s with CBMP_Graph < 2 cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize], groupSize);
 			return false;
 		}
 		if (!val[t_u1f])

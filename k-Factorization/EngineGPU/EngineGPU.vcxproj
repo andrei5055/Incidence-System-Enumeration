@@ -89,7 +89,7 @@
       <Defines>USE_CUDA</Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
-      <AdditionalOptions>-diag-suppress 128 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-diag-suppress 128, 550 %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

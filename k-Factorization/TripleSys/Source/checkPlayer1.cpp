@@ -110,8 +110,8 @@ PlayerOk1:
 					break;
 				case 5:
 					switch (prevPlayer) {
-					case 3: return (iPlayerNumber <= 9) ? iPlayerNumber : m_numPlayers;
-					case 5: return (iPlayerNumber <= 9) ? iPlayerNumber : m_numPlayers;
+					case 3: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
+					case 5: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
 					case 6: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
 					case 9: return (iPlayerNumber <= 14) ? iPlayerNumber : m_numPlayers;
 					default: return iPlayerNumber + 1;

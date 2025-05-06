@@ -58,15 +58,6 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 #endif
 		if (param(t_useImproveMatrix) && improveMatrix(m_improveResult, NULL, 0/*, bResults, lenResult()*/))
 			return -1;
-#if 0 // looks like we do not need it (matrixStat used in processOneDay and checkLinkH)
-#if !USE_CUDA// double check in some cases
-		if (m_use2RowsCanonization && m_groupSize == 3 && !matrixStat(neighbors(), iDay))
-		{
-			return -1;
-		}
-#endif
-#endif
-
 #if 1
 		if ((iDay == numDaysResult())
 			|| checkCanonicity()

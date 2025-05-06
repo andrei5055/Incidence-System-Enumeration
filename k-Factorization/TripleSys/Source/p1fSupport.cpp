@@ -15,8 +15,9 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		v1 = pfj[v2];
 	}
 #if _DEBUG
-	int s = 0;
-	for (itr = 0; itr < m_numPlayers; itr++) {
+	int s = 0;	for (itr = 0; itr < m_numPlayers; itr++) {
+		//if (tr[itr] == unset || tr[itr] >= m_numPlayers)
+		//	return false;
 		ASSERT(tr[itr] == unset || tr[itr] >= m_numPlayers);
 		s |= (1 << tr[itr]);
 	}
@@ -29,6 +30,7 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		printTable("tr ", tr, 1, m_numPlayers, 2);
 		printTable("trv", trv, 1, m_numPlayers, 2);**/
 		printfRed("Not p1f matrix\n");
+		//return false;
 		ASSERT(1);
 	}
 #endif

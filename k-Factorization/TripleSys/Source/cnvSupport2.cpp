@@ -8,9 +8,13 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 	bool bRet = true;
 	TrCycles trCycles;
 	TrCycles trCycles01;
-	bool ok = getCyclesAndPath(&trCycles01, 1, neighbors(0), neighbors(1)) > 0;
-	ASSERT(!ok);
-
+	bool bCBMP = !completeGraph();
+	bool bok;
+	if (bCBMP)
+		bok = getCyclesAndPathCBMP(&trCycles01, 1, neighbors(0), neighbors(1), result(0), result(1), 0) > 0;
+	else
+		bok = getCyclesAndPath(&trCycles01, 1, neighbors(0), neighbors(1)) > 0;
+	ASSERT(!bok);
 	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
 
 	// get first row
@@ -44,70 +48,77 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 					else if (bSaveTestedTrs)
 						pTestedTRs->resetGroupOrder();
 				}
-				bool ok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0 &&
-					!MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET);
-				if (!ok) {/**
-					printTable("result", result(), nrows, m_numPlayers, 2);
-					printTable("resi", result(indRow0), 1, m_numPlayers, 2);
-					printTable("resj", result(indRow1), 1, m_numPlayers, 2);
-					printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
-					printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
-					continue;
-				}
-
-				ASSERT(!ok);
-				ctchar* pDir, * pStartOut;
-				auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
-
-				do {
-#if 0
-					printTable("pDir", pDir, 1, 2, 2);
-					printTable("pIdx", pIdx, 1, 2, 2);
-					printTable("pStartOut", pStartOut, 1, 2, 2);
-#endif
-					//if (pDir[0])
-						//continue;
-					const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
-
-					ASSERT(!btr);
-
-					m_TrInd++;
-#if !USE_CUDA
-					if (m_cnvMode) {
-						cnvPrintAuto(tr, nrows);
-						continue; // print only
+				bool bok;
+				int nitr = bCBMP ? m_groupSizeFactorial : 1;
+				for (int itr = 0; itr < nitr; itr++) {
+					if (bCBMP) {
+						bok = getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),
+							result(indRow0), result(indRow1), itr) > 0;
 					}
-#endif
-					if (!completeGraph()) {
-						auto a = tr[0] % 2, b = tr[1] % 2;// , c = tr[2] % 3;
-						if (a == b) {
-							ASSERT(trCycles01.fullPath[12] % 2 == trCycles.fullPath[12] % 2);
-							continue;
-						}
-						auto i = 0;
-						for (i = 2; i < m_numPlayers; i += 2) {
-							if ((tr[i] % 2) != a || (tr[i + 1] % 2) != b)
-								break;
-						}
-						if (i != m_numPlayers)
-							continue;
+					else {
+						bok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0;
 					}
-					const int icmp = kmProcessMatrix(result(), tr, nrows);
-
-					if (icmp < 0)
-					{
-						//TestkmProcessMatrix(nrows, nrows, tr, tr, 0/*icmp*/);
-						bRet = false;
-						goto ret;
-					}
-					// save Tr if icmp not -1, continue if it was already processed
-					if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
+					if (!bok || MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET)) {/**
+						printTable("result", result(), nrows, m_numPlayers, 2);
+						printTable("resi", result(indRow0), 1, m_numPlayers, 2);
+						printTable("resj", result(indRow1), 1, m_numPlayers, 2);
+						printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
+						printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
 						continue;
+					}
 
-					if (icmp == 0)
-						updateGroup(tr);
+					ASSERT(!bok);
+					ctchar* pDir, * pStartOut;
+					auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
 
-				} while (ProceedToNextMapping());
+					do {
+#if 0
+						printTable("pDir", pDir, 1, 2, 2);
+						printTable("pIdx", pIdx, 1, 2, 2);
+						printTable("pStartOut", pStartOut, 1, 2, 2);
+#endif
+						//if (pDir[0])
+							//continue;
+						const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
+
+						ASSERT(!btr);
+
+						m_TrInd++;
+#if !USE_CUDA
+						if (m_cnvMode) {
+							cnvPrintAuto(tr, nrows);
+							continue; // print only
+						}
+#endif
+						if (bCBMP) {
+							tchar g0 = (tr[0] & 1), g1 = (tr[1] & 1);
+							if (g0 == g1)
+								continue;
+							auto i = 2;
+							for (; i < m_numPlayers; i += 2) {
+								if ((tr[i] & 1) != g0 || (tr[i + 1] & 1) != g1)
+									break;
+							}
+							if (i != m_numPlayers)
+								continue;
+						}
+						const int icmp = kmProcessMatrix(result(), tr, nrows);
+
+						if (icmp < 0)
+						{
+							//TestkmProcessMatrix(nrows, nrows, tr, tr, 0);//icmp);
+							bRet = false;
+							goto ret;
+						}
+						// save Tr if icmp not -1, continue if it was already processed
+						if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
+							continue;
+
+						if (icmp == 0)
+							updateGroup(tr);
+
+					} while (ProceedToNextMapping());
+				}
 			}
 		}
 		if (bSaveTestedTrs && m_lastRowWithTestedTrs < iRowLast)

@@ -36,7 +36,7 @@ int TopGun::Run()
 	sLongLong resultMatr = 0;
 	bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 
-	if (m_groupSize <= 3 && m_use2RowsCanonization) {
+	if ((m_groupSize <= 3 || param(t_CBMP_Graph) > 1) && m_use2RowsCanonization) {
 		if (m_pSecondRowsDB && !m_pSecondRowsDB->isValid(paramPtr())) {
 			delete m_pSecondRowsDB;
 			m_pSecondRowsDB = NULL;

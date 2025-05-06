@@ -11,7 +11,6 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 	const auto* neighbors0 = neighbors(0);
 	const auto* neighbors1 = neighbors(1);
 	// get first row
-	const auto cbmpGraph = !completeGraph();
 	for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
 		const bool bSaveTestedTrs = bUseTestedTrs && (iRowLast < m_numDaysResult - 1);
 		for (int indRow = 0; indRow < iRowLast; indRow++)
@@ -27,9 +26,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						const int nTrs = pTestedTRs->numObjects();
 						for (int itr = 0; itr < nTrs; itr++) {
 							tchar* trt = pTestedTRs->getObject(itr);
-
-							const int icmp = nrows < 3 ? 0 : cbmpGraph ? kmProcessMatrix(result(), trt, nrows) : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
-							//const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
+							const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(trt, nrows, indRow0, indRow1);
 							m_TrInd++;
 							if (icmp < 0)
 							{
@@ -57,7 +54,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						continue; // print only
 					}
 #endif
-					const int icmp = nrows < 3 ? 0 : cbmpGraph ? kmProcessMatrix(result(), tr, nrows) : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
+					const int icmp = nrows < 3 ? 0 : kmProcessMatrix2p1f(tr, nrows, indRow0, indRow1);
 					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
@@ -85,6 +82,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;
+	tchar gtest[MAX_PLAYER_NUMBER];
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 	auto v1 = getV1();
@@ -92,12 +90,12 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	const auto* neighbors0 = neighbors(0);
 	tchar* p1 = NULL;
 	bool bCurrentSet = false;
+	bool bCBMP = /**m_groupSize > 3 &&**/ !completeGraph();
 	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 	setAllowUndefinedCycles(nrows);
 	/**
-	static tchar a[] = {0,4,8,1,3,11,2,6,10,5,7,9,12,16,20,13,17,18,14,21,25,15,22,26,19,23,24};
-	//static tchar a[] = { 0 , 4 , 8,   1,  5,  9,   2, 10, 12,   3,  7, 14,   6, 11, 13 };
+	static tchar a[] = { 0,5,10,1,6,14,2,3,13,4,12,23,7,17,18,8,15,19,9,20,22, 11,16,21 }
 	if (memcmp(a, result(1), sizeof(a)) == 0)
 		ip1 = ip1;**/
 	while (1)
@@ -149,7 +147,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						for (int itr = 0; itr < nTrs; itr++) {
 #if 1
 							const auto * trt = pTestedTRs->getObject(itr);
-#else    
+#else,,
 							// Take tr in the order they were added to the database
 							const auto* trt = pTestedTRs->CStorage<tchar>::getObject(itr);
 #endif
@@ -174,14 +172,21 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						auto* pV1 = v1;
 						if (bSaveTestedTrs)
 							pTestedTRs->resetGroupOrder();
-						nv1 = getAllV(v1, maxv1, indRow0, indRow1);
+						nv1 = MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+						nv1 = bCBMP ? nv1 : getAllV(v1, maxv1, indRow0, indRow1);
 #if !USE_CUDA
 						if (bPrintInfo) {
 							collectCyclesInfo(v1, nv1, indRow0, indRow1);
 						}
 #endif
 						for (int itr = 0; itr < nv1; itr++, pV1 += m_nGroups) {
-							if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1))) {
+							if (bCBMP) {
+								if (getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),
+									result(indRow0), result(indRow1), itr) <= 0)
+									continue;
+							}
+							else if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1),
+								result(indRow0), result(indRow1))) {
 								//ASSERT(1);
 								continue;
 							}
@@ -194,16 +199,24 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 									continue;
 								bCycleSelected = true;
 								ctchar* pDir, * pStartOut;
-								auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 3, &pDir, &pStartOut);
+								auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, m_groupSize, &pDir, &pStartOut);
 								do {
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
-										if (!completeGraph()) {
-											auto a = tr[0] % 3, b = tr[1] % 3, c = tr[2] % 3;
-											auto i = 0;
-											for (i = 3; i < m_numPlayers; i += 3) {
-												if ((tr[i] % 3) != a || (tr[i + 1] % 3) != b || (tr[i + 2] % 3) != c)
-													break;
+										if (bCBMP) {
+											tchar is = 0;
+											for (int i = 0; i < m_groupSize;i++) {
+												auto gind = tr[i] % m_groupSize;
+												gtest[i] = gind;
+												is |= (1 << gind);
+											}
+											if (is != (1 << m_groupSize) - 1)
+												continue;
+											auto i = m_groupSize;
+											for (; i < m_numPlayers; i += m_groupSize) {
+												for (int j = 0; j < m_groupSize; j++)
+													if ((tr[i+j] % m_groupSize) != gtest[j])
+														break;
 											}
 											if (i != m_numPlayers)
 												continue;
@@ -248,7 +261,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											updateGroup(tr);
 									}
 								} while (ProceedToNextMapping());
-								break;
+								//break; // if not p1f we can't break;
 							}
 							if (!bCycleSelected) {
 								if (!allowUndefinedCycles()) {
@@ -330,9 +343,14 @@ void alldata::collectCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1)
 {
 	TrCycles trCycles;
 	memset(m_TrCyclesPair, 0, sizeof(m_TrCyclesPair));
-	for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)
-	{
-		if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1))) {
+	for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups) {
+		bool bRet = false;
+		if (!completeGraph())
+			bRet = getCyclesAndPathCBMP(&trCycles, MAX_3PF_SETS, neighbors(indRow0), neighbors(indRow1),
+				result(indRow0), result(indRow1), iv1) > 0;
+		else
+			bRet = getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1));
+		if (!bRet) {
 			ASSERT(1);
 			continue;
 		}

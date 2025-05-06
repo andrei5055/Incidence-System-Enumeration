@@ -16,11 +16,19 @@ CC void SizeParam::linksFromMatrix(tchar* lnk, tchar* iv, int nr) const
 			)
 
 			const auto linksOK = setLinksForOnePlayer(i, lnk, iv_id, j, ivId);
-			ASSERT_(!linksOK,
-				printfRed("*** Init: value of %d (for day %d position %d) already defined in links table\n", ivId, i, j);
-				printTable("Initial result", iv, nr, np, m_groupSize);
-				myExit(1)
-			)
+			if (!linksOK) {
+				for (int k = 0; k < j % m_groupSize; k++) {
+					int iv0 = iv_id[j - k - 1];
+					int lDay = *(lnk + ivId * np + iv0);
+					if (lDay != unset) {
+#if !USE_CUDA
+						printfRed("*** Init: pair (%d,%d) in day %d already defined in day %d\n", iv0, ivId, i, lDay);
+						printTableColor("Initial result", iv, nr, np, m_groupSize);
+						myExit(1);
+#endif
+					}
+				}
+			}
 		}
 	}
 }

@@ -2,10 +2,12 @@
 
 CC int alldata::getNextPlayer()
 {
-	int iPlayerNumber = indexPlayer[iPlayer];
 	int iRet;
 	int m0 = iPlayer % m_groupSize;
+	int iPrevPlayer = m0 ? tmpPlayers[iPlayer - 1] : iPlayer ? tmpPlayers[iPlayer - m_groupSize] : -1;
 	const auto cbmpGraph = !completeGraph();
+	int iPlayerNumber = MAX2(indexPlayer[iPlayer], iPrevPlayer + 1);
+	int iPlayerMax = m_indexPlayerMax[iPlayer];
 	for (; iPlayerNumber < m_numPlayers; iPlayerNumber++)
 	{
 	checkPlayerNumber:
@@ -20,14 +22,14 @@ CC int alldata::getNextPlayer()
 			}
 		}
 		
-		if (iPlayerNumber > m_indexPlayerMax[iPlayer])
+		if (iPlayerNumber > iPlayerMax)
 			return m_numPlayers;
 
 		if (selPlayers[iPlayerNumber] != unset)
 			continue;
 
-		if ((iRet = checkPlayer1(iPlayerNumber)) >= m_numPlayers)
-			return m_numPlayers;
+		if ((iRet = checkPlayer1(iPlayerNumber)) > iPlayerMax)
+				return m_numPlayers;
 
 		if (iPlayerNumber != iRet)
 		{
@@ -39,17 +41,17 @@ CC int alldata::getNextPlayer()
 		{
 			if (m_groupSize == 2)
 			{
-				tchar* lnk = links(tmpPlayers[iPlayer - 1]);
+				tchar* lnk = links(iPrevPlayer);
 				if (lnk[iPlayerNumber] != unset)
 					continue;
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				lnk[iPlayerNumber] = iDay;
-				links(iPlayerNumber)[tmpPlayers[iPlayer - 1]] = iDay;
+				links(iPlayerNumber)[iPrevPlayer] = iDay;
 				break;
 			}
 			else if (m_groupSize == 3)
 			{
-				if ((iRet = checkPlayer3(iPlayerNumber, m_numPlayers)) >= m_numPlayers)
+				if ((iRet = checkPlayer3(iPlayerNumber, m_numPlayers)) > iPlayerMax)
 					return m_numPlayers;
 				if (iPlayerNumber == iRet)
 					break;

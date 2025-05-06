@@ -83,8 +83,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 		m_file = f;
 	}
 #endif
-	if (/**param(t_u1f) && m_groupSize == 3**/ 1)//???
-		InitCycleSupport(m_nGroups);
+	InitCycleSupport(m_nGroups);
 
 	const auto u1fPntr = sysParam()->u1fCycles[0];
 	
@@ -103,10 +102,11 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	if (m_use2RowsCanonization) {
 		if (m_groupSize == 2)
 			m_pCheckFunc = (bp1f && pSysParam->completeGraph()) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
-		else if (m_groupSize == 3)
+		else if (m_groupSize == 3 || !pSysParam->completeGraph())
 			m_pCheckFunc = &alldata::cnvCheck3U1F;
 	}
-	else if ((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5))
+	else if (pSysParam->completeGraph() && 
+		((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5)))
 		m_pCheckFunc = &alldata::cnvCheck45;
 
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
