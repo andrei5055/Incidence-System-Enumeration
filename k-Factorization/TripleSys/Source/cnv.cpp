@@ -99,7 +99,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 				{
 					for (int j = 0; j < m_groupSize; j++) {
 						auto r1 = resn[i + j];
-						ttr[r1] = tr[i + (r1 % m_groupSize)];
+						ttr[r1] = tr[i + m_groupSizeRemainder[r1]];
 					}
 				}
 			}
@@ -211,7 +211,6 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 {
 	const int playerIndexCycle = nrows * m_numPlayers - m_groupSize - 1;
-	setAllowUndefinedCycles(nrows);
 	m_TrInd = 0;
 	resetGroupOrder();
 	m_playerIndex = playerIndexCycle;

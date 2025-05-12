@@ -5,10 +5,13 @@ CC bool alldata::processOneDay()
 	//	updateIndexPlayerMinMax();
 	while (iPlayer < m_numPlayers)
 	{
+#if 0
+		static tchar a[] = { 0,3,1,4,2,7,5,8,6,9 };
+		if (memcmp(a, tmpPlayers, sizeof(a) - 8) == 0)// && iPlayer == 3)
+			iDay = iDay;
+#endif
 		if (iPlayer < 0)
 			return false;
-		if (iPlayer == 1)
-			iPlayer = iPlayer;
 		const auto iPlayerNumber = getNextPlayer();
 		if (iPlayerNumber >= m_numPlayers)
 		{

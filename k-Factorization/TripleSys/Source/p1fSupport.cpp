@@ -64,7 +64,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 	if (idir & mask) // select a0 < c0 (clockwise), or a0 > c0 (contrclockwise)
 	{
 		// a0 < b0
-		switch (posb % 3) {
+		switch (m_groupSizeRemainder[posb]) {
 		case 0: a0 = res0[posb + 1]; break;
 		case 1: a0 = res0[posb - 1]; break;
 		case 2: a0 = res0[posb - 2]; break;
@@ -72,14 +72,14 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 	}
 	else
 	{
-		switch (posb % 3) {
+		switch (m_groupSizeRemainder[posb]) {
 		case 0: a0 = res0[posb + 2]; break;
 		case 1: a0 = res0[posb + 1]; break;
 		case 2: a0 = res0[posb - 1]; break;
 		}
 	}
 	posb = ti0[b1];
-	switch (posb % 3) {
+	switch (m_groupSizeRemainder[posb]) {
 	case 0: a1 = resi0[posb + 2]; break;
 	case 1: a1 = resi0[posb + 1]; break;
 	case 2: a1 = resi0[posb - 1]; break;
@@ -130,7 +130,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 			if (idir & mask) // select a0 < c0 (clockwise), or a0 > c0 (contrclockwise)
 			{
 				// a0 < b0
-				switch (posb % 3) {
+				switch (m_groupSizeRemainder[posb]) {
 				case 0: a0 = res0[posb + 1]; break;
 				case 1: a0 = res0[posb - 1]; break;
 				case 2: a0 = res0[posb - 2]; break;
@@ -138,14 +138,14 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 			}
 			else
 			{
-				switch (posb % 3) {
+				switch (m_groupSizeRemainder[posb]) {
 				case 0: a0 = res0[posb + 2]; break;
 				case 1: a0 = res0[posb + 1]; break;
 				case 2: a0 = res0[posb - 1]; break;
 				}
 			}
 			posb = ti0[b1];
-			switch (posb % 3) {
+			switch (m_groupSizeRemainder[posb]) {
 			case 0: a1 = resi0[posb + 2]; break;
 			case 1: a1 = resi0[posb + 1]; break;
 			case 2: a1 = resi0[posb - 1]; break;

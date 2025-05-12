@@ -32,7 +32,7 @@ public:
 	virtual ~TopGunBase()					{ 
 		delete[] startMatrix;
 		delete[] cnt();
-		delete[] m_pMatrixAutOrder;
+		delete m_pMatrixInfo;
 		delete[] m_pMatrixPerm;
 	}
 	int virtual Run() = 0;
@@ -57,16 +57,16 @@ protected:
 	int m_nRowsOut;
 	int mStartMatrixSize;
 	tchar* startMatrix;
-	uint* m_pMatrixAutOrder = NULL;
 	uint* m_pMatrixPerm = NULL;
+	CMatrixInfo* m_pMatrixInfo = NULL;	// Information about loaded matrices: |Aut(M)|, cycle's, group's
 	int nMatrices;
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
 private:
 	int getStartMatrices();
-	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, uint ** ppGroupOrders = NULL) const {
-		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), ppGroupOrders);
+	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
+		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), pMatrixInfo);
 	}
 };
 

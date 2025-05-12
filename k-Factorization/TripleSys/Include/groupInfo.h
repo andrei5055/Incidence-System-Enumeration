@@ -84,17 +84,15 @@ protected:
 	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
-	CC inline void setAllowUndefinedCycles(int nrows)	{ m_AllowUndefinedCycles = /**m_groupSize != 2 && nrows != 2 &&**/ m_allowUndefinedCycles; }
-	CC inline bool allowUndefinedCycles() const		{ return m_AllowUndefinedCycles; }
 private:
 	CC bool checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tchar* vo) const;
 
+	tchar* m_remainder3;
 	tchar* m_pU1Ftable;
 	tchar* m_pLinksCopy = NULL;
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;
 	const kSysParam* m_param;
-	bool m_AllowUndefinedCycles = false;
 #if PrintNVminmax
 	char* m_nvmn = NULL;
 	char* m_nvmx = NULL;

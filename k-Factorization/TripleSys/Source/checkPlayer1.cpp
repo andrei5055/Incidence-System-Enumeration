@@ -2,7 +2,7 @@
 
 CC int alldata::checkPlayer1(int iPlayerNumber)
 {
-	int m0 = iPlayer % m_groupSize;
+	int m0 = m_groupSizeRemainder[iPlayer];
 	int m1 = m0 == 0 ? m_groupSize : 1;
 	if (iDay <= 0)
 	{
@@ -122,7 +122,7 @@ PlayerOk1:
 #endif
 		}
 	}
-	if (completeGraph() && iDay == 1 && (iPlayerNumber % m_groupSize) && selPlayers[iPlayerNumber - 1] == unset)
+	if (iDay == 1 && completeGraph() && m_groupSizeRemainder[iPlayerNumber] && selPlayers[iPlayerNumber - 1] == unset)
 		return iPlayerNumber + 1;
 	return iPlayerNumber;
 }

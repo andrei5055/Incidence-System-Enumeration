@@ -90,14 +90,14 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	const auto* neighbors0 = neighbors(0);
 	tchar* p1 = NULL;
 	bool bCurrentSet = false;
-	bool bCBMP = /**m_groupSize > 3 &&**/ !completeGraph();
+	bool bCBMP = !completeGraph();
 	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
-	setAllowUndefinedCycles(nrows);
-	/**
-	static tchar a[] = { 0,5,10,1,6,14,2,3,13,4,12,23,7,17,18,8,15,19,9,20,22, 11,16,21 }
+#if 0
+	static tchar a[] = {0,3,1,4,2,7,5,8,6,9};
 	if (memcmp(a, result(1), sizeof(a)) == 0)
-		ip1 = ip1;**/
+		ip1 = ip1;
+#endif
 	while (1)
 	{
 		//if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
@@ -172,8 +172,12 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						auto* pV1 = v1;
 						if (bSaveTestedTrs)
 							pTestedTRs->resetGroupOrder();
-						nv1 = MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
-						nv1 = bCBMP ? nv1 : getAllV(v1, maxv1, indRow0, indRow1);
+						if (m_groupSize == 2)
+							nv1 = 1;
+						else if (bCBMP)
+							nv1 = MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+						else
+							nv1 = getAllV(v1, maxv1, indRow0, indRow1);
 #if !USE_CUDA
 						if (bPrintInfo) {
 							collectCyclesInfo(v1, nv1, indRow0, indRow1);
@@ -183,6 +187,10 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							if (bCBMP) {
 								if (getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),
 									result(indRow0), result(indRow1), itr) <= 0)
+									continue;
+							}
+							else if (m_groupSize == 2) {
+								if (getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) < 1)
 									continue;
 							}
 							else if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1),
@@ -206,7 +214,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 										if (bCBMP) {
 											tchar is = 0;
 											for (int i = 0; i < m_groupSize;i++) {
-												auto gind = tr[i] % m_groupSize;
+												auto gind = m_groupSizeRemainder[tr[i]];
 												gtest[i] = gind;
 												is |= (1 << gind);
 											}
@@ -215,7 +223,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											auto i = m_groupSize;
 											for (; i < m_numPlayers; i += m_groupSize) {
 												for (int j = 0; j < m_groupSize; j++)
-													if ((tr[i+j] % m_groupSize) != gtest[j])
+													if (m_groupSizeRemainder[tr[i+j]] != gtest[j])
 														break;
 											}
 											if (i != m_numPlayers)
@@ -264,7 +272,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								//break; // if not p1f we can't break;
 							}
 							if (!bCycleSelected) {
-								if (!allowUndefinedCycles()) {
+								if (!m_allowUndefinedCycles) {
 #if !USE_CUDA
 									if (bCollectInfo)
 										printfRed("Cycles (%d:%d:%d) for rows %d,%d are present, but not selected\n",
@@ -279,7 +287,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 					}
 #if !USE_CUDA
 					if (bPrintInfo) {
-						char stat[128];
+						char stat[256];
 						matrixStatOutput(stat, sizeof(stat), m_TrCyclesPair);
 						printf("nTr(generated=%-3d, new=%-3d) GroupOrder(accumulated)=%-2d Cycles for rows %d,%d: %s\n",
 							nTrsForPair, pTestedTRs->numObjects(), orderOfGroup(), indRow0, indRow1, stat);
@@ -348,6 +356,8 @@ void alldata::collectCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1)
 		if (!completeGraph())
 			bRet = getCyclesAndPathCBMP(&trCycles, MAX_3PF_SETS, neighbors(indRow0), neighbors(indRow1),
 				result(indRow0), result(indRow1), iv1) > 0;
+		else if (m_groupSize == 2)
+			bRet = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0;
 		else
 			bRet = getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1));
 		if (!bRet) {

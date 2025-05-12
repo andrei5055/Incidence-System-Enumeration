@@ -138,7 +138,7 @@ class alldata : public CGroupUtilisation, public CChecklLink , private CGroupInf
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
-	CC alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
+	CC alldata(const SizeParam& p, const kSysParam* pSysParam, const int createSecondRow = 0, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
 	CC sLongLong Run(int threadId=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
@@ -319,6 +319,7 @@ private:
 	tchar* m_Km2ndRowInd;
 	tchar* m_trmk;
 	tchar* m_groups;
+	tchar* m_groupSizeRemainder;
 	tchar* m_tx = NULL;
 
 	mutable int m_numCycles;

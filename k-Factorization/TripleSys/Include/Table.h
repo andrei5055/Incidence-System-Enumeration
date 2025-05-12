@@ -42,6 +42,7 @@ public:
 		m_name(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
 		m_makeString(makeString), m_bOutCntr(outCntr) {}
 	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
+	void printTableInfo(const char* pInfo);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
 	virtual const char *name() 					{ return m_name; }
@@ -76,7 +77,7 @@ public:
 	inline void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
 	inline void setInfo(const char* pInfo)		{ m_pInfo = pInfo; }
 	virtual const char* name() {
-		const auto len = snprintf(m_pBuffer, m_nLenBuffer, "%s = %d", m_name, m_groupOrder);
+		const auto len = snprintf(m_pBuffer, m_nLenBuffer, "%s %d", m_name, m_groupOrder);
 		if (m_pInfo) {
 			const auto new_len = len + strlen(m_pInfo) + 4;
 			if (new_len > m_nLenBuffer) {
@@ -257,3 +258,12 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 	FCLOSE_F(f);
 }
 
+template<typename T>
+void Table<T>::printTableInfo(const char* pInfo) {
+	if (!pInfo)
+		return;
+
+	FOPEN_F(f, m_pFileName, "a");
+	fprintf(f, pInfo);
+	FCLOSE_F(f);
+}

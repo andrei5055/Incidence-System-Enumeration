@@ -8,6 +8,11 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 	bool bRet = true;
 	TrCycles trCycles;
 	TrCycles trCycles01;
+#if 0
+	static tchar a[] = { 0,3,1,4,2,7,5,8,6,9 };
+	if (memcmp(a, result(1), sizeof(a)) == 0)
+		bRet = bRet;
+#endif
 	bool bCBMP = !completeGraph();
 	bool bok;
 	if (bCBMP)
@@ -49,7 +54,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						pTestedTRs->resetGroupOrder();
 				}
 				bool bok;
-				int nitr = bCBMP ? m_groupSizeFactorial : 1;
+				int nitr = 1; //bCBMP ? m_groupSizeFactorial : 1;
 				for (int itr = 0; itr < nitr; itr++) {
 					if (bCBMP) {
 						bok = getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),

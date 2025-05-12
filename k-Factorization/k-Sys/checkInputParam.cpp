@@ -90,16 +90,25 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	const auto nRowStart = val[t_nRowsInStartMatrix];
-	if (nRowStart && !val[t_MultiThreading]) {
-		printfRed("*** %s=%d should be 0 if %s=0. Exit\n", paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading]);
-		return false;
-	}
-
 	if (nRowStart) {
-		const auto nRowRes = val[t_nRowsInResultMatrix];
+		const auto nRowRes = val[t_nRowsInResultMatrix];	
 		if (nRowRes && nRowRes < nRowStart) {
 			printfRed("*** When it's not 0, %s=%d should be > %s=%d. Exit\n", paramNames[t_nRowsInResultMatrix], nRowRes, paramNames[t_nRowsInStartMatrix], nRowStart);
 			return false;
+		}
+		
+		if (!val[t_orderMatrices]) {
+			if (!val[t_MultiThreading]) {
+				printfRed("*** %s=%d should be 0 if %s=0. Exit\n", paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading]);
+				return false;
+			}
+		}
+		else {
+			// When we order the set of matrices, we need to read all of them.
+			printfRed("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
+				"\"%s\"=%d is ignored and replaced with the maximum integer value (%d)\n", 
+				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], INT_MAX);
+			*(int *)(val + t_nMaxNumberOfStartMatrices) = INT_MAX;
 		}
 	}
 	if (val[t_MultiThreading] == 2 && val[t_nRowsInStartMatrix] != val[t_useRowsPrecalculation]) {

@@ -3,7 +3,7 @@
 void RunThread(int threadId, eThreadStartMode iMode,
 	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, tchar* mstart0, tchar* mfirst, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
-	alldata sys(*pMaster, pMaster->paramPtr(), pRowStorage);
+	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
 	if (pMaster->descrStorage())
 		pMaster->addMatrixDB(sys.matrixDB());

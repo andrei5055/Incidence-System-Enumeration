@@ -386,7 +386,7 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 		printTable("The Matrix", result(), iDay, m_numPlayers, m_groupSize);
 		m_numDaysResult = iDay;
 		for (int i = 2; i <= iDay; i++) {
-			char stat[128];
+			char stat[256];
 			bool bRet = cnvCheckNew(0, i, false);
 			bool bRet2 = matrixStat(neighbors(), i, NULL);
 			bool needOutput = false;

@@ -125,7 +125,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	unsigned char* bResults = NULL;
 
 	COutGroupHandle* pAutGroup[4] = { NULL };
-	TableAut Result("\n\n|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
 	if (bSavingMatricesToDisk) {
 		string fName = format("{:0>10}.txt", threadNumber);
@@ -167,7 +167,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 #endif
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
-#if 0 // make 27 player matrix on the basis of first 5 rows
+#if 0 // Generate KC matrix
 #define N m_numPlayers
 #define G m_groupSize
 #define M (N/G)
@@ -208,8 +208,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
-
-	setAllowUndefinedCycles(iDay);
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
@@ -453,7 +451,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					noMoreResults = true;
 					goto noResult;
 				}
-				if (iDay == 2 && groupSize_2 && m_use2RowsCanonization)
+				if (0)//iDay == 2 && groupSize_2 && m_use2RowsCanonization)
 				{
 					noMoreResults = true;
 					goto noResult;
@@ -678,12 +676,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			m_finalKMindex++;
 #if !USE_CUDA
 			if (m_createSecondRow) {
-				if (groupSize_2)
-					m_pSecondRowsDB->addObject(result(1));
+				//if (groupSize_2)
+				//	m_pSecondRowsDB->addObject(result(1));
 				if (m_bPrint)
 					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
 				/**
-				char stat[128];
+				char stat[256];
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
@@ -711,7 +709,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 			if (m_bPrint || bSavingMatricesToDisk)
 			{
-				char stat[128];
+				char stat[256];
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)

@@ -205,7 +205,7 @@ CC int alldata::getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		if (ncr == 1 && !allowUndefinedCycles())
+		if (ncr == 1 && !m_allowUndefinedCycles)
 		{
 			if (cyclesNotOk(ncr, ncycles, trc->length))
 				return -1;
@@ -291,7 +291,7 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, int ncr, ctchar * t1, ctchar 
 		ctchar* r = res1;
 		for (int i = 0, k = 0; i < m_numPlayers; i += m_groupSize, k++) {
 			for (int j = 0; j < m_groupSize; j++) {
-				v0[(r[i + j] % m_groupSize) * m_nGroups + k] = r[i + j];
+				v0[m_groupSizeRemainder[r[i + j]] * m_nGroups + k] = r[i + j];
 			}
 		}
 		ctchar* vtr = v0; // Common Values
@@ -343,8 +343,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 	/**???
 	if (m_groupSize > 3 && !pNeedOutput)
 		return true;**/
-	setAllowUndefinedCycles(nr);
-	if (!pNeedOutput && allowUndefinedCycles())
+	if (!pNeedOutput && m_allowUndefinedCycles)
 		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
@@ -437,7 +436,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 		return false;
 	if (ncycles <= 0)
 		return true;
-	if (allowUndefinedCycles())
+	if (m_allowUndefinedCycles)
 		return false;
 	auto pntr = m_param->u1fCycles[0];
 	if (!pntr)
@@ -454,7 +453,7 @@ CC bool CChecklLink::cyclesNotOk(int ncr, int ncycles, tchar* length) const
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
-	if (allowUndefinedCycles())
+	if (m_allowUndefinedCycles)
 		return true;
 	auto pntr = m_param->u1fCycles[0];
 
@@ -544,7 +543,7 @@ CC int alldata::p1fCheck2ndRow() const
 
 	const auto nc = m_numPlayers;
 	const tchar* p2ndRow = result(1);
-	if (m_groupSize == 3)
+	if (1)//m_groupSize == 3)
 	{
 		ctchar* p;
 		for (int is = 0; is < m_pSecondRowsDB->numObjects(); is++)
@@ -647,7 +646,7 @@ CC int alldata::getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2)
 	ctchar* r = result(ir1);
 	for (int i = 0, k = 0; i < m_numPlayers; i+= m_groupSize, k++) {
 		for (int j = 0; j < m_groupSize; j++) {
-			allv[(r[i + j] % m_groupSize) * m_nGroups + k] = r[i + j];
+			allv[m_groupSizeRemainder[r[i + j]] * m_nGroups + k] = r[i + j];
 		}
 	}
 	return m_groupSize;

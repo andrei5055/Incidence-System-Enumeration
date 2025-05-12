@@ -2,7 +2,7 @@
 
 CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 {
-	const auto m0 = iPlayer % m_groupSize;
+	const auto m0 = m_groupSizeRemainder[iPlayer];
 	ASSERT(!m0);
 
 	auto i0 = iPlayer > 0 ? tmpPlayers[iPlayer - 1] : 0;

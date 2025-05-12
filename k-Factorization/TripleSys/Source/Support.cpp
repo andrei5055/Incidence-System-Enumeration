@@ -87,7 +87,7 @@ CC bool SizeParam::setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, 
 
 CC bool alldata::unsetLinksForOnePlayer(ctchar* p, int ip) const
 {
-	const int i = ip % m_groupSize;
+	const int i = m_groupSizeRemainder[ip];
 	if (i == 0)
 		return true;
 	const auto i1 = *(p += ip);
@@ -210,7 +210,7 @@ CC void alldata::updateIndexPlayerMinMax()
 							for (; ip1 < m_numPlayers; ip1++) {
 								auto const ld = links()[ip1];
 								ASSERT(ld != unset && ld > iDay);
-								if ((ld == unset || ld >= iDay) && (ip1 % m_groupSize))
+								if ((ld == unset || ld >= iDay) && m_groupSizeRemainder[ip1])
 									break;
 							}/**
 							if (ip1 == 11 && iDay == 3) {

@@ -3,7 +3,7 @@
 
 using namespace std;
 
-CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage* pRowStorage,
+CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSecondRow, CRowStorage* pRowStorage,
 	bool useCheckLinksT, int improveResult, bool createImprovedMatrix) :
 	CGroupInfo(pSysParam->val[t_numPlayers], 200), CGroupUtilisation(pSysParam),
 	CycleSupport(pSysParam->val[t_numPlayers], !pSysParam->completeGraph()), CChecklLink(p, pSysParam),
@@ -14,7 +14,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_improveResult = improveResult;
 	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
 		m_numDaysResult = m_numDays;
-
+	m_createSecondRow = createSecondRow;
 	m_rowTime = new int[m_numDays];
 	m_rowTime[0] = 0;
 	m_pResults = new tchar[m_nLenResults];
@@ -29,10 +29,12 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_ho = m_h + numPlayers64;
 	m_indexPlayerMin = m_ho + numPlayers64;
 	m_indexPlayerMax = m_indexPlayerMin + numPlayers64;
+	m_groupSizeRemainder = new tchar[m_numPlayers];
 	for (int i = 0; i < m_numPlayers; i++)
 	{
-		m_indexPlayerMax[i] = (i % m_groupSize) == 0 ? i : m_numPlayers - 1;
-		m_indexPlayerMin[i] = i / m_groupSize + (i % m_groupSize);
+		m_groupSizeRemainder[i] = i % m_groupSize;
+		m_indexPlayerMax[i] = m_groupSizeRemainder[i] == 0 ? i : m_numPlayers - 1;
+		m_indexPlayerMin[i] = i / m_groupSize + m_groupSizeRemainder[i];
 	}
 
 #if !USE_CUDA
@@ -51,12 +53,11 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	m_groups = new tchar[m_groupSizeFactorial * m_groupSize];
 	m_pLinks = new tchar[np2];
 	m_pSecondRowsDB = NULL;
-	m_createSecondRow = 0;
 	m_DayIdx = new tchar[m_numDays];
 	m_numCycles = 0;
 	m_firstNotSel = 0;
 	m_matrixCanonInterval = param(t_matrixCanonInterval);
-	m_checkForUnexpectedCycle = UseP1fCheckGroups && m_groupSize == 2 && m_numPlayers > 4 &&
+	m_checkForUnexpectedCycle = !m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
 		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); // assume all cycle sets are sorted
 
 	iPlayerIni = m_numPlayers - 1;
@@ -100,8 +101,12 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, CRowStorage*
 	bool bp1f = (!u1fPntr || u1fPntr[1] == m_numPlayers);
 	m_pCheckFunc = NULL;
 	if (m_use2RowsCanonization) {
-		if (m_groupSize == 2)
-			m_pCheckFunc = (bp1f && pSysParam->completeGraph()) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
+		if (m_groupSize == 2) {
+			if (!param(t_useFastCanonizerForG2) || m_createSecondRow)
+				m_pCheckFunc = &alldata::cnvCheck3U1F;
+			else 
+				m_pCheckFunc = (bp1f && pSysParam->completeGraph()) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
+		}
 		else if (m_groupSize == 3 || !pSysParam->completeGraph())
 			m_pCheckFunc = &alldata::cnvCheck3U1F;
 	}
@@ -249,6 +254,7 @@ CC alldata::~alldata() {
 	delete[] m_Ktmp;
 	delete[] m_trmk;
 	delete[] m_groups;
+	delete[] m_groupSizeRemainder;
 	delete[] m_DayIdx;
 	delete m_pCheckCanon;
 	delete m_pOrbits;

@@ -16,11 +16,16 @@ CC bool alldata::createU1FTr(tchar* tr, const TrCycles* trCycles01, const TrCycl
 		int ioff = offset[i] * 2;
 		int ip = dir[i] ? ioff + m_groupSize - 1 : ioff;
 		int istep = dir[i] ? -1 : 1;
+		auto* fp = trCycles->fullPath + start[i] * 2;
+		auto* fp01 = trCycles01->fullPath + trCycles01->start[i] * 2;
 		for (int j = 0; j < cycleLength; j++, ip += istep)
 		{
-			ip = ip >= cycleLength ? ip - cycleLength : ip < 0 ? ip + cycleLength : ip;
-			int i0 = trCycles->fullPath[ip + start[i] * 2];
-			int i1 = trCycles01->fullPath[j + trCycles01->start[i] * 2];
+			if (ip >= cycleLength)
+				ip -= cycleLength;
+			else if (ip < 0) 
+				ip += cycleLength;
+			const auto i0 = fp[ip];
+			const auto i1 = fp01[j];
 			if (tr[i0] != i1)
 			{
 				if (tr[i0] != unset)

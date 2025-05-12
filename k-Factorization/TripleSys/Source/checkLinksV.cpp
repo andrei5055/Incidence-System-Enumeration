@@ -92,47 +92,54 @@ CC bool CChecklLink::checkLinksV2(ctchar* lnks, int nr) const
 }
 CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* vo) const
 {
-	if (nv <= 0)
+	if (nv <= 0) {
+		//printTableColor("v", m_vo, 1, vo + 1 - m_vo, 0);
+		//return false;
 		return true;
+	}
 	const auto cbmpGraph = !completeGraph();
 	if (nv == 2 && ind != -1)
 	{
 		ASSERT(vo + 1 - m_vo >= m_numPlayers,
-		    printf("vo + 1 - m_vo=%d\n", (int)(vo + 1 - m_vo));
-		)
-		switch (ind) {
-		case 0:
-			if (c[v[1] * m_numPlayers + v[2]] != unset)
-				return false;
-			if (cbmpGraph) {
-				if ((v[1] % 3) == (v[2] % 3))
+			printf("vo + 1 - m_vo=%d\n", (int)(vo + 1 - m_vo));
+			)
+			switch (ind) {
+			case 0:
+				if (c[v[1] * m_numPlayers + v[2]] != unset)
 					return false;
-			}
-			*vo = v[1];
-			*(vo + 1) = v[2];
-			return true;
-		case 1:
-			if (c[v[0] * m_numPlayers + v[2]] != unset)
-				return false;
-			if (cbmpGraph) {
-				if ((v[0] % 3) == (v[2] % 3))
+				if (cbmpGraph) {
+					if (m_remainder3[v[1]] == m_remainder3[v[2]])
+						return false;
+				}
+				*vo = v[1];
+				*(vo + 1) = v[2];
+				break;
+			case 1:
+				if (c[v[0] * m_numPlayers + v[2]] != unset)
 					return false;
-			}
-			*vo = v[0];
-			*(vo + 1) = v[2];
-			return true;
-		case 2:
-			if (c[v[0] * m_numPlayers + v[1]] != unset)
-				return false;
-			if (cbmpGraph) {
-				if ((v[0] % 3) == (v[1] % 3))
+				if (cbmpGraph) {
+					if (m_remainder3[v[0]] == m_remainder3[v[2]])
+						return false;
+				}
+				*vo = v[0];
+				*(vo + 1) = v[2];
+				break;
+			case 2:
+				if (c[v[0] * m_numPlayers + v[1]] != unset)
 					return false;
+				if (cbmpGraph) {
+					if (m_remainder3[v[0]] == m_remainder3[v[1]])
+						return false;
+				}
+				*vo = v[0];
+				*(vo + 1) = v[1];
+				break;
+			default:
+				return false;
 			}
-			*vo = v[0];
-			*(vo + 1) = v[1];
-			return true;
-		}
-		return false;
+		//printTableColor("v", m_vo, 1, vo + 2 - m_vo, 0);
+		//return false;
+		return true;
 	}
 	tchar t[MAX_PLAYER_NUMBER];
 	if (ind == -1)
@@ -146,20 +153,35 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 			memcpy(t + ind, v + ind + 1, nv - ind);
 	}
 	const auto* ct0 = c + t[0] * m_numPlayers;
-	for (int i = 1; i < nv; i++)
-	{
-		if (cbmpGraph) {
-			if ((t[0] % 3) == (t[i] % 3))
-				continue;
-		}
-		if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
+	if (cbmpGraph) {
+		const auto t0r3 = m_remainder3[t[0]];
+		for (int i = 1; i < nv; i++)
 		{
-			ASSERT(vo + 1 - m_vo >= m_numPlayers);
-			*vo = t[0];
-			*(vo + 1) = t[i];
-			return true;
+			if (t0r3 == m_remainder3[t[i]])
+				continue;
+			if (ct0[t[i]] == unset) {
+				ASSERT(vo + 1 - m_vo >= m_numPlayers);
+				//*vo = t[0];
+				//*(vo + 1) = t[i];
+				if (checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2)) {
+					*vo = t[0];
+					*(vo + 1) = t[i];
+					return true;
+				}
+			}
 		}
 	}
-
+	else {
+		for (int i = 1; i < nv; i++)
+		{
+			if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
+			{
+				ASSERT(vo + 1 - m_vo >= m_numPlayers);
+				*vo = t[0];
+				*(vo + 1) = t[i];
+				return true;
+			}
+		}
+	}
 	return false;
 }

@@ -5,7 +5,7 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 	if (trc[0].counter == 0)
 		return false;
 	ctchar* u1fPntr = sysParam()->u1fCycles[0];
-	if (allowUndefinedCycles()) {
+	if (m_allowUndefinedCycles) {
 		if (!u1fPntr)
 			return true;  //all cycles are welcome */ trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
 		else {
@@ -65,6 +65,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 	int vp = 0;
 	tchar v = 0;
 	tchar k = 0, k0 = 0, k1 = 0, ip = 0;
+	const tchar iGroupSizeM1 = m_groupSize - 1;
 	for (; k0 < nc && ncycles < ncc; k0 += m_groupSize)
 	{
 		if (res1tmp[k0] == unset) // not used before 
@@ -80,7 +81,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 				res1tmp[k1] = 0;
 				for (int j = 0; j < m_groupSize; j++) {
 					v = res1[k1 + j];
-					vp = pst[v % m_groupSize];
+					vp = pst[m_groupSizeRemainder[v]];
 					trc->fullPath[ip + vp] = v;
 				}
 				ip += m_groupSize;
@@ -88,12 +89,13 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 				k1 = k / m_groupSize * m_groupSize;
 				for (int j = 0; j < m_groupSize; j++) {
 					v = res2[k1 + j];
-					//vp = pst[m_groupSize - (v % m_groupSize) - 1] - is;
-					vp = pst[v % m_groupSize];
+					//vp = pst[m_groupSize - m_groupSizeRemainder[v] - 1] - is;
+					//vp = pst[m_groupSizeRemainder[v]];
+					vp = iGroupSizeM1 - pst[m_groupSizeRemainder[v]];
 					trc->fullPath[ip + vp] = v;
 				}
-				k = t1[trc->fullPath[ip]];
 				ip += m_groupSize;
+				k = t1[trc->fullPath[ip - 1]];
 			}
 			tchar length = i;
 
@@ -112,7 +114,8 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 			printTableColor("", trc->fullPath + trc->start[ncycles - 1] * 2, 1, trc->length[ncycles - 1] * 2, m_groupSize);
 			**/
 			if (*(trc->fullPath + trc->start[ncycles - 1] * 2) !=
-				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize)) {
+				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - 1)) {
+				//*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize)) {
 				memset(trc, 0, sizeof(TrCycles));
 				return -1;
 			}
@@ -123,7 +126,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		if (ncr == 1 && !allowUndefinedCycles())
+		if (ncr == 1 && !m_allowUndefinedCycles)
 		{
 			if (cyclesNotOk(ncr, ncycles, trc->length))
 				return -1;
@@ -135,11 +138,13 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 }
 CC int alldata::u1fGetCycleLengthCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const
 {
-	auto const n = MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+	auto const n = m_groupSize == 2 ? 1 : MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+
 	for (int i = 0; i < n; i++) {
 		auto ncycles = getCyclesAndPathCBMP(trc, ncr, t1, t2, res1, res2, i);
 		if (cyclesNotOk(ncr, ncycles, trc->length))
 			return ncycles ? -1 : 0;
+		//printTableColor("t", trc->fullPath, 1, m_numPlayers, m_groupSize);
 		//return ncycles;
 	}
 	return 1;

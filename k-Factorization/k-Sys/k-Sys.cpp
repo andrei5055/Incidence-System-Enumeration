@@ -9,6 +9,7 @@ const char* intParamNames[]{
 	"CBMP_Graph",           // Complete Balanced Multi-Partite Graph
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
+	"UseFastCanonizerForG2", // 0 currently does not work with u1f
 	"SubmatrixGroupOrderMin",
 	"ResultGroupOrderMin",
 	"USE_GPU",

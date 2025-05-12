@@ -3,7 +3,7 @@
 CC int alldata::getNextPlayer()
 {
 	int iRet;
-	int m0 = iPlayer % m_groupSize;
+	int m0 = m_groupSizeRemainder[iPlayer];
 	int iPrevPlayer = m0 ? tmpPlayers[iPlayer - 1] : iPlayer ? tmpPlayers[iPlayer - m_groupSize] : -1;
 	const auto cbmpGraph = !completeGraph();
 	int iPlayerNumber = MAX2(indexPlayer[iPlayer], iPrevPlayer + 1);
@@ -13,9 +13,9 @@ CC int alldata::getNextPlayer()
 	checkPlayerNumber:
 		if (cbmpGraph) {
 			checkPlayerNumber1:
-			int m1 = iPlayerNumber % m_groupSize;
+			int m1 = m_groupSizeRemainder[iPlayerNumber];
 			for (int k = 1; k <= m0; k++) {
-				if ((tmpPlayers[iPlayer - k] % m_groupSize) == m1) {
+				if (m_groupSizeRemainder[tmpPlayers[iPlayer - k]] == m1) {
 					iPlayerNumber++;
 					goto checkPlayerNumber1;
 				}

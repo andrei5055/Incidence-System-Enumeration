@@ -43,13 +43,13 @@ int TopGun::Run()
 		}
 
 		if (!m_pSecondRowsDB) {
-			alldata sys(*this, paramPtr());
+			alldata sys(*this, paramPtr(), 1);
 			m_pSecondRowsDB = new RowDB(*paramPtr());
 			// Use:
 			// a) m_pSecondRowsDB->addObject(pSecondRow)
 			// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
 			// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
-			// 
+			//
 			resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
 			if (resultMatr == 0) {
 				printfRed("*** Cannot create second row(s) with these parameters. Exit\n");
@@ -58,35 +58,30 @@ int TopGun::Run()
 		}
 	}
 
-	if (!param(t_MultiThreading))
-	{
-		alldata sys(*this, paramPtr());
-		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
-		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
-		transferMatrixDB(sys.matrixDB());
-	}
-	else
-	{
+	const auto orderMatrixMode = param(t_orderMatrices);
+	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (!readStartMatrices())
 			myExit(1);
 
 		//myTemporaryCheck();
-		const auto orderMatrixMode = param(t_orderMatrices);
 		if (orderMatrixMode) {
 			auto nDuplicate = orderMatrices(orderMatrixMode);
 			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
 			nMatrices -= nDuplicate;
 			if (orderMatrixMode == 2) {
-				TableAut Result("|Aut(M)|", m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+				TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 				Result.allocateBuffer(32);
 				std::string ResultFile;
 				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), "_OrderedMatrices.txt");
 				Result.setOutFileName(ResultFile.c_str());
 				for (int i = 0; i < nMatrices; i++) {
 					const auto idx = m_pMatrixPerm[i];
-					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;
-					Result.setGroupOrder(m_pMatrixAutOrder[idx]);
-					Result.printTable(pMatr, true, false, nRowsStart());
+					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
+					Result.setGroupOrder(groupOrder);
+					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
+					Result.printTable(pntrStartMatrix() + idx * mStartMatrixSize, true, false, nRowsStart());
+					if (groupOrder > 1)
+						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
 				}
 				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
 				reportEOJ(0);
@@ -225,6 +220,12 @@ int TopGun::Run()
 		const auto str = std::format("Total time={}ms (including prep time={}ms)\n", rTime, mTime);
 		printf(str.c_str());
 		m_reportInfo += str;
+	} else {
+		 alldata sys(*this, paramPtr());
+		 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
+		 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+		 transferMatrixDB(sys.matrixDB());
+
 	}
 
 	const auto expectedResult = param(t_expectedResult);

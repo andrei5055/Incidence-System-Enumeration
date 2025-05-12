@@ -13,7 +13,7 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
     //                  1 - Matrix reordering will be performed, but |Aut(M)| will not be needed.
     //                  2 - Matrix reordering will be performed AND |Aut(M)| will be used. 
 	if (orderMatrixMode == 2)
-		m_pMatrixAutOrder = new uint[nMatricesReserved()];
+		m_pMatrixInfo = new CMatrixInfo(nMatricesReserved());
 
 	if (m_nRowsOut == 0)
 		m_nRowsOut = m_numDays;
@@ -66,7 +66,6 @@ int TopGunBase::getStartMatrices()
 	nMatricesFromOneFile = nMatricesAll = nfr = 0;
 	int nMax = nMatricesMax();
 	int nReserved = nMatricesReserved();
-	auto* pAutOrder = m_pMatrixAutOrder;
 
 	std::string path_name;
 	createFolderAndFileName(path_name, paramPtr(), t_StartFolder, nRowsStart());
@@ -91,7 +90,7 @@ int TopGunBase::getStartMatrices()
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, m_pMatrixAutOrder? &pAutOrder : NULL);
+		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, m_pMatrixInfo);
 		if (!nMatricesFromOneFile)
 		{
 			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());
@@ -101,7 +100,6 @@ int TopGunBase::getStartMatrices()
 		nfr++;
 		printf("\n%d %d-rows 'Start Matrices' loaded from file %s", nMatricesFromOneFile, nRowsStart(), sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
-		m_pMatrixAutOrder = pAutOrder;
 		nMax -= nMatricesFromOneFile;
 		if (nMax <= 0)
 			break;
@@ -111,6 +109,10 @@ int TopGunBase::getStartMatrices()
 		printf("\n%d %d-rows 'Start Matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), nfr);
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
+
+	if (m_pMatrixInfo)
+		m_pMatrixInfo->updateReservedMatrNumb(nReserved);
+
 	return nMatricesAll;
 }
 
@@ -176,7 +178,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			}
 			if (allowUndefinedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
 				fprintf(f, "\n%s\n", SECTION_PARAM_U1F_CONF);
-				char buffer[128], * pBuf = buffer;
+				char buffer[256], *pBuf = buffer;
 				const auto lenBuf = countof(buffer);
 				SPRINTFS(pBuf, buffer, lenBuf, "%c", '{');
 				const auto ngrp = pntr[0];
