@@ -187,11 +187,11 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 	if (groupSize2() && tc->length[0] == m_numPlayers)
 		return p1fCheck2P1F(neighborsi, pObj + m_numPlayers);
 	TrCycles tcs;
-	const auto ncycles = m_pAllData->u1fGetCycleLength(&tcs, 1, neighborsi, pObj + m_numPlayers,
-		neighborsi - m_numPlayers, pObj);
+	const auto ncycles = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers,
+		neighborsi - m_numPlayers, pObj, eCheckErrors);
 	if (ncycles <= 0)
 		return false;
-	for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++, tc++)
+	for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++, tc++)
 	{
 		if (tc->counter == 0)
 			break;

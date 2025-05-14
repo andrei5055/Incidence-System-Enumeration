@@ -103,6 +103,12 @@ typedef enum {
 	eDisabled,
 } eThreadStartMode;
 
+typedef enum {
+	eNoCollection,
+	eEachSetSeparate,
+	eSameSetsTogether,
+} eCollectionMode;
+
 template<typename T>CC void initArray(T** pPntr, int len, T val = 0) {
 	auto *ptr = *pPntr = new T[len];
 	while (len--)
@@ -171,7 +177,8 @@ public:
 	CC inline auto transformedMatrix() const		{ return m_Km; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
-	CC int u1fGetCycleLength(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
+	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
+		eCheckForErrors checkErrors) const;
 private:
 	CC void Init();
 	inline auto numDays() const						{ return m_numDays; }
@@ -209,17 +216,22 @@ private:
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
 	char *matrixStatOutput(char* str, int maxStr, TrCycles* trs) const;
-	CC void cyclesFor2Rows(ctchar* p1);
-	CC int p3Cycles(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
-		bool bWithoutPath = true) const;
-	CC int u1fGetCycleLength3(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
-	CC int u1fGetCycleLengthCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const;
+	CC void cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1,
+		ctchar* result0, ctchar* result1, eCollectionMode collectionMode);
+	CC int p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
+		eCheckForErrors checkErrors) const;
+	CC int u1fGetCycleLength3(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
+		eCheckForErrors checkErrors) const;
+	CC int u1fGetCycleLengthCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
+		eCheckForErrors checkErrors) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
-	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, bool bWithoutPath = true) const;
-	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const;
-	CC int getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart) const;
-	CC int getCyclesAndPath(TrCycles* trc, int ncr, ctchar* tt1, ctchar* tt2, ctchar* tt3 = NULL, ctchar* tt4 = NULL, 
-		bool bWithoutPath = true) const;
+	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, eCollectionMode collectionMode) const;
+	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1, 
+		eCheckForErrors checkErrors) const;
+	CC int getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart, 
+		eCheckForErrors checkErrors) const;
+	CC int getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4,
+		eCheckForErrors checkError) const;
 	CC int checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer = NULL);
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
@@ -232,12 +244,13 @@ private:
 	CC bool createU1FTr(tchar* tr, const TrCycles* trCycles01, const TrCycles* trCycles,
 		ctchar* dir, ctchar* offset, ctchar* start, int iPrint = 0);
 
-	CC int getAllV0(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
-	CC int getAllV(tchar* allv, int maxv, tchar ir1, tchar ir2, tchar* pt2 = NULL) const;
+	CC int getAllV0(tchar* allv, int maxv, ctchar* neighbor1, ctchar* result0) const;
+	CC inline int getAllV(tchar* allv, int maxv, ctchar* neighbor1, ctchar* result0) const;
+	CC int getAllV(tchar* allv, int maxv, int iRow0, int iRow1) const;
 	CC int p1fCheck2ndRow() const;
 	CC void updateIndexPlayerMinMax();
 	CC bool cyclesOfTwoRowsOk(TrCycles* trc) const;
-	void collectCyclesInfo(tchar* pv1, int nv1, int indRow0, int indRow1);
+	CC int collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indRow0, int indRow1, eCheckForErrors checkError);
 	void printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);
 	void reportCurrentMatrix();
@@ -276,7 +289,6 @@ private:
 		return (ncycles != 2 || (cycles[0] != 9 && cycles[0] != 12)) &&
 			(ncycles != 3 || (cycles[0] != 6 && cycles[0] != 9));
 	}
-	Cycles* m_cycles;
 	size_t m_nCanonCalls[2] = 				// Counter of CanonicityChecker::CheckCanonicity calls 
 				{ (size_t)-1, (size_t)-1 };	// (total # of calls, # of calls with negative answer) 
 	char* maxResult;
@@ -345,8 +357,10 @@ private:
 #endif
 	void* m_pRes;
 	TrCycles m_TrCycles;
-	mutable TrCycles m_TrCyclesAll[MAX_3PF_SETS];
-	mutable TrCycles m_TrCyclesPair[MAX_3PF_SETS];
+	mutable TrCycles* m_TrCyclesAll = NULL;
+	mutable TrCycles* m_TrCyclesPair = NULL;
+	mutable TrCycles* m_TrCyclesCollection = NULL;
+	eCollectionMode m_collectionMode;
 	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
@@ -360,9 +374,10 @@ private:
 	const char* m_fHdr = NULL;
 	int m_threadNumber = 0;
 	bool m_bPrint = false;
+	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 
 	public:
-	mutable TrCycles m_TrCyclesFirst2Rows[MAX_3PF_SETS];
+	mutable TrCycles* m_TrCyclesFirst2Rows = NULL;
 };
 
 inline bool is_number(const std::string& s)

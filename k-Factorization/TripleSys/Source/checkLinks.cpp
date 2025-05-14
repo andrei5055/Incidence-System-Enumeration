@@ -52,7 +52,6 @@ CC bool CChecklLink::checkLinks(tchar* pLinks, int id, bool printLinksStatTime)
 	int iOffset = 0;// 5;
 	int ie = m_numPlayers;
 	int i = -1;
-	bool bUseTable = m_numPlayers == 24 && cbmpGraph;
 	for (int i0 = 0; i0 < ie; i0++) {
 		i = (i0 + iOffset) % m_numPlayers;
 		const auto ip3 = m_remainder3[i];

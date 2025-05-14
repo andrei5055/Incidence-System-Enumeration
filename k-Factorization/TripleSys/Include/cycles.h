@@ -1,16 +1,5 @@
 #pragma once
 
-class Cycles {
-public:
-	bool defined = false;
-	tchar rowInd[2];
-	tchar cycles[MAX_3PF_SETS * MAX_CYCLES_PER_SET];
-	int nCycleSets = 0;
-	tchar* cycleStart(int ic) {
-		return (ic >= nCycleSets) ? NULL : cycles + ic * MAX_CYCLES_PER_SET + 1;
-	}
-};
-
 class CycleMapping {
 protected:
 	CC CycleMapping(int numPlayers, bool cmpGraph = false) : m_bCMP_Graph(cmpGraph) {
@@ -42,8 +31,8 @@ class CycleSupport : protected CycleMapping {
 protected:
 	CC CycleSupport(int numPlayers, bool cmpGraph = false) : CycleMapping(numPlayers, cmpGraph) {}
 	CC ~CycleSupport() { delete[] m_pV0; }
-    CC void InitCycleSupport(int groupNumber) {
-		auto const len = groupNumber * MAX_3PF_SETS;
+    CC void InitCycleSupport(int groupNumber, int maxSets) {
+		auto const len = groupNumber * maxSets;
 		m_pV0 = new tchar[2 * len];
 		m_pV1 = m_pV0 + len;
 	}

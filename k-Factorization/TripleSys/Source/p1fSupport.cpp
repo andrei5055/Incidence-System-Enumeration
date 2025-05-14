@@ -16,19 +16,18 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 	}
 #if _DEBUG
 	int s = 0;	for (itr = 0; itr < m_numPlayers; itr++) {
-		//if (tr[itr] == unset || tr[itr] >= m_numPlayers)
-		//	return false;
+		if (tr[itr] == unset || tr[itr] >= m_numPlayers)
+			break;
 		ASSERT(tr[itr] == unset || tr[itr] >= m_numPlayers);
 		s |= (1 << tr[itr]);
 	}
 	if (s != (1 << m_numPlayers) - 1)
-	{/**
+	{/**/
 		printTable("pf0", pf0, 1, m_numPlayers, 2);
 		printTable("pf1", pf1, 1, m_numPlayers, 2);
 		printTable("pfi", pfi, 1, m_numPlayers, 2);
 		printTable("pfj", pfj, 1, m_numPlayers, 2);
 		printTable("tr ", tr, 1, m_numPlayers, 2);
-		printTable("trv", trv, 1, m_numPlayers, 2);**/
 		printfRed("Not p1f matrix\n");
 		//return false;
 		ASSERT(1);
@@ -235,14 +234,15 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 	return false;
 }
 
-CC bool alldata::getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1) const
+CC bool alldata::getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1, 
+	eCheckForErrors checkErrors) const
 {
 	memset(trc, 0, sizeof(TrCycles));
 	tchar tt1[MAX_PLAYER_NUMBER], tt2[MAX_PLAYER_NUMBER];
 	tchar tt3[MAX_PLAYER_NUMBER], tt4[MAX_PLAYER_NUMBER];
 
 	getTT14ForG3(tt1, tt2, tt3, tt4, v, t0, t1, res0, res1, m_nGroups);
-	return getCyclesAndPath(trc, 1, tt1, tt2, tt3, tt4) > 0;
+	return getCyclesAndPathFromNeighbors(trc, tt1, tt2, tt3, tt4, checkErrors) > 0;
 }
 
 CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v0, ctchar* v1,
@@ -251,9 +251,9 @@ CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v
 	TrCycles trCycles01;
 	TrCycles trCycles;
 	m_numCycles = 0;
-	if (!getCyclesAndPath3(&trCycles01, v0, t0, t1, result(), res1))
+	if (!getCyclesAndPath3(&trCycles01, v0, t0, t1, result(), res1, eNoErrorCheck))
 		return false;
-	if (!getCyclesAndPath3(&trCycles, v1, neighbors(ir0), neighbors(ir1), result(ir0), result(ir1)))
+	if (!getCyclesAndPath3(&trCycles, v1, neighbors(ir0), neighbors(ir1), result(ir0), result(ir1), eNoErrorCheck))
 		return false;
 	if (MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET) != 0)
 		return false;

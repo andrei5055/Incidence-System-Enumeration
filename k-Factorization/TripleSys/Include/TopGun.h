@@ -83,7 +83,6 @@ private:
 	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
-
 	sLongLong *m_cntTotal = NULL;
 	sLongLong dNumMatrices[2];
 	bool *threadActive = NULL;

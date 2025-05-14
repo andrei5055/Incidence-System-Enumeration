@@ -82,6 +82,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;
+	TrCycles trCycles;
 	tchar gtest[MAX_PLAYER_NUMBER];
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
@@ -91,7 +92,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	tchar* p1 = NULL;
 	bool bCurrentSet = false;
 	bool bCBMP = !completeGraph();
-	const int maxv1 = MAX_3PF_SETS;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 #if 0
 	static tchar a[] = {0,3,1,4,2,7,5,8,6,9};
@@ -101,7 +101,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	while (1)
 	{
 		//if ((any2RowsConvertToFirst2 && nrows != 2) || !m_pSecondRowsDB)
-		if (!m_pSecondRowsDB)
+		if (!m_pSecondRowsDB || (param(t_autSaveTestedTrs) > 0 && nrows < m_numDaysResult))
 			p1 = result(1);
 		else if (m_pSecondRowsDB->numObjects() > ip1)
 			p1 = m_pSecondRowsDB->getObject(ip1);
@@ -112,10 +112,17 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			break;
 		}
 		ip1++;
-		memset(&m_TrCycles, 0, sizeof(m_TrCycles));
-		if (MEMCMP(p1, result(1), m_numPlayers) == 0)
+		if (MEMCMP(p1, result(1), m_numPlayers) == 0) {
 			bCurrentSet = true;
-		cyclesFor2Rows(p1); // result is in m_TrCyclesAll 
+			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
+			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors(1), result(0), result(1), eSameSetsTogether);
+		}
+		else {
+			tchar neighbors1[MAX_PLAYER_NUMBER];
+			u1fSetTableRow(neighbors1, p1);
+			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
+			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors1, result(0), p1, eSameSetsTogether);
+		}
 		if (nrows == 2) {
 			if (!cyclesOfTwoRowsOk(m_TrCyclesAll)) {
 				if (bCurrentSet) {
@@ -128,7 +135,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
 		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
 		bool bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
-		TrCycles trCycles;
 		// get first row
 		for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
 			bool bSaveTestedTrs = bUseTestedTrs && ((iRowLast < m_numDaysResult - 1) || bCollectInfo);
@@ -172,34 +178,34 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						auto* pV1 = v1;
 						if (bSaveTestedTrs)
 							pTestedTRs->resetGroupOrder();
-						if (m_groupSize == 2)
-							nv1 = 1;
-						else if (bCBMP)
-							nv1 = MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+#define UseOneCyclesSet 0
+						if (UseOneCyclesSet && nrows < m_numDaysResult && !param(t_autSaveTestedTrs)) {
+							cyclesFor2Rows(m_TrCyclesPair, &m_TrCycles, neighbors(indRow0), neighbors(indRow1),
+								result(indRow0), result(indRow1), eSameSetsTogether);
+							for (int itr = 0; itr < MAX_CYCLE_SETS; itr++) {
+								if (m_TrCyclesPair[itr].counter == 0 && m_TrCyclesAll[itr].counter == 0)
+									break;
+								if (m_TrCyclesPair[itr].counter != m_TrCyclesAll[itr].counter ||
+									MEMCMP(m_TrCyclesPair[itr].length, m_TrCyclesAll[itr].length, MAX_CYCLES_PER_SET))
+									goto nextRow;
+							}
+							nv1 = MAX_CYCLE_SETS;
+						}
 						else
-							nv1 = getAllV(v1, maxv1, indRow0, indRow1);
+							nv1 = (m_groupSize == 3 && !bCBMP) ? getAllV(v1, m_maxCommonVSets, indRow0, indRow1) : MAX_CYCLE_SETS;
 #if !USE_CUDA
 						if (bPrintInfo) {
-							collectCyclesInfo(v1, nv1, indRow0, indRow1);
+							cyclesFor2Rows(m_TrCyclesPair, &m_TrCycles, neighbors(indRow0), neighbors(indRow1), 
+								result(indRow0), result(indRow1), eSameSetsTogether);
 						}
 #endif
 						for (int itr = 0; itr < nv1; itr++, pV1 += m_nGroups) {
-							if (bCBMP) {
-								if (getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),
-									result(indRow0), result(indRow1), itr) <= 0)
-									continue;
-							}
-							else if (m_groupSize == 2) {
-								if (getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) < 1)
-									continue;
-							}
-							else if (!getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1),
-								result(indRow0), result(indRow1))) {
-								//ASSERT(1);
+							if (UseOneCyclesSet && nrows < m_numDaysResult)
+								memcpy(&trCycles, &m_TrCyclesPair[itr], sizeof(TrCycles));
+							else if (collectOneCyclesSet(&trCycles, pV1, itr, indRow0, indRow1, eNoErrorCheck) <= 0)
 								continue;
-							}
 							bool bCycleSelected = false;
-							for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+							for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++)
 							{
 								if (m_TrCyclesAll[itr0].counter == 0)
 									break;
@@ -285,6 +291,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							}
 						}
 					}
+					nextRow:
 #if !USE_CUDA
 					if (bPrintInfo) {
 						char stat[256];
@@ -293,10 +300,8 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							nTrsForPair, pTestedTRs->numObjects(), orderOfGroup(), indRow0, indRow1, stat);
 					}
 #endif
-					if (bCurrentSet)
-					{
-						if (!nTrsForPair)
-						{
+					if (bCurrentSet) {
+						if (!nTrsForPair) {
 							if (any2RowsConvertToFirst2) {
 #if !USE_CUDA
 								if (bCollectInfo)
@@ -325,6 +330,18 @@ ret:
 	}
 	return bRet;
 }
+CC int alldata::collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indRow0, int indRow1, eCheckForErrors checkErrors)
+{
+	int iRet = -1;
+	if (!completeGraph())
+		iRet = getCyclesAndPathCBMP(trc, neighbors(indRow0), neighbors(indRow1),
+			result(indRow0), result(indRow1), ind, checkErrors);
+	else if (m_groupSize == 2)
+		iRet = getCyclesAndPathFromNeighbors(trc, neighbors(indRow0), neighbors(indRow1), NULL, NULL, checkErrors);
+	else
+		iRet = getCyclesAndPath3(trc, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1), checkErrors);
+	return iRet;
+}
 #if !USE_CUDA
 void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 {
@@ -345,26 +362,6 @@ void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 			printTable("input", result(), id + 2, m_numPlayers, m_groupSize);
 			printTable("ttr", ttr, 1, m_numPlayers, m_groupSize);
 		}
-	}
-}
-void alldata::collectCyclesInfo(tchar* pV1, int nv1, int indRow0, int indRow1) 
-{
-	TrCycles trCycles;
-	memset(m_TrCyclesPair, 0, sizeof(m_TrCyclesPair));
-	for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups) {
-		bool bRet = false;
-		if (!completeGraph())
-			bRet = getCyclesAndPathCBMP(&trCycles, MAX_3PF_SETS, neighbors(indRow0), neighbors(indRow1),
-				result(indRow0), result(indRow1), iv1) > 0;
-		else if (m_groupSize == 2)
-			bRet = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0;
-		else
-			bRet = getCyclesAndPath3(&trCycles, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1));
-		if (!bRet) {
-			ASSERT(1);
-			continue;
-		}
-		collectCyclesAndPath(m_TrCyclesPair, &trCycles, true);
 	}
 }
 void alldata::printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows)

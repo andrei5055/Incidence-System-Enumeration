@@ -88,7 +88,7 @@ void kSysParam::setup() {
 
 int main(int argc, const char* argv[])
 {
-	std::cout << "k - Sys 10.61\n";
+	std::cout << "k - Sys 10.62\n";
 
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames),
@@ -252,7 +252,6 @@ int main(int argc, const char* argv[])
 					topGun = new TopGun(param);
 
 				topGun->outputIntegratedResults(NULL, 0);
-
 				if (topGun->Run())
 					testOK = false;
 

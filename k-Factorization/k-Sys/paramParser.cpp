@@ -263,7 +263,7 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 	}
 
 	if (j < 0)
-		printf("Sorry, the parameter for keyword '%s' was not found\n", line.c_str());
+		printfYellow("Sorry, the parameter for keyword '%s' was not found\n", line.c_str());
 
 	return 0;
 }

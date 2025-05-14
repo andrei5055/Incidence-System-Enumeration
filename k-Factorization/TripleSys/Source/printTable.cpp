@@ -28,9 +28,12 @@ void alldata::printPermutationMatrices(const int iMode) const {
 		return;
 	int maxStr = 144;
 	auto v = getV0();
-	tchar cycles[MAX_3PF_SETS * MAX_GROUP_NUMBER];
-	tchar pm0[MAX_GROUP_NUMBER * MAX_GROUP_NUMBER * 2];
-	tchar pm[MAX_3PF_SETS * MAX_GROUP_NUMBER * MAX_GROUP_NUMBER];
+	int cyclesSize = m_maxCommonVSets * m_nGroups;
+	tchar* cycles = new tchar[cyclesSize];
+	int pm0Size = m_nGroups * m_nGroups * 2;
+	tchar* pm0 = new tchar[pm0Size];
+	int pmSize = pm0Size * m_maxCommonVSets;
+	tchar* pm = new tchar[pmSize];
 	for (int i = 1; i < iDay; i++) {
 		for (int i0 = 0; i0 < i; i0++) {
 			if (i0 == i)
@@ -40,11 +43,10 @@ void alldata::printPermutationMatrices(const int iMode) const {
 			//if (iMode == 3 && i0 != 1 && i != 4)
 			if (iMode == 3 && i0 != i - 1)
 				continue;
-			auto nv = getAllV(v, MAX_3PF_SETS, i0, i);
-			memset(pm0, 0, sizeof(pm0));
-			memset(pm, 0, sizeof(pm));
-			memset(cycles, unset, sizeof(cycles));
-			memset(&m_TrCyclesAll, 0, sizeof(m_TrCyclesAll));
+			auto nv = getAllV(v, m_maxCommonVSets, i0, i);
+			memset(pm0, 0, pm0Size);
+			memset(pm, 0, pmSize);
+			memset(cycles, unset, cyclesSize);
 			for (int j = 0; j < nv; j++) {
 				for (int k = 0; k < m_nGroups; k++) {
 					int m = neighbors(i)[v[j * m_nGroups + k]];
@@ -54,7 +56,7 @@ void alldata::printPermutationMatrices(const int iMode) const {
 					pm0[m / m_groupSize + m_nGroups + k * m_nGroups * 2] = 1;
 				}
 				TrCycles trc;
-				const auto ncycles = p3Cycles(&trc, 2, neighbors(i0), neighbors(i), v + j * m_nGroups, result(i0), result(i));
+				const auto ncycles = p3Cycles(&trc, neighbors(i0), neighbors(i), v + j * m_nGroups, result(i0), result(i), eCheckErrors);
 				if (ncycles > 0)
 					memcpy(cycles + j * m_nGroups, trc.length, ncycles);
 			}
@@ -74,6 +76,9 @@ void alldata::printPermutationMatrices(const int iMode) const {
 			}
 		}
 	}
+	delete[] cycles;
+	delete[] pm;
+	delete[] pm0;
 }
 
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, int* t)

@@ -13,13 +13,15 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 			const int nc = *u1fPntr;
 			u1fPntr++;
 			for (int itr1 = 0; itr1 < nc; itr1++, u1fPntr += MAX_CYCLES_PER_SET) {
-				for (int itr0 = 0; itr0 < MAX_3PF_SETS; itr0++)
+				for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++)
 				{
 					if (trc[itr0].counter == 0)
 						return false;
 					if (!MEMCMP(trc[itr0].length, u1fPntr, MAX_CYCLES_PER_SET))
 						//return true;
 						break;
+					if (itr0 == MAX_CYCLE_SETS)
+						return false;
 				}
 			}
 			return true;
@@ -27,11 +29,15 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 	}
 	// check that all and only requested cycles are present
 	if (!u1fPntr) {
-		return trc[0].length[0] == m_numPlayers && !trc[1].counter;
+		return trc[0].length[0] == m_numPlayers && (MAX_CYCLE_SETS <= 1 || trc[1].counter == 0);
 		//return true;
 	}
 	else {
 		const int nc = *u1fPntr;
+		if (nc > MAX_CYCLE_SETS) {
+			ASSERT(1);
+			EXIT_(1);
+		}
 		u1fPntr++;
 		int itr;
 		for (itr = 0; itr < nc; itr++, u1fPntr += MAX_CYCLES_PER_SET)
@@ -42,12 +48,13 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 			if (MEMCMP(trc[itr].length, u1fPntr, MAX_CYCLES_PER_SET))
 				return false;
 		}
-		return trc[itr].counter == 0;
+		return itr == MAX_CYCLE_SETS || trc[itr].counter == 0;
 	}
 	return true;
 }
 
-CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart) const
+CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart,
+	eCheckForErrors checkErrors) const
 {
 	// calculate cycle(s) between two cbmp-Graph rows.
 	// return number of cycles calculated, 0 if one of the cycle not selected or -1 if full cycle set not selected.
@@ -99,7 +106,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 			}
 			tchar length = i;
 
-			if (ncr == 1 && !cycleLengthOk(length))
+			if (checkErrors == eCheckErrors && !cycleLengthOk(length))
 			{
 				trc->start[0] = trc->start[ncycles];
 				trc->length[0] = length;
@@ -126,26 +133,30 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar*
 	trc->ncycles = ncycles;
 	if (ncycles > 0) {
 		sortCycles(trc->length, trc->start, ncycles);
-		if (ncr == 1 && !m_allowUndefinedCycles)
-		{
-			if (cyclesNotOk(ncr, ncycles, trc->length))
-				return -1;
-		}
-		if (ncr > 1)
-			collectCyclesAndPath(m_TrCyclesAll, trc, ncr != 2);
+		if (cyclesNotOk(ncycles, trc->length, checkErrors))
+			return -1;
 	}
 	return ncycles;
 }
-CC int alldata::u1fGetCycleLengthCBMP(TrCycles* trc, int ncr, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2) const
+CC int alldata::u1fGetCycleLengthCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
+	eCheckForErrors checkErrors) const
 {
-	auto const n = m_groupSize == 2 ? 1 : MIN2(m_groupSizeFactorial, MAX_3PF_SETS);
+	auto const n = m_maxCommonVSets;
 
 	for (int i = 0; i < n; i++) {
-		auto ncycles = getCyclesAndPathCBMP(trc, ncr, t1, t2, res1, res2, i);
-		if (cyclesNotOk(ncr, ncycles, trc->length))
+		auto ncycles = getCyclesAndPathCBMP(trc, t1, t2, res1, res2, i, checkErrors);
+		if (cyclesNotOk(ncycles, trc->length, checkErrors))
 			return ncycles ? -1 : 0;
-		//printTableColor("t", trc->fullPath, 1, m_numPlayers, m_groupSize);
-		//return ncycles;
+		if (m_TrCyclesCollection) {
+			collectCyclesAndPath(m_TrCyclesCollection, trc, m_collectionMode);
+#if 0 // print information about each pair cycles and path
+			if (iDay == m_numDaysResult && checkErrors == eNoErrorCheck) {
+				printTable("\nCycles length", trc->length, 1, ncycles, 0);
+				for (int j = 0; j < ncycles; j++)
+					printTable("Full Path", trc->fullPath + trc->start[j] * 2, 1, trc->length[j] * 2, m_groupSize);
+			}
+#endif
+		}
 	}
 	return 1;
 }

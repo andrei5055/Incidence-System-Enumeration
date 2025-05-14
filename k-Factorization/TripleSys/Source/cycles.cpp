@@ -8,8 +8,8 @@ void alldata::checkCommonValues()
 {
 	if (m_groupSize != 3 || numDaysResult() != 2)
 		return;
-	tchar v[MAX_GROUP_NUMBER * MAX_3PF_SETS];
-	const int nv = getAllV(v, MAX_3PF_SETS, 0, 1);
+	tchar* v = new tchar[m_nGroups * m_maxCommonVSets];
+	const int nv = getAllV(v, m_maxCommonVSets, 0, 1);
 	for (int i = 0; i < nv; i++)
 	{
 		std::qsort(v + i * m_nGroups, m_nGroups, 1, compare_fn);
@@ -45,6 +45,7 @@ void alldata::checkCommonValues()
 	printf("\nEnd of comparision of %d sets of common values.\n\n", nv);
 
 	checkCommonValues(v, nv);
+	delete[] v;
 }
 
 void alldata::checkCommonValues(ctchar* pBaseValues, int numSets) {

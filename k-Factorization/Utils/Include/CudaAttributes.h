@@ -29,12 +29,14 @@
 #if USE_CUDA
 #define ASSERT(c,...)
 #define ASSERT_(c,...)
+#define EXIT_(x)
 #else
 #define ASSERT_FUNC         myAssert
 #define ASSERT_(c,...)       if (c) { \
                                  __VA_ARGS__; \
                                  ASSERT_FUNC(c, __FILE__, __LINE__); \
                              }
+#define EXIT_(x)            exit(x)
 #if NDEBUG
 #define ASSERT(c,...)
 #else

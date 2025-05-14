@@ -65,8 +65,8 @@
 	P3Cycle1End(); } \
 	P3Cycles7EndAndReturn(ret)
 #define P3CyclesCheck(trc)	\
-			ncycles = p3Cycles(trc, ncr, t1, t2, v, res1, res2); \
-			if (cyclesNotOk(ncr, ncycles, trc->length)) \
+			ncycles = p3Cycles(trc, t1, t2, v, res1, res2, checkErrors); \
+			if (cyclesNotOk(ncycles, trc->length, checkErrors)) \
 				return ncycles ? -1: 0;
 
 

@@ -6,6 +6,11 @@
 #include "Storage.h"
 #include "TrRepo.h"
 
+typedef enum {
+	eNoErrorCheck,
+	eCheckErrors,
+} eCheckForErrors;
+
 class SizeParam {
 public:
 	CC SizeParam(const kSysParam& p) :
@@ -75,7 +80,7 @@ public:
 	CC ~CChecklLink();
 	CC bool checkLinks(tchar* c, int id, bool printLinksStatTime = false);
 	CC bool cycleLengthOk(tchar length) const;
-	CC bool cyclesNotOk(int ncr, int ncycles, tchar* cycles) const;
+	CC bool cyclesNotOk(int ncycles, tchar* cycles, eCheckForErrors checkErrors) const;
 	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline auto completeGraph() const				{ return m_param->completeGraph();}

@@ -203,14 +203,14 @@ void alldata::testRightNeighbor(int nr)
 
 	bool added = false;
 	auto v1 = getV1();
-	const int nv1 = getAllV(v1, MAX_3PF_SETS, iRow0, iRow1);
+	const int nv1 = getAllV(v1, m_maxCommonVSets, iRow0, iRow1);
 	const auto* pV1 = v1;
 	int nce = 0;
 	for (int iv1 = 0; iv1 < nv1; iv1++, pV1 += m_nGroups)  // Andrei nv1 is equal to 1
 	{
 		TrCycles trCycles;
 
-		if (!getCyclesAndPath3(&trCycles, pV1, neighbors(iRow1), neighbors(iRow0), result(iRow1), result(iRow0)))
+		if (!getCyclesAndPath3(&trCycles, pV1, neighbors(iRow1), neighbors(iRow0), result(iRow1), result(iRow0), eNoErrorCheck))
 			continue;
 		int m = 0;
 		for (m = 0; m < pathLength; m += m_groupSize * 2)
@@ -263,7 +263,6 @@ void alldata::testRightNeighbor(int nr)
 		printTable("\nclassic", sp, m_numPlayers, m_numPlayers, m_groupSize);
 	}
 	cnvCheckNew(0, nr, false);
-	//const int nv1 = getAllV(v1, maxv1, indRow0, indRow1);
 	exit(0);
 }
 void alldata::TestkmProcessMatrix(int nrows, unsigned char n, const tchar* tr, const tchar* ttr, int icmp) const
@@ -308,14 +307,14 @@ void alldata::testCanonizatorSpeed()
 		abort();
 	}
 
-	tchar v0[MAX_GROUP_NUMBER * MAX_3PF_SETS];
+	tchar* v0 = new tchar[m_nGroups * m_maxCommonVSets];
 	int nv0;
 
 	memset(&m_TrCycles, 0, sizeof(m_TrCycles));
 
 	if (m_groupSize == 3)
 	{
-		nv0 = getAllV(v0, MAX_3PF_SETS, 0, 1);
+		nv0 = getAllV(v0, m_maxCommonVSets, 0, 1);
 	}
 	clock_t tTime = clock();
 	int improveResult = m_improveResult;
@@ -363,6 +362,7 @@ void alldata::testCanonizatorSpeed()
 
 	printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, m_groupSize);
 	printf("End of Improved (%d):\n", i);
+	delete[] v0;
 	m_improveResult = improveResult;
 	m_pProcessMatrix = pProcessMatrix;
 	//time2 = __rdtscp(&junk);

@@ -16,9 +16,9 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 	bool bCBMP = !completeGraph();
 	bool bok;
 	if (bCBMP)
-		bok = getCyclesAndPathCBMP(&trCycles01, 1, neighbors(0), neighbors(1), result(0), result(1), 0) > 0;
+		bok = getCyclesAndPathCBMP(&trCycles01, neighbors(0), neighbors(1), result(0), result(1), 0, eCheckErrors) > 0;
 	else
-		bok = getCyclesAndPath(&trCycles01, 1, neighbors(0), neighbors(1)) > 0;
+		bok = getCyclesAndPathFromNeighbors(&trCycles01, neighbors(0), neighbors(1), NULL, NULL, eCheckErrors) > 0;
 	ASSERT(!bok);
 	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
 
@@ -57,11 +57,11 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 				int nitr = 1; //bCBMP ? m_groupSizeFactorial : 1;
 				for (int itr = 0; itr < nitr; itr++) {
 					if (bCBMP) {
-						bok = getCyclesAndPathCBMP(&trCycles, 1, neighbors(indRow0), neighbors(indRow1),
-							result(indRow0), result(indRow1), itr) > 0;
+						bok = getCyclesAndPathCBMP(&trCycles, neighbors(indRow0), neighbors(indRow1),
+							result(indRow0), result(indRow1), itr, eNoErrorCheck) > 0;
 					}
 					else {
-						bok = getCyclesAndPath(&trCycles, 1, neighbors(indRow0), neighbors(indRow1)) > 0;
+						bok = getCyclesAndPathFromNeighbors(&trCycles, neighbors(indRow0), neighbors(indRow1), NULL, NULL, eNoErrorCheck) > 0;
 					}
 					if (!bok || MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET)) {/**
 						printTable("result", result(), nrows, m_numPlayers, 2);

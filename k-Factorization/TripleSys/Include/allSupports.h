@@ -11,9 +11,9 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 template<typename T>
 CC void printValue(tchar v, double scale) {
 	if (v == unset)
-		printfGreen(" %3d", v);
+		printfGreen(" -1");
 	else
-		printf(" %3d", v);
+		printf("%3d", v);
 }
 
 template<typename T>

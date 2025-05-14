@@ -84,7 +84,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		m_file = f;
 	}
 #endif
-	InitCycleSupport(m_nGroups);
+	bool bCBMP = !pSysParam->completeGraph();
+	m_maxCommonVSets = m_groupSize == 2 ? 1 : (bCBMP ? m_groupSizeFactorial : (int)pow(6.0, m_nGroups / 3.0) + 1);
+	InitCycleSupport(m_nGroups, m_maxCommonVSets);
 
 	const auto u1fPntr = sysParam()->u1fCycles[0];
 	
@@ -98,25 +100,28 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		if (pRowStorage || !(param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation)))
 			m_pRowUsage = new CRowUsage(m_pRowStorage);
 	}
-	bool bp1f = (!u1fPntr || u1fPntr[1] == m_numPlayers);
+	m_TrCyclesAll = new TrCycles[MAX_CYCLE_SETS];
+	m_TrCyclesPair = new TrCycles[MAX_CYCLE_SETS];
+	m_TrCyclesFirst2Rows = new TrCycles[MAX_CYCLE_SETS];
+	bool bp1f = ((!u1fPntr || u1fPntr[1] == m_numPlayers) && !m_allowUndefinedCycles);
 	m_pCheckFunc = NULL;
 	if (m_use2RowsCanonization) {
 		if (m_groupSize == 2) {
-			if (!param(t_useFastCanonizerForG2) || m_createSecondRow)
+			if (param(t_useFastCanonizerForG2) || m_createSecondRow)
 				m_pCheckFunc = &alldata::cnvCheck3U1F;
 			else 
-				m_pCheckFunc = (bp1f && pSysParam->completeGraph()) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
+				m_pCheckFunc = (bp1f && !bCBMP) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
 		}
-		else if (m_groupSize == 3 || !pSysParam->completeGraph())
+		else if (m_groupSize == 3 || bCBMP)
 			m_pCheckFunc = &alldata::cnvCheck3U1F;
 	}
-	else if (pSysParam->completeGraph() && 
+	else if (!bCBMP &&
 		((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5)))
 		m_pCheckFunc = &alldata::cnvCheck45;
 
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
-	if (!pSysParam->completeGraph())
+	if (bCBMP)
 		m_pProcessMatrix = &alldata::kmProcessMatrix;
 	else
 		m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
@@ -192,7 +197,6 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 #if Use_GroupOrbits
 	m_pOrbits = new CGroupOrbits<unsigned char>(m_numPlayers);
 #endif
-	m_cycles = new Cycles[m_numDays * (m_numDays - 1)];
 #if !USE_CUDA
 #if 0   // Testing the construction of all permutations
 	tchar perm[] = { 0, 1, 2, 3, 4, 5 };
@@ -259,7 +263,9 @@ CC alldata::~alldata() {
 	delete m_pCheckCanon;
 	delete m_pOrbits;
 	delete[] m_tx;
-	delete[] m_cycles;
+	delete[] m_TrCyclesAll;
+	delete[] m_TrCyclesPair;
+	delete[] m_TrCyclesFirst2Rows;
 	if (m_bRowStorageOwner)
 		delete m_pRowStorage;
 	delete m_pRowUsage;

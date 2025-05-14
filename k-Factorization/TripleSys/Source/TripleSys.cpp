@@ -609,8 +609,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (iDay == nPrecalcRows + 1) {
 					if (!nRows4++ && iDay >= 2) {
-						cyclesFor2Rows(result(1));
-						memcpy(m_TrCyclesFirst2Rows, m_TrCyclesAll, sizeof(m_TrCyclesFirst2Rows));
+						TrCycles trc;
+						cyclesFor2Rows(m_TrCyclesFirst2Rows, &trc, neighbors(0), neighbors(1), result(0), result(1), eEachSetSeparate);
 					}
 
 					nRows4Day++;
