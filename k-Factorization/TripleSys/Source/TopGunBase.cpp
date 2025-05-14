@@ -26,12 +26,6 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 }
 
 bool TopGunBase::readStartMatrices() {
-	if (nRowsStart() < 2 || nRowsStart() > m_numDays)
-	{
-		printfRed("*** NRowsInStartMatrix(%d) with UseMultiThreading must be in range 2:%d\n",
-			nRowsStart(), m_numDays);
-		myExit(1);
-	}
 	if ((nMatrices = getStartMatrices()) < 1)
 	{
 		printfRed("*** Cant load 'Start Matrices'. Exit\n");
@@ -117,6 +111,9 @@ int TopGunBase::getStartMatrices()
 }
 
 void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) const {
+	if (param(t_exploreMatrices))
+		return;
+
 	std::string IntegratedResults;
 	auto nRows = nRowsOut();
 	if (!nRows)
@@ -148,7 +145,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		}
 	}
 
-	const auto allowUndefinedCycles = paramPtr()->val[t_allowUndefinedCycles];
+	const auto allowUndefinedCycles = param(t_allowUndefinedCycles);
 	for (int j = 0; j < numParamSet; j++) {
 		auto* paramNames = pParSet[j].paramNames;
 		const int iMax = pParSet[j].numParams;

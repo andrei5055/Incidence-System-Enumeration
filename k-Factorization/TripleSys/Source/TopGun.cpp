@@ -1,6 +1,7 @@
 #include "TopGun.h"
 #include "Table.h"
 #include "data.h"
+#include "SRGToolkit.h"
 
 RowDB* TopGun::m_pSecondRowsDB = NULL;
 
@@ -34,9 +35,9 @@ int TopGun::Run()
 {
 	iTime = clock();
 	sLongLong resultMatr = 0;
-	bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
+	const auto orderMatrixMode = param(t_orderMatrices);
 
-	if ((m_groupSize <= 3 || param(t_CBMP_Graph) > 1) && m_use2RowsCanonization) {
+	if (orderMatrixMode < 2 && (m_groupSize <= 3 || param(t_CBMP_Graph) > 1) && m_use2RowsCanonization) {
 		if (m_pSecondRowsDB && !m_pSecondRowsDB->isValid(paramPtr())) {
 			delete m_pSecondRowsDB;
 			m_pSecondRowsDB = NULL;
@@ -58,7 +59,6 @@ int TopGun::Run()
 		}
 	}
 
-	const auto orderMatrixMode = param(t_orderMatrices);
 	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (!readStartMatrices())
 			myExit(1);
@@ -68,7 +68,10 @@ int TopGun::Run()
 			auto nDuplicate = orderMatrices(orderMatrixMode);
 			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
 			nMatrices -= nDuplicate;
+			const auto groupSize = param(t_groupSize);
 			if (orderMatrixMode == 2) {
+				const auto exploreMatrices = param(t_exploreMatrices);
+				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), groupSize) : NULL;
 				TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 				Result.allocateBuffer(32);
 				std::string ResultFile;
@@ -79,11 +82,22 @@ int TopGun::Run()
 					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
 					Result.setGroupOrder(groupOrder);
 					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-					Result.printTable(pntrStartMatrix() + idx * mStartMatrixSize, true, false, nRowsStart());
+					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;
+					Result.printTable(pMatr, true, false, nRowsStart());
 					if (groupOrder > 1)
 						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
+
+					if (pSRGtoolkit)
+						pSRGtoolkit->exploreMatrix(pMatr);
+				}
+
+				if (pSRGtoolkit) {
+					pSRGtoolkit->printStat();
+					delete pSRGtoolkit;
 				}
 				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
+
+
 				reportEOJ(0);
 				return 0;
 			}
@@ -112,6 +126,7 @@ int TopGun::Run()
 
 		cTime = clock();
 
+		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 		if (bUseMultiThread2)
 		{
 			int icode = 0;

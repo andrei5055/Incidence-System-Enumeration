@@ -52,6 +52,7 @@ const char* intParamNames[]{
 	"OrderMatrices",
 	"AllowUndefinedCycles", // 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
+	"ExploreMatrices",
 };
 
 const char* strParamNames[]{
@@ -201,7 +202,7 @@ int main(int argc, const char* argv[])
 
 			param.setup();
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
-			if (val[t_u1f]) {
+			if (val[t_u1f] && !val[t_exploreMatrices]) {
 				if (!val[t_use2RowsCanonization])
 					printfYellow(" 1 row canonization %s\n", val[t_groupSize] > 3 || val[t_numPlayers] < 12  ? "" : "(can be slow)");
 				else
@@ -251,6 +252,7 @@ int main(int argc, const char* argv[])
 					topGun = new TopGun(param);
 
 				topGun->outputIntegratedResults(NULL, 0);
+
 				if (topGun->Run())
 					testOK = false;
 

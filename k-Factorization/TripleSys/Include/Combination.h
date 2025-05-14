@@ -6,7 +6,7 @@ typedef unsigned int uint;
 
 class Combination {
 public:
-	Combination(tchar a, tchar b, tchar c) : m_code(E>>a + E>>b + E>>c) {}
+	Combination(tchar a, tchar b, tchar c) : m_code((E>>a) + (E>>b) + (E>>c)) {}
 	inline auto code() const		{ return m_code; }
 private:
 	const uint m_code;

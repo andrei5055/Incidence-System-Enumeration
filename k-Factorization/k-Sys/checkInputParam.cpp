@@ -27,9 +27,11 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			MAX_GROUP_NUMBER, paramNames[t_numPlayers], paramNames[t_groupSize], numPlayers, groupSize, numGroups);
 		return false;
 	}
+
+	int numDays;
 	const auto cbmpGraph = val[t_CBMP_Graph] > 1;
 	if (cbmpGraph) {
-		const auto numDays = numPlayers / groupSize;
+		numDays = numPlayers / groupSize;
 		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)
 		{
 			printfRed("*** Incorrect parameters: %s=%d %s=%d %s=%d, Exit\n", 
@@ -38,7 +40,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		}
 	}
 	else {
-		const auto numDays = (numPlayers - 1) / (groupSize - 1);
+		numDays = (numPlayers - 1) / (groupSize - 1);
 		if (numDays < 1 || numDays * (groupSize - 1) != numPlayers - 1 ||
 			groupSize < 0 || numPlayers / groupSize * groupSize != numPlayers)
 		{
@@ -90,6 +92,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	const auto nRowStart = val[t_nRowsInStartMatrix];
+	const auto multiThreading = val[t_MultiThreading];
 	if (nRowStart) {
 		const auto nRowRes = val[t_nRowsInResultMatrix];	
 		if (nRowRes && nRowRes < nRowStart) {
@@ -98,7 +101,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		}
 		
 		if (!val[t_orderMatrices]) {
-			if (!val[t_MultiThreading]) {
+			if (!multiThreading) {
 				printfRed("*** %s=%d should be 0 if %s=0. Exit\n", paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading]);
 				return false;
 			}
@@ -111,9 +114,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			*(int *)(val + t_nMaxNumberOfStartMatrices) = INT_MAX;
 		}
 	}
-	if (val[t_MultiThreading] == 2 && val[t_nRowsInStartMatrix] != val[t_useRowsPrecalculation]) {
-		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], val[t_MultiThreading],
-			paramNames[t_nRowsInStartMatrix], val[t_nRowsInStartMatrix], paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+
+	if (multiThreading == 2 && nRowStart != val[t_useRowsPrecalculation]) {
+		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], multiThreading,
+			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 		return false;
 	}
 
@@ -134,11 +138,18 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				paramNames[t_useAutForPrecRows], val[t_useAutForPrecRows]);
 			return false;
 		}
-		if (USE_GROUP_4_2_ROWS && val[t_MultiThreading] == 2) {
+		if (USE_GROUP_4_2_ROWS && multiThreading == 2) {
 			printfRed("*** With %s=%d the use of the Aut(M) on 2 rows (USE_GROUP_4_2_ROWS) is not implemented. Exit\n", 
-				paramNames[t_MultiThreading], val[t_MultiThreading]);
+				paramNames[t_MultiThreading], multiThreading);
 			return false;
 		}
+	}
+
+	if (multiThreading && (nRowStart < 2 || nRowStart > numDays))
+	{
+		printfRed("*** %s(%d) with %s must be in range 2:%d\n",
+			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading], numDays);
+		return false;
 	}
 
 	return true;

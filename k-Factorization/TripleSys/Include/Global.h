@@ -61,6 +61,7 @@ typedef enum {
 	t_orderMatrices,
 	t_allowUndefinedCycles,
 	t_any2RowsConvertToFirst2,
+	t_exploreMatrices,
 	t_lastParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,

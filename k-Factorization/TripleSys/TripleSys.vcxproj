@@ -160,6 +160,7 @@
     <ClCompile Include="Source\cnvSupport2.cpp" />
     <ClCompile Include="Source\cnvSupport3.cpp" />
     <ClCompile Include="Source\cnvSupport4.cpp" />
+    <ClCompile Include="Source\Combination.cpp" />
     <ClCompile Include="Source\CompSolGraph.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
@@ -181,6 +182,7 @@
     <ClCompile Include="Source\reportCheckLinksData.cpp" />
     <ClCompile Include="Source\RowStorage.cpp" />
     <ClCompile Include="Source\RowUsage.cpp" />
+    <ClCompile Include="Source\SRGToolkit.cpp" />
     <ClCompile Include="Source\Stat.cpp" />
     <ClCompile Include="Source\Support.cpp" />
     <ClCompile Include="Source\Tests.cpp" />
@@ -207,13 +209,13 @@
     <ClInclude Include="Include\p1fCheck.h" />
     <ClInclude Include="Include\RowStorage.h" />
     <ClInclude Include="Include\CompSolGraph.h" />
+    <ClInclude Include="Include\SRGToolkit.h" />
     <ClInclude Include="Include\Stat.h" />
     <ClInclude Include="Include\Storage.h" />
     <ClInclude Include="Include\Table.h" />
     <ClInclude Include="Include\TimerInfo.h" />
     <ClInclude Include="Include\TopGun.h" />
     <ClInclude Include="Include\TripleSys.h" />
-    <ClInclude Include="Source\Combination.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
