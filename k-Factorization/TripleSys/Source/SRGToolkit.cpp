@@ -1,14 +1,23 @@
 ﻿#include "SRGToolkit.h"
+#include "TripleSys.h"
 #include <cstring>
-#include "k-SysSupport.h"
-
-typedef unsigned char tchar;
-typedef const tchar ctchar;
 
 SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) : 
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize) {
-	m_pAdjacencyMatrix = new tchar[m_v * m_v];
+	m_pGraph[0] = new tchar[2 * m_v * m_v];
+	m_pGraph[1] = m_pGraph[0] + m_v * m_v;
 	memset(m_graphParam, 0, sizeof(m_graphParam));
+	m_subgraphVertex = new unsigned short[m_v];
+	m_pOrbits = new unsigned short[m_v * m_v];
+	m_pNumOrbits = new unsigned short[m_v];
+	m_pLenOrbits = new tchar[m_v * (m_v - 1) / 2];
+}
+
+SRGToolkit::~SRGToolkit() { 
+	delete[] m_pGraph[0];
+	delete[] m_subgraphVertex;
+	delete[] m_pNumOrbits;
+	delete[] m_pOrbits;
 }
 
 static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
@@ -37,6 +46,7 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 	auto& graphParam = m_graphParam[typeIdx];
 	const auto cond = typeIdx != 0;
 	// Create graph
+	auto m_pAdjacencyMatrix = m_pGraph[0];
 	memset(m_pAdjacencyMatrix, 0, m_v * m_v * sizeof(m_pAdjacencyMatrix[0]));
 	auto pVertex = pMatr;
 	int numVertex = 0;
@@ -50,7 +60,9 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 					m_pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
 			}
 
-			// Add edges to the graph for the vertices intersecting by one element
+			// Add edges between vertex pairs whose corresponding tuples of size `m_groupSize`
+			// either share exactly one common element (if `cont == true`)
+			// or have no elements in common (if `cont == false`).
 			auto* pNextVertex = pMatr + (i + 1) * m_nCols;
 			while (pNextVertex < pVertexLast) {
 				numNextVertex++;
@@ -93,33 +105,58 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 		graphParam.k = graphDegree;
 
 	// Check if constructed graph is strongly regular
-	int nCommon[2] = { 0, 0 };
+	int nCommon[4] = { 0 };
+	bool flag = true;
 	auto pFirstVertex = m_pAdjacencyMatrix;
 	for (int i = 0; i < m_v; i++, pFirstVertex += m_v) {
 		auto pSecondVertex = pFirstVertex;
 		for (int j = i; ++j < m_v;) {
 			pSecondVertex += m_v;
-			const auto idx = pFirstVertex[j] ? 0 : 1;
-			int nCommonCurr[2] = { 0, 0 };
+			int nCommonCurr, alpha;
+			nCommonCurr = alpha = 0;
 			for (int k = 0; k < m_v; k++) {
 				if (pFirstVertex[k] && pSecondVertex[k])
-					nCommonCurr[idx]++;
+					m_subgraphVertex[nCommonCurr++] = k;
 			}
+
+			if (flag) {
+				// Count the number of edges in the subgraph of two vertices common neighbors 
+				for (int k = 0; k < nCommonCurr; k++) {
+					for (int l = k + 1; l < nCommonCurr; l++) {
+						if (m_pAdjacencyMatrix[m_subgraphVertex[k] * m_v + m_subgraphVertex[l]])
+							alpha++;
+					}
+				}
+			}
+
+			const auto idx = pFirstVertex[j] ? 0 : 1;
 			if (nCommon[idx]) {
-				if (nCommon[idx] != nCommonCurr[idx]) {
+				if (nCommon[idx] != nCommonCurr) {
 					printfRed("Graph is not strongly regular\n");
 					return;
 				}
+				if (flag) {
+					//printfRed("Graph does not satisfy 4-vertex condition\n");
+					flag = (nCommon[idx + 2] == alpha);
+				}
 			}
-			else
-				nCommon[idx] = nCommonCurr[idx];
+			else {
+				nCommon[idx] = nCommonCurr;
+				nCommon[idx+2] = alpha;
+			}
 		}
 	}
 
 	if (!graphParam.m_cntr[2]++) {
 		graphParam.λ = nCommon[0];
 		graphParam.μ = nCommon[1];
+		graphParam.α = nCommon[2];
+		graphParam.β = nCommon[3];
 	}
+	if (!flag)
+		graphParam.m_cntr[3]++;
+
+	canonizeGraph(m_pAdjacencyMatrix);
 }
 
 void SRGToolkit::printStat() {
@@ -128,17 +165,169 @@ void SRGToolkit::printStat() {
 		const bool plural = graphParam.m_cntr[0] > 1;
 		const char* pntr0 = plural ? "s" : "";
 		const char* pntr1 = plural ? "are" : "is";
-		const char* pntr2 = plural ? "  " : "";
+		const char* pntr2 = plural ? "    " : "";
 
 		printfYellow("Out of %d graph%s with %d vertices\n", graphParam.m_cntr[0], pntr0, m_v);
 		printfYellow("       %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
+		printfYellow("       %d %s strongly regular with parameters: (%d,%2d,%2d,%2d)\n", 
+			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
+		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3];
+		if (n4VertCond)
+			printfYellow("       %d of them satisfy 4-vertex conditions: (%d, %d)\n", n4VertCond, graphParam.α, graphParam.β);
 
-		printfYellow("Graph%s %s strongly regular with parameters: (%d,%2d,%2d,%2d)\n", pntr0, pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 		const auto v_2k = m_v - 2 * graphParam.k;
 		graphParam.k = m_v - graphParam.k - 1;
 		const auto λ = graphParam.λ;
+		const auto μ = graphParam.μ;
 		graphParam.λ = v_2k + graphParam.μ - 2;
 		graphParam.μ = v_2k + λ;
-		printfYellow("%s        Parameters of complimentary graph: (%d,%2d,%2d,%2d)\n", pntr2, m_v, graphParam.k, graphParam.λ, graphParam.μ);
+		graphParam.α = λ * (λ - 1) / 2 - graphParam.α;
+		graphParam.β = μ * (μ - 1) / 2 - graphParam.β;
+		printfYellow("%s           complimentary graph parameters: (%d,%2d,%2d,%2d)\n", pntr2, m_v, graphParam.k, graphParam.λ, graphParam.μ);
+//		if (n4VertCond)
+//			printfYellow("%s            4-vertex condition parameters: (%d, %d)\n", pntr2, graphParam.α, graphParam.β);		
 	}
+}
+
+void SRGToolkit::canonizeGraph(ctchar* pGraph) {
+	//	return;
+	auto pGraphOut = m_pGraph[1];
+	memcpy(pGraphOut, pGraph, m_v * m_v);
+	auto pVertexOut = pGraphOut;
+	auto pCurVertex = pGraph;
+
+	// Initialize orbits
+	for (int i = m_v; i--;)
+		m_pOrbits[i] = i;
+
+	int flag = 0;
+	// Loop over all vertices
+	m_pNumOrbits[0] = 1;
+	m_pLenOrbits[0] = m_v;
+	auto pLenOrbitsNext = m_pLenOrbits;
+	auto pOrbits = m_pOrbits;
+	int len, idxOrb, i = 0;
+	while (i < m_v) {
+		// Loop over all orbits generated by first i vertices
+		// Copying current orbits and orbit's lenghts to the next level
+		auto pLenOrbits = pLenOrbitsNext;
+		// Decrease the first orbit's length after we starting use the current vertex
+		pLenOrbitsNext += (len = m_v - i - 1);
+		if (!--pLenOrbits[idxOrb = 0]) {
+			// The current vertex is the sole member of its orbit; removing the orbit entirely
+			memcpy(pLenOrbitsNext, pLenOrbits + 1, len);
+			memcpy(pLenOrbits, pLenOrbitsNext, len);
+			m_pNumOrbits[i]--;
+		}
+		else
+			memcpy(pLenOrbitsNext, pLenOrbits, len);
+
+		auto idxLast = i;
+		const auto idxOrbMax = m_pNumOrbits[i] = m_pNumOrbits[i++];
+		int idxOrbNext = -1;
+		while (idxOrb < idxOrbMax) {
+			idxOrbNext++;
+			auto idxLeft = idxLast;
+			const auto lenOrb = pLenOrbits[idxOrb++];
+			ASSERT(!lenOrb);
+			idxLast += lenOrb;
+			if (lenOrb == 1)
+				continue;
+
+			// Orbit's lenght > 1, loop over the vertices from the same orbit
+			int idxRight = idxLast;
+			const auto idxLeftStart = idxLeft;
+			while (true) {
+				while (++idxLeft < idxRight && pCurVertex[m_pOrbits[idxLeft]]);
+				while (idxLeft < idxRight && !pCurVertex[m_pOrbits[idxRight]]) idxRight--;
+
+				if (idxLeft >= idxRight)
+					break;
+
+				// Mark this swap in orbits
+				const auto tmp = m_pOrbits[idxLeft];
+				m_pOrbits[idxLeft] = m_pOrbits[idxRight];
+				m_pOrbits[idxRight] = tmp;
+			}
+
+			if (--idxLeft != idxLeftStart) {
+				// Current orbits was split in two
+				m_pNumOrbits[i]++;
+				// Moving lenghts of the orbits to reseve a place for a new one
+				auto j = idxOrbMax + idxOrbNext - idxOrb;
+				while (j > idxOrbNext)
+					pLenOrbitsNext[j-- + 1] = pLenOrbitsNext[j];
+
+				pLenOrbitsNext[idxOrbNext++] = (idxLeft -= idxLeftStart);
+				pLenOrbitsNext[idxOrbNext] = lenOrb - idxLeft;
+				ASSERT(!idxLeft || lenOrb == idxLeft);
+			}
+		}
+
+		//	printAdjMatrix(pGraph, i);
+		const auto pVertexIn = pGraph + m_pOrbits[i-1] * m_v;
+		for (int j = 0; j < m_v; j++)
+			pVertexOut[j] = pVertexIn[m_pOrbits[j]];
+
+		pVertexOut += m_v;
+		pCurVertex += m_v;
+		const auto retVal = memcmp(pVertexOut, pCurVertex, m_v);
+		if (!flag)
+			flag = retVal;
+	}
+
+	printAdjMatrix(pGraph);
+}
+
+void SRGToolkit::printAdjMatrix(ctchar* pGraph, int idx) {
+	auto pGraphOut = m_pGraph[1];
+	for (int i = 0; i < m_v; i++) {
+		auto pVertexOut = pGraphOut + i * m_v;
+		const auto pVertexIn = pGraph + m_pOrbits[i] * m_v;
+		for (int j = 0; j < m_v; j++) {
+			pVertexOut[j] = pVertexIn[m_pOrbits[j]];
+		}
+	}
+
+	char buf[256], * pBuf;
+	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);
+	FOPEN_F(f, buf, "w");
+	fprintf(f, "Adjacency matrix for graph% d\n", idx);
+	
+	pBuf = buf;
+	int iMax = 20;
+	int k = 0;
+	for (int j = 0; j < 3; j++) {
+		if (j == 2)
+			iMax = m_v % iMax;
+		for (int i = 0; i < iMax; i++) {
+			SPRINTFD(pBuf, buf, "%3d", m_pOrbits[k++]);
+		}
+		SPRINTFD(pBuf, buf, "\n");
+	}
+	fprintf(f, "%s\n", buf);
+
+
+	pBuf = buf;
+	for (int i = 0; i < m_v; i += 10) {
+		SPRINTFD(pBuf, buf, "%1d", i / 10);
+		for (int j = 0; j < 9; j++)
+			SPRINTFD(pBuf, buf, " ");
+	}
+	fprintf(f, "%s\n", buf);
+
+	pBuf = buf;
+	for (int i = 0; i < m_v; i++)
+		SPRINTFD(pBuf, buf, "%1d", i%10);
+
+	fprintf(f, "%s\n", buf);
+
+	auto pVertexOut = pGraphOut;
+	for (int i = 0; i < m_v; i++, pVertexOut += m_v) {
+		pBuf = buf;
+		for (int j = 0; j < m_v; j++)
+			SPRINTFD(pBuf, buf, "%1d", pVertexOut[j]);
+		fprintf(f, "%s\n", buf);
+	}
+	FCLOSE_F(f);
 }
