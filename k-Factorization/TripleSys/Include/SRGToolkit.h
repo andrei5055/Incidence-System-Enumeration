@@ -19,8 +19,8 @@ public:
 	void printStat();
 private:
 	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
-	void canonizeGraph(ctchar* pGraph);
-	void printAdjMatrix(ctchar* pGraph, int idx = 0);
+	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut);
+	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0);
 
 	const int m_nCols;
 	const int m_nRows; 
