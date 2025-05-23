@@ -46,8 +46,8 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 	auto& graphParam = m_graphParam[typeIdx];
 	const auto cond = typeIdx != 0;
 	// Create graph
-	auto m_pAdjacencyMatrix = m_pGraph[0];
-	memset(m_pAdjacencyMatrix, 0, m_v * m_v * sizeof(m_pAdjacencyMatrix[0]));
+	auto pAdjacencyMatrix = m_pGraph[0];
+	memset(pAdjacencyMatrix, 0, m_v * m_v * sizeof(pAdjacencyMatrix[0]));
 	auto pVertex = pMatr;
 	int numVertex = 0;
 	for (int i = 0; i < m_nRows; i++) {
@@ -56,8 +56,8 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 			auto numNextVertex = numVertex;
 			for (int k = j; ++k < numGroups;) {
 				++numNextVertex;
-				m_pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
-					m_pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
+				pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
+					pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
 			}
 
 			// Add edges between vertex pairs whose corresponding tuples of size `m_groupSize`
@@ -70,8 +70,8 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 				// If one out of groupSize elements is the same, then we have an edge between two vertices.
 				if (one_common_element(pVertex, pNextVertex, m_groupSize) == cond) {
 					// Add edges to the graph for the vertices intersecting by one element
-					m_pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
-						m_pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
+					pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
+						pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
 				}
 
 				// Move to the next vertex
@@ -80,11 +80,24 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 		}
 	}
 
-	graphParam.m_cntr[0]++;
+	checkSRG(pAdjacencyMatrix, &graphParam);
+
+	int i, idx, retVal;
+	i = idx = 0;
+	while (retVal = canonizeGraph(m_pGraph[i], m_pGraph[1 - i])) {
+		printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
+		checkSRG(m_pGraph[1 - i]);
+		i = 1 - i;
+	}
+}
+
+bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
+	if (pGraphParam)
+		pGraphParam->m_cntr[0]++;
 
 	// Check if constructed graph is regular
 	int graphDegree = 0;
-	pVertex = m_pAdjacencyMatrix;
+	auto pVertex = pGraph;
 	for (int i = 0; i < m_v; i++, pVertex += m_v) {
 		int vertexDegree = 0;
 		for (int j = 0; j < m_v; j++)
@@ -94,20 +107,20 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 		if (graphDegree) {
 			if (graphDegree != vertexDegree) {
 				printfRed("Graph is not regular\n");
-				return;
+				return false;
 			}
 		}
 		else
 			graphDegree = vertexDegree;
 	}
 
-	if (!graphParam.m_cntr[1]++)
-		graphParam.k = graphDegree;
+	if (pGraphParam && !pGraphParam->m_cntr[1]++)
+		pGraphParam->k = graphDegree;
 
 	// Check if constructed graph is strongly regular
 	int nCommon[4] = { 0 };
 	bool flag = true;
-	auto pFirstVertex = m_pAdjacencyMatrix;
+	auto pFirstVertex = pGraph;
 	for (int i = 0; i < m_v; i++, pFirstVertex += m_v) {
 		auto pSecondVertex = pFirstVertex;
 		for (int j = i; ++j < m_v;) {
@@ -123,7 +136,7 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 				// Count the number of edges in the subgraph of two vertices common neighbors 
 				for (int k = 0; k < nCommonCurr; k++) {
 					for (int l = k + 1; l < nCommonCurr; l++) {
-						if (m_pAdjacencyMatrix[m_subgraphVertex[k] * m_v + m_subgraphVertex[l]])
+						if (pGraph[m_subgraphVertex[k] * m_v + m_subgraphVertex[l]])
 							alpha++;
 					}
 				}
@@ -133,7 +146,7 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 			if (nCommon[idx]) {
 				if (nCommon[idx] != nCommonCurr) {
 					printfRed("Graph is not strongly regular\n");
-					return;
+					return false;
 				}
 				if (flag) {
 					//printfRed("Graph does not satisfy 4-vertex condition\n");
@@ -142,27 +155,22 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 			}
 			else {
 				nCommon[idx] = nCommonCurr;
-				nCommon[idx+2] = alpha;
+				nCommon[idx + 2] = alpha;
 			}
 		}
 	}
 
-	if (!graphParam.m_cntr[2]++) {
-		graphParam.λ = nCommon[0];
-		graphParam.μ = nCommon[1];
-		graphParam.α = nCommon[2];
-		graphParam.β = nCommon[3];
+	if (pGraphParam) {
+		if (!pGraphParam->m_cntr[2]++) {
+			pGraphParam->λ = nCommon[0];
+			pGraphParam->μ = nCommon[1];
+			pGraphParam->α = nCommon[2];
+			pGraphParam->β = nCommon[3];
+		}
+		if (!flag)
+			pGraphParam->m_cntr[3]++;
 	}
-	if (!flag)
-		graphParam.m_cntr[3]++;
-
-	int i, idx, retVal;
-	i = idx = 0;
-	while (retVal = canonizeGraph(m_pGraph[i], m_pGraph[1 - i])) {
-		printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
-		i = 1 - i;
-		//break;
-	}
+	return true;
 }
 
 void SRGToolkit::printStat() {
@@ -209,10 +217,10 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut) {
 	auto pCurVertex = pGraph;
 	int lastUnfixedVertexIndex = 0;
 	int len, idxOrb, i = 0;
-	int idxRight = 1;  // Continue, until at least one orbit lenght > 1
+	int idxRight = 1;  // Continue, until at least one orbit length > 1
 	while (idxRight && i < m_v) {
 		// Loop over all orbits generated by first i vertices
-		// Copying current orbits and orbit's lenghts to the next level
+		// Copying current orbits and orbit's lengths to the next level
 		auto pLenOrbits = pLenOrbitsNext;
 		// Decrease the first orbit's length after we starting use the current vertex
 		pLenOrbitsNext += (len = m_v - i - 1);
@@ -241,7 +249,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut) {
 			if (lenOrb == 1)
 				continue;
 
-			// Orbit's lenght > 1, loop over the vertices from the same orbit
+			// Orbit's length > 1, loop over the vertices from the same orbit
 			idxRight = idxLast;
 			const auto idxLeftStart = idxLeft;
 			while (true) {
@@ -260,7 +268,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut) {
 			if (--idxLeft != idxLeftStart) {
 				// Current orbits was split in two
 				m_pNumOrbits[i]++;
-				// Moving lenghts of the orbits to reseve a place for a new one
+				// Moving lengths of the orbits to reseve a place for a new one
 				auto j = idxOrbMax + idxOrbNext - idxOrb;
 				while (j > idxOrbNext)
 					pLenOrbitsNext[j-- + 1] = pLenOrbitsNext[j];

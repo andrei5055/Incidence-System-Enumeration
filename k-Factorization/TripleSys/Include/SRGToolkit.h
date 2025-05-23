@@ -19,6 +19,7 @@ public:
 	void printStat();
 private:
 	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
+	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut);
 	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0);
 
