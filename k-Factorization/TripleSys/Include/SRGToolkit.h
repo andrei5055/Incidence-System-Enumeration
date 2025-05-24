@@ -20,7 +20,7 @@ public:
 private:
 	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
 	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
-	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut);
+	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0);
 
 	const int m_nCols;
