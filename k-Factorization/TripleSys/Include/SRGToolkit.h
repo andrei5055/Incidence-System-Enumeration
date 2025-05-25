@@ -21,6 +21,8 @@ private:
 	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
 	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
+	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
+		ctchar* pLenOrbits, tchar* pLenOrbitsNext, int& idxRight, bool flag);
 	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0);
 
 	const int m_nCols;
