@@ -26,8 +26,9 @@ private:
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
-		tchar** ppLenOrbits, int& idxRight, bool flag, int& lastUnfixedVertexIndex);
-	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0, int startVertex = 0);
+		ushort** ppLenOrbits, int& idxRight, bool flag, int& lastUnfixedVertexIndex);
+	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0, int startVertex = 0) const;
+	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0) const;
 
 	const int m_nCols;
 	const int m_nRows; 
@@ -40,6 +41,6 @@ private:
 	ushort* m_pGroupOrbits = nullptr;
 	ushort* m_subgraphVertex = nullptr;
 	ushort* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
-	tchar* m_pLenOrbits = nullptr;
+	ushort* m_pLenOrbits = nullptr;
 };
 
