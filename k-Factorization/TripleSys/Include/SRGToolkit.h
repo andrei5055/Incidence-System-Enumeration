@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "k-SysSupport.h"
+#include "GroupOrder.h"
 
 typedef struct {
 	unsigned int m_cntr[4];
@@ -10,7 +11,9 @@ typedef struct {
 	int β;
 } SRGParam;
 
-class SRGToolkit
+typedef unsigned short ushort;
+
+class SRGToolkit : public CGroupOrder<ushort>
 {
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize);
@@ -20,10 +23,11 @@ public:
 private:
 	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
 	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
+	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
 		tchar** ppLenOrbits, int& idxRight, bool flag, int& lastUnfixedVertexIndex);
-	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0);
+	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0, int startVertex = 0);
 
 	const int m_nCols;
 	const int m_nRows; 
@@ -32,9 +36,10 @@ private:
 
 	SRGParam m_graphParam[2];
 	tchar* m_pGraph[2] = { nullptr };
-	unsigned short* m_pOrbits = nullptr;
-	unsigned short* m_subgraphVertex = nullptr;
-	unsigned short* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
+	ushort* m_pOrbits = nullptr;
+	ushort* m_pGroupOrbits = nullptr;
+	ushort* m_subgraphVertex = nullptr;
+	ushort* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
 	tchar* m_pLenOrbits = nullptr;
 };
 
