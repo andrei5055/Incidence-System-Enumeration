@@ -98,6 +98,9 @@ void SRGToolkit::initCanonizer() {
 	// Initialize orbits
 	m_pNumOrbits[0] = 1;
 	m_pLenOrbits[0] = m_v;
+}
+
+void SRGToolkit::initVertexGroupOrbits() {
 	for (int i = m_v; i--;)
 		m_pGroupOrbits[i] = i;
 }
@@ -124,8 +127,10 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 	int indVertMax = 1;
 	int indVert = 0;
 	ushort* pLenOrbitsPrev = m_pLenOrbits;
-	if (defineAut)
-		pLenOrbitsPrev += (2 * m_v - firstVert) * (firstVert - 1) / 2;
+	if (defineAut) {
+		pLenOrbitsPrev += (2 * m_v - firstVert - 1) * firstVert / 2;
+		initVertexGroupOrbits();
+	}
 
 	while (true) {
 		// Loop over all vertices
@@ -134,22 +139,22 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			m_pOrbits[i] = i;
 
 		ushort* pLenOrbits = pLenOrbitsPrev;
-		auto pOrbits = m_pOrbits;
 		int i = firstVert;
 		while (defineAut) {
 			if (indVert == indVertMax) {
-				--firstVert;
-				indVert = 0;
-
 				while (--i) {
 					// The smallest index of the vertex that will be considered first
-					pLenOrbits = m_pLenOrbits + (2 * m_v - i) * (i - 1) / 2;
-					if ((indVertMax = *pLenOrbits) > 1)
-						break;
+					pLenOrbits = m_pLenOrbits + (2 * m_v - i - 1) * i / 2;
+					if (*pLenOrbits)
+						break;	
 				}
 
 				if (!i)
 					return 0;
+				
+				firstVert = i;
+				indVert = 0;
+				indVertMax = *(pLenOrbitsPrev = pLenOrbits);
 			}
 
 			const auto pGroupOrbs = m_pGroupOrbits + i;
@@ -159,6 +164,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			if (indVert++ < indVertMax) {
 				// swapping of i-th and (i+indVert)-th vertices
 				m_pOrbits[m_pOrbits[i] = i + indVert] = i;
+				pLenOrbits[0]++;
 				break;
 			}
 		}
@@ -166,16 +172,16 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 		int idxRight = 1;  // Continue, until at least one orbit length > 1
 		while (idxRight && i < m_v) {
 			flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
-			ASSERT(firstVert && flag);
+			ASSERT(defineAut && flag < 0);
 		}
 
-		if (defineAut) {
+		if (!flag && defineAut) {
 			addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
 			const auto pGraphLast = createGraphOut(pGraph, pGraphOut, firstVert);
 			flag = memcmp(pGraphLast, pGraph + firstVert * m_v, m_v * (m_v - firstVert));
 			ASSERT(flag);
 		}
-		if (!firstVert)
+		if (!firstVert || flag)
 			break;
 	}
 
@@ -183,7 +189,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 }
 
 int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
-	ushort ** ppLenOrbits, int& idxRight, bool flag, int &lastUnfixedVertexIndex) {
+	ushort ** ppLenOrbits, int& idxRight, int flag, int &lastUnfixedVertexIndex) {
 
 	auto idxLast = vertIdx;
 	const auto vertIdxNext = vertIdx + 1;
@@ -199,7 +205,7 @@ int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 		// The current vertex is the sole member of its orbit; 
 		// removing the orbit entirely
 		memcpy(pLenOrbitsNext, pLenOrbits + 1, len);
-		memcpy(pLenOrbits, pLenOrbitsNext, len);
+		pLenOrbits++;  // compensation for removed orbits
 		m_pNumOrbits[vertIdx]--;
 	}
 	else {
