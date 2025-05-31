@@ -201,10 +201,12 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	const int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_useRowsPrecalculation == eCalculateRows) {
+		bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
+		/**
 		switch (m_groupSize) {
 		case 2: bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != nrr + 1; break;
 		case 3: bPrecalcRow = nrr == 3 && nr > nrr && *(mi + nc * 2 + 1) != 5; break;
-		}
+		}*/
 	}
 	if (bPrecalcRow)
 		nr = nrr;
@@ -238,7 +240,7 @@ CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int
 		if (j < tpr[ttr[co[i]]])
 			j = tpr[ttr[co[i]]];
 	}
-const auto playerIndex = iDayCurrent * m_numPlayers + j;
+	const auto playerIndex = iDayCurrent * m_numPlayers + j;
 	if (m_playerIndex > playerIndex)
 		m_playerIndex = playerIndex;
 #define ProfilePlayerIndex 0 && !USE_CUDA
@@ -419,7 +421,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	char row2ndValue = 0;
 
 	const int nrr = param(t_useRowsPrecalculation);
-	const bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
+	const bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
 	for (tchar i = 0; i < nr; i++)
 	{
 		if (i == ind0 || i == ind1)
@@ -577,7 +579,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	const auto nc = m_numPlayers;
 	memset(tm, unset, nc);
 	int nrr = param(t_useRowsPrecalculation);
-	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nrr == 3 && nr == 4 && *(mi + nc * 2 + 1) != 5;
+	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
 	if (bPrecalcRow)
 		nr = nrr;
 	auto rowMax = tm[0] = ind; // indices of input rows in result matrices

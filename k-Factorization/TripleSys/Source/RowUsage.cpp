@@ -36,15 +36,17 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 #endif
 
 CC void CRowUsage::init(int iThread, int numThreads) {
-	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bUsePlayersMask);
+	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
 	const auto iRow = m_pRowStorage->numPreconstructedRows();
 	if (iThread) {
-		m_pRowSolutionIdx[iRow] = 0;
+		// Determine the maximum number of solutions for the first non-predetermined row.  
+		m_pRowSolutionIdx[0] = 0;
 		uint last = iRow;
 		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, &last, m_pRowStorage->getPlayersMask());
+		m_pRowStorage->setSolutionInterval(m_pRowSolutionIdx, iRow);
 	}
 
-	m_pRowSolutionIdx[iRow] = iThread;
+	m_threadID = m_pRowSolutionIdx[iRow] = iThread;
 	m_step = numThreads;
 }
 
@@ -53,6 +55,14 @@ ll cntr = 0;
 #define increaseGetRowCounter()  cntr++
 #else
 #define increaseGetRowCounter()
+#endif
+
+
+#if 0 && !USE_CUDA
+#define OUT_SELECTED_ROW_SOLUTION(pRowStorage, iRow, first, last) \
+					pRowStorage->outSelectedSolution(iRow, first, last, m_threadID)
+#else
+#define OUT_SELECTED_ROW_SOLUTION(pRowStorage, iRow, first, last)  
 #endif
 
 CC int CRowUsage::getRow(int iRow, int ipx) {
@@ -70,6 +80,11 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	if (last == UINT_MAX)
 		return availablePlayers? 0 : -1;
 
+	if (last > m_pRowStorage->getNumSolution())
+		return 0;
+
+	ASSERT(last > m_pRowStorage->getNumSolution());
+
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)
 			return 0;
@@ -83,6 +98,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last);
 		}
 
+		OUT_SELECTED_ROW_SOLUTION(m_pRowStorage, iRow, first, last);
 		first += m_step;
 		return 1;
 	}
@@ -155,8 +171,9 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #endif
 			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
-				if (m_bGroupSize2) {
-
+				if (!selectPlayerByMask()) {
+					// Usially, we should be here only when groupSize == 2 and it's NOT 
+					// a complete balanced maltipartite graph case.
 #if NEW
 					if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
 						first++;
@@ -215,11 +232,6 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #endif  // UseSolutionCliques
 				}  else {
 					multiply_2();
-/*
-					const auto availPlayers = *((const ll*)(m_pCompatibleSolutions + (nRow + 2) * m_lenMask) - 1);
-					uint last1 = iRow + 1;
-					const auto& first1 = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last1, &last1, availPlayers);
-*/
 					break;
 				}
 			} else
@@ -229,6 +241,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 		break;
 	}
 
+	OUT_SELECTED_ROW_SOLUTION(m_pRowStorage, iRow, first, last);
 	first++;
 	return 1;
 }

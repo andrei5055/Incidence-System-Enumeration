@@ -45,12 +45,15 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
+	CC inline void setSolutionInterval(uint* pRowSolutionIdx, uint idx) const {
+		pRowSolutionIdx[idx + m_lenDayResults] = pRowSolutionIdx[m_lenDayResults];
+	}
 	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
-	CC bool addRow(ctchar* pRow, ctchar* pNeighbors);
+	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC bool initCompatibilityMasks();
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
@@ -69,8 +72,10 @@ public:
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto maskTestingCompleted() const			{ return m_pMaskTestingCompleted; }
 	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
+	CC inline auto selectPlayerByMask() const			{ return m_bSelectPlayerByMask; }
+	CC inline auto getNumSolution() const				{ return m_numObjects; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
-		*ppRowSolutionIdx = new uint[m_lenDayResults * (m_bGroupSize2 ? 1 : 2)];
+		*ppRowSolutionIdx = new uint[m_lenDayResults * (selectPlayerByMask() ? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
@@ -81,6 +86,7 @@ public:
 	}
 
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const;
+	CC void outSelectedSolution(int iRow, uint first, uint last, int threadID = 0) const;
 #if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
 private:
@@ -144,8 +150,10 @@ private:
 	const int m_numDaysResult;
 	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
+	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
+	int m_stepCombSolution;
 
 	ctchar* m_pFirstMatr = NULL;                         // Pointer to the array of initial matrices
 	CStorage<tchar>* m_pMaskStorage = NULL;
@@ -193,7 +201,7 @@ class CRowUsage : public CompSolStorage {
 public:
 	CC CRowUsage(const CRowStorage* const pRowStorage) : CompSolStorage(pRowStorage) {
 		m_bUseCombinedSolutions = pRowStorage->initRowSolution(&m_pRowSolutionIdx);
-		m_bGroupSize2 = pRowStorage->groupSize2();
+		m_bSelectPlayerByMask = pRowStorage->selectPlayerByMask();
 	}
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
@@ -209,14 +217,16 @@ public:
 		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx);
 	}
 private:
+	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	uint m_lenMask = 0;				// Count of tmask elements, each encoding mutually compatible solutions
 	uint* m_pRowSolutionIdx = NULL;
 	tmask* m_pCompatibleSolutions = NULL;
 	int m_step = 0;
 	bool m_bUseCombinedSolutions;
 	bool m_bSolutionReady = false;   // true, when solution was prepared ar a part of combined solution. 
-	bool m_bUsePlayersMask = false;
-	bool m_bGroupSize2 = false;
+	bool m_bSelectPlayerByMask = false;
+	bool m_bPlayerByMask = false;
+	int m_threadID = 0;
 };
 
 #define PERMUTATION_OF_PLAYERS(numPlayers, pLayersIn, permut, pLayersOut)	for (auto j = numPlayers; j--;) \

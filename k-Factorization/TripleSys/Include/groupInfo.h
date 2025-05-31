@@ -85,7 +85,7 @@ public:
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline auto completeGraph() const				{ return m_param->completeGraph();}
 protected:
-	CC void u1fSetTableRow(tchar* ro, ctchar* ri) const;
+	CC void u1fSetTableRow(tchar* ro, ctchar* ri, bool bNeighbors = false) const;
 	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }

@@ -217,7 +217,7 @@ private:
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
 	char *matrixStatOutput(char* str, int maxStr, TrCycles* trs) const;
 	CC void cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1,
-		ctchar* result0, ctchar* result1, eCollectionMode collectionMode);
+		ctchar* result0, ctchar* result1);
 	CC int p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
 		eCheckForErrors checkErrors) const;
 	CC int u1fGetCycleLength3(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
@@ -225,7 +225,7 @@ private:
 	CC int u1fGetCycleLengthCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
 		eCheckForErrors checkErrors) const;
 	CC void sortCycles(tchar* cycles, tchar* cyclcesStart, int ncycles) const;
-	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, eCollectionMode collectionMode) const;
+	CC int collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const;
 	CC bool getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1, 
 		eCheckForErrors checkErrors) const;
 	CC int getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int istart, 
@@ -321,6 +321,7 @@ private:
 	int m_cnvMode;
 	int m_useRowsPrecalculation;
 	int m_secondPlayerInRow4;
+	int m_secondPlayerInRow4First;
 	int m_secondPlayerInRow4Last;
 	int m_numDaysResult;
 	int m_lastRowWithTestedTrs;
@@ -360,7 +361,6 @@ private:
 	mutable TrCycles* m_TrCyclesAll = NULL;
 	mutable TrCycles* m_TrCyclesPair = NULL;
 	mutable TrCycles* m_TrCyclesCollection = NULL;
-	eCollectionMode m_collectionMode;
 	checkU1F m_pCheckFunc;
 	sortGroups m_pSortGroups;
 	processMatrix2 m_pProcessMatrix;
@@ -375,9 +375,11 @@ private:
 	int m_threadNumber = 0;
 	bool m_bPrint = false;
 	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
+	int m_printMatrices = 0;
 
 	public:
 	mutable TrCycles* m_TrCyclesFirst2Rows = NULL;
+	mutable bool m_allRowPairsSameCycles = false;
 };
 
 inline bool is_number(const std::string& s)

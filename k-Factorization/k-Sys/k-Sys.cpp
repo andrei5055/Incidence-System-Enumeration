@@ -89,6 +89,23 @@ void kSysParam::setup() {
 int main(int argc, const char* argv[])
 {
 	std::cout << "k - Sys 10.62\n";
+	ifstream* infile = NULL;
+	string* testToRun = NULL;
+	if (argc > 1) {
+		infile = new ifstream(argv[1], ifstream::in);
+		if (infile && !infile->is_open()) {
+			printfRed("Cannot open file \"%s\"\n", argv[1]);
+			delete infile;
+			return -1;
+		}
+
+		if (argc > 2)
+			testToRun = new string(argv[2]);
+	}
+	else {
+		printfRed("Program was launched without parameters.\n");
+		return -1;
+	}
 
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames),
@@ -140,22 +157,6 @@ int main(int argc, const char* argv[])
 	for (int i = 0; i < countof(param.u1fCycles); i++)
 		param.u1fCycles[i] = 0;
 
-	string* testToRun = NULL;
-	ifstream* infile = NULL;
-	if (argc > 1) {
-		infile = new ifstream(argv[1], ifstream::in);
-		if (infile && !infile->is_open()) {
-			printf("Cannot open file \"%s\"\n", argv[1]);
-			delete infile;
-			infile = NULL;
-		}
-		else
-			if (argc > 2)
-				testToRun = new string(argv[2]);
-	}
-
-	if (!infile)
-		printf("The precompiled parameters will be used:\n");
 
 	// Job is defined by external file
 	vector<string> failedTests;

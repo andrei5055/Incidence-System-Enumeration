@@ -148,7 +148,7 @@ CC int alldata::u1fGetCycleLengthCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctc
 		if (cyclesNotOk(ncycles, trc->length, checkErrors))
 			return ncycles ? -1 : 0;
 		if (m_TrCyclesCollection) {
-			collectCyclesAndPath(m_TrCyclesCollection, trc, m_collectionMode);
+			collectCyclesAndPath(m_TrCyclesCollection, trc);
 #if 0 // print information about each pair cycles and path
 			if (iDay == m_numDaysResult && checkErrors == eNoErrorCheck) {
 				printTable("\nCycles length", trc->length, 1, ncycles, 0);

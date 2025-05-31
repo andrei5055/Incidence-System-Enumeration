@@ -68,10 +68,9 @@ int TopGun::Run()
 			auto nDuplicate = orderMatrices(orderMatrixMode);
 			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
 			nMatrices -= nDuplicate;
-			const auto groupSize = param(t_groupSize);
 			if (orderMatrixMode == 2) {
 				const auto exploreMatrices = param(t_exploreMatrices);
-				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), groupSize) : NULL;
+				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), m_groupSize) : NULL;
 				TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 				Result.allocateBuffer(32);
 				std::string ResultFile;

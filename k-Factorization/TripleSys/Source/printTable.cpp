@@ -80,7 +80,7 @@ void alldata::printPermutationMatrices(const int iMode) const {
 	delete[] pm;
 	delete[] pm0;
 }
-
+static tchar __colors[6] = { 32, 18, 5, 21, 26, 4 };
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns, bool makeString, ctchar* co, int* t)
 {
 	int ind = 0;
@@ -107,12 +107,8 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 			}
 			else if (v < 67)
 			{
-				if (v == 1)
-					printf(" 1");
-				else {
-					printf("\x1b[38;5;%dm%2d", 28 + v * 3, v);
-					printf("\x1b[0m");
-				}
+				printf("\x1b[38;5;%dm%2d", 28 + ((np > 1 && np < 7) ? __colors[v % np] : v) * 3, v);
+				printf("\x1b[0m");
 			}
 			else if (v == unset)
 				printf("  ");
