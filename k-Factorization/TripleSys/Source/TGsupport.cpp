@@ -1,7 +1,7 @@
 #include "TopGun.h"
 
 void RunThread(int threadId, eThreadStartMode iMode,
-	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, tchar* mstart0, tchar* mfirst, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
+	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, ctchar* mstart0, ctchar* mfirst, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
@@ -37,7 +37,7 @@ void TopGun::startThread(int iTask, int iTaskId, eThreadStartMode iMode, CRowSto
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
 	threads[iTask] = std::thread{ RunThread, iTaskId, iMode,
-		this,  m_pSecondRowsDB, mstart, mfirst, m_cnt + iTask * 2, iTask, pRowStorage};
+		this, m_pSecondRowsDB, mstart, mfirst, m_cnt + iTask * 2, iTask, pRowStorage};
 	threadActive[iTask] = true;
 #if 0
 	printfRed("*** Thread %d ", iTask + 1);

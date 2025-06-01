@@ -148,7 +148,7 @@ public:
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
 	CC sLongLong Run(int threadId=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
-		tchar* mstart0 = NULL, ctchar* mfirst = NULL,
+		ctchar* mstart0 = NULL, ctchar* mfirst = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);

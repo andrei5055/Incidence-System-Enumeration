@@ -70,7 +70,7 @@ void alldata::outputError() const {
 #endif
 
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
-	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
+	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
 	m_allRowPairsSameCycles = param(t_allowUndefinedCycles) == 0 || param(t_any2RowsConvertToFirst2) > 0;

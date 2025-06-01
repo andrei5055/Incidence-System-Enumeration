@@ -88,7 +88,7 @@ private:
 	bool *threadActive = NULL;
 	int mLinksSize;
 	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
-	tchar* mstart = NULL, *mfirst = NULL;
+	ctchar* mstart = NULL, *mfirst = NULL;
 	int numThreads;
 	int m_iMatrix;
 	int m_iPrintCount;

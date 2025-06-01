@@ -111,7 +111,8 @@ int TopGunBase::getStartMatrices()
 }
 
 void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) const {
-	if (param(t_exploreMatrices))
+	const auto exploreMatrices = param(t_exploreMatrices);
+	if (exploreMatrices >= 2)
 		return;
 
 	std::string IntegratedResults;
@@ -127,6 +128,11 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		reportResult(f);
 		if (!m_reportInfo.empty())
 			fprintf(f, m_reportInfo.c_str());
+
+		if (exploreMatrices) {
+			//readStartMatrices();
+			//auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), m_groupSize) : NULL;
+		}
 	}
 	else {
 		if (numParamSet) {
