@@ -145,7 +145,7 @@ __declspec(dllexport) sLongLong runWithCuda(const TopGunGPU* pTG)
     const size_t lenMatr = pTG->numPlayers() * pTG->nRowsStart() * sizeof(tchar);
     const size_t inputLenTotal = matrToProceed * lenMatr;
     tchar* pntrTo;
-    auto* pntrFrom = pTG->startMatrix();
+    auto* pntrFrom = pTG->inputMatrices();
     kSysParam *paramPtr;
     alldata** dev_proc = NULL;
     sLongLong* matr_res = NULL;

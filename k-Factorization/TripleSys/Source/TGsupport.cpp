@@ -54,12 +54,12 @@ void TopGun::myTemporaryCheck()
 		myExit(1);
 	}
 	auto* lnki = mStartLinks;
-	auto* stri = m_startMatrix;
+	auto* stri = inputMatrices();
 
-	int nm = nMatrices < 20000 ? nMatrices : 20000;
-	int is = 1;//nMatrices / nm;
-	int mstep = mStartMatrixSize* is;
-	int lstep = mLinksSize * is;
+	const int nm = numMatrices2Process() < 20000 ? numMatrices2Process() : 20000;
+	const int is = 1;//nMatrices / nm;
+	const int mstep = inputMatrixSize() * is;
+	const int lstep = mLinksSize * is;
 	char* lnkt = new char[mLinksSize];
 
 	for (int i = 0; i < nm; i++, stri += mstep, lnki += lstep)
@@ -69,7 +69,7 @@ void TopGun::myTemporaryCheck()
 	for (int iRow = 3; iRow <= nRowsStart() && iRow < m_numDays; iRow++)
 	{
 		lnki = mStartLinks;
-		stri = m_startMatrix;
+		stri = inputMatrices();
 		for (int i = 0; i < nm - 1; i++, stri += mstep, lnki += lstep)
 		{
 			if ((i % 100) == 0)
@@ -82,7 +82,7 @@ void TopGun::myTemporaryCheck()
 				char a = lnki[k];
 				lnkt[k] = (a == unset) ? a : (a >= iRow ? unset : 0);
 			}
-			auto* strj = m_startMatrix;
+			auto* strj = inputMatrices();
 			auto* lnkj = mStartLinks;
 			for (int j = i + 1; j < nm; j++, strj += mstep, lnkj += lstep)
 			{

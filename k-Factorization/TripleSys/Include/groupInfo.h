@@ -21,7 +21,7 @@ public:
 		m_numDays(p.numFactors()),
 		m_allowUndefinedCycles(p.val[t_allowUndefinedCycles]) {}
 protected:
-	CC void linksFromMatrix(tchar* lnk, tchar* iv, int nr) const;
+	CC void linksFromMatrix(tchar* lnk, ctchar* iv, int nr) const;
 	CC bool setLinksForOnePlayer(tchar id, tchar* lnk, tchar* p, int ip, tchar v) const;
 	void createFolderAndFileName(std::string& fnn, const kSysParam* param, int tFolder, int nr, const std::string& fName = "") const;
 	const int m_numPlayers;

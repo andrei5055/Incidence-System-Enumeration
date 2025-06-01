@@ -1,7 +1,7 @@
 #include "TripleSys.h"
-CC void SizeParam::linksFromMatrix(tchar* lnk, tchar* iv, int nr) const
-{
-	auto* iv_id = iv;
+CC void SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr) const
+{ // ANDREI ??? ctchar* iv
+	auto* iv_id = (tchar*)iv;
 	const auto np = m_numPlayers;
 	memset(lnk, unset, np * np);
 	for (int i = 0; i < nr; i++, iv_id += np)
@@ -18,8 +18,8 @@ CC void SizeParam::linksFromMatrix(tchar* lnk, tchar* iv, int nr) const
 			const auto linksOK = setLinksForOnePlayer(i, lnk, iv_id, j, ivId);
 			if (!linksOK) {
 				for (int k = 0; k < j % m_groupSize; k++) {
-					int iv0 = iv_id[j - k - 1];
-					int lDay = *(lnk + ivId * np + iv0);
+					const auto iv0 = iv_id[j - k - 1];
+					const auto lDay = *(lnk + ivId * np + iv0);
 					if (lDay != unset) {
 #if !USE_CUDA
 						printfRed("*** Init: pair (%d,%d) in day %d already defined in day %d\n", iv0, ivId, i, lDay);

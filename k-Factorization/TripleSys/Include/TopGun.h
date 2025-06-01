@@ -30,41 +30,43 @@ class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase()					{ 
-		delete[] m_startMatrix;
+		delete[] m_pInputMatrices;
 		delete[] cnt();
 		delete m_pMatrixInfo;
 		delete[] m_pMatrixPerm;
 	}
 	int virtual Run() = 0;
-	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt") const;
+	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt");
 	inline auto numPlayers() const			{ return m_numPlayers; }
 	inline auto groupSize() const			{ return m_groupSize; }
 	inline auto groupSizeFactorial() const	{ return m_groupSizeFactorial; }
-	inline auto numMatrices2Process() const	{ return nMatrices; }
+	inline auto numMatrices2Process() const	{ return m_nMatrices; }
 	inline auto nRowsStart() const			{ return param(t_nRowsInStartMatrix); }
 	inline auto nRowsOut() const			{ return m_nRowsOut; }
 	inline sLongLong* cnt() const			{ return m_cnt; }
-	inline const auto* startMatrix() const	{ return m_startMatrix; }
+	inline const auto* inputMatrices() const { return m_pInputMatrices; }
 	inline auto* paramPtr() const			{ return &m_param; }
 protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
-	bool readStartMatrices();
+	bool readStartMatrices(const char* pMatrixType = "Start");
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
 	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	inline auto inputMatrixSize() const		{ return m_nInputMatrixSize; }
 	int orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;
-	int mStartMatrixSize;
-	tchar* m_startMatrix = NULL;
+	int m_nInputMatrixSize;
+	tchar* m_pInputMatrices = NULL;
 	uint* m_pMatrixPerm = NULL;
 	CMatrixInfo* m_pMatrixInfo = NULL;	// Information about loaded matrices: |Aut(M)|, cycle's, group's
-	int nMatrices;
+	int m_nMatrices;
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
 private:
-	int getStartMatrices();
+	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
+	int loadMatrices(const char* pMatrixType);
 	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
 		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), pMatrixInfo);
 	}

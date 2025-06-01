@@ -287,7 +287,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							if (any2RowsConvertToFirst2) {
 #if !USE_CUDA
 								if (bCollectInfo)
-									printfRed("Rows %d,%d with Cycles(%d:%d:%d) cant be converted to rows 0,1\n",
+									printfRed("Rows %d,%d with Cycles(%d:%d:%d) cannot be converted to rows 0,1\n",
 										indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);
 #endif
 								bRet = false;

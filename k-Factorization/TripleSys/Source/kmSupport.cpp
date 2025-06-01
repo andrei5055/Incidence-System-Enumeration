@@ -443,7 +443,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			rowMax = MAX2(rowMax, i);
 			bProc3 = true;
 		}
-		else if (row2ndValue <= nr && !bPrecalcRow) // cant use quick check if row2ndValue > nr, or precalculation of rows nrr and up
+		else if (row2ndValue <= nr && !bPrecalcRow) // We cannot use quick check if row2ndValue > nr, or precalculation of rows nrr and up
 		{
 			if (bProc3 && row2ndValue == 4)
 			{
@@ -495,7 +495,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	if (r2ind >= nr)
 		r2ind = 1;
 	if (r2ind == ind)
-		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow2 cant be used for 1st row
+		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow2 cannot be used for 1-st row
 
 	iRet = kmProcessOneNot1stRow2(mi, r2ind, tb, tr, nr);
 	auto row2ndValue = tb[0];
@@ -536,7 +536,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 			rowMax = MAX2(rowMax, i);
 			bProc2 = true;
 		}
-		else if (row2ndValue <= nr) // cant return if row2ndValue > nr
+		else if (row2ndValue <= nr) // We cannot return if row2ndValue > nr
 		{
 			if (bProc2 && row2ndValue == 3)
 			{
@@ -587,7 +587,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	if (r2ind >= nr)
 		r2ind = 1;
 	if (r2ind == ind)
-		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow3 cant be used for 1st row
+		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow3 cannot be used for 1-st row
 	tchar* const mo = m_Ktmp;
 	iRet = kmProcessOneNot1stRow3(mo, mi, r2ind, tb, tc, tr, nr);
 	auto row2ndValue = tb[0];
@@ -639,7 +639,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 			rowMax = MAX2(rowMax, i);
 			bProc2 = true;
 		}
-		else if (row2ndValue <= nr) // cant return if row2ndValue > nr
+		else if (row2ndValue <= nr) // We cannot return, if row2ndValue > nr
 		{
 			if (bProc2 && row2ndValue == 4) // 3rd row and 2nd row was processed cmp was equal 0
 			{

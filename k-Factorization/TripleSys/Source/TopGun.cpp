@@ -10,7 +10,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 
 	dNumMatrices[0] = nMatricesMax();
 	mLinksSize = numPlayers() * numPlayers();
-	if (!startMatrix())
+	if (!inputMatrices())
 	{
 		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesReserved());
 		myExit(1);
@@ -65,9 +65,10 @@ int TopGun::Run()
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
-			auto nDuplicate = orderMatrices(orderMatrixMode);
+			const auto nDuplicate = orderMatrices(orderMatrixMode);
+			auto nMatrices = numMatrices2Process();
 			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
-			nMatrices -= nDuplicate;
+			nMatrices = m_nMatrices -= nDuplicate;
 			if (orderMatrixMode == 2) {
 				const auto exploreMatrices = param(t_exploreMatrices);
 				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), m_groupSize) : NULL;
@@ -81,7 +82,7 @@ int TopGun::Run()
 					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
 					Result.setGroupOrder(groupOrder);
 					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-					const auto pMatr = startMatrix() + idx * mStartMatrixSize;
+					const auto pMatr = inputMatrices() + idx * inputMatrixSize();
 					Result.printTable(pMatr, true, false, nRowsStart());
 					if (groupOrder > 1)
 						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
@@ -96,12 +97,12 @@ int TopGun::Run()
 				}
 				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
 
-
 				reportEOJ(0);
 				return 0;
 			}
 		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
+		const auto nMatrices = numMatrices2Process();
 		if (nMatrices <= firstIndexOfStartMatrices)
 		{
 			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n",
@@ -117,8 +118,8 @@ int TopGun::Run()
 		InitCnt(numThreads);
 		int nThreadsRunning = 1;
 		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices;
-		mstart = m_startMatrix + m_iMatrix * mStartMatrixSize;
-		mfirst = m_startMatrix;
+		mfirst = inputMatrices();
+		mstart = mfirst + m_iMatrix * inputMatrixSize();
 		mTime = clock() - iTime;
 
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
@@ -181,7 +182,7 @@ int TopGun::Run()
 						cTime = clock();
 					}
 				}
-				mstart += mStartMatrixSize;
+				mstart += inputMatrixSize();
 				m_iMatrix += 1;
 			}
 		}
@@ -199,7 +200,7 @@ int TopGun::Run()
 						{
 							//printTable("Input matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
 							startThread(iTask, m_iMatrix + 1);
-							mstart += mStartMatrixSize;
+							mstart += inputMatrixSize();
 							m_iMatrix += 1;
 							nThreadsRunning++;
 						}
