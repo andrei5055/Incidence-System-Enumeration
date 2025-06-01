@@ -30,7 +30,7 @@ class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase()					{ 
-		delete[] startMatrix;
+		delete[] m_startMatrix;
 		delete[] cnt();
 		delete m_pMatrixInfo;
 		delete[] m_pMatrixPerm;
@@ -44,7 +44,7 @@ public:
 	inline auto nRowsStart() const			{ return param(t_nRowsInStartMatrix); }
 	inline auto nRowsOut() const			{ return m_nRowsOut; }
 	inline sLongLong* cnt() const			{ return m_cnt; }
-	inline auto* pntrStartMatrix() const	{ return startMatrix; }
+	inline const auto* startMatrix() const	{ return m_startMatrix; }
 	inline auto* paramPtr() const			{ return &m_param; }
 protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
@@ -56,7 +56,7 @@ protected:
 
 	int m_nRowsOut;
 	int mStartMatrixSize;
-	tchar* startMatrix;
+	tchar* m_startMatrix = NULL;
 	uint* m_pMatrixPerm = NULL;
 	CMatrixInfo* m_pMatrixInfo = NULL;	// Information about loaded matrices: |Aut(M)|, cycle's, group's
 	int nMatrices;

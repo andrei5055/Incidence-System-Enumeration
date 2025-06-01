@@ -6,7 +6,7 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 	m_param(param) {
 	m_nRowsOut = param.val[t_nRowsInResultMatrix];
 	mStartMatrixSize = m_numPlayers * nRowsStart();
-	startMatrix = new tchar[nMatricesReserved() * mStartMatrixSize];
+	m_startMatrix = new tchar[nMatricesReserved() * mStartMatrixSize];
 
 	const auto orderMatrixMode = param.val[t_orderMatrices];
 	// orderMatrixMode: 0 - No matrix reordering will be performed.
@@ -33,7 +33,7 @@ bool TopGunBase::readStartMatrices() {
 	}
 
 	const auto totalLen = nMatrices * mStartMatrixSize;
-	if (!reallocStorageMemory(&startMatrix, totalLen, totalLen)) {
+	if (!reallocStorageMemory(&m_startMatrix, totalLen, totalLen)) {
 		printfRed("*** Memory allocation issue encountered while reading the initial matrices\n");
 		return false;
 	}
@@ -84,7 +84,7 @@ int TopGunBase::getStartMatrices()
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, m_pMatrixInfo);
+		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &m_startMatrix, nMax, nReserved, m_pMatrixInfo);
 		if (!nMatricesFromOneFile)
 		{
 			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());
@@ -208,7 +208,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 }
 
 int matrixSize;
-tchar* pStartMatrix;
+ctchar* pStartMatrix;
 
 int compare_matr_fn(const void* pA, const void* pB) {
 	return memcmp(pA, pB, matrixSize);
@@ -229,13 +229,13 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 		for (int i = 0; i < nMatrices; i++)
 			m_pMatrixPerm[i] = i;
 
-		pStartMatrix = pntrStartMatrix();
+		pStartMatrix = startMatrix();
 		std::qsort(m_pMatrixPerm, nMatrices, sizeof(m_pMatrixPerm[0]), compare_matr_fn_perm);
 	}
 	else {
-		std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
+		std::qsort(m_startMatrix, nMatrices, mStartMatrixSize, compare_matr_fn);
 
-		auto* pMatrixDst = pntrStartMatrix();
+		auto* pMatrixDst = m_startMatrix;
 		auto* pMatrixSrc = pMatrixDst + mStartMatrixSize;
 		for (int i = 1; i < nMatrices; i++, pMatrixSrc += mStartMatrixSize) {
 			if (memcmp(pMatrixDst, pMatrixSrc, mStartMatrixSize)) {

@@ -10,7 +10,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 
 	dNumMatrices[0] = nMatricesMax();
 	mLinksSize = numPlayers() * numPlayers();
-	if (!startMatrix)
+	if (!startMatrix())
 	{
 		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesReserved());
 		myExit(1);
@@ -81,7 +81,7 @@ int TopGun::Run()
 					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
 					Result.setGroupOrder(groupOrder);
 					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;
+					const auto pMatr = startMatrix() + idx * mStartMatrixSize;
 					Result.printTable(pMatr, true, false, nRowsStart());
 					if (groupOrder > 1)
 						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
@@ -117,8 +117,8 @@ int TopGun::Run()
 		InitCnt(numThreads);
 		int nThreadsRunning = 1;
 		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices;
-		mstart = startMatrix + m_iMatrix * mStartMatrixSize;
-		mfirst = startMatrix;
+		mstart = m_startMatrix + m_iMatrix * mStartMatrixSize;
+		mfirst = m_startMatrix;
 		mTime = clock() - iTime;
 
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);

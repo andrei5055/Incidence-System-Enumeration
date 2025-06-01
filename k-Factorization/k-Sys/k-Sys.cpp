@@ -45,7 +45,7 @@ const char* intParamNames[]{
 	                         // otherwise any combinations of:
 	                         //  1,  2 - generators and groups acting on elements
 							 //  4,  8 - generators and groups acting on the matrix rows
-							 // 16, 32 - generators ogroup acting on the k-sets
+							 // 16, 32 - generators and groups acting on the k-sets
 	"NestedGroups",
 	"GridSize",
 	"BlockSize",
