@@ -1,7 +1,5 @@
 #include "TopGun.h"
-#include "Table.h"
 #include "data.h"
-#include "SRGToolkit.h"
 
 RowDB* TopGun::m_pSecondRowsDB = NULL;
 
@@ -60,43 +58,13 @@ int TopGun::Run()
 	}
 
 	if (orderMatrixMode || param(t_MultiThreading)) {
-		if (!readStartMatrices())
+		if (readMatrices() < 0)
 			myExit(1);
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
-			const auto nDuplicate = orderMatrices(orderMatrixMode);
-			auto nMatrices = numMatrices2Process();
-			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
-			nMatrices = m_nMatrices -= nDuplicate;
-			if (orderMatrixMode == 2) {
-				const auto exploreMatrices = param(t_exploreMatrices);
-				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), m_groupSize) : NULL;
-				TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
-				Result.allocateBuffer(32);
-				std::string ResultFile;
-				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), "_OrderedMatrices.txt");
-				Result.setOutFileName(ResultFile.c_str());
-				for (int i = 0; i < nMatrices; i++) {
-					const auto idx = m_pMatrixPerm[i];
-					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
-					Result.setGroupOrder(groupOrder);
-					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-					const auto pMatr = inputMatrices() + idx * inputMatrixSize();
-					Result.printTable(pMatr, true, false, nRowsStart());
-					if (groupOrder > 1)
-						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
-
-					if (pSRGtoolkit)
-						pSRGtoolkit->exploreMatrix(pMatr);
-				}
-
-				if (pSRGtoolkit) {
-					pSRGtoolkit->printStat();
-					delete pSRGtoolkit;
-				}
-				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
-
+			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, param(t_exploreMatrices) > 1);
+			if (orderMatrixMode == 2) {				
 				reportEOJ(0);
 				return 0;
 			}
@@ -236,10 +204,10 @@ int TopGun::Run()
 		printf(str.c_str());
 		m_reportInfo += str;
 	} else {
-		 alldata sys(*this, paramPtr());
-		 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
-		 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
-		 transferMatrixDB(sys.matrixDB());
+	 alldata sys(*this, paramPtr());
+	 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
+	 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+	 transferMatrixDB(sys.matrixDB());
 
 	}
 

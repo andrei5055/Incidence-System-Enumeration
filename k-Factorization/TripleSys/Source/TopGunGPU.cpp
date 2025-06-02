@@ -4,7 +4,7 @@ int TopGunGPU::Run()
 {
     __declspec(dllimport) sLongLong runWithCuda(const TopGunGPU * pntr);
 
-    if (!readStartMatrices())
+    if (readMatrices() < 0)
         myExit(1);
 
     const auto total = runWithCuda(this);
