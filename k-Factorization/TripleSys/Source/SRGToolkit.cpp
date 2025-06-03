@@ -15,6 +15,7 @@ SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) :
 	m_pLenOrbits = new ushort [3 * m_len];
 	m_pSavedOrbits = m_pLenOrbits + m_len;
 	m_pSavedOrbIdx = m_pSavedOrbits + m_len;
+	m_bChekMatr[0] = m_bChekMatr[1] = true;
 }
 
 SRGToolkit::~SRGToolkit() { 
@@ -38,12 +39,14 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 	return false;
 }
 
-void SRGToolkit::exploreMatrix(const unsigned char* pMatr) {
-	for (int i = 0; i < 2; i++)
-		exploreMatrixOfType(i, pMatr);
+void SRGToolkit::exploreMatrix(ctchar* pMatr) {
+	for (int i = 0; i < 2; i++) {
+		if (m_bChekMatr[i])
+			m_bChekMatr[i] = exploreMatrixOfType(i, pMatr);
+	}
 }
 
-void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	const auto numGroups = m_nCols / m_groupSize;
 	const auto pVertexLast = pMatr + m_nRows * m_nCols;
 
@@ -84,7 +87,8 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 		}
 	}
 
-	checkSRG(pAdjacencyMatrix, &graphParam);
+	if (!checkSRG(pAdjacencyMatrix, &graphParam))
+		return false;
 
 	initCanonizer();
 	int i, idx, firstVert = 0;
@@ -95,6 +99,7 @@ void SRGToolkit::exploreMatrixOfType(int typeIdx, const unsigned char* pMatr) {
 		i = 1 - i;
 	}
 	printAdjMatrix(NULL, m_pGraph[i], idx++, m_v);
+	return true;
 }
 
 void SRGToolkit::initCanonizer() {
@@ -380,7 +385,7 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 		pGraphParam->k = graphDegree;
 
 	// Check if constructed graph is strongly regular
-	int nCommon[4] = { 0 };
+	int nCommon[10] = { 0 };
 	bool flag = true;
 	auto pFirstVertex = pGraph;
 	for (int i = 0; i < m_v; i++, pFirstVertex += m_v) {
@@ -407,17 +412,31 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			const auto idx = pFirstVertex[j] ? 0 : 1;
 			if (nCommon[idx]) {
 				if (nCommon[idx] != nCommonCurr) {
-					printfRed("Graph is not strongly regular\n");
+#if 0
+					printfRed("Graph is not strongly regular:\n"
+						"For(%d, %d) %s is %d and not %d as it was for (%d, %d)\n", 
+						i, j, idx? "mu" : "lambda", nCommonCurr, nCommon[idx], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+					printAdjMatrix(pGraph);
+#endif
 					return false;
 				}
 				if (flag) {
-					//printfRed("Graph does not satisfy 4-vertex condition\n");
 					flag = (nCommon[idx + 2] == alpha);
+					if (flag)
+						continue;
+#if 0
+					printfRed("Graph does not satisfy 4-vertex condition\n"
+						"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
+						i, j, idx ? "beta" : "alpha", alpha, nCommon[idx+2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+					printAdjMatrix(pGraph);
+#endif
 				}
 			}
 			else {
 				nCommon[idx] = nCommonCurr;
 				nCommon[idx + 2] = alpha;
+				nCommon[4 * idx + 4] = i;
+				nCommon[4 * idx + 5] = j;
 			}
 		}
 	}
@@ -438,6 +457,11 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 void SRGToolkit::printStat() {
 	for (int i = 0; i < 2; i++) {
 		auto& graphParam = m_graphParam[i];
+		if (!m_bChekMatr[i]) {
+			printfRed("At least one out of %d graphs of type %d is not SRG.\n", graphParam.m_cntr[0], i);
+			continue;
+		}
+
 		const bool plural = graphParam.m_cntr[0] > 1;
 		const char* pntr0 = plural ? "s" : "";
 		const char* pntr1 = plural ? "are" : "is";
@@ -469,7 +493,12 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int s
 	if (endVertex)
 		return;
 
-	createGraphOut(pGraph, pGraphOut, startVertex, endVertex);
+	if (pGraphOut)
+		createGraphOut(pGraph, pGraphOut, startVertex, endVertex);
+	else
+		pGraphOut = (tchar * )pGraph;
+
+	return;
 
 	char buf[256], * pBuf;
 	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);

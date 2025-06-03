@@ -27,10 +27,12 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 TopGun::~TopGun() {
 	delete[] m_cntTotal;
 	delete[] threadActive;
+	reportEOJ(m_errCode);
 }
 
 int TopGun::Run()
 {
+	m_errCode = 0;
 	iTime = clock();
 	sLongLong resultMatr = 0;
 	const auto orderMatrixMode = param(t_orderMatrices);
@@ -64,10 +66,8 @@ int TopGun::Run()
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
 			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, param(t_exploreMatrices) > 1);
-			if (orderMatrixMode == 2) {				
-				reportEOJ(0);
+			if (orderMatrixMode == 2)
 				return 0;
-			}
 		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
 		const auto nMatrices = numMatrices2Process();
@@ -212,10 +212,9 @@ int TopGun::Run()
 	}
 
 	const auto expectedResult = param(t_expectedResult);
-	const auto code = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
-	if (code)
+	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
+	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
 
-	reportEOJ(code);
-	return code;
+	return m_errCode;
 }

@@ -52,9 +52,12 @@ protected:
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
 	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	inline void updateMatrReserved(bool v)	{ m_bUpdateMatrixReserved = v; }
+	inline auto updateMatrReserved()		{ return m_bUpdateMatrixReserved; }
 	inline auto inputMatrixSize() const		{ return m_nInputMatrixSize; }
 	void orderAndExploreMatrices(int nRows, int orderMatrixMode = 2, bool exploreMatrices = true);
 	int orderMatrices(int orderMatrixMode);
+
 
 	int m_nRowsOut;
 	int m_nInputMatrixSize;
@@ -79,6 +82,8 @@ private:
 	}
 	cchar* matrixType(int nRows) const		{ return !nRows || nRows == nRowsStart() ? "Start" : "Constructed"; }
 	void allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode);
+
+	bool m_bUpdateMatrixReserved = true;
 };
 
 class TopGun : public TopGunBase {
@@ -107,6 +112,7 @@ private:
 	int m_iPrintCount;
 	std::vector<std::thread> threads;//(NThreads);
 	static RowDB* m_pSecondRowsDB;
+	int m_errCode;
 };
 
 class TopGunGPU : public TopGunBase {

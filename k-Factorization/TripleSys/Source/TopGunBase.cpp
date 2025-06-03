@@ -103,7 +103,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
 
-	if (m_pMatrixInfo)
+	if (m_pMatrixInfo && updateMatrReserved())
 		m_pMatrixInfo->updateReservedMatrNumb(nReserved);
 
 	return nMatricesAll;
@@ -296,5 +296,9 @@ void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {
 	//                  1 - Matrix reordering will be performed, but |Aut(M)| will not be needed.
 	//                  2 - Matrix reordering will be performed AND |Aut(M)| will be used. 
 	delete m_pMatrixInfo;
-	m_pMatrixInfo = orderMatrixMode == 2? new CMatrixInfo(nMatr) : NULL;
+	m_pMatrixInfo = NULL;
+	if (orderMatrixMode == 2) {
+		m_pMatrixInfo = new CMatrixInfo((uint)nMatr);
+		updateMatrReserved(false);
+	}
 }
