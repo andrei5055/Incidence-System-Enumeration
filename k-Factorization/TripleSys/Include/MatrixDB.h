@@ -30,7 +30,7 @@ public:
 	}
 	inline auto descrStorage() const    { return m_descrStorage; }
 protected:
-	void reportResult(FILE* f) const;
+	size_t reportResult(FILE* f) const;
 private:
 	std::vector<MatrDescr *>* m_descrStorage = NULL;
 };

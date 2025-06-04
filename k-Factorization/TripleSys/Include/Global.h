@@ -8,7 +8,6 @@
 // The maximum numbers of players and groups per day for which the program is compiled.
 #define MAX_PLAYER_NUMBER			64
 #define MAX_GROUP_NUMBER			16
-#define MAX_3PF_SETS			    218 // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 
 #define MAX_CYCLE_SETS		30
 #define MAX_CYCLES_PER_SET	 8

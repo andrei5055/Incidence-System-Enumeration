@@ -115,13 +115,13 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0) {
 			bCurrentSet = true;
 			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
-			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors(1), result(0), result(1), eSameSetsTogether);
+			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors(1), result(0), result(1));
 		}
 		else {
 			tchar neighbors1[MAX_PLAYER_NUMBER];
 			u1fSetTableRow(neighbors1, p1);
 			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
-			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors1, result(0), p1, eSameSetsTogether);
+			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors1, result(0), p1);
 		}
 		if (nrows == 2) {
 			if (!cyclesOfTwoRowsOk(m_TrCyclesAll)) {
@@ -173,36 +173,19 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						}
 					}
 					else {
-						//if (nv1 > 53)
-						//	indRow1 = indRow1
 						auto* pV1 = v1;
 						if (bSaveTestedTrs)
 							pTestedTRs->resetGroupOrder();
-#define UseOneCyclesSet 0
-						if (UseOneCyclesSet && nrows < m_numDaysResult && !param(t_autSaveTestedTrs)) {
-							cyclesFor2Rows(m_TrCyclesPair, &m_TrCycles, neighbors(indRow0), neighbors(indRow1),
-								result(indRow0), result(indRow1), eSameSetsTogether);
-							for (int itr = 0; itr < MAX_CYCLE_SETS; itr++) {
-								if (m_TrCyclesPair[itr].counter == 0 && m_TrCyclesAll[itr].counter == 0)
-									break;
-								if (m_TrCyclesPair[itr].counter != m_TrCyclesAll[itr].counter ||
-									MEMCMP(m_TrCyclesPair[itr].length, m_TrCyclesAll[itr].length, MAX_CYCLES_PER_SET))
-									goto nextRow;
-							}
-							nv1 = MAX_CYCLE_SETS;
-						}
-						else
-							nv1 = (m_groupSize == 3 && !bCBMP) ? getAllV(v1, m_maxCommonVSets, indRow0, indRow1) : MAX_CYCLE_SETS;
+						nv1 = bCBMP ? m_maxCommonVSets : ((m_groupSize == 3) ? getAllV(v1, m_maxCommonVSets, indRow0, indRow1) :
+							MAX_CYCLE_SETS);
 #if !USE_CUDA
 						if (bPrintInfo) {
 							cyclesFor2Rows(m_TrCyclesPair, &m_TrCycles, neighbors(indRow0), neighbors(indRow1), 
-								result(indRow0), result(indRow1), eSameSetsTogether);
+								result(indRow0), result(indRow1));
 						}
 #endif
 						for (int itr = 0; itr < nv1; itr++, pV1 += m_nGroups) {
-							if (UseOneCyclesSet && nrows < m_numDaysResult)
-								memcpy(&trCycles, &m_TrCyclesPair[itr], sizeof(TrCycles));
-							else if (collectOneCyclesSet(&trCycles, pV1, itr, indRow0, indRow1, eNoErrorCheck) <= 0)
+							if (collectOneCyclesSet(&trCycles, pV1, itr, indRow0, indRow1, eNoErrorCheck) <= 0)
 								continue;
 							bool bCycleSelected = false;
 							for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++)
@@ -291,7 +274,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							}
 						}
 					}
-					nextRow:
 #if !USE_CUDA
 					if (bPrintInfo) {
 						char stat[256];
@@ -305,7 +287,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							if (any2RowsConvertToFirst2) {
 #if !USE_CUDA
 								if (bCollectInfo)
-									printfRed("Rows %d,%d with Cycles(%d:%d:%d) cant be converted to rows 0,1\n",
+									printfRed("Rows %d,%d with Cycles(%d:%d:%d) cannot be converted to rows 0,1\n",
 										indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);
 #endif
 								bRet = false;

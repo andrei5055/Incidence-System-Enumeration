@@ -180,7 +180,8 @@ CC void alldata::updateIndexPlayerMinMax()
 			case 2:
 			if (m_numPlayers >= 4)
 			{
-				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
+				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
+					m_secondPlayerInRow4)
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = completeGraph() ? iDay + 1 : iDay * 2 + 1;
@@ -190,7 +191,8 @@ CC void alldata::updateIndexPlayerMinMax()
 			default:
 			if (m_numPlayers >= 9)
 			{
-				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation))
+				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
+					m_secondPlayerInRow4)
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {
 					int ip1 = result(iDay - 1)[1] + 1;

@@ -201,10 +201,12 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	const int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_useRowsPrecalculation == eCalculateRows) {
+		bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
+		/**
 		switch (m_groupSize) {
 		case 2: bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != nrr + 1; break;
 		case 3: bPrecalcRow = nrr == 3 && nr > nrr && *(mi + nc * 2 + 1) != 5; break;
-		}
+		}*/
 	}
 	if (bPrecalcRow)
 		nr = nrr;
@@ -238,7 +240,7 @@ CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int
 		if (j < tpr[ttr[co[i]]])
 			j = tpr[ttr[co[i]]];
 	}
-const auto playerIndex = iDayCurrent * m_numPlayers + j;
+	const auto playerIndex = iDayCurrent * m_numPlayers + j;
 	if (m_playerIndex > playerIndex)
 		m_playerIndex = playerIndex;
 #define ProfilePlayerIndex 0 && !USE_CUDA
@@ -419,7 +421,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	char row2ndValue = 0;
 
 	const int nrr = param(t_useRowsPrecalculation);
-	const bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != nrr + 1;
+	const bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
 	for (tchar i = 0; i < nr; i++)
 	{
 		if (i == ind0 || i == ind1)
@@ -441,7 +443,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			rowMax = MAX2(rowMax, i);
 			bProc3 = true;
 		}
-		else if (row2ndValue <= nr && !bPrecalcRow) // cant use quick check if row2ndValue > nr, or precalculation of rows nrr and up
+		else if (row2ndValue <= nr && !bPrecalcRow) // We cannot use quick check if row2ndValue > nr, or precalculation of rows nrr and up
 		{
 			if (bProc3 && row2ndValue == 4)
 			{
@@ -493,7 +495,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	if (r2ind >= nr)
 		r2ind = 1;
 	if (r2ind == ind)
-		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow2 cant be used for 1st row
+		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow2 cannot be used for 1-st row
 
 	iRet = kmProcessOneNot1stRow2(mi, r2ind, tb, tr, nr);
 	auto row2ndValue = tb[0];
@@ -534,7 +536,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 			rowMax = MAX2(rowMax, i);
 			bProc2 = true;
 		}
-		else if (row2ndValue <= nr) // cant return if row2ndValue > nr
+		else if (row2ndValue <= nr) // We cannot return if row2ndValue > nr
 		{
 			if (bProc2 && row2ndValue == 3)
 			{
@@ -577,7 +579,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	const auto nc = m_numPlayers;
 	memset(tm, unset, nc);
 	int nrr = param(t_useRowsPrecalculation);
-	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nrr == 3 && nr == 4 && *(mi + nc * 2 + 1) != 5;
+	bool bPrecalcRow = m_useRowsPrecalculation == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
 	if (bPrecalcRow)
 		nr = nrr;
 	auto rowMax = tm[0] = ind; // indices of input rows in result matrices
@@ -585,7 +587,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	if (r2ind >= nr)
 		r2ind = 1;
 	if (r2ind == ind)
-		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow3 cant be used for 1st row
+		r2ind = (ind + 1) % nr; // function kmProcessOneNot1stRow3 cannot be used for 1-st row
 	tchar* const mo = m_Ktmp;
 	iRet = kmProcessOneNot1stRow3(mo, mi, r2ind, tb, tc, tr, nr);
 	auto row2ndValue = tb[0];
@@ -637,7 +639,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 			rowMax = MAX2(rowMax, i);
 			bProc2 = true;
 		}
-		else if (row2ndValue <= nr) // cant return if row2ndValue > nr
+		else if (row2ndValue <= nr) // We cannot return, if row2ndValue > nr
 		{
 			if (bProc2 && row2ndValue == 4) // 3rd row and 2nd row was processed cmp was equal 0
 			{

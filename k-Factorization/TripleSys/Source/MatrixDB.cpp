@@ -73,8 +73,9 @@ void out_date_time(FILE* f) {
 	fprintf(f, "\n%s %s\n", DATE_TIME_TAG, output);
 }
 
-void MatrixDB::reportResult(FILE* f) const {
+size_t MatrixDB::reportResult(FILE* f) const {
 	out_date_time(f);
+	size_t total = 0;
 	if (descrStorage()) {
 		char line[61];
 		memset(line, '-', sizeof(line));
@@ -83,7 +84,7 @@ void MatrixDB::reportResult(FILE* f) const {
 		My_FPRINTF(f, "%s\n", line);
 		My_FPRINTF(f, "  |Aut(M)|:              Cycles:            # of matrices:\n");
 		My_FPRINTF(f, "%s\n", line);
-		size_t total = 0;
+
 		for (const auto& record : *descrStorage()) {
 			My_FPRINTF(f, " %6zd  %34s  %8zd\n", record->groupOrder(), record->cycleDescr(), record->numMatrix());
 			total += record->numMatrix();
@@ -96,4 +97,5 @@ void MatrixDB::reportResult(FILE* f) const {
 	else {
 		My_FPRINTF(f, " *** Resulting matrix DB is empty *** \n");
 	}
+	return total;
 }

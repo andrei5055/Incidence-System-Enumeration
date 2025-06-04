@@ -1,7 +1,5 @@
 #include "TopGun.h"
-#include "Table.h"
 #include "data.h"
-#include "SRGToolkit.h"
 
 RowDB* TopGun::m_pSecondRowsDB = NULL;
 
@@ -10,7 +8,7 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 
 	dNumMatrices[0] = nMatricesMax();
 	mLinksSize = numPlayers() * numPlayers();
-	if (!startMatrix)
+	if (!inputMatrices())
 	{
 		printfRed("*** Not enough memory for initial %d-rows %d matrices. Exit\n", nRowsStart(), nMatricesReserved());
 		myExit(1);
@@ -29,10 +27,12 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 TopGun::~TopGun() {
 	delete[] m_cntTotal;
 	delete[] threadActive;
+	reportEOJ(m_errCode);
 }
 
 int TopGun::Run()
 {
+	m_errCode = 0;
 	iTime = clock();
 	sLongLong resultMatr = 0;
 	const auto orderMatrixMode = param(t_orderMatrices);
@@ -60,48 +60,23 @@ int TopGun::Run()
 	}
 
 	if (orderMatrixMode || param(t_MultiThreading)) {
-		if (!readStartMatrices())
+		if (readMatrices() < 0)
 			myExit(1);
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
-			auto nDuplicate = orderMatrices(orderMatrixMode);
-			printfGreen("%d 'Start Matrices' sorted, %d duplicate matrices removed\n", nMatrices, nDuplicate);
-			nMatrices -= nDuplicate;
-			if (orderMatrixMode == 2) {
-				const auto exploreMatrices = param(t_exploreMatrices);
-				auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRowsOut(), m_groupSize) : NULL;
-				TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
-				Result.allocateBuffer(32);
-				std::string ResultFile;
-				createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRowsStart(), "_OrderedMatrices.txt");
-				Result.setOutFileName(ResultFile.c_str());
-				for (int i = 0; i < nMatrices; i++) {
-					const auto idx = m_pMatrixPerm[i];
-					const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
-					Result.setGroupOrder(groupOrder);
-					Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-					const auto pMatr = pntrStartMatrix() + idx * mStartMatrixSize;
-					Result.printTable(pMatr, true, false, nRowsStart());
-					if (groupOrder > 1)
-						Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
-
-					if (pSRGtoolkit)
-						pSRGtoolkit->exploreMatrix(pMatr);
-				}
-
-				if (pSRGtoolkit) {
-					pSRGtoolkit->printStat();
-					delete pSRGtoolkit;
-				}
-				printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
-
-
+			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, param(t_exploreMatrices) > 1);
+			if (orderMatrixMode == 2)
+				reportEOJ(0);
+				reportEOJ(0);
+				reportEOJ(0);
+				reportEOJ(0);
+				reportEOJ(0);
 				reportEOJ(0);
 				return 0;
-			}
 		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
+		const auto nMatrices = numMatrices2Process();
 		if (nMatrices <= firstIndexOfStartMatrices)
 		{
 			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n",
@@ -117,8 +92,8 @@ int TopGun::Run()
 		InitCnt(numThreads);
 		int nThreadsRunning = 1;
 		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices;
-		mstart = startMatrix + m_iMatrix * mStartMatrixSize;
-		mfirst = startMatrix;
+		mfirst = inputMatrices();
+		mstart = mfirst + m_iMatrix * inputMatrixSize();
 		mTime = clock() - iTime;
 
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
@@ -181,7 +156,7 @@ int TopGun::Run()
 						cTime = clock();
 					}
 				}
-				mstart += mStartMatrixSize;
+				mstart += inputMatrixSize();
 				m_iMatrix += 1;
 			}
 		}
@@ -199,7 +174,7 @@ int TopGun::Run()
 						{
 							//printTable("Input matrix", mstart, nRowsStart, m_numPlayers, 0, m_groupSize, true);
 							startThread(iTask, m_iMatrix + 1);
-							mstart += mStartMatrixSize;
+							mstart += inputMatrixSize();
 							m_iMatrix += 1;
 							nThreadsRunning++;
 						}
@@ -235,18 +210,17 @@ int TopGun::Run()
 		printf(str.c_str());
 		m_reportInfo += str;
 	} else {
-		 alldata sys(*this, paramPtr());
-		 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
-		 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
-		 transferMatrixDB(sys.matrixDB());
+	 alldata sys(*this, paramPtr());
+	 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
+	 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+	 transferMatrixDB(sys.matrixDB());
 
 	}
 
 	const auto expectedResult = param(t_expectedResult);
-	const auto code = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
-	if (code)
+	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
+	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
 
-	reportEOJ(code);
-	return code;
+	return m_errCode;
 }

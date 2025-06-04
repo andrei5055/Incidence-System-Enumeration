@@ -1,19 +1,13 @@
 #include <filesystem>
 #include <set>
 #include "TopGun.h"
+#include "Table.h"
+#include "SRGToolkit.h"
 
 TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param), 
 	m_param(param) {
 	m_nRowsOut = param.val[t_nRowsInResultMatrix];
-	mStartMatrixSize = m_numPlayers * nRowsStart();
-	startMatrix = new tchar[nMatricesReserved() * mStartMatrixSize];
-
-	const auto orderMatrixMode = param.val[t_orderMatrices];
-	// orderMatrixMode: 0 - No matrix reordering will be performed.
-    //                  1 - Matrix reordering will be performed, but |Aut(M)| will not be needed.
-    //                  2 - Matrix reordering will be performed AND |Aut(M)| will be used. 
-	if (orderMatrixMode == 2)
-		m_pMatrixInfo = new CMatrixInfo(nMatricesReserved());
+	reserveInputMatrixMemory(nRowsStart(), nMatricesReserved());
 
 	if (m_nRowsOut == 0)
 		m_nRowsOut = m_numDays;
@@ -25,22 +19,22 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 	}
 }
 
-bool TopGunBase::readStartMatrices() {
-	if ((nMatrices = getStartMatrices()) < 1)
+int TopGunBase::readMatrices(int tFolder, int nRows) {
+	if ((m_nMatrices = loadMatrices(tFolder, nRows)) < 1)
 	{
-		printfRed("*** Cant load 'Start Matrices'. Exit\n");
-		return false;
+		printfRed("*** Can't load '%s Matrices'. Exit\n", matrixType(nRows));
+		return m_nMatrices;
 	}
 
-	const auto totalLen = nMatrices * mStartMatrixSize;
-	if (!reallocStorageMemory(&startMatrix, totalLen, totalLen)) {
-		printfRed("*** Memory allocation issue encountered while reading the initial matrices\n");
-		return false;
+	const auto totalLen = numMatrices2Process() * inputMatrixSize();
+	if (!reallocStorageMemory(&m_pInputMatrices, totalLen, totalLen)) {
+		printfRed("*** Memory allocation issue encountered while reading the matrices\n");
+		return -1;
 	}
-	return true;
+	return m_nMatrices;
 }
 
-int TopGunBase::getStartMatrices()
+int TopGunBase::loadMatrices(int tFolder, int nRows)
 {
 	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[U1FName]/MatrixID.txt
 	// StartFolder, Columns, Rows, GroupSize, U1FName - input parameters
@@ -61,8 +55,13 @@ int TopGunBase::getStartMatrices()
 	int nMax = nMatricesMax();
 	int nReserved = nMatricesReserved();
 
+	if (!nRows)
+		nRows = nRowsStart();
+
+	auto* pMatrixType = matrixType(nRows);
+
 	std::string path_name;
-	createFolderAndFileName(path_name, paramPtr(), t_StartFolder, nRowsStart());
+	createFolderAndFileName(path_name, paramPtr(), tFolder, nRows);
 
 	std::set<std::filesystem::path> sorted_by_name;
 
@@ -84,15 +83,15 @@ int TopGunBase::getStartMatrices()
 		if (fnumber.find_first_not_of("0123456789") != -1)
 			continue;
 
-		nMatricesFromOneFile = readStartData(sfn, nMatricesAll, &startMatrix, nMax, nReserved, m_pMatrixInfo);
+		nMatricesFromOneFile = readInputData(sfn, nRows, nMatricesAll, &m_pInputMatrices, nMax, nReserved, m_pMatrixInfo);
 		if (!nMatricesFromOneFile)
 		{
-			printfRed("Can't load file with 'Start Matrices': %s\n", sfn.c_str());
+			printfRed("Can't load file with '%s Matrices': %s\n", pMatrixType, sfn.c_str());
 			break;
 		}
 
 		nfr++;
-		printf("\n%d %d-rows 'Start Matrices' loaded from file %s", nMatricesFromOneFile, nRowsStart(), sfn.c_str());
+		printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRowsStart(), pMatrixType, sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
 		nMax -= nMatricesFromOneFile;
 		if (nMax <= 0)
@@ -100,18 +99,19 @@ int TopGunBase::getStartMatrices()
 	}
 
 	if (nMatricesAll)
-		printf("\n%d %d-rows 'Start Matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), nfr);
+		printf("\n%d %d-rows '%s Matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), pMatrixType, nfr);
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
 
-	if (m_pMatrixInfo)
+	if (m_pMatrixInfo && updateMatrReserved())
 		m_pMatrixInfo->updateReservedMatrNumb(nReserved);
 
 	return nMatricesAll;
 }
 
-void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) const {
-	if (param(t_exploreMatrices))
+void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) {
+	const auto exploreMatrices = param(t_exploreMatrices);
+	if (exploreMatrices >= 2)
 		return;
 
 	std::string IntegratedResults;
@@ -124,9 +124,16 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
 	
 	if (finalReport) {
-		reportResult(f);
+		const auto totalMatr = reportResult(f);
 		if (!m_reportInfo.empty())
 			fprintf(f, m_reportInfo.c_str());
+
+
+		if (exploreMatrices && totalMatr) {
+			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
+			if (readMatrices(t_ResultFolder, nRows) >= 0)
+				orderAndExploreMatrices(nRowsOut());
+		}
 	}
 	else {
 		if (numParamSet) {
@@ -208,7 +215,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 }
 
 int matrixSize;
-tchar* pStartMatrix;
+ctchar* pStartMatrix;
 
 int compare_matr_fn(const void* pA, const void* pB) {
 	return memcmp(pA, pB, matrixSize);
@@ -222,30 +229,76 @@ int compare_matr_fn_perm(const void* pA, const void* pB) {
 
 int TopGunBase::orderMatrices(int orderMatrixMode) {
 	int nDuplicate = 0;
-	matrixSize = mStartMatrixSize;
+	const auto nMatrices = numMatrices2Process();
+	matrixSize = inputMatrixSize();
 	if (orderMatrixMode == 2) {
 		delete[] m_pMatrixPerm;
 		m_pMatrixPerm = new uint[nMatrices];
 		for (int i = 0; i < nMatrices; i++)
 			m_pMatrixPerm[i] = i;
 
-		pStartMatrix = pntrStartMatrix();
+		pStartMatrix = inputMatrices();
 		std::qsort(m_pMatrixPerm, nMatrices, sizeof(m_pMatrixPerm[0]), compare_matr_fn_perm);
 	}
 	else {
-		std::qsort(pntrStartMatrix(), nMatrices, mStartMatrixSize, compare_matr_fn);
-
-		auto* pMatrixDst = pntrStartMatrix();
-		auto* pMatrixSrc = pMatrixDst + mStartMatrixSize;
-		for (int i = 1; i < nMatrices; i++, pMatrixSrc += mStartMatrixSize) {
-			if (memcmp(pMatrixDst, pMatrixSrc, mStartMatrixSize)) {
-				pMatrixDst += mStartMatrixSize;
+		auto* pMatrixDst = (tchar*)inputMatrices();
+		std::qsort(pMatrixDst, nMatrices, inputMatrixSize(), compare_matr_fn);
+		auto* pMatrixSrc = pMatrixDst + inputMatrixSize();
+		for (int i = 1; i < nMatrices; i++, pMatrixSrc += inputMatrixSize()) {
+			if (memcmp(pMatrixDst, pMatrixSrc, inputMatrixSize())) {
+				pMatrixDst += inputMatrixSize();
 				if (nDuplicate)
-					memcpy(pMatrixDst, pMatrixSrc, mStartMatrixSize);
+					memcpy(pMatrixDst, pMatrixSrc, inputMatrixSize());
 			}
 			else
 				nDuplicate++;
 		}
 	}
 	return nDuplicate;
+}
+
+void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool exploreMatrices) {
+	const auto nDuplicate = orderMatrices(orderMatrixMode);
+	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", numMatrices2Process(), matrixType(nRows), nDuplicate);
+	m_nMatrices -= nDuplicate;
+	if (orderMatrixMode != 2)
+		return;
+
+	auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRows, m_groupSize) : NULL;
+	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+	Result.allocateBuffer(32);
+	std::string ResultFile;
+	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
+	Result.setOutFileName(ResultFile.c_str());
+	for (int i = 0; i < numMatrices2Process(); i++) {
+		const auto idx = m_pMatrixPerm[i];
+		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
+		Result.setGroupOrder(groupOrder);
+		Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
+		const auto pMatr = inputMatrices() + idx * inputMatrixSize();
+		Result.printTable(pMatr, true, false, nRows);
+		if (groupOrder > 1)
+			Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
+
+		if (pSRGtoolkit)
+			pSRGtoolkit->exploreMatrix(pMatr);
+	}
+
+	if (pSRGtoolkit) {
+		pSRGtoolkit->printStat();
+		delete pSRGtoolkit;
+	}
+	printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
+}
+
+void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {
+	// orderMatrixMode: 0 - No matrix reordering will be performed.
+	//                  1 - Matrix reordering will be performed, but |Aut(M)| will not be needed.
+	//                  2 - Matrix reordering will be performed AND |Aut(M)| will be used. 
+	delete m_pMatrixInfo;
+	m_pMatrixInfo = NULL;
+	if (orderMatrixMode == 2) {
+		m_pMatrixInfo = new CMatrixInfo((uint)nMatr);
+		updateMatrReserved(false);
+	}
 }

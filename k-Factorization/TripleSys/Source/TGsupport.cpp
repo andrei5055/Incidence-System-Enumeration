@@ -1,7 +1,7 @@
 #include "TopGun.h"
 
 void RunThread(int threadId, eThreadStartMode iMode,
-	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, tchar* mstart0, tchar* mfirst, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
+	TopGun *pMaster, CStorageSet<tchar>* secondRowsDB, ctchar* mstart0, ctchar* mfirst, sLongLong* pcnt, int iThread, CRowStorage *pRowStorage)
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
@@ -37,7 +37,7 @@ void TopGun::startThread(int iTask, int iTaskId, eThreadStartMode iMode, CRowSto
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
 	threads[iTask] = std::thread{ RunThread, iTaskId, iMode,
-		this,  m_pSecondRowsDB, mstart, mfirst, m_cnt + iTask * 2, iTask, pRowStorage};
+		this, m_pSecondRowsDB, mstart, mfirst, m_cnt + iTask * 2, iTask, pRowStorage};
 	threadActive[iTask] = true;
 #if 0
 	printfRed("*** Thread %d ", iTask + 1);
@@ -54,12 +54,12 @@ void TopGun::myTemporaryCheck()
 		myExit(1);
 	}
 	auto* lnki = mStartLinks;
-	auto* stri = startMatrix;
+	auto* stri = inputMatrices();
 
-	int nm = nMatrices < 20000 ? nMatrices : 20000;
-	int is = 1;//nMatrices / nm;
-	int mstep = mStartMatrixSize* is;
-	int lstep = mLinksSize * is;
+	const int nm = numMatrices2Process() < 20000 ? numMatrices2Process() : 20000;
+	const int is = 1;//nMatrices / nm;
+	const int mstep = inputMatrixSize() * is;
+	const int lstep = mLinksSize * is;
 	char* lnkt = new char[mLinksSize];
 
 	for (int i = 0; i < nm; i++, stri += mstep, lnki += lstep)
@@ -69,7 +69,7 @@ void TopGun::myTemporaryCheck()
 	for (int iRow = 3; iRow <= nRowsStart() && iRow < m_numDays; iRow++)
 	{
 		lnki = mStartLinks;
-		stri = startMatrix;
+		stri = inputMatrices();
 		for (int i = 0; i < nm - 1; i++, stri += mstep, lnki += lstep)
 		{
 			if ((i % 100) == 0)
@@ -82,7 +82,7 @@ void TopGun::myTemporaryCheck()
 				char a = lnki[k];
 				lnkt[k] = (a == unset) ? a : (a >= iRow ? unset : 0);
 			}
-			auto* strj = startMatrix;
+			auto* strj = inputMatrices();
 			auto* lnkj = mStartLinks;
 			for (int j = i + 1; j < nm; j++, strj += mstep, lnkj += lstep)
 			{

@@ -21,14 +21,14 @@ public:
 	void exploreMatrix(ctchar* pMatr);
 	void printStat();
 private:
-	void exploreMatrixOfType(int typeIdx, ctchar* pMatr);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr);
 	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
 		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
 	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
-	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx = 0, int startVertex = 0, int endVertex = 0) const;
+	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut = NULL, int idx = 0, int startVertex = 0, int endVertex = 0) const;
 	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0) const;
 	void initVertexGroupOrbits();
 
@@ -38,7 +38,7 @@ private:
 	const int m_v;
 	
 	int m_len;
-
+	bool m_bChekMatr[2];
 	SRGParam m_graphParam[2];
 	tchar* m_pGraph[2] = { nullptr };
 	ushort* m_pOrbits = nullptr;

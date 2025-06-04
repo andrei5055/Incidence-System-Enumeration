@@ -3,12 +3,20 @@ CC bool alldata::processOneDay()
 {   // returns: false - go to prev day, true - day processed
 	//if (iPlayer == 0)
 	//	updateIndexPlayerMinMax();
+	unsigned int cnt = 0;
 	while (iPlayer < m_numPlayers)
 	{
+		if (m_printMatrices && cnt++ > 300000000) {
+#if !USE_CUDA
+			printTableColor("processOneDay", tmpPlayers, 1, m_numPlayers, m_groupSize);
+#endif
+			cnt = 0;
+		}
 #if 0
-		static tchar a[] = { 0,3,1,4,2,7,5,8,6,9 };
-		if (memcmp(a, tmpPlayers, sizeof(a) - 8) == 0)// && iPlayer == 3)
-			iDay = iDay;
+		static tchar a[] = { 0, 4,10,  1, 8, 9,  2, 7,13,  3,11,12,  5, 6, };
+		if (memcmp(a, tmpPlayers, 14) == 0 && iDay == 2)
+			printTableColor("processOneDay", tmpPlayers, 1, m_numPlayers, m_groupSize);
+		iDay = iDay;
 #endif
 		if (iPlayer < 0)
 			return false;

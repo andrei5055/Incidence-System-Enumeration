@@ -1,6 +1,6 @@
 #include "TripleSys.h"
 #include "p1fCheck.h"
-CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri) const
+CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri, bool bNeighbors) const
 {
 	switch (m_groupSize) {
 	case 3:
@@ -10,7 +10,7 @@ CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri) const
 		}
 		break;
 	case 2:
-		if (completeGraph()) {
+		if (completeGraph() || bNeighbors) {
 			for (int i = 0; i < m_numPlayers; i += 2)
 			{
 				U1FT(i);
@@ -72,7 +72,7 @@ CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles) const
 		}
 	}
 }
-CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, eCollectionMode collectionMode) const
+CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const
 {
 	int ncr = MAX_CYCLE_SETS;
 	int iLength = sizeof(TrCycles);
@@ -89,8 +89,7 @@ CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc, eCollectio
 
 		// add cycle to array of all cycles
 		//ASSERT(!bWithoutPath); // to allow use of bWithoutPath=false you need to change code to create correct m_TrCyclesFirst2Rows
-		int ic = (collectionMode == eSameSetsTogether || trc->length[0] == m_numPlayers) ? (MEMCMP(trc->length, trcAll[j].length, ncc)) :
-			(MEMCMP(trc, &trcAll[j], iLength - sizeof(trc->counter)));
+		int ic = MEMCMP(trc->length, trcAll[j].length, ncc);
 		 switch (ic) {
 		case -1:
 			if (j >= ncr) {
@@ -192,7 +191,7 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 
 			if (checkErrors == eCheckErrors && !cycleLengthOk(length))
 			{
-				// in check mode (ncr == 1) report only one (first) cycle with incorrect length
+				// report only one (first) cycle with incorrect length
 				// 
 				trc->start[0] = trc->start[ncycles];
 				trc->length[0] = length;
@@ -212,7 +211,7 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 		}
 
 	if (m_TrCyclesCollection)
-		collectCyclesAndPath(m_TrCyclesCollection, trc, m_collectionMode);
+		collectCyclesAndPath(m_TrCyclesCollection, trc);
 
 	return ncycles;
 }
@@ -265,7 +264,7 @@ CC int alldata::p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctcha
 	printTable("start", trc->start, 1, MAX_CYCLES_PER_SET, 0);
 #endif
 	if (iret > 0 && m_TrCyclesCollection)
-		collectCyclesAndPath(m_TrCyclesCollection, trc, m_collectionMode);
+		collectCyclesAndPath(m_TrCyclesCollection, trc);
 	return iret;
 }
 CC int alldata::u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
@@ -359,7 +358,6 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 	if (pNeedOutput) {
 		memset(m_TrCyclesAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);
 		m_TrCyclesCollection = m_TrCyclesAll;
-		m_collectionMode = eSameSetsTogether;
 	}
 	else if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3)
 	{
@@ -404,7 +402,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 			else
 			{
 				int ncycles = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eNoErrorCheck);
-#if 0
+#if 0 // print information about each pair cycles and path
 				if (nr == m_numDaysResult) {
 				printf("\nRows %d:", i);
 				printTable("", result(i), 1, m_numPlayers, m_groupSize);
@@ -420,7 +418,6 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 	if (pNeedOutput) {
 		*pNeedOutput = true;
 		m_TrCyclesCollection = NULL;
-		m_collectionMode = eNoCollection;
 	}
 	return ret;
 }
@@ -549,7 +546,7 @@ CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, c
 }
 CC int alldata::p1fCheck2ndRow() const
 {
-	if (m_groupSize > 3)
+	if (completeGraph() && m_groupSize > 3)
 		return 0;
 
 	if (m_createSecondRow)
@@ -668,11 +665,9 @@ CC int alldata::getAllV(tchar* allv, int maxv, int ir0, int ir1) const
 {
 	return getAllV(allv, maxv, neighbors(ir1), result(ir0));
 }
-void alldata::cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1, ctchar* result0, ctchar* result1,
-	eCollectionMode collectionMode)
+void alldata::cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1, ctchar* result0, ctchar* result1)
 {
 	memset(trc, 0, sizeof(TrCycles));
-	m_collectionMode = collectionMode;
 	m_TrCyclesCollection = trcAll;
 	if (trcAll)
 		memset(trcAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);

@@ -70,16 +70,20 @@ void alldata::outputError() const {
 #endif
 
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
-	tchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
+	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
-	int iPrintMatrices = 0;
+	m_allRowPairsSameCycles = param(t_allowUndefinedCycles) == 0 || param(t_any2RowsConvertToFirst2) > 0;
+	int m_printMatrices = 0;
 	m_lastRowWithTestedTrs = 0;
 	m_threadNumber = threadNumber;
+	//if (iThread == 0 && iCalcMode == eCalculateMatrices)
+	//return 0;
 #if !USE_CUDA
-	iPrintMatrices = (iThread == 0 || param(t_numThreads) < 2)? param(t_printMatrices) : 0;
+	///m_printMatrices = (iThread == 1 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
+	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
 	int* edges = NULL;
-	if (iPrintMatrices & 32)
+	if (m_printMatrices & 32)
 		edges = new int[numDaysResult() * m_numPlayers * m_numPlayers]();
 	m_iTime = clock();
 	m_fHdr = getFileNameAttr(sysParam());
@@ -98,25 +102,29 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		m_createSecondRow = 1;
 		m_numDaysResult = 2;
 		nrowsStart = nPrecalcRows = 0;
-	}
+	} 
 	else
 		m_createSecondRow = 0;
-
+	const bool bCBMP = !completeGraph();
 	const auto groupSize_2 = m_groupSize == 2;
 	if (iCalcMode == eCalcResult)
 		m_useRowsPrecalculation = (nPrecalcRows && nPrecalcRows <= 3 && m_groupSize <= 3 && nrowsStart <= nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
 		m_useRowsPrecalculation = iCalcMode;
+
 	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : m_groupSize + 1 + m_numDays - m_numDaysResult);
-	tchar secondPlayerInRow4First = groupSize_2 ? nPrecalcRows + 1 : m_groupSize + 2;
+	tchar m_secondPlayerInRow4First = 0;
+	if (bCBMP) {
+		secondPlayerMax = m_numPlayers - 1 - (m_groupSize - 2) * m_groupSize;
+	}
 	tchar secondPlayerInRow4Last = MIN2(param(t_lastRowSecondPlayer), secondPlayerMax);
 	if (!secondPlayerInRow4Last)
-		secondPlayerInRow4Last = groupSize_2 ? m_numDaysResult : secondPlayerMax;
+		secondPlayerInRow4Last = groupSize_2 ? (bCBMP ? m_numDaysResult * 2 - 1 : m_numDaysResult) : secondPlayerMax;
+	m_secondPlayerInRow4 = 0;
 
-	m_secondPlayerInRow4 = nPrecalcRows ? secondPlayerInRow4First : 0; // used only if UseRowsPrecalculation not 0
 	int nRows4 = 0;
 	int nRows4Day = 0;
-	m_bPrint = iPrintMatrices != 0;
+	m_bPrint = m_printMatrices != 0;
 	int minRows = nrowsStart;
 
 #if !USE_CUDA
@@ -203,7 +211,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 
 
-	if (iDay > numDaysResult() && !(iPrintMatrices & 16))
+	if (iDay > numDaysResult() && !(m_printMatrices & 16))
 		iDay = numDaysResult(); // warning?
 
 	for (int i = 0; i < iDay; i++)
@@ -285,7 +293,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto p1f_counter = param(t_p1f_counter);
 
 #if 1 && !USE_CUDA 
-	if (testGroupOrderEachSubmatrix(iPrintMatrices, iCalcModeOrg)) {
+	if (testGroupOrderEachSubmatrix(m_printMatrices, iCalcModeOrg)) {
 		noMoreResults = true;
 		goto noResult;
 	}
@@ -346,14 +354,29 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					iDay--;
 					bPrevResult = false;
 				}
-				if (iDay >= nPrecalcRows) {
+				if (iDay < nPrecalcRows)
+					m_secondPlayerInRow4First = 0;
+				else {
 					int ipx = 0;
 					if (m_playerIndex)
 					{
 						iDay = m_playerIndex / m_numPlayers;
 						ipx = m_playerIndex % m_numPlayers;
 						m_playerIndex = 0;
-						if (iDay < nPrecalcRows || iDay >= numDaysResult())
+						if (iDay < nPrecalcRows)
+						{
+							if (param(t_MultiThreading))
+							{
+								noMoreResults = true;
+								goto noResult;
+							}
+							m_pRowStorage->init();
+							m_secondPlayerInRow4 = m_secondPlayerInRow4First = 0;
+							m_playerIndex = 0;
+							nRows4 = nRows4Day = 0;
+							continue;
+						}
+						if (iDay >= numDaysResult())
 						{
 							//ASSERT(1);
 							noMoreResults = true;
@@ -391,13 +414,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						}
 
 						m_pRowUsage->getMatrix(result(), neighbors(), iDay);
+						/**
 						if (m_bCheckLinkV && iDay < m_numDays) {
 							linksFromMatrix(links(), result(), iDay);
 							if (!checkLinks(links(), iDay)) {
 								iDay--;
 								goto ProcessPrecalculatedRow;
 							}
-						}
+						}*/
 						iDay--;
 #if !USE_CUDA
 						m_cTime = clock();
@@ -407,17 +431,17 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						goto checkCurrentMatrix;
 					case -1: // reported if requested row not in solution (can happen only if LastRowSecondPlayer is incorrect)
 					{
-						if (secondPlayerInRow4Last < secondPlayerMax) {
+						if (secondPlayerInRow4Last < secondPlayerMax) {/**
 							m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 							linksFromMatrix(links(), result(), iDay);
 							if (cnvCheckNew(0, iDay, false) && (m_groupSize != 3 || checkLinks(links(), iDay))) {
-								// matrix ok, error cannot be ignored
+								// matrix ok, error cannot be ignored*/
 #if !USE_CUDA
 								printfRed("*** Failing getRow(%d) = %d ***\n", iDay, retVal);
 								printTable("Current result", result(), iDay, m_numPlayers, groupSize());
 								exit(1);
 #endif					
-							}
+							//}
 						}
 						// continue to case 0:
 					}
@@ -484,80 +508,96 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 			if (!processOneDay())
 			{
-				if (nPrecalcRows && nPrecalcRows == iDay && m_useRowsPrecalculation == eCalculateRows) {
-					m_secondPlayerInRow4++;
-					if (!nRows4Day && groupSize_2)
-					{
-						m_secondPlayerInRow4 = secondPlayerInRow4First;
-						bPrevResult = true;
+				if (nPrecalcRows && m_useRowsPrecalculation == eCalculateRows && m_secondPlayerInRow4) {
+
+					if (nPrecalcRows > iDay) {
+						m_useRowsPrecalculation = eCalculateRows;
+						m_pRowStorage->init();
+					}
+					else if (nPrecalcRows == iDay) {
+						ASSERT(m_secondPlayerInRow4 == 0);
+						m_secondPlayerInRow4++;
+						if (bCBMP && !m_groupSizeRemainder[m_secondPlayerInRow4])
+							m_secondPlayerInRow4++;
+						if (!nRows4Day && groupSize_2)
+						{
+							m_secondPlayerInRow4 = m_secondPlayerInRow4First;
+							bPrevResult = true;
+							if (nRows4) {
+								nRows4 = 0;
+								if (iCalcMode == eCalculateRows) {
+									nLoops = nRows4;
+									noMoreResults = true;
+									goto noResult;
+								}
+								m_pRowUsage->init();
+								m_pRowStorage->reset();
+							}
+							continue;
+							//noMoreResults = true;
+							//goto noResult;
+						}
+						nRows4Day = 0;
+						if (m_secondPlayerInRow4 <= secondPlayerInRow4Last)
+							continue;
+						m_secondPlayerInRow4 = m_secondPlayerInRow4First = 0;
 						if (nRows4) {
-							nRows4 = 0;
+							iDay = nPrecalcRows;
+							if (m_bPrint) {
+								printf("Total number of precalculated row solutions = %5d\n", nRows4);
+								m_lastRowWithTestedTrs = 0;
+#if !USE_CUDA
+								if (m_printMatrices & 32) {
+									for (int j = 0; j < m_numPlayers; j++) {
+										bool bnl = true;
+										for (int k = j + 1; k < m_numPlayers; k++) {
+											if (links(j)[k] == unset) {
+												if (bnl) {
+													bnl = false;
+													printf("\n\n     ");
+													for (int i = nPrecalcRows; i < numDaysResult(); i++)
+														printf(" R%-2d ", i);
+												}
+												printf("\n%2d:%-2d", j, k);
+												for (int i = nPrecalcRows; i < numDaysResult(); i++)
+													printf(" %-4d", edges[(j * m_numPlayers + k) * numDaysResult() + i]);
+											}
+										}
+									}
+									printf("\n");
+									delete[] edges;
+									exit(0);
+								}
+#endif
+							}
+							m_useRowsPrecalculation = eCalculateMatrices;
+							m_playerIndex = 0;
+
+							if (!m_pRowStorage->initCompatibilityMasks()) {
+#if !USE_CUDA
+								//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
+								//ASSERT(1);
+#endif
+								iDay = nPrecalcRows;
+								m_useRowsPrecalculation = eCalculateRows;
+								m_pRowStorage->init();
+								iDay++;
+								//linksFromMatrix(links(), result(), iDay);
+								//iPlayer = m_numPlayers;
+								bPrevResult = true;
+								continue;
+							}
+
 							if (iCalcMode == eCalculateRows) {
 								nLoops = nRows4;
 								noMoreResults = true;
 								goto noResult;
 							}
 							m_pRowUsage->init();
-							m_pRowStorage->reset();
+//						m_pRowStorage->reset();
+							nRows4 = 0;
+							continue;
 						}
-						continue;
-						//noMoreResults = true;
-						//goto noResult;
-					}
-					nRows4Day = 0;
-					if (m_secondPlayerInRow4 <= secondPlayerInRow4Last)
-						continue;
-					m_secondPlayerInRow4 = secondPlayerInRow4First;
-					if (nRows4) {
-						iDay = nPrecalcRows;
-						if (m_bPrint) {
-							printf("Total number of precalculated row solutions = %5d\n", nRows4);
-							m_lastRowWithTestedTrs = 0;
-#if !USE_CUDA
-							if (iPrintMatrices & 32) {
-								for (int j = 0; j < m_numPlayers; j++) {
-									bool bnl = true;
-									for (int k = j + 1; k < m_numPlayers; k++) {
-										if (links(j)[k] == unset) {
-											if (bnl) {
-												bnl = false;
-												printf("\n\n     ");
-												for (int i = nPrecalcRows; i < numDaysResult(); i++)
-													printf(" R%-2d ", i);
-											}
-											printf("\n%2d:%-2d", j, k);
-											for (int i = nPrecalcRows; i < numDaysResult(); i++)
-												printf(" %-4d", edges[(j * m_numPlayers + k) * numDaysResult() + i]);
-										}
-									}
-								}
-								printf("\n");
-								delete[] edges;
-								exit(0);
-							}
-#endif
-						}
-						m_useRowsPrecalculation = eCalculateMatrices;
-						m_playerIndex = 0;
-
-						if (!m_pRowStorage->initCompatibilityMasks()) {
-#if !USE_CUDA
-							//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
-							//ASSERT(1);
-#endif
-							noMoreResults = true;
-							goto noResult;
-						}
-
-						if (iCalcMode == eCalculateRows) {
-							nLoops = nRows4;
-							noMoreResults = true;
-							goto noResult;
-						}
-						m_pRowUsage->init();
-						m_pRowStorage->reset();
-						nRows4 = 0;
-						continue;
 					}
 				}
 				bPrevResult = true;
@@ -569,6 +609,17 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
+
+			if (!m_secondPlayerInRow4First && nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
+				if (nPrecalcRows - 1 == iDay) {
+					m_pRowStorage->initPlayerMask(NULL);
+				//	setArraysForLastRow(nPrecalcRows);
+				}
+				else if (nPrecalcRows == iDay) {
+					m_secondPlayerInRow4 = m_secondPlayerInRow4First = result(nPrecalcRows)[1];
+					m_lastRowWithTestedTrs = 0;
+				}
+			}
 
 		checkCurrentMatrix:
 
@@ -593,7 +644,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 
 #if 1
-			switch (checkCurrentResult(iPrintMatrices, pIS_Canonizer)) {
+			switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
 			case -1:  
 				if (nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices) {
 					goto ProcessPrecalculatedRow;
@@ -610,7 +661,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				if (iDay == nPrecalcRows + 1) {
 					if (!nRows4++ && iDay >= 2) {
 						TrCycles trc;
-						cyclesFor2Rows(m_TrCyclesFirst2Rows, &trc, neighbors(0), neighbors(1), result(0), result(1), eEachSetSeparate);
+						cyclesFor2Rows(m_TrCyclesFirst2Rows, &trc, neighbors(0), neighbors(1), result(0), result(1));
 					}
 
 					nRows4Day++;
@@ -627,10 +678,20 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					if (!bP1F)
 						printf("not p1f\n");
 #endif
-					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows));
+					ASSERT(!m_secondPlayerInRow4First);
+#if 0
+					if (iTest) {
+						printTable("r3", result(nPrecalcRows), 1, m_numPlayers, m_groupSize);
+						if (result(nPrecalcRows)[1] == 8)
+							iTest = iTest;
+					}
+#endif
+					tchar nb[MAX_PLAYER_NUMBER]; 
+					u1fSetTableRow(nb, result(nPrecalcRows), true);
+					const auto retVal = m_pRowStorage->addRow(result(nPrecalcRows), neighbors(nPrecalcRows), nb);
 
 #if !USE_CUDA
-					if (iPrintMatrices & 32) {
+					if (m_printMatrices & 32) {
 						tchar* c = result(nPrecalcRows);
 						for (int i = 0;i < m_numPlayers;i += m_groupSize) {
 							int j = c[1] - 1 + (c[i] * m_numPlayers + c[i + 1]) * numDaysResult();
@@ -650,7 +711,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						}**/
 						m_playerIndex = nPrecalcRows * m_numPlayers;
 						goBack();
-						m_secondPlayerInRow4 = secondPlayerInRow4First;
+						m_pRowStorage->init();
+						m_secondPlayerInRow4 = m_secondPlayerInRow4First = 0;
 						m_playerIndex = 0;
 						nRows4 = nRows4Day = 0;
 					}
@@ -727,7 +789,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					printf("%d(%zd): " AUT "%d, % s\n", threadNumber, nLoops, orderOfGroup(), stat);
 					// print on screen result with highlighted differences from prev result
 					printResultWithHistory("", iDay);
-					if (iPrintMatrices & 2)
+					if (m_printMatrices & 2)
 						printPermutationMatrices(2);
 				}
 

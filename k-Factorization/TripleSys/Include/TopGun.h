@@ -30,44 +30,60 @@ class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase()					{ 
-		delete[] startMatrix;
+		delete[] m_pInputMatrices;
 		delete[] cnt();
 		delete m_pMatrixInfo;
 		delete[] m_pMatrixPerm;
 	}
 	int virtual Run() = 0;
-	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt") const;
+	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt");
 	inline auto numPlayers() const			{ return m_numPlayers; }
 	inline auto groupSize() const			{ return m_groupSize; }
 	inline auto groupSizeFactorial() const	{ return m_groupSizeFactorial; }
-	inline auto numMatrices2Process() const	{ return nMatrices; }
+	inline auto numMatrices2Process() const	{ return m_nMatrices; }
 	inline auto nRowsStart() const			{ return param(t_nRowsInStartMatrix); }
 	inline auto nRowsOut() const			{ return m_nRowsOut; }
 	inline sLongLong* cnt() const			{ return m_cnt; }
-	inline auto* pntrStartMatrix() const	{ return startMatrix; }
+	inline const auto* inputMatrices() const { return m_pInputMatrices; }
 	inline auto* paramPtr() const			{ return &m_param; }
 protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
-	bool readStartMatrices();
+	int readMatrices(int tFolder = t_StartFolder, int nRows = 0);
 	void InitCnt(size_t nThrds) { m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
 	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices); }
 	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
+	inline void updateMatrReserved(bool v)	{ m_bUpdateMatrixReserved = v; }
+	inline auto updateMatrReserved()		{ return m_bUpdateMatrixReserved; }
+	inline auto inputMatrixSize() const		{ return m_nInputMatrixSize; }
+	void orderAndExploreMatrices(int nRows, int orderMatrixMode = 2, bool exploreMatrices = true);
 	int orderMatrices(int orderMatrixMode);
 
+
 	int m_nRowsOut;
-	int mStartMatrixSize;
-	tchar* startMatrix;
+	int m_nInputMatrixSize;
+	tchar* m_pInputMatrices = NULL;
 	uint* m_pMatrixPerm = NULL;
 	CMatrixInfo* m_pMatrixInfo = NULL;	// Information about loaded matrices: |Aut(M)|, cycle's, group's
-	int nMatrices;
+	int m_nMatrices;
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
 private:
-	int getStartMatrices();
-	int readStartData(const std::string& fn, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
-		return readTable(fn, nRowsStart(), numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), pMatrixInfo);
+	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
+	int loadMatrices(int tFolder, int nRows);
+	int readInputData(const std::string& fn, int nRows, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
+		return readTable(fn, nRows, numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), pMatrixInfo);
 	}
+	inline void reserveInputMatrixMemory(int nRows, int nMatr, int orderMatrixMode = 0) {
+		delete[] inputMatrices();
+		setInputMatrixSize(m_numPlayers * nRows);
+		m_pInputMatrices = new tchar[nMatr * inputMatrixSize()];
+		allocateMatrixInfoMemory(nMatr, orderMatrixMode);
+	}
+	cchar* matrixType(int nRows) const		{ return !nRows || nRows == nRowsStart() ? "Start" : "Constructed"; }
+	void allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode);
+
+	bool m_bUpdateMatrixReserved = true;
 };
 
 class TopGun : public TopGunBase {
@@ -79,21 +95,24 @@ public:
 	inline static K_SYS_LIBRARY_API auto secondRowDB()		{ return m_pSecondRowsDB; }
 private:
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
+	//void orderAndExploreMatices(int nRows, bool exploreMatrices) const;
 	void myTemporaryCheck();
 	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
+
 	sLongLong *m_cntTotal = NULL;
 	sLongLong dNumMatrices[2];
 	bool *threadActive = NULL;
 	int mLinksSize;
 	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
-	tchar* mstart = NULL, *mfirst = NULL;
+	ctchar* mstart = NULL, *mfirst = NULL;
 	int numThreads;
 	int m_iMatrix;
 	int m_iPrintCount;
 	std::vector<std::thread> threads;//(NThreads);
 	static RowDB* m_pSecondRowsDB;
+	int m_errCode;
 };
 
 class TopGunGPU : public TopGunBase {

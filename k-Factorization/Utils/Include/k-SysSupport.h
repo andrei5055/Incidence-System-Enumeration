@@ -41,6 +41,7 @@
 
 void myAssert(int code, const char* file, int line);
 
+typedef const char cchar;
 typedef unsigned char tchar;
 typedef const tchar  ctchar;
 typedef unsigned int uint;
@@ -103,7 +104,7 @@ public:
 		delete[] m_pGroupsInfo;
 	}
 	inline auto cycleInfo(int idx) const		{ return m_pCycleInfo[idx]->c_str(); }
-	inline auto groupInfo(int idx) const		{ return m_pGroupsInfo[idx]->c_str(); }
+	inline auto groupInfo(int idx) const		{ return m_pGroupsInfo && m_pGroupsInfo[idx]? m_pGroupsInfo[idx]->c_str() : NULL; }
 	inline auto** groupOrdersPntr()				{ return &m_pGroupOrders; }
 	inline auto** cycleInfoPntr()				{ return &m_pCycleInfo; }
 	inline auto** groupInfoPntr()				{ return &m_pGroupsInfo; }
