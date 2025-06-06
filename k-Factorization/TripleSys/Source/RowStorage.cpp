@@ -84,19 +84,21 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
 
 CC bool CRowStorage::p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const {
 	tchar k = 0;
-	tchar i;
+	tchar i = 2;
 	tchar np = (tchar)m_numPlayers;
-	tchar n8 = np & 0xf1;
-	for (i = 2; i < n8; i += 8)
+	if (np >= 16)
 	{
-		if ((k = neighborsj[neighborsi[k]]) == 0)
+		if ((k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0 ||
+		    (k = neighborsj[neighborsi[k]]) == 0)
 			return false;
-		if ((k = neighborsj[neighborsi[k]]) == 0)
-			return false;
-		if ((k = neighborsj[neighborsi[k]]) == 0)
-			return false;
-		if ((k = neighborsj[neighborsi[k]]) == 0)
-			return false;
+		if (np == 16)
+			return true;
+		i = np - 14;
 	}
 	for (; i < np; i += 2)
 	{

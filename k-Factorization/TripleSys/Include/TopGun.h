@@ -94,6 +94,7 @@ public:
 	int K_SYS_LIBRARY_API Run();
 	inline static K_SYS_LIBRARY_API auto secondRowDB()		{ return m_pSecondRowsDB; }
 private:
+	void deleteOldFiles();
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	//void orderAndExploreMatices(int nRows, bool exploreMatrices) const;
 	void myTemporaryCheck();

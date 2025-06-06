@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "k-SysSupport.h"
-#include "GroupOrder.h"
+#include "TripleSys.h"
 
 typedef struct {
 	unsigned int m_cntr[4];
@@ -10,8 +9,6 @@ typedef struct {
 	int α;
 	int β;
 } SRGParam;
-
-typedef unsigned short ushort;
 
 class SRGToolkit : public CGroupOrder<ushort>
 {
@@ -48,5 +45,6 @@ private:
 	ushort* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
 	ushort* m_pLenOrbits = nullptr;
 	ushort* m_pSavedOrbIdx = nullptr;
+	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
 };
 

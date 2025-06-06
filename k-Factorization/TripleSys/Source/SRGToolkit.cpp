@@ -1,6 +1,7 @@
 ﻿#include "SRGToolkit.h"
-#include "TripleSys.h"
 #include <cstring>
+
+#define PRINT_MATRICES 1
 
 SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) : 
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize) {
@@ -16,6 +17,8 @@ SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) :
 	m_pSavedOrbits = m_pLenOrbits + m_len;
 	m_pSavedOrbIdx = m_pSavedOrbits + m_len;
 	m_bChekMatr[0] = m_bChekMatr[1] = true;
+	for (int i = 0; i < 2; i++)
+		m_pMarixStorage[i] = new CBinaryMatrixStorage(m_len, 50 * m_len);
 }
 
 SRGToolkit::~SRGToolkit() { 
@@ -23,6 +26,8 @@ SRGToolkit::~SRGToolkit() {
 	delete[] m_subgraphVertex;
 	delete[] m_pNumOrbits;
 	delete[] m_pOrbits;
+	for (int i = 0; i < 2; i++)
+		delete m_pMarixStorage[i];
 }
 
 static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
@@ -93,12 +98,24 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	initCanonizer();
 	int i, idx, firstVert = 0;
 	i = idx = 0;
+	static int kkk; kkk++;
 	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
 		printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
 		checkSRG(m_pGraph[1 - i]);
 		i = 1 - i;
 	}
+#if PRINT_MATRICES
 	printAdjMatrix(NULL, m_pGraph[i], idx++, m_v);
+#endif
+
+	// Copy elements above the main diagonal into the array.
+	auto pFrom = m_pGraph[i];
+	auto pTo = m_pGraph[1 - i];
+	auto pGraph = pTo;
+	for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
+		memcpy(pTo, pFrom + ++i, j);
+
+	m_pMarixStorage[typeIdx]->addObject(pGraph);
 	return true;
 }
 
@@ -251,6 +268,7 @@ canonRow:
 #endif
 				const auto pGraphLast = createGraphOut(pGraph, pGraphOut, firstVert);
 				flag = memcmp(pGraphLast, pGraph + firstVert * m_v, m_v * (m_v - firstVert));
+				printAdjMatrix(NULL, pGraphOut, 99, m_v, m_v);
 				ASSERT(flag);
 			}
 		}
@@ -498,7 +516,7 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int s
 	else
 		pGraphOut = (tchar * )pGraph;
 
-	return;
+#if PRINT_MATRICES
 
 	char buf[256], * pBuf;
 	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);
@@ -549,4 +567,5 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int s
 		fprintf(f, "%s\n", buf);
 	}
 	FCLOSE_F(f);
+#endif
 }

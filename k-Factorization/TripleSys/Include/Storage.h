@@ -109,23 +109,23 @@ public:
 	CC virtual T* getObject(int idx = 0) const { return CStorage<T>::getObject(m_pIdx[idx]); }
 	CC T* reallocStorageMemory() {
 		const auto retVal = CStorageSet<T>::reallocStorageMemory();
-		::reallocStorageMemory(&m_pIdx, CStorageSet<T>::m_numObjectsMax * sizeof(m_pIdx[0]));
+		::reallocStorageMemory(&m_pIdx, this->m_numObjectsMax * sizeof(m_pIdx[0]));
 		return retVal;
 	}
-	CC inline void push_back(int idx) { m_pIdx[CStorageSet<T>::m_numObjects++] = idx; }
+	CC inline void push_back(int idx) { m_pIdx[this->m_numObjects++] = idx; }
 	CC inline void insert(int idx, int value) {
 		const auto pSrc = m_pIdx + idx;
-		MEMMOVE((void*)(pSrc + 1), pSrc, (CStorageSet<T>::m_numObjects++ - idx) * sizeof(m_pIdx[0]));
+		MEMMOVE((void*)(pSrc + 1), pSrc, (this->m_numObjects++ - idx) * sizeof(m_pIdx[0]));
 		m_pIdx[idx] = value;
 	}
-	CC T* getObjAddr(int idx) { return idx < CStorageSet<T>::m_numObjectsMax ? CStorage<T>::getObject(idx) : reallocStorageMemory(); }
+	CC T* getObjAddr(int idx) { return idx < this->m_numObjectsMax ? CStorage<T>::getObject(idx) : reallocStorageMemory(); }
 	CC inline int* getIndices() const { return m_pIdx; }
 	CC CStorageIdx& operator = (const CStorageIdx& other) {
 		auto** ppStorage = CStorage<T>::getObjectsPntr();
 		delete[] * ppStorage;
 		delete[] m_pIdx;
 		m_pIdx = NULL;	// We don't need indices for now 	
-		CStorageSet<T>::m_numObjectsMax = CStorageSet<T>::m_numObjects = other.numObjects();
+		this->m_numObjectsMax = this->m_numObjects = other.numObjects();
 		const auto len = this->numObjects() * CStorage<T>::m_lenObj;
 		*ppStorage = new T[len];
 		memcpy(*ppStorage, other.CStorage<T>::getObject(), len);

@@ -1,5 +1,7 @@
 #include "TopGun.h"
 #include "data.h"
+#include <set>
+#include <filesystem>
 
 RowDB* TopGun::m_pSecondRowsDB = NULL;
 
@@ -29,13 +31,48 @@ TopGun::~TopGun() {
 	delete[] threadActive;
 	reportEOJ(m_errCode);
 }
+void TopGun::deleteOldFiles()
+{
+	namespace fs = std::filesystem;
+	std::string resultFile, resultFolder;
+	std::string fName = "0.txt";
+	const auto numRows = param(t_nRowsInResultMatrix) ? param(t_nRowsInResultMatrix) : m_numDays;
+	createFolderAndFileName(resultFolder, paramPtr(), t_ResultFolder, numRows);
+	createFolderAndFileName(resultFile, paramPtr(), t_ResultFolder, numRows, fName);
+	fs::path filePath = resultFile;
+	std::string fileMask = filePath.filename().string();
+	const auto i0pos = fileMask.find('0');
+	if (i0pos < 1)
+		return;
 
+	for (auto& entry : fs::directory_iterator(fs::path(resultFolder))) {
+		filePath = entry.path();
+		std::string fn = filePath.filename().string();
+		if (fn.size() > 4 && !fn.compare(0, i0pos + 1, fileMask, 0, i0pos + 1) && !fn.compare(fn.size() - 4, 4, ".txt")) {
+			std::error_code ec;
+			bool removed = fs::remove(filePath, ec);
+
+			if (removed) {
+				// File was successfully removed
+			}
+			else {
+				// File removal failed, check ec for details
+				std::cerr << "Error removing file: " << ec.message() << std::endl;
+			}
+		}
+	}
+
+	//printf("%s\n", resultFile.c_str());
+	return;
+}
 int TopGun::Run()
 {
 	m_errCode = 0;
 	iTime = clock();
 	sLongLong resultMatr = 0;
 	const auto orderMatrixMode = param(t_orderMatrices);
+
+	deleteOldFiles();
 
 	if (orderMatrixMode < 2 && (m_groupSize <= 3 || param(t_CBMP_Graph) > 1) && m_use2RowsCanonization) {
 		if (m_pSecondRowsDB && !m_pSecondRowsDB->isValid(paramPtr())) {
@@ -58,7 +95,7 @@ int TopGun::Run()
 			}
 		}
 	}
-
+	deleteOldFiles();
 	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (readMatrices() < 0)
 			myExit(1);
@@ -67,12 +104,6 @@ int TopGun::Run()
 		if (orderMatrixMode) {
 			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, param(t_exploreMatrices) > 1);
 			if (orderMatrixMode == 2)
-				reportEOJ(0);
-				reportEOJ(0);
-				reportEOJ(0);
-				reportEOJ(0);
-				reportEOJ(0);
-				reportEOJ(0);
 				return 0;
 		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);

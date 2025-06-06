@@ -738,21 +738,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			m_finalKMindex++;
 #if !USE_CUDA
 			if (m_createSecondRow) {
-				//if (groupSize_2)
-				//	m_pSecondRowsDB->addObject(result(1));
-				if (m_bPrint)
-					printTableColor("Second Row", result(1), 1, m_numPlayers, m_groupSize);
-				/**
-				char stat[256];
-				bool needOutput = false;
-				matrixStat(neighbors(), iDay, &needOutput);
-				if (needOutput)
-					m_matrixDB.addMatrix(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				else
-					stat[0] = '\0';
-				printf("%s\n", stat);**/
-				//if (nLoops > 2)
-					//goto noResult;
+				if (m_bPrint) {
+					const auto nr = secondRowsDB->numObjects();
+					if (nr) {
+						printf("Second row %04d:", nr);
+						printTableColor("", secondRowsDB->getObject(nr - 1), 1, m_numPlayers, m_groupSize);
+					}
+				}
+				if (groupSize_2 && sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] <= secondRowsDB->numObjects())
+					goto noResult;
 				goto cont1;
 			}
 

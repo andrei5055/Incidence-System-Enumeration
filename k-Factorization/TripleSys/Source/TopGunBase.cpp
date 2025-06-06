@@ -129,7 +129,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			fprintf(f, m_reportInfo.c_str());
 
 
-		if (exploreMatrices && totalMatr) {
+		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
 			if (readMatrices(t_ResultFolder, nRows) >= 0)
 				orderAndExploreMatrices(nRowsOut());

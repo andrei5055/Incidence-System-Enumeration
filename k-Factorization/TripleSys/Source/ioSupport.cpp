@@ -9,7 +9,7 @@ void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param,
 	if (!folder || !strlen(folder))
 		return;
 
-	const char *uf, *fhdr = getFileNameAttr(param, &uf);
+	const char* uf, * fhdr = getFileNameAttr(param, &uf);
 	char buffer[32];
 	if (param->completeGraph())
 		snprintf(buffer, sizeof(buffer), "Complete");
@@ -17,12 +17,14 @@ void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param,
 		snprintf(buffer, sizeof(buffer), "%d-Partite", param->partiteNumb());
 
 	fn = std::format("{}{}_graphs/{}/{}x{}x{}{}/", folder, buffer, param->partitionSize(), m_numPlayers, nr, m_groupSize, uf);
-	try {
-		fs::create_directories(fn);
-	}
-	catch(...) {
-		printfRed("*** Error: Unable to create folder \"%s\"\n", fn.c_str());
-		myExit(1);
+	if (!fs::exists(fn)) {
+		try {
+			fs::create_directories(fn);
+		}
+		catch (...) {
+			printfRed("*** Error: Unable to create folder \"%s\"\n", fn.c_str());
+			myExit(1);
+		}
 	}
 	if (!fName.empty())
 		fn += fhdr + fName;

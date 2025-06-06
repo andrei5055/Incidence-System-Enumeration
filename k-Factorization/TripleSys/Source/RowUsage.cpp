@@ -26,8 +26,19 @@ void bitwise_multiply(const ll* a, const ll* b, ll* result, size_t size) {
 
 		// Store the result back to the result array
 		_mm256_storeu_si256((__m256i*) & result[i], vec_result);
+
+			// Load 4 `long long` elements from each array
+			vec_a = _mm256_loadu_si256((__m256i*) & a[i + 4]);
+			vec_b = _mm256_loadu_si256((__m256i*) & b[i + 4]);
+
+			// Perform bitwise AND operation
+			vec_result = _mm256_and_si256(vec_a, vec_b);
+
+			// Store the result back to the result array
+			_mm256_storeu_si256((__m256i*) & result[i + 4], vec_result);
+		}
 	}
-	**/
+	/**/
 	// Handle the remainder elements (if `size` is not a multiple of 4)
 	for (; i < size; ++i) {
 		result[i] = a[i] & b[i];
@@ -146,8 +157,24 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 #endif
 		if (iRow < m_nRowMax) {
 			// Construct the intersection of compatible solutions only if we will use it.
-#define multiplyAll() 	for (auto j = m_pRowStorage->numLongs2Skip(iRow); j < m_lenMask; j++) \
-							pToA[j] = pPrevA[j] & pFromA[j];
+#define multiplyAll() { const uint j8max = m_lenMask - 7; \
+						uint  j = m_pRowStorage->numLongs2Skip(iRow); \
+						if (m_lenMask > 7) { \
+							for (; j < j8max; j += 8) { \
+								pToA[j] = pPrevA[j] & pFromA[j]; \
+								pToA[j + 1] = pPrevA[j + 1] & pFromA[j + 1]; \
+								pToA[j + 2] = pPrevA[j + 2] & pFromA[j + 2]; \
+								pToA[j + 3] = pPrevA[j + 3] & pFromA[j + 3]; \
+								pToA[j + 4] = pPrevA[j + 4] & pFromA[j + 4]; \
+								pToA[j + 5] = pPrevA[j + 5] & pFromA[j + 5]; \
+								pToA[j + 6] = pPrevA[j + 6] & pFromA[j + 6]; \
+								pToA[j + 7] = pPrevA[j + 7] & pFromA[j + 7]; \
+						}} \
+						for (; j < m_lenMask; j++) \
+							pToA[j] = pPrevA[j] & pFromA[j]; \
+					  }
+#define multiplyAllOld()  for (uint j = m_pRowStorage->numLongs2Skip(iRow); j < m_lenMask; j++) \
+							pToA[j] = pPrevA[j] & pFromA[j]; 
 
 #if CalculatePtoAOnTheFly
 #define ptoa(j) (pToA[j] = pPrevA[j] & pFromA[j])
