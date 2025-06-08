@@ -1,13 +1,12 @@
 ﻿#include "SRGToolkit.h"
 #include <cstring>
 
-#define PRINT_MATRICES 1
+#define PRINT_MATRICES 0
 
 SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) : 
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize) {
 	m_pGraph[0] = new tchar[2 * m_v * m_v];
 	m_pGraph[1] = m_pGraph[0] + m_v * m_v;
-	memset(m_graphParam, 0, sizeof(m_graphParam));
 	m_subgraphVertex = new ushort[m_v];
 	m_pOrbits = new ushort[m_v];
 	m_pNumOrbits = new ushort[2 * m_v];
@@ -16,9 +15,11 @@ SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) :
 	m_pLenOrbits = new ushort [3 * m_len];
 	m_pSavedOrbits = m_pLenOrbits + m_len;
 	m_pSavedOrbIdx = m_pSavedOrbits + m_len;
-	m_bChekMatr[0] = m_bChekMatr[1] = true;
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++) {
+		m_bChekMatr[i] = true;
+		m_pGraphParam[i] = new SRGParam();
 		m_pMarixStorage[i] = new CBinaryMatrixStorage(m_len, 50 * m_len);
+	}
 }
 
 SRGToolkit::~SRGToolkit() { 
@@ -26,8 +27,10 @@ SRGToolkit::~SRGToolkit() {
 	delete[] m_subgraphVertex;
 	delete[] m_pNumOrbits;
 	delete[] m_pOrbits;
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++) {
 		delete m_pMarixStorage[i];
+		delete m_pGraphParam[i];
+	}
 }
 
 static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
@@ -44,18 +47,21 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 	return false;
 }
 
-void SRGToolkit::exploreMatrix(ctchar* pMatr) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr) {
+	int counter = 0;
 	for (int i = 0; i < 2; i++) {
-		if (m_bChekMatr[i])
-			m_bChekMatr[i] = exploreMatrixOfType(i, pMatr);
+		if (m_bChekMatr[i] && (m_bChekMatr[i] = exploreMatrixOfType(i, pMatr)))
+			counter++;
 	}
+
+	return counter > 0;
 }
 
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	const auto numGroups = m_nCols / m_groupSize;
 	const auto pVertexLast = pMatr + m_nRows * m_nCols;
 
-	auto& graphParam = m_graphParam[typeIdx];
+	auto graphParam = m_pGraphParam[typeIdx];
 	const auto cond = typeIdx != 0;
 	// Create graph
 	auto pAdjacencyMatrix = m_pGraph[0];
@@ -92,16 +98,22 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 		}
 	}
 
-	if (!checkSRG(pAdjacencyMatrix, &graphParam))
+	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
+	switch (graphType) {
+	case t_nonregular:
+	case t_regular:
+	case t_complete:
+		delete graphParam;
+		m_pGraphParam[typeIdx] = NULL;
 		return false;
+	}
 
 	initCanonizer();
 	int i, idx, firstVert = 0;
 	i = idx = 0;
-	static int kkk; kkk++;
 	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
-		printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
-		checkSRG(m_pGraph[1 - i]);
+		createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
+		//printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
 		i = 1 - i;
 	}
 #if PRINT_MATRICES
@@ -162,9 +174,15 @@ ushort* SRGToolkit::restoreParam(int &i, int iStart, ushort * pLenOrbits) {
 }
 
 int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
+#if PRINT_MATRICES
+	if (firstVert) {
+		// Copy the top part of the adjacency matrix
+		memcpy(pGraphOut, pGraph, m_v * (m_v - firstVert));
+	}
+#endif
 	const auto defineAut = firstVert > 0;
 	int lastUnfixedVertexIndex = 0;
-	// Vertex index wich will will be swapped with the vertex firstVert
+	// Vertex index which will will be swapped with the vertex firstVert
 	int indVertMax = 1;
 	int indVert = 0;
 	ushort* pLenOrbitsPrev = m_pLenOrbits;
@@ -227,7 +245,8 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 canonRow:
 				flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
 				if (flag < 0) {
-					printAdjMatrix(pGraph, pGraphOut, idx++, 0, i);
+					createGraphOut(pGraph, pGraphOut, i);
+					//printAdjMatrix(pGraph, pGraphOut, idx++, 0, i);
 					if (i == iStart)
 						break;
 
@@ -247,7 +266,6 @@ canonRow:
 			}
 
 			if (!flag) {
-				addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
 #if 0
 				static int fff; fff = 0;
 				FOPEN_F(f, "aaa.txt", fff++ ? "a" : "w");
@@ -266,10 +284,20 @@ canonRow:
 				fprintf(f1, "%s\n", buf);
 				FCLOSE_F(f1);
 #endif
-				const auto pGraphLast = createGraphOut(pGraph, pGraphOut, firstVert);
-				flag = memcmp(pGraphLast, pGraph + firstVert * m_v, m_v * (m_v - firstVert));
-				printAdjMatrix(NULL, pGraphOut, 99, m_v, m_v);
+				// Build the matrix of the graph to the end
+				const auto pGraphLast = createGraphOut(pGraph, pGraphOut, i);
+				flag = memcmp(pGraphLast, pGraph + i * m_v, m_v * (m_v - i));
+				if (!flag)
+					addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
+/*
+				printAdjMatrix(pGraphOut, NULL, 99, m_v);
+				for (int k = firstVert; k < m_v; k++) {
+					auto ll = memcmp(pGraphLast + (k - firstVert) * m_v, pGraph + k * m_v, m_v);
+					if (ll)
+						ll += 0;
+				}
 				ASSERT(flag);
+				*/
 			}
 		}
 		else {
@@ -376,7 +404,7 @@ int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 }
 
 
-bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
+t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	if (pGraphParam)
 		pGraphParam->m_cntr[0]++;
 
@@ -392,7 +420,7 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 		if (graphDegree) {
 			if (graphDegree != vertexDegree) {
 				printfRed("Graph is not regular\n");
-				return false;
+				return t_nonregular;
 			}
 		}
 		else
@@ -418,6 +446,9 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			}
 
 			if (flag) {
+				if (nCommonCurr == graphDegree - 1)
+					return t_complete;   // Complete graph, we don't need them
+
 				// Count the number of edges in the subgraph of two vertices common neighbors 
 				for (int k = 0; k < nCommonCurr; k++) {
 					for (int l = k + 1; l < nCommonCurr; l++) {
@@ -436,7 +467,7 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 						i, j, idx? "mu" : "lambda", nCommonCurr, nCommon[idx], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
 					printAdjMatrix(pGraph);
 #endif
-					return false;
+					return t_regular;
 				}
 				if (flag) {
 					flag = (nCommon[idx + 2] == alpha);
@@ -469,12 +500,15 @@ bool SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 		if (!flag)
 			pGraphParam->m_cntr[3]++;
 	}
-	return true;
+	return t_srg;
 }
 
 void SRGToolkit::printStat() {
 	for (int i = 0; i < 2; i++) {
-		auto& graphParam = m_graphParam[i];
+		if (!m_pGraphParam[i])
+			continue;
+
+		auto& graphParam = *m_pGraphParam[i];
 		if (!m_bChekMatr[i]) {
 			printfRed("At least one out of %d graphs of type %d is not SRG.\n", graphParam.m_cntr[0], i);
 			continue;
@@ -508,6 +542,8 @@ void SRGToolkit::printStat() {
 }
 
 void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int startVertex, int endVertex) const {
+	return;
+
 	if (endVertex)
 		return;
 

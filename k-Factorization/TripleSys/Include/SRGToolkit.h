@@ -1,25 +1,34 @@
 ﻿#pragma once
 #include "TripleSys.h"
 
-typedef struct {
+typedef struct SRGParam {
 	unsigned int m_cntr[4];
 	int k;
 	int λ;
 	int μ;
 	int α;
 	int β;
-} SRGParam;
+	SRGParam() { memset(this, 0, sizeof(*this)); }
+};
+
+typedef enum {
+	t_nonregular	= 0,
+	t_regular		= 1 << 0,
+	t_srg			= t_regular + (1 << 1),
+	t_4_vert		= t_srg + (1 << 2),
+	t_complete		= -1
+} t_graphType;
 
 class SRGToolkit : public CGroupOrder<ushort>
 {
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize);
 	~SRGToolkit();
-	void exploreMatrix(ctchar* pMatr);
+	bool exploreMatrix(ctchar* pMatr);
 	void printStat();
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr);
-	bool checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
+	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
@@ -36,7 +45,7 @@ private:
 	
 	int m_len;
 	bool m_bChekMatr[2];
-	SRGParam m_graphParam[2];
+	SRGParam *m_pGraphParam[2] = { nullptr };
 	tchar* m_pGraph[2] = { nullptr };
 	ushort* m_pOrbits = nullptr;
 	ushort* m_pSavedOrbits = nullptr;

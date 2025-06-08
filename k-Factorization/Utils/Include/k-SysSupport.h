@@ -44,6 +44,7 @@ void myAssert(int code, const char* file, int line);
 typedef const char cchar;
 typedef unsigned char tchar;
 typedef const tchar  ctchar;
+typedef unsigned short ushort;
 typedef unsigned int uint;
 
 template<typename T>

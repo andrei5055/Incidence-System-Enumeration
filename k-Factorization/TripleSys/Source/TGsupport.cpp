@@ -34,6 +34,13 @@ void TopGun::threadStopped(int iTask)
 }
 void TopGun::startThread(int iTask, int iTaskId, eThreadStartMode iMode, CRowStorage* pRowStorage)
 {
+	assert(this != nullptr);
+	assert(m_pSecondRowsDB != nullptr);
+	assert(mstart != nullptr);
+	assert(mfirst != nullptr);
+	assert(m_cnt != nullptr);
+	assert(iMode == eCalculateMatrices && pRowStorage != nullptr || iMode != eCalculateMatrices && pRowStorage == nullptr);
+
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
 	threads[iTask] = std::thread{ RunThread, iTaskId, iMode,

@@ -91,7 +91,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 		}
 
 		nfr++;
-		printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRowsStart(), pMatrixType, sfn.c_str());
+		printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRows, pMatrixType, sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
 		nMax -= nMatricesFromOneFile;
 		if (nMax <= 0)
@@ -99,7 +99,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 	}
 
 	if (nMatricesAll)
-		printf("\n%d %d-rows '%s Matrices' loaded from %d file(s)\n", nMatricesAll, nRowsStart(), pMatrixType, nfr);
+		printf("\n%d %d-rows '%s Matrices' loaded from %d file(s)\n", nMatricesAll, nRows, pMatrixType, nfr);
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
 
@@ -280,8 +280,12 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 		if (groupOrder > 1)
 			Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
 
-		if (pSRGtoolkit)
-			pSRGtoolkit->exploreMatrix(pMatr);
+		if (pSRGtoolkit) {
+			if (!pSRGtoolkit->exploreMatrix(pMatr)) {
+				delete pSRGtoolkit;
+				pSRGtoolkit = NULL;
+			}
+		}
 	}
 
 	if (pSRGtoolkit) {
