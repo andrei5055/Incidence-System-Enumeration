@@ -22,7 +22,7 @@ typedef enum {
 class SRGToolkit : public CGroupOrder<ushort>
 {
 public:
-	SRGToolkit(int nCols, int nRows, int groupSize);
+	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr);
 	void printStat();
@@ -34,7 +34,8 @@ private:
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
 		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
 	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
-	void printAdjMatrix(tchar* pGraphOut, int idx = 0, int endVertex = 0) const;
+	void printAdjMatrix(ctchar* pGraphOut, int idx = 0, int endVertex = 0) const;
+	void outAdjMatrix(ctchar* pGraphOut, FILE* f, int endVertex = 0) const;
 	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0) const;
 	void initVertexGroupOrbits();
 
@@ -42,6 +43,7 @@ private:
 	const int m_nRows; 
 	const int m_groupSize;
 	const int m_v;
+	const std::string m_resFileName;
 	
 	int m_len;
 	bool m_bChekMatr[2];

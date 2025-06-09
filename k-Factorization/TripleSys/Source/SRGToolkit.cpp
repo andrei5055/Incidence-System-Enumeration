@@ -8,8 +8,9 @@
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
-SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) : 
-	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize) {
+SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName) :
+	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize),
+	m_resFileName(resFileName) {
 	m_pGraph[0] = new tchar[2 * m_v * m_v];
 	m_pGraph[1] = m_pGraph[0] + m_v * m_v;
 	m_subgraphVertex = new ushort[m_v];
@@ -128,7 +129,37 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
 		memcpy(pTo, pFrom + ++i, j);
 
+	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
 	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
+	if (prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects()) {
+		// New SRG constructed
+		char buf[256], *pBuf = buf;
+		SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
+		std::string fileName = m_resFileName + buf;
+		FOPEN_F(f, fileName.c_str(), prevMatrNumb ? "a" : "w");
+
+		if (!prevMatrNumb) {
+			fprintf(f, "List of SRGs with parameters (%d, %d, %d, %d):\n", m_v, graphParam->k, graphParam->λ, graphParam->μ);
+		}
+
+		pBuf = buf;
+		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
+		if (graphType == t_4_vert)
+			SPRINTFD(pBuf, buf, ",  4-vertex condition satisfied (alpha=%d, beta=%d)", graphParam->α, graphParam->β);
+
+		fprintf(f, "%s\n", buf);
+		outAdjMatrix(m_pGraph[i], f);
+		FCLOSE_F(f);
+	}
+	else {
+		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
+		--graphParam->m_cntr[0];
+		--graphParam->m_cntr[1];
+		--graphParam->m_cntr[2];
+		if (graphType != t_4_vert)
+			--graphParam->m_cntr[3];
+	}
+
 	PRINT_ADJ_MATRIX(m_pGraph[i], m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return true;
 }
@@ -481,16 +512,24 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	}
 
 	if (pGraphParam) {
+		if (flag) {
+			if (pGraphParam->m_cntr[2] == pGraphParam->m_cntr[3]) {
+				pGraphParam->α = nCommon[2];
+				pGraphParam->β = nCommon[3];
+			}
+			else {
+				if (pGraphParam->α != nCommon[2] || pGraphParam->β != nCommon[3])
+					printfRed("Found graph with 4-vertex condition for different alpha an beta");
+			}
+		} else
+			pGraphParam->m_cntr[3]++;
+
 		if (!pGraphParam->m_cntr[2]++) {
 			pGraphParam->λ = nCommon[0];
 			pGraphParam->μ = nCommon[1];
-			pGraphParam->α = nCommon[2];
-			pGraphParam->β = nCommon[3];
 		}
-		if (!flag)
-			pGraphParam->m_cntr[3]++;
 	}
-	return t_srg;
+	return flag? t_4_vert : t_srg;
 }
 
 void SRGToolkit::printStat() {
@@ -518,22 +557,21 @@ void SRGToolkit::printStat() {
 			printfYellow("       %d of them satisfy 4-vertex conditions: (%d, %d)\n", n4VertCond, graphParam.α, graphParam.β);
 
 		const auto v_2k = m_v - 2 * graphParam.k;
-		graphParam.k = m_v - graphParam.k - 1;
-		const auto λ = graphParam.λ;
-		const auto μ = graphParam.μ;
-		graphParam.λ = v_2k + graphParam.μ - 2;
-		graphParam.μ = v_2k + λ;
-		graphParam.α = λ * (λ - 1) / 2 - graphParam.α;
-		graphParam.β = μ * (μ - 1) / 2 - graphParam.β;
-		printfYellow("%s           complimentary graph parameters: (%d,%2d,%2d,%2d)\n", pntr2, m_v, graphParam.k, graphParam.λ, graphParam.μ);
-		//		if (n4VertCond)
-		//			printfYellow("%s            4-vertex condition parameters: (%d, %d)\n", pntr2, graphParam.α, graphParam.β);		
-		printfYellow("       %d of these graphs %s non-isomorphic\n", m_pMarixStorage[i]->numObjects(), pntr1);
+		const auto k = m_v - graphParam.k - 1;
+		const auto λ = v_2k + graphParam.μ - 2;
+		const auto μ = v_2k + graphParam.λ;
+		//graphParam.α = λ * (λ - 1) / 2 - graphParam.α;
+		//graphParam.β = μ * (μ - 1) / 2 - graphParam.β;
+		printfYellow("%s           complementary graph parameters: (%d,%2d,%2d,%2d)\n", pntr2, m_v, k, λ, μ);
+		const auto α = graphParam.k - graphParam.β;
+		const auto β = v_2k + graphParam.μ - graphParam.α - 2;
+		//if (n4VertCond)
+		//	printfYellow("%s            4-vertex condition parameters: (%d, %d)\n", pntr2, α, β);
 	}
 }
 
 #if PRINT_MATRICES
-void SRGToolkit::printAdjMatrix(tchar* pGraphOut, int idx, int endVertex) const {
+void SRGToolkit::printAdjMatrix(ctchar* pGraphOut, int idx, int endVertex) const {
 	char buf[256], * pBuf;
 	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);
 	FOPEN_F(f, buf, "w");
@@ -569,19 +607,23 @@ void SRGToolkit::printAdjMatrix(tchar* pGraphOut, int idx, int endVertex) const 
 
 	fprintf(f, "%s\n", buf);
 
+	outAdjMatrix(pGraphOut, f, endVertex);
+	FCLOSE_F(f);
+}
+#endif
+
+void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
 	if (!endVertex)
 		endVertex = m_v;
 
-	auto pVertexOut = pGraphOut;
-	for (int i = 0; i < endVertex; i++, pVertexOut += m_v) {
+	char buf[512], * pBuf;
+	for (int i = 0; i < endVertex; i++, pGraphOut += m_v) {
 		pBuf = buf;
 		for (int j = 0; j < m_v; j++)
-			SPRINTFD(pBuf, buf, "%1d", pVertexOut[j]);
+			SPRINTFD(pBuf, buf, "%1d", pGraphOut[j]);
 
 		*(pBuf - m_v + i) = '*';		// *'s on diagonal
 		SPRINTFD(pBuf, buf, " %2d", i); // row #'s from left
 		fprintf(f, "%s\n", buf);
 	}
-	FCLOSE_F(f);
 }
-#endif

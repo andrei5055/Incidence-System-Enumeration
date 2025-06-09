@@ -264,10 +264,15 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 	if (orderMatrixMode != 2)
 		return;
 
-	auto pSRGtoolkit = exploreMatrices ? new SRGToolkit(numPlayers(), nRows, m_groupSize) : NULL;
+	std::string ResultFile;	
+	SRGToolkit* pSRGtoolkit = NULL;
+	if (exploreMatrices) {
+		createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_SGR_Type_");
+		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, ResultFile);
+	}
+
 	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
-	std::string ResultFile;
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
 	Result.setOutFileName(ResultFile.c_str());
 	for (int i = 0; i < numMatrices2Process(); i++) {
