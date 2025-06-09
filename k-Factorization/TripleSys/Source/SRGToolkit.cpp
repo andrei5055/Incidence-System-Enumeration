@@ -2,6 +2,11 @@
 #include <cstring>
 
 #define PRINT_MATRICES 0
+#if PRINT_MATRICES
+#define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
+#else
+#define PRINT_ADJ_MATRIX(...)
+#endif
 
 SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize) : 
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize) {
@@ -109,16 +114,12 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	}
 
 	initCanonizer();
-	int i, idx, firstVert = 0;
-	i = idx = 0;
+	int i, firstVert = 0;
+	i = 0;
 	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
 		createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
-		//printAdjMatrix(m_pGraph[i], m_pGraph[1 - i], idx++);
 		i = 1 - i;
 	}
-#if PRINT_MATRICES
-	printAdjMatrix(NULL, m_pGraph[i], idx++, m_v);
-#endif
 
 	// Copy elements above the main diagonal into the array.
 	auto pFrom = m_pGraph[i];
@@ -127,7 +128,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
 		memcpy(pTo, pFrom + ++i, j);
 
-	m_pMarixStorage[typeIdx]->addObject(pGraph);
+	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
+	PRINT_ADJ_MATRIX(m_pGraph[i], m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return true;
 }
 
@@ -191,7 +193,6 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 		initVertexGroupOrbits();
 	}
 
-	int idx = 100;
 	while (true) {
 		// Loop over all vertices
 		// Initialize orbits
@@ -245,8 +246,6 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 canonRow:
 				flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
 				if (flag < 0) {
-					createGraphOut(pGraph, pGraphOut, i);
-					//printAdjMatrix(pGraph, pGraphOut, idx++, 0, i);
 					if (i == iStart)
 						break;
 
@@ -289,15 +288,6 @@ canonRow:
 				flag = memcmp(pGraphLast, pGraph + i * m_v, m_v * (m_v - i));
 				if (!flag)
 					addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
-/*
-				printAdjMatrix(pGraphOut, NULL, 99, m_v);
-				for (int k = firstVert; k < m_v; k++) {
-					auto ll = memcmp(pGraphLast + (k - firstVert) * m_v, pGraph + k * m_v, m_v);
-					if (ll)
-						ll += 0;
-				}
-				ASSERT(flag);
-				*/
 			}
 		}
 		else {
@@ -538,22 +528,12 @@ void SRGToolkit::printStat() {
 		printfYellow("%s           complimentary graph parameters: (%d,%2d,%2d,%2d)\n", pntr2, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 		//		if (n4VertCond)
 		//			printfYellow("%s            4-vertex condition parameters: (%d, %d)\n", pntr2, graphParam.α, graphParam.β);		
+		printfYellow("       %d of these graphs %s non-isomorphic\n", m_pMarixStorage[i]->numObjects(), pntr1);
 	}
 }
 
-void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int startVertex, int endVertex) const {
-	return;
-
-	if (endVertex)
-		return;
-
-	if (pGraphOut)
-		createGraphOut(pGraph, pGraphOut, startVertex, endVertex);
-	else
-		pGraphOut = (tchar * )pGraph;
-
 #if PRINT_MATRICES
-
+void SRGToolkit::printAdjMatrix(tchar* pGraphOut, int idx, int endVertex) const {
 	char buf[256], * pBuf;
 	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);
 	FOPEN_F(f, buf, "w");
@@ -603,5 +583,5 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraph, tchar* pGraphOut, int idx, int s
 		fprintf(f, "%s\n", buf);
 	}
 	FCLOSE_F(f);
-#endif
 }
+#endif

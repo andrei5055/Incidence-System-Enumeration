@@ -9,7 +9,7 @@ typedef struct SRGParam {
 	int α;
 	int β;
 	SRGParam() { memset(this, 0, sizeof(*this)); }
-};
+} SRGParam;
 
 typedef enum {
 	t_nonregular	= 0,
@@ -34,7 +34,7 @@ private:
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
 		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
 	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
-	void printAdjMatrix(ctchar* pGraph, tchar* pGraphOut = NULL, int idx = 0, int startVertex = 0, int endVertex = 0) const;
+	void printAdjMatrix(tchar* pGraphOut, int idx = 0, int endVertex = 0) const;
 	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0) const;
 	void initVertexGroupOrbits();
 
