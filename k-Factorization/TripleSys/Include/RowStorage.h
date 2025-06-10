@@ -45,9 +45,6 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
-	CC inline void setSolutionInterval(uint* pRowSolutionIdx, uint idx) const {
-		pRowSolutionIdx[idx + m_lenDayResults] = pRowSolutionIdx[m_lenDayResults];
-	}
 	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }

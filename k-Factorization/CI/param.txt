@@ -1,4 +1,5 @@
 PrintMatrices=0
+ExploreMatrices=1
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 

@@ -549,12 +549,16 @@ void SRGToolkit::printStat() {
 		const char* pntr2 = plural ? "    " : "";
 
 		printfYellow("Out of %d graph%s with %d vertices\n", graphParam.m_cntr[0], pntr0, m_v);
-		printfYellow("       %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
+		if (!graphParam.m_cntr[2]) {
+			printfYellow("       %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
+			return;
+		}
+
 		printfYellow("       %d %s strongly regular with parameters: (%d,%2d,%2d,%2d)\n",
 			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3];
 		if (n4VertCond)
-			printfYellow("       %d of them satisfy 4-vertex conditions: (%d, %d)\n", n4VertCond, graphParam.α, graphParam.β);
+			printfYellow("       %d of them satisf%s 4-vertex conditions: (%d, %d)\n", n4VertCond, (n4VertCond > 1? "y" : "ies"), graphParam.α, graphParam.β);
 
 		const auto v_2k = m_v - 2 * graphParam.k;
 		const auto k = m_v - graphParam.k - 1;

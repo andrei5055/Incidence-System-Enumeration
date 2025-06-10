@@ -54,7 +54,6 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 		m_pRowSolutionIdx[0] = 0;
 		uint last = iRow;
 		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, &last, m_pRowStorage->getPlayersMask());
-		m_pRowStorage->setSolutionInterval(m_pRowSolutionIdx, iRow);
 	}
 
 	m_threadID = m_pRowSolutionIdx[iRow] = iThread;
