@@ -90,7 +90,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_rTime = m_iTime;
 	m_cTime = m_iTime;
 	const auto iCalcModeOrg = iCalcMode;
-	const auto bSavingMatricesToDisk = iCalcModeOrg != eCalcSecondRow? param(t_savingMatricesToDisk) : false;
+	const auto bSavingMatricesToDisk = (iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows) ?
+		param(t_savingMatricesToDisk) : false;
 	int nMatricesMax = 0;
 	int startMatrixCount = 0;
 #endif
@@ -785,6 +786,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					printResultWithHistory("", iDay);
 					if (m_printMatrices & 2)
 						printPermutationMatrices(2);
+					//printTable("links", links(), m_numPlayers, m_numPlayers, 0);
 				}
 
 				if (orderOfGroup() > 1) {

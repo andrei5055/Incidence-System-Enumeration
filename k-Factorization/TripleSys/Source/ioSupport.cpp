@@ -19,7 +19,13 @@ void SizeParam::createFolderAndFileName(std::string& fn, const kSysParam* param,
 	fn = std::format("{}{}_graphs/{}/{}x{}x{}{}/", folder, buffer, param->partitionSize(), m_numPlayers, nr, m_groupSize, uf);
 	if (!fs::exists(fn)) {
 		try {
-			fs::create_directories(fn);
+			if (!fs::create_directories(fn)) {
+				const auto err = GetLastError();
+				if (err != ERROR_ALREADY_EXISTS) {
+					printfRed("*** Error: Unable to create folder \"%s\" (system error %d(0x%x)\n", fn.c_str(), err, err);
+					myExit(err ? err : 1);
+				}
+			}
 		}
 		catch (...) {
 			printfRed("*** Error: Unable to create folder \"%s\"\n", fn.c_str());

@@ -72,8 +72,6 @@ int TopGun::Run()
 	sLongLong resultMatr = 0;
 	const auto orderMatrixMode = param(t_orderMatrices);
 
-	deleteOldFiles();
-
 	if (orderMatrixMode < 2 && (m_groupSize <= 3 || param(t_CBMP_Graph) > 1) && m_use2RowsCanonization) {
 		if (m_pSecondRowsDB && !m_pSecondRowsDB->isValid(paramPtr())) {
 			delete m_pSecondRowsDB;
@@ -95,10 +93,11 @@ int TopGun::Run()
 			}
 		}
 	}
-	deleteOldFiles();
 	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (readMatrices() < 0)
 			myExit(1);
+
+		deleteOldFiles();
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
@@ -240,12 +239,13 @@ int TopGun::Run()
 		const auto str = std::format("Total time={}ms (including prep time={}ms)\n", rTime, mTime);
 		printf(str.c_str());
 		m_reportInfo += str;
-	} else {
+	}
+	else {
+		deleteOldFiles();
 	 alldata sys(*this, paramPtr());
 	 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 	 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 	 transferMatrixDB(sys.matrixDB());
-
 	}
 
 	const auto expectedResult = param(t_expectedResult);
