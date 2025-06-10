@@ -99,33 +99,42 @@ private:
 	size_t m_nLenBuffer = 0;
 };
 
-class COutGroupHandle : public Table<tchar> {
+template<typename T>
+class COutGroupHandle : public Table<T> {
 public:
 	COutGroupHandle(uint outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
-		Table<tchar>(name, 0, degree, -1, groupSize, false, true) {}
+		Table<T>(name, 0, degree, -1, groupSize, false, true) {}
 	virtual ~COutGroupHandle()	{}
 	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
-		printTable(pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
+		this->printTable((const T *)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected: 
 	const uint m_outGroupMask;  // In what forms and what the group's information should be printed
 }; 
 
-class Generators : public CGroupOrder<tchar>, public CStorageSet<tchar>, public COutGroupHandle {
+template<typename T>
+class Generators : public CGroupOrder<T>, public CStorageSet<T>, public COutGroupHandle<T> {
 public:
 	Generators(uint outGroupMask, char const* name, int degree, int groupSize) :
-		CStorageSet<tchar>(10, degree),
-		COutGroupHandle(outGroupMask, name, degree, groupSize) {};
+		CStorageSet<T>(10, degree),
+		COutGroupHandle<T>(outGroupMask, name, degree, groupSize) {};
 	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
 protected:
-	inline auto groupDegree() const		{ return m_nc; }
+	inline auto groupDegree() const		{ return this->m_nc; }
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
 private:
-	CC void savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut);
-	tchar m_lenStab;
+	CC void savePermutation(const T degree, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {
+		if (m_lenStab <= this->stabilizerLength())
+			return;
+
+		this->addObject(permRow);
+		m_lenStab = this->stabilizerLength();
+	}
+
+	T m_lenStab;
 };
 
-class RowGenerators : public Generators {
+class RowGenerators : public Generators<tchar> {
 public:
 	RowGenerators(uint outGroupMask, int rowNumb, int groupSize = 0);
 	~RowGenerators()					{ delete m_pRowGroup; }

@@ -1,5 +1,6 @@
 ﻿#pragma once
-#include "TripleSys.h"
+//#include "TripleSys.h"
+#include "Table.h"
 
 typedef struct SRGParam {
 	unsigned int m_cntr[4];
@@ -19,7 +20,10 @@ typedef enum {
 	t_complete		= -1
 } t_graphType;
 
-class SRGToolkit : public CGroupOrder<ushort>
+//class CKOrbits : public RowGenerators {
+//}
+
+class SRGToolkit : public  Generators<ushort> //CGroupOrder<ushort>
 {
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName);

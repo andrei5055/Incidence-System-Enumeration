@@ -11,28 +11,29 @@ static void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 	}
 }
 
-void Generators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+template<typename T>
+void Generators<T>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	// Calculate the orbits and a minimal generating set 
 	// of the permutation group under its action on the element set
-	setGroupOrder(1);
-	releaseAllObjects();
+	this->setGroupOrder(1);
+	this->releaseAllObjects();
 	
 	// Adding orbits:
-	auto* pOrb = getNextObject();
+	auto* pOrb = this->getNextObject();
 	for (int i = 0; i < groupDegree(); i++)
 		pOrb[i] = i;
 
 	// ...  and trivial permutation:
-	addObject(pOrb);
+	this->addObject(pOrb);
 	m_lenStab = groupDegree();
 	const auto groupOrder = pElemGroup->numObjects();
 	for (int i = 1; i < groupOrder; i++) {
 		const auto *c = pElemGroup->getObject(i);
-		addAutomorphism(groupDegree(), c, pOrb, true, false, true);
+		this->addAutomorphism(groupDegree(), c, pOrb, true, false, true);
 	}
 
-	updateGroupOrder(groupDegree(), pOrb);
-	printTable(getObject(0), false, outToScreen, numObjects(), "");
+	this->updateGroupOrder(groupDegree(), pOrb);
+	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
 
 	if (checkNestedGroups) {
 		const auto retVal = testNestedGroups(pElemGroup);
@@ -40,15 +41,8 @@ void Generators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen,
 	}
 }
 
-void Generators::savePermutation(ctchar degree, ctchar* permRow, tchar* pOrbits, bool rowPermut, bool savePermut) {
-	if (m_lenStab <= stabilizerLength())
-		return;
-
-	addObject(permRow);
-	m_lenStab = stabilizerLength();
-}
-
-int Generators::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits *pKOrb) const {
+template<typename T>
+int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits *pKOrb) const {
 	const auto pntr = (alldata*)pElemGroup;
 	if (pntr->param(t_nestedGroups) > 1)
 		rowMin = 2;

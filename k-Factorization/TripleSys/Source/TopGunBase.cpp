@@ -275,6 +275,8 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 	Result.allocateBuffer(32);
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
 	Result.setOutFileName(ResultFile.c_str());
+	printfGreen("Saved to a file: \"%s\"\n", ResultFile.c_str());
+
 	for (int i = 0; i < numMatrices2Process(); i++) {
 		const auto idx = m_pMatrixPerm[i];
 		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
@@ -297,7 +299,6 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 		pSRGtoolkit->printStat();
 		delete pSRGtoolkit;
 	}
-	printfGreen("They are saved to a file: \"%s\"\n", ResultFile.c_str());
 }
 
 void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {

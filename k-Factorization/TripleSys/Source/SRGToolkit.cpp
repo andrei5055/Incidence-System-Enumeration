@@ -10,7 +10,7 @@
 
 SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName) :
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize),
-	m_resFileName(resFileName) {
+	m_resFileName(resFileName), Generators<ushort>(0, "", nRows* nCols / groupSize, groupSize) {
 	m_pGraph[0] = new tchar[2 * m_v * m_v];
 	m_pGraph[1] = m_pGraph[0] + m_v * m_v;
 	m_subgraphVertex = new ushort[m_v];
@@ -630,4 +630,8 @@ void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
 		SPRINTFD(pBuf, buf, " %2d", i); // row #'s from left
 		fprintf(f, "%s\n", buf);
 	}
+}
+
+template<>
+void Generators<ushort>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 }
