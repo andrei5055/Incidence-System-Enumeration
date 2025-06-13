@@ -1,7 +1,8 @@
 ﻿#include "SRGToolkit.h"
-#include <cstring>
-#include <windows.h>
-#pragma execution_character_set("utf-8")
+//#include <stdio.h>
+//#include <cstring>
+//#include <windows.h>
+//#pragma execution_character_set("utf-8")
 
 #define PRINT_MATRICES 0
 #if PRINT_MATRICES
@@ -585,6 +586,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 }
 
 void SRGToolkit::printStat() {
+	//SetConsoleOutputCP(CP_UTF8);
 	for (int i = 0; i < 2; i++) {
 		if (!m_pGraphParam[i])
 			continue;
@@ -600,21 +602,17 @@ void SRGToolkit::printStat() {
 		const char* pntr1 = plural ? "are" : "is";
 		const char* pntr2 = plural ? "    " : "";
 
-		printfYellow("Analized %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
+		printfYellow("Out of %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
 		if (!graphParam.m_cntr[2]) {
 			printfYellow("       %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
 			return;
 		}
 
-		printfYellow("       %d %s strongly regular with parameters: (%d,%2d,%d,%d)\n",
-			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
-
-		if (graphParam.m_cntr[4])
-			printfYellow("       %d - rank 3 graph(s)\n", graphParam.m_cntr[4]);
-
-		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3] - graphParam.m_cntr[4];
+		//printfYellow("       %d %s strongly regular with parameters: (%d,%2d, λ = %d, μ = %d)\n",
+		//	graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
+		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3];
 		if (n4VertCond)
-			printfRed("       %d of them satisf%s 4-vertex conditions: (%d, %d)\n", n4VertCond, (n4VertCond > 1? "y" : "ies"), graphParam.α, graphParam.β);
+			printfYellow("       %d of them satisf%s 4-vertex conditions: (%d, %d)\n", n4VertCond, (n4VertCond > 1? "y" : "ies"), graphParam.α, graphParam.β);
 
 		const auto v_2k = m_v - 2 * graphParam.k;
 		const auto k = m_v - graphParam.k - 1;

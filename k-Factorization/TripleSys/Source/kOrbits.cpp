@@ -1,8 +1,8 @@
 #include "kOrbits.h"
 
 CKOrbits::CKOrbits(uint outGroupMask, int numElems, int groupSize, int numRows) : 
-    m_numElems(numElems), m_numRows(numRows), 
-    RowGenerators(outGroupMask, numRows * numElems / groupSize, groupSize) { 
+    m_numElems(numElems), m_numRows(numRows), m_groupSize(groupSize),
+    RowGenerators(outGroupMask, numRows * numElems / groupSize) { 
     m_outMask = 16;
     m_sActionOn = "k-sets, |Aut(K)|";
 
@@ -25,11 +25,11 @@ CKOrbits::~CKOrbits() {
 
 void CKOrbits::createTable(ctchar* pSolution) {
     tchar id = 0;
-    const auto numGroups = m_numElems / groupSize();
+    const auto numGroups = m_numElems / m_groupSize;
     for (int i = 0; i < m_numRows; i++) {
         for (int j = 0; j < numGroups; j++) {
             unsigned int idx = *pSolution++;
-            for (int k = groupSize(); --k;) {
+            for (int k = m_groupSize; --k;) {
                 idx *= m_numElems;
                 idx += *pSolution++;
             }
@@ -41,11 +41,11 @@ void CKOrbits::createTable(ctchar* pSolution) {
 
 void CKOrbits::encodeSolution(ctchar* pSolution) {
     tchar id = 0;
-    const auto numGroups = m_numElems / groupSize();
+    const auto numGroups = m_numElems / m_groupSize;
     for (int i = 0; i < m_numRows; i++) {
         for (int j = 0; j < numGroups; j++) {
             unsigned int idx = *pSolution++;
-            for (int k = groupSize(); --k;) {
+            for (int k = m_groupSize; --k;) {
                 idx *= m_numElems;
                 idx += *pSolution++;
             }

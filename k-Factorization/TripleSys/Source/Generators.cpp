@@ -43,7 +43,7 @@ void Generators<T>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScre
 
 template<typename T>
 int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits *pKOrb) const {
-	const auto pntr = (alldata*)pElemGroup;
+	const auto pntr = (const alldata*)pElemGroup;
 	if (pntr->param(t_nestedGroups) > 1)
 		rowMin = 2;
 	else
@@ -72,8 +72,8 @@ int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pR
 	return rowMin == rowMax? -1 : 0;
 }
 
-RowGenerators::RowGenerators(uint outGroupMask, int rowNumb, int groupSize)
-	: Generators(outGroupMask, "", rowNumb, groupSize), m_pRowGroup(NULL) {
+RowGenerators::RowGenerators(uint outGroupMask, int rowNumb)
+	: Generators(outGroupMask, "", rowNumb), m_pRowGroup(NULL) {
 	m_outMask = 4;
 	m_sActionOn = "matrix rows, |Aut(R)|";
 }

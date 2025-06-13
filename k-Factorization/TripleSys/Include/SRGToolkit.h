@@ -3,7 +3,7 @@
 #include "Table.h"
 
 typedef struct SRGParam {
-	unsigned int m_cntr[4];
+	unsigned int m_cntr[5];
 	int k;
 	int λ;
 	int μ;
@@ -20,10 +20,8 @@ typedef enum {
 	t_complete		= -1
 } t_graphType;
 
-//class CKOrbits : public RowGenerators {
-//}
 
-class SRGToolkit : public  Generators<ushort> //CGroupOrder<ushort>
+class SRGToolkit : public  Generators<ushort>
 {
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName);

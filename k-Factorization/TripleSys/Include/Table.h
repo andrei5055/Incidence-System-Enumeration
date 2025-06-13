@@ -35,34 +35,45 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 	}
 }
 
+
+class IOutGroupHandle {
+public:
+	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) = 0;
+	virtual ~IOutGroupHandle() {}
+	inline void setOutFileName(const char* pFileName, bool resetFile = true) {
+		if ((m_pFileName = pFileName) && resetFile)
+			std::remove(pFileName);
+	}
+protected:
+	const auto outFileName() const				{ return m_pFileName; }
+	const char* m_pFileName = NULL;
+};
+
 template<typename T>
-class Table {
+class Table : public IOutGroupHandle {
 public:
 	Table(char const *name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		m_name(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
-		m_makeString(makeString), m_bOutCntr(outCntr) {}
+		m_makeString(makeString), m_bOutCntr(outCntr), IOutGroupHandle() {}
 	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
 	void printTableInfo(const char* pInfo);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
 	virtual const char *name() 					{ return m_name; }
-	inline void setOutFileName(const char* pFileName, bool resetFile = true) {
-		m_pFileName = pFileName;
-		if (resetFile)
-			std::remove(pFileName);
+	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
+		this->printTable((const T*)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected:
 	inline auto groupSize() const				{ return m_np; }
 
 	const char *m_name;
-	const int m_nc;
+	const T m_nc;
 private:
 	const int m_nl;
 	const int m_ns;
 	const int m_np;
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
-	const char* m_pFileName = NULL;
 public:
 	size_t m_cntr = 0;
 };
@@ -102,12 +113,9 @@ private:
 template<typename T>
 class COutGroupHandle : public Table<T> {
 public:
-	COutGroupHandle(uint outGroupMask, char const* name, int degree, int groupSize) : m_outGroupMask(outGroupMask),
-		Table<T>(name, 0, degree, -1, groupSize, false, true) {}
+	COutGroupHandle(uint outGroupMask, char const* name, int degree) : m_outGroupMask(outGroupMask),
+		Table<T>(name, 0, degree, -1, 0, false, true) {}
 	virtual ~COutGroupHandle()	{}
-	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
-		this->printTable((const T *)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
-	}
 protected: 
 	const uint m_outGroupMask;  // In what forms and what the group's information should be printed
 }; 
@@ -115,13 +123,14 @@ protected:
 template<typename T>
 class Generators : public CGroupOrder<T>, public CStorageSet<T>, public COutGroupHandle<T> {
 public:
-	Generators(uint outGroupMask, char const* name, int degree, int groupSize) :
+	Generators(uint outGroupMask, char const* name, int degree) :
 		CStorageSet<T>(10, degree),
-		COutGroupHandle<T>(outGroupMask, name, degree, groupSize) {};
+		COutGroupHandle<T>(outGroupMask, name, degree) {};
 	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
 protected:
 	inline auto groupDegree() const		{ return this->m_nc; }
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
+	void resetGroup()					{ m_lenStab = groupDegree(); }
 private:
 	CC void savePermutation(const T degree, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {
 		if (m_lenStab <= this->stabilizerLength())
@@ -136,7 +145,7 @@ private:
 
 class RowGenerators : public Generators<tchar> {
 public:
-	RowGenerators(uint outGroupMask, int rowNumb, int groupSize = 0);
+	RowGenerators(uint outGroupMask, int rowNumb);
 	~RowGenerators()					{ delete m_pRowGroup; }
 	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	const char* name() override         { return m_sName.c_str(); }
@@ -177,9 +186,10 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 		}
 		else
 			SPRINTFD(pBuf, buffer, "%s:\n", pName);
+
+		_printf(f, outToScreen, buffer);
 	}
 
-	_printf(f, outToScreen, buffer);
 	if (idx) {
 		for (int i = 0; i < nl; i++)
 			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);

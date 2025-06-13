@@ -267,7 +267,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 	std::string ResultFile;	
 	SRGToolkit* pSRGtoolkit = NULL;
 	if (exploreMatrices) {
-		createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_SGR_Type_");
+		createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_SRG_Type_");
 		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, ResultFile);
 	}
 

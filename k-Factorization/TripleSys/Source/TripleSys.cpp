@@ -133,7 +133,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	//aq();
 	unsigned char* bResults = NULL;
 
-	COutGroupHandle<tchar>* pAutGroup[4] = { NULL };
+	IOutGroupHandle* pAutGroup[4] = { NULL };
 	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
 	if (bSavingMatricesToDisk) {
@@ -154,11 +154,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		const auto outAutGroup = param(t_outAutomorphismGroup);
 		if (outAutGroup) {
 			if (outAutGroup & 1) {
-				pAutGroup[0] = new Generators<tchar>(outAutGroup, "\nOrbits and generators of the Aut(M) acting on elements", m_numPlayers, m_groupSize);
+				pAutGroup[0] = new Generators<tchar>(outAutGroup, "\nOrbits and generators of the Aut(M) acting on elements", m_numPlayers);
 				pAutGroup[0]->setOutFileName(pResFile, false);
 			}
 			if (outAutGroup & 2) {
-				pAutGroup[1] = new COutGroupHandle<tchar>(outAutGroup, "\nAut(M) acting on elements", m_numPlayers, m_groupSize);
+				pAutGroup[1] = new COutGroupHandle<tchar>(outAutGroup, "\nAut(M) acting on elements", m_numPlayers);
 				pAutGroup[1]->setOutFileName(pResFile, false);
 			}
 

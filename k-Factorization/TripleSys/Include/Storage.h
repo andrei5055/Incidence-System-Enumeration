@@ -84,7 +84,23 @@ public:
 	}
 
 	CC inline auto* addObject(const T* pObj) {
-		return (const T*)memcpy(getNextObject(), pObj, this->lenObject());
+		return (const T*)memcpy(getNextObject(), pObj, sizeof(T) * this->lenObject());
+	}
+	CC inline T* reserveObjects(int nObjects) {
+		// Reserves memory for numObject database records.
+		if (nObjects <= 0)
+			return NULL;
+
+		if (numObjects() + nObjects <= m_numObjectsMax) {
+			m_numObjects += nObjects;
+			return this->getObject();
+		}
+
+		T* retVal = NULL;
+		for (int i = 0; i < nObjects; i++)
+			retVal = getNextObject();
+
+		return retVal - nObjects * this->lenObject();
 	}
 	CC inline void releaseObject()			{ m_numObjects--; }
 	CC inline void releaseAllObjects()		{ m_numObjects = 0; }

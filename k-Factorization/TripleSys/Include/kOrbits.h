@@ -24,6 +24,7 @@ private:
 
 	const int m_numElems;
 	const int m_numRows;
+	const int m_groupSize;
 	tchar* m_pTable = NULL;
 	tchar* m_pSolution = NULL;
 };
