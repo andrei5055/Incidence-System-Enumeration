@@ -3,8 +3,7 @@
 
 #pragma execution_character_set("utf-8")
 
-#define CHECK_NON_SRG	0   // Make it 1, if you want to see the graph which are not strongly-regular
-#define PRINT_MATRICES	0
+#define PRINT_MATRICES				0
 #if PRINT_MATRICES
 #define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
 #else
@@ -148,16 +147,20 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
 	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
 	if (prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects()) {
+		char buf[512], *pBuf = buf;
 		// New SRG constructed
-		char buf[256], *pBuf = buf;
 		if (!prevMatrNumb) {
+			std::string fileName;
+#if OUT_SRG_TO_SEPARATE_FILE
 			SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
-			std::string fileName = m_resFileName + buf;
+			fileName = m_resFileName + buf;
+#else
+			fileName = m_resFileName;
+#endif			
 			const auto len = fileName.length() + 1;
-			auto pFileName = new char[len];
-			memcpy(pFileName, fileName.c_str(), len);
 			delete[] outFileName();
-			setOutFileName(pFileName, false);
+			memcpy(pBuf = new char[len], fileName.c_str(), len);
+			setOutFileName(pBuf, false);
 		}
 
 		// Copying vertex orbits and trivial permutation
@@ -182,19 +185,23 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 		if (rank3)
 			graphParam->m_cntr[4]++;
 
-		FOPEN_F(f, outFileName(), prevMatrNumb ? "a" : "w");
-
-		if (!prevMatrNumb) {
-			fprintf(f, "List of SRGs with parameters (%d, %d, %d, %d):\n", m_v, graphParam->k, graphParam->λ, graphParam->μ);
-		}
+		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
 
 		pBuf = buf;
+#if OUT_SRG_TO_SEPARATE_FILE
+		if (!prevMatrNumb)
+			fprintf(f, "List of SRGs of type %d with parameters (%d, %d, %d, %d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+
 		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
+#else
+		SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (%d, %d, %d, %d): |Aut(G)| = %zd", 
+			prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
+#endif
 		if (rank3)
-			SPRINTFD(pBuf, buf, ", it's a rank 3 graph with");
+			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
 		else
 		if (graphType == t_4_vert)
-			SPRINTFD(pBuf, buf, ",  4-vertex condition satisfied");
+			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
 
 		if (rank3 || graphType == t_4_vert)
 			SPRINTFD(pBuf, buf, " (alpha = % d, beta = % d)", graphParam->α, graphParam->β);
