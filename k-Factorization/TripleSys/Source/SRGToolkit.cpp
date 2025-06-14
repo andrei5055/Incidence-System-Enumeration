@@ -1,9 +1,10 @@
 ﻿#include "SRGToolkit.h"
 #include <cstring>
-#include <windows.h>
+
 #pragma execution_character_set("utf-8")
 
-#define PRINT_MATRICES 0
+#define CHECK_NON_SRG	0   // Make it 1, if you want to see the graph which are not strongly-regular
+#define PRINT_MATRICES	0
 #if PRINT_MATRICES
 #define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
 #else
@@ -60,8 +61,13 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 bool SRGToolkit::exploreMatrix(ctchar* pMatr) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
-		if (m_bChekMatr[i] && (m_bChekMatr[i] = exploreMatrixOfType(i, pMatr)))
-			counter++;
+		if (m_bChekMatr[i])
+			if (exploreMatrixOfType(i, pMatr))
+				counter++;
+#if !CHECK_NON_SRG			
+			else 
+				m_bChekMatr[i] = false;
+#endif
 	}
 
 	return counter > 0;
@@ -111,10 +117,15 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
 	switch (graphType) {
 	case t_nonregular:
-	case t_regular:
 	case t_complete:
 		delete graphParam;
 		m_pGraphParam[typeIdx] = NULL;
+		return false;
+	case t_regular:
+		if (!CHECK_NON_SRG) {
+			delete graphParam;
+			m_pGraphParam[typeIdx] = NULL;
+		}
 		return false;
 	}
 
@@ -127,6 +138,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	}
 
 	// Copy elements above the main diagonal into the array.
+	const auto pResGraph = m_pGraph[i];
 	auto pFrom = m_pGraph[i];
 	auto pTo = m_pGraph[1 - i];
 	auto pGraph = pTo;
@@ -188,7 +200,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 			SPRINTFD(pBuf, buf, " (alpha = % d, beta = % d)", graphParam->α, graphParam->β);
 
 		fprintf(f, "%s\n", buf);
-		outAdjMatrix(m_pGraph[i], f);
+		outAdjMatrix(pResGraph, f);
 		FCLOSE_F(f);
 
 		makeGroupOutput(NULL, false, false);
@@ -592,29 +604,29 @@ void SRGToolkit::printStat() {
 		auto& graphParam = *m_pGraphParam[i];
 		if (!m_bChekMatr[i]) {
 			printfRed("At least one out of %d graphs of type %d is not SRG.\n", graphParam.m_cntr[0], i);
-			continue;
+			//continue;
 		}
 
 		const bool plural = graphParam.m_cntr[0] > 1;
 		const char* pntr0 = plural ? "s" : "";
 		const char* pntr1 = plural ? "are" : "is";
-		const char* pntr2 = plural ? "    " : "";
 
-		printfYellow("Analized %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
+		printfYellow("Constructed %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
 		if (!graphParam.m_cntr[2]) {
-			printfYellow("       %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
+			printfYellow(" • %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
 			return;
 		}
 
-		printfYellow("       %d %s strongly regular with parameters: (%d,%2d,%d,%d)\n",
+		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
 			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 
 		if (graphParam.m_cntr[4])
-			printfYellow("       %d - rank 3 graph(s)\n", graphParam.m_cntr[4]);
+			printfYellow(" • %d - rank 3 graph%s\n", graphParam.m_cntr[4], (graphParam.m_cntr[4] > 1? "s" : ""));
 
 		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3] - graphParam.m_cntr[4];
 		if (n4VertCond)
-			printfRed("       %d of them satisf%s 4-vertex conditions: (%d, %d)\n", n4VertCond, (n4VertCond > 1? "y" : "ies"), graphParam.α, graphParam.β);
+			printfRed(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n", 
+				n4VertCond, (n4VertCond > 1? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
 
 		const auto v_2k = m_v - 2 * graphParam.k;
 		const auto k = m_v - graphParam.k - 1;
@@ -622,11 +634,11 @@ void SRGToolkit::printStat() {
 		const auto μ = v_2k + graphParam.λ;
 		//graphParam.α = λ * (λ - 1) / 2 - graphParam.α;
 		//graphParam.β = μ * (μ - 1) / 2 - graphParam.β;
-		printfYellow("%s           complementary graph parameters: (%d,%2d,%2d,%2d)\n", pntr2, m_v, k, λ, μ);
+		printfYellow("Complementary graph parameters: (v, k, λ, μ) = (%d,%2d,%2d,%2d)\n", m_v, k, λ, μ);
 		const auto α = graphParam.k - graphParam.β;
 		const auto β = v_2k + graphParam.μ - graphParam.α - 2;
 		//if (n4VertCond)
-		//	printfYellow("%s            4-vertex condition parameters: (%d, %d)\n", pntr2, α, β);
+		//	printfYellow("            4-vertex condition parameters: (%d, %d)\n",  α, β);
 	}
 }
 

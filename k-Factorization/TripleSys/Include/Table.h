@@ -33,6 +33,8 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 
 		_printf(f, toScreen, buffer);
 	}
+
+	_printf(f, toScreen, "\n");
 }
 
 

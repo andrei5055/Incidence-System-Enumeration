@@ -86,8 +86,17 @@ void kSysParam::setup() {
 	m_numFactors = (val[t_numPlayers] - (completeGraph() ? 1 : partitionSize())) / (val[t_groupSize] - 1);
 }
 
+void enableAnsiColors() {
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD dwMode = 0;
+	GetConsoleMode(hOut, &dwMode);
+	SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+
 int main(int argc, const char* argv[])
 {
+	SetConsoleOutputCP(CP_UTF8);
+	enableAnsiColors();
 	std::cout << "k - Sys 10.62\n";
 	ifstream* infile = NULL;
 	string* testToRun = NULL;
