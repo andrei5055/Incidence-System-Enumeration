@@ -96,8 +96,8 @@ int TopGun::Run()
 	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (readMatrices() < 0)
 			myExit(1);
-
-		deleteOldFiles();
+		if (!param(t_nFirstIndexOfStartMatrices) && !param(t_exploreMatrices))
+			deleteOldFiles();
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
@@ -242,10 +242,10 @@ int TopGun::Run()
 	}
 	else {
 		deleteOldFiles();
-	 alldata sys(*this, paramPtr());
-	 sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
-	 resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
-	 transferMatrixDB(sys.matrixDB());
+		alldata sys(*this, paramPtr());
+		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
+		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+		transferMatrixDB(sys.matrixDB());
 	}
 
 	const auto expectedResult = param(t_expectedResult);

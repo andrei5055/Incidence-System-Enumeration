@@ -4,6 +4,8 @@
 #pragma execution_character_set("utf-8")
 
 #define PRINT_MATRICES				0
+#define FFF 0    // 6 - for 26, 9 - for 22
+#define FF_ 2    // 4 - for 26. 2 for 22
 #if PRINT_MATRICES
 #define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
 #else
@@ -27,7 +29,7 @@ SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& r
 	for (int i = 0; i < 2; i++) {
 		m_bChekMatr[i] = true;
 		m_pGraphParam[i] = new SRGParam();
-		m_pMarixStorage[i] = new CBinaryMatrixStorage(m_len, 50 * m_len);
+		m_pMarixStorage[i] = new CBinaryMatrixStorage(m_len, 50);
 	}
 }
 
@@ -71,7 +73,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr) {
 
 	return counter > 0;
 }
-
+int nIter = 0;
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	const auto numGroups = m_nCols / m_groupSize;
 	const auto pVertexLast = pMatr + m_nRows * m_nCols;
@@ -133,6 +135,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	i = 0;
 	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
 		createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
+		PRINT_ADJ_MATRIX(m_pGraph[1-i], nIter++, m_v);
 		i = 1 - i;
 	}
 
@@ -221,7 +224,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 			--graphParam->m_cntr[3];
 	}
 
-	PRINT_ADJ_MATRIX(m_pGraph[i], m_pMarixStorage[typeIdx]->numObjects(), m_v);
+	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return true;
 }
 
@@ -294,7 +297,14 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 		// Initialize orbits
 		for (int i = m_v; i--;)
 			m_pOrbits[i] = i;
-
+#if FFF
+		static int ff;
+		if (nIter >= FFF) {
+			FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
+			fprintf(f, "==> ff = %2d  firstVert = %2d\n", ff, firstVert);
+			FCLOSE_F(f);
+		}
+#endif
 		ushort* pLenOrbits = pLenOrbitsPrev;
 		int i = firstVert;
 		while (defineAut) {
@@ -303,14 +313,14 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 					// The smallest index of the vertex that will be considered first
 					pLenOrbits = m_pLenOrbits + (2 * m_v - i - 1) * i / 2;
 					if (*pLenOrbits)
-						break;	
+						break;
 				}
 
 				if (i < 0) {
 					updateGroupOrder(m_v, m_pGroupOrbits);
 					return 0;
 				}
-				
+
 				firstVert = i;
 				indVert = 0;
 				indVertMax = *(pLenOrbitsPrev = pLenOrbits);
@@ -318,11 +328,12 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 
 			const auto pGroupOrbs = m_pGroupOrbits + i;
 			while (++indVert <= indVertMax && pGroupOrbs[indVert] != i + indVert);
-#if 0
-			static int ff;
-			FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
-			fprintf(f, "ff = %2d  i = %2d  indVert = %2d\n", ff, i, indVert);
-			FCLOSE_F(f);
+#if FFF
+			if (nIter >= FFF) {
+				FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
+				fprintf(f, "ff = %2d  i = %2d  indVert = %2d\n", ff, i, indVert);
+				FCLOSE_F(f);
+			}
 #endif
 			if (indVert <= indVertMax) {
 				// swapping of i-th and (i+indVert)-th vertices
@@ -339,7 +350,26 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			while (idxRight && i < m_v) {
 				if (*pLenOrbits > 1)
 					m_pSavedOrbIdx[i] = 0;
-canonRow:
+			canonRow:
+#if FFF
+				if (nIter >= FFF) {
+					char buffer[32];
+					static int hhh;
+					const bool flg = i == FF_ && idxRight == 1;
+					if (flg) {
+						hhh++;
+						FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
+						fprintf(f, "ff = %2d  canonizeMatrixRow: hhh = %3d\n", ff, hhh);
+						FCLOSE_F(f);
+						sprintf_s(buffer, sizeof(buffer), "ccc_%4d.txt", hhh);
+						printAdjMatrix(pGraphOut, buffer, i+1);
+					}
+					sprintf_s(buffer, sizeof(buffer), "ccc_%4d.txt", hhh);
+					FOPEN_F(f, buffer, /*flg ? "w" :*/ "a");
+					fprintf(f, "canonizeMatrixRow: i = %2d  flag = %d idxRight = %2d\n", i, flag, idxRight);
+					FCLOSE_F(f);
+				}
+#endif
 				flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
 				if (flag < 0) {
 					if (i == iStart)
@@ -471,7 +501,7 @@ int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 		if (splitPos && splitPos < idxLast) {
 			// Current orbits was split in two
 			m_pNumOrbits[vertIdxNext]++;
-			// Moving lengths of the orbits to reseve a place for a new one
+			// Moving lengths of the orbits to reserve a place for a new one
 			auto j = idxOrbMax + idxOrbNext - idxOrb;
 			while (j > idxOrbNext)
 				pLenOrbitsNext[j-- + 1] = pLenOrbitsNext[j];
@@ -651,11 +681,16 @@ void SRGToolkit::printStat() {
 
 #if PRINT_MATRICES
 void SRGToolkit::printAdjMatrix(ctchar* pGraphOut, int idx, int endVertex) const {
-	char buf[256], * pBuf;
+	char buf[1024];
 	snprintf(buf, sizeof(buf), "aaa_%02d.txt", idx);
-	FOPEN_F(f, buf, "w");
+	printAdjMatrix(pGraphOut, buf, endVertex, idx);
+}
+
+void SRGToolkit::printAdjMatrix(ctchar* pGraphOut, const char* fileName, int endVertex, int idx) const {
+	FOPEN_F(f, fileName, "w");
 	fprintf(f, "Adjacency matrix for graph% d\n", idx);
 	
+	char buf[1024], * pBuf;
 	pBuf = buf;
 	int iMax = m_v <= 30? m_v : 20;
 	int k = 0;
@@ -670,7 +705,6 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraphOut, int idx, int endVertex) const
 		SPRINTFD(pBuf, buf, "\n");
 	}
 	fprintf(f, "%s\n", buf);
-
 
 	pBuf = buf;
 	for (int i = 0; i < m_v; i += 10) {
@@ -695,7 +729,7 @@ void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
 	if (!endVertex)
 		endVertex = m_v;
 
-	char buf[512], * pBuf;
+	char buf[1024], * pBuf;
 	for (int i = 0; i < endVertex; i++, pGraphOut += m_v) {
 		pBuf = buf;
 		for (int j = 0; j < m_v; j++)

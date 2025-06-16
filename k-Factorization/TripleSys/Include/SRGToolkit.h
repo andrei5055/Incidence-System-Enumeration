@@ -39,6 +39,7 @@ private:
 		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
 	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
 	void printAdjMatrix(ctchar* pGraphOut, int idx = 0, int endVertex = 0) const;
+	void printAdjMatrix(ctchar* pGraphOut, const char* fileName, int endVertex, int idx = 0) const;
 	void outAdjMatrix(ctchar* pGraphOut, FILE* f, int endVertex = 0) const;
 	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0) const;
 	void initVertexGroupOrbits();

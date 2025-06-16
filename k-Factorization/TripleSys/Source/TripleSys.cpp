@@ -579,9 +579,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 								//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
 								//ASSERT(1);
 #endif
+								if (param(t_MultiThreading)) {
+									nLoops = 0;
+									goto noResult;
+								}
 								iDay = nPrecalcRows;
 								m_useRowsPrecalculation = eCalculateRows;
 								m_pRowStorage->init();
+								nRows4 = 0;
 								iDay++;
 								//linksFromMatrix(links(), result(), iDay);
 								//iPlayer = m_numPlayers;

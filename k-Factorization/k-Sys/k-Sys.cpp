@@ -212,7 +212,7 @@ int main(int argc, const char* argv[])
 
 			param.setup();
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
-			if (val[t_u1f] && !val[t_exploreMatrices]) {
+			if (val[t_u1f]) {// && !val[t_exploreMatrices]) {
 				if (!val[t_use2RowsCanonization])
 					printfYellow(" 1 row canonization %s\n", val[t_groupSize] > 3 || val[t_numPlayers] < 12  ? "" : "(can be slow)");
 				else
