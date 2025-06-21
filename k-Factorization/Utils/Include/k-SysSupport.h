@@ -96,10 +96,8 @@ public:
 	~CMatrixInfo() { 
 		delete[] m_pGroupOrders;
 		for (auto i = m_nMatrReserved; i--;) {
-			if (m_pCycleInfo[i])
-				delete m_pCycleInfo[i];
-			if (m_pGroupsInfo[i])
-				delete m_pGroupsInfo[i];
+			delete m_pCycleInfo[i];
+			delete m_pGroupsInfo[i];
 		}
 		delete[] m_pCycleInfo;
 		delete[] m_pGroupsInfo;

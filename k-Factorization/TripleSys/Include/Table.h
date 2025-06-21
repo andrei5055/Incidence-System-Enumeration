@@ -2,7 +2,9 @@
 #include "TripleSys.h"
 
 template<typename T>
-void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, const unsigned char* pDayPerm=NULL) {
+void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, 
+	bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, 
+	const unsigned char* pDayPerm=NULL, bool empty_line = true) {
 	char buffer[1512];
 	const auto* endLine = makeString ? " \"\n" : "\n";
 	for (int j = 0; j < nl; j++) {
@@ -34,7 +36,8 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 		_printf(f, toScreen, buffer);
 	}
 
-	_printf(f, toScreen, "\n");
+	if (empty_line)
+		_printf(f, toScreen, "\n");
 }
 
 
@@ -194,7 +197,7 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 
 	if (idx) {
 		for (int i = 0; i < nl; i++)
-			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
+			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine, -1, NULL, i == nl - 1);
 	} else
 		outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
 

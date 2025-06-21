@@ -77,13 +77,6 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 				continue;
 
 			if (line[0] == infoSymb) {
-				if (!j++) {
-					if (pInfo[1] && pInfo[1][iPrev])
-						*pInfo[1][iPrev] += "\n";
-
-					iPrev = i++;
-				}
-
 				int iv;
 				start = end = 0;
 				std::string dl("\" ");
@@ -99,8 +92,10 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 					*(sm++) = iv;
 				}
 
-				if (j == nRows)
+				if (++j == nRows) {
+					iPrev = i++;
 					break;
+				}
 			}
 			else {
 				if (!j) {
@@ -125,8 +120,11 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 							// Group's Info found
 							if (pInfo[1]) {
 								// We are ready to store it...
+								if (line.find("Orbits") == 0)
+									line = "\n" + line;
+
 								if (!pInfo[1][iPrev])
-									pInfo[1][iPrev] = new std::string("\n" + line);
+									pInfo[1][iPrev] = new std::string(line);
 								else
 									*pInfo[1][iPrev] += "\n" + line;
 							}
@@ -141,6 +139,9 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 			}
 		}
 	}
+
+	if (pGroupOrders)
+		*pInfo[1][iPrev] += "\n";
 
 	mf.close();
 	return i;
