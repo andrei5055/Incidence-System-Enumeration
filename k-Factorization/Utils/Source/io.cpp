@@ -140,7 +140,7 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 		}
 	}
 
-	if (pGroupOrders)
+	if (pGroupOrders && pInfo[1][iPrev])
 		*pInfo[1][iPrev] += "\n";
 
 	mf.close();
