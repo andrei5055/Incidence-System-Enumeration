@@ -82,8 +82,10 @@ int factorial(int n) {
 void kSysParam::setup() {
 	if (!val[t_CBMP_Graph])
 		val[t_CBMP_Graph] = 1;
-	groupSizeFactorial = factorial(val[t_groupSize]);
-	m_numFactors = (val[t_numPlayers] - (completeGraph() ? 1 : partitionSize())) / (val[t_groupSize] - 1);
+
+	const auto groupSize = val[t_groupSize];
+	groupSizeFactorial = factorial(groupSize);
+	m_numFactors = (val[t_numPlayers] - (completeGraph() ? 1 : partitionSize())) / (groupSize - 1);
 }
 
 void enableAnsiColors() {
@@ -91,6 +93,29 @@ void enableAnsiColors() {
 	DWORD dwMode = 0;
 	GetConsoleMode(hOut, &dwMode);
 	SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+
+void setAutLevels(int *val) {
+	auto* pAutLevel = val + t_autLevelMinDef;
+	const auto numPlayers = val[t_numPlayers];
+	const auto groupSize = val[t_groupSize];
+	for (int i = 2; i < 4; i++, pAutLevel++) {
+		if (*pAutLevel < i)
+			*pAutLevel = i;
+
+		if (!*(++pAutLevel)) {
+			*pAutLevel = val[t_nRowsInResultMatrix];
+			if (!*pAutLevel)
+				*pAutLevel = val[t_CBMP_Graph] > 1 ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
+
+			if (i == 2 && val[t_nRowsInResultMatrix] > 2)
+				--*pAutLevel;
+		}
+		else {
+			if (*pAutLevel < *(pAutLevel - 1))
+				*pAutLevel = *(pAutLevel - 1);
+		}
+	}
 }
 
 int main(int argc, const char* argv[])
@@ -191,30 +216,10 @@ int main(int argc, const char* argv[])
 			else
 				buffer[0] = 0;
 
-			auto* pAutLevel = val + t_autLevelMinDef;
-			for (int i = 2; i < 4; i++, pAutLevel++) {
-				if (*pAutLevel < i)
-					*pAutLevel = i;
-
-				if (!*(++pAutLevel)) {
-					*pAutLevel = val[t_nRowsInResultMatrix];
-					if (!*pAutLevel)
-						*pAutLevel = val[t_CBMP_Graph] > 1 ? numPlayers / groupSize : (numPlayers - 1) / (groupSize - 1);
-
-					if (i == 2 && val[t_nRowsInResultMatrix] > 2)
-						--*pAutLevel;
-				}
-				else {
-					if (*pAutLevel < *(pAutLevel - 1))
-						*pAutLevel = *(pAutLevel - 1);
-				}
-			}
-
-			param.setup();
 			printfGreen("Test %sis launched with the following parameters:\n", buffer);
 			if (val[t_u1f]) {// && !val[t_exploreMatrices]) {
 				if (!val[t_use2RowsCanonization])
-					printfYellow(" 1 row canonization %s\n", val[t_groupSize] > 3 || val[t_numPlayers] < 12  ? "" : "(can be slow)");
+					printfYellow(" 1 row canonization %s\n", groupSize > 3 || numPlayers < 12  ? "" : "(can be slow)");
 				else
 					printfGreen(" 2 rows canonization\n");
 
@@ -240,7 +245,7 @@ int main(int argc, const char* argv[])
 					if (!ufName)
 						ufName = new string("");
 
-					printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), val[t_numPlayers]);
+					printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), numPlayers);
 				}
 			}
 			else {
@@ -255,6 +260,8 @@ int main(int argc, const char* argv[])
 
 			bool testOK = checkInputParam(param, intParamNames);
 			if (testOK) {
+				setAutLevels(val);
+				param.setup();
 				TopGunBase* topGun;
 				if (useGPU)
 					topGun = new TopGunGPU(param);

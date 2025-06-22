@@ -658,7 +658,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 					printfRed("Found graph with 4-vertex condition for different alpha an beta");
 			}
 		} else
-			pGraphParam->m_cntr[3]++;  // # of graphs not satisfiing 4-vertex condition
+			pGraphParam->m_cntr[3]++;  // # of graphs not satisfying 4-vertex condition
 
 		if (!pGraphParam->m_cntr[2]++) {
 			pGraphParam->λ = nCommon[0];
