@@ -16,6 +16,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	const auto groupSize = val[t_groupSize];
+	if (groupSize < 2) {
+		printfRed("*** %s(%d) must be > 1, Exit\n", paramNames[t_groupSize], groupSize);
+		return false;
+	}
 	const auto numGroups = numPlayers / groupSize;
 	if (numGroups < groupSize) {
 		printfRed("*** %s/%s (%d/%d) must be >= %s, Exit\n",

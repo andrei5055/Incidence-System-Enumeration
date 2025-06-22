@@ -107,7 +107,7 @@ int TopGun::Run()
 		}
 		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
 		const auto nMatrices = numMatrices2Process();
-		if (nMatrices <= firstIndexOfStartMatrices)
+		if (nMatrices && nMatrices <= firstIndexOfStartMatrices)
 		{
 			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n",
 				firstIndexOfStartMatrices, nMatrices);

@@ -396,7 +396,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 				}
 #endif
 				flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
-				if (false && !flag && !idxRight) {
+				if (!flag && !idxRight) {
 					// All remaining orbits consist of single elements
 					const auto pGraphLast = createGraphOut(pGraph, pGraphOut, i, i + 1);
 					flag = memcmp(pGraphLast, pGraph + i * m_v, m_v);
