@@ -196,11 +196,16 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	if (graphType == t_4_vert)
 		pGraphDescr = "4-vertex condition";
 
+	char buf[512], * pBuf = buf;
+	SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ μ) = (%d,%2d,%d,%d)",
+		m_v, graphParam->k, graphParam->λ, graphParam->μ);
+	pGraphDB->setTableTitle(buf);
+
 	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
 	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
 	const auto newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
 	if (newGraph) {
-		char buf[512], *pBuf = buf;
+		pBuf = buf;
 		// New SRG constructed
 		if (!prevMatrNumb) {
 			std::string fileName;

@@ -32,6 +32,9 @@ void GraphDescr::addSourceObj(size_t sourceID) {
 		else {
 			if (m_cntr > 1)
 				m_source += "-" + std::to_string(m_prevID);
+			else
+				if (m_cntr == 1 && sourceID == -1)
+					sourceID = m_prevID;
 
 			if (sourceID != -1)
 				m_source += "," + std::to_string(sourceID);
