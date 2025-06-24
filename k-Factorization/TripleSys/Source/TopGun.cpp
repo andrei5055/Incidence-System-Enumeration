@@ -105,7 +105,7 @@ int TopGun::Run()
 			if (orderMatrixMode == 2)
 				return 0;
 		}
-		const auto firstIndexOfStartMatrices = param(t_nFirstIndexOfStartMatrices);
+		const auto firstIndexOfStartMatrices = (uint)param(t_nFirstIndexOfStartMatrices);
 		const auto nMatrices = numMatrices2Process();
 		if (nMatrices && nMatrices <= firstIndexOfStartMatrices)
 		{
@@ -141,7 +141,7 @@ int TopGun::Run()
 						printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
 				}
 				else {
-					for (int iTask = 0; iTask < numThreads; iTask++)
+					for (uint iTask = 0; iTask < numThreads; iTask++)
 						startThread(iTask, m_iMatrix * numThreads + iTask + 1, eCalculateMatrices, sys.RowStorage());
 
 					while (1) {
@@ -175,7 +175,7 @@ int TopGun::Run()
 					}
 					waitAllThreadFinished();
 
-					for (int iTask = 0; iTask < numThreads; iTask++)
+					for (uint iTask = 0; iTask < numThreads; iTask++)
 						threadStopped(iTask);
 
 					nMatricesProc++;

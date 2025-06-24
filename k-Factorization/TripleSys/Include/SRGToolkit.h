@@ -28,10 +28,10 @@ class SRGToolkit : public  Generators<ushort>
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr);
+	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
 	void printStat();
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);

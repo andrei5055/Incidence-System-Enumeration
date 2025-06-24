@@ -9,6 +9,7 @@
 #define FFF 8    // 6 - for 26, 9 - for 22
 #define FF_ 2    // 4 - for 26. 2 for 22
 tchar* pGraph[2] = { NULL };
+int nIter = 0;
 #else
 #define PRINT_ADJ_MATRIX(...)
 #endif
@@ -61,11 +62,11 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 	return false;
 }
 
-bool SRGToolkit::exploreMatrix(ctchar* pMatr) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
 		if (m_bChekMatr[i])
-			if (exploreMatrixOfType(i, pMatr))
+			if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID))
 				counter++;
 #if !CHECK_NON_SRG			
 			else 
@@ -75,8 +76,8 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr) {
 
 	return counter > 0;
 }
-int nIter = 0;
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
+
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
 	const auto numGroups = m_nCols / m_groupSize;
 	const auto pVertexLast = pMatr + m_nRows * m_nCols;
 
@@ -169,9 +170,36 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 	for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
 		memcpy(pTo, pFrom + ++i, j);
 
+	// Copying vertex orbits and trivial permutation
+	auto pntr = this->getObject(0);
+	memcpy(pntr, m_pGroupOrbits, m_v * sizeof(*pntr));
+	pntr += 2 * m_v;
+	bool rank3 = true;
+	for (i = 0; i < m_v; i++) {
+		pntr[i] = i;
+		rank3 &= !m_pGroupOrbits[i];
+	}
+
+	// Analyze the stabilizer of first vertex
+	pntr -= m_v;
+	const auto j = graphParam->k + 1;
+	for (i = 1; i < j; i++)
+		rank3 &= pntr[i] == 1;
+
+	while (i < m_v)
+		rank3 &= pntr[i++] == j;
+
+	const char* pGraphDescr = "";
+	if (rank3)
+		pGraphDescr = "rank 3 graph";
+	else
+	if (graphType == t_4_vert)
+		pGraphDescr = "4-vertex condition";
+
 	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
 	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
-	if (prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects()) {
+	const auto newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
+	if (newGraph) {
 		char buf[512], *pBuf = buf;
 		// New SRG constructed
 		if (!prevMatrNumb) {
@@ -187,25 +215,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 			memcpy(pBuf = new char[len], fileName.c_str(), len);
 			setOutFileName(pBuf, false);
 		}
-
-		// Copying vertex orbits and trivial permutation
-		auto pntr = this->getObject(0);
-		memcpy(pntr, m_pGroupOrbits, m_v * sizeof(*pntr));
-		pntr += 2 * m_v;
-		bool rank3 = true;
-		for (i = 0; i < m_v; i++) {
-			pntr[i] = i;
-			rank3 &= !m_pGroupOrbits[i];
-		}
-
-		// Analyze the stabilizer of first vertex
-		pntr -= m_v;
-		const auto j = graphParam->k + 1;
-		for (i = 1; i < j; i++)
-			rank3 &= pntr[i] == 1;
-
-		while (i < m_v)
-			rank3 &= pntr[i++] == j;
 
 		if (rank3)
 			graphParam->m_cntr[4]++;
@@ -228,6 +237,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 		if (graphType == t_4_vert)
 			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
 
+
 		if (rank3 || graphType == t_4_vert)
 			SPRINTFD(pBuf, buf, " (alpha = % d, beta = % d)", graphParam->α, graphParam->β);
 
@@ -245,6 +255,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr) {
 		if (graphType != t_4_vert)
 			--graphParam->m_cntr[3];
 	}
+
+	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
 
 //	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return true;

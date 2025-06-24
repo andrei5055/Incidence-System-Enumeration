@@ -775,7 +775,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bool needOutput = false;
 				matrixStat(neighbors(), iDay, &needOutput);
 				if (needOutput)
-					m_matrixDB.addMatrix(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+					m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				else
 					stat[0] = '\0';
 

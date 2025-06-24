@@ -147,7 +147,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	const sLongLong* cntTotal = m_cntTotal;
 	const sLongLong* cnt = m_cnt;
 	sLongLong sum1 = 0, sum2 = 0;
-	for (int i = 0; i < numThreads; i++)
+	for (uint i = 0; i < numThreads; i++)
 	{
 		const auto j = i * 2;
 		sLongLong d = cnt[j];
@@ -180,7 +180,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 	{
 		char buffer[256], *pBuf = buffer;
 		const auto lenBuf = sizeof(buffer);
-		for (int i = 0; i < numThreads; i++)
+		for (uint i = 0; i < numThreads; i++)
 		{
 			if ((i % 20) == 0)
 				SPRINTFS(pBuf, buffer, lenBuf, "\n");

@@ -11,12 +11,14 @@ TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param),
 
 	if (m_nRowsOut == 0)
 		m_nRowsOut = m_numDays;
+}
 
-	if (m_nRowsOut < 2 || m_nRowsOut > m_numDays) {
-		printfRed("*** NRowsInResultMatrix(%d) must be either 0 or within the range 2:%d\n",
-			nRowsOut(), m_numDays);
-		myExit(1);
-	}
+TopGunBase::~TopGunBase() {
+	delete[] m_pInputMatrices;
+	delete[] cnt();
+	delete m_pMatrixInfo;
+	delete[] m_pMatrixPerm;
+	delete [] m_pGraphDB;
 }
 
 int TopGunBase::readMatrices(int tFolder, int nRows) {
@@ -125,15 +127,17 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	
 	if (finalReport) {
 		const auto totalMatr = reportResult(f);
-		if (!m_reportInfo.empty())
-			fprintf(f, m_reportInfo.c_str());
-
-
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
-			if (readMatrices(t_ResultFolder, nRows) >= 0)
+			if (readMatrices(t_ResultFolder, nRows) >= 0) {
 				orderAndExploreMatrices(nRowsOut());
+
+				for (int i = 0; i < 2; i++)
+					(m_pGraphDB + i)->reportResult(f, false);
+			}
 		}
+		if (!m_reportInfo.empty())
+			fprintf(f, m_reportInfo.c_str());
 	}
 	else {
 		if (numParamSet) {
@@ -234,7 +238,7 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 	if (orderMatrixMode == 2) {
 		delete[] m_pMatrixPerm;
 		m_pMatrixPerm = new uint[nMatrices];
-		for (int i = 0; i < nMatrices; i++)
+		for (uint i = 0; i < nMatrices; i++)
 			m_pMatrixPerm[i] = i;
 
 		pStartMatrix = inputMatrices();
@@ -244,7 +248,7 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 		auto* pMatrixDst = (tchar*)inputMatrices();
 		std::qsort(pMatrixDst, nMatrices, inputMatrixSize(), compare_matr_fn);
 		auto* pMatrixSrc = pMatrixDst + inputMatrixSize();
-		for (int i = 1; i < nMatrices; i++, pMatrixSrc += inputMatrixSize()) {
+		for (uint i = 1; i < nMatrices; i++, pMatrixSrc += inputMatrixSize()) {
 			if (memcmp(pMatrixDst, pMatrixSrc, inputMatrixSize())) {
 				pMatrixDst += inputMatrixSize();
 				if (nDuplicate)
@@ -264,7 +268,6 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 	if (orderMatrixMode != 2)
 		return;
 
-
 	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 	Result.allocateBuffer(32);
 	std::string ResultFile;
@@ -280,12 +283,15 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 		const auto& srgResFile = ResultFile;
 #endif
 		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, srgResFile);
+		m_pGraphDB = new GraphDB[2]();
+		for (int i = 0; i < 2; i++)
+			m_pGraphDB[i].setGraphType(i + 1);
 	}
 
 	Result.setOutFileName(ResultFile.c_str());
 	printfGreen("Saved to a file: \"%s\"\n", ResultFile.c_str());
 
-	for (int i = 0; i < numMatrices2Process(); i++) {
+	for (uint i = 0; i < numMatrices2Process(); i++) {
 		const auto idx = m_pMatrixPerm[i];
 		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
 		Result.setGroupOrder(groupOrder);
@@ -296,7 +302,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 			Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
 
 		if (pSRGtoolkit) {
-			if (!pSRGtoolkit->exploreMatrix(pMatr)) {
+			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i+1)) {
 				delete pSRGtoolkit;
 				pSRGtoolkit = NULL;
 			}

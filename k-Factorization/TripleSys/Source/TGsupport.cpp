@@ -35,7 +35,6 @@ void TopGun::threadStopped(int iTask)
 void TopGun::startThread(int iTask, int iTaskId, eThreadStartMode iMode, CRowStorage* pRowStorage)
 {
 	assert(this != nullptr);
-	assert(m_pSecondRowsDB != nullptr);
 	assert(mstart != nullptr);
 	assert(mfirst != nullptr);
 	assert(m_cnt != nullptr);

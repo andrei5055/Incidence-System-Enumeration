@@ -29,12 +29,7 @@ public:
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
-	virtual ~TopGunBase()					{ 
-		delete[] m_pInputMatrices;
-		delete[] cnt();
-		delete m_pMatrixInfo;
-		delete[] m_pMatrixPerm;
-	}
+	virtual ~TopGunBase();
 	int virtual Run() = 0;
 	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt");
 	inline auto numPlayers() const			{ return m_numPlayers; }
@@ -58,16 +53,16 @@ protected:
 	void orderAndExploreMatrices(int nRows, int orderMatrixMode = 2, bool exploreMatrices = true);
 	int orderMatrices(int orderMatrixMode);
 
-
 	int m_nRowsOut;
 	int m_nInputMatrixSize;
 	tchar* m_pInputMatrices = NULL;
 	uint* m_pMatrixPerm = NULL;
 	CMatrixInfo* m_pMatrixInfo = NULL;	// Information about loaded matrices: |Aut(M)|, cycle's, group's
-	int m_nMatrices;
+	uint m_nMatrices;
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
+	GraphDB *m_pGraphDB = NULL;
 private:
 	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
 	int loadMatrices(int tFolder, int nRows);
@@ -108,8 +103,8 @@ private:
 	int mLinksSize;
 	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
 	ctchar* mstart = NULL, *mfirst = NULL;
-	int numThreads;
-	int m_iMatrix;
+	uint numThreads;
+	uint m_iMatrix;
 	int m_iPrintCount;
 	std::vector<std::thread> threads;//(NThreads);
 	static RowDB* m_pSecondRowsDB;

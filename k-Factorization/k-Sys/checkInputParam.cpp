@@ -20,6 +20,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		printfRed("*** %s(%d) must be > 1, Exit\n", paramNames[t_groupSize], groupSize);
 		return false;
 	}
+
 	const auto numGroups = numPlayers / groupSize;
 	if (numGroups < groupSize) {
 		printfRed("*** %s/%s (%d/%d) must be >= %s, Exit\n",
@@ -51,6 +52,12 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			printfRed("*** Incorrect parameters: %s=%d %s=%d, Exit\n", paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize);
 			return false;
 		}
+	}
+
+	const auto nRowsOut = val[t_nRowsInResultMatrix];
+	if (nRowsOut == 1 || nRowsOut > numDays) {
+		printfRed("*** %s(%d) must be either 0 or within the range 2:%d\n", paramNames[t_nRowsInResultMatrix], nRowsOut, numDays);
+		return false;
 	}
 
 	const auto pCycles = param.u1fCycles[0];
