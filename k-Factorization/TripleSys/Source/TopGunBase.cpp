@@ -125,7 +125,15 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, pResFileName);
 	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
 	
+	char buffer[128];
 	if (finalReport) {
+		const auto nParts = param(t_CBMP_Graph);
+		if (nParts <= 1) 
+			sprintf_s(buffer, "Factorization of K(%d)", param(t_numPlayers));
+		else
+			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers));
+
+		setTableTitle(buffer);
 		const auto totalMatr = reportResult(f);
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
@@ -141,7 +149,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	}
 	else {
 		if (numParamSet) {
-			char buffer[16], *pStr = NULL;
+			char *pStr = NULL;
 			while (fgets(buffer, sizeof(buffer), f) && !(pStr = strstr(buffer, DATE_TIME_TAG))); 
 			
 			if (pStr) {

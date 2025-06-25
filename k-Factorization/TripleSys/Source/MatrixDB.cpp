@@ -22,7 +22,7 @@ void out_date_time(FILE* f) {
 
 	char output[50];
 	strftime(output, sizeof(output), "%m/%d/%y: %H:%M:%S", &datetime);
-	fprintf(f, "\n%s %s\n", DATE_TIME_TAG, output);
+	fprintf(f, "\n%s %s\n\n\n", DATE_TIME_TAG, output);
 }
 
 void GraphDescr::addSourceObj(size_t sourceID) {
