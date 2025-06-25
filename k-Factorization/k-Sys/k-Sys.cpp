@@ -226,6 +226,7 @@ int main(int argc, const char* argv[])
 				const auto uf_code = param.u1fCycles[0];
 				auto& ufName = strVal[t_UFname];
 				if (uf_code) {
+					ufName = NULL;
 					const auto uf = getUF(uf_code);
 					if (!ufName) {
 						ufName = new string("");

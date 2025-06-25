@@ -119,6 +119,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5)))
 		m_pCheckFunc = &alldata::cnvCheck45;
 
+	if (param(t_useFastCanonizerForG2) == 2)
+		m_pSortGroups = NULL;
+
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
 	if (bCBMP)
