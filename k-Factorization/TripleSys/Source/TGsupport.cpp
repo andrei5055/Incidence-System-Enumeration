@@ -5,10 +5,7 @@ void RunThread(int threadId, eThreadStartMode iMode,
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
-	if (pMaster->descrStorage())
-		pMaster->addMatrixDB(sys.matrixDB());
-	else
-		pMaster->transferMatrixDB(sys.matrixDB());
+	pMaster->updateMatrixDB(sys.matrixDB());
 }
 void TopGun::waitAllThreadFinished()
 {

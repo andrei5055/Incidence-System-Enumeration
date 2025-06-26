@@ -125,7 +125,7 @@ public:
 	CC virtual T* getObject(int idx = 0) const { return CStorage<T>::getObject(m_pIdx[idx]); }
 	CC T* reallocStorageMemory() {
 		const auto retVal = CStorageSet<T>::reallocStorageMemory();
-		::reallocStorageMemory(&m_pIdx, this->m_numObjectsMax * sizeof(m_pIdx[0]));
+		::reallocStorageMemory(&m_pIdx, this->m_numObjectsMax);
 		return retVal;
 	}
 	CC inline void push_back(int idx) { m_pIdx[this->m_numObjects++] = idx; }
