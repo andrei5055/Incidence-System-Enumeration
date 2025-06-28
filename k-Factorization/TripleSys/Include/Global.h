@@ -16,6 +16,14 @@
 #define unset ((tchar)(-1))
 
 typedef enum {
+	t_nonregular = 0,
+	t_regular = 1 << 0,
+	t_srg = t_regular + (1 << 1),
+	t_4_vert = t_srg + (1 << 2),
+	t_complete = -1
+} t_graphType;
+
+typedef enum {
 	// indices of parameters with the integer type values
 	t_numPlayers,			 
 	t_groupSize,

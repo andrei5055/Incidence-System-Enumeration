@@ -14,15 +14,6 @@ typedef struct SRGParam {
 	SRGParam() { memset(this, 0, sizeof(*this)); }
 } SRGParam;
 
-typedef enum {
-	t_nonregular	= 0,
-	t_regular		= 1 << 0,
-	t_srg			= t_regular + (1 << 1),
-	t_4_vert		= t_srg + (1 << 2),
-	t_complete		= -1
-} t_graphType;
-
-
 class SRGToolkit : public  Generators<ushort>
 {
 public:

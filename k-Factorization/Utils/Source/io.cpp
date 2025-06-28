@@ -12,7 +12,6 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 		return 0;
 
 	const auto checkFirstElem = nRows > 0;
-	int i(0), nl(0);
 	const auto lenMatr = nCols * nRows;
 	tchar* sm = *ppSm + lenMatr * nUsed;
 	auto** ppGroupOrders = pMatrixInfo ? pMatrixInfo->groupOrdersPntr() : NULL;
@@ -31,11 +30,12 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 	std::string line;
 	size_t start, end;
 	int iPrev = 0;
+	int i(0), nl(0);
 	while (i < nmax && !mf.eof()) {
 		int j = 0;
 		while (getline(mf, line)) {
 			nl++;
-			if (!j && i + nUsed == reservedElement) {
+			if (!j && i + nUsed > reservedElement) {
 				const auto prevReserved = reservedElement;
 				reservedElement <<= 1;
 				if (reservedElement > nMatricesMax)
@@ -94,7 +94,7 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 
 				if (++j == nRows) {
 					iPrev = i++;
-					break;
+					j = 0;
 				}
 			}
 			else {

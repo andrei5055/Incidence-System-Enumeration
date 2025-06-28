@@ -119,6 +119,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	}
 
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
+	pGraphDB->setGraphType(graphType);
 	switch (graphType) {
 	case t_nonregular:
 	case t_complete:
