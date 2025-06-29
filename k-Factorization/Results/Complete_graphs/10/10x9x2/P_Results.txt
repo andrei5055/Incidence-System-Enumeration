@@ -1,0 +1,84 @@
+
+===>> 06/28/25: 20:16:07
+
+
+     Factorization of K(10)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+           40             1        36(10)                            
+     ------------------------------------------------------------
+          Total:          1
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (45,28,15,21)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+        3628800             1      rank 3 graph         1                      
+     ----------------------------------------------------------------
+                 Total:     1                              1
+     ----------------------------------------------------------------
+
+
+      *** The graphs of type 2 are merely regular and therefore have not been constructed. *** 
+
+
+T = 0s: 6 (from 6) P-matrices (10x3) processed by 10 threads. 1 P-matrices (10x9) generated
+Thread:Matrices generated
+ 1:1 2:0 3:0 4:0 5:0 6:0 7:0 8:0 9:0 10:0
+Total time=38ms (including prep time=1ms)
+
+Main parameters:
+                      nPlayers: 10
+                     GroupSize: 2
+                    CBMP_Graph: 1
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 0
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 10
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 100000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: 1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5000
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 9
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 9
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 21
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 1
+               ExploreMatrices: 1
+
+Parameters of string type:
+                       U1FName: 
+                   StartFolder: ../Logs_CI/
+                  ResultFolder: ../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/
+                      TestName: P1F_10x9x2_10_Threads

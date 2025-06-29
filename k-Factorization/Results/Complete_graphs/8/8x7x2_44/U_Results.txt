@@ -1,0 +1,87 @@
+
+===>> 06/28/25: 20:14:54
+
+
+     Factorization of K(8)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+         1344             1        21(4:4)                           
+     ------------------------------------------------------------
+          Total:          1
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (28,15,6,10)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+          40320             1      rank 3 graph         1                      
+     ----------------------------------------------------------------
+                 Total:     1                              1
+     ----------------------------------------------------------------
+
+
+      *** The graphs of type 2 are merely regular and therefore have not been constructed. *** 
+
+
+1 row(s) calculated for '2nd rows DB' for matrices (8,2,2), Execution time = 0 ms
+
+Thread 1: 1 non-isomorphic matrices (8,7,2) created
+Thread execution time = 3 ms
+
+Main parameters:
+                      nPlayers: 8
+                     GroupSize: 2
+                    CBMP_Graph: 1
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 0
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 0
+                      NThreads: 1
+            NRowsInStartMatrix: 0
+      MaxNumberOfStartMatrices: 1
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: 1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5000
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 7
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 7
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 21
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 1
+               ExploreMatrices: 1
+
+Parameters of string type:
+                       U1FName: _44
+                   StartFolder: ../Logs_CI/
+                  ResultFolder: ../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/
+                      TestName: U1F_44
+
+U1F configurations:
+                     U1FCycles: {{4,4}}

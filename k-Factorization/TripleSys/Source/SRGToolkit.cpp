@@ -230,11 +230,11 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		pBuf = buf;
 #if OUT_SRG_TO_SEPARATE_FILE
 		if (!prevMatrNumb)
-			fprintf(f, "List of SRGs of type %d with parameters (%d, %d, %d, %d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+			fprintf(f, "List of SRGs of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
 
 		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
 #else
-		SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (%d, %d, %d, %d): |Aut(G)| = %zd", 
+		SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
 			prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
 #endif
 		if (rank3)
@@ -245,7 +245,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 
 		if (rank3 || graphType == t_4_vert)
-			SPRINTFD(pBuf, buf, " (alpha = % d, beta = % d)", graphParam->α, graphParam->β);
+			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
 
 		fprintf(f, "%s\n", buf);
 		outAdjMatrix(pResGraph, f);
@@ -651,7 +651,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 #if 0
 					printfRed("Graph does not satisfy 4-vertex condition\n"
 						"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "beta" : "alpha", alpha, nCommon[idx+2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+						i, j, idx ? "β" : "α", alpha, nCommon[idx+2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
 					printAdjMatrix(pGraph);
 #endif
 				}
@@ -673,7 +673,8 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			}
 			else {
 				if (pGraphParam->α != nCommon[2] || pGraphParam->β != nCommon[3])
-					printfRed("Found graph with 4-vertex condition for different alpha an beta");
+					printfRed("Found graph with 4-vertex condition for different (α, β) = (%d, %d) != (%d, %d)\n", 
+						nCommon[2], nCommon[3], pGraphParam->α, pGraphParam->β);
 			}
 		} else
 			pGraphParam->m_cntr[3]++;  // # of graphs not satisfying 4-vertex condition

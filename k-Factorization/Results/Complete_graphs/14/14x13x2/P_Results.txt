@@ -1,0 +1,91 @@
+
+===>> 06/28/25: 20:17:52
+
+
+     Factorization of K(14)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+            1             2        78(14)                            
+            2             3        78(14)                            
+            3             5        78(14)                            
+            4             1        78(14)                            
+            6             5        78(14)                            
+           12             5        78(14)                            
+           84             1        78(14)                            
+          156             1        78(14)                            
+     ------------------------------------------------------------
+          Total:         23
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (91,66,45,55)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+     87178291200             1      rank 3 graph         1-23                   
+     ----------------------------------------------------------------
+                 Total:     1                             23
+     ----------------------------------------------------------------
+
+
+      *** The graphs of type 2 are merely regular and therefore have not been constructed. *** 
+
+
+T =59s: 174 (from 174) P-matrices (14x3) processed by 10 threads. 23 P-matrices (14x13) generated
+Thread:Matrices generated
+ 1:5 2:4 3:2 4:2 5:0 6:1 7:1 8:3 9:3 10:2
+Total time=58995ms (including prep time=2ms)
+
+Main parameters:
+                      nPlayers: 14
+                     GroupSize: 2
+                    CBMP_Graph: 1
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 0
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 2
+                      NThreads: 10
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 100000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: 23
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 3
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 3
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5000
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 9
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 9
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 21
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 1
+               ExploreMatrices: 1
+
+Parameters of string type:
+                       U1FName: 
+                   StartFolder: ../Logs_CI/
+                  ResultFolder: ../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/
+                      TestName: P1F_14x13x2_10ThreadsMultThred_2

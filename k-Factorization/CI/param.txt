@@ -1,5 +1,6 @@
 PrintMatrices=0
 ExploreMatrices=1
+OutAutomorphismGroup=21
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 

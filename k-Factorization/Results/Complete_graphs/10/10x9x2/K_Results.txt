@@ -1,0 +1,134 @@
+
+===>> 06/28/25: 20:16:04
+
+
+     Factorization of K(10)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+            1            41        10(4:6) 26(10)                    
+            1            37        11(4:6) 25(10)                    
+            1            46        12(4:6) 24(10)                    
+            1            28        13(4:6) 23(10)                    
+            1            16        14(4:6) 22(10)                    
+            1            13        15(4:6) 21(10)                    
+            1             2        16(4:6) 20(10)                    
+            1             2        17(4:6) 19(10)                    
+            1             1        3(4:6) 33(10)                     
+            1             5        5(4:6) 31(10)                     
+            1            12        6(4:6) 30(10)                     
+            1            24        7(4:6) 29(10)                     
+            1            29        8(4:6) 28(10)                     
+            1            42        9(4:6) 27(10)                     
+            2            10        10(4:6) 26(10)                    
+            2             3        11(4:6) 25(10)                    
+            2            12        12(4:6) 24(10)                    
+            2             2        13(4:6) 23(10)                    
+            2             4        14(4:6) 22(10)                    
+            2             6        16(4:6) 20(10)                    
+            2             2        18(4:6) 18(10)                    
+            2             1        2(4:6) 34(10)                     
+            2             1        20(4:6) 16(10)                    
+            2             5        4(4:6) 32(10)                     
+            2             7        6(4:6) 30(10)                     
+            2             4        7(4:6) 29(10)                     
+            2             7        8(4:6) 28(10)                     
+            2             5        9(4:6) 27(10)                     
+            3             1        15(4:6) 21(10)                    
+            3             4        6(4:6) 30(10)                     
+            4             1        10(4:6) 26(10)                    
+            4             1        12(4:6) 24(10)                    
+            4             1        14(4:6) 22(10)                    
+            4             2        18(4:6) 18(10)                    
+            4             1        2(4:6) 34(10)                     
+            4             1        8(4:6) 28(10)                     
+            6             1        12(4:6) 24(10)                    
+            6             1        15(4:6) 21(10)                    
+            6             2        18(4:6) 18(10)                    
+            6             1        24(4:6) 12(10)                    
+            6             1        6(4:6) 30(10)                     
+            8             1        16(4:6) 20(10)                    
+            8             2        8(4:6) 28(10)                     
+            9             1        9(4:6) 27(10)                     
+           12             1        18(4:6) 18(10)                    
+           12             1        24(4:6) 12(10)                    
+           16             1        20(4:6) 16(10)                    
+           18             1        18(4:6) 18(10)                    
+           40             1        36(10)                            
+           54             1        9(4:6) 27(10)                     
+          432             1        36(4:6)                           
+     ------------------------------------------------------------
+          Total:        396
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (45,28,15,21)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+        3628800             1      rank 3 graph         1-396                  
+     ----------------------------------------------------------------
+                 Total:     1                            396
+     ----------------------------------------------------------------
+
+
+      *** The graphs of type 2 are merely regular and therefore have not been constructed. *** 
+
+
+T = 3s: 12 (from 12) K-matrices (10x3) processed by 10 threads. 396 K-matrices (10x9) generated
+Thread:Matrices generated
+ 1:84 2:34 3:252 4:22 5:3 6:0 7:1 8:0 9:0 10:0
+Total time=3190ms (including prep time=1ms)
+
+Main parameters:
+                      nPlayers: 10
+                     GroupSize: 2
+                    CBMP_Graph: 1
+      UseUniform1Factorization: 0
+          Use2RowsCanonization: 0
+         UseFastCanonizerForG2: 0
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 10
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 100000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: 396
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5000
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 9
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 9
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 21
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 1
+               ExploreMatrices: 1
+
+Parameters of string type:
+                       U1FName: 
+                   StartFolder: ../Logs_CI/
+                  ResultFolder: ../Logs_CI/
+          ImprovedResultFolder: ../ImprovedResults/
+                      TestName: K1F_10x9x2_10_Threads
