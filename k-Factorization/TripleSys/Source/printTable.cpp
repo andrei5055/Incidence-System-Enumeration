@@ -111,7 +111,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 				printf("\x1b[0m");
 			}
 			else if (v == unset)
-				printf("  ");
+				printf(" .");
 			else
 				printf("%2d", v);
 		}

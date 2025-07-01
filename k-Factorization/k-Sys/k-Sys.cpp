@@ -53,6 +53,7 @@ const char* intParamNames[]{
 	"AllowUndefinedCycles", // 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
 	"ExploreMatrices",
+	"RejectCycleLength",
 };
 
 const char* strParamNames[]{

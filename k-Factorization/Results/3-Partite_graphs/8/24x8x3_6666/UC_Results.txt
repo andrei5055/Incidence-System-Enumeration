@@ -1,0 +1,94 @@
+
+===>> 06/30/25: 20:35:12
+
+
+     Factorization of K(3x24)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+         1344             1        168(6:6:6:6)                      
+     ------------------------------------------------------------
+          Total:          1
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (64,42,26,30)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+          16128             1      rank 3 graph         1                      
+     ----------------------------------------------------------------
+                 Total:     1                              1
+     ----------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (64,28,12,12)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+           5376             1                           1                      
+     ----------------------------------------------------------------
+                 Total:     1                              1
+     ----------------------------------------------------------------
+
+
+T = 0s: 1 (from 1) UC-matrices (24x4) processed by 1 threads. 1 UC-matrices (24x8) generated
+Thread:Matrices generated
+ 1:1
+Total time=483ms (including prep time=296ms)
+
+Main parameters:
+                      nPlayers: 24
+                     GroupSize: 3
+                    CBMP_Graph: 3
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 1
+            NRowsInStartMatrix: 4
+      MaxNumberOfStartMatrices: 100000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 1
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5100
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 1
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 0
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 0
+               ExploreMatrices: 1
+             RejectCycleLength: 0
+
+Parameters of string type:
+                       U1FName: _6666
+                   StartFolder: ../../LogsTest9/
+                  ResultFolder: ../../LogsTest9/
+          ImprovedResultFolder: ../ImprovedResults/
+
+U1F configurations:
+                     U1FCycles: {{6,6,6,6}}

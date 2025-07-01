@@ -77,6 +77,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	int m_printMatrices = 0;
 	m_lastRowWithTestedTrs = 0;
 	m_threadNumber = threadNumber;
+	const auto p1f_counter = param(t_p1f_counter);
+	void* pIS_Canonizer = NULL;
+#if !USE_CUDA && USE_BINARY_CANONIZER
+	if (m_ppBinMatrStorage)
+		pIS_Canonizer = createCanonizer(numPlayers(), m_groupSize);
+#endif
 	//if (iThread == 0 && iCalcMode == eCalculateMatrices)
 	//return 0;
 #if !USE_CUDA
@@ -258,6 +264,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	if (!mStart0 && iDay > 0)
 	{
 		testCanonizatorSpeed();
+		m_lastRowWithTestedTrs = 0;
+		setArraysForLastRow(iDay);
+		minRows = iDay;
+		iDay--;
+		goto checkCurrentMatrix;
 		exit(0);
 	}
 #endif
@@ -284,14 +295,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		}
 	}
 #endif
-	void* pIS_Canonizer = NULL;
-#if !USE_CUDA && USE_BINARY_CANONIZER
-	if (m_ppBinMatrStorage)
-		pIS_Canonizer = createCanonizer(numPlayers(), m_groupSize);
-#endif
 
 	bPrevResult = false;
-	const auto p1f_counter = param(t_p1f_counter);
 
 #if 1 && !USE_CUDA 
 	if (testGroupOrderEachSubmatrix(m_printMatrices, iCalcModeOrg)) {

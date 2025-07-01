@@ -464,6 +464,9 @@ CC bool CChecklLink::cyclesNotOk(int ncycles, tchar* length, eCheckForErrors eCh
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
+	if (length <= m_param->val[t_rejectCycleLength])
+		return false; // reject cycle length 4
+
 	if (m_allowUndefinedCycles)
 		return true;
 	auto pntr = m_param->u1fCycles[0];
@@ -549,8 +552,14 @@ CC int alldata::p1fCheck2ndRow() const
 	if (completeGraph() && m_groupSize > 3)
 		return 0;
 
-	if (m_createSecondRow)
+	if (m_createSecondRow) {
+		if (m_groupSize == 5 && !completeGraph()) {
+			// n-partite second row starts with n+1 values: "0, 1*(n+1), 2*(n+1), ... , (n-1)*(n+1), 1"
+			static ctchar _m5[] = { 0, 6, 12, 18, 24, 1 };
+			return MEMCMP(result(1), _m5, sizeof(_m5));
+		}
 		return 0;
+	}
 
 	const auto nc = m_numPlayers;
 	const tchar* p2ndRow = result(1);

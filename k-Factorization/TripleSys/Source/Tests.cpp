@@ -322,11 +322,12 @@ void alldata::testCanonizatorSpeed()
 	m_pProcessMatrix = &alldata::kmProcessMatrix;
 	m_improveResult = 2;
 	int i, nTests = 1000;
+	int order = 0;
 	for (i = 1; i <= nTests; i++)
 	{
-		const int order = orderOfGroup();
 		if (!cnvCheckNew(0, iDay))
 		{
+			order = orderOfGroup();
 			printf("Group Order=%d\n", order);
 			iret = memcmp(bRes1, result(), iDay * m_numPlayers);
 			if (iret >= 0)
@@ -347,12 +348,12 @@ void alldata::testCanonizatorSpeed()
 			}
 			for (int j = 0; j < iDay; j++)
 				u1fSetTableRow(neighbors(j), result(j));
-			printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, m_groupSize);
+			//printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, 0);
 #endif
 		}
 		else
 		{
-			iret = iret;
+			order = orderOfGroup();
 			printf("Group Order=%d\n", order);
 			//StatReportAfterEachResult(ResetStat, "Canonizator time", (int)((clock() - tTime)) / i, true);
 			//printf("order=%d\n",  order);
@@ -360,7 +361,7 @@ void alldata::testCanonizatorSpeed()
 		}
 	}
 
-	printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, m_groupSize);
+	//printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, 0);
 	printf("End of Improved (%d):\n", i);
 	delete[] v0;
 	m_improveResult = improveResult;

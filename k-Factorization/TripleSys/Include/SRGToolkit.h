@@ -12,6 +12,7 @@ typedef struct SRGParam {
 	int α;
 	int β;
 	SRGParam() { memset(this, 0, sizeof(*this)); }
+	t_graphType updateParam(int* pCommon, bool flag_4_ver);
 } SRGParam;
 
 class SRGToolkit : public  Generators<ushort>

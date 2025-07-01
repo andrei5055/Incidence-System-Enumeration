@@ -665,26 +665,28 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 		}
 	}
 
-	if (pGraphParam) {
-		if (flag) {
-			if (pGraphParam->m_cntr[2] == pGraphParam->m_cntr[3]) {
-				pGraphParam->α = nCommon[2];
-				pGraphParam->β = nCommon[3];
-			}
-			else {
-				if (pGraphParam->α != nCommon[2] || pGraphParam->β != nCommon[3])
-					printfRed("Found graph with 4-vertex condition for different (α, β) = (%d, %d) != (%d, %d)\n", 
-						nCommon[2], nCommon[3], pGraphParam->α, pGraphParam->β);
-			}
-		} else
-			pGraphParam->m_cntr[3]++;  // # of graphs not satisfying 4-vertex condition
+	return pGraphParam->updateParam(nCommon, flag);
+}
 
-		if (!pGraphParam->m_cntr[2]++) {
-			pGraphParam->λ = nCommon[0];
-			pGraphParam->μ = nCommon[1];
+t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {
+	if (this) {
+		if (flag_4_ver) {
+			if (α && α != pCommon[2] || β && β != pCommon[3])
+				printfRed("Found graph with 4-vertex condition for different (α, β) = (%d, %d) != (%d, %d)\n",
+					pCommon[2], pCommon[3], α, β);
+			α = pCommon[2];
+			β = pCommon[3];
+
+		}
+		else
+			m_cntr[3]++;  // # of graphs not satisfying 4-vertex condition
+
+		if (!m_cntr[2]++) {
+			λ = pCommon[0];
+			μ = pCommon[1];
 		}
 	}
-	return flag? t_4_vert : t_srg;
+	return flag_4_ver ? t_4_vert : t_srg;
 }
 
 void SRGToolkit::printStat() {

@@ -1,0 +1,95 @@
+
+===>> 06/29/25: 11:20:14
+
+
+     Factorization of K(2x18)
+     ------------------------------------------------------------
+       |Aut(M)|:  # of matrices:          Cycles:
+     ------------------------------------------------------------
+          972             1        36(6:6:6)                         
+         7776             1        36(6:6:6)                         
+     ------------------------------------------------------------
+          Total:          2
+     ------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (81,64,49,56)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+     263363788800             1      rank 3 graph         1,2                    
+     ----------------------------------------------------------------
+                 Total:     1                              2
+     ----------------------------------------------------------------
+
+
+     Strongly regular graphs with parameters: (v,k,λ μ) = (81,24,9,6)
+     ----------------------------------------------------------------
+       |Aut(G)|:    # of graphs:    Graph type:        Sources:
+     ----------------------------------------------------------------
+            324             1                           2                      
+           7776             1                           1                      
+     ----------------------------------------------------------------
+                 Total:     2                              2
+     ----------------------------------------------------------------
+
+
+T = 0s: 3 (from 3) UC-matrices (18x3) processed by 3 threads. 2 UC-matrices (18x9) generated
+Thread:Matrices generated
+ 1:2 2:0 3:0
+Total time=173ms (including prep time=12ms)
+
+Main parameters:
+                      nPlayers: 18
+                     GroupSize: 2
+                    CBMP_Graph: 2
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 3
+            NRowsInStartMatrix: 3
+      MaxNumberOfStartMatrices: 100000
+     FirstIndexOfStartMatrices: 0
+           NRowsInResultMatrix: 0
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 1
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5100
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 1
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 21
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 0
+               ExploreMatrices: 1
+
+Parameters of string type:
+                       U1FName: _666
+                   StartFolder: ../../LogsTest9/
+                  ResultFolder: ../../LogsTest9/
+          ImprovedResultFolder: ../ImprovedResults/
+
+U1F configurations:
+                     U1FCycles: {{6,6,6}}
