@@ -183,16 +183,11 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 					fprintf(f, "%30s: %s\n", paramNames[i], ptr->c_str());
 			}
 			break;
-		default:
-		{
-			auto pntr0 = paramPtr()->u1fCycles[0];
-			tchar cyclesDefault[3] = { 1, 0, 0 };
-			tchar* pntr = pntr0;
-			if (!pntr) {
-				cyclesDefault[1] = m_numPlayers;
-				pntr = cyclesDefault;
-			}
-			if (allowUndefinedCycles || (pntr[0] != 1 || pntr[1] != m_numPlayers)) {
+		default: {
+				auto pntr = paramPtr()->u1fCycles[0];
+				if (!pntr || !allowUndefinedCycles && pntr[0] == 1 && pntr[1] == m_numPlayers)
+					break;
+
 				fprintf(f, "\n%s\n", SECTION_PARAM_U1F_CONF);
 				char buffer[256], *pBuf = buffer;
 				const auto lenBuf = countof(buffer);
@@ -212,8 +207,6 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 				SPRINTFS(pBuf, buffer, lenBuf, "}");
 				fprintf(f, "%30s: %s\n", paramNames[0], buffer);
 			}
-		}
-		break;
 		}
 	}
 

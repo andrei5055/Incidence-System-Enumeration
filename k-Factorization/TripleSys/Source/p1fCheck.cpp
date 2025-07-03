@@ -464,9 +464,6 @@ CC bool CChecklLink::cyclesNotOk(int ncycles, tchar* length, eCheckForErrors eCh
 
 CC bool CChecklLink::cycleLengthOk(tchar length) const
 {
-	if (length <= m_param->val[t_rejectCycleLength])
-		return false; // reject cycle length 4
-
 	if (m_allowUndefinedCycles)
 		return true;
 	auto pntr = m_param->u1fCycles[0];

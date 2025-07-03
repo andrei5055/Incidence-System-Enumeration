@@ -246,8 +246,8 @@ int main(int argc, const char* argv[])
 				else {
 					if (!ufName)
 						ufName = new string("");
-
-					printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), numPlayers);
+					printfGreen(" %s-matrices with u1f cycles(_all) ", getFileNameAttr(&param));
+					//printfGreen(" %s-matrices with p1f cycles(%d) ", getFileNameAttr(&param), numPlayers);
 				}
 			}
 			else {
