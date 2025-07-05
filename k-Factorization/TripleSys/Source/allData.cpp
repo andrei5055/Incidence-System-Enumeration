@@ -15,7 +15,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
 		m_numDaysResult = m_numDays;
 	m_createSecondRow = createSecondRow;
-	m_rowTime = new int[m_numDays];
+	m_rowTime = new int[m_numDaysResult];
 	m_rowTime[0] = 0;
 	m_pResults = new tchar[m_nLenResults];
 	m_pResultsPrev = new tchar[m_nLenResults * 2];
@@ -59,7 +59,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_matrixCanonInterval = param(t_matrixCanonInterval);
 	m_checkForUnexpectedCycle = !m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
 		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); // assume all cycle sets are sorted
-	if (param(t_rejectCycleLength) == 4 && m_groupSize == 2 && m_numPlayers > 4)
+	if (m_numDaysResult <= 3 && param(t_rejectCycleLength) == 4 && param(t_semiSymmetricGraphs) && m_groupSize == 2 && m_numPlayers > 4)
 		m_checkForUnexpectedCycle = true; // reject cycle length 4
 
 	iPlayerIni = m_numPlayers - 1;

@@ -72,7 +72,7 @@ void alldata::outputError() const {
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
-	memset(m_rowTime, 0, m_numDays * sizeof(m_rowTime[0]));
+	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
 	m_allRowPairsSameCycles = param(t_allowUndefinedCycles) == 0 || param(t_any2RowsConvertToFirst2) > 0;
 	int m_printMatrices = 0;
 	m_lastRowWithTestedTrs = 0;
@@ -134,12 +134,30 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_bPrint = m_printMatrices != 0;
 	int minRows = nrowsStart;
 
+	const auto semiSymGraph = !m_createSecondRow && param(t_semiSymmetricGraphs) != 0;
+	const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
+	const auto outAutGroup = param(t_outAutomorphismGroup);
+	IOutGroupHandle* pAutGroup[4] = { NULL };
+	if (semiSymGraph || outAutGroup) {
+		if (bSavingMatricesToDisk) {
+			if (outAutGroup & 1)
+				pAutGroup[0] = new Generators<tchar>(outAutGroup, "\nOrbits and generators of the Aut(M) acting on elements", m_numPlayers);
+
+			if (outAutGroup & 2)
+				pAutGroup[1] = new COutGroupHandle<tchar>(outAutGroup, "\nAut(M) acting on elements", m_numPlayers);
+		}
+
+		if (semiSymGraph || bSavingMatricesToDisk && (outAutGroup & 12))
+			pAutGroup[2] = new RowGenerators(outAutGroup, numDaysResult());
+
+		if (semiSymGraph || bSavingMatricesToDisk && (outAutGroup & 48))
+			pAutGroup[3] = new CKOrbits(outAutGroup, m_numPlayers, m_groupSize, numDaysResult());
+	}
 #if !USE_CUDA
 	//extern void aq();
 	//aq();
 	unsigned char* bResults = NULL;
 
-	IOutGroupHandle* pAutGroup[4] = { NULL };
 	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
 	if (bSavingMatricesToDisk) {
@@ -157,29 +175,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		Result.setOutFileName(pResFile);
 		m_pRes = &Result;
 
-		const auto outAutGroup = param(t_outAutomorphismGroup);
 		if (outAutGroup) {
-			if (outAutGroup & 1) {
-				pAutGroup[0] = new Generators<tchar>(outAutGroup, "\nOrbits and generators of the Aut(M) acting on elements", m_numPlayers);
-				pAutGroup[0]->setOutFileName(pResFile, false);
-			}
-			if (outAutGroup & 2) {
-				pAutGroup[1] = new COutGroupHandle<tchar>(outAutGroup, "\nAut(M) acting on elements", m_numPlayers);
-				pAutGroup[1]->setOutFileName(pResFile, false);
-			}
-
-			if (outAutGroup & 12) {
-				pAutGroup[2] = new RowGenerators(outAutGroup, numDaysResult());
-				pAutGroup[2]->setOutFileName(pResFile, false);
-			}
-
-			if (outAutGroup & 48) {
-				pAutGroup[3] = new CKOrbits(outAutGroup, m_numPlayers, m_groupSize, numDaysResult());
-				pAutGroup[3]->setOutFileName(pResFile, false);
+			for (int i = 0; i < countof(pAutGroup); i++) {
+				if (pAutGroup[i])
+					pAutGroup[i]->setOutFileName(pResFile, false);
 			}
 		}
 	}
-
 #endif
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
 #if 0 // Generate KC matrix
@@ -733,8 +735,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			}
 		}
 		ASSERT(iDay < numDaysResult());
-		if (orderOfGroup() >= param(t_resultGroupOrderMin))
-		{
+
+		auto flag = true;
+		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {
+			int retVal;
+			for (int i = 2; i <= 3; i++)
+			    retVal = ((RowGenerators*)pAutGroup[i])->getGroup(this);
+		}
+
+		if (flag && orderOfGroup() >= param(t_resultGroupOrderMin)) {
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0
 			if (pIS_Canonizer) {
 				const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay);

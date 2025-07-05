@@ -239,6 +239,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 												}
 											}
 										}
+
 										if (icmp == -1) {
 											//if (nrows>2)
 											//printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), m_Km, nrows, nLoops, m_finalKMindex);

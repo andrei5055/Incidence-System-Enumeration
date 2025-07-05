@@ -69,6 +69,7 @@ typedef enum {
 	t_allowUndefinedCycles,
 	t_any2RowsConvertToFirst2,
 	t_exploreMatrices,
+	t_semiSymmetricGraphs,
 	t_rejectCycleLength,
 	t_lastParam,
 	// indices of parameters with the string type values

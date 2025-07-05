@@ -154,6 +154,18 @@ public:
 	~RowGenerators()					{ delete m_pRowGroup; }
 	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	const char* name() override         { return m_sName.c_str(); }
+	int getGroup(const CGroupInfo* pElemGroup) {
+		if (m_bGroupConstructed)
+			return 0;
+
+		if (!m_pRowGroup)
+			m_pRowGroup = new CGroupInfo(lenObject(), 10);
+		else
+			m_pRowGroup->releaseAllObjects();
+
+		m_bGroupConstructed = true;
+		return createGroup(pElemGroup);
+	}
 protected:
 	virtual int createGroup(const CGroupInfo* pElemGroup) {
 		return testNestedGroups(pElemGroup, m_pRowGroup, lenObject());
@@ -162,6 +174,7 @@ protected:
 	std::string m_sName;
 	std::string m_sActionOn;
 	uint m_outMask;
+	bool m_bGroupConstructed;
 };
 
 #if OUTPUT_VECTOR_STAT

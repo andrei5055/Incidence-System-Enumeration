@@ -76,16 +76,12 @@ RowGenerators::RowGenerators(uint outGroupMask, int rowNumb)
 	: Generators(outGroupMask, "", rowNumb), m_pRowGroup(NULL) {
 	m_outMask = 4;
 	m_sActionOn = "matrix rows, |Aut(R)|";
+	m_bGroupConstructed = false;
 }
 
 void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
-	if (!m_pRowGroup)
-		m_pRowGroup = new CGroupInfo(lenObject(), 10);
-	else
-		m_pRowGroup->releaseAllObjects();
-
 	char errBuf[48], *pErr = NULL;
-	const auto retVal = createGroup(pElemGroup);
+	const auto retVal = getGroup(pElemGroup);
 	if (retVal > 0)
 		snprintf(pErr = errBuf, sizeof(errBuf), "Nested groups check failed on row %d\n", retVal);
 
@@ -103,5 +99,6 @@ void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScre
 		COutGroupHandle::makeGroupOutput(m_pRowGroup, outToScreen, false);
 	}
 
+	m_bGroupConstructed = false;
 	reportNestedGroupCheckResult(retVal, outToScreen);
 }
