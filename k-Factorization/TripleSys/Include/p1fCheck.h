@@ -13,7 +13,8 @@
 	if ((k = t2[k1 = t1[k]]) != unset) \
 		return i
 
-#define U1FT(i) ro[ro[ri[i]] = ri[i + 1]] = ri[i]
+//#define U1FT(i) ro[ro[ri[i]] = ri[i + 1]] = ri[i]
+#define U1FT(i) {auto a = ri[i], b = ri[i+1]; ro[a] = b; ro[b] = a;}
 
 //#define U1FT3(i) ro[ri[i]] = ri[i+1]; ro[ri[i+1]] = ri[i+2]; ro[ri[i+2]] = ri[i]
 #define U1FT3(i) ro[ri[i]] = i; ro[ri[i+1]] = i+1; ro[ri[i+2]] = i+2

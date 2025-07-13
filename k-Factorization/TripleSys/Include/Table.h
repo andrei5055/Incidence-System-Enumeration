@@ -132,6 +132,7 @@ public:
 		CStorageSet<T>(10, degree),
 		COutGroupHandle<T>(outGroupMask, name, degree) {};
 	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
+	void createOrbits(const CGroupInfo* pElemGroup);
 protected:
 	inline auto groupDegree() const		{ return this->m_nc; }
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
@@ -146,6 +147,7 @@ private:
 	}
 
 	T m_lenStab;
+	bool m_bOrbitsCreated = false;
 };
 
 class RowGenerators : public Generators<tchar> {
@@ -154,19 +156,10 @@ public:
 	~RowGenerators()					{ delete m_pRowGroup; }
 	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	const char* name() override         { return m_sName.c_str(); }
-	int getGroup(const CGroupInfo* pElemGroup) {
-		if (m_bGroupConstructed)
-			return 0;
-
-		if (!m_pRowGroup)
-			m_pRowGroup = new CGroupInfo(lenObject(), 10);
-		else
-			m_pRowGroup->releaseAllObjects();
-
-		m_bGroupConstructed = true;
-		return createGroup(pElemGroup);
-	}
+	int createGroupAndOrbits(const CGroupInfo* pElemGroup);
 protected:
+	int getGroup(const CGroupInfo* pElemGroup);
+	virtual void createTable(ctchar* pSolution)	{}
 	virtual int createGroup(const CGroupInfo* pElemGroup) {
 		return testNestedGroups(pElemGroup, m_pRowGroup, lenObject());
 	}
@@ -175,6 +168,7 @@ protected:
 	std::string m_sActionOn;
 	uint m_outMask;
 	bool m_bGroupConstructed;
+	int m_groupState;
 };
 
 #if OUTPUT_VECTOR_STAT

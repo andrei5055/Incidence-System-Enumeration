@@ -233,6 +233,7 @@ private:
 	CC int getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4,
 		eCheckForErrors checkError) const;
 	CC int checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer = NULL);
+	CC bool a();
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
 	CC void p1fCheckStartMatrix(int nr);

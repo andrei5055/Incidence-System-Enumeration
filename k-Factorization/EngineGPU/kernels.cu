@@ -3,7 +3,7 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 
 #include "TopGun.h"
 
-#if 1 //USE_GPU
+#if 0 //USE_GPU
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
@@ -294,7 +294,7 @@ CC bool alldata::improveMatrix(int improveResult, tchar* bResults, const int len
     return true;
 }
 #else
-__declspec(dllexport) sLongLong runWithCuda(int numPlayers, int groupSize, int groupSizeFactorial, unsigned int n_proc) {
+__declspec(dllexport) sLongLong runWithCuda(const TopGunGPU* pTG) {
     return -1;
 }
 

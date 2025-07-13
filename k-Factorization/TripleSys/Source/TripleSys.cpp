@@ -98,8 +98,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto iCalcModeOrg = iCalcMode;
 	const auto bSavingMatricesToDisk = (iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows) ?
 		param(t_savingMatricesToDisk) : false;
-	int nMatricesMax = 0;
-	int startMatrixCount = 0;
 #endif
 	int iDaySaved = 0;
 	auto nPrecalcRows = param(t_useRowsPrecalculation);
@@ -134,7 +132,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_bPrint = m_printMatrices != 0;
 	int minRows = nrowsStart;
 
-	const auto semiSymGraph = !m_createSecondRow && param(t_semiSymmetricGraphs) != 0;
+	const auto semiSymGraph = !m_createSecondRow && numDaysResult() > 2 && param(t_semiSymmetricGraphs) == 1;
 	const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
 	const auto outAutGroup = param(t_outAutomorphismGroup);
 	IOutGroupHandle* pAutGroup[4] = { NULL };
@@ -738,9 +736,18 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 		auto flag = true;
 		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {
-			int retVal;
-			for (int i = 2; i <= 3; i++)
-			    retVal = ((RowGenerators*)pAutGroup[i])->getGroup(this);
+			int i = 2;
+			for (; i <= 3; i++) {
+				auto* pGroup = static_cast<RowGenerators*>(pAutGroup[i]);
+				pGroup->createGroupAndOrbits(this);
+				const auto *pObj = pGroup->getObject(0);
+				int j = pGroup->lenObject();
+				while (j-- && !pObj[j]);
+				if (j >= 0)
+					break;
+			}
+
+			flag = i > 3;
 		}
 
 		if (flag && orderOfGroup() >= param(t_resultGroupOrderMin)) {

@@ -16,9 +16,9 @@ const char* intParamNames[]{
 	"UseMultiThreading",
 	"NThreads",
 	"NRowsInStartMatrix",
+	"NRowsInResultMatrix",
 	"MaxNumberOfStartMatrices",
 	"FirstIndexOfStartMatrices",
-	"NRowsInResultMatrix",
 	"ExpectedResult",
 	"UseCheckLinksV",
 	"UseRowsPrecalculation",
@@ -164,9 +164,9 @@ int main(int argc, const char* argv[])
 	val[t_MultiThreading] = UseMultiThreading;
 	val[t_numThreads] = NThreads;
 	val[t_nRowsInStartMatrix] = NRowsInStartMatrix;
+	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;
 	val[t_nMaxNumberOfStartMatrices] = MaxNumberOfStartMatrices;
 	val[t_nFirstIndexOfStartMatrices] = FirstIndexOfStartMatrices;
-	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;
 	val[t_expectedResult] = ExpectedResult;
 	val[t_useCheckLinksV] = UseCheckLinksV;
 	val[t_printMatrices] = PrintMatrices;

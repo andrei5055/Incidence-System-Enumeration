@@ -12,12 +12,15 @@ static void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 }
 
 template<typename T>
-void Generators<T>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+void Generators<T>::createOrbits(const CGroupInfo* pElemGroup) {
 	// Calculate the orbits and a minimal generating set 
 	// of the permutation group under its action on the element set
+	if (m_bOrbitsCreated)
+		return;
+
 	this->setGroupOrder(1);
 	this->releaseAllObjects();
-	
+
 	// Adding orbits:
 	auto* pOrb = this->getNextObject();
 	for (int i = 0; i < groupDegree(); i++)
@@ -28,17 +31,25 @@ void Generators<T>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScre
 	m_lenStab = groupDegree();
 	const auto groupOrder = pElemGroup->numObjects();
 	for (int i = 1; i < groupOrder; i++) {
-		const auto *c = pElemGroup->getObject(i);
+		const auto* c = pElemGroup->getObject(i);
 		this->addAutomorphism(groupDegree(), c, pOrb, true, false, true);
 	}
 
 	this->updateGroupOrder(groupDegree(), pOrb);
+	m_bOrbitsCreated = true;
+}
+
+template<typename T>
+void Generators<T>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+	createOrbits(pElemGroup);
 	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
 
 	if (checkNestedGroups) {
 		const auto retVal = testNestedGroups(pElemGroup);
 		reportNestedGroupCheckResult(retVal, outToScreen);
 	}
+
+	m_bOrbitsCreated = false;
 }
 
 template<typename T>
@@ -81,7 +92,7 @@ RowGenerators::RowGenerators(uint outGroupMask, int rowNumb)
 
 void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	char errBuf[48], *pErr = NULL;
-	const auto retVal = getGroup(pElemGroup);
+	const auto retVal = createGroupAndOrbits(pElemGroup);
 	if (retVal > 0)
 		snprintf(pErr = errBuf, sizeof(errBuf), "Nested groups check failed on row %d\n", retVal);
 
@@ -101,4 +112,25 @@ void RowGenerators::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScre
 
 	m_bGroupConstructed = false;
 	reportNestedGroupCheckResult(retVal, outToScreen);
+}
+
+int RowGenerators::getGroup(const CGroupInfo* pElemGroup) {
+	if (!m_pRowGroup)
+		m_pRowGroup = new CGroupInfo(lenObject(), 10);
+	else
+		m_pRowGroup->releaseAllObjects();
+
+	return createGroup(pElemGroup);
+}
+
+int RowGenerators::createGroupAndOrbits(const CGroupInfo* pElemGroup) {
+	if (m_bGroupConstructed)
+		return m_groupState;
+
+	createTable(((alldata*)pElemGroup)->result());
+	m_groupState = getGroup(pElemGroup);
+
+	createOrbits(m_pRowGroup);
+	m_bGroupConstructed = true;
+	return m_groupState;
 }

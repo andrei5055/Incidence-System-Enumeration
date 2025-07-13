@@ -15,11 +15,11 @@ public:
 #endif
 	}
 protected:
+	void createTable(ctchar* pSolution) override;
 	int createGroup(const CGroupInfo* pElemGroup) override {
 		return testNestedGroups(pElemGroup, NULL, ((alldata*)pElemGroup)->numDaysResult(), this);
 	}
 private:
-	void createTable(ctchar* pSolution);
 	void encodeSolution(ctchar* pSolution);
 
 	const int m_numElems;

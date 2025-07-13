@@ -116,6 +116,16 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			bCurrentSet = true;
 			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
 			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors(1), result(0), result(1));
+			if (m_createSecondRow && nrows == numDaysResult() && nrows == nrowsToUseForTrs) {
+				if (param(t_rejectCycleLength)) {
+					for (int i = 1; i < m_TrCyclesAll[0].ncycles; i++) {
+						if (m_TrCyclesAll[0].length[0] != m_TrCyclesAll[0].length[i]) {
+							bRet = false;
+							goto ret;
+						}
+					}
+				}
+			}
 		}
 		else {
 			tchar neighbors1[MAX_PLAYER_NUMBER];

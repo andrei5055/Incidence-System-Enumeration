@@ -56,7 +56,9 @@ void CKOrbits::encodeSolution(ctchar* pSolution) {
 }
 
 void CKOrbits::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
-    createTable(((alldata*)pElemGroup)->result());
+    if (!m_bGroupConstructed)
+        createTable(((alldata*)pElemGroup)->result());
+
     RowGenerators::makeGroupOutput(pElemGroup, outToScreen, checkNestedGroups);
 }
 

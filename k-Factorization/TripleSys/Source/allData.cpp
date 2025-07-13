@@ -51,15 +51,16 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	memset(m_Km2ndRowInd, 0, m_numPlayers);
 	m_trmk = new tchar[m_numPlayers];
 	m_groups = new tchar[m_groupSizeFactorial * m_groupSize];
-	m_pLinks = new tchar[np2];
+	m_pLinks = new tchar[np2 * 2];
 	m_pSecondRowsDB = NULL;
 	m_DayIdx = new tchar[m_numDays];
 	m_numCycles = 0;
 	m_firstNotSel = 0;
+	bool bCBMP = !pSysParam->completeGraph();
 	m_matrixCanonInterval = param(t_matrixCanonInterval);
 	m_checkForUnexpectedCycle = !m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
 		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); // assume all cycle sets are sorted
-	if (m_numDaysResult <= 3 && param(t_rejectCycleLength) == 4 && param(t_semiSymmetricGraphs) && m_groupSize == 2 && m_numPlayers > 4)
+	if (param(t_rejectCycleLength) == 4)
 		m_checkForUnexpectedCycle = true; // reject cycle length 4
 
 	iPlayerIni = m_numPlayers - 1;
@@ -86,7 +87,6 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		m_file = f;
 	}
 #endif
-	bool bCBMP = !pSysParam->completeGraph();
 	m_maxCommonVSets = m_groupSize == 2 ? 1 : (bCBMP ? m_groupSizeFactorial : (int)pow(6.0, m_nGroups / 3.0) + 1);
 	InitCycleSupport(m_nGroups, m_maxCommonVSets);
 
@@ -109,7 +109,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_pCheckFunc = NULL;
 	if (m_use2RowsCanonization) {
 		if (m_groupSize == 2) {
-			if (param(t_useFastCanonizerForG2) || m_createSecondRow)
+			if (param(t_useFastCanonizerForG2))
 				m_pCheckFunc = &alldata::cnvCheck3U1F;
 			else 
 				m_pCheckFunc = (bp1f && !bCBMP) ? &alldata::cnvCheck2P1F : &alldata::cnvCheck2U1F;
@@ -121,6 +121,8 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		((m_numPlayers == 16 && m_groupSize == 4) || (m_numPlayers == 25 && m_groupSize == 5)))
 		m_pCheckFunc = &alldata::cnvCheck45;
 
+	if (m_createSecondRow)
+		m_pCheckFunc = &alldata::cnvCheck3U1F;
 	if (param(t_useFastCanonizerForG2) == 2)
 		m_pSortGroups = NULL;
 

@@ -103,9 +103,46 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			StatReportAfterAllTr(ResetStat, "Stat for one improvement. iDay", iDay, bPrint);
 			if (!bPrev || orderOfGroup() < param(t_submatrixGroupOrderMin))
 				return -1;
+			if (!a())
+				return -1;
 		}
 #endif
 	}
 	m_playerIndex = 0;
 	return 0;
+}
+bool alldata::a()
+{
+	if (param(t_semiSymmetricGraphs) != iDay)
+		return true;
+	int nGroupsToCheck = m_numPlayers * m_numDaysResult / 2;
+
+	if (orderOfGroup() < nGroupsToCheck)
+		return false;
+	
+	memcpy(links(m_numPlayers), links(), m_numPlayers * m_numPlayers);
+
+	for (int i = numObjects(); --i >= 0;) {
+		const auto tr = getObject(i);
+
+		if ((tr[0] & 1) == 1 && (tr[1] & 1) == 0)
+			continue;
+			//return false;
+		if (nGroupsToCheck) {
+			tchar gr0 = 0, gr1 = 0;
+			for (int j = 1; j < m_numPlayers; j++) {
+				if (tr[j] == 0)
+					gr0 = j;
+				else if (tr[j] == 1)
+					gr1 = j;
+			}
+			if (links(gr0 + m_numPlayers)[gr1] != unset) {
+				links(gr0 + m_numPlayers)[gr1] = unset;
+				links(gr1 + m_numPlayers)[gr0] = unset;
+				nGroupsToCheck--;
+				ASSERT(nGroupsToCheck < 0);
+			}
+		}
+	}
+	return (nGroupsToCheck == 0);
 }
