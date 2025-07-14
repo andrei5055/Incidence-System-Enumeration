@@ -260,14 +260,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if !USE_CUDA
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
-#if 0
+#if 0   // Matrix from data.h
 	if (!mStart0 && iDay > 0)
 	{
-		testCanonizatorSpeed();
+		//testCanonizatorSpeed();
 		m_lastRowWithTestedTrs = 0;
 		setArraysForLastRow(iDay);
-		minRows = iDay;
-		iDay--;
+		minRows = iDay--;
 		goto checkCurrentMatrix;
 		exit(0);
 	}

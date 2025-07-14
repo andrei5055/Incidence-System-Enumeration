@@ -7,7 +7,7 @@
 TopGunBase::TopGunBase(const kSysParam& param) : SizeParam(param), 
 	m_param(param) {
 	m_nRowsOut = param.val[t_nRowsInResultMatrix];
-	reserveInputMatrixMemory(nRowsStart(), nMatricesReserved());
+	reserveInputMatrixMemory(nRowsStart(), nMatricesReserved(), param.val[t_orderMatrices]);
 
 	if (m_nRowsOut == 0)
 		m_nRowsOut = m_numDays;

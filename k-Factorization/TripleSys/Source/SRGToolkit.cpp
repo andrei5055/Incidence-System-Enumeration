@@ -130,8 +130,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		if (!CHECK_NON_SRG) {
 			delete graphParam;
 			m_pGraphParam[typeIdx] = NULL;
+			return false;
 		}
-		return false;
 	}
 
 	initCanonizer();
@@ -197,9 +197,13 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	if (graphType == t_4_vert)
 		pGraphDescr = "4-vertex condition";
 
-	char buf[512], * pBuf = buf;
-	SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ μ) = (%d,%2d,%d,%d)",
-		m_v, graphParam->k, graphParam->λ, graphParam->μ);
+	char buf[512], *pBuf = buf;
+	if (graphType != t_regular)
+		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ μ) = (%d,%2d,%d,%d)",
+			m_v, graphParam->k, graphParam->λ, graphParam->μ);
+	else
+		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", m_v, graphParam->k);
+
 	pGraphDB->setTableTitle(buf);
 
 	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
@@ -229,13 +233,21 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 		pBuf = buf;
 #if OUT_SRG_TO_SEPARATE_FILE
-		if (!prevMatrNumb)
-			fprintf(f, "List of SRGs of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+		if (!prevMatrNumb) {
+			if (graphType != t_regular)
+				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+			else
+				fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
+		}
 
 		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
 #else
-		SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
-			prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
+		if (graphType != t_regular)
+			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
+				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
+		else
+			SPRINTFD(pBuf, buf, "\Regular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
+				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, groupOrder());
 #endif
 		if (rank3)
 			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
@@ -707,7 +719,7 @@ void SRGToolkit::printStat() {
 		printfYellow("\nConstructed %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
 		if (!graphParam.m_cntr[2]) {
 			printfYellow(" • %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
-			return;
+			continue;
 		}
 
 		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
