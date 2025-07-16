@@ -103,7 +103,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			StatReportAfterAllTr(ResetStat, "Stat for one improvement. iDay", iDay, bPrint);
 			if (!bPrev || orderOfGroup() < param(t_submatrixGroupOrderMin))
 				return -1;
-			if (!a())
+			if (!semiCheck())
 				return -1;
 		}
 #endif
@@ -111,38 +111,184 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 	m_playerIndex = 0;
 	return 0;
 }
-bool alldata::a()
+
+
+#include <mutex>
+
+extern std::mutex mtxLinks; // The mutex to protect the shared resource
+extern CStorageIdx<tchar>** mpLinks;
+extern CStorageIdx<tchar>** mShLinks;
+extern CStorageIdx<tchar>** mShLinks2;
+extern int SemiPhase;
+tchar testL[] = {
+ 0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0
+,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0
+,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0
+,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0
+,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0
+,1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0
+,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0
+,1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0
+,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0
+,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1
+,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1
+,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0
+,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0
+,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1
+,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,1,0
+,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1
+,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,1,0
+};
+void L2L(tchar* out, tchar* in, int n, tchar notSet)
 {
-	if (param(t_semiSymmetricGraphs) != iDay)
-		return true;
-	int nGroupsToCheck = m_numPlayers * m_numDaysResult / 2;
-
-	if (orderOfGroup() < nGroupsToCheck)
-		return false;
-	
-	memcpy(links(m_numPlayers), links(), m_numPlayers * m_numPlayers);
-
-	for (int i = numObjects(); --i >= 0;) {
-		const auto tr = getObject(i);
-
-		if ((tr[0] & 1) == 1 && (tr[1] & 1) == 0)
-			continue;
-			//return false;
-		if (nGroupsToCheck) {
-			tchar gr0 = 0, gr1 = 0;
-			for (int j = 1; j < m_numPlayers; j++) {
-				if (tr[j] == 0)
-					gr0 = j;
-				else if (tr[j] == 1)
-					gr1 = j;
-			}
-			if (links(gr0 + m_numPlayers)[gr1] != unset) {
-				links(gr0 + m_numPlayers)[gr1] = unset;
-				links(gr1 + m_numPlayers)[gr0] = unset;
-				nGroupsToCheck--;
-				ASSERT(nGroupsToCheck < 0);
+	tchar* outi = out;
+	tchar* ini = in;
+	memset(out, 0, n * n / 4);
+	for (int i = 0; i < n; i++, ini += n) {
+		for (int j = i + 1; j < n; j++) {
+			if (ini[j] != notSet) {
+				int iout = (i & 1) ? j / 2 : i / 2;
+				int jout = (i & 1) ? i / 2 : j / 2;
+				out[iout * (n / 2) + jout] = 1;
 			}
 		}
 	}
-	return (nGroupsToCheck == 0);
+}
+bool add2DBs(tchar* lnkT) {
+	// Phase 1: create DB
+	/** check for trs with odd to even swap
+	for (int i = 0; i < numObjects(); i++) {
+		const auto tr = getObject(i);
+		if ((tr[0] & 1) == 1 && (tr[1] & 1) == 0)
+			return false;
+	}**/
+	int itr = mpLinks[0]->numObjects();
+	if (mpLinks[0]->isProcessed(lnkT)) {
+		int itr3 = mShLinks[0]->updateRepo(lnkT);
+		mShLinks2[0]->updateRepo(lnkT);
+		printf("Same %d(%d,%d)\n", itr, mShLinks[0]->numObjects(), itr3);
+	}
+	return true;
+}
+int nPairsLeft(tchar* lnkT, int nnd4) {
+	// Phase 2 or 3: DBs with links already created
+	int n = 0;
+	for (int i = 0; i < nnd4; i++) {
+		if (lnkT[i])
+			n++;
+	}
+	return n;
+}
+int adjustPairsCount(tchar* tr, int np, tchar* lnkT, int nGroupsToCheck) {
+	tchar gr0 = 0, gr1 = 0;
+	for (int j = 1; j < np; j++) {
+		if (tr[j] == 0)
+			gr0 = j;
+		else if (tr[j] == 1)
+			gr1 = j;
+	}
+	if (gr0 & 1)
+		SWAP(gr0, gr1);
+	int i0 = gr0 / 2 * (np / 2) + gr1 / 2;
+	ASSERT(i0 < 0 || i0 >= np * np / 4);
+	if (lnkT[i0]) {
+		lnkT[i0] = 0;
+		nGroupsToCheck -= 1;
+		ASSERT(nGroupsToCheck < 0);
+	}
+	return nGroupsToCheck;
+}
+bool alldata::semiCheck()
+{
+	tchar lnk[16 * 16];
+	if (param(t_semiSymmetricGraphs) != iDay)
+		return true;
+	if (orderOfGroup() < 2)
+		return false;
+	
+	int nn = m_numPlayers * m_numPlayers;
+	if (orderOfGroup() == 400)
+		nn = nn;
+	int nnd4 = nn / 4;
+	int nGroupsToCheck = 0;
+	tchar* lnkT = links(m_numPlayers);
+	bool bSharedLink = false;
+	L2L(lnk, links(), m_numPlayers, unset);
+	if (param(t_test) & 0x4) {
+		L2L(lnkT, testL, m_numPlayers, 0);
+		if (MEMCMP(lnkT, lnk, nnd4))
+			return false;
+	}
+	else
+		memcpy(lnkT, lnk, nnd4);
+	std::lock_guard<std::mutex> lock(mtxLinks);
+	if (mpLinks == NULL) {
+		SemiPhase = 1;
+		mpLinks = new CStorageIdx<tchar>*[1];
+		mpLinks[0] = new CStorageIdx<tchar>(1000, nnd4);
+		mShLinks = new CStorageIdx<tchar>*[1];
+		mShLinks[0] = new CStorageIdx<tchar>(100, nnd4);
+		mShLinks2 = new CStorageIdx<tchar>*[1];
+		mShLinks2[0] = new CStorageIdx<tchar>(100, nnd4);
+	}
+	switch (SemiPhase) {
+	case 1: return add2DBs(lnkT);
+	case 2:
+	case 3: {
+		// Phase 2 or 3: DBs with links already created 
+		int idx = -1;
+		if (!(param(t_test) & 0x8))
+			idx = mShLinks[0]->findObject(lnk, 0, mShLinks[0]->numObjects());
+		if (idx >= 0) {
+			bSharedLink = true;
+			lnkT = mShLinks2[0]->getObject(idx);
+			if (0 && idx == 17) {
+				printf("\nidx = %d aut=%d\n", idx, orderOfGroup());
+				printTableColor("R", result(), iDay, m_numPlayers, m_groupSize);
+				printTableColor("links (rows:0,2,4..., columns:1,3,5,...", lnk, m_numPlayers / 2, m_numPlayers / 2, 0);
+				printTableColor("lnkT", lnkT, m_numPlayers / 2, m_numPlayers / 2, 0);
+			}
+		}
+		nGroupsToCheck = nPairsLeft(lnkT, nnd4);
+		if (SemiPhase == 3) {
+			if (bSharedLink) {
+				static int cc = 999; if (cc > nGroupsToCheck) printf(" %d.%d ", idx, cc = nGroupsToCheck);
+				if (!nGroupsToCheck) {
+					printf("\nidx = %d\n", idx);
+					printTableColor("Multi matrix result", result(), iDay, m_numPlayers, m_groupSize);
+					printTableColor("links (rows:0,2,4..., columns:1,3,5,...", lnk, m_numPlayers / 2, m_numPlayers / 2, 0);
+					return true;
+				}
+			}
+			return false;
+		}
+		// phase 2
+		int i;
+		for (i = 0; i < numObjects(); i++) {
+			if (!nGroupsToCheck)
+				break;
+			const auto tr = getObjAddr(i);
+			nGroupsToCheck = adjustPairsCount(tr, m_numPlayers, lnkT, nGroupsToCheck);
+		}
+		if (0 && idx == 17) {
+			printf("\nidx = %d aut=%d nch=%d\n", idx, orderOfGroup(), nGroupsToCheck);
+			printTableColor("R", result(), iDay, m_numPlayers, m_groupSize);
+			printTableColor("links (rows:0,2,4..., columns:1,3,5,...", lnk, m_numPlayers / 2, m_numPlayers / 2, 0);
+			printTableColor("lnk", lnk, m_numPlayers / 2, m_numPlayers / 2, 0);
+			printTableColor("lnkT", lnkT, m_numPlayers / 2, m_numPlayers / 2, 0);
+		}
+		if (!bSharedLink) {
+			static int ccc = 999; if (ccc > nGroupsToCheck) printf(" .%d ", ccc = nGroupsToCheck);
+			if (!nGroupsToCheck) {
+				printTableColor("One matrix result", result(), iDay, m_numPlayers, m_groupSize);
+				printTableColor("links", lnk, m_numPlayers / 2, m_numPlayers / 2, 0);
+				return true;
+			}
+		}
+	}
+	}
+	return false;
 }

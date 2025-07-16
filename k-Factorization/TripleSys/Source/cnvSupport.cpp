@@ -30,6 +30,8 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 							m_TrInd++;
 							if (icmp < 0)
 							{
+								if (param(t_test) & 0x2)
+									continue; // Calculate all automorphisms (even if matrix is not canonical)
 								bRet = false;
 								goto ret;
 							}
@@ -58,6 +60,8 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
+						if (param(t_test) & 0x2)
+							continue; // Calculate all automorphisms (even if matrix is not canonical)
 #if PRINT_TRANSFORMED
 						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), cmpGraph? m_Km:m_Ktmp, 0, 0, 0);
 #endif
@@ -177,6 +181,8 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							if (icmp == 0)
 								updateGroup(trt);
 							else if (icmp < 0) {
+								if (param(t_test) & 0x2)
+									continue; // Calculate all automorphisms (even if matrix is not canonical)
 								bRet = false;
 								goto ret;
 							}

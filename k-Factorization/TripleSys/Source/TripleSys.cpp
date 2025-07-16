@@ -260,15 +260,19 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if !USE_CUDA
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
-#if 0   // Matrix from data.h
-	if (!mStart0 && iDay > 0)
-	{
+#if 1   // Matrix from data.h
+	if (param(t_test) & 1) {
+		if (!iDay || !mStart0) {
+			printfRed("*** Error: parameter Test=%d, but matrix not defined in data.h\n", param(t_test));
+			//testCanonizatorSpeed(););
+			myExit(1);
+		}
+		printfGreen(" SW uses input matrix from data.h (Test=%d)\n", param(t_test));
 		//testCanonizatorSpeed();
-		m_lastRowWithTestedTrs = 0;
 		setArraysForLastRow(iDay);
 		minRows = iDay--;
 		goto checkCurrentMatrix;
-		exit(0);
+		//exit(0);
 	}
 #endif
 #endif
@@ -310,7 +314,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	else if (iDay > 0) {
 		if (m_useRowsPrecalculation == eCalculateRows)
 			m_pRowStorage->initPlayerMask(mfirst);
-		m_lastRowWithTestedTrs = 0;
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, 0);
 		iDay--;
@@ -623,7 +626,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			if (!m_secondPlayerInRow4First && nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
 				if (nPrecalcRows - 1 == iDay) {
 					m_pRowStorage->initPlayerMask(NULL);
-				//	setArraysForLastRow(nPrecalcRows);
 				}
 				else if (nPrecalcRows == iDay) {
 					m_secondPlayerInRow4 = m_secondPlayerInRow4First = result(nPrecalcRows)[1];

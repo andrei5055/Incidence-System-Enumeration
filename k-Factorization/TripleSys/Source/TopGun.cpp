@@ -252,6 +252,23 @@ int TopGun::Run()
 	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
 	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
-
+	else
+		finalizeSemiM();
 	return m_errCode;
+}
+
+#include <mutex>
+
+std::mutex mtxLinks; // The mutex to protect the shared resource
+CStorageIdx<tchar>** mpLinks = NULL;
+CStorageIdx<tchar>** mShLinks = NULL;
+CStorageIdx<tchar>** mShLinks2 = NULL;
+int SemiPhase = 0;
+
+void TopGun::finalizeSemiM()
+{
+	const auto nSemiM = mShLinks ? mShLinks[0]->numObjects() : -1;
+	if (nSemiM < 0)
+		return;
+	SemiPhase++;
 }

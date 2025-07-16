@@ -35,7 +35,7 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 		int j = 0;
 		while (getline(mf, line)) {
 			nl++;
-			if (!j && i + nUsed > reservedElement) {
+			if (!j && i + nUsed >= reservedElement) {
 				const auto prevReserved = reservedElement;
 				reservedElement <<= 1;
 				if (reservedElement > nMatricesMax)

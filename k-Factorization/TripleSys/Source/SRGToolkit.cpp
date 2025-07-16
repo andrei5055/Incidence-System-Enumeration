@@ -205,6 +205,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", m_v, graphParam->k);
 
 	pGraphDB->setTableTitle(buf);
+	if (rank3)
+		graphParam->m_cntr[4]++;
 
 	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
 	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
@@ -226,9 +228,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			setOutFileName(pBuf, false);
 		}
 
-		if (rank3)
-			graphParam->m_cntr[4]++;
-
 		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
 
 		pBuf = buf;
@@ -246,7 +245,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
 				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
 		else
-			SPRINTFD(pBuf, buf, "\Regular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
+			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
 				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, groupOrder());
 #endif
 		if (rank3)
@@ -269,9 +268,14 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
 		--graphParam->m_cntr[0];
 		--graphParam->m_cntr[1];
-		--graphParam->m_cntr[2];
+		if (graphType != t_regular) 
+			--graphParam->m_cntr[2];
+
 		if (graphType != t_4_vert)
 			--graphParam->m_cntr[3];
+
+		if (rank3)
+			--graphParam->m_cntr[4];
 	}
 
 	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
@@ -691,7 +695,7 @@ t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {
 
 		}
 		else
-			m_cntr[3]++;  // # of graphs not satisfying 4-vertex condition
+			m_cntr[3]++;  // # of graphs NOT satisfying 4-vertex condition
 
 		if (!m_cntr[2]++) {
 			λ = pCommon[0];
