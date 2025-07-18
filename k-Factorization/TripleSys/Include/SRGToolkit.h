@@ -18,7 +18,7 @@ typedef struct SRGParam {
 class SRGToolkit : public  Generators<ushort>
 {
 public:
-	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName);
+	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
 	void printStat();
@@ -54,5 +54,6 @@ private:
 	ushort* m_pLenOrbits = nullptr;
 	ushort* m_pSavedOrbIdx = nullptr;
 	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
+	tchar* m_bConnectFlags = nullptr;
 };
 

@@ -284,7 +284,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 #else
 		const auto& srgResFile = ResultFile;
 #endif
-		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, srgResFile);
+		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, srgResFile, param(t_semiSymmetricGraphs));
 		m_pGraphDB = new GraphDB[2]();
 		for (int i = 0; i < 2; i++)
 			m_pGraphDB[i].setGraphType(i + 1);
@@ -292,7 +292,6 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 
 	Result.setOutFileName(ResultFile.c_str());
 	printfGreen("Saved to a file: \"%s\"\n", ResultFile.c_str());
-
 	for (uint i = 0; i < numMatrices2Process(); i++) {
 		const auto idx = m_pMatrixPerm[i];
 		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];

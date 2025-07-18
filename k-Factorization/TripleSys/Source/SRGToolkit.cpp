@@ -14,7 +14,7 @@ int nIter = 0;
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
-SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName) :
+SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric) :
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize),
 	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
 	setOutFileName(NULL);
@@ -34,6 +34,9 @@ SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& r
 		m_pGraphParam[i] = new SRGParam();
 		m_pMarixStorage[i] = new CBinaryMatrixStorage(m_len, 50);
 	}
+
+	if (semiSymmetric)
+		m_bConnectFlags = new tchar[m_len * (nRows - 1) * groupSize];
 }
 
 SRGToolkit::~SRGToolkit() { 
@@ -42,6 +45,7 @@ SRGToolkit::~SRGToolkit() {
 	delete[] m_pNumOrbits;
 	delete[] m_pOrbits;
 	delete[] outFileName();
+	delete[] m_bConnectFlags;
 	for (int i = 0; i < 2; i++) {
 		delete m_pMarixStorage[i];
 		delete m_pGraphParam[i];
@@ -101,6 +105,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			// Add edges between vertex pairs whose corresponding tuples of size `m_groupSize`
 			// either share exactly one common element (if `cont == true`)
 			// or have no elements in common (if `cont == false`).
+			int nConnected = (m_nRows - i - 1) * m_groupSize;
 			auto* pNextVertex = pMatr + (i + 1) * m_nCols;
 			while (pNextVertex < pVertexLast) {
 				numNextVertex++;
@@ -110,6 +115,9 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 					// Add edges to the graph for the vertices intersecting by one element
 					pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
 						pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
+
+					if (!(--nConnected))
+						break;
 				}
 
 				// Move to the next vertex
