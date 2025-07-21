@@ -87,6 +87,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 	auto graphParam = m_pGraphParam[typeIdx];
 	const auto cond = typeIdx != 0;
+	const auto mult = cond ? m_groupSize : numGroups - m_groupSize;
 	// Create graph
 	auto pAdjacencyMatrix = m_pGraph[0];
 	memset(pAdjacencyMatrix, 0, m_v * m_v * sizeof(pAdjacencyMatrix[0]));
@@ -105,7 +106,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			// Add edges between vertex pairs whose corresponding tuples of size `m_groupSize`
 			// either share exactly one common element (if `cont == true`)
 			// or have no elements in common (if `cont == false`).
-			int nConnected = (m_nRows - i - 1) * m_groupSize;
+			int nConnected = (m_nRows - i - 1) * mult;
 			auto* pNextVertex = pMatr + (i + 1) * m_nCols;
 			while (pNextVertex < pVertexLast) {
 				numNextVertex++;
@@ -279,7 +280,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		if (graphType != t_regular) 
 			--graphParam->m_cntr[2];
 
-		if (graphType != t_4_vert)
+		if (graphType == t_4_vert)
 			--graphParam->m_cntr[3];
 
 		if (rank3)
@@ -700,10 +701,8 @@ t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {
 					pCommon[2], pCommon[3], α, β);
 			α = pCommon[2];
 			β = pCommon[3];
-
+			m_cntr[3]++; // # of graphs satisfying 4-vertex condition
 		}
-		else
-			m_cntr[3]++;  // # of graphs NOT satisfying 4-vertex condition
 
 		if (!m_cntr[2]++) {
 			λ = pCommon[0];
@@ -740,7 +739,7 @@ void SRGToolkit::printStat() {
 		if (graphParam.m_cntr[4])
 			printfYellow(" • %d - rank 3 graph%s\n", graphParam.m_cntr[4], (graphParam.m_cntr[4] > 1? "s" : ""));
 
-		const auto n4VertCond = graphParam.m_cntr[2] - graphParam.m_cntr[3] - graphParam.m_cntr[4];
+		const auto n4VertCond = graphParam.m_cntr[4] - graphParam.m_cntr[3];
 		if (n4VertCond)
 			printfRed(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n", 
 				n4VertCond, (n4VertCond > 1? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
