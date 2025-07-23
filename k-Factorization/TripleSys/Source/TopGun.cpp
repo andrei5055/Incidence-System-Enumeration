@@ -165,11 +165,6 @@ int TopGun::Run()
 							}
 							iTask++;
 						}
-						if (clock() - cTime > 20000)
-						{
-							printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
-							cTime = clock();
-						}
 						if (!nThreadsRunning)
 							break;
 					}
@@ -178,13 +173,12 @@ int TopGun::Run()
 					for (uint iTask = 0; iTask < numThreads; iTask++)
 						threadStopped(iTask);
 
-					nMatricesProc++;
-
-					if (clock() - cTime > 20000)
-					{
-						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
-						cTime = clock();
-					}
+				}
+				nMatricesProc++;
+				if (clock() - cTime > 20000)
+				{
+					printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+					cTime = clock();
 				}
 				mstart += inputMatrixSize();
 				m_iMatrix += 1;
