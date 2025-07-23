@@ -1,0 +1,66 @@
+
+===>> 07/22/25: 15:11:35
+
+
+      *** Resulting matrix DB is empty *** 
+T = 2s: 48 (from 48) UC-matrices (20x3) processed by 10 threads. 0 UC-matrices (20x10) generated
+Thread:Matrices generated
+ 1:0 2:0 3:0 4:0 5:0 6:0 7:0 8:0 9:0 10:0
+Total time=1540ms (including prep time=1ms)
+
+Main parameters:
+                      nPlayers: 20
+                     GroupSize: 2
+                    CBMP_Graph: 2
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 1
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 10
+            NRowsInStartMatrix: 3
+           NRowsInResultMatrix: 0
+      MaxNumberOfStartMatrices: 300000
+     FirstIndexOfStartMatrices: 0
+                ExpectedResult: 0
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+             UseAutForPrecRows: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 1
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5100
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 16
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 16
+                  AutDirection: 1
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 1
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+          OutAutomorphismGroup: 0
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 0
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 0
+               ExploreMatrices: 1
+           SemiSymmetricGraphs: 0
+             RejectCycleLength: 0
+
+Parameters of string type:
+                       U1FName: _812
+                   StartFolder: ../../LogsTest1/
+                  ResultFolder: ../../LogsTest1/
+          ImprovedResultFolder: ../ImprovedResults/
+
+U1F configurations:
+                     U1FCycles: {{8,12}}
