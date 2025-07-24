@@ -43,7 +43,7 @@ CC void CRowStorage::initMaskStorage(uint numObjects) {
 	reset();
 }
 
-CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
+CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr, ctchar lastNeighborOfPlayer0) {
 	m_pFirstMatr = pFirstMatr;
 	m_stepCombSolution = 0;
 	ll playersMask = -1;
@@ -78,6 +78,9 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr) {
 		for (int i = groupSize; i < numPlayers(); i += groupSize)
 			playersMask &= ((ll)-1 ^ ((ll)1 << i));
 	}
+
+	for (int i = lastNeighborOfPlayer0 + 1; i < numPlayers(); i++)
+		playersMask &= ((ll)-1 ^ ((ll)1 << i));
 
 	m_playersMask[0] = m_playersMask[1] = playersMask ^ ((ll)(-1) << shift);
 }

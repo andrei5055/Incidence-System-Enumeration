@@ -40,7 +40,7 @@ public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
-	CC void initPlayerMask(ctchar* pFirstMatr = NULL);
+	CC void initPlayerMask(ctchar* pFirstMatr = NULL, ctchar lastNeighborOfPlayer0 = 0);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
