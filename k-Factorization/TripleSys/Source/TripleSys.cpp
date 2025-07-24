@@ -437,20 +437,22 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 							m_rowTime[i] = m_cTime - m_iTime;
 #endif
 						goto checkCurrentMatrix;
-					case -1: // reported if requested row not in solution (can happen only if LastRowSecondPlayer is incorrect)
+					case -1: // reported if requested row not in solution
 					{
-						if (secondPlayerInRow4Last < secondPlayerMax) {/**
+#if 0
+						if (secondPlayerInRow4Last < secondPlayerMax) {
 							m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 							linksFromMatrix(links(), result(), iDay);
 							if (cnvCheckNew(0, iDay, false) && (m_groupSize != 3 || checkLinks(links(), iDay))) {
-								// matrix ok, error cannot be ignored*/
+								// matrix ok, error cannot be ignored
 #if !USE_CUDA
 								printfRed("*** Failing getRow(%d) = %d ***\n", iDay, retVal);
 								printTable("Current result", result(), iDay, m_numPlayers, groupSize());
 								exit(1);
 #endif					
-							//}
+							}
 						}
+#endif
 						// continue to case 0:
 					}
 					case 0:
