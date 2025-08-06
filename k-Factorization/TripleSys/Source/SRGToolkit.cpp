@@ -14,8 +14,8 @@ int nIter = 0;
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
-SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric) :
-	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize),
+SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices) :
+	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize), m_nExploreMatrices(exploreMatrices),
 	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
 	setOutFileName(NULL);
 	const int coeff = PRINT_MATRICES? 2 : 0;
@@ -143,61 +143,66 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		}
 	}
 
-	initCanonizer();
-	int i, firstVert = 0;
-	i = 0;
+	bool rank3 = false;
+	tchar* pGraph = NULL;
+	ctchar* pResGraph = NULL;
+	if (m_nExploreMatrices > 0) {
+		initCanonizer();
+		int i, firstVert = 0;
+		i = 0;
 #if PRINT_MATRICES
-	new ushort[m_v];
-	for (int j = m_v; j--;)
-		m_pOrbits[j] = j;
-
-	auto pInitOrbits = m_pOrbits + m_v;
-	auto pResOrbits = pInitOrbits + m_v;
-	memcpy(pGraph[0] = m_pGraph[i] + 2 * m_v * m_v, m_pGraph[0], m_v * m_v * sizeof(m_pGraph[0]));
-	pGraph[1] = pGraph[0] + m_v * m_v;
-	memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
-	PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
-#endif
-	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
-		createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
-#if PRINT_MATRICES
+		new ushort[m_v];
 		for (int j = m_v; j--;)
-			pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
+			m_pOrbits[j] = j;
 
-		memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
-		createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
-		PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
-		PRINT_ADJ_MATRIX(m_pGraph[1-i], nIter++, m_v);
+		auto pInitOrbits = m_pOrbits + m_v;
+		auto pResOrbits = pInitOrbits + m_v;
+		memcpy(pGraph[0] = m_pGraph[i] + 2 * m_v * m_v, m_pGraph[0], m_v * m_v * sizeof(m_pGraph[0]));
+		pGraph[1] = pGraph[0] + m_v * m_v;
+		memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
+		PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
 #endif
-		i = 1 - i;
+		while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
+			createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
+#if PRINT_MATRICES
+			for (int j = m_v; j--;)
+				pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
+
+			memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
+			createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
+			PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
+			PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter++, m_v);
+#endif
+			i = 1 - i;
+		}
+
+		// Copy elements above the main diagonal into the array.
+		pResGraph = m_pGraph[i];
+		auto pFrom = m_pGraph[i];
+		auto pTo = pGraph = m_pGraph[1 - i];
+		for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
+			memcpy(pTo, pFrom + ++i, j);
+
+		// Copying vertex orbits and trivial permutation
+		auto pntr = this->getObject(0);
+		memcpy(pntr, m_pGroupOrbits, m_v * sizeof(*pntr));
+		pntr += 2 * m_v;
+		rank3 = true;
+		for (i = 0; i < m_v; i++) {
+			pntr[i] = i;
+			rank3 &= !m_pGroupOrbits[i];
+		}
+
+		// Analyze the stabilizer of first vertex
+		pntr -= m_v;
+		const auto j = graphParam->k + 1;
+		for (i = 1; i < j; i++)
+			rank3 &= pntr[i] == 1;
+
+		while (i < m_v)
+			rank3 &= pntr[i++] == j;
+
 	}
-
-	// Copy elements above the main diagonal into the array.
-	const auto pResGraph = m_pGraph[i];
-	auto pFrom = m_pGraph[i];
-	auto pTo = m_pGraph[1 - i];
-	auto pGraph = pTo;
-	for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
-		memcpy(pTo, pFrom + ++i, j);
-
-	// Copying vertex orbits and trivial permutation
-	auto pntr = this->getObject(0);
-	memcpy(pntr, m_pGroupOrbits, m_v * sizeof(*pntr));
-	pntr += 2 * m_v;
-	bool rank3 = true;
-	for (i = 0; i < m_v; i++) {
-		pntr[i] = i;
-		rank3 &= !m_pGroupOrbits[i];
-	}
-
-	// Analyze the stabilizer of first vertex
-	pntr -= m_v;
-	const auto j = graphParam->k + 1;
-	for (i = 1; i < j; i++)
-		rank3 &= pntr[i] == 1;
-
-	while (i < m_v)
-		rank3 &= pntr[i++] == j;
 
 	const char* pGraphDescr = "";
 	if (rank3)
@@ -217,9 +222,16 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	if (rank3)
 		graphParam->m_cntr[4]++;
 
-	const auto prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
-	m_pMarixStorage[typeIdx]->updateRepo(pGraph);
-	const auto newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
+	bool newGraph = true;
+	int prevMatrNumb = m_nPrevMatrNumb;
+	if (pGraph) {
+		prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
+		m_pMarixStorage[typeIdx]->updateRepo(pGraph);
+		newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
+	}
+	else
+		m_nPrevMatrNumb++;
+
 	if (newGraph) {
 		pBuf = buf;
 		// New SRG constructed
@@ -268,10 +280,13 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
 
 		fprintf(f, "%s\n", buf);
-		outAdjMatrix(pResGraph, f);
+		if (pResGraph)
+			outAdjMatrix(pResGraph, f);
+
 		FCLOSE_F(f);
 
-		makeGroupOutput(NULL, false, false);
+		if (pResGraph)
+			makeGroupOutput(NULL, false, false);
 	}
 	else {
 		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
@@ -627,6 +642,18 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			graphDegree = vertexDegree;
 	}
 
+	if (2 * graphDegree > m_v && graphDegree < m_v - 1) {
+		graphDegree = m_v - 1 - graphDegree;
+		// Compute the complement graph by inverting the adjacency relations.
+		auto pVertex = pGraph;
+		for (int i = 0; i < m_v; i++, pVertex += m_v) {
+			for (int j = 0; j < m_v; j++)
+				pVertex[j] = 1 - pVertex[j];
+
+			pVertex[i] = 0;
+		}
+	}
+
 	if (pGraphParam && !pGraphParam->m_cntr[1]++)
 		pGraphParam->k = graphDegree;
 
@@ -736,13 +763,20 @@ void SRGToolkit::printStat() {
 		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
 			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 
-		if (graphParam.m_cntr[4])
-			printfYellow(" • %d - rank 3 graph%s\n", graphParam.m_cntr[4], (graphParam.m_cntr[4] > 1? "s" : ""));
-
-		const auto n4VertCond = graphParam.m_cntr[4] - graphParam.m_cntr[3];
-		if (n4VertCond)
-			printfRed(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n", 
-				n4VertCond, (n4VertCond > 1? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
+		unsigned int n4VertCond;
+		if (graphParam.m_cntr[4]) {
+			printfYellow(" • %d - rank 3 graph%s\n", graphParam.m_cntr[4], (graphParam.m_cntr[4] > 1 ? "s" : ""));
+			n4VertCond = graphParam.m_cntr[4] - graphParam.m_cntr[3];
+			if (n4VertCond)
+				printfRed(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n",
+					n4VertCond, (n4VertCond > 1 ? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
+		}
+		else {
+			n4VertCond = graphParam.m_cntr[3];
+			if (n4VertCond)
+				printfYellow(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n",
+					n4VertCond, (n4VertCond > 1 ? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
+		}
 
 		const auto v_2k = m_v - 2 * graphParam.k;
 		const auto k = m_v - graphParam.k - 1;

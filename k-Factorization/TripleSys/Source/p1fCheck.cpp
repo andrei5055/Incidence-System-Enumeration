@@ -550,9 +550,14 @@ CC int alldata::p1fCheck2ndRow() const
 		return 0;
 
 	if (m_createSecondRow) {
-		if (m_groupSize == 5 && !completeGraph()) {
+		if (m_groupSize == 5&& !completeGraph()) {
 			// n-partite second row starts with n+1 values: "0, 1*(n+1), 2*(n+1), ... , (n-1)*(n+1), 1"
 			static ctchar _m5[] = { 0, 6, 12, 18, 24, 1 };
+
+			static ctchar _m5Max[] = { 0, 6, 12, 18, 24,  1, 7, 13, 19, 25 }; // experemental data
+			if (m_numPlayers == 35 && MEMCMP(result(1), _m5Max, sizeof(_m5Max)) > 0)
+				return 1;
+
 			return MEMCMP(result(1), _m5, sizeof(_m5));
 		}
 		return 0;
@@ -573,7 +578,7 @@ CC int alldata::p1fCheck2ndRow() const
 		return 1;
 	}
 
-	return MEMCMP(p2ndRow, m_pSecondRowsDB->getObject(0), nc); // only one second row for group size = 2
+	return -1; //MEMCMP(p2ndRow, m_pSecondRowsDB->getObject(0), nc); // only one second row for group size = 2
 }
 
 CC void alldata::p1fCheckStartMatrix(int nr) 

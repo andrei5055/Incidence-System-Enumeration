@@ -50,7 +50,7 @@ protected:
 	inline void updateMatrReserved(bool v)	{ m_bUpdateMatrixReserved = v; }
 	inline auto updateMatrReserved()		{ return m_bUpdateMatrixReserved; }
 	inline auto inputMatrixSize() const		{ return m_nInputMatrixSize; }
-	void orderAndExploreMatrices(int nRows, int orderMatrixMode = 2, bool exploreMatrices = true);
+	void orderAndExploreMatrices(int nRows, int orderMatrixMode = 2, int exploreMatrices = 1);
 	int orderMatrices(int orderMatrixMode);
 
 	int m_nRowsOut;

@@ -321,12 +321,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			break;
 	}
 ret:
-	if (bRet)
-	{
-		//printf("Trs total=%d\n", m_TrInd); Andrei 
-		if (m_createSecondRow && nrows == numDaysResult() && p1 == result(1) && nrows == nrowsToUseForTrs)
-			memcpy(m_pSecondRowsDB->getNextObject(), p1, m_numPlayers);
-	}
 	return bRet;
 }
 CC int alldata::collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indRow0, int indRow1, eCheckForErrors checkErrors)

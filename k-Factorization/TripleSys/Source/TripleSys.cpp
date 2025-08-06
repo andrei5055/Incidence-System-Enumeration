@@ -768,6 +768,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			m_finalKMindex++;
 #if !USE_CUDA
 			if (m_createSecondRow) {
+				memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
 				if (m_bPrint) {
 					const auto nr = secondRowsDB->numObjects();
 					if (nr) {

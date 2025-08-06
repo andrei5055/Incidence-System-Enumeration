@@ -1,12 +1,12 @@
 
-===>> 07/27/25: 16:40:24
+===>> 07/27/25: 23:48:05
 
 
      Factorization of K(2x13)
      ------------------------------------------------------------
        |Aut(M)|:  # of matrices:          Cycles:
      ------------------------------------------------------------
-           91             1        78(4:4:6:6:6)                     
+           39             1        78(6:8:12)                        
      ------------------------------------------------------------
           Total:          1
      ------------------------------------------------------------
@@ -26,16 +26,16 @@
      ----------------------------------------------------------------
        |Aut(G)|:    # of graphs:    Graph type:        Sources:
      ----------------------------------------------------------------
-            468             1                           1                      
+             39             1                           1                      
      ----------------------------------------------------------------
                  Total:     1                              1
      ----------------------------------------------------------------
 
 
-T = 5m54s: 10 (from 10) UC-matrices (26x3) processed by 10 threads. 1 UC-matrices (26x13) generated
+T =10s: 2689 (from 2689) UC-matrices (26x8) processed by 10 threads. 1 UC-matrices (26x13) generated
 Thread:Matrices generated
- 1:0 2:0 3:0 4:0 5:1 6:0 7:0 8:0 9:0 10:0
-Total time=353720ms (including prep time=5ms)
+ 1:0 2:0 3:0 4:1 5:0 6:0 7:0 8:0 9:0 10:0
+Total time=9813ms (including prep time=180ms)
 
 Main parameters:
                       nPlayers: 26
@@ -49,7 +49,7 @@ Main parameters:
                        USE_GPU: 0
              UseMultiThreading: 1
                       NThreads: 10
-            NRowsInStartMatrix: 3
+            NRowsInStartMatrix: 8
            NRowsInResultMatrix: 0
       MaxNumberOfStartMatrices: 300000
      FirstIndexOfStartMatrices: 0
@@ -86,10 +86,10 @@ Main parameters:
              RejectCycleLength: 0
 
 Parameters of string type:
-                       U1FName: _44666
+                       U1FName: _6812
                    StartFolder: ../../LogsTest1/
                   ResultFolder: ../../LogsTest1/
           ImprovedResultFolder: ../ImprovedResults/
 
 U1F configurations:
-                     U1FCycles: {{4,4,6,6,6}}
+                     U1FCycles: {{6,8,12}}

@@ -132,14 +132,14 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		if (nParts <= 1) 
 			sprintf_s(buffer, "Factorization of K(%d)", param(t_numPlayers));
 		else
-			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers));
+			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers)/nParts);
 
 		setTableTitle(buffer);
 		const auto totalMatr = reportResult(f);
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
 			if (readMatrices(t_ResultFolder, nRows) >= 0) {
-				orderAndExploreMatrices(nRowsOut());
+				orderAndExploreMatrices(nRowsOut(), 2, exploreMatrices);
 
 				for (int i = 0; i < 2; i++)
 					(m_pGraphDB + i)->reportResult(f, false);
@@ -263,7 +263,7 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 	return nDuplicate;
 }
 
-void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool exploreMatrices) {
+void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exploreMatrices) {
 	const auto nDuplicate = orderMatrices(orderMatrixMode);
 	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", numMatrices2Process(), matrixType(nRows), nDuplicate);
 	m_nMatrices -= nDuplicate;
@@ -284,7 +284,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, bool ex
 #else
 		const auto& srgResFile = ResultFile;
 #endif
-		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, srgResFile, param(t_semiSymmetricGraphs));
+		pSRGtoolkit = new SRGToolkit(numPlayers(), nRows, m_groupSize, srgResFile, param(t_semiSymmetricGraphs), exploreMatrices);
 		m_pGraphDB = new GraphDB[2]();
 		for (int i = 0; i < 2; i++)
 			m_pGraphDB[i].setGraphType(i + 1);

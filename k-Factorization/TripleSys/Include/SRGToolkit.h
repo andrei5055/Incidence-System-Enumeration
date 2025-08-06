@@ -5,7 +5,7 @@
 #define OUT_SRG_TO_SEPARATE_FILE	0	// Set this value to 1 if you want to see the constructed SRG in a separate file.
 
 typedef struct SRGParam {
-	unsigned int m_cntr[5];   // 0 - total, 1 - regular, 2 - SRG, 3 - NOT 4-vert cond; 4 - rank 3 
+	unsigned int m_cntr[5];   // 0 - total, 1 - regular, 2 - SRG, 3 - 4-vert cond; 4 - rank 3 
 	int k;
 	int λ;
 	int μ;
@@ -18,7 +18,7 @@ typedef struct SRGParam {
 class SRGToolkit : public  Generators<ushort>
 {
 public:
-	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric);
+	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
 	void printStat();
@@ -41,6 +41,8 @@ private:
 	const int m_groupSize;
 	const int m_v;
 	const std::string m_resFileName;
+	const int m_nExploreMatrices;
+	int m_nPrevMatrNumb = 0;
 	
 	int m_len;
 	bool m_bChekMatr[2];

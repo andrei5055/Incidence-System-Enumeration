@@ -1,65 +1,67 @@
 
-===>> 07/27/25: 16:40:24
+===>> 07/26/25: 21:10:34
 
 
-     Factorization of K(2x13)
+     Factorization of K(4x7)
      ------------------------------------------------------------
        |Aut(M)|:  # of matrices:          Cycles:
      ------------------------------------------------------------
-           91             1        78(4:4:6:6:6)                     
+          588             1        504(28)                           
+          882             1        504(28)                           
      ------------------------------------------------------------
-          Total:          1
+          Total:          2
      ------------------------------------------------------------
 
 
-     Strongly regular graphs with parameters: (v,k,λ μ) = (169,24,11,2)
+     Strongly regular graphs with parameters: (v,k,λ μ) = (49,24,11,12)
      ----------------------------------------------------------------
        |Aut(G)|:    # of graphs:    Graph type:        Sources:
      ----------------------------------------------------------------
-     3764599792427073536             1      rank 3 graph         1                      
+           2352             1      rank 3 graph         1                      
+           3528             1      rank 3 graph         2                      
      ----------------------------------------------------------------
-                 Total:     1                              1
+                 Total:     2                              2
      ----------------------------------------------------------------
 
 
-     Strongly regular graphs with parameters: (v,k,λ μ) = (169,36,13,6)
+     Strongly regular graphs with parameters: (v,k,λ μ) = (49,18,7,6)
      ----------------------------------------------------------------
        |Aut(G)|:    # of graphs:    Graph type:        Sources:
      ----------------------------------------------------------------
-            468             1                           1                      
+            588             1                           1,2                    
      ----------------------------------------------------------------
-                 Total:     1                              1
+                 Total:     1                              2
      ----------------------------------------------------------------
 
 
-T = 5m54s: 10 (from 10) UC-matrices (26x3) processed by 10 threads. 1 UC-matrices (26x13) generated
+T = 2s: 11 (from 11) UC-matrices (28x2) processed by 10 threads. 2 UC-matrices (28x7) generated
 Thread:Matrices generated
- 1:0 2:0 3:0 4:0 5:1 6:0 7:0 8:0 9:0 10:0
-Total time=353720ms (including prep time=5ms)
+ 1:0 2:0 3:0 4:0 5:1 6:0 7:0 8:0 9:1 10:0
+Total time=1613ms (including prep time=1ms)
 
 Main parameters:
-                      nPlayers: 26
-                     GroupSize: 2
-                    CBMP_Graph: 2
+                      nPlayers: 28
+                     GroupSize: 4
+                    CBMP_Graph: 4
       UseUniform1Factorization: 1
           Use2RowsCanonization: 1
          UseFastCanonizerForG2: 1
-        SubmatrixGroupOrderMin: 0
+        SubmatrixGroupOrderMin: 8
            ResultGroupOrderMin: 0
                        USE_GPU: 0
              UseMultiThreading: 1
                       NThreads: 10
-            NRowsInStartMatrix: 3
+            NRowsInStartMatrix: 2
            NRowsInResultMatrix: 0
       MaxNumberOfStartMatrices: 300000
      FirstIndexOfStartMatrices: 0
-                ExpectedResult: 1
+                ExpectedResult: -1
                 UseCheckLinksV: 1
          UseRowsPrecalculation: 0
     UseSolutionCliquesAfterRow: 0
              UseAutForPrecRows: 0
            LastRowSecondPlayer: 0
-                 PrintMatrices: 0
+                 PrintMatrices: 1
           SavingMatricesToDisk: 1
            MatrixCanonInterval: 0
       CheckConstructedMatrices: 0
@@ -69,27 +71,24 @@ Main parameters:
                 AutLevelMaxDef: 16
                 AutLevelMinApp: 3
                 AutLevelMaxApp: 16
-                  AutDirection: 1
+                  AutDirection: 0
                AutGroupsToTest: 0
               AutSaveTestedTrs: 1
               UseImproveMatrix: 0
           UseCombinedSolutions: 0
-          OutAutomorphismGroup: 21
+          OutAutomorphismGroup: 0
                   NestedGroups: 0
                       GridSize: 32
                      BlockSize: 24
                  OrderMatrices: 0
-          AllowUndefinedCycles: 0
+          AllowUndefinedCycles: 1
        Any2RowsConvertToFirst2: 0
                ExploreMatrices: 1
            SemiSymmetricGraphs: 0
              RejectCycleLength: 0
 
 Parameters of string type:
-                       U1FName: _44666
+                       U1FName: 
                    StartFolder: ../../LogsTest1/
                   ResultFolder: ../../LogsTest1/
           ImprovedResultFolder: ../ImprovedResults/
-
-U1F configurations:
-                     U1FCycles: {{4,4,6,6,6}}
