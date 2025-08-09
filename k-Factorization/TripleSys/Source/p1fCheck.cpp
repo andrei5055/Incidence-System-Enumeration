@@ -74,6 +74,7 @@ CC void alldata::sortCycles(tchar* length, tchar* start, int ncycles) const
 }
 CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const
 {
+	// we need to convert it to DB (with function "compare")
 	int ncr = MAX_CYCLE_SETS;
 	int iLength = sizeof(TrCycles);
 	const int ncc = MAX_CYCLES_PER_SET;
@@ -88,12 +89,11 @@ CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const
 		}
 
 		// add cycle to array of all cycles
-		//ASSERT(!bWithoutPath); // to allow use of bWithoutPath=false you need to change code to create correct m_TrCyclesFirst2Rows
 		int ic = MEMCMP(trc->length, trcAll[j].length, ncc);
-		 switch (ic) {
+		switch (ic) {
 		case -1:
 			if (j >= ncr) {
-				ASSERT(1);
+				ASSERT(1); // number of different cycles sets > MAX_CYCLE_SETS
 				EXIT_(1);
 			}
 			for (int i = ncr - 2; i >= j; i--) 
@@ -143,9 +143,10 @@ CC void alldata::adjustPlayerPosition(tchar* path, tchar length, tchar nrows)
 }
 CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4, eCheckForErrors checkErrors) const
 {
-	// calculate cycle(s) between two rows for group size 2 or 3.
-	// return number of cycles calculated, 0 if one of the cycle not selected or -1 if full cycle set not selected.
-	//        if 0 trc->ncycles = 1 and trc->length[0] equal to incorrect cycle length
+	// calculate cycle(s) between two rows (for group size 2 or 3).
+	// returns: >0 - number of cycles calculated.
+	//           0 - if one of the cycle not selected (trc->ncycles=1, trc->length[0]=incorrect cycle length)
+	//          -1 - if full cycle set not selected.
 	// tt1, tt2 contains values of "neighbor of player" (for not common elements), or value of common element
 	// tt3, tt4 contains values of same group common element for each player
 
@@ -270,7 +271,7 @@ CC int alldata::p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctcha
 CC int alldata::u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
 	eCheckForErrors checkErrors) const
 {
-	// returns > 0  ok, 0 - one of the cycle not in any list, -1 - cycle set not in list
+	// returns > 0  ok, 0 - one of the cycle not in any set, -1 - cycle set not defined
 	// calculate cycle(s) length for rows res1, res2.
 	// t1, t2 - precalculated arrays with 
 	// for group size = 2: neighbor for each player (for example t1[7] - neighbor of player 7 in row res1)
@@ -383,9 +384,9 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		{
 			if (checkErrors == eCheckErrors)
 			{
-				const auto ncycles = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eCheckErrors);
+				const auto iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eCheckErrors);
 				// in case of incorrect one cycle length u1fGetCycleLength reports only one cycle (with error)
-				if (ncycles == 0)
+				if (iret == 0)
 				{
 					tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
 					int fpLength = m_TrCycles.length[0] * 2;
@@ -393,7 +394,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 					ret = false;
 					break;
 				}
-				if (ncycles == -1)
+				if (iret == -1)
 				{
 					ret = false;
 					break;
@@ -401,7 +402,7 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 			}
 			else
 			{
-				int ncycles = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eNoErrorCheck);
+				int iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eNoErrorCheck);
 #if 0 // print information about each pair cycles and path
 				if (nr == m_numDaysResult) {
 				printf("\nRows %d:", i);
@@ -550,15 +551,29 @@ CC int alldata::p1fCheck2ndRow() const
 		return 0;
 
 	if (m_createSecondRow) {
-		if (m_groupSize == 5&& !completeGraph()) {
+		if (!completeGraph()) {
 			// n-partite second row starts with n+1 values: "0, 1*(n+1), 2*(n+1), ... , (n-1)*(n+1), 1"
-			static ctchar _m5[] = { 0, 6, 12, 18, 24, 1 };
-
-			static ctchar _m5Max[] = { 0, 6, 12, 18, 24,  1, 7, 13, 19, 25 }; // experemental data
-			if (m_numPlayers == 35 && MEMCMP(result(1), _m5Max, sizeof(_m5Max)) > 0)
-				return 1;
-
-			return MEMCMP(result(1), _m5, sizeof(_m5));
+			switch (m_groupSize) {
+				case 3: {
+					static ctchar _m3Max[] = { 0,  4,  8,   1,  9, 14,   2, 15, 19 }; // experemental data
+					if (m_numPlayers == 27 && MEMCMP(result(1), _m3Max, sizeof(_m3Max)) > 0)
+						return 1;
+					break;
+				}
+				case 4: {
+					static ctchar _m4Max[] = { 0, 5, 10, 15,  1, 6, 16, 23 }; // experemental data
+					if (m_numPlayers == 28 && MEMCMP(result(1), _m4Max, sizeof(_m4Max)) > 0)
+						return 1;
+					break;
+				}
+				case 5: {
+					static ctchar _m5Max[] = { 0, 6, 12, 18, 24,  1, 7, 13, 19, 25 }; // experemental data
+					static ctchar _m5[] = { 0, 6, 12, 18, 24, 1 };
+					if (m_numPlayers == 35 && MEMCMP(result(1), _m5Max, sizeof(_m5Max)) > 0)
+						return 1;
+					return MEMCMP(result(1), _m5, sizeof(_m5));
+				}
+			}
 		}
 		return 0;
 	}
@@ -691,7 +706,7 @@ void alldata::cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0
 				break;
 			case 3: {
 				auto v0 = getV0();
-				const int nv0 = getAllV(v0, m_maxCommonVSets, neighbors1, result0); // ! neighbor1 can be different than neighors(1)
+				const int nv0 = getAllV(v0, m_maxCommonVSets, neighbors1, result0); // ! neighbors1 can be different than neighors(1)
 				ASSERT(!nv0);
 				ctchar* vtr = v0; // Common Values
 				for (int i = 0; i < nv0; i++, vtr += m_nGroups)

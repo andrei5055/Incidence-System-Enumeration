@@ -156,9 +156,11 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 	}
 
 	if (!groupSize2() && m_playersMask[1] && pRow[1] > (i = minPlayer(m_playersMask[1]))) {
-		PRINT_RED(".");
+		//PRINT_RED(".");
+		//printTable("Solution", pRow, 1, m_numPlayers, m_pAllData->groupSize(), 0, true);
 		//PRINT_RED("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
-		EXIT;
+		//EXIT;
+		return false; // this can happen if a row with requested player was skipped in main code because of some other reason
 	}
 
 	if (m_numObjects > 1) {
@@ -229,9 +231,9 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		return p1fCheck2P1F(neighborsi + m_numPlayers, pObj + m_numPlayers * 2);
 
 	TrCycles tcs;
-	const auto ncycles = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers,
+	const auto iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers,
 		neighborsi - m_numPlayers, pObj, eCheckErrors);
-	if (ncycles <= 0)
+	if (iret <= 0)
 		return false;
 	for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++, tc++)
 	{

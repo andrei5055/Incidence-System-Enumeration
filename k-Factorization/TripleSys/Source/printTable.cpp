@@ -1,5 +1,54 @@
 #include "TopGun.h"
 #if !USE_CUDA
+void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
+	if (f)
+		fprintf(f, format, pStr);
+
+	if (toScreen)
+		printf(format, pStr);
+}
+
+#if PrintImprovedResults
+void alldata::outputResults(int iDay, const unsigned char* pResult, int cntr) const
+{
+	char buffer[256];
+	const bool toScreen = PrintImprovedResults > 1;
+	FOPEN_W(f, ImprovedResultFile, canonCalls(1) || cntr ? "a" : "w", m_file);
+
+	const unsigned char* pDayPerm = NULL;
+	auto flag = true;
+	if (cntr) {
+		flag = m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainMatr);
+		if (flag) {
+			pDayPerm = pResult + iDay * numPlayers();
+			sprintf_s(buffer, "Improved Result #%d for %d days  m_groupIndex = %d:\n", cntr, iDay, m_groupIndex);
+			_printf(f, toScreen, buffer);
+		}
+
+		if (m_pCheckCanon->improvedResultIsReady(t_bResultFlags::t_readyToExplainTxt))
+			_printf(f, toScreen, "%s\n", m_pCheckCanon->comment());
+	}
+	else {
+		sprintf_s(buffer, "Initial Result #%zd (%zd):\n", canonCalls(0), ((Table<char>*) m_pRes)->counter());
+		_printf(f, toScreen, buffer);
+	}
+
+	if (flag)
+		outMatrix(pResult, iDay, numPlayers(), m_groupSize, 0, f, false, toScreen, cntr, pDayPerm);
+
+	FCLOSE_W(f, m_file);
+}
+#endif
+
+#if CHECK_PERMUTATIONS
+void alldata::outputError() const {
+	extern char lastError[];
+	FOPEN_W(f, ImprovedResultFile, "a", m_file);
+	_printf(f, false, lastError);
+	FCLOSE_W(f, m_file);
+}
+#endif
+
 void alldata::reportCurrentMatrix()
 {
 	m_cTime = clock();

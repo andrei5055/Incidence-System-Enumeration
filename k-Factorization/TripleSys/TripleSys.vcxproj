@@ -164,6 +164,7 @@
     <ClCompile Include="Source\CompSolGraph.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
+    <ClCompile Include="Source\endOfRowPrecalculation.cpp" />
     <ClCompile Include="Source\cycles.cpp" />
     <ClCompile Include="Source\Generators.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
@@ -177,6 +178,7 @@
     <ClCompile Include="Source\p1fCheck.cpp" />
     <ClCompile Include="Source\p1fSupport.cpp" />
     <ClCompile Include="Source\PlayerPermutation.cpp" />
+    <ClCompile Include="Source\precalculatedSolutions.cpp" />
     <ClCompile Include="Source\printTable.cpp" />
     <ClCompile Include="Source\processOneDay.cpp" />
     <ClCompile Include="Source\reportCheckLinksData.cpp" />

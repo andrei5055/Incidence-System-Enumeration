@@ -45,8 +45,9 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			if (iDay == 2)
 			{
 				switch (p1fCheck2ndRow()) {
-				case -1: return -1;
-				case  1: noMoreResults = true; return 1;
+					case -1: return -1;
+					case  1: return 1;
+					case  0: break;
 				}
 			}
 		}

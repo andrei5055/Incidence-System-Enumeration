@@ -124,7 +124,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	if (m_createSecondRow)
 		m_pCheckFunc = &alldata::cnvCheck3U1F;
 	if (param(t_useFastCanonizerForG2) == 2)
-		m_pSortGroups = NULL;
+		m_pCheckFunc = NULL;
 
 	m_pSortGroups = m_groupSize == 2 ? &alldata::kmSortGroups2 : (m_groupSize == 3 ? &alldata::kmSortGroups3 : &alldata::kmSortGroups);
 
@@ -294,7 +294,7 @@ CC void alldata::Init() {
 
 	maxDays = -1;
 	nLoops = iDay = 0;
-	noMoreResults = bPrevResult = false; // can be false, or true to go to prev day
+	bPrevResult = false; // can be false, or true to go to prev day
 	cnvInit();
 }
 

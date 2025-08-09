@@ -97,8 +97,10 @@ public:
 		Init(param->u1fCycles[0]);
 	}
 	~kSysParam()			{ 
-		if (m_b_dataOwner) 
-		   delete[] u1fCycles[0]; 
+		if (m_b_dataOwner) {
+			delete[] u1fCycles[0];
+			u1fCycles[0] = NULL;
+		}
 	}
 	CC inline auto partiteNumb() const		{ return val[t_CBMP_Graph]; }
 	CC inline auto completeGraph() const	{ return partiteNumb() == 1; }

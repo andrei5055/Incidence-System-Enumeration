@@ -108,7 +108,12 @@ typedef enum {
 	eEachSetSeparate,
 	eSameSetsTogether,
 } eCollectionMode;
-
+typedef enum {
+	eCheckCurrentMatrix,
+	eContinue,
+	eNoResult,
+	eOk,
+} ePrecalculateReturn;
 template<typename T>CC void initArray(T** pPntr, int len, T val = 0) {
 	auto *ptr = *pPntr = new T[len];
 	while (len--)
@@ -150,6 +155,10 @@ public:
 	CC sLongLong Run(int threadId=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
 		ctchar* mstart0 = NULL, ctchar* mfirst = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
+	CC void initPrecalculationData(eThreadStartMode iCalcMode, int nRowStart);
+	CC ePrecalculateReturn endOfRowPrecalculation(eThreadStartMode iCalcMode);
+	CC void addPrecalculatedRow();
+	CC ePrecalculateReturn precalculatedSolutions(eThreadStartMode iCalcMode);
 	bool initStartValues(const char* ivc, bool printStartValues=true);
 	CC bool improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1 = NULL);
 	CC int cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits=NULL);
@@ -296,7 +305,6 @@ private:
 	int maxDays;
 	int maxDaysPlayers;
 	sLongLong nLoops;
-	bool noMoreResults;
 	int* m_rowTime;
 	tchar* m_pResults;
 	tchar* m_pResultsPrev;
@@ -321,6 +329,9 @@ private:
 	int m_TrInd;
 	int m_cnvMode;
 	int m_useRowsPrecalculation;
+	int m_nPrecalcRows = 0;
+	int m_nRows4 = 0;
+	int m_nRows4Day = 0;
 	int m_secondPlayerInRow4;
 	int m_secondPlayerInRow4First;
 	int m_secondPlayerInRow4Last;

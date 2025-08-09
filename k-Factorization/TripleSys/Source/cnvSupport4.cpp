@@ -7,7 +7,7 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 	ctchar* u1fPntr = sysParam()->u1fCycles[0];
 	if (m_allowUndefinedCycles) {
 		if (!u1fPntr)
-			return true;  //all cycles are welcome */ trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
+			return true;  //all cycles are welcome or trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
 		else {
 			// check that selected in params cycles are present
 			const int nc = *u1fPntr;
@@ -24,12 +24,13 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 						return false;
 				}
 			}
-			return true;
 		}
+		return true;
 	}
-	// check that all and only requested cycles are present
+	// check that only requested cycles are present
 	if (!u1fPntr) {
-		return trc[0].length[0] == m_numPlayers && (MAX_CYCLE_SETS <= 1 || trc[1].counter == 0);
+		ASSERT(MAX_CYCLE_SETS < 2);
+		return trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
 		//return true;
 	}
 	else {
@@ -39,16 +40,19 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 			EXIT_(1);
 		}
 		u1fPntr++;
-		int itr;
-		for (itr = 0; itr < nc; itr++, u1fPntr += MAX_CYCLES_PER_SET)
+		for (int j = 0; j < MAX_CYCLE_SETS; j++)
 		{
-			if (trc[itr].counter == 0)
-				return false;
-			// warning! cycles defined in params must be sorted
-			if (MEMCMP(trc[itr].length, u1fPntr, MAX_CYCLES_PER_SET))
+			if (trc[j].counter == 0)
+				break;
+			int i = 0;
+			for (auto u1fPntr1 = u1fPntr; i < nc; i++, u1fPntr1 += MAX_CYCLES_PER_SET) {
+				// warning! cycles defined in params must be sorted
+				if (MEMCMP(trc[j].length, u1fPntr1, MAX_CYCLES_PER_SET) == 0)
+					break;
+			}
+			if (i == nc)
 				return false;
 		}
-		return itr == MAX_CYCLE_SETS || trc[itr].counter == 0;
 	}
 	return true;
 }
@@ -64,45 +68,47 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctch
 
 	const auto nc = m_numPlayers;
 	const int ncc = MAX_CYCLES_PER_SET;
-	tchar res1tmp[MAX_PLAYER_NUMBER];
+	tchar usedGroups[MAX_GROUP_NUMBER];
 	int ncycles = 0;
 	memset(trc, 0, sizeof(TrCycles));
-	memset(res1tmp, unset, nc);
+	memset(usedGroups, unset, sizeof(usedGroups));
 	tchar* pst = m_groups + istart * m_groupSize;
 	int vp = 0;
 	tchar v = 0;
+	ctchar cin = 0, cout = 1;
 	tchar k = 0, k0 = 0, k1 = 0, ip = 0;
-	const tchar iGroupSizeM1 = m_groupSize - 1;
-	for (; k0 < nc && ncycles < ncc; k0 += m_groupSize)
+	for (; k0 < m_nGroups && ncycles < ncc; k0++)
 	{
-		if (res1tmp[k0] == unset) // not used before 
+		if (usedGroups[k0] == unset) // not used before 
 		{
 			trc->start[ncycles] = ip / 2;
 			k = k0;
 			int i = 0;
 			for (; i < nc; i += m_groupSize)
 			{
-				k1 = k / m_groupSize * m_groupSize;
-				if (i && res1tmp[k1] != unset)
+				k1 = k * m_groupSize;
+				if (usedGroups[k] != unset)
 					break;
-				res1tmp[k1] = 0;
+				usedGroups[k] = 0;
 				for (int j = 0; j < m_groupSize; j++) {
 					v = res1[k1 + j];
 					vp = pst[m_groupSizeRemainder[v]];
 					trc->fullPath[ip + vp] = v;
 				}
+				k1 = t2[trc->fullPath[ip + cout]];
+				k1 = k1 - m_groupSizeRemainder[k1];
 				ip += m_groupSize;
-				k = t2[trc->fullPath[ip - 1]];
-				k1 = k / m_groupSize * m_groupSize;
+				//k = t2[trc->fullPath[ip - 1]];
 				for (int j = 0; j < m_groupSize; j++) {
 					v = res2[k1 + j];
-					//vp = pst[m_groupSize - m_groupSizeRemainder[v] - 1] - is;
-					//vp = pst[m_groupSizeRemainder[v]];
-					vp = iGroupSizeM1 - pst[m_groupSizeRemainder[v]];
+					//vp = m_groupSizeRemainder[v];
+					//vp = iGroupSizeM1 - pst[m_groupSizeRemainder[v]];
+					vp = pst[m_groupSizeRemainder[v]];
 					trc->fullPath[ip + vp] = v;
 				}
+				k = t1[trc->fullPath[ip + cin]] / m_groupSize;
 				ip += m_groupSize;
-				k = t1[trc->fullPath[ip - 1]];
+				//k = t1[trc->fullPath[ip - 1]];
 			}
 			tchar length = i;
 
@@ -120,12 +126,14 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctch
 			printf("p%d:", ncycles - 1);
 			printTableColor("", trc->fullPath + trc->start[ncycles - 1] * 2, 1, trc->length[ncycles - 1] * 2, m_groupSize);
 			**/
-			if (*(trc->fullPath + trc->start[ncycles - 1] * 2) !=
-				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - 1)) {
-				//*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize)) {
+			/**/
+			if (*(trc->fullPath + trc->start[ncycles - 1] * 2 + cin) !=
+				//*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - 1)) {
+				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize + cin)) {
 				memset(trc, 0, sizeof(TrCycles));
 				return -1;
 			}
+			/**/
 		}
 	}
 	if (ncycles == 0)
@@ -144,10 +152,11 @@ CC int alldata::u1fGetCycleLengthCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctc
 	auto const n = m_maxCommonVSets;
 
 	for (int i = 0; i < n; i++) {
-		auto ncycles = getCyclesAndPathCBMP(trc, t1, t2, res1, res2, i, checkErrors);
+		auto const ncycles = getCyclesAndPathCBMP(trc, t1, t2, res1, res2, i, checkErrors);
 		if (cyclesNotOk(ncycles, trc->length, checkErrors))
 			return ncycles ? -1 : 0;
 		if (m_TrCyclesCollection) {
+			// Collect passes with different cycles (one pass per each cycle)
 			collectCyclesAndPath(m_TrCyclesCollection, trc);
 #if 0 // print information about each pair cycles and path
 			if (iDay == m_numDaysResult && checkErrors == eNoErrorCheck) {

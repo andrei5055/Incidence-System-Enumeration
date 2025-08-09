@@ -254,8 +254,11 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 			else
 				if (j == 1)
 					rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
-				else
+				else {
+					// As of 08/04/2025, only param.u1fCycles[0] is valid for use 
+					// (see the definition of class kSysParam for details).
 					rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
+				}
 		}
 
 		if (i >= 0)

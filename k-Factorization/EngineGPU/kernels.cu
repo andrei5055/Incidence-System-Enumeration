@@ -8,6 +8,8 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "device_launch_parameters.h"
 #include <stdio.h>
 #include "TripleSys.cpp"
+#include "endOfRowPrecalculation.cpp"
+#include "precalculatedSolutions.cpp"
 #include "alldata.cpp"
 #include "p1fCheck.cpp"
 #include "p1fSupport.cpp"

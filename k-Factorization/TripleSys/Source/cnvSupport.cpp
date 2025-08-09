@@ -118,7 +118,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 		ip1++;
 		if (MEMCMP(p1, result(1), m_numPlayers) == 0) {
 			bCurrentSet = true;
-			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
 			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors(1), result(0), result(1));
 			if (m_createSecondRow && nrows == numDaysResult() && nrows == nrowsToUseForTrs) {
 				if (param(t_rejectCycleLength)) {
@@ -134,7 +133,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 		else {
 			tchar neighbors1[MAX_PLAYER_NUMBER];
 			u1fSetTableRow(neighbors1, p1);
-			// warning, current version of cyclesOfTwoRows does not work with eEachSetSeparate
 			cyclesFor2Rows(m_TrCyclesAll, &trCycles, neighbors(0), neighbors1, result(0), p1);
 		}
 		if (nrows == 2) {
@@ -277,6 +275,8 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								} while (ProceedToNextMapping());
 								//break; // if not p1f we can't break;
 							}
+							if (!bCurrentSet)
+								continue;
 							if (!bCycleSelected) {
 								if (!m_allowUndefinedCycles) {
 #if !USE_CUDA

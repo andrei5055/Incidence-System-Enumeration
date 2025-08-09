@@ -125,8 +125,8 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			*(int *)(val + t_nMaxNumberOfStartMatrices) = INT_MAX;
 		}
 	}
-
-	if (multiThreading == 2 && nRowStart != val[t_useRowsPrecalculation]) {
+	// current version does not work with multiThreading equal 1 and nRowStart != val[t_useRowsPrecalculation]
+	if (multiThreading /* == 2 */ && val[t_useRowsPrecalculation] && nRowStart != val[t_useRowsPrecalculation]) {
 		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], multiThreading,
 			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 		return false;
