@@ -6,10 +6,13 @@
 #define PRINT_MATRICES	0
 #if PRINT_MATRICES
 #define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
-#define FFF 8    // 6 - for 26, 9 - for 22
-#define FF_ 2    // 4 - for 26. 2 for 22
+// Parameters specific to the bug we are trying to fix.
+#define N_MATR 2     // Number of matrix to activate the output
+#define FFF 1 //8    // 6 - for 26 matrices, 9 - for 22 matrices
+#define FF_ 1 // 2   // 4 - for 26. 2 for 22
 tchar* pGraph[2] = { NULL };
-int nIter = 0;
+static int nIter = 0;
+static int kkk;
 #else
 #define PRINT_ADJ_MATRIX(...)
 #endif
@@ -144,34 +147,38 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	}
 
 	bool rank3 = false;
-	tchar* pGraph = NULL;
+	tchar* pGraph[2] = { NULL, NULL };
 	ctchar* pResGraph = NULL;
 	if (m_nExploreMatrices > 0) {
 		initCanonizer();
 		int i, firstVert = 0;
 		i = 0;
 #if PRINT_MATRICES
-		new ushort[m_v];
-		for (int j = m_v; j--;)
-			m_pOrbits[j] = j;
+		auto* pInitOrbits = m_pOrbits + m_v;
+		auto* pResOrbits = pInitOrbits + m_v; *pResOrbits;
+		if (++kkk == N_MATR) {
+//			new ushort[m_v];
+			for (int j = m_v; j--;)
+				m_pOrbits[j] = j;
 
-		auto pInitOrbits = m_pOrbits + m_v;
-		auto pResOrbits = pInitOrbits + m_v;
-		memcpy(pGraph[0] = m_pGraph[i] + 2 * m_v * m_v, m_pGraph[0], m_v * m_v * sizeof(m_pGraph[0]));
-		pGraph[1] = pGraph[0] + m_v * m_v;
-		memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
-		PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
+			memcpy(pGraph[0] = m_pGraph[i] + 2 * m_v * m_v, m_pGraph[0], m_v * m_v * sizeof(m_pGraph[0][0]));
+			pGraph[1] = pGraph[0] + m_v * m_v;
+			memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
+			PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
+		}
 #endif
 		while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
 			createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
 #if PRINT_MATRICES
-			for (int j = m_v; j--;)
-				pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
+			if (kkk == N_MATR) {
+				for (int j = m_v; j--;)
+					pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
 
-			memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
-			createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
-			PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
-			PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter++, m_v);
+				memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
+				createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
+				PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
+				PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter++, m_v);
+			}
 #endif
 			i = 1 - i;
 		}
@@ -179,7 +186,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		// Copy elements above the main diagonal into the array.
 		pResGraph = m_pGraph[i];
 		auto pFrom = m_pGraph[i];
-		auto pTo = pGraph = m_pGraph[1 - i];
+		auto pTo = pGraph[0] = m_pGraph[1 - i];
 		for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
 			memcpy(pTo, pFrom + ++i, j);
 
@@ -201,7 +208,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 		while (i < m_v)
 			rank3 &= pntr[i++] == j;
-
 	}
 
 	const char* pGraphDescr = "";
@@ -213,7 +219,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 	char buf[512], *pBuf = buf;
 	if (graphType != t_regular)
-		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ μ) = (%d,%2d,%d,%d)",
+		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ,μ) = (%d,%2d,%d,%d)",
 			m_v, graphParam->k, graphParam->λ, graphParam->μ);
 	else
 		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", m_v, graphParam->k);
@@ -224,9 +230,9 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 	bool newGraph = true;
 	int prevMatrNumb = m_nPrevMatrNumb;
-	if (pGraph) {
+	if (pGraph[0]) {
 		prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
-		m_pMarixStorage[typeIdx]->updateRepo(pGraph);
+		m_pMarixStorage[typeIdx]->updateRepo(pGraph[0]);
 		newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
 	}
 	else
@@ -255,7 +261,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 #if OUT_SRG_TO_SEPARATE_FILE
 		if (!prevMatrNumb) {
 			if (graphType != t_regular)
-				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
 			else
 				fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
 		}
@@ -263,7 +269,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
 #else
 		if (graphType != t_regular)
-			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
+			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
 				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
 		else
 			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
@@ -439,15 +445,14 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 				if (nIter >= FFF) {
 					static int hhh;
 					const bool flg = i == FF_ && idxRight == 1;
+					sprintf_s(buffer, sizeof(buffer), "ccc_%04d.txt", hhh += flg? 1 : 0);
 					if (flg) {
-						hhh++;
 						FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
 						fprintf(f, "ff = %2d  canonizeMatrixRow: hhh = %3d\n", ff, hhh);
 						FCLOSE_F(f);
-						sprintf_s(buffer, sizeof(buffer), "ccc_%04d.txt", hhh);
 						printAdjMatrix(pGraphOut, buffer, i+1);
 					}
-					sprintf_s(buffer, sizeof(buffer), "ccc_%04d.txt", hhh);
+
 					FOPEN_F(f, buffer, /*flg ? "w" :*/ "a");
 					fprintf(f, "canonizeMatrixRow: i = %2d  flag = %d idxRight = %2d\n", i, flag, idxRight);
 					FCLOSE_F(f);
@@ -642,7 +647,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			graphDegree = vertexDegree;
 	}
 
-	if (2 * graphDegree > m_v && graphDegree < m_v - 1) {
+	if (/*true ||*/ 2 * graphDegree > m_v && graphDegree < m_v - 1) {
 		graphDegree = m_v - 1 - graphDegree;
 		// Compute the complement graph by inverting the adjacency relations.
 		auto pVertex = pGraph;
