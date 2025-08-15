@@ -6,7 +6,6 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 		return true;
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
-
 	const bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
 	const auto* neighbors0 = neighbors(0);
 	const auto* neighbors1 = neighbors(1);
@@ -30,9 +29,9 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 							m_TrInd++;
 							if (icmp < 0)
 							{
+								bRet = false;
 								if (param(t_test) & 0x2)
 									continue; // Calculate all automorphisms (even if matrix is not canonical)
-								bRet = false;
 								goto ret;
 							}
 							if (icmp == 0)
@@ -60,12 +59,12 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 					//TestkmProcessMatrix(nrows, 0, tr, tr, icmp);
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
+						bRet = false;
 						if (param(t_test) & 0x2)
 							continue; // Calculate all automorphisms (even if matrix is not canonical)
 #if PRINT_TRANSFORMED
 						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), cmpGraph? m_Km:m_Ktmp, 0, 0, 0);
 #endif
-						bRet = false;
 						goto ret;
 					}
 					if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
@@ -174,14 +173,15 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							int icmp = kmProcessMatrix(result(), trt, nrows);
 							if (!bCurrentSet && icmp != -1) {
 								icmp = -1;
-								m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
+								if (m_playerIndex > (iRowLast + 1) * m_numPlayers - m_groupSize - 1)
+									m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
 							}
 							if (icmp == 0)
 								updateGroup(trt);
 							else if (icmp < 0) {
+								bRet = false;
 								if (param(t_test) & 0x2)
 									continue; // Calculate all automorphisms (even if matrix is not canonical)
-								bRet = false;
 								goto ret;
 							}
 						}
@@ -249,7 +249,8 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 												icmp = kmProcessMatrix(result(), tr, nrows);
 												if (!bCurrentSet && icmp != -1) {
 													icmp = -1;
-													m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
+													if (m_playerIndex > (iRowLast + 1) * m_numPlayers - m_groupSize - 1)
+														m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
 												}
 											}
 										}
@@ -263,6 +264,8 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											}
 #endif
 											bRet = false;
+											if (param(t_test) & 0x2)
+												continue; // Calculate all automorphisms (even if matrix is not canonical)
 											goto ret;
 										}
 										// save Tr if icmp is not -1; continue if it was already processed

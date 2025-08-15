@@ -149,6 +149,7 @@ class alldata : public CGroupUtilisation, public CChecklLink, private CGroupInfo
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
+	bool p1f16();
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, const int createSecondRow = 0, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
@@ -171,8 +172,7 @@ public:
 	void printPermutationMatrices(const int iMode) const;
 #endif
 	CC inline void initCheckByGroup(tchar iDay, tchar iMode) {
-		// Creating the sequences 0,1,2,3,... as the day's indices.
-		memcpy(m_DayIdx, result(), (m_NumDaysToTransform = iDay));
+		m_NumDaysToTransform = iDay;
 		if (!(m_cnvMode = iMode))
 			resetGroupOrder();
 

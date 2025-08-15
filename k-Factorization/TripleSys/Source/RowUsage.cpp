@@ -198,8 +198,8 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				if (!selectPlayerByMask()) {
-					// Usially, we should be here only when groupSize == 2 and it's NOT 
-					// a complete balanced maltipartite graph case.
+					// Usually, we should be here only when groupSize == 2 and it's NOT 
+					// a complete balanced multipartite graph case.
 #if NEW
 					if (!m_pRowStorage->checkSolutionByMask(iRow, pToASol)) {
 						first++;

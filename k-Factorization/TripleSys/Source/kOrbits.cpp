@@ -6,7 +6,7 @@ CKOrbits::CKOrbits(uint outGroupMask, int numElems, int groupSize, int numRows) 
     m_outMask = 16;
     m_sActionOn = "k-sets, |Aut(K)|";
 
-    unsigned int len = numElems;
+    auto len = numElems;
     int i = groupSize;
     while (--i)
         len *= numElems;
@@ -14,7 +14,7 @@ CKOrbits::CKOrbits(uint outGroupMask, int numElems, int groupSize, int numRows) 
     m_pTable = new tchar[len];
     m_pSolution = new tchar[len = m_numElems / groupSize * numRows];
     auto pntr = getNextObject();
-    for (tchar i = 0; i < len; i++)
+    for (i = 0; i < len; i++)
         pntr[i] = i;
 }
 

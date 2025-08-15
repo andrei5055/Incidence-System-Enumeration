@@ -152,9 +152,9 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		}
 
 		if (icmp < 0) {
+			ret = -1;
 			if (param(t_test) & 0x2)
 				continue; // Calculate all automorphisms (even if matrix is not canonical)
-			ret = -1;
 #if !USE_CUDA //PRINT_TRANSFORMED
 			if (param(t_printMatrices) & 16) {
 				printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);

@@ -42,9 +42,9 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 							m_TrInd++;
 							if (icmp < 0)
 							{
+								bRet = false;
 								if (param(t_test) & 0x2)
 									continue; // Calculate all automorphisms (even if matrix is not canonical)
-								bRet = false;
 								goto ret;
 							}
 							if (icmp == 0)
@@ -114,9 +114,9 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						if (icmp < 0)
 						{
 							//TestkmProcessMatrix(nrows, nrows, tr, tr, 0);//icmp);
+							bRet = false;
 							if (param(t_test) & 0x2)
 								continue; // Calculate all automorphisms (even if matrix is not canonical)
-							bRet = false;
 							goto ret;
 						}
 						// save Tr if icmp not -1, continue if it was already processed

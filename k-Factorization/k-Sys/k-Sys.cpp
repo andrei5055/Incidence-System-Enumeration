@@ -5,6 +5,7 @@
 
 const char* intParamNames[]{
 	"nPlayers",
+	"nPlayersMax",
 	"GroupSize",
 	"CBMP_Graph",           // Complete Balanced Multi-Partite Graph
 	"UseUniform1Factorization",
@@ -55,6 +56,7 @@ const char* intParamNames[]{
 	"ExploreMatrices",
 	"SemiSymmetricGraphs",
 	"RejectCycleLength",
+	"Test",
 };
 
 const char* strParamNames[]{
@@ -261,10 +263,21 @@ int main(int argc, const char* argv[])
 			else
 				printfGreen("%cPU\n", useGPU ? 'G' : 'C');
 
-			bool testOK = checkInputParam(param, intParamNames);
-			if (testOK) {
+			bool testOK = false;
+			const auto np_save = val[t_numPlayers];
+			const auto np_saveMax = val[t_numPlayersMax];
+			auto np_Max = np_saveMax;
+			if (np_Max < np_save)
+				val[t_numPlayersMax] = np_Max = np_save;
+
+			for (int np = np_save; np <= np_Max; np += val[t_groupSize]) {
+				val[t_numPlayers] = np;
+				testOK = checkInputParam(param, intParamNames);
+				if (!testOK)
+					break;
+
 				setAutLevels(val);
-				param.setup();
+				param.setup();					
 				TopGunBase* topGun;
 				if (useGPU)
 					topGun = new TopGunGPU(param);
@@ -278,6 +291,9 @@ int main(int argc, const char* argv[])
 				topGun->outputIntegratedResults(params, countof(params));
 				delete topGun;
 			}
+
+			val[t_numPlayers] = np_save;
+			val[t_numPlayersMax] = np_saveMax;
 
 			numTests++;
 			if (!testOK) {

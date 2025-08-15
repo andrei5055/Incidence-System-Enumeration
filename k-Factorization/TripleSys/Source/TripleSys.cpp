@@ -105,32 +105,40 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	}
 #endif
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
-#if 0 // Generate KC matrix
-#define N m_numPlayers
-#define G m_groupSize
-#define M (N/G)
-	if (m_numPlayers != N || m_numDaysResult != M || m_groupSize != G) {
-		printfRed("Can't create %dx%dx%d matrix. Exit\n", N, M, G); 
-		myExit(1);
-	}
-	iDay = M;
-	nrowsStart = M;
+#if 1 // Generate KC matrix
+	if (!m_createSecondRow) {
+		iDay = m_numDaysResult;
+		nrowsStart = m_numDaysResult;
 
-	for (int i = 0; i < N; i++)
-		result()[i] = i;
-
-	for (int i = 1; i < M; i++) {
-		tchar* r = result(i);
-		for (int j = 0; j < N; j += G, r += G) {
-			for (int k = 0; k < G; k++)
-				r[k] = ((j / G + i * k) % M) + M * k;
+		for (int i = 0; i < m_numDaysResult; i++) {
+			tchar* r = m_Km + i * m_numPlayers;
+			for (int j = 0; j < m_numPlayers; j += m_groupSize, r += m_groupSize) {
+				for (int k = 0; k < m_groupSize; k++) {
+					int ip = ((j / m_groupSize + i * k) % m_numDaysResult);
+					ip = ip * m_groupSize + k;
+					r[k] = ip;
+				}
+			}
 		}
+		tchar tm[MAX_PLAYER_NUMBER];
+		memset(tm, 0, sizeof(tm));
+		printTable("MKM", m_Km, m_numDaysResult, m_numPlayers, m_groupSize);
+		(this->*m_pSortGroups)(m_Km, m_numDaysResult);
+		auto* coi = m_Ktmp;
+		auto* cii = m_Km;
+		for (int i = 0; i < m_numDaysResult; i++, coi += m_numPlayers, cii += m_numPlayers)
+			kmSortGroupsByFirstValue(cii, coi);
+		// Result of the loop above is in m_Ktmp, sort and send it to m_Km.
+		kmSortRowsBy2ndValue(m_numDaysResult, tm);
+		memcpy(result(), m_Km, m_nLenResults);
+
+		linksFromMatrix(links(), result(), nrowsStart);
+		memcpy(m_pResultsPrev, result(), m_nLenResults);
+		memcpy(m_pResultsPrev2, result(), m_nLenResults);
+		printResultWithHistory("Generated KC-matrix", m_numDaysResult);
+		iDay = m_numDaysResult;
+		//printTableColor("circular matrix", result(), iDay, m_numPlayers, m_groupSize);
 	}
-	linksFromMatrix(links(), result(), nrowsStart);
-	memcpy(m_pResultsPrev, result(), m_nLenResults);
-	memcpy(m_pResultsPrev2, result(), m_nLenResults);
-	printResultWithHistory("Generated KC-matrix", m_numDaysResult);
-	//printTableColor("circular matrix", result(), iDay, m_numPlayers, m_groupSize);
 #else
 	if (mStart0)
 	{
@@ -147,7 +155,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
-		if (groupSize_2)		// need to be implemented for 3?
+		if (groupSize_2 && !(param(t_test) & 0x20))		// need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
 	m_playerIndex = 0;
@@ -208,8 +216,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			m_pRowStorage->initPlayerMask(mfirst, maxPlayerInFirstGroup);
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
-		iDay--;
+		minRows = iDay--;
 		//testRightNeighbor(iDay + 1);
+		if ((param(t_test) & 0x10) && !p1f16())
+			goto noResult;
 		goto checkCurrentMatrix;
 	}
 
@@ -316,14 +326,16 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 
 #if 1
-			switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
-			case -1:
-				goBack();
-				if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
-					goto ProcessPrecalculatedRow;
-				goto ProcessOneDay;
-			case  1: goto noResult;
-			default: break;
+			if (m_createSecondRow || !(param(t_test) & 0x20)) { // do not call canonizator if Test=32
+				switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
+				case -1:
+					goBack();
+						if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
+							goto ProcessPrecalculatedRow;
+						goto ProcessOneDay;
+				case  1: goto noResult;
+				default: break;
+				}
 			}
 #endif
 			if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
@@ -408,7 +420,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if 0			// record result and print on screen (if m_bPrint==true)
 				Result.printTable(result(), true, m_bPrint, numDaysResult());
 #else			// record result without print on screen
-				Result.printTable(result(), true, false, numDaysResult());
+				if (bSavingMatricesToDisk)
+					Result.printTable(result(), true, false, numDaysResult());
+
 				if (m_bPrint) {
 					printf("%d(%zd): " AUT "%d, % s\n", threadNumber, nLoops, orderOfGroup(), stat);
 					// print on screen result with highlighted differences from prev result
@@ -455,7 +469,7 @@ cont1:
 				}
 				else {
 					printfRed("Test \"%s\" is not implemented\n", testDescr.c_str());
-					myExit(1);
+					//myExit(1);
 				}
 			}
 #endif

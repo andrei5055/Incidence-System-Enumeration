@@ -6,11 +6,11 @@
 #define GroupSize 3
 
 // The maximum numbers of players and groups per day for which the program is compiled.
-#define MAX_PLAYER_NUMBER			64
-#define MAX_GROUP_NUMBER			16
+#define MAX_PLAYER_NUMBER			92
+#define MAX_GROUP_NUMBER			(MAX_PLAYER_NUMBER / 2)
 
-#define MAX_CYCLE_SETS		30
-#define MAX_CYCLES_PER_SET	 8
+#define MAX_CYCLE_SETS		32
+#define MAX_CYCLES_PER_SET	(MAX_PLAYER_NUMBER / 4)
 #define USE_GROUP_4_2_ROWS   0  // The use of the Aut(M) of the 2-row matrix
 
 #define unset ((tchar)(-1))
@@ -25,7 +25,8 @@ typedef enum {
 
 typedef enum {
 	// indices of parameters with the integer type values
-	t_numPlayers,			 
+	t_numPlayers,
+	t_numPlayersMax,
 	t_groupSize,
 	t_CBMP_Graph,			// Complete Balanced Multi-Partite Graph
 	t_u1f,
