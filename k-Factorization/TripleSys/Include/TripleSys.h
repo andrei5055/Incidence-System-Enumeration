@@ -337,6 +337,9 @@ private:
 	int m_secondPlayerInRow4Last;
 	int m_numDaysResult;
 	int m_lastRowWithTestedTrs;
+	int m_test = 0;
+
+	bool m_ignoreCanonizationMinus1 = false;
 
 	tchar* m_Km;
 	tchar* m_Km2;

@@ -1,5 +1,5 @@
 #include "TripleSys.h"
-CC void SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr) const
+CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfError) const
 { // ANDREI ??? ctchar* iv
 	auto* iv_id = (tchar*)iv;
 	const auto np = m_numPlayers;
@@ -9,11 +9,14 @@ CC void SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr) const
 		for (int j = 0; j < np; j++)
 		{
 			const auto ivId = iv_id[j];
-			ASSERT_(ivId == unset,
-				printfRed("*** Init: value for day %d position %d not defined\n", i, j);
-				printTable("Initial result", iv, nr, np, m_groupSize);
-				myExit(1)
-			)
+			if (ivId >= np) {
+#if !USE_CUDA
+				printfRed("*** Init: value(%d) for day %d position %d is incorrect\n", ivId, i, j);
+#endif
+				if (exitIfError)
+					myExit(1);
+				return false;
+			}
 
 			const auto linksOK = setLinksForOnePlayer(i, lnk, iv_id, j, ivId);
 			if (!linksOK) {
@@ -23,14 +26,16 @@ CC void SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr) const
 					if (lDay != unset) {
 #if !USE_CUDA
 						printfRed("*** Init: pair (%d,%d) in day %d already defined in day %d\n", iv0, ivId, i, lDay);
-						printTableColor("Initial result", iv, nr, np, m_groupSize);
-						myExit(1);
+						if (exitIfError)
+							myExit(1);
+						return false;
 #endif
 					}
 				}
 			}
 		}
 	}
+	return true;
 }
 
 bool alldata::initStartValues(const char* ivcb, bool printStartValues)

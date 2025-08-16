@@ -218,7 +218,7 @@ bool alldata::semiCheck()
 	tchar* lnkT = links(m_numPlayers);
 	bool bSharedLink = false;
 	L2L(lnk, links(), m_numPlayers, unset);
-	if (param(t_test) & 0x4) {
+	if (m_test & 0x4) {
 		L2L(lnkT, testL, m_numPlayers, 0);
 		if (MEMCMP(lnkT, lnk, nnd4))
 			return false;
@@ -241,7 +241,7 @@ bool alldata::semiCheck()
 	case 3: {
 		// Phase 2 or 3: DBs with links already created 
 		int idx = -1;
-		if (!(param(t_test) & 0x8))
+		if (!(m_test & 0x8))
 			idx = mShLinks[0]->findObject(lnk, 0, mShLinks[0]->numObjects());
 		if (idx >= 0) {
 			bSharedLink = true;

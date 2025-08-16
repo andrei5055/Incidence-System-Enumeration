@@ -153,7 +153,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 
 		if (icmp < 0) {
 			ret = -1;
-			if (param(t_test) & 0x2)
+			if (m_ignoreCanonizationMinus1)
 				continue; // Calculate all automorphisms (even if matrix is not canonical)
 #if !USE_CUDA //PRINT_TRANSFORMED
 			if (param(t_printMatrices) & 16) {
@@ -198,7 +198,8 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 		if (!cnvCheckKm(tr, tg, nrows))
 		{
 			ret = false;
-			break;
+			if (!m_ignoreCanonizationMinus1)
+				break;
 		}
 		int i = ng;
 		while (i-- && ++tg[i] >= m_groupSizeFactorial)
@@ -286,7 +287,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		{
 			a[i] = (p[i] = i) * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		}
-		if (ret = cnvCheckTgNew(a, nrows, ng))
+		if (ret = cnvCheckTgNew(a, nrows, ng) || m_ignoreCanonizationMinus1)
 		{
 			p[m_nGroups] = ng;//m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
 			auto i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
@@ -295,7 +296,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 				p[i]--;             // decrease index "weight" for i by one
 				const auto j = (i % 2) ? p[i] : 0;   // IF i is odd then j = p[i] otherwise j = 0
 				SWAP(a[i], a[j]);
-				if (!cnvCheckTgNew(a, nrows, ng))
+				if (!cnvCheckTgNew(a, nrows, ng) && !m_ignoreCanonizationMinus1)
 				{
 					ret = false;
 					break;////

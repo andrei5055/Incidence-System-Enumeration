@@ -1,4 +1,9 @@
 #include "TripleSys.h"
+#include <ppl.h>
+//#include <array>
+//#include <sstream>
+
+using namespace concurrency;
 
 #define UseIPX				0 // works faster with 0
 #define USE_INTRINSIC		0 //!USE_CUDA // with 0 we can calculate ptoa on the fly
@@ -222,7 +227,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 							}
 							j++;
 						}
-
+#if 1
 						// middle part
 						while (j < jMax && !ptoa(j))
 							j++;
@@ -231,7 +236,20 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 							multiply(j, jMax);
 							continue;   // at least one solution masked by middle part of the interval is still valid
 						}
+#else
 
+						//int size = jMax ;
+
+						std::atomic<bool> found_non_zero(false);
+						parallel_for(uint(j), jMax, [&](uint i)
+							{
+								pToA[i] = pPrevA[i] & pFromA[i];
+								if (pToA[i])
+									found_non_zero.store(true, std::memory_order_relaxed);
+							});
+						if (found_non_zero.load(std::memory_order_relaxed))
+							continue;
+#endif
 						// There are no valid solutions with the indices inside 
 						// the interval defined by set of long longs
 						mask = pRowSolutionMasks[i];

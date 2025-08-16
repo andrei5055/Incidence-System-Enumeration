@@ -30,7 +30,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 							if (icmp < 0)
 							{
 								bRet = false;
-								if (param(t_test) & 0x2)
+								if (m_ignoreCanonizationMinus1)
 									continue; // Calculate all automorphisms (even if matrix is not canonical)
 								goto ret;
 							}
@@ -60,7 +60,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
 						bRet = false;
-						if (param(t_test) & 0x2)
+						if (m_ignoreCanonizationMinus1)
 							continue; // Calculate all automorphisms (even if matrix is not canonical)
 #if PRINT_TRANSFORMED
 						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), cmpGraph? m_Km:m_Ktmp, 0, 0, 0);
@@ -108,7 +108,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			p1 = result(1);
 		else if (m_pSecondRowsDB->numObjects() > ip1)
 			p1 = m_pSecondRowsDB->getObject(ip1);
-		else if (m_createSecondRow) // do not merge with "first if" above
+		else if (m_createSecondRow || m_ignoreCanonizationMinus1) // do not merge with "first if" above
 			p1 = result(1);
 		else {
 			bRet = false;
@@ -180,7 +180,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								updateGroup(trt);
 							else if (icmp < 0) {
 								bRet = false;
-								if (param(t_test) & 0x2)
+								if (m_ignoreCanonizationMinus1)
 									continue; // Calculate all automorphisms (even if matrix is not canonical)
 								goto ret;
 							}
@@ -264,7 +264,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											}
 #endif
 											bRet = false;
-											if (param(t_test) & 0x2)
+											if (m_ignoreCanonizationMinus1)
 												continue; // Calculate all automorphisms (even if matrix is not canonical)
 											goto ret;
 										}
