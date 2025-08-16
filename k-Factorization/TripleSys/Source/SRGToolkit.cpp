@@ -1,4 +1,5 @@
 ﻿#include "SRGToolkit.h"
+#include "SRGSupport.h"
 #include <cstring>
 
 #pragma execution_character_set("utf-8")
@@ -69,11 +70,11 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 	return false;
 }
 
-bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
 		if (m_bChekMatr[i])
-			if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID))
+			if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID, srcGroupOrder))
 				counter++;
 #if !CHECK_NON_SRG			
 			else 
@@ -84,7 +85,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 	return counter > 0;
 }
 
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
 	const auto numGroups = m_nCols / m_groupSize;
 	const auto pVertexLast = pMatr + m_nRows * m_nCols;
 
@@ -256,7 +257,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		}
 
 		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
-
+		SrgSummary srgSummary;
 		pBuf = buf;
 #if OUT_SRG_TO_SEPARATE_FILE
 		if (!prevMatrNumb) {
@@ -282,8 +283,14 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
 
 
-		if (rank3 || graphType == t_4_vert)
+		if (rank3 || graphType == t_4_vert) {
 			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
+			srgSummary.row(m_v, graphParam->k, graphParam->λ, graphParam->μ, graphParam->α, graphParam->β,
+				m_nCols / m_groupSize, m_groupSize, srcGroupOrder);
+		}
+		else if (graphType != t_regular)
+			srgSummary.row(m_v, graphParam->k, graphParam->λ, graphParam->μ, -1, -1,
+				m_nCols / m_groupSize, m_groupSize, srcGroupOrder);
 
 		fprintf(f, "%s\n", buf);
 		if (pResGraph)
@@ -765,24 +772,29 @@ void SRGToolkit::printStat() {
 			continue;
 		}
 
-		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
-			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
-
 		unsigned int n4VertCond;
+		int a = -1, b = -1;
 		if (graphParam.m_cntr[4]) {
 			printfYellow(" • %d - rank 3 graph%s\n", graphParam.m_cntr[4], (graphParam.m_cntr[4] > 1 ? "s" : ""));
 			n4VertCond = graphParam.m_cntr[4] - graphParam.m_cntr[3];
-			if (n4VertCond)
+			if (n4VertCond) {
 				printfRed(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n",
 					n4VertCond, (n4VertCond > 1 ? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
+				a = graphParam.α;
+				b = graphParam.β;
+			}
 		}
 		else {
 			n4VertCond = graphParam.m_cntr[3];
-			if (n4VertCond)
+			if (n4VertCond) {
 				printfYellow(" • %d graph%s satisf%s 4-vertex conditions: (α = %d, β = %d)\n",
 					n4VertCond, (n4VertCond > 1 ? "s" : ""), (n4VertCond > 1 ? "y" : "ies"), graphParam.α, graphParam.β);
+				a = graphParam.α;
+				b = graphParam.β;
+			}
 		}
-
+		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
+			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
 		const auto v_2k = m_v - 2 * graphParam.k;
 		const auto k = m_v - graphParam.k - 1;
 		const auto λ = v_2k + graphParam.μ - 2;

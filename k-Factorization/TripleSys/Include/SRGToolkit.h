@@ -20,10 +20,10 @@ class SRGToolkit : public  Generators<ushort>
 public:
 	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
+	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	void printStat();
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);

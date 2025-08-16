@@ -303,7 +303,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 			Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
 
 		if (pSRGtoolkit) {
-			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i+1)) {
+			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i+1, groupOrder)) {
 				delete pSRGtoolkit;
 				pSRGtoolkit = NULL;
 			}

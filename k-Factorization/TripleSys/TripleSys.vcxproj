@@ -175,6 +175,7 @@
     <ClCompile Include="Source\kmSupport.cpp" />
     <ClCompile Include="Source\kOrbits.cpp" />
     <ClCompile Include="Source\MatrixDB.cpp" />
+    <ClCompile Include="Source\p1f16.cpp" />
     <ClCompile Include="Source\p1fCheck.cpp" />
     <ClCompile Include="Source\p1fSupport.cpp" />
     <ClCompile Include="Source\PlayerPermutation.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="Include\p1fCheck.h" />
     <ClInclude Include="Include\RowStorage.h" />
     <ClInclude Include="Include\CompSolGraph.h" />
+    <ClInclude Include="Include\SRGsupport.h" />
     <ClInclude Include="Include\SRGToolkit.h" />
     <ClInclude Include="Include\Stat.h" />
     <ClInclude Include="Include\Storage.h" />
