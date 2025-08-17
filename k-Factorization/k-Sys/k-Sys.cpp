@@ -7,10 +7,12 @@ const char* intParamNames[]{
 	"nPlayers",
 	"nPlayersMax",
 	"GroupSize",
-	"CBMP_Graph",           // Complete Balanced Multi-Partite Graph
+	"CBMP_Graph",				// Complete Balanced Multi-Partite Graph
+	"EnumerateFactorizations",  // 0 - Construct just one ("generated") factorization (implemented only for CBMP_Graph > 0)
+	                            // 1 - Construct all existing factorizations (default) 
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
-	"UseFastCanonizerForG2", // 0 currently does not work with u1f
+	"UseFastCanonizerForG2",	// 0 currently does not work with u1f
 	"SubmatrixGroupOrderMin",
 	"ResultGroupOrderMin",
 	"USE_GPU",
@@ -42,6 +44,9 @@ const char* intParamNames[]{
 	                    // 2 - saving only while testing paths; 3 - saving while testing on groups OR paths
 	"UseImproveMatrix",
 	"UseCombinedSolutions",
+	"Out_CSV_file",     // 0 - Skip writing output to the CSV file
+	                    // 1 - Add SRG info to existing CSV file (create a new file if it does not exist).
+	                    // 2 - Write SRG info into a new CSV file.
 	"OutAutomorphismGroup",  // 0 - No output, 
 	                         // otherwise any combinations of:
 	                         //  1,  2 - generators and groups acting on elements
@@ -67,6 +72,7 @@ const char* strParamNames[]{
 	"UseBinaryCanonizer",
 	"TestName",
 	"MatrTest",
+	"CSV_FileName",     // If such file exists, add new SRG info into the copy of that file
 };
 
 const char* arrayParamNames[]{
@@ -158,6 +164,7 @@ int main(int argc, const char* argv[])
 	memset(val, 0, sizeof(val));
 	val[t_numPlayers] = nPlayers;
 	val[t_groupSize] = GroupSize;
+	val[t_enumerateFactorizations] = 1;
 	val[t_u1f] = UseUniform1Factorization;
 	val[t_use2RowsCanonization] = Use2RowsCanonization;
 	val[t_submatrixGroupOrderMin] = SubmatrixGroupOrderMin;

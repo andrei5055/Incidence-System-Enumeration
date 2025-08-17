@@ -29,6 +29,7 @@ typedef enum {
 	t_numPlayersMax,
 	t_groupSize,
 	t_CBMP_Graph,			// Complete Balanced Multi-Partite Graph
+	t_enumerateFactorizations,
 	t_u1f,
 	t_use2RowsCanonization,
 	t_useFastCanonizerForG2,
@@ -62,6 +63,7 @@ typedef enum {
 	t_autSaveTestedTrs,
 	t_useImproveMatrix,
 	t_useCombinedSolutions,
+	t_out_CSV_file,
 	t_outAutomorphismGroup,
 	t_nestedGroups,
 	t_gridSize,
@@ -81,7 +83,8 @@ typedef enum {
 	t_ImprovedResultFolder,
 	t_binaryCanonizer,
 	t_testName,
-	t_matrTest, // parameter, which will define the test to be launched for constructed matrix or matrices 
+	t_matrTest, // parameter, which will define the test to be launched for constructed matrix or matrices
+	t_CSV_FileName,
 	t_lastStrParam
 } paramID;
 

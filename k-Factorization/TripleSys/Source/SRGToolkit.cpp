@@ -18,7 +18,8 @@ static int kkk;
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
-SRGToolkit::SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices) :
+SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices) :
+	m_pParam(p), 
 	m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(nRows * nCols/groupSize), m_nExploreMatrices(exploreMatrices),
 	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
 	setOutFileName(NULL);
@@ -283,14 +284,14 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
 
 
-		if (rank3 || graphType == t_4_vert) {
+		if (rank3 || graphType == t_4_vert)
 			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
-			srgSummary.row(m_v, graphParam->k, graphParam->λ, graphParam->μ, graphParam->α, graphParam->β,
-				m_nCols / m_groupSize, m_groupSize, srcGroupOrder);
+
+		if (graphType != t_regular) {
+			const auto rank3graph = rank3 ? 1 : (m_nExploreMatrices > 0 ? -1 : 0);
+			const auto grOrder = m_nExploreMatrices > 0 ? groupOrder() : 0;
+			srgSummary.outSRG_info(m_v, graphParam, graphType, rank3graph, grOrder, m_groupSize, m_nCols / m_groupSize, srcGroupOrder);
 		}
-		else if (graphType != t_regular)
-			srgSummary.row(m_v, graphParam->k, graphParam->λ, graphParam->μ, -1, -1,
-				m_nCols / m_groupSize, m_groupSize, srcGroupOrder);
 
 		fprintf(f, "%s\n", buf);
 		if (pResGraph)

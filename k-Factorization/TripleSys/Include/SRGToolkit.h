@@ -18,7 +18,7 @@ typedef struct SRGParam {
 class SRGToolkit : public  Generators<ushort>
 {
 public:
-	SRGToolkit(int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices);
+	SRGToolkit(const kSysParam* pParam, int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	void printStat();
@@ -35,6 +35,7 @@ private:
 	void outAdjMatrix(ctchar* pGraphOut, FILE* f, int endVertex = 0) const;
 	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0, const ushort* pOrb = NULL) const;
 	void initVertexGroupOrbits();
+	inline int param(paramID id) const { return m_pParam->val[id]; }
 
 	const int m_nCols;
 	const int m_nRows; 
@@ -57,5 +58,6 @@ private:
 	ushort* m_pSavedOrbIdx = nullptr;
 	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
 	tchar* m_bConnectFlags = nullptr;
+	const kSysParam* m_pParam;
 };
 
