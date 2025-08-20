@@ -9,14 +9,16 @@ using namespace std;
 
 #pragma execution_character_set("utf-8")
 
-SrgSummary::SrgSummary(string* logFolder, int iMode, string* extFile) {
+#define SRG_CSV	"/SRG.csv"
+
+SrgSummary::SrgSummary(const string* logFolder, int iMode, const string* extFile) {
 	mode = iMode;
 	if (!mode)
 		return;
-	inpFile = mode == 1 ? (extFile ? *extFile : *logFolder + "/SRG.csv") : "";
-	tmpFile = *logFolder + "/SRGtmp.csv";
-	outFile = *logFolder + "/SRG.csv";
-	outFile2 = extFile ? *extFile : *logFolder + "/SRG.csv";
+	inpFile = mode == 1 ? (extFile ? *extFile : *logFolder + SRG_CSV) : "";
+	tmpFile = *logFolder + SRG_CSV + "_tmp";
+	outFile = *logFolder + SRG_CSV;
+	outFile2 = extFile ? *extFile : *logFolder + SRG_CSV;
 }
 
 void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType graphType, int rank3, size_t grOrder, int srcGroupSize, int srcGroups, int srcAut) {
@@ -60,14 +62,14 @@ void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType grap
 		SPRINTFD(pBuf, buf, "%zu", grOrder);
 	SPRINTFD(pBuf, buf, ",%d,%d,%d\n", srcGroupSize, srcGroups, srcAut);
 
-	// merge (if requested) new row with existing SRG.csv
+	// merge (if requested) new row with existing SRG_CSV
 	bool bNewRowRecorded = false;
 	int vOld = -1, kOld = -1;
 	while (1) {
 		char* pStr = fInp ? fgets(bufInp, sizeof(bufInp), fInp) : NULL;
 		if (!bNewRowRecorded) {
 			if (pStr && strcmp(buf, bufInp) == NULL) {
-				// new row is the same as current row from SRG.csv, ignore new row
+				// new row is the same as current row from SRG_CSV, ignore new row
 				bNewRowRecorded = true;
 			}
 			else {
@@ -91,7 +93,7 @@ void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType grap
 	copyFiles(tmpFile, outFile2);
 	deleteFile(tmpFile);
 }
-void SrgSummary::deleteFile(string tmp)
+void SrgSummary::deleteFile(const string& tmp)
 {
 	if (tmp.length()) {
 		try {
@@ -107,7 +109,7 @@ void SrgSummary::deleteFile(string tmp)
 		}
 	}
 }
-void SrgSummary::copyFiles(string inp, string out)
+void SrgSummary::copyFiles(const string& inp, const string& out)
 {
 	if (inp.length() && out.length()) {
 		filesystem::path source_path = inp;

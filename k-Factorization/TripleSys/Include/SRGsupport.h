@@ -6,9 +6,9 @@
 class SrgSummary
 {
 public:
-	SrgSummary(std::string* logFolder, int iMode, std::string* extFolder);
-	void copyFiles(std::string inp, std::string out);
-	void deleteFile(std::string tmp);
+	SrgSummary(const std::string* logFolder, int iMode, const std::string* extFolder);
+	void copyFiles(const std::string& inp, const std::string& out);
+	void deleteFile(const std::string& tmp);
 	void outSRG_info(int v, const SRGParam* graphParam, t_graphType graphType, int rank3, size_t grOrder, int srcGroupSize, int srcGroups, int srcAut);
 private:
 	std::string outFile;
