@@ -8,8 +8,8 @@ const char* intParamNames[]{
 	"nPlayersMax",
 	"GroupSize",
 	"CBMP_Graph",				// Complete Balanced Multi-Partite Graph
-	"EnumerateFactorizations",  // 0 - Construct just one ("generated") factorization (implemented only for CBMP_Graph > 0)
-	                            // 1 - Construct all existing factorizations (default) 
+	"generateMatrixExample",  // 1 - Construct just one ("generated") factorization (implemented only for CBMP_Graph > 0)
+	                            // 0 - Construct all existing factorizations (default) 
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
 	"UseFastCanonizerForG2",	// 0 currently does not work with u1f
@@ -164,7 +164,6 @@ int main(int argc, const char* argv[])
 	memset(val, 0, sizeof(val));
 	val[t_numPlayers] = nPlayers;
 	val[t_groupSize] = GroupSize;
-	val[t_enumerateFactorizations] = 1;
 	val[t_u1f] = UseUniform1Factorization;
 	val[t_use2RowsCanonization] = Use2RowsCanonization;
 	val[t_submatrixGroupOrderMin] = SubmatrixGroupOrderMin;

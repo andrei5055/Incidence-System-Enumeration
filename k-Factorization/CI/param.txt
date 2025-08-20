@@ -1,5 +1,7 @@
 PrintMatrices=0
 ExploreMatrices=1
+Out_CSV_File=1
+CSV_FileName=../../SRG.csv
 OutAutomorphismGroup=21
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"

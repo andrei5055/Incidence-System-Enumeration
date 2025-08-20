@@ -35,6 +35,20 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 
 	int numDays;
 	const auto cbmpGraph = val[t_CBMP_Graph] > 1;
+	
+	if (val[t_generateMatrixExample]) {
+		if (val[t_MultiThreading] > 0) {
+			printfRed("*** Program can't generate matrix(GenerateMatrixExample=%d) in multithread mode, Exit\n",
+				val[t_generateMatrixExample]);
+			return false;
+		}
+
+		if (!cbmpGraph) {
+			printfRed("*** Program can generate (GenerateMatrixExample=%d) only n-partite matrix, but CBMP_Graph=%d, Exit\n",
+				val[t_generateMatrixExample], val[t_CBMP_Graph]);
+			return false;
+		}
+	}
 	if (cbmpGraph) {
 		numDays = numPlayers / groupSize;
 		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)

@@ -1,5 +1,7 @@
 PrintMatrices=0
 ExploreMatrices=1
+Out_CSV_File=1
+CSV_FileName=../../SRG.csv
 OutAutomorphismGroup=21
 //UseBinaryCanonizer=1,2,3,4,5,6,7,8,9,10,11
 StartFolder="../Logs_CI/"

@@ -29,7 +29,7 @@ typedef enum {
 	t_numPlayersMax,
 	t_groupSize,
 	t_CBMP_Graph,			// Complete Balanced Multi-Partite Graph
-	t_enumerateFactorizations,
+	t_generateMatrixExample,
 	t_u1f,
 	t_use2RowsCanonization,
 	t_useFastCanonizerForG2,

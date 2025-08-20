@@ -13,7 +13,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	m_test = param(t_test);
-	m_ignoreCanonizationMinus1 = (m_test & 0x22) != 0;
+	m_ignoreCanonizationMinus1 = (m_test & 0x2) != 0 || param(t_generateMatrixExample) != 0;
 	const auto iCalcModeOrg = iCalcMode;
 	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
 	m_allRowPairsSameCycles = param(t_allowUndefinedCycles) == 0 || param(t_any2RowsConvertToFirst2) > 0;
@@ -111,7 +111,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
 #if !USE_CUDA
 	// Generate KC matrix
-	if (m_test & 0x20) {
+	if (param(t_generateMatrixExample)) {
 		if (!m_createSecondRow && m_groupSize == 3 && !(m_nGroups & 1)) {
 			printfRed("*** Error: can't generate matrix. Number of groups(%d) must be odd number with group size=%d\n", m_nGroups, m_groupSize);
 			goto noResult; 
@@ -170,7 +170,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
-		if (groupSize_2 && !(m_test & 0x20))		// need to be implemented for 3?
+		if (groupSize_2 && !param(t_generateMatrixExample))		// need to be implemented for 3?
 			p1fCheckStartMatrix(iDay);
 	}
 	m_playerIndex = 0;
@@ -341,8 +341,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if 1
 			switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
 			case -1:
-				if (m_test & 0x20) {
-					printfYellow("\n*** Matrix below processed and accepted but it is not canonical (Test=%d)", m_test);
+				if (param(t_generateMatrixExample)) {
+					printfYellow("\n*** Matrix below processed and accepted but it is not canonical (GenerateMatrixExample=%d)", param(t_generateMatrixExample));
 					break;
 				}
 				goBack();

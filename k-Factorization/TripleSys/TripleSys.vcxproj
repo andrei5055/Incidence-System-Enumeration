@@ -185,6 +185,7 @@
     <ClCompile Include="Source\reportCheckLinksData.cpp" />
     <ClCompile Include="Source\RowStorage.cpp" />
     <ClCompile Include="Source\RowUsage.cpp" />
+    <ClCompile Include="Source\SRGsupport.cpp" />
     <ClCompile Include="Source\SRGToolkit.cpp" />
     <ClCompile Include="Source\Stat.cpp" />
     <ClCompile Include="Source\Support.cpp" />

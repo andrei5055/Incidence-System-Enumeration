@@ -258,7 +258,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		}
 
 		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
-		SrgSummary srgSummary;
+		SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
 		pBuf = buf;
 #if OUT_SRG_TO_SEPARATE_FILE
 		if (!prevMatrNumb) {
