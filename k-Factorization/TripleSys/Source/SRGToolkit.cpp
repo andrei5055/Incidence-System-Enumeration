@@ -157,9 +157,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		i = 0;
 #if PRINT_MATRICES
 		auto* pInitOrbits = m_pOrbits + m_v;
-		auto* pResOrbits = pInitOrbits + m_v; *pResOrbits;
+		auto* pResOrbits = pInitOrbits + m_v;
 		if (++kkk == N_MATR) {
-//			new ushort[m_v];
 			for (int j = m_v; j--;)
 				m_pOrbits[j] = j;
 
@@ -655,6 +654,22 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			graphDegree = vertexDegree;
 	}
 
+	int nCommon[10];
+	bool flag;
+	// Check if constructed graph is strongly regular
+	const auto graphType = checkSRG(pGraph, graphDegree, nCommon, sizeof(nCommon), flag);
+	switch (graphType) {
+	case t_regular: 
+		if (pGraphParam && !pGraphParam->m_cntr[1]++)
+			pGraphParam->k = graphDegree;
+	case t_complete:return graphType;
+
+	default: // Check if complementary graph is a complete graph or a set of complete graphs 
+		if (graphDegree == m_v - 1 || graphDegree == nCommon[1])
+				return t_complete;
+	}
+
+#if 1
 	if (/*true ||*/ 2 * graphDegree > m_v && graphDegree < m_v - 1) {
 		graphDegree = m_v - 1 - graphDegree;
 		// Compute the complement graph by inverting the adjacency relations.
@@ -665,14 +680,18 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 
 			pVertex[i] = 0;
 		}
+		checkSRG(pGraph, graphDegree, nCommon, sizeof(nCommon), flag);
 	}
-
+#endif
 	if (pGraphParam && !pGraphParam->m_cntr[1]++)
 		pGraphParam->k = graphDegree;
 
-	// Check if constructed graph is strongly regular
-	int nCommon[10] = { 0 };
-	bool flag = true;
+	return pGraphParam->updateParam(nCommon, flag);
+}
+
+t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCommon, size_t lenCommon, bool &flag) const {
+	memset(nCommon, 0, lenCommon);
+	flag = true;
 	auto pFirstVertex = pGraph;
 	for (int i = 0; i < m_v; i++, pFirstVertex += m_v) {
 		auto pSecondVertex = pFirstVertex;
@@ -703,8 +722,8 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 				if (nCommon[idx] != nCommonCurr) {
 #if 0
 					printfRed("Graph is not strongly regular:\n"
-						"For(%d, %d) %s is %d and not %d as it was for (%d, %d)\n", 
-						i, j, idx? "mu" : "lambda", nCommonCurr, nCommon[idx], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+						"For(%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
+						i, j, idx ? "mu" : "lambda", nCommonCurr, nCommon[idx], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
 					printAdjMatrix(pGraph);
 #endif
 					return t_regular;
@@ -716,7 +735,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 #if 0
 					printfRed("Graph does not satisfy 4-vertex condition\n"
 						"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "β" : "α", alpha, nCommon[idx+2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+						i, j, idx ? "β" : "α", alpha, nCommon[idx + 2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
 					printAdjMatrix(pGraph);
 #endif
 				}
@@ -730,7 +749,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 		}
 	}
 
-	return pGraphParam->updateParam(nCommon, flag);
+	return t_srg;
 }
 
 t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {

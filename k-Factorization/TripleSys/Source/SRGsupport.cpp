@@ -15,7 +15,19 @@ SrgSummary::SrgSummary(const string* logFolder, int iMode, const string* extFile
 	mode = iMode;
 	if (!mode)
 		return;
-	inpFile = mode == 1 ? (extFile ? *extFile : *logFolder + SRG_CSV) : "";
+	if ((!logFolder || !logFolder->length()) && (!extFile || !extFile->length())) {
+		printfYellow("*** Warning: path to '%s' not defined (check 'CSV_FileName' and/or 'ResultFolder')\n", SRG_CSV);
+		printfYellow("***          can't save SRG values\n");
+		mode = 0;
+		return;
+	}
+	inpFile = "";
+	if (mode == 1) {
+		if (extFile && extFile->length() > 0)
+			inpFile = *extFile;
+		else if (logFolder && logFolder->length() > 0)
+			inpFile = *logFolder + SRG_CSV;
+	}
 	tmpFile = *logFolder + SRG_CSV + "_tmp";
 	outFile = *logFolder + SRG_CSV;
 	outFile2 = extFile ? *extFile : *logFolder + SRG_CSV;
@@ -27,13 +39,13 @@ void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType grap
 
 	FILE* fInp = 0, * fTmp = 0, * fOut = 0, * fOut2 = 0;
 	if (mode == 1) {
-		fopen_s(&fInp, inpFile.c_str(), "r");
+		fInp = _fsopen(inpFile.c_str(), "r", _SH_DENYNO);
 		if (!fInp)
 			inpFile = "";
 	}
-	fopen_s(&fTmp, tmpFile.c_str(), "w+");
+	fopen_s(&fTmp, tmpFile.c_str(), "w");
 	if (!fTmp) {
-		printf("*** Error: Can't open temporary file to save SRG summary (%s)\n", tmpFile.c_str());
+		printfRed("*** Error: Can't open temporary file '%s' to save SRG summary\n", tmpFile.c_str());
 		exit(1);
 	}
 
@@ -68,7 +80,7 @@ void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType grap
 	while (1) {
 		char* pStr = fInp ? fgets(bufInp, sizeof(bufInp), fInp) : NULL;
 		if (!bNewRowRecorded) {
-			if (pStr && strcmp(buf, bufInp) == NULL) {
+			if (pStr && strcmp(buf, bufInp) == 0) {
 				// new row is the same as current row from SRG_CSV, ignore new row
 				bNewRowRecorded = true;
 			}
@@ -101,11 +113,11 @@ void SrgSummary::deleteFile(const string& tmp)
 				cout << "File deleted successfully: " << tmp << endl;
 			}
 			else {
-				cout << "File not found or could not be deleted: " << tmp << endl;
+				printfRed("File not found or could not be deleted: %s\n", tmp.c_str());
 			}
 		}
 		catch (const filesystem::filesystem_error& e) {
-			cerr << "Error deleting file: " << e.what() << endl;
+			printfRed("Error deleting file: %s\n",e.what());
 		}
 	}
 }
@@ -120,7 +132,7 @@ void SrgSummary::copyFiles(const string& inp, const string& out)
 			cout << "File copied successfully from " << source_path << " to " << destination_path << endl;
 		}
 		catch (const filesystem::filesystem_error& e) {
-			cerr << "Error copying file: " << e.what() << endl;
+			printfRed("Error copying file: %s\n", e.what());
 		}
 	}
 }

@@ -25,6 +25,7 @@ public:
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
+	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	void initCanonizer();
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
 	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
