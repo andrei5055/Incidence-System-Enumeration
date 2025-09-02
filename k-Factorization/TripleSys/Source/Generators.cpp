@@ -19,6 +19,7 @@ void Generators<T>::createOrbits(const CGroupInfo* pElemGroup) {
 		return;
 
 	this->setGroupOrder(1);
+	this->setStabilizerLengthAut(m_lenStab = groupDegree());
 	this->releaseAllObjects();
 
 	// Adding orbits:
@@ -28,7 +29,6 @@ void Generators<T>::createOrbits(const CGroupInfo* pElemGroup) {
 
 	// ...  and trivial permutation:
 	this->addObject(pOrb);
-	m_lenStab = groupDegree();
 	const auto groupOrder = pElemGroup->numObjects();
 	for (int i = 1; i < groupOrder; i++) {
 		const auto* c = pElemGroup->getObject(i);

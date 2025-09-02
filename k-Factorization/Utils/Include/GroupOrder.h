@@ -11,6 +11,14 @@
 #include "DataTypes.h"
 #endif
 
+#define TRACE_GROUP_ORDER   0
+#if TRACE_GROUP_ORDER
+#define printfYellow_TGO printfYellow
+#else
+#define printfYellow_TGO
+#endif
+
+
 #define IDX_MAX				(ELEMENT_MAX - 1)
 
 template<typename T>
@@ -62,6 +70,11 @@ protected:
 				len++;
 		}
 
+        printfYellow_TGO("%zd,%zd\n", len, groupOrder());
+#if 0
+        if (len == 1 && groupOrder() == 1)
+            len = 1;
+#endif
 		setGroupOrder(len * groupOrder());
 	}
 

@@ -44,9 +44,10 @@ private:
 	const int m_v;
 	const std::string m_resFileName;
 	const int m_nExploreMatrices;
+	const size_t m_len;
+	const size_t m_lenGraphMatr;
+
 	int m_nPrevMatrNumb = 0;
-	
-	int m_len;
 	bool m_bChekMatr[2];
 	SRGParam *m_pGraphParam[2] = { nullptr };
 	tchar* m_pGraph[2] = { nullptr };
