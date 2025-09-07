@@ -137,6 +137,8 @@ typedef struct TrCycles {
 	tchar fullPath[MAX_PLAYER_NUMBER * 2];
 	int ncycles;
 	int counter;
+	int irow1;
+	int irow2;
 } TrCycles;
 
 
@@ -225,6 +227,7 @@ private:
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
 	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
 	char *matrixStatOutput(char* str, int maxStr, TrCycles* trs) const;
+	CC void resetTrCycles(TrCycles* trc) const;
 	CC void cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1,
 		ctchar* result0, ctchar* result1);
 	CC int p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,

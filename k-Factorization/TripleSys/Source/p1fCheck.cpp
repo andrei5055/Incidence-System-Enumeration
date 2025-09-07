@@ -102,7 +102,14 @@ CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const
 			memcpy(&trcAll[j], trc, iLength);
 			trcAll[j].counter = 1;
 			break;
-		case 0: trcAll[j].counter++; break;
+		case 0:
+			// add 1 to "set of cycles" if pairs rows numbers not used, or different than last used
+			if ((trc->irow1 + trc->irow2 == 0) || (trcAll[j].irow1 != trc->irow1) || (trcAll[j].irow2 != trc->irow2)) {
+				trcAll[j].irow1 = trc->irow1;
+				trcAll[j].irow2 = trc->irow2;
+				trcAll[j].counter++;
+			}
+			break;
 		case 1: continue;
 		}
 		break;
@@ -154,7 +161,7 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 	const int ncc = MAX_CYCLES_PER_SET;
 	tchar tt2tmp[MAX_PLAYER_NUMBER];
 	int ncycles = 0;
-	memset(trc, 0, sizeof(TrCycles));
+	resetTrCycles(trc);
 	memcpy(tt2tmp, tt2, nc);
 	tchar k = 0, k0, k1 = 0, ip = 0;
 	for (k0 = 0; k0 < nc && ncycles < ncc; k0++)
@@ -380,8 +387,10 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		auto* rowm = table + m * nc;
 		auto* rowi = table;
 		int iend = m;
+		m_TrCycles.irow2 = m;
 		for (int i = 0; i < iend; i++, rowi += nc)
 		{
+			m_TrCycles.irow1 = i;
 			if (checkErrors == eCheckErrors)
 			{
 				const auto iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eCheckErrors);
@@ -691,9 +700,18 @@ CC int alldata::getAllV(tchar* allv, int maxv, int ir0, int ir1) const
 {
 	return getAllV(allv, maxv, neighbors(ir1), result(ir0));
 }
+CC void alldata::resetTrCycles(TrCycles* trc) const
+{
+	// reset all members of TrCycles exclude "irow1" and "irow2"
+	const auto ir1 = trc->irow1;
+	const auto ir2 = trc->irow2;
+	memset(trc, 0, sizeof(TrCycles));
+	trc->irow1 = ir1;
+	trc->irow2 = ir2;
+}
 void alldata::cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1, ctchar* result0, ctchar* result1)
 {
-	memset(trc, 0, sizeof(TrCycles));
+	resetTrCycles(trc);
 	m_TrCyclesCollection = trcAll;
 	if (trcAll)
 		memset(trcAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);

@@ -237,7 +237,6 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 CC bool alldata::getCyclesAndPath3(TrCycles* trc, ctchar* v, ctchar* t0, ctchar* t1, ctchar* res0, ctchar* res1, 
 	eCheckForErrors checkErrors) const
 {
-	memset(trc, 0, sizeof(TrCycles));
 	tchar tt1[MAX_PLAYER_NUMBER], tt2[MAX_PLAYER_NUMBER];
 	tchar tt3[MAX_PLAYER_NUMBER], tt4[MAX_PLAYER_NUMBER];
 

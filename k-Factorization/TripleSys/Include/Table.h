@@ -142,7 +142,8 @@ private:
 		if (m_lenStab <= this->stabilizerLength())
 			return;
 
-		this->addObject(permRow);
+		extern short* pGenerator;
+		pGenerator = (short *)this->addObject(permRow);
 		m_lenStab = this->stabilizerLength();
 	}
 

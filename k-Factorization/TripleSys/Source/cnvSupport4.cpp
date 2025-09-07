@@ -70,7 +70,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctch
 	const int ncc = MAX_CYCLES_PER_SET;
 	tchar usedGroups[MAX_GROUP_NUMBER];
 	int ncycles = 0;
-	memset(trc, 0, sizeof(TrCycles));
+	resetTrCycles(trc);
 	memset(usedGroups, unset, sizeof(usedGroups));
 	tchar* pst = m_groups + istart * m_groupSize;
 	int vp = 0;
@@ -126,14 +126,14 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctch
 			printf("p%d:", ncycles - 1);
 			printTableColor("", trc->fullPath + trc->start[ncycles - 1] * 2, 1, trc->length[ncycles - 1] * 2, m_groupSize);
 			**/
-			/**/
+			// check that cycle start is equal to cycle end
 			if (*(trc->fullPath + trc->start[ncycles - 1] * 2 + cin) !=
-				//*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - 1)) {
 				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize + cin)) {
-				memset(trc, 0, sizeof(TrCycles));
+				ASSERT(1);
+				EXIT_(1);
+				resetTrCycles(trc);
 				return -1;
 			}
-			/**/
 		}
 	}
 	if (ncycles == 0)

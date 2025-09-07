@@ -11,11 +11,11 @@
 #include "DataTypes.h"
 #endif
 
-#define TRACE_GROUP_ORDER   0
+#define TRACE_GROUP_ORDER   1
 #if TRACE_GROUP_ORDER
 #define printfYellow_TGO printfYellow
 #else
-#define printfYellow_TGO
+#define printfYellow_TGO(...)
 #endif
 
 

@@ -231,6 +231,7 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		return p1fCheck2P1F(neighborsi + m_numPlayers, pObj + m_numPlayers * 2);
 
 	TrCycles tcs;
+	tcs.irow1 = tcs.irow2 = 0;
 	const auto iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers,
 		neighborsi - m_numPlayers, pObj, eCheckErrors);
 	if (iret <= 0)
