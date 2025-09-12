@@ -5,7 +5,7 @@
 #pragma execution_character_set("utf-8")
 
 #define PRINT_NUM_CUR_GRAPH TRACE_GROUP_ORDER
-#define PRINT_MATRICES		1
+#define PRINT_MATRICES		0
 
 extern short* pGenerator = NULL;
 #if PRINT_NUM_CUR_GRAPH
@@ -17,7 +17,7 @@ int numCurrGraph;
 #define DO_PRINT(nIter)   (printFlag && FFF != -1 && nIter >= FFF)
 // Parameters specific to the bug we are trying to fix.
 #define N_MATR 5     // Number of matrix to activate the output
-#define FFF 46 //8    // 6 - for 26 matrices, 9 - for 22 matrices
+#define FFF 40 //46 //8    // 6 - for 26 matrices, 9 - for 22 matrices
 #define FF_ 1 // 2   // 4 - for 26. 2 for 22
 tchar* pGraph[2] = { NULL };
 static int nIter = 0;
@@ -26,7 +26,29 @@ static bool printFlag = false;
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
-SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, const std::string& resFileName, bool semiSymmetric, int exploreMatrices) :
+#define PERMUT			1
+#define USE_COMPLEMENT  1
+
+// Use PERMUT equal 
+//    0 to find the automorphism of original matrix (it will be in vvv.txt)
+//    1 to find the automorphism of canonized complement matrix
+#if PERMUT
+ushort autIni[] = {
+	41, 40, 37, 39, 35, 36, 38, 23, 26, 24, 25, 27, 22, 21, 48, 45, 43, 47, 42, 44,
+	46, 13, 12,  7,  9, 10,  8, 11, 29, 28, 33, 32, 31, 30, 34,  4,  5,  2,  6,  3,
+	 1,  0, 18, 16, 19, 15, 20, 17, 14
+};
+// ccc_497 29  31
+// why ccc_496:  29 33
+//    and ccc_498  29 33 as well
+ushort autLost[] = {
+	29, 30,  8,  7, 43, 45, 47,  3,  2, 12, 20, 21,  9, 38, 33, 42, 31, 39, 35, 22,
+	10, 11, 19, 40, 32, 37, 36, 41, 34,  0,  1, 16, 24, 14, 28, 18, 26, 25, 13, 17,
+	23, 27, 15,  4, 48,  5, 46,  6, 44
+};
+#endif
+
+SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, const std::string& resFileName, int exploreMatrices) :
 	m_pParam(p), m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(groupDegree()), m_nExploreMatrices(exploreMatrices),
 	m_len(groupDegree()* (groupDegree() - 1) / 2), m_lenGraphMatr(groupDegree() * groupDegree()),
 	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
@@ -47,8 +69,8 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, 
 		m_pMarixStorage[i] = new CBinaryMatrixStorage((int)m_len, 50);
 	}
 
-	if (semiSymmetric)
-		m_bConnectFlags = new tchar[m_len * (nRows - 1) * groupSize];
+
+	m_bUsedFlags = new tchar[m_v * m_v];
 }
 
 SRGToolkit::~SRGToolkit() { 
@@ -57,7 +79,7 @@ SRGToolkit::~SRGToolkit() {
 	delete[] m_pNumOrbits;
 	delete[] m_pOrbits;
 	delete[] outFileName();
-	delete[] m_bConnectFlags;
+	delete[] m_bUsedFlags;
 	for (int i = 0; i < 2; i++) {
 		delete m_pMarixStorage[i];
 		delete m_pGraphParam[i];
@@ -164,8 +186,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		int i, firstVert = 0;
 		i = 0;
 #if PRINT_NUM_CUR_GRAPH
-		++numCurrGraph;
-		printfYellow("**** numCurrGraph = %d ****\n", numCurrGraph);
+		printfYellow("**** numCurrGraph = %d ****\n", ++numCurrGraph);
 #endif
 #if PRINT_MATRICES
 		auto* pInitOrbits = m_pOrbits + m_v;
@@ -185,7 +206,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 #endif
 		while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
 			createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
-			//printfYellow("firstVert = %d\n", firstVert);
 
 #if PRINT_MATRICES
 			if (printFlag) {
@@ -193,7 +213,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 					pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
 
 				memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
-				// Construct matrix from the initial one by using pInitOrbits permutation
+				// Construct matrix from the original one by using pInitOrbits permutation
 				createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
 				PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
 				// Matrix after nIter iterations of canonization
@@ -253,33 +273,47 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 #if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES
 		if (printFlag) {
+			// pInitOrbits - permutation, that canonize original matrix
+			const auto ppp = pResOrbits + m_v;
+			ushort s[49];
+#if PERMUT
+			// Convert it to the automorphism of the original matrix 
+			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
+			// s = q∘p∘q^−1.
+			// Note: q^−1 is in ppp = pResOrbits + m_v
+
+			for (int j = m_v; j--;)
+				pResOrbits[j] = ppp[autIni[j]];
+
+			for (int j = m_v; j--;)
+				s[j] = pResOrbits[pInitOrbits[j]];
+
+			createGraphOut(pResGraph, pGraph[1], 0, 0, s);
+			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
+
+			ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
+#else
 			pntr += 2 * m_v;  // pointer to the first non-trivial generator
 			// Check if it's an automorphism
 			createGraphOut(pResGraph, pGraph[1], 0, 0, pntr);
 			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
 
-			// pInitOrbits - permutation, that canonize original matrix
 			// Multiply this automorphism by pInitOrbits
 			for (int j = m_v; j--;)
-				pResOrbits[j] = pInitOrbits[pntr[j]]; //pntr[pInitOrbits[j]];
+				pResOrbits[j] = pInitOrbits[pntr[j]];
 
 			for (int j = m_v; j--;)
 				pInitOrbits[pResOrbits[j]] = j;
 
 			createGraphOut(pResGraph, pGraph[1], 0, 0, pInitOrbits);
-			PRINT_ADJ_MATRIX(pGraph[0], 0, m_v, NULL, "xxx");
-			PRINT_ADJ_MATRIX(pResGraph, 0, m_v, NULL, "yyy");
 			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, pInitOrbits, "zzz");
 			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-			// It's what we see:
-			//   a) yyy - canonical for aaa_-1
-			//   b) aaa_-1 == xxx_00 == zzz_00, but permutations are different
 			
 			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
 			// multiply q (saved in pResOrbits + m_v) by p^(-1) (which is pInitOrbits)
-			const auto ppp = pResOrbits + m_v;
-#define	A	0
-#define B	0
+			// s=q∘p^−1
+#define	A	1
 #if A
 			const auto q = ppp;
 			const auto p = pInitOrbits;
@@ -287,37 +321,18 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			const auto q = pInitOrbits;
 			const auto p = ppp;
 #endif
-
-#if B
 			for (int j = m_v; j--;)
 				pResOrbits[p[j]] = j;   // pResOrbits is p^(-1)
-#else
-			memcpy(pResOrbits, p, m_v * sizeof(*p));
-#endif
 
-			ushort s[49];
 			for (int j = m_v; j--;)
 				s[j] = pResOrbits[q[j]];
 
 			// Obtained permutation (pResOrbits) should be an automorphism of pGraph[0]
 			// Let's check it
 			createGraphOut(pGraph[0], pGraph[1], 0, 0, s);
-			const auto resA = memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0]));
+			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
 			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
-
-			// Convert it to the automorphism of the original matrix 
-			for (int j = m_v; j--;)
-				s[j] = q[pResOrbits[j]];
-
-			createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
-			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, pInitOrbits, "www");
-			const auto res = memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0]));
-			PRINT_ADJ_MATRIX(pGraph[0], -1, m_v, pInitOrbits, "ttt");
-			//assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-//  A=1,0 && B=1 ==> vvv = aaa_-1  && resA = 0 && res = 1, but s is trivial permutation.
-//  A=1,0 && B=0 ==>  resA = 1 && res = 1
-
-			// A 1 B (1,0) ==> resA = 1 && res = 1
+#endif
 		}
 #endif
 	}
@@ -439,6 +454,9 @@ void SRGToolkit::initCanonizer() {
 	// Initialize orbits
 	m_pNumOrbits[0] = 1;
 	m_pLenOrbits[0] = m_v;
+
+	// Initiate flags
+	memset(m_bUsedFlags, 0, m_v * m_v);
 }
 
 void SRGToolkit::initVertexGroupOrbits() {
@@ -492,7 +510,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 #endif
 	const auto defineAut = firstVert > 0;
 	int lastUnfixedVertexIndex = 0;
-	// Vertex index which will will be swapped with the vertex firstVert
+	// Vertex index which will be swapped with the vertex firstVert
 	int indVertMax = 1;
 	int indVert = 0;
 	resetGroup();
@@ -522,6 +540,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 #endif
 		ushort* pLenOrbits = pLenOrbitsPrev;
 		int i = firstVert;
+		memset(m_bUsedFlags + i * m_v, 0, m_v);
 		while (defineAut) {
 			if (indVert >= indVertMax) {
 				while (--i >= 0) {
@@ -545,7 +564,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			while (++indVert <= indVertMax && pGroupOrbs[indVert] != i + indVert);
 #if FFF
 			if (DO_PRINT(nIter)) {
-				FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
+				FOPEN_F(f, "bbb.txt", "a");
 				fprintf(f, "ff = %2d  i = %2d  indVert = %2d\n", ff, i, indVert);
 				FCLOSE_F(f);
 			}
@@ -553,7 +572,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			if (indVert <= indVertMax) {
 				// swapping of i-th and (i+indVert)-th vertices
 				m_pOrbits[m_pOrbits[i] = i + indVert] = i;
-				pLenOrbits[0]++;
+				++*pLenOrbits;
 				break;
 			}
 		}
@@ -572,13 +591,13 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 					const bool flg = i == FF_ && idxRight == 1;
 					sprintf_s(buffer, "ccc_%04d.txt", hhh += flg? 1 : 0);
 					if (flg) {
-						FOPEN_F(f, "bbb.txt", ff++ ? "a" : "w");
+						FOPEN_F(f, "bbb.txt", "a");
 						fprintf(f, "ff = %2d  canonizeMatrixRow: hhh = %3d\n", ff, hhh);
 						FCLOSE_F(f);
 						printAdjMatrix(pGraphOut, buffer, i+1);
 					}
 
-					FOPEN_F(f, buffer, /*flg ? "w" :*/ "a");
+					FOPEN_F(f, buffer, "a");
 					fprintf(f, "canonizeMatrixRow: i = %2d  flag = %d idxRight = %2d\n", i, flag, idxRight);
 					FCLOSE_F(f);
 				}
@@ -605,6 +624,10 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 					m_pOrbits[i] = m_pOrbits[i + j];
 					m_pOrbits[i + j] = tmp;
 					++*pLenOrbits;
+#if 0
+					if (nIter == 40 && m_pOrbits[0] == 29 && i == 1)
+						i += 0;
+#endif
 					goto canonRow;
 				}
 			}
@@ -816,7 +839,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			return t_complete;
 	}
 
-#if 0
+#if USE_COMPLEMENT
 	if (true || 2 * graphDegree > m_v && graphDegree < m_v - 1) {
 		graphDegree = m_v - 1 - graphDegree;
 		// Compute the complement graph by inverting the adjacency relations.

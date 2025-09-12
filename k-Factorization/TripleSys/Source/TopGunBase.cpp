@@ -284,7 +284,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 #else
 		const auto& srgResFile = ResultFile;
 #endif
-		pSRGtoolkit = new SRGToolkit(paramPtr(), numPlayers(), nRows, m_groupSize, srgResFile, param(t_semiSymmetricGraphs), exploreMatrices);
+		pSRGtoolkit = new SRGToolkit(paramPtr(), numPlayers(), nRows, m_groupSize, srgResFile, exploreMatrices);
 		m_pGraphDB = new GraphDB[2]();
 		for (int i = 0; i < 2; i++)
 			m_pGraphDB[i].setGraphType(i + 1);

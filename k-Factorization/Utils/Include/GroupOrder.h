@@ -11,7 +11,7 @@
 #include "DataTypes.h"
 #endif
 
-#define TRACE_GROUP_ORDER   1
+#define TRACE_GROUP_ORDER   0
 #if TRACE_GROUP_ORDER
 #define printfYellow_TGO printfYellow
 #else
