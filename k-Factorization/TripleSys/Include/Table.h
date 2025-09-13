@@ -138,10 +138,14 @@ protected:
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
 	void resetGroup()					{ m_lenStab = groupDegree(); }
 private:
-	CC void savePermutation(const T degree, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {
-		if (m_lenStab <= this->stabilizerLength())
-			return;
-
+	CC virtual bool needUpdate(const T* permRow, const T* pOrbits) {
+		if (m_lenStab > this->stabilizerLength())
+			return true;
+		// Verify if the element is the leading representative of its orbit.
+		const auto elem = permRow[m_lenStab];
+		return elem == pOrbits[elem];
+	}
+	CC void savePermutation(const T degree, const T* permRow, bool rowPermut, bool savePermut) {
 		extern short* pGenerator;
 		pGenerator = (short *)this->addObject(permRow);
 		m_lenStab = this->stabilizerLength();

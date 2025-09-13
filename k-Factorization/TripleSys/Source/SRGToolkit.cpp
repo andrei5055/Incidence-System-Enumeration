@@ -4,7 +4,7 @@
 
 #pragma execution_character_set("utf-8")
 
-#define PRINT_NUM_CUR_GRAPH TRACE_GROUP_ORDER
+#define PRINT_NUM_CUR_GRAPH 1 //TRACE_GROUP_ORDER
 #define PRINT_MATRICES		0
 
 extern short* pGenerator = NULL;
@@ -27,12 +27,12 @@ static bool printFlag = false;
 #endif
 
 #define PERMUT			1
-#define USE_COMPLEMENT  1
+#define USE_COMPLEMENT  0
 
 // Use PERMUT equal 
 //    0 to find the automorphism of original matrix (it will be in vvv.txt)
 //    1 to find the automorphism of canonized complement matrix
-#if PERMUT
+#if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES && PERMUT
 ushort autIni[] = {
 	41, 40, 37, 39, 35, 36, 38, 23, 26, 24, 25, 27, 22, 21, 48, 45, 43, 47, 42, 44,
 	46, 13, 12,  7,  9, 10,  8, 11, 29, 28, 33, 32, 31, 30, 34,  4,  5,  2,  6,  3,
@@ -226,8 +226,12 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			i = 1 - i;
 		}
 
+#if 0
 		// Check if canonical graph is really canonical
+		// Warning: This call removes all previously determined generators of Aut(G).
+		//          For debugging use only.
 		ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
+#endif
 #if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES
 		if (printFlag) {
 			// Create the reverse permutation for pInitOrbits
@@ -515,6 +519,10 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 	int indVert = 0;
 	resetGroup();
 	releaseAllObjects();
+	// Allocate space for three vectors
+	// (a) vertex orbits
+	// (b) vertex orbits under the stabilizer of vertex 0
+	// (c) trivial permutation
 	reserveObjects(3);
 	bool stabFlag = true;
 
@@ -540,7 +548,6 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 #endif
 		ushort* pLenOrbits = pLenOrbitsPrev;
 		int i = firstVert;
-		memset(m_bUsedFlags + i * m_v, 0, m_v);
 		while (defineAut) {
 			if (indVert >= indVertMax) {
 				while (--i >= 0) {
@@ -582,8 +589,10 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 		if (defineAut) {
 			const auto iStart = i;
 			while (idxRight && i < m_v) {
-				if (*pLenOrbits > 1)
+				if (*pLenOrbits > 1) {
 					m_pSavedOrbIdx[i] = 0;
+					memset(m_bUsedFlags + i * m_v, 0, m_v);
+				}
 			canonRow:
 #if FFF
 				if (DO_PRINT(nIter)) {
@@ -619,10 +628,19 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 						
 					idxRight = 1;
 					flag = 0;
-					const auto j = m_pSavedOrbIdx[i];
-					const auto tmp = m_pOrbits[i];
-					m_pOrbits[i] = m_pOrbits[i + j];
-					m_pOrbits[i + j] = tmp;
+					auto pOrbit = m_pOrbits + i;
+					auto j = m_pSavedOrbIdx[i];
+					auto pUsedFlag = m_bUsedFlags + i * m_v;
+					if (j > 1) {
+						while (pUsedFlag[pOrbit[j]])
+							j--;
+					}
+
+					// Replace the current orbit’s leading vertex with 
+					// the next candidate and mark it as used
+					const auto tmp = *pOrbit;
+					*pOrbit = *(pOrbit + j);
+					pUsedFlag[*(pOrbit + j) = tmp] = 1;
 					++*pLenOrbits;
 #if 0
 					if (nIter == 40 && m_pOrbits[0] == 29 && i == 1)

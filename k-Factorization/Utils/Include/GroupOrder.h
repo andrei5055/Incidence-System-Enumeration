@@ -11,7 +11,7 @@
 #include "DataTypes.h"
 #endif
 
-#define TRACE_GROUP_ORDER   0
+#define TRACE_GROUP_ORDER   1
 #if TRACE_GROUP_ORDER
 #define printfYellow_TGO printfYellow
 #else
@@ -53,8 +53,11 @@ public:
 	CC inline auto groupOrder() const { return this ? m_nGroupOrder : 1; }
 	CC inline void setGroupOrder(size_t val) { m_nGroupOrder = val; }
     CC void addAutomorphism(const T degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
+        if (!needUpdate(permRow, pOrbits))
+            return;
+
         UpdateOrbits(permRow, degree, pOrbits, rowPermut, calcGroupOrder);
-        savePermutation(degree, permRow, pOrbits, rowPermut, savePermut);
+        savePermutation(degree, permRow, rowPermut, savePermut);
     }
 protected:
 	void UpdateOrbits(const T* permut, const T lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
@@ -78,12 +81,13 @@ protected:
 		setGroupOrder(len * groupOrder());
 	}
 
-    CC virtual void savePermutation(const T degree, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {}
+    CC virtual void savePermutation(const T degree, const T* permRow, bool rowPermut, bool savePermut) {}
 	CC inline void setStabilizerLength(T len) { m_nStabLength = len; }
 	CC inline auto stabilizerLength() const { return m_nStabLength; }
 	CC inline void setStabilizerLengthAut(T l) { m_nStabLengthAut = l; }
 	CC inline auto stabilizerLengthAut() const { return m_nStabLengthAut; }
     CC T next_permutation(T* perm, const T* pOrbits, T nRow, T idx = ELEMENT_MAX, T lenStab = 0);
+    CC virtual bool needUpdate(const T* permRow, const T* pOrbits) { return true; }
 private:
 	CC T udpdateStabLength(const T* permut, T lenPerm, const T* pOrb, bool calcOrder, bool rowPermut) {
 		T idx = 0;
