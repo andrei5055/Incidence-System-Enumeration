@@ -142,7 +142,11 @@ private:
 		if (m_lenStab > this->stabilizerLength())
 			return true;
 		// Verify if the element is the leading representative of its orbit.
-		const auto elem = permRow[m_lenStab];
+		T i = 0;
+		while (permRow[i] == i)
+			i++;
+
+		const auto elem = permRow[i];
 		return elem == pOrbits[elem];
 	}
 	CC void savePermutation(const T degree, const T* permRow, bool rowPermut, bool savePermut) {

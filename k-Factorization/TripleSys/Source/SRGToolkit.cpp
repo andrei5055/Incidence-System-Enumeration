@@ -16,35 +16,60 @@ int numCurrGraph;
 #define PRINT_ADJ_MATRIX(...) printAdjMatrix(__VA_ARGS__)
 #define DO_PRINT(nIter)   (printFlag && FFF != -1 && nIter >= FFF)
 // Parameters specific to the bug we are trying to fix.
-#define N_MATR 5     // Number of matrix to activate the output
-#define FFF 40 //46 //8    // 6 - for 26 matrices, 9 - for 22 matrices
+#define N_MATR 3     // Number of matrix to activate the output
+#define NUM_GENERATOR	1  // Generator number that is presumably missing from the matrix with the smaller group
+#define FFF 22  // should be set equal to index NM of last bbb_NM.txt file
 #define FF_ 1 // 2   // 4 - for 26. 2 for 22
 tchar* pGraph[2] = { NULL };
 static int nIter = 0;
 static bool printFlag = false;
+static int hhh;
 #else
 #define PRINT_ADJ_MATRIX(...)
 #endif
 
 #define PERMUT			1
-#define USE_COMPLEMENT  0
+#define USE_COMPLEMENT -1   // -1 use compliment graph only when 2*k > v
+                            //  0 don't use compliment graph
+                            //  1 always use complement graph
+                             
 
 // Use PERMUT equal 
 //    0 to find the automorphism of original matrix (it will be in vvv.txt)
 //    1 to find the automorphism of canonized complement matrix
 #if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES && PERMUT
-ushort autIni[] = {
+ushort autIni[] = {  // Could be found in vvv.txt
+#if N_MATR == 3
+#if NUM_GENERATOR == 1
+	 0, 34, 18, 17, 32, 47, 13,  7, 23, 43, 20, 41, 31,  6, 35, 37, 29,  3,  2, 25,
+	10, 21, 44,  8, 46, 19, 26, 40, 28, 16, 36, 12,  4, 33,  1, 14, 30, 15, 48, 45,
+	27, 11, 42,  9, 22, 39, 24,  5, 38
+#elif NUM_GENERATOR == 2
+	19, 46, 21, 26, 44, 40,  8,  7,  6, 41, 23, 31, 43, 20, 34, 32, 47, 17, 18,  0,
+	13,  2, 37, 10, 35, 25,  3, 29, 48, 27, 30, 11, 15, 45, 14, 24, 42, 22, 38, 39,
+	 5,  9, 36, 12,  4, 33,  1, 16, 28
+#endif
+#elif N_MATR == 5
 	41, 40, 37, 39, 35, 36, 38, 23, 26, 24, 25, 27, 22, 21, 48, 45, 43, 47, 42, 44,
 	46, 13, 12,  7,  9, 10,  8, 11, 29, 28, 33, 32, 31, 30, 34,  4,  5,  2,  6,  3,
 	 1,  0, 18, 16, 19, 15, 20, 17, 14
+#endif
 };
 // ccc_497 29  31
 // why ccc_496:  29 33
 //    and ccc_498  29 33 as well
 ushort autLost[] = {
+#if N_MATR == 3
+#if NUM_GENERATOR == 1
+	 0,  7,  9, 13, 11, 17, 15,  1,  8,  2, 10,  4, 12,  3, 14,  6, 18,  5, 16, 23,
+	29, 27, 43, 19, 30, 25, 45, 21, 47, 20, 24, 33, 41, 31, 48, 35, 39, 46, 40, 36,
+	38, 32, 44, 22, 42, 26, 37, 28, 34
+#endif
+#elif N_MATR == 5
 	29, 30,  8,  7, 43, 45, 47,  3,  2, 12, 20, 21,  9, 38, 33, 42, 31, 39, 35, 22,
 	10, 11, 19, 40, 32, 37, 36, 41, 34,  0,  1, 16, 24, 14, 28, 18, 26, 25, 13, 17,
 	23, 27, 15,  4, 48,  5, 46,  6, 44
+#endif
 };
 #endif
 
@@ -298,7 +323,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 			ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
 #else
-			pntr += 2 * m_v;  // pointer to the first non-trivial generator
+			pntr += (NUM_GENERATOR + 1) * m_v;  // pointer to the first non-trivial generator
 			// Check if it's an automorphism
 			createGraphOut(pResGraph, pGraph[1], 0, 0, pntr);
 			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
@@ -468,6 +493,7 @@ void SRGToolkit::initVertexGroupOrbits() {
 	setStabilizerLengthAut(m_v);
 	for (int i = m_v; i--;)
 		m_pGroupOrbits[i] = i;
+	memcpy(this->getObject(1), m_pGroupOrbits, m_v * sizeof(m_pGroupOrbits[0]));
 }
 
 tchar *SRGToolkit::createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex, int endVertex, const ushort* pOrb) const {
@@ -524,7 +550,6 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 	// (b) vertex orbits under the stabilizer of vertex 0
 	// (c) trivial permutation
 	reserveObjects(3);
-	bool stabFlag = true;
 
 	ushort* pLenOrbitsPrev = m_pLenOrbits;
 	if (defineAut) {
@@ -596,7 +621,6 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 			canonRow:
 #if FFF
 				if (DO_PRINT(nIter)) {
-					static int hhh;
 					const bool flg = i == FF_ && idxRight == 1;
 					sprintf_s(buffer, "ccc_%04d.txt", hhh += flg? 1 : 0);
 					if (flg) {
@@ -679,12 +703,11 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 #endif
 				flag = memcmp(pGraphLast, pGraph + i * m_v, m_v * (m_v - i));
 				if (!flag) {
-					if (m_pOrbits[0] && stabFlag) {
-						stabFlag = false;
+					addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
+					if (!m_pOrbits[0]) {
+						// Set vertex orbits under the stabilizer of vertex 0
 						memcpy(this->getObject(1), m_pGroupOrbits, sizeof(m_pGroupOrbits[0]) * m_v);
 					}
-
-					addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
 				}
 			}
 		}
@@ -857,8 +880,8 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			return t_complete;
 	}
 
-#if USE_COMPLEMENT
-	if (true || 2 * graphDegree > m_v && graphDegree < m_v - 1) {
+#if USE_COMPLEMENT != 0
+	if (USE_COMPLEMENT == 1 || 2 * graphDegree > m_v && graphDegree < m_v - 1) {
 		graphDegree = m_v - 1 - graphDegree;
 		// Compute the complement graph by inverting the adjacency relations.
 		auto pVertex = pGraph;
