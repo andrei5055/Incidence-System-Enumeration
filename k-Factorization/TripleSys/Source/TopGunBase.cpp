@@ -114,7 +114,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 
 void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) {
 	const auto exploreMatrices = param(t_exploreMatrices);
-	if (exploreMatrices < 0)
+	if (exploreMatrices < -3)
 		return;
 
 	std::string IntegratedResults;

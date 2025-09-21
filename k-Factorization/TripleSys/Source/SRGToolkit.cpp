@@ -200,7 +200,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		flg = 2;
 	}
 
-	if (!(m_nExploreMatrices & flg)) {
+	const bool canonize = m_nExploreMatrices > 0;
+	if (!((canonize? m_nExploreMatrices : -m_nExploreMatrices) & flg)) {
 		delete graphParam;
 		m_pGraphParam[typeIdx] = NULL;
 		return false;
@@ -210,7 +211,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	tchar* pGraph[2] = { NULL, NULL };
 	tchar* pUpperDiag = NULL;
 	ctchar* pResGraph = NULL;
-	const bool canonize = !(m_nExploreMatrices & 4);
 	if (canonize) {
 		initCanonizer();
 		int i, firstVert = 0;
