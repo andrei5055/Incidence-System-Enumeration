@@ -97,7 +97,7 @@ protected:
 	CC inline auto getColOrbits(int idx) const		{ return m_pObits[1][idx]; }
 	inline bool checkProperty(uint flag) const		{ return enumFlags() & flag; }
 	CC inline auto numRow() const					{ return m_nNumRow; }
-	CC void setStabiliserLengthExt(T len)			{ m_nStabExtern = len; }
+	CC inline void setStabilizerLengthExt(T len)	{ m_nStabExtern = len; }
 	CC inline auto numParts() const					{ return m_numParts; }
 	CC virtual T lenStabilizer() const				{ return 0; }
 	CK inline auto shiftToUnforcedOrbit(T nRow) const { return m_pShift[nRow]; }
@@ -106,7 +106,7 @@ protected:
 	CK inline void setGroupOnParts(CGroupOnParts<T>* pntr) { m_pGroupOnParts = pntr; }
 	CK inline auto getGroupOnParts() const			{ return m_pGroupOnParts; }
 	CK virtual CGroupOnParts<T>* makeGroupOnParts(const CCanonicityChecker *owner) { return NULL; }
-	CC virtual void savePermutation(const T numRow, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut);
+	CC virtual void savePermutation(const T numRow, const T* permRow, bool rowPermut, bool savePermut);
 private:
 	CC T *init(T nRow, T numParts, bool savePerm, T *pOrbits, T **pPermRows, bool groupOnParts, T* pPermCol = NULL);
 	CC int checkColOrbit(T orbLen, T nColCurr, const S *pRow, const T *pRowPerm, T *pColPerm) const;

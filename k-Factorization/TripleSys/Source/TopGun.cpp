@@ -96,12 +96,13 @@ int TopGun::Run()
 	if (orderMatrixMode || param(t_MultiThreading)) {
 		if (readMatrices() < 0)
 			myExit(1);
-		if (!param(t_nFirstIndexOfStartMatrices) && !param(t_exploreMatrices))
+		const auto exploreMatrices = param(t_exploreMatrices);
+		if (!param(t_nFirstIndexOfStartMatrices) && !exploreMatrices)
 			deleteOldFiles();
 
 		//myTemporaryCheck();
 		if (orderMatrixMode) {
-			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, param(t_exploreMatrices) > 1);
+			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, exploreMatrices > 1);
 			if (orderMatrixMode == 2)
 				return 0;
 		}

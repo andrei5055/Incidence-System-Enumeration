@@ -58,7 +58,12 @@ const char* intParamNames[]{
 	"OrderMatrices",
 	"AllowUndefinedCycles", // 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
-	"ExploreMatrices",
+	"ExploreMatrices",      // -1 - No output of integrated results into "ID_Results.txt"
+							//  0 - Do not construct graphs
+							//  1 - Construct: SRGs
+							//  2 -            regular graphs
+	                        //  3 -			   SRGs and regular graphs
+	                        //  add 4, to construct, but not canonize
 	"SemiSymmetricGraphs",
 	"RejectCycleLength",
 	"Test",

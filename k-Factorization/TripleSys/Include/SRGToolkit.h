@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "Table.h"
 
-#define CHECK_NON_SRG				1   // Set this value to 1, if you want to see the graph which are not strongly-regular
 #define OUT_SRG_TO_SEPARATE_FILE	0	// Set this value to 1 if you want to see the constructed SRG in a separate file.
 
 typedef struct SRGParam {

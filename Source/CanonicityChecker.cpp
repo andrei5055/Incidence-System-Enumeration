@@ -83,7 +83,7 @@ CanonicityChecker(T *)::init(T nRow, T numParts, bool savePerm, T *pOrbits, T** 
 	return pCol;
 }
 
-CanonicityChecker(void)::savePermutation(const T numRow, const T* permRow, T* pOrbits, bool rowPermut, bool savePermut) {
+CanonicityChecker(void)::savePermutation(const T numRow, const T* permRow, bool rowPermut, bool savePermut) {
 	if (!rowPermut) {
 		if (permRowStorage())
 			permRowStorage()->savePermut(numRow, permRow);

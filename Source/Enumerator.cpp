@@ -684,7 +684,7 @@ FClass2(CEnumerator, bool)::Enumerate(designParam* pParam, bool writeFile, EnumI
 #endif
 	}
     
-	this->setStabiliserLengthExt(lenStab);
+	this->setStabilizerLengthExt(lenStab);
 #if CANON_ON_GPU
 	this->matrix()->m_nStabExtern = lenStab;
 #endif

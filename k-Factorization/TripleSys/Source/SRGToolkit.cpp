@@ -4,7 +4,7 @@
 
 #pragma execution_character_set("utf-8")
 
-#define PRINT_NUM_CUR_GRAPH 1 //TRACE_GROUP_ORDER
+#define PRINT_NUM_CUR_GRAPH TRACE_GROUP_ORDER
 #define PRINT_MATRICES		0
 
 extern short* pGenerator = NULL;
@@ -75,7 +75,7 @@ ushort autLost[] = {
 
 SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, const std::string& resFileName, int exploreMatrices) :
 	m_pParam(p), m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(groupDegree()), m_nExploreMatrices(exploreMatrices),
-	m_len(groupDegree()* (groupDegree() - 1) / 2), m_lenGraphMatr(groupDegree() * groupDegree()),
+	m_len(groupDegree() * (groupDegree() - 1) / 2), m_lenGraphMatr(groupDegree() * groupDegree()),
 	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
 	setOutFileName(NULL);
 	const int coeff = PRINT_MATRICES? 3 : 0;
@@ -128,13 +128,14 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
-		if (m_bChekMatr[i])
-			if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID, srcGroupOrder))
-				counter++;
-#if !CHECK_NON_SRG			
-			else 
+		if (!m_bChekMatr[i])
+			continue;
+
+		if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID, srcGroupOrder))
+			counter++;			
+		else 
+			if (!(m_nExploreMatrices & 2))
 				m_bChekMatr[i] = false;
-#endif
 	}
 
 	return counter > 0;
@@ -188,6 +189,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
 	pGraphDB->setGraphType(graphType);
+	int flg = 1;
 	switch (graphType) {
 	case t_nonregular:
 	case t_complete:
@@ -195,18 +197,21 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		m_pGraphParam[typeIdx] = NULL;
 		return false;
 	case t_regular:
-		if (!CHECK_NON_SRG) {
-			delete graphParam;
-			m_pGraphParam[typeIdx] = NULL;
-			return false;
-		}
+		flg = 2;
+	}
+
+	if (!(m_nExploreMatrices & flg)) {
+		delete graphParam;
+		m_pGraphParam[typeIdx] = NULL;
+		return false;
 	}
 
 	bool rank3 = false;
 	tchar* pGraph[2] = { NULL, NULL };
 	tchar* pUpperDiag = NULL;
 	ctchar* pResGraph = NULL;
-	if (m_nExploreMatrices > 0) {
+	const bool canonize = !(m_nExploreMatrices & 4);
+	if (canonize) {
 		initCanonizer();
 		int i, firstVert = 0;
 		i = 0;
@@ -445,8 +450,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
 
 		if (graphType != t_regular) {
-			const auto rank3graph = rank3 ? 1 : (m_nExploreMatrices > 0 ? -1 : 0);
-			const auto grOrder = m_nExploreMatrices > 0 ? groupOrder() : 0;
+			const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
+			const auto grOrder = canonize ? groupOrder() : 0;
 			srgSummary.outSRG_info(m_v, graphParam, graphType, rank3graph, grOrder, m_groupSize, m_nCols / m_groupSize, srcGroupOrder);
 		}
 
@@ -456,7 +461,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 		FCLOSE_F(f);
 
-		if (pResGraph)
+		if (pResGraph && groupOrder() > 1)
 			makeGroupOutput(NULL, false, false);
 	}
 	else {
