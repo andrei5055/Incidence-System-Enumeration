@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup>
+        <DPCPPLinkOptions>-fsycl-targets=nvptx64-nvidia-cuda</DPCPPLinkOptions>
+    </PropertyGroup>
+</Project>

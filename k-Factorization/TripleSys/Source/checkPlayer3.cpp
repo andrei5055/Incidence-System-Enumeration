@@ -13,7 +13,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 
 	if (l0[iPlayerNumber] != unset)
 		return iPlayerNumber + 1;
-	if (iPlayer == 1 && completeGraph() && (m_useRowsPrecalculation != eCalculateRows || iDay != 3))
+	if (iPlayer == 1 && completeGraph() && (m_precalcMode != eCalculateRows || iDay != 3))
 	{
 		// AI statement #15
 		for (int i = 1; i < iPlayerNumber; i++)
@@ -30,7 +30,7 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			return iPlayerNumber + 1;
 		l1[iPlayerNumber] = li[i1] = day;
 		l0[iPlayerNumber] = li[i0] = day;
-		if (m_bCheckLinkV && m_useRowsPrecalculation != eCalculateRows /* && iPlayerNumber == 11 */ && !checkLinks(links(), iDay))
+		if (m_bCheckLinkV && m_precalcMode != eCalculateRows /* && iPlayerNumber == 11 */ && !checkLinks(links(), iDay))
 		{
 			selPlayers[iPlayerNumber] = unset;
 			tmpPlayers[iPlayer] = unset;

@@ -65,7 +65,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			|| (param(t_submatrixGroupOrderMin) > 0)
 			|| (param(t_nestedGroups) > 1)
 			|| (m_use2RowsCanonization && m_groupSize == 3) // slightly faster (for 15,7,3)
-			|| (m_useRowsPrecalculation == eCalculateRows && m_groupSize == 2) // significantly faster for gs=2
+			|| (m_precalcMode == eCalculateRows && m_groupSize == 2) // significantly faster for gs=2
 			)
 		{
 			bool bPrev = true;

@@ -218,7 +218,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 	resetGroupOrder();
 	m_playerIndex = playerIndexCycle;
 
-	if (m_useRowsPrecalculation != eCalculateRows) {
+	if (m_precalcMode != eCalculateRows) {
 		if (useAutomorphisms && param(t_autGroupNumb) && utilizeGroups(nrows)) {
 			int step, lastVal, j, nGroupsTested = 0;
 			int i = setupIteratorByGroups(&lastVal, &step);
@@ -253,7 +253,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 
 		m_playerIndex = playerIndexCycle;
 
-		if (m_useRowsPrecalculation != eCalculateRows && param(t_nestedGroups) > 1 && nrows > 2)
+		if (m_precalcMode != eCalculateRows && param(t_nestedGroups) > 1 && nrows > 2)
 		{
 			updateGroup(result(0));
 			if (orderOfGroup() >= param(t_nestedGroups)) {
@@ -312,7 +312,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 
 	if (ret) {
 		//m_playerIndex = 0;
-		if (m_useRowsPrecalculation != eCalculateRows || nrows < param(t_useRowsPrecalculation))
+		if (m_precalcMode != eCalculateRows || nrows < param(t_useRowsPrecalculation))
 			saveGroup(*this, nrows);
 	}
 	return ret;

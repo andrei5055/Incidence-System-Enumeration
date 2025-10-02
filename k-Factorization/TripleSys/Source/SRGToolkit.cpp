@@ -94,7 +94,6 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, 
 		m_pMarixStorage[i] = new CBinaryMatrixStorage((int)m_len, 50);
 	}
 
-
 	m_bUsedFlags = new tchar[m_v * m_v];
 }
 

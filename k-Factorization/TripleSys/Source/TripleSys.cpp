@@ -54,7 +54,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	int maxPlayerInFirstGroup = groupSize_2 ? m_secondPlayerInRow4Last : m_numPlayers;
 
-	m_bPrint = m_printMatrices != 0;
+	m_bPrint = (m_printMatrices & 1) != 0;
+	bool bPrintCurrent = (m_printMatrices & 32) != 0;
 	int minRows = nrowsStart;
 
 	const auto semiSymGraph = !m_createSecondRow && numDaysResult() > 2 && param(t_semiSymmetricGraphs) == 1;
@@ -225,7 +226,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		m_pRowUsage->init(iThread, param(t_numThreads));
 
 	else if (iDay > 0) {
-		if (m_useRowsPrecalculation == eCalculateRows)
+		if (m_precalcMode == eCalculateRows)
 			m_pRowStorage->initPlayerMask(mfirst, maxPlayerInFirstGroup);
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
@@ -244,7 +245,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		CUDA_PRINTF(" *** nLoops = %lld\n", nLoops);
 		while (iDay < numDaysResult() || bPrevResult)
 		{
-			if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices) {
+			if (m_nPrecalcRows && m_precalcMode == eCalculateMatrices) {
 			ProcessPrecalculatedRow:
 				const auto iRet = precalculatedSolutions(iCalcMode);
 				switch (iRet) {
@@ -288,7 +289,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 			if (!processOneDay())
 			{
-				if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateRows && m_secondPlayerInRow4) {
+				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					const auto iRet = endOfRowPrecalculation(iCalcMode);
 					switch (iRet) {
 					case eCheckCurrentMatrix: goto checkCurrentMatrix;
@@ -300,13 +301,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				bPrevResult = true;
 				continue;
 			}
-			if (m_useRowsPrecalculation == eCalculateMatrices) {
+			if (m_precalcMode == eCalculateMatrices) {
 				ASSERT(1); // error in SW
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
 
-			if (!m_secondPlayerInRow4First && m_nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
+			if (!m_secondPlayerInRow4First && m_nPrecalcRows && m_precalcMode == eCalculateRows) {
 				if (m_nPrecalcRows - 1 == iDay) {
 					m_pRowStorage->initPlayerMask(NULL, maxPlayerInFirstGroup);
 				}
@@ -346,14 +347,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					break;
 				}
 				goBack();
-				if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateMatrices)
+				if (m_nPrecalcRows && m_precalcMode == eCalculateMatrices)
 					goto ProcessPrecalculatedRow;
 				goto ProcessOneDay;
 			case 1: goto noResult;
 			default: break;
 			}
 #endif
-			if (m_nPrecalcRows && m_useRowsPrecalculation == eCalculateRows) {
+			if (m_nPrecalcRows && m_precalcMode == eCalculateRows) {
 				if (iDay == m_nPrecalcRows + 1) {
 					addPrecalculatedRow();
 					bPrevResult = true;

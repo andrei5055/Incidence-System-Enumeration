@@ -180,7 +180,7 @@ CC void alldata::updateIndexPlayerMinMax()
 			case 2:
 			if (m_numPlayers >= 4)
 			{
-				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
+				if (m_precalcMode == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
 					m_secondPlayerInRow4)
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else
@@ -191,7 +191,7 @@ CC void alldata::updateIndexPlayerMinMax()
 			default:
 			if (m_numPlayers >= 9)
 			{
-				if (m_useRowsPrecalculation == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
+				if (m_precalcMode == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
 					m_secondPlayerInRow4)
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
 				else {

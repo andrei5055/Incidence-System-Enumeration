@@ -4,7 +4,7 @@
 CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMode)
 {
 	if (m_nPrecalcRows > iDay) {
-		m_useRowsPrecalculation = eCalculateRows;
+		m_precalcMode = eCalculateRows;
 		m_pRowStorage->init();
 	}
 	else if (m_nPrecalcRows == iDay) {
@@ -38,7 +38,7 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 				printf("Total number of precalculated row solutions = %5d\n", m_nRows4);
 				m_lastRowWithTestedTrs = 0;
 			}
-			m_useRowsPrecalculation = eCalculateMatrices;
+			m_precalcMode = eCalculateMatrices;
 			m_playerIndex = 0;
 
 			if (!m_pRowStorage->initCompatibilityMasks()) {
@@ -51,7 +51,7 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 					return eNoResult;
 				}
 				iDay = m_nPrecalcRows;
-				m_useRowsPrecalculation = eCalculateRows;
+				m_precalcMode = eCalculateRows;
 				m_pRowStorage->init();
 				m_nRows4 = 0;	iDay++;
 				//linksFromMatrix(links(), result(), iDay);
@@ -123,9 +123,9 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 		nRowsStart = m_nPrecalcRows = 0;
 	}
 	if (iCalcMode == eCalcResult)
-		m_useRowsPrecalculation = (m_nPrecalcRows && m_nPrecalcRows <= 3 && m_groupSize <= 3 && nRowsStart <= m_nPrecalcRows) ? eCalculateRows : eDisabled;
+		m_precalcMode = (m_nPrecalcRows && m_nPrecalcRows <= 4 && m_groupSize <= 3 && nRowsStart <= m_nPrecalcRows) ? eCalculateRows : eDisabled;
 	else
-		m_useRowsPrecalculation = iCalcMode;
+		m_precalcMode = iCalcMode;
 
 	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : m_groupSize + 1 + m_numDays - m_numDaysResult);
 	tchar m_secondPlayerInRow4First = 0;
@@ -140,8 +140,8 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 	m_nRows4 = 0;
 	m_nRows4Day = 0;
 #if 1 // preset automorphism groups
-	const auto iCalc = m_useRowsPrecalculation;
-	m_useRowsPrecalculation = eCalcResult;
+	const auto iCalc = m_precalcMode;
+	m_precalcMode = eCalcResult;
 	if (!param(t_autGroupNumb)) {
 		if (param(t_useAutForPrecRows) > 1 && iDay >= param(t_useAutForPrecRows)) {
 			auto* pGroupInfo = groupInfo(param(t_useAutForPrecRows));
@@ -164,6 +164,6 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 			resetGroupOrder();
 		}
 	}
-	m_useRowsPrecalculation = iCalc;
+	m_precalcMode = iCalc;
 #endif
 }

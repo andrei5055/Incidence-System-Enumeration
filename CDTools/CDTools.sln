@@ -19,6 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CombiLogic", "..\CombiLogic
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TripleSys", "..\k-Factorization\TripleSys\TripleSys.vcxproj", "{DD293748-8D62-4F87-8E07-A57D00D84BD4}"
 	ProjectSection(ProjectDependencies) = postProject
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C} = {BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}
 		{BA86F27F-F92D-4C5F-8B2D-6D5782A2617B} = {BA86F27F-F92D-4C5F-8B2D-6D5782A2617B}
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3} = {FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}
 	EndProjectSection
@@ -34,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "k-Sys", "..\k-Factorization
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Utils", "..\k-Factorization\Utils\Utils.vcxproj", "{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OneApp", "..\k-Factorization\OneApp\OneApp.vcxproj", "{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -167,6 +170,22 @@ Global
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}.Release|Win32.Build.0 = Release|Win32
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}.Release|x64.ActiveCfg = Release|x64
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}.Release|x64.Build.0 = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|ARM.ActiveCfg = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|ARM.Build.0 = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|Win32.ActiveCfg = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|Win32.Build.0 = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|x64.ActiveCfg = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Debug|x64.Build.0 = Debug|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|ARM.ActiveCfg = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|ARM.Build.0 = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|Mixed Platforms.Build.0 = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|Win32.ActiveCfg = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|Win32.Build.0 = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|x64.ActiveCfg = Release|x64
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

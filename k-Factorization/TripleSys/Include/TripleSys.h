@@ -270,7 +270,7 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
+	CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay == m_matrixCanonInterval) : false;}
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;
@@ -331,7 +331,7 @@ private:
 	int m_improveResult;
 	int m_TrInd;
 	int m_cnvMode;
-	int m_useRowsPrecalculation;
+	int m_precalcMode;
 	int m_nPrecalcRows = 0;
 	int m_nRows4 = 0;
 	int m_nRows4Day = 0;
