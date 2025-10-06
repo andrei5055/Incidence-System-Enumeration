@@ -4,15 +4,16 @@
 __global__ void logical_mul_kernel(const long long* __restrict__ A,
                                    const long long* __restrict__ B,
                                    long long* __restrict__ C,
-                                   size_t N) {
-    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+                                   size_t N, int numSol) {
+    const size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < N) {
+        for (int j = 0; j < numSol; j++)
         // Logical multiplication = bitwise AND
-        C[idx] = A[idx] & B[idx];
+            C[/*j * N +*/ idx] = A[idx] & B[idx];
     }
 }
 
-__declspec(dllexport) void logical_mul(const long long* h_A, const long long* h_B, long long* h_C, int N, int nc) {
+__declspec(dllexport) void logical_mul(const long long* h_A, const long long* h_B, long long* h_C, int N, int nc, int nSol) {
     long long* d_A, * d_B, * d_C;
 
     size_t bytes = N * sizeof(long long);
@@ -30,7 +31,7 @@ __declspec(dllexport) void logical_mul(const long long* h_A, const long long* h_
     printf("Starting CUDA gpu  gridSize = %d  blockSize = %d\n", gridSize, blockSize);
     auto tm = clock();
     for (int i = 0; i < nc; i++) {
-        logical_mul_kernel << <gridSize, blockSize >> > (d_A, d_B, d_C, N);
+        logical_mul_kernel << <gridSize, blockSize >> > (d_A, d_B, d_C, N, nSol);
         cudaDeviceSynchronize();
     }
     printf("CUDA gpu x %d iterations  lenArray = %d: %ld ms\n", nc, N, clock() - tm);

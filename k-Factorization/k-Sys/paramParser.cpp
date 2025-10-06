@@ -237,10 +237,12 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 		line = beg + "=" + end;
 	}
 
-	static const char* jobTask[] = { "RUN_JOB", "END_JOB" };
-	for (int j = 0; j < 2; j++) {
-		if (case_insensitive_find(line, jobTask[j]) != string::npos)
-			return j + 1;
+	static const char* jobTask[2][2] = {"RUNJOB", "ENDJOB", "RUN_JOB", "END_JOB"};
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j < 2; j++) {
+			if (case_insensitive_find(line, jobTask[i][j]) != string::npos)
+				return j + 1;
+		}
 	}
 
 	auto j = nDescr;
