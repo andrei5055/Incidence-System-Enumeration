@@ -40,10 +40,10 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 		_printf(f, toScreen, "\n");
 }
 
-
+template<typename T>
 class IOutGroupHandle {
 public:
-	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) = 0;
+	virtual void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) = 0;
 	virtual ~IOutGroupHandle() {}
 	inline void setOutFileName(const char* pFileName, bool resetFile = true) {
 		if ((m_pFileName = pFileName) && resetFile)
@@ -55,17 +55,17 @@ protected:
 };
 
 template<typename T>
-class Table : public IOutGroupHandle {
+class Table : public IOutGroupHandle<T> {
 public:
 	Table(char const *name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		m_name(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
-		m_makeString(makeString), m_bOutCntr(outCntr), IOutGroupHandle() {}
+		m_makeString(makeString), m_bOutCntr(outCntr), IOutGroupHandle<T>() {}
 	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
 	void printTableInfo(const char* pInfo);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
 	virtual const char *name() 					{ return m_name; }
-	virtual void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
+	virtual void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
 		this->printTable((const T*)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected:
@@ -131,8 +131,8 @@ public:
 	Generators(uint outGroupMask, char const* name, int degree) :
 		CStorageSet<T>(10, degree),
 		COutGroupHandle<T>(outGroupMask, name, degree) {};
-	void makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
-	void createOrbits(const CGroupInfo* pElemGroup);
+	void makeGroupOutput(const CRepository<T>* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
+	void createOrbits(const CRepository<T>* pElemGroup);
 protected:
 	inline auto groupDegree() const		{ return this->m_nc; }
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
@@ -159,20 +159,86 @@ private:
 	bool m_bOrbitsCreated = false;
 };
 
-class RowGenerators : public Generators<tchar> {
-public:
-	RowGenerators(uint outGroupMask, int rowNumb);
-	~RowGenerators()					{ delete m_pRowGroup; }
-	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
-	const char* name() override         { return m_sName.c_str(); }
-	int createGroupAndOrbits(const CGroupInfo* pElemGroup);
-protected:
-	int getGroup(const CGroupInfo* pElemGroup);
-	virtual void createTable(ctchar* pSolution)	{}
-	virtual int createGroup(const CGroupInfo* pElemGroup) {
-		return testNestedGroups(pElemGroup, m_pRowGroup, lenObject());
+void reportNestedGroupCheckResult(int retVal, bool outToScreen);
+
+template<typename T>
+void Generators<T>::createOrbits(const CRepository<T>* pElemGroup) {
+	// Calculate the orbits and a minimal generating set 
+	// of the permutation group under its action on the element set
+	if (m_bOrbitsCreated)
+		return;
+
+	this->setGroupOrder(1);
+	this->setStabilizerLengthAut(m_lenStab = groupDegree());
+	this->releaseAllObjects();
+
+	// Adding orbits:
+	auto* pOrb = this->getNextObject();
+	for (int i = 0; i < groupDegree(); i++)
+		pOrb[i] = i;
+
+	// ...  and trivial permutation:
+	this->addObject(pOrb);
+	const auto groupOrder = pElemGroup->numObjects();
+	for (int i = 1; i < groupOrder; i++) {
+		const auto* c = pElemGroup->getObject(i);
+		this->addAutomorphism(groupDegree(), c, pOrb, true, false, true);
 	}
-	CGroupInfo* m_pRowGroup = NULL;
+
+	this->updateGroupOrder(groupDegree(), pOrb);
+	m_bOrbitsCreated = true;
+}
+
+template<typename T>
+int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits* pKOrb) const {
+	const auto pntr = (const alldata*)pElemGroup;
+	if (pntr->param(t_nestedGroups) > 1)
+		rowMin = 2;
+	else
+		if (!pRowGroup && !pKOrb)
+			return -1;
+
+	tchar ts[MAX_PLAYER_NUMBER];
+	ctchar* mi = pntr->result();
+	CGroupInfo* pRowGroupOut = NULL;
+	const auto groupOrder = pElemGroup->numObjects();
+	const auto rowMax = pntr->numDaysResult();
+	for (int j = rowMin; j <= rowMax; j++) {
+		if (j == rowMax && !(pRowGroupOut = pRowGroup) && !pKOrb)
+			break;
+
+		const auto len = pElemGroup->lenObject() * j;
+		for (int i = 0; i < groupOrder; i++) {
+			pntr->kmSortMatrixForReorderedPlayers(mi, j, pElemGroup->getObject(i), ts, false, pKOrb);
+			if (MEMCMP(mi, pntr->transformedMatrix(), len))
+				return j;
+
+			if (pRowGroupOut)
+				pRowGroupOut->updateGroup(ts);
+		}
+	}
+	return rowMin == rowMax ? -1 : 0;
+}
+template<typename T>
+class RowGenerators : public Generators<T> {
+public:
+    RowGenerators(uint outGroupMask, int rowNumb) : Generators<T>(outGroupMask, "", rowNumb), m_pRowGroup(NULL) {
+		m_outMask = 4;
+		m_sActionOn = "matrix rows, |Aut(R)|";
+		m_bGroupConstructed = false;
+	}
+
+	~RowGenerators()					{ delete m_pRowGroup; }
+	void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
+	const char* name() override         { return m_sName.c_str(); }
+	int createGroupAndOrbits(const CRepository<tchar>* pElemGroup);
+protected:
+	int getGroup(const CRepository<tchar>* pElemGroup);
+	virtual void createTable(ctchar* pSolution)	{}
+	virtual int createGroup(const CRepository<tchar>* pElemGroup) {
+		return this->testNestedGroups(pElemGroup, m_pRowGroup, this->lenObject());
+	}
+	CRepository<tchar>* m_pRowGroup = NULL;
 	std::string m_sName;
 	std::string m_sActionOn;
 	uint m_outMask;
@@ -180,6 +246,53 @@ protected:
 	int m_groupState;
 };
 
+template<typename T>
+void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+	char errBuf[48], * pErr = NULL;
+	const auto retVal = createGroupAndOrbits(pElemGroup);
+	if (retVal > 0)
+		snprintf(pErr = errBuf, sizeof(errBuf), "Nested groups check failed on row %d\n", retVal);
+
+	if (this->m_outGroupMask & m_outMask) {
+		m_sName = std::format("\n{}Orbits and generators of Aut(M) acting on {} = {}",
+			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
+		Generators<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
+
+		// To avoid writing this error (if any) to the file twice
+		pErr = NULL;
+	}
+	if (this->m_outGroupMask & (m_outMask << 1)) {
+		m_sName = std::format("\n{}Aut(M) acting on {} = {}",
+			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
+		COutGroupHandle<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
+	}
+
+	m_bGroupConstructed = false;
+	reportNestedGroupCheckResult(retVal, outToScreen);
+}
+
+template<typename T>
+int RowGenerators<T>::getGroup(const CRepository<tchar>* pElemGroup) {
+	if (!m_pRowGroup)
+		m_pRowGroup = new CRepository<tchar>(this->lenObject(), 10);
+	else
+		m_pRowGroup->releaseAllObjects();
+
+	return createGroup(pElemGroup);
+}
+
+template<typename T>
+int RowGenerators<T>::createGroupAndOrbits(const CRepository<tchar>* pElemGroup) {
+	if (m_bGroupConstructed)
+		return m_groupState;
+
+	createTable(((alldata*)pElemGroup)->result());
+	m_groupState = getGroup(pElemGroup);
+
+	this->createOrbits(m_pRowGroup);
+	m_bGroupConstructed = true;
+	return m_groupState;
+}
 #if OUTPUT_VECTOR_STAT
 static size_t nMatr = 0;
 static size_t nMatrMax = 0;
@@ -190,7 +303,7 @@ template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, const char* pStartLine, const int *idx)
 {
 	char buffer[512], *pBuf = buffer;
-	FOPEN_F(f, m_pFileName, "a");
+	FOPEN_F(f, this->m_pFileName, "a");
 	if (outCntr)
 		m_cntr++;
 
@@ -303,7 +416,7 @@ void Table<T>::printTableInfo(const char* pInfo) {
 	if (!pInfo)
 		return;
 
-	FOPEN_F(f, m_pFileName, "a");
+	FOPEN_F(f, this->m_pFileName, "a");
 	fprintf(f, pInfo);
 	FCLOSE_F(f);
 }

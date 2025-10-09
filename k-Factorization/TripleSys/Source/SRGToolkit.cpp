@@ -55,9 +55,7 @@ ushort autIni[] = {  // Could be found in vvv.txt
 	 1,  0, 18, 16, 19, 15, 20, 17, 14
 #endif
 };
-// ccc_497 29  31
-// why ccc_496:  29 33
-//    and ccc_498  29 33 as well
+
 ushort autLost[] = {
 #if N_MATR == 3
 #if NUM_GENERATOR == 1
@@ -1116,7 +1114,19 @@ void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
 }
 
 template<>
-void Generators<ushort>::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+void Generators<ushort>::makeGroupOutput(const CRepository<ushort>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	this->printTable(this->getObject(0), false, false, this->numObjects(), "");
 }
 
+template<>
+void Generators<tchar>::makeGroupOutput(const CRepository<tchar>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+	createOrbits(pElemGroup);
+	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
+
+	if (checkNestedGroups) {
+		const auto retVal = testNestedGroups((const CGroupInfo*)pElemGroup);
+		reportNestedGroupCheckResult(retVal, outToScreen);
+	}
+
+	m_bOrbitsCreated = false;
+}

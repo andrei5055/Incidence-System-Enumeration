@@ -14,7 +14,7 @@ typedef struct SRGParam {
 	t_graphType updateParam(int* pCommon, bool flag_4_ver);
 } SRGParam;
 
-class SRGToolkit : public  Generators<ushort>
+class SRGToolkit : public Generators<ushort>
 {
 public:
 	SRGToolkit(const kSysParam* pParam, int nCols, int nRows, int groupSize, const std::string& resFileName, int exploreMatrices);

@@ -61,7 +61,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto semiSymGraph = !m_createSecondRow && numDaysResult() > 2 && param(t_semiSymmetricGraphs) == 1;
 	const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
 	const auto outAutGroup = param(t_outAutomorphismGroup);
-	IOutGroupHandle* pAutGroup[4] = { NULL };
+	IOutGroupHandle<tchar>* pAutGroup[4] = { NULL };
 	if (semiSymGraph || outAutGroup) {
 		if (bSavingMatricesToDisk) {
 			if (outAutGroup & 1)
@@ -72,7 +72,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		}
 
 		if (semiSymGraph || bSavingMatricesToDisk && (outAutGroup & 12))
-			pAutGroup[2] = new RowGenerators(outAutGroup, numDaysResult());
+			pAutGroup[2] = new RowGenerators<tchar>(outAutGroup, numDaysResult());
 
 		if (semiSymGraph || bSavingMatricesToDisk && (outAutGroup & 48))
 			pAutGroup[3] = new CKOrbits(outAutGroup, m_numPlayers, m_groupSize, numDaysResult());
@@ -368,7 +368,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {
 			int i = 2;
 			for (; i <= 3; i++) {
-				auto* pGroup = static_cast<RowGenerators*>(pAutGroup[i]);
+				auto* pGroup = static_cast<RowGenerators<tchar>*>(pAutGroup[i]);
 				pGroup->createGroupAndOrbits(this);
 				const auto *pObj = pGroup->getObject(0);
 				int j = pGroup->lenObject();

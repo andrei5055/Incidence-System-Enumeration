@@ -3,11 +3,11 @@
 #include "k-SysSupport.h"
 #include "Table.h"
 
-class CKOrbits : public RowGenerators {
+class CKOrbits : public RowGenerators<tchar> {
 public:
 	CKOrbits(uint outGroupMask, int numElems, int groupSize, int nRows);
 	~CKOrbits();
-	void makeGroupOutput(const CGroupInfo* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
+	void makeGroupOutput(const CRepository<tchar>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	CC void UpdateGroup(ctchar* pSolution) {
 #if !USE_CUDA
 		encodeSolution(pSolution);
@@ -16,7 +16,7 @@ public:
 	}
 protected:
 	void createTable(ctchar* pSolution) override;
-	int createGroup(const CGroupInfo* pElemGroup) override {
+	int createGroup(const CRepository<tchar>* pElemGroup) override {
 		return testNestedGroups(pElemGroup, NULL, ((alldata*)pElemGroup)->numDaysResult(), this);
 	}
 private:
