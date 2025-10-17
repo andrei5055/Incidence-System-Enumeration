@@ -20,6 +20,7 @@
 
 
 #define IDX_MAX				(ELEMENT_MAX - 1)
+typedef unsigned short ushort;
 
 template<typename T>
 inline void revert(T* perm, T j, T i) {
@@ -27,7 +28,7 @@ inline void revert(T* perm, T j, T i) {
 }
 
 template<typename T>
-void Update_Orbits(const T* permut, T lenPerm, T* pOrb, T idx = 0) {
+void Update_Orbits(const T* permut, ushort lenPerm, T* pOrb, T idx = 0) {
 	// Update orbits of elements
 	do {
 		auto i = *(pOrb + idx);
@@ -52,20 +53,14 @@ class CGroupOrder {
 public:
 	CC inline auto groupOrder() const { return this ? m_nGroupOrder : 1; }
 	CC inline void setGroupOrder(size_t val) { m_nGroupOrder = val; }
-    CC void addAutomorphism(const T degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
+    CC void addAutomorphism(ushort degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
         if (!needUpdate(permRow, pOrbits))
             return;
 
         UpdateOrbits(permRow, degree, pOrbits, rowPermut, calcGroupOrder);
         savePermutation(degree, permRow, rowPermut, savePermut);
     }
-protected:
-	void UpdateOrbits(const T* permut, const T lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
-		const T lenStab = udpdateStabLength(permut, lenPerm, pOrb, calcGroupOrder, rowPermut);
-		Update_Orbits(permut, lenPerm, pOrb, lenStab);
-	}
-
-	CC void updateGroupOrder(const T degree, const T * pOrb) {
+	CC void updateGroupOrder(ushort degree, const T * pOrb) {
 		size_t len = 1;
 		auto idx = stabilizerLengthAut();
 		while (++idx < degree) {
@@ -80,16 +75,21 @@ protected:
 #endif
 		setGroupOrder(len * groupOrder());
 	}
+    CC inline void setStabilizerLengthAut(ushort l) { m_nStabLengthAut = l; }
+protected:
+	void UpdateOrbits(const T* permut, ushort lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
+		const T lenStab = udpdateStabLength(permut, lenPerm, pOrb, calcGroupOrder, rowPermut);
+		Update_Orbits(permut, lenPerm, pOrb, lenStab);
+	}
 
-    CC virtual void savePermutation(const T degree, const T* permRow, bool rowPermut, bool savePermut) {}
-	CC inline void setStabilizerLength(T len) { m_nStabLength = len; }
+    CC virtual void savePermutation(ushort degree, const T* permRow, bool rowPermut, bool savePermut) {}
+	CC inline void setStabilizerLength(ushort len) { m_nStabLength = len; }
 	CC inline auto stabilizerLength() const { return m_nStabLength; }
-	CC inline void setStabilizerLengthAut(T l) { m_nStabLengthAut = l; }
 	CC inline auto stabilizerLengthAut() const { return m_nStabLengthAut; }
     CC T next_permutation(T* perm, const T* pOrbits, T nRow, T idx = ELEMENT_MAX, T lenStab = 0);
     CC virtual bool needUpdate(const T* permRow, const T* pOrbits) { return true; }
 private:
-	CC T udpdateStabLength(const T* permut, T lenPerm, const T* pOrb, bool calcOrder, bool rowPermut) {
+	CC T udpdateStabLength(const T* permut, ushort lenPerm, const T* pOrb, bool calcOrder, bool rowPermut) {
 		T idx = 0;
 		while (idx == permut[idx])
 			idx++;
@@ -105,8 +105,8 @@ private:
 		return idx;
 	}
 
-	T m_nStabLength;
-	T m_nStabLengthAut;
+	ushort m_nStabLength;
+	ushort m_nStabLengthAut;
 	size_t m_nGroupOrder;
 };
 
@@ -162,7 +162,7 @@ T CGroupOrder<T>::next_permutation(T* perm, const T* pOrbits, T nRow, T idx, T l
 
     if (idx == IDX_MAX) {
         // First call after some automorphism was found
-        temp = perm[idx = i = stabilizerLength()];
+        temp = perm[idx = i = (T)stabilizerLength()];
         for (j = nRow; --j > temp;)
             perm[j] = j;
 

@@ -5,7 +5,7 @@ template<typename T>
 void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeString = false, 
 	bool toScreen = false, const char *pStartLine = " \"", int cntr=-1, 
 	const unsigned char* pDayPerm=NULL, bool empty_line = true) {
-	char buffer[1512];
+	char buffer[8192];
 	const auto* endLine = makeString ? " \"\n" : "\n";
 	for (int j = 0; j < nl; j++) {
 		char* pBuf = buffer;
@@ -58,21 +58,22 @@ template<typename T>
 class Table : public IOutGroupHandle<T> {
 public:
 	Table(char const *name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
-		m_name(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
+		m_pName(name), m_nc(nc), m_nl(nl), m_ns(ns), m_np(np), 
 		m_makeString(makeString), m_bOutCntr(outCntr), IOutGroupHandle<T>() {}
 	void printTable(const T *c, bool outCntr = false, bool outToScreen = true, int nl = 0, const char* pStartLine = " \"", const int* idx = NULL);
 	void printTableInfo(const char* pInfo);
 	inline void addCounterToTableName(bool val) { m_bOutCntr = val; }
 	inline auto counter() const					{ return m_cntr; }
-	virtual const char *name() 					{ return m_name; }
+	virtual const char *name() 					{ return m_pName; }
+	inline void setName(const char* pName)		{ m_pName = pName; }
 	virtual void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
 		this->printTable((const T*)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
 protected:
 	inline auto groupSize() const				{ return m_np; }
 
-	const char *m_name;
-	const T m_nc;
+	const char * m_pName;
+	const ushort m_nc;
 private:
 	const int m_nl;
 	const int m_ns;
@@ -88,12 +89,12 @@ class TableAut : public Table<tchar>
 public:
 	TableAut(char const* name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		Table<tchar>(name, nl, nc, ns, np, makeString, outCntr) {}
-	~TableAut()							{ delete[] m_pBuffer; }
+	~TableAut()									{ delete[] m_pBuffer; }
 	inline void allocateBuffer(size_t len)		{ m_pBuffer = new char[m_nLenBuffer = len]; }
 	inline void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
 	inline void setInfo(const char* pInfo)		{ m_pInfo = pInfo; }
 	virtual const char* name() {
-		const auto len = snprintf(m_pBuffer, m_nLenBuffer, "%s %d", m_name, m_groupOrder);
+		const auto len = snprintf(m_pBuffer, m_nLenBuffer, "%s %d", m_pName, m_groupOrder);
 		if (m_pInfo) {
 			const auto new_len = len + strlen(m_pInfo) + 4;
 			if (new_len > m_nLenBuffer) {
@@ -128,15 +129,18 @@ protected:
 template<typename T>
 class Generators : public CGroupOrder<T>, public CStorageSet<T>, public COutGroupHandle<T> {
 public:
-	Generators(uint outGroupMask, char const* name, int degree) :
-		CStorageSet<T>(10, degree),
+	Generators(uint outGroupMask, char const* name, int degree, int multLenElem = 1) :
+		CStorageSet<T>(10, degree * multLenElem),
 		COutGroupHandle<T>(outGroupMask, name, degree) {};
 	void makeGroupOutput(const CRepository<T>* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
-	void createOrbits(const CRepository<T>* pElemGroup);
+	virtual void createOrbits(const CRepository<T>* pElemGroup);
+	inline auto groupDegree() const			{ return this->m_nc; }
 protected:
-	inline auto groupDegree() const		{ return this->m_nc; }
+	virtual void createOrbitsSet(const CRepository<T>* pElemGroup);
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
-	void resetGroup()					{ m_lenStab = groupDegree(); }
+	void resetGroup()						{ m_lenStab = groupDegree(); }
+	inline bool orbitsCreated() const		{ return m_bOrbitsCreated; }
+	inline void setOrbitsCreated(bool val)	{ m_bOrbitsCreated = val; }
 private:
 	CC virtual bool needUpdate(const T* permRow, const T* pOrbits) {
 		if (m_lenStab > this->stabilizerLength())
@@ -149,13 +153,13 @@ private:
 		const auto elem = permRow[i];
 		return elem == pOrbits[elem];
 	}
-	CC void savePermutation(const T degree, const T* permRow, bool rowPermut, bool savePermut) {
+	CC void savePermutation(ushort degree, const T* permRow, bool rowPermut, bool savePermut) {
 		extern short* pGenerator;
 		pGenerator = (short *)this->addObject(permRow);
 		m_lenStab = this->stabilizerLength();
 	}
 
-	T m_lenStab;
+	ushort m_lenStab;
 	bool m_bOrbitsCreated = false;
 };
 
@@ -165,16 +169,21 @@ template<typename T>
 void Generators<T>::createOrbits(const CRepository<T>* pElemGroup) {
 	// Calculate the orbits and a minimal generating set 
 	// of the permutation group under its action on the element set
-	if (m_bOrbitsCreated)
+	if (orbitsCreated())
 		return;
 
+	createOrbitsSet(pElemGroup);
+	setOrbitsCreated(true);
+}
+
+template<typename T>
+void Generators<T>::createOrbitsSet(const CRepository<T>* pElemGroup) {
 	this->setGroupOrder(1);
 	this->setStabilizerLengthAut(m_lenStab = groupDegree());
 	this->releaseAllObjects();
-
 	// Adding orbits:
 	auto* pOrb = this->getNextObject();
-	for (int i = 0; i < groupDegree(); i++)
+	for (int i = groupDegree(); i--;)
 		pOrb[i] = i;
 
 	// ...  and trivial permutation:
@@ -186,7 +195,6 @@ void Generators<T>::createOrbits(const CRepository<T>* pElemGroup) {
 	}
 
 	this->updateGroupOrder(groupDegree(), pOrb);
-	m_bOrbitsCreated = true;
 }
 
 template<typename T>
@@ -219,31 +227,39 @@ int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pR
 	}
 	return rowMin == rowMax ? -1 : 0;
 }
+
 template<typename T>
 class RowGenerators : public Generators<T> {
 public:
-    RowGenerators(uint outGroupMask, int rowNumb) : Generators<T>(outGroupMask, "", rowNumb), m_pRowGroup(NULL) {
+    RowGenerators(uint outGroupMask, int rowNumb, int lenElem = 1) : 
+		m_lenElem(lenElem), Generators<T>(outGroupMask, "", rowNumb, lenElem), m_pRowGroup(NULL) {
 		m_outMask = 4;
 		m_sActionOn = "matrix rows, |Aut(R)|";
 		m_bGroupConstructed = false;
 	}
 
-	~RowGenerators()					{ delete m_pRowGroup; }
+	~RowGenerators()						{ delete m_pRowGroup; }
 	void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
-	const char* name() override         { return m_sName.c_str(); }
-	int createGroupAndOrbits(const CRepository<tchar>* pElemGroup);
+	const char* name() override				{ return m_sName.c_str(); }
+	virtual int createGroupAndOrbits(const CRepository<tchar>* pElemGroup);
 protected:
 	int getGroup(const CRepository<tchar>* pElemGroup);
+	int lenElem() const						{ return m_lenElem; }
 	virtual void createTable(ctchar* pSolution)	{}
 	virtual int createGroup(const CRepository<tchar>* pElemGroup) {
 		return this->testNestedGroups(pElemGroup, m_pRowGroup, this->lenObject());
 	}
-	CRepository<tchar>* m_pRowGroup = NULL;
+	virtual void generatorOutput(bool outToScreen, const char* pErr = NULL) {
+		Generators<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
+	}
+
+	CRepository<T>* m_pRowGroup = NULL;
 	std::string m_sName;
 	std::string m_sActionOn;
 	uint m_outMask;
 	bool m_bGroupConstructed;
 	int m_groupState;
+	const int m_lenElem;
 };
 
 template<typename T>
@@ -256,8 +272,8 @@ void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool ou
 	if (this->m_outGroupMask & m_outMask) {
 		m_sName = std::format("\n{}Orbits and generators of Aut(M) acting on {} = {}",
 			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
-		Generators<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
-
+		Generators<T>::setName(name());
+		generatorOutput(outToScreen, pErr);
 		// To avoid writing this error (if any) to the file twice
 		pErr = NULL;
 	}

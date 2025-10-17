@@ -1,5 +1,5 @@
-﻿#include "SRGToolkit.h"
-#include "SRGSupport.h"
+﻿#include "SRGSupport.h"
+#include "SRGToolkit.h"
 #include <cstring>
 
 #pragma execution_character_set("utf-8")
@@ -1115,7 +1115,7 @@ void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
 
 template<>
 void Generators<ushort>::makeGroupOutput(const CRepository<ushort>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
-	this->printTable(this->getObject(0), false, false, this->numObjects(), "");
+	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
 }
 
 template<>

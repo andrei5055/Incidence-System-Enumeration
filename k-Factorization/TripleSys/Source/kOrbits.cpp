@@ -2,29 +2,33 @@
 
 CKOrbits::CKOrbits(uint outGroupMask, int numElems, int groupSize, int numRows) : 
     m_numElems(numElems), m_numRows(numRows), m_groupSize(groupSize),
-    RowGenerators(outGroupMask, numRows * numElems / groupSize) { 
+    RowGenerators(outGroupMask, numRows * numElems / groupSize, sizeof(ushort)) {
     m_outMask = 16;
     m_sActionOn = "k-sets, |Aut(K)|";
 
-    auto len = numElems;
+    size_t len = numElems;
     int i = groupSize;
     while (--i)
         len *= numElems;
 
-    m_pTable = new tchar[len];
-    m_pSolution = new tchar[len = m_numElems / groupSize * numRows];
+
+    m_pTable = new ushort[m_len = len];
+    m_pSolution = new ushort[groupDegree()];
     auto pntr = getNextObject();
-    for (i = 0; i < len; i++)
+    for (i = groupDegree(); i--;)
         pntr[i] = i;
+
+    m_pKOrbGenerators = new Generators<ushort>(0, "\nOrbits and group generators for k-sets", groupDegree());
 }
 
 CKOrbits::~CKOrbits() {
     delete[] m_pTable;
     delete[] m_pSolution;
+    delete m_pKOrbGenerators;
 }
 
 void CKOrbits::createTable(ctchar* pSolution) {
-    tchar id = 0;
+    ushort id = 0;
     const auto numGroups = m_numElems / m_groupSize;
     for (int i = 0; i < m_numRows; i++) {
         for (int j = 0; j < numGroups; j++) {
@@ -34,13 +38,14 @@ void CKOrbits::createTable(ctchar* pSolution) {
                 idx += *pSolution++;
             }
 
+            ASSERT(idx >= m_len);
             m_pTable[idx] = id++;
         }
     }
 }
 
 void CKOrbits::encodeSolution(ctchar* pSolution) {
-    tchar id = 0;
+    ushort id = 0;
     const auto numGroups = m_numElems / m_groupSize;
     for (int i = 0; i < m_numRows; i++) {
         for (int j = 0; j < numGroups; j++) {
@@ -50,15 +55,36 @@ void CKOrbits::encodeSolution(ctchar* pSolution) {
                 idx += *pSolution++;
             }
 
+            ASSERT(idx >= m_len || id >= groupDegree() || m_pTable[idx] == m_pTable[0]);
             m_pSolution[id++] = m_pTable[idx];
         }
     }
+    ASSERT(id != groupDegree());
 }
 
-void CKOrbits::makeGroupOutput(const CGroupInfo* pElemGroup, bool outToScreen, bool checkNestedGroups) {
-    if (!m_bGroupConstructed)
-        createTable(((alldata*)pElemGroup)->result());
-
-    RowGenerators::makeGroupOutput(pElemGroup, outToScreen, checkNestedGroups);
+int CKOrbits::createGroupAndOrbits(const CRepository<tchar>* pElemGroup) {
+    m_pKOrbGenerators->setOutFileName(outFileName(), false);
+    return RowGenerators::createGroupAndOrbits(pElemGroup);
 }
 
+void CKOrbits::createOrbitsSet(const CRepository<tchar>* pElemGroup) {
+    m_pKOrbGenerators->setGroupOrder(1);
+    m_pKOrbGenerators->setStabilizerLengthAut(groupDegree());
+    m_pKOrbGenerators->releaseAllObjects();
+    // Adding orbits:
+    auto *pOrb = m_pKOrbGenerators->getNextObject();
+    const auto grDegree = m_pKOrbGenerators->groupDegree();
+    for (auto i = grDegree; i--;)
+        pOrb[i] = i;
+
+    // ...  and trivial permutation:
+    m_pKOrbGenerators->addObject(pOrb);
+    const auto groupOrder = pElemGroup->numObjects();
+    for (int i = 1; i < groupOrder; i++) {
+        const auto* c = (ushort*)pElemGroup->getObject(i);
+        m_pKOrbGenerators->addAutomorphism(grDegree, c, pOrb, true, false, true);
+    }
+
+    // In fact, we don't need to 
+    m_pKOrbGenerators->updateGroupOrder(grDegree, pOrb);
+}
