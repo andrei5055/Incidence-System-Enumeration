@@ -52,7 +52,7 @@ ProcessPrecalculatedRow:
 			}
 			if (iDay >= numDaysResult())
 			{
-				//ASSERT(1);
+				//ASSERT_IF(1);
 				return eNoResult;
 			}
 		}

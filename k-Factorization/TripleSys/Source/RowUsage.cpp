@@ -94,7 +94,7 @@ void testLogicalMultiplication(const long long* h_A, const long long* h_B, long 
 
 CC int CRowUsage::getRow(int iRow, int ipx) {
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
-	ASSERT(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
+	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	const ll availablePlayers = nRow >= 0
@@ -109,7 +109,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	if (last > m_pRowStorage->getNumSolution())
 		return 0;
 
-	ASSERT(last > m_pRowStorage->getNumSolution());
+	ASSERT_IF(last > m_pRowStorage->getNumSolution());
 
 	if (iRow == numPreconstructedRows) {
 		if (first >= last)

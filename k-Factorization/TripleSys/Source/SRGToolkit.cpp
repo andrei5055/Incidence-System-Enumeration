@@ -470,7 +470,7 @@ int CGraphCanonizer::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int ver
 		idxOrbNext++;
 		auto idxLeft = idxLast;
 		const auto lenOrb = pLenOrbits[idxOrb++];
-		ASSERT(!lenOrb);
+		ASSERT_IF(!lenOrb);
 		idxLast += lenOrb;
 		if (lenOrb == 1)
 			continue;
@@ -509,7 +509,7 @@ int CGraphCanonizer::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int ver
 
 			pLenOrbitsNext[idxOrbNext++] = (splitPos -= idxLeftStart);
 			pLenOrbitsNext[idxOrbNext] = lenOrb - splitPos;
-			ASSERT(!splitPos || lenOrb == splitPos);
+			ASSERT_IF(!splitPos || lenOrb == splitPos);
 		}
 	}
 
@@ -703,7 +703,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
 			PRINT_ADJ_MATRIX(pGraph[1], 0, v, s, "vvv");
 
-			ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
+			ASSERT_IF(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
 #else
 			pntr += (NUM_GENERATOR + 1) * v;  // pointer to the first non-trivial generator
 			// Check if it's an automorphism

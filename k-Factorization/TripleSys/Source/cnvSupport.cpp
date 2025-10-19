@@ -151,7 +151,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 					bRet = false;
 					break;
 				}
-				ASSERT(1);
+				ASSERT_IF(1);
 			}
 		}
 		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
@@ -357,7 +357,7 @@ CC int alldata::collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indR
 #if !USE_CUDA
 void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 {
-	ASSERT(nrows < 2);
+	ASSERT_IF(nrows < 2);
 	tchar ttr[MAX_PLAYER_NUMBER];
 	memset(ttr, 0, m_numPlayers);
 	for (int iSwap = 0; iSwap < 2; iSwap++)

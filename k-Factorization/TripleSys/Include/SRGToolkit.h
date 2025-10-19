@@ -21,7 +21,7 @@ public:
 	~CGraphCanonizer()					{ releaseCanonizerMemory(); }
 
 	ctchar* canonize_graph(ctchar* pGraph = NULL, int* pCanonIdx = NULL);
-	inline auto* graphPntr(int idx = 0) const	{ ASSERT(idx >= 0 && idx <= 1); return m_pGraph[idx]; }
+	inline auto* graphPntr(int idx = 0) const { ASSERT_IF(idx < 0 || idx > 1); return m_pGraph[idx]; }
 protected:
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert = 0);
 	inline auto lenGraphMatr() const			{ return m_lenGraphMatr; }

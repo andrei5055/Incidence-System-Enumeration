@@ -93,7 +93,7 @@ CC int alldata::collectCyclesAndPath(TrCycles* trcAll, TrCycles* trc) const
 		switch (ic) {
 		case -1:
 			if (j >= ncr) {
-				ASSERT(1); // number of different cycles sets > MAX_CYCLE_SETS
+				ASSERT_IF(1); // number of different cycles sets > MAX_CYCLE_SETS
 				EXIT_(1);
 			}
 			for (int i = ncr - 2; i >= j; i--) 
@@ -166,7 +166,7 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 	tchar k = 0, k0, k1 = 0, ip = 0;
 	for (k0 = 0; k0 < nc && ncycles < ncc; k0++)
 	{
-		ASSERT(k0 >= nc);
+		ASSERT_IF(k0 >= nc);
 		if (tt2tmp[k0] != unset && k0 != tt2tmp[k0]) // not used before and not common value
 		{
 			trc->start[ncycles] = ip / 2;
@@ -176,22 +176,22 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 			{
 				if (k == unset || k1 == unset)
 					break;
-				ASSERT(ip >= nc*2);
+				ASSERT_IF(ip >= nc*2);
 				trc->fullPath[ip] = k;
 				if (m_groupSize == 3)
 					trc->fullPath[++ip] = tt3[k];
-				ASSERT(ip >= nc*2 - 1);
+				ASSERT_IF(ip >= nc*2 - 1);
 				trc->fullPath[ip + 1] = tt1[k];
 				ip += 2;
-				ASSERT(k >= nc*2);
+				ASSERT_IF(k >= nc*2);
 				tt2tmp[k] = tt2tmp[k1] = unset;
 				k = tt2tmp[k1 = tt1[k]];
 
-				ASSERT(ip >= nc*2);
+				ASSERT_IF(ip >= nc*2);
 				trc->fullPath[ip] = k1;
 				if (m_groupSize == 3)
 					trc->fullPath[++ip] = tt4[k1];
-				ASSERT(ip >= nc*2 - 1);
+				ASSERT_IF(ip >= nc*2 - 1);
 				trc->fullPath[ip + 1] = tt2[k1];
 				ip += 2;
 			}
@@ -255,7 +255,7 @@ CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, 
 CC int alldata::p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctchar* res1, ctchar* res2,
 	eCheckForErrors checkErrors) const
 {
-	ASSERT(m_groupSize != 3);
+	ASSERT_IF(m_groupSize != 3);
 	tchar tt1[MAX_PLAYER_NUMBER], tt2[MAX_PLAYER_NUMBER];
 	tchar tt3[MAX_PLAYER_NUMBER], tt4[MAX_PLAYER_NUMBER];
 
@@ -347,7 +347,7 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, ctchar * t1, ctchar * t2, ctc
 			P3Cycles9EndAndReturn(ncycles);
 		}
 		default: 
-			ASSERT(1); EXIT_(1);
+			ASSERT_IF(1); EXIT_(1);
 	}
 
 	return ncycles;
@@ -624,7 +624,7 @@ CC void alldata::p1fCheckStartMatrix(int nr)
 		}
 #endif
 		CUDA_PRINTF("*** p1fCheck DONE for rows = 0,%d  iret = %d\n", i, iret);
-		ASSERT(iret <= 0, 
+		ASSERT_IF(iret <= 0, 
 			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not with requested cycles), Exit\n", i);
 			printTable("Incorrect 'Start matrix'", result(), nr, m_numPlayers, m_groupSize);
 			myExit(1);
@@ -677,7 +677,7 @@ CC int alldata::getAllV0(tchar* allv, int maxv, ctchar* t2, ctchar* res1) const
 				return nv;
 			P3Cycles9EndAndReturn(nv);
 		}
-		default: ASSERT(1); EXIT_(1);
+		default: ASSERT_IF(1); EXIT_(1);
 	}
 	return nv;
 }
@@ -725,7 +725,7 @@ void alldata::cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0
 			case 3: {
 				auto v0 = getV0();
 				const int nv0 = getAllV(v0, m_maxCommonVSets, neighbors1, result0); // ! neighbors1 can be different than neighors(1)
-				ASSERT(!nv0);
+				ASSERT_IF(!nv0);
 				ctchar* vtr = v0; // Common Values
 				for (int i = 0; i < nv0; i++, vtr += m_nGroups)
 					p3Cycles(&m_TrCycles, neighbors0, neighbors1, vtr, result0, result1, eCheckErrors);

@@ -219,9 +219,9 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 
 	if (j >= 0)
 		return false;
-	ASSERT(idx >= m_numSolutionTotal);
+	ASSERT_IF(idx >= m_numSolutionTotal);
 	const auto pObj = getObject(idx);
-	ASSERT(!pObj);
+	ASSERT_IF(!pObj);
 	TrCycles* tc = &m_pAllData->m_TrCyclesFirst2Rows[0];
 
 	if (!m_pAllData->m_allRowPairsSameCycles)
@@ -338,7 +338,7 @@ CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroup
 				break;
 
 			// Should never happen if all first non-fixed row solutions are canonical. 
-	//		ASSERT(true);
+	//		ASSERT_IF(true);
 			// Just in case, we'll reset the mask.
 			memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
 		}
@@ -588,7 +588,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 		return false;    // At least one player was not present with player 0 in any matrix row solution. 
 	}
 
-	ASSERT(last != m_numSolutionTotal);
+	ASSERT_IF(last != m_numSolutionTotal);
 	if (USE_GROUP_4_2_ROWS) {
 		const auto pGroupInfo = m_pAllData->groupInfo(2);
 		const auto groupOrder = pGroupInfo->orderOfGroup();

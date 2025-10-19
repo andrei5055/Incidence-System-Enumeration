@@ -29,14 +29,14 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 	}
 	// check that only requested cycles are present
 	if (!u1fPntr) {
-		ASSERT(MAX_CYCLE_SETS < 2);
+		ASSERT_IF(MAX_CYCLE_SETS < 2);
 		return trc[0].length[0] == m_numPlayers && trc[1].counter == 0;
 		//return true;
 	}
 	else {
 		const int nc = *u1fPntr;
 		if (nc > MAX_CYCLE_SETS) {
-			ASSERT(1);
+			ASSERT_IF(1);
 			EXIT_(1);
 		}
 		u1fPntr++;
@@ -129,7 +129,7 @@ CC int alldata::getCyclesAndPathCBMP(TrCycles* trc, ctchar* t1, ctchar* t2, ctch
 			// check that cycle start is equal to cycle end
 			if (*(trc->fullPath + trc->start[ncycles - 1] * 2 + cin) !=
 				*(trc->fullPath + trc->start[ncycles - 1] * 2 + trc->length[ncycles - 1] * 2 - m_groupSize + cin)) {
-				ASSERT(1);
+				ASSERT_IF(1);
 				EXIT_(1);
 				resetTrCycles(trc);
 				return -1;

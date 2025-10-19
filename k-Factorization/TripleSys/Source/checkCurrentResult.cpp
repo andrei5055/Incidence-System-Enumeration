@@ -7,7 +7,7 @@
 
 CC void alldata::goBack()
 {
-	ASSERT(m_playerIndex >= iDay * m_numPlayers,
+	ASSERT_IF(m_playerIndex >= iDay * m_numPlayers,
 		printfRed("*** Request to go 'back in future' request (from player %d to player %d)\n", iDay * m_numPlayers - 1, m_playerIndex);
 		printTable("Input matrix", result(), iDay, m_numPlayers, m_groupSize, 0, true);
 		abort();
@@ -201,11 +201,11 @@ int adjustPairsCount(tchar* tr, int np, tchar* lnkT, int nGroupsToCheck) {
 	if (gr0 & 1)
 		SWAP(gr0, gr1);
 	int i0 = gr0 / 2 * (np / 2) + gr1 / 2;
-	ASSERT(i0 < 0 || i0 >= np * np / 4);
+	ASSERT_IF(i0 < 0 || i0 >= np * np / 4);
 	if (lnkT[i0]) {
 		lnkT[i0] = 0;
 		nGroupsToCheck -= 1;
-		ASSERT(nGroupsToCheck < 0);
+		ASSERT_IF(nGroupsToCheck < 0);
 	}
 	return nGroupsToCheck;
 }

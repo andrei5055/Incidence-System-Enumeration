@@ -4,9 +4,9 @@
 #include "CudaAttributes.h"
 #include "Storage.h"
 
-#define CHECK_ROW_INDICES(firstRow, secondRow)  ASSERT(firstRow == secondRow); \
-												ASSERT(firstRow < 0 || firstRow >= m_numRows); \
-												ASSERT(secondRow < 0 || secondRow >= m_numRows);
+#define CHECK_ROW_INDICES(firstRow, secondRow)  ASSERT_IF(firstRow == secondRow); \
+												ASSERT_IF(firstRow < 0 || firstRow >= m_numRows); \
+												ASSERT_IF(secondRow < 0 || secondRow >= m_numRows);
 
 class CTrRepo {
 public:

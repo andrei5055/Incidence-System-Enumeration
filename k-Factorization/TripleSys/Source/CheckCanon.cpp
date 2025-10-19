@@ -515,7 +515,7 @@ CheckerCanon(bool)::copyTuple(const T* res, T inc, bool doCheck) const {
 	players[prev = res[0]] = inc;
 	for (T j = 1; j < groupSize(); j++) {
 		const auto next = res[j];
-		ASSERT(prev == next);
+		ASSERT_IF(prev == next);
 		if (doCheck && prev > next)
 			return false;
 
@@ -563,7 +563,7 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 	const T* result = studiedMatrix();
 	memcpy(pDest, result, lenRow());  
 	if (pNewOrder) {
-		ASSERT(result == pNewOrder);
+		ASSERT_IF(result == pNewOrder);
 		T i = 1;
 		while (playerPrevID < playerNewID) {
 			pDest[pNewOrder[i]] = playerPrevID++;
@@ -581,7 +581,7 @@ CheckerCanon(bool)::explainRejection(const T* players, T playerPrevID, T playerN
 
 	groupOrdering(pDest_1, numGroups(), tmpBuffer(), groupSize());
 	const auto diff = memcmp(pDest_1, result + m_numElem, lenRow());
-	ASSERT(diff >= 0);
+	ASSERT_IF(diff >= 0);
 
 	if (result + m_numElem == players || doOutput || numDays() == 2) {
 		addImproveResultFlags(t_bResultFlags::t_readyToExplainMatr);
@@ -932,7 +932,7 @@ CheckerCanon(int)::orderingMatrix(T nDays, T numGroups, bool expected, bool inve
 		return diff;
 	}
 
-	ASSERT((!expected) && (diff < 0));
+	ASSERT_IF((!expected) && (diff < 0));
 	return diff;
 }
 
@@ -942,7 +942,7 @@ CheckerCanon(bool)::checkDay(T iDay) {
 #if	(UsePos_1_4_condition & 1)
 	if (iDay == 1) {
 		if (!preordered()) {
-			ASSERT(pDest==NULL);  // When matrices are not preordered, 
+			ASSERT_IF(pDest==NULL);  // When matrices are not preordered, 
 								  // we expect to have an external buffer
 			setPreordered(true);
 			if (orderingMatrix(0, 0, false) < 0)

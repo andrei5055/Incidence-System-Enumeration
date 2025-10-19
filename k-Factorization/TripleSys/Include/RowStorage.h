@@ -92,12 +92,12 @@ private:
 
 #define SetMask(bm, ir, ic) \
 	const int ib = ir * m_numPlayers + ic - (1 + ir) * (2 + ir) / 2; \
-	ASSERT(ib / 8 >= m_lenMask); \
+	ASSERT_IF(ib / 8 >= m_lenMask); \
 	SET_MASK_BIT(bm, ib)
 
 #define SetMaskWithOffset(bm, iOffset, ic) \
 	ib = iOffset + ic; \
-	ASSERT(ib / 8 >= m_lenMask); \
+	ASSERT_IF(ib / 8 >= m_lenMask); \
 	SET_MASK_BIT(bm, ib)
 
 private:

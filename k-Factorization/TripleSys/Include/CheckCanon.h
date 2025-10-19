@@ -111,7 +111,7 @@ private:
 	inline auto orbits() const				{ return m_pOrbits; }
 	inline void setTrivialPerm(const T* p)  { m_pTrivialPerm = p; }
 	inline auto trivialPerm() const			{ return m_pTrivialPerm; }
-	inline auto playersPerm(int idx=0) const{ ASSERT(idx >= 4); return m_players + idx * m_numElem; }
+	inline auto playersPerm(int idx=0) const{ ASSERT_IF(idx >= 4); return m_players + idx * m_numElem; }
 	bool checkPermutationOfFirstDayGroups(int numGroups, const T* pCurrentRow, bool useCurrentRow = true);
 	bool checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(const T*, T, const T*), const T* pCurrentRow = NULL, bool symmetrical = true);
 	int checkPermutationOnGroups(const T* permGroups, T numElem, const T* pCurrentRow);

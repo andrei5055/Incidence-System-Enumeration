@@ -138,6 +138,15 @@ int main(int argc, const char* argv[])
 	SetConsoleOutputCP(CP_UTF8);
 	enableAnsiColors();
 	std::cout << "k - Sys 10.62\n";
+	// Get the handle to the current process
+	HANDLE hProcess = GetCurrentProcess();
+
+	// Set the priority class to ABOVE_NORMAL_PRIORITY_CLASS
+	if (!SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS)) {
+		// Handle error if priority setting fails
+		printfRed("Can't set prority above normal\n");
+		exit(1);
+	}
 	ifstream* infile = NULL;
 	string* testToRun = NULL;
 	if (argc > 1) {

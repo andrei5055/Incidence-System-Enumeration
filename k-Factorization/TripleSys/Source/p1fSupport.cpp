@@ -18,7 +18,7 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 	int s = 0;	for (itr = 0; itr < m_numPlayers; itr++) {
 		if (tr[itr] == unset || tr[itr] >= m_numPlayers)
 			break;
-		ASSERT(tr[itr] == unset || tr[itr] >= m_numPlayers);
+		ASSERT_IF(tr[itr] == unset || tr[itr] >= m_numPlayers);
 		s |= (1 << tr[itr]);
 	}
 	if (s != (1 << m_numPlayers) - 1)
@@ -30,7 +30,7 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		printTable("tr ", tr, 1, m_numPlayers, 2);
 		printfRed("Not p1f matrix\n");
 		//return false;
-		ASSERT(1);
+		ASSERT_IF(1);
 	}
 #endif
 	return true;
@@ -166,7 +166,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 		if (tr[c1] != unset && tr[c1] != c0)
 			break;
 #endif
-		ASSERT(a1 >= m_numPlayers || b1 >= m_numPlayers || c1 >= m_numPlayers);
+		ASSERT_IF(a1 >= m_numPlayers || b1 >= m_numPlayers || c1 >= m_numPlayers);
 		switch (iPrint){
 		case 1: printf("  %2d %2d %2d", a1, b1, c1); break;
 		case 2: printf("  %2d %2d %2d", a0, b0, c0); break;
@@ -186,7 +186,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 		b1 = v1t[k1];
 		tchar indc0 = da0 * 9 + 3 - t1[a0] - t1[b0];
 		tchar indc1 = da1 * 9 + 3 - ti1[a1] - ti1[b1];
-		ASSERT(indc0 >= m_numPlayers || indc1 >= m_numPlayers);
+		ASSERT_IF(indc0 >= m_numPlayers || indc1 >= m_numPlayers);
 		c0 = res1[indc0];
 		c1 = resi1[indc1];
 		switch (iPrint) {
@@ -195,7 +195,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 		case 3: printf("     %2d   ", b1); break;
 		case 4: printf("     %2d   ", b0); break;
 		}
-		ASSERT(b1 >= m_numPlayers);
+		ASSERT_IF(b1 >= m_numPlayers);
 		if (tr[b1] != unset && tr[b1] != b0)
 		{
 			break;

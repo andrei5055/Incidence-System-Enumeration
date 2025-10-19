@@ -8,7 +8,7 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 		m_pRowStorage->init();
 	}
 	else if (m_nPrecalcRows == iDay) {
-		ASSERT(m_secondPlayerInRow4 == 0);
+		ASSERT_IF(m_secondPlayerInRow4 == 0);
 		const bool bCBMP = !completeGraph();
 		m_secondPlayerInRow4++;
 		if (bCBMP && !m_groupSizeRemainder[m_secondPlayerInRow4])
@@ -52,7 +52,7 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 			if (!m_pRowStorage->initCompatibilityMasks()) {
 #if !USE_CUDA
 				//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
-				//ASSERT(1);
+				//ASSERT_IF(1);
 #endif
 				if (param(t_MultiThreading)) {
 					nLoops = 0;
@@ -101,7 +101,7 @@ CC void alldata::addPrecalculatedRow()
 	if (!bP1F)
 		printf("not p1f\n");
 #endif
-	ASSERT(!m_secondPlayerInRow4First);
+	ASSERT_IF(!m_secondPlayerInRow4First);
 #if 0
 	if (iTest) {
 		printTable("r3", result(m_nPrecalcRows), 1, m_numPlayers, m_groupSize);

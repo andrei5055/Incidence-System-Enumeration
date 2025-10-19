@@ -123,13 +123,13 @@ CC bool alldata::initPrevDay()
 	memcpy(tmpPlayers, pRes, m_numPlayers);
 
 	const auto ind = indexPlayer[iPlayer = iPlayerIni];
-	ASSERT(ind == unset);
+	ASSERT_IF(ind == unset);
 
 	updateIndexPlayerMinMax();
 
 	for (int j = 0; j < m_numPlayers; j++)
 	{
-		ASSERT(*(pRes + j) == unset);
+		ASSERT_IF(*(pRes + j) == unset);
 		const auto k = tmpPlayers[j];
 		if (j < iPlayer)
 		{
@@ -138,7 +138,7 @@ CC bool alldata::initPrevDay()
 		else
 		{
 			const auto unsetLinkOK = unsetLinksForOnePlayer(pRes, j);
-			ASSERT(!unsetLinkOK);
+			ASSERT_IF(!unsetLinkOK);
 			tmpPlayers[j] = selPlayers[k] = unset;
 			indexPlayer[j] = m_indexPlayerMin[j];
 		}
@@ -150,14 +150,14 @@ CC bool alldata::initPrevDay()
 
 CC void alldata::getPrevPlayer()
 {
-	ASSERT(iPlayer > m_numPlayers);
+	ASSERT_IF(iPlayer > m_numPlayers);
 	if (iPlayer < m_numPlayers)
 	    indexPlayer[iPlayer] = m_indexPlayerMin[iPlayer];
 	while (--iPlayer >= 0)
 	{
 		const auto iPlayerNumber = tmpPlayers[iPlayer];
 		const auto unsetLinkOk = unsetLinksForOnePlayer(tmpPlayers, iPlayer);
-		ASSERT(!unsetLinkOk);
+		ASSERT_IF(!unsetLinkOk);
 		tmpPlayers[iPlayer] = selPlayers[iPlayerNumber] = unset;
 		if (m_firstNotSel > iPlayerNumber)
 			m_firstNotSel = iPlayerNumber;
@@ -211,7 +211,7 @@ CC void alldata::updateIndexPlayerMinMax()
 						default:
 							for (; ip1 < m_numPlayers; ip1++) {
 								auto const ld = links()[ip1];
-								ASSERT(ld != unset && ld > iDay);
+								ASSERT_IF(ld != unset && ld > iDay);
 								if ((ld == unset || ld >= iDay) && m_groupSizeRemainder[ip1])
 									break;
 							}/**
@@ -226,7 +226,7 @@ CC void alldata::updateIndexPlayerMinMax()
 					else {
 						for (; ip1 < m_numPlayers; ip1++) {
 							auto const ld = links()[ip1];
-							ASSERT(ld != unset && ld > iDay);
+							ASSERT_IF(ld != unset && ld > iDay);
 							if (ld == unset || ld >= iDay)
 								break;
 						}

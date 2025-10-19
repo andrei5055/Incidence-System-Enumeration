@@ -306,7 +306,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				continue;
 			}
 			if (m_precalcMode == eCalculateMatrices) {
-				ASSERT(1); // error in SW
+				ASSERT_IF(1); // error in SW
 				goto noResult;
 			}
 			memcpy(result(iDay), tmpPlayers, m_numPlayers);
@@ -366,7 +366,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 			}
 		}
-		ASSERT(iDay < numDaysResult());
+		ASSERT_IF(iDay < numDaysResult());
 
 		auto flag = true;
 		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {

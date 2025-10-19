@@ -8,8 +8,8 @@ inline void unsetCell(int* cr, int* cb, tchar* pv, ctchar ir, ctchar ic, ctchar 
 	if (v < ic)
 		return;
 	int iv = ~(1 << v);
-	ASSERT(ic >= np);
-	ASSERT(ir >= np);
+	ASSERT_IF(ic >= np);
+	ASSERT_IF(ir >= np);
 	cb[ic] &= iv;
 	cr[ir] &= iv;
 	*pv = unset;
@@ -20,7 +20,7 @@ inline void unsetCell(int* cr, int* cb, tchar* pv, ctchar ir, ctchar ic, ctchar 
 }
 inline void setCell(int* cr, int* cb, tchar* pv, ctchar v, ctchar ir, ctchar ic, ctchar np)
 {
-	ASSERT(v >= np);
+	ASSERT_IF(v >= np);
 	if (v < ic)
 		return;
 	int iv = 1 << v;
@@ -38,7 +38,7 @@ void unsetLsCells(int* cr, int* cb, tchar** lsr, ctchar irs, ctchar ire, ctchar 
 	tchar js = ics < 1 ? 1 : ics; // cb[0] not supported (no modification to first column of LS)
 	tchar je = np;
 	for (int i = irs; i <= ire; i++) {
-		ASSERT(i >= np || np == unset || js >= np);
+		ASSERT_IF(i >= np || np == unset || js >= np);
 		tchar* p = lsr[i];
 		for (int j = js; j < np; j++)
 			unsetCell(cr, cb, p + j, i, j, np);
@@ -54,7 +54,7 @@ void setLsCells(int* cr, int* cb, tchar** lsr, ctchar irs, ctchar ire, ctchar np
 		irStart = 1;
 	}
 	for (tchar i = irStart; i <= ire; i++) {
-		ASSERT(i >= np || np == unset);
+		ASSERT_IF(i >= np || np == unset);
 		tchar* p = lsr[i];
 		for (int j = 0; j < np; j++) // cb[0] not supported (no modification to first column of LS)
 			setCell(cr, cb, p + j, *(p + j), i, j, np);
@@ -103,7 +103,7 @@ void resultFromNeighbors(tchar* res, tchar** lsr, ctchar nr, ctchar nRes, ctchar
 		tchar k = 0;
 		for (int j = 0; j < np && k < np / 2; j++) {
 			tchar v = *(lsr[i + 1] + j);
-			ASSERT(v >= np);
+			ASSERT_IF(v >= np);
 			if (v > k && j < v) {
 				resi[k * 2] = j;
 				resi[k * 2 + 1] = v;
@@ -250,7 +250,7 @@ bool alldata::p1f16()
 						icn = 1;
 					}
 					else {
-						ASSERT(irn > irOrg || (irn == irOrg && icn >= np));
+						ASSERT_IF(irn > irOrg || (irn == irOrg && icn >= np));
 						unsetLsCells(cr, cb, lsr, irn, irOrg, icn, np);
 					}
 					ic = icn;

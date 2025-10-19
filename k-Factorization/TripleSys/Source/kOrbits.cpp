@@ -38,7 +38,7 @@ void CKOrbits::createTable(ctchar* pSolution) {
                 idx += *pSolution++;
             }
 
-            ASSERT(idx >= m_len);
+            ASSERT_IF(idx >= m_len);
             m_pTable[idx] = id++;
         }
     }
@@ -55,11 +55,11 @@ void CKOrbits::encodeSolution(ctchar* pSolution) {
                 idx += *pSolution++;
             }
 
-            ASSERT(idx >= m_len || id >= groupDegree() || m_pTable[idx] == m_pTable[0]);
+            ASSERT_IF(idx >= m_len || id >= groupDegree() || m_pTable[idx] == m_pTable[0]);
             m_pSolution[id++] = m_pTable[idx];
         }
     }
-    ASSERT(id != groupDegree());
+    ASSERT_IF(id != groupDegree());
 }
 
 int CKOrbits::createGroupAndOrbits(const CRepository<tchar>* pElemGroup) {

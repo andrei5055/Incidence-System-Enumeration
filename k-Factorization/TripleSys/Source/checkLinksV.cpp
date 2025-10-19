@@ -50,7 +50,7 @@ CC bool CChecklLink::checkLinksV2(ctchar* lnks, int nr) const
 					printTable("rest", p, nrr, 16, 2);
 					ok = false;
 				}
-				//ASSERT(m >= nrr);
+				//ASSERT_IF(m >= nrr);
 				pp[nc + i] = k;
 				//if (pp[nc + k] == unset)
 				//	pp[nc + k] = i;
@@ -71,7 +71,7 @@ CC bool CChecklLink::checkLinksV2(ctchar* lnks, int nr) const
 		for (int k = 0; k < m_numPlayers; k++)
 		{
 			tchar pk = pp[k];
-			ASSERT(pk == unset);
+			ASSERT_IF(pk == unset);
 			int j = 0;
 			for (; j < nrr; j++)
 			{
@@ -100,7 +100,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 	const auto cbmpGraph = !completeGraph();
 	if (nv == 2 && ind != -1)
 	{
-		ASSERT(vo + 1 - m_vo >= m_numPlayers,
+		ASSERT_IF(vo + 1 - m_vo >= m_numPlayers,
 			printf("vo + 1 - m_vo=%d\n", (int)(vo + 1 - m_vo));
 			)
 			switch (ind) {
@@ -160,7 +160,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 			if (t0r3 == m_remainder3[t[i]])
 				continue;
 			if (ct0[t[i]] == unset) {
-				ASSERT(vo + 1 - m_vo >= m_numPlayers);
+				ASSERT_IF(vo + 1 - m_vo >= m_numPlayers);
 				//*vo = t[0];
 				//*(vo + 1) = t[i];
 				if (checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2)) {
@@ -176,7 +176,7 @@ CC bool CChecklLink::checkLinksV(ctchar* c, ctchar* v, int nv, int ind, tchar* v
 		{
 			if (ct0[t[i]] == unset && checkLinksV(c, t + 1, nv - 2, i - 1, vo + 2))
 			{
-				ASSERT(vo + 1 - m_vo >= m_numPlayers);
+				ASSERT_IF(vo + 1 - m_vo >= m_numPlayers);
 				*vo = t[0];
 				*(vo + 1) = t[i];
 				return true;

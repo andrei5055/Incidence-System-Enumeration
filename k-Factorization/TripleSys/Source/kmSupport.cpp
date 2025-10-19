@@ -97,7 +97,7 @@ CC void alldata::kmSortRowsBy2ndValue(tchar nr, tchar* tm) const
 	for (char ir = 0; ir < nr; ir++)
 	{
 		const auto iv = *(mic + 1);
-		ASSERT(iv >= nc || iv < 0);// || pmi[iv] != NULL);
+		ASSERT_IF(iv >= nc || iv < 0);// || pmi[iv] != NULL);
 		tm[iv] = ir;
 		pmi[iv] = mic;
 		mic += nc;
@@ -216,7 +216,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	auto *coi = m_Km;
 	for (int i = 0; i < nr; i++, coi += nc, mi += nc)
 	{
-		ASSERT(ts[i] >= nc);
+		ASSERT_IF(ts[i] >= nc);
 		switch (MEMCMP(coi, mi, nc))
 	    {
 		case -1: setPlayerIndex(tr, dayMax, ts[i], coi, mi, miFrom + nc * ts[i]); return -1;
@@ -478,14 +478,14 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 				for (int j = i + 1; j < nc; j++, ind += nc) {
 					if (tm[j] != unset) {
 						auto const jRow = m_Ktmp[ind + 1];
-						ASSERT(jRow != j);
+						ASSERT_IF(jRow != j);
 						auto const pRow = m_pRows[jRow]->getNextObject(); // jRow is from 5 to nc - 1
 						memcpy(pRow, result(i - 1), nc);
 						memcpy(pRow + nc, m_Ktmp + ind, nc);
 						return 2;
 					}
 				}
-				ASSERT(1); // something wrong
+				ASSERT_IF(1); // something wrong
 			}
 			return 2;
 		}
@@ -536,7 +536,7 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 		rowMax = MAX2(rowMax, r2ind);
 		bProc2 = true;
 	}
-	ASSERT(row2ndValue >= nc);
+	ASSERT_IF(row2ndValue >= nc);
 	tm[row2ndValue] = r2ind;
 
 	for (tchar i = 0; i < nr; i++)
@@ -633,7 +633,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 		rowMax = MAX2(rowMax, r2ind);
 		bProc2 = true;
 	}
-	ASSERT(row2ndValue < 2);
+	ASSERT_IF(row2ndValue < 2);
 
 	auto* moi = mo + nc * 3;
 	auto* mii = mi + nc * 2;
@@ -645,7 +645,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 			continue;
 		iRet = kmProcessOneNot1stRow3(mo, mi, i, tb, tc, tr, nr);
 		row2ndValue = tb[0];
-		ASSERT(row2ndValue >= nc);
+		ASSERT_IF(row2ndValue >= nc);
 
 		if (row2ndValue == 3) // 2nd row
 		{
@@ -677,7 +677,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 				rowMax = MAX2(rowMax, i);
 			}
 		}
-		ASSERT(row2ndValue < 3)
+		ASSERT_IF(row2ndValue < 3)
 		tm[row2ndValue - 2] = i;
 	}
 	if (!bProc2)

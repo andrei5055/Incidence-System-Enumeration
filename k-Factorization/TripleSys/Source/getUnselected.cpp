@@ -12,6 +12,6 @@ CC void alldata::getUnselected(tchar* v, int nv) const
 				return;
 		}
 	}
-	ASSERT(1);
+	ASSERT_IF(1);
 }
 

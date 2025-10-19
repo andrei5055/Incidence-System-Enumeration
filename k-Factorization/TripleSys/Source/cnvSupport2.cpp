@@ -19,7 +19,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 		bok = getCyclesAndPathCBMP(&trCycles01, neighbors(0), neighbors(1), result(0), result(1), 0, eCheckErrors) > 0;
 	else
 		bok = getCyclesAndPathFromNeighbors(&trCycles01, neighbors(0), neighbors(1), NULL, NULL, eCheckErrors) > 0;
-	ASSERT(!bok);
+	ASSERT_IF(!bok);
 	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
 	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 
@@ -81,7 +81,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						continue;
 					}
 
-					ASSERT(!bok);
+					ASSERT_IF(!bok);
 					ctchar* pDir, * pStartOut;
 					auto pIdx = InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
 
@@ -95,7 +95,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 							//continue;
 						const bool btr = createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
 
-						ASSERT(!btr);
+						ASSERT_IF(!btr);
 
 						m_TrInd++;
 #if !USE_CUDA
