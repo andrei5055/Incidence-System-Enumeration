@@ -1,5 +1,6 @@
 #include <iostream>
 #include "TripleSys.h"
+#include "SRGToolkit.h"
 
 #include <mutex>
 extern std::mutex mtxLinks; // The mutex to protect the shared resource
@@ -52,7 +53,7 @@ ProcessPrecalculatedRow:
 			}
 			if (iDay >= numDaysResult())
 			{
-				//ASSERT_IF(1);
+				//ASSERT(1);
 				return eNoResult;
 			}
 		}
@@ -91,10 +92,21 @@ ProcessPrecalculatedRow:
 			if (iDay == m_numDaysResult && (m_test & 32) && m_groupSize == 2 && m_numPlayers == 16) {
 				ll msk[2];
 				msk[0] = msk[1] = 0;
+				memset(m_pGraph, 0, 16 * 16);
 				tchar* r = result();
 				int m_lenMask = 16;
 				for (tchar i = 0; i < (m_numDaysResult * 16); i += 2) {
-					SetMask(msk, r[i], r[i + 1]);
+					m_pGraph[r[i] * 16 + r[i + 1]] = 1;
+					m_pGraph[r[i + 1] * 16 + r[i]] = 1;
+				}
+				auto* pCanonGraph = ((CGraphCanonizer*)m_pGraphCanonizer)->canonize_graph();
+				
+				for (tchar i = 0; i < 16; i++) {
+					for (tchar j = i + 1; j < 16; j++) {
+						if (pCanonGraph[i * 16 + j]) {
+							SetMask(msk, i, j);
+						}
+					}
 				}
 				std::lock_guard<std::mutex> lock(mtxLinks);
 				if (mpLinks == NULL) {
@@ -103,10 +115,10 @@ ProcessPrecalculatedRow:
 				}
 				if (mpLinks[0]->isProcessed((ctchar*)msk))
 					SemiPhase++;
-				else {
-					if (!(mpLinks[0]->numObjects() % 1000000))
-						printfGreen(" nMasks(%d rows)=%d, same=%d\n", iDay, mpLinks[0]->numObjects(), SemiPhase);
-				}
+
+				if (!((SemiPhase + mpLinks[0]->numObjects()) % 1000000))
+					printfGreen(" nMasks(%d rows)=%d, same=%d\n", iDay, mpLinks[0]->numObjects(), SemiPhase);
+
 			}
 #endif
 			iDay--;

@@ -27,7 +27,7 @@
 //#define CUDA_PRINTF(x, ...) printf(x, __VA_ARGS__)
 
 #if USE_CUDA
-#define ASSERT(c,...)
+#define ASSERT_IF(c,...)
 #define ASSERT_(c,...)
 #define EXIT_(x)
 #else
@@ -38,10 +38,10 @@
                              }
 #define EXIT_(x)            exit(x)
 #if NDEBUG
-#define ASSERT(c,...)
+#define ASSERT_IF(c,...)
 #else
 
-#define ASSERT              ASSERT_
+#define ASSERT_IF              ASSERT_
 #endif
 #endif
 

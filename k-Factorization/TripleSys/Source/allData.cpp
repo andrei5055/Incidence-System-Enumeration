@@ -1,5 +1,6 @@
 #include "TripleSys.h"
 #include "CheckCanon.h"
+#include "GraphCanonizer.h"
 
 using namespace std;
 
@@ -43,7 +44,8 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 #endif
 	m_TrInd = 0;
 	m_tx = new tchar[m_numPlayers * (m_numPlayers - 2) / 2];
-
+	m_pGraphCanonizer = new CGraphCanonizer(m_numPlayers);
+	m_pGraph = m_pGraphCanonizer->graphPntr();
 	const auto np2 = m_numPlayers * m_numPlayers;
 	m_Km = new tchar[np2];		// m_Km can be used for sort and needs m_numPlayers rows
 	m_Ktmp = new tchar[np2];	// m_Ktmp can be used for sort and needs m_numPlayers rows
@@ -286,7 +288,7 @@ CC alldata::~alldata() {
 
 	delete[] m_pRows;
 	m_pRows = NULL;
-
+	delete m_pGraphCanonizer;
 	releaseBinaryMatricesStorage();
 #if !USE_CUDA
 	FCLOSE_F(m_file);

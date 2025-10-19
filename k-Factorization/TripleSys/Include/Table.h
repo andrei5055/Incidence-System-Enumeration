@@ -154,8 +154,7 @@ private:
 		return elem == pOrbits[elem];
 	}
 	CC void savePermutation(ushort degree, const T* permRow, bool rowPermut, bool savePermut) {
-		extern short* pGenerator;
-		pGenerator = (short *)this->addObject(permRow);
+		this->addObject(permRow);
 		m_lenStab = this->stabilizerLength();
 	}
 

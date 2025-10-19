@@ -144,6 +144,7 @@ typedef struct TrCycles {
 
 typedef CRepository<tchar> CBinaryMatrixStorage;
 class CKOrbits;
+class CGraphCanonizer;
 
 class alldata : public CGroupUtilisation, public CChecklLink, private CGroupInfo, CycleSupport {
 	typedef bool(alldata::*checkU1F)(int, int);
@@ -353,6 +354,9 @@ private:
 	tchar* m_groups;
 	tchar* m_groupSizeRemainder;
 	tchar* m_tx = NULL;
+
+	CGraphCanonizer* m_pGraphCanonizer;
+	tchar* m_pGraph;
 
 	mutable int m_numCycles;
 	mutable int m_NumDaysToTransform;

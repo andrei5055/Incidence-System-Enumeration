@@ -171,6 +171,7 @@
     <ClCompile Include="Source\Generators.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
     <ClCompile Include="Source\getUnselected.cpp" />
+    <ClCompile Include="Source\GraphCanonizer.cpp" />
     <ClCompile Include="Source\improveMatrix.cpp" />
     <ClCompile Include="Source\initStartValues.cpp" />
     <ClCompile Include="Source\ioSupport.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Include\cycles.h" />
     <ClInclude Include="Include\data.h" />
     <ClInclude Include="Include\Global.h" />
+    <ClInclude Include="Include\GraphCanonizer.h" />
     <ClInclude Include="Include\groupInfo.h" />
     <ClInclude Include="Include\kOrbits.h" />
     <ClInclude Include="Include\ResultDB.h" />
