@@ -201,6 +201,10 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	}
 #endif
 
+	m_pRows = new CStorageSet<tchar>*[m_numPlayers];
+	for (int i = 0; i < m_numPlayers; i++) {
+		m_pRows[i] = new CStorageSet<tchar>(100, m_numPlayers * 2);
+	}
 #if Use_GroupOrbits
 	m_pOrbits = new CGroupOrbits<unsigned char>(m_numPlayers);
 #endif
@@ -276,6 +280,13 @@ CC alldata::~alldata() {
 	if (m_bRowStorageOwner)
 		delete m_pRowStorage;
 	delete m_pRowUsage;
+
+	for (int i = 0; i < m_numPlayers; i++)
+		delete m_pRows[i];
+
+	delete[] m_pRows;
+	m_pRows = NULL;
+
 	releaseBinaryMatricesStorage();
 #if !USE_CUDA
 	FCLOSE_F(m_file);

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "groupInfo.h"
 
-#include "allsupports.h"
+#include "allSupports.h"
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
@@ -270,7 +270,8 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay == m_matrixCanonInterval) : false;}
+	CC inline bool checkCanonicity() const { return (iDay <= m_matrixCanonInterval); }
+	//CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;
@@ -394,6 +395,8 @@ private:
 	bool m_bPrint = false;
 	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 	int m_printMatrices = 0;
+
+	CStorageSet<tchar>** m_pRows = NULL;
 
 	public:
 	mutable TrCycles* m_TrCyclesFirst2Rows = NULL;

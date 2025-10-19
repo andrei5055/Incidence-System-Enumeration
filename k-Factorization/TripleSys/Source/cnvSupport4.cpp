@@ -18,8 +18,8 @@ CC bool alldata::cyclesOfTwoRowsOk(TrCycles* trc) const
 					if (trc[itr0].counter == 0)
 						return false;
 					if (!MEMCMP(trc[itr0].length, u1fPntr, MAX_CYCLES_PER_SET))
-						//return true;
-						break;
+						return true;
+						//break;
 					if (itr0 == MAX_CYCLE_SETS)
 						return false;
 				}

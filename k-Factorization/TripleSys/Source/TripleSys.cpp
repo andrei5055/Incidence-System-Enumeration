@@ -12,12 +12,23 @@ using namespace std;
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
-	m_test = param(t_test);
-	m_ignoreCanonizationMinus1 = (m_test & 0x2) != 0 || param(t_generateMatrixExample) != 0;
 	const auto iCalcModeOrg = iCalcMode;
+#if !USE_CUDA
+	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
+	m_iTime = clock();
+	m_fHdr = getFileNameAttr(sysParam());
+	m_rTime = m_iTime;
+	m_cTime = m_iTime;
+	const auto bSavingMatricesToDisk = (iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows) ?
+		param(t_savingMatricesToDisk) : false;
+#endif
+	m_test = param(t_test);
+	m_bPrint = (m_printMatrices & 1) != 0;
+	bool bPrintCurrent = (m_printMatrices & 32) != 0;
+	int minRows = nrowsStart;
+	m_ignoreCanonizationMinus1 = (m_test & 2) != 0 || param(t_generateMatrixExample) != 0;
 	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
-	m_allRowPairsSameCycles = param(t_allowUndefinedCycles) == 0 || param(t_any2RowsConvertToFirst2) > 0;
-	int m_printMatrices = 0;
+	m_allRowPairsSameCycles = param(t_any2RowsConvertToFirst2) != 0;
 	m_lastRowWithTestedTrs = 0;
 	m_threadNumber = threadNumber;
 	const auto p1f_counter = param(t_p1f_counter);
@@ -28,16 +39,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 	//if (iThread == 0 && iCalcMode == eCalculateMatrices)
 	//return 0;
-#if !USE_CUDA
-	///m_printMatrices = (iThread == 1 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
-	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
-	m_iTime = clock();
-	m_fHdr = getFileNameAttr(sysParam());
-	m_rTime = m_iTime;
-	m_cTime = m_iTime;
-	const auto bSavingMatricesToDisk = (iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows) ?
-		param(t_savingMatricesToDisk) : false;
-#endif
 	m_pSecondRowsDB = secondRowsDB;
 	if (iCalcMode == eCalcSecondRow) {
 		iCalcMode = eCalcResult;
@@ -50,13 +51,23 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const bool bCBMP = !completeGraph();
 	const auto groupSize_2 = m_groupSize == 2;
 
+	if (iDay == 0)
+		iDay = nrowsStart;
+	if (iDay > numDaysResult() && !(m_printMatrices & 16) && !(m_test & 1))
+		iDay = numDaysResult(); // warning?
+
+	if (mStart0)
+	{
+		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
+		linksFromMatrix(links(), result(), nrowsStart);
+	}
+
+	for (int i = 0; i < iDay; i++)
+		u1fSetTableRow(neighbors(i), result(i));
+
 	initPrecalculationData(iCalcModeOrg, nrowsStart);
 
 	int maxPlayerInFirstGroup = groupSize_2 ? m_secondPlayerInRow4Last : m_numPlayers;
-
-	m_bPrint = (m_printMatrices & 1) != 0;
-	bool bPrintCurrent = (m_printMatrices & 32) != 0;
-	int minRows = nrowsStart;
 
 	const auto semiSymGraph = !m_createSecondRow && numDaysResult() > 2 && param(t_semiSymmetricGraphs) == 1;
 	const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
@@ -155,19 +166,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		memcpy(m_pResultsPrev2, result(), m_nLenResults);
 		printResultWithHistory("Generated KC-matrix", m_numDaysResult);
 		iDay = m_numDaysResult;
-	}
-#endif
-	if (mStart0)
-	{
-		iDay = nrowsStart;
-		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
-		linksFromMatrix(links(), result(), nrowsStart);
-	}
-	if (iDay > numDaysResult() && !(m_printMatrices & 16))
-		iDay = numDaysResult(); // warning?
-
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
+	}
+#endif
 
 	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
 	{
@@ -177,18 +179,18 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_playerIndex = 0;
 #if !USE_CUDA
 #if 1   // Matrix from data.h
-	if (m_test & 1) {
-		if (!iDay || !mStart0) {
+	if ((m_test & 1) && (iCalcModeOrg != eCalcSecondRow)){
+		if (!iDay) {
 			printfRed("*** Error: parameter Test=%d, but matrix not defined in data.h\n", m_test);
-			//testCanonizatorSpeed(););
+			//testCanonizatorSpeed();
 			myExit(1);
 		}
 		printfGreen(" SW uses input matrix from data.h (Test=%d)\n", m_test);
-		//testCanonizatorSpeed();
+		testCanonizatorSpeed();
 		setArraysForLastRow(iDay);
-		minRows = iDay--;
-		goto checkCurrentMatrix;
-		//exit(0);
+		//minRows = iDay--;
+		//goto checkCurrentMatrix;
+		exit(0);
 	}
 #endif
 #endif
@@ -232,7 +234,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
 		minRows = iDay--;
 		//testRightNeighbor(iDay + 1);
-		if ((m_test & 0x10) && !p1f16())
+		if ((m_test & 16) && !p1f16())
 			goto noResult;
 		goto checkCurrentMatrix;
 	}
@@ -290,6 +292,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			if (!processOneDay())
 			{
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
+					if (m_bPrint)
+						printf("m_secondPlayerInRow4=%d m_nRows4Day=%d\n", m_secondPlayerInRow4, m_nRows4Day);
 					const auto iRet = endOfRowPrecalculation(iCalcMode);
 					switch (iRet) {
 					case eCheckCurrentMatrix: goto checkCurrentMatrix;
@@ -323,7 +327,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				m_lastRowWithTestedTrs = iDay - 1;
 
 #if !USE_CUDA
-			if (m_bPrint)
+			if (bPrintCurrent)
 				reportCurrentMatrix();
 #endif
 			iDay++;
@@ -343,7 +347,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
 			case -1:
 				if (param(t_generateMatrixExample)) {
-					printfYellow("\n*** Matrix below processed and accepted but it is not canonical (GenerateMatrixExample=%d)", param(t_generateMatrixExample));
+					printfYellow("\n*** GenerateMatrixExample=%d: generated matrix below processed but it is not canonical", param(t_generateMatrixExample));
 					break;
 				}
 				goBack();
@@ -545,6 +549,13 @@ noResult:
 	static ll cntrTotal;
 	printf("Matr# %4d: ********** cntr = %lld  = %lld\n", ++nMatr, cntr, cntrTotal += cntr);
 	cntr = 0;
+#endif
+#if 1
+	extern CStorageIdx<tchar>** mpLinks;
+	extern int SemiPhase;
+	if (mpLinks && (m_test & 32) && m_groupSize == 2 && m_numPlayers == 16) {
+		printfGreen("Final nMasks(%d rows)=%d, same=%d\n", m_numDaysResult, mpLinks[0]->numObjects(), SemiPhase);
+	}
 #endif
 	return nLoops;
 }

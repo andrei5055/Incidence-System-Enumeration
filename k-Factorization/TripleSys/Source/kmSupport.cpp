@@ -469,15 +469,38 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 	
 	for (int i = 4; i <= nr; i++)
 	{
-		if (tm[i] == unset) // all values of tm are >= 0; unset indicates that row is missing
+		if (tm[i] == unset) { // all values of tm are >= 0; unset indicates that row is missing
+			if ((m_test & 128) && i == 4 && nrr == 3 && m_precalcMode == eCalculateRows) {
+				// 3 rows precalculation mode, 4 rows input, 
+				// rows#4 is 0, 4, ..., 
+				// after tr we have same 3 rows on top and one row somewhere (from position 5 to (nc - 1))
+				int ind = nc * i;
+				for (int j = i + 1; j < nc; j++, ind += nc) {
+					if (tm[j] != unset) {
+						auto const jRow = m_Ktmp[ind + 1];
+						ASSERT(jRow != j);
+						auto const pRow = m_pRows[jRow]->getNextObject(); // jRow is from 5 to nc - 1
+						memcpy(pRow, result(i - 1), nc);
+						memcpy(pRow + nc, m_Ktmp + ind, nc);
+						return 2;
+					}
+				}
+				ASSERT(1); // something wrong
+			}
 			return 2;
+		}
 		const auto shift = nc * (i - 1);
 		iRet = MEMCMP(m_Ktmp + shift, mi + shift, nc);
 		switch (iRet)
 		{
 		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i]); return -1;
 		case 0: rowMax = MAX2(tm[i], rowMax); continue;
-		case 1: return 1;
+		case 1: /**if ((m_test & 128) && i == 4 && nrr == 3 && m_precalcMode == eCalculateRows) {
+				auto const pRow = m_pRows[i]->getNextObject(); // jRow is from 5 to nc - 1
+				memcpy(pRow, result(i - 1), nc);
+				memcpy(pRow + nc, m_Ktmp + shift, nc);
+			}*/ // we will reject this row in conanizator for 4 rows
+			return 1;
 		}
 	}
 	return bPrecalcRow ? 3 : 0;

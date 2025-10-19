@@ -30,8 +30,18 @@ CC int alldata::checkPlayer3(int iPlayerNumber, int lastPlayer)
 			return iPlayerNumber + 1;
 		l1[iPlayerNumber] = li[i1] = day;
 		l0[iPlayerNumber] = li[i0] = day;
-		if (m_bCheckLinkV && m_precalcMode != eCalculateRows /* && iPlayerNumber == 11 */ && !checkLinks(links(), iDay))
+		if (m_bCheckLinkV && m_precalcMode != eCalculateRows && !checkLinks(links(), iDay))
 		{
+			/**
+			static int cnt, cn[21 * 10] = { 0 };
+			if (m_bPrint){
+				cn[iDay * 21 + iPlayer]++;
+				if (cnt++ == 1000000) {
+					printTable("cn", &cn[3 * 21], 7, 21, 3);
+					memset(cn, 0, sizeof(cn));
+					cnt = 0;
+				}
+			}**/
 			selPlayers[iPlayerNumber] = unset;
 			tmpPlayers[iPlayer] = unset;
 			li[i0] = li[i1] = unset;

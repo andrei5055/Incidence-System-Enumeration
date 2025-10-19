@@ -19,12 +19,12 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 		*uf = param->strVal[t_UFname] ? param->strVal[t_UFname]->c_str() : "";
 
 	if (!param->completeGraph()) {
-		if (val[t_nestedGroups] > 1)
+		if (val[t_nestedGroups] > 0)
 			return *fhdr == 'K' ? "KCN" : *fhdr == 'P' ? "PCN" : "UCN";
 		else
 			return *fhdr == 'K' ? "KC" : *fhdr == 'P' ? "PC" : "UC";
 	}
-	else if (val[t_nestedGroups] > 1)
+	else if (val[t_nestedGroups] > 0)
 		return *fhdr == 'K' ? "KN" : *fhdr == 'P' ? "PN" : "UN";
 	return fhdr;
 }
@@ -153,14 +153,14 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 
 		if (icmp < 0) {
 			ret = -1;
-			if (m_ignoreCanonizationMinus1)
-				continue; // Calculate all automorphisms (even if matrix is not canonical)
 #if !USE_CUDA //PRINT_TRANSFORMED
 			if (param(t_printMatrices) & 16) {
 				printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 				//continue;
 			}
 #endif
+			if (m_ignoreCanonizationMinus1)
+				continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 			break;
 		}
 	}
@@ -221,6 +221,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 	if (m_precalcMode != eCalculateRows) {
 		if (useAutomorphisms && param(t_autGroupNumb) && utilizeGroups(nrows)) {
 			int step, lastVal, j, nGroupsTested = 0;
+			bool bRet = true;
 			int i = setupIteratorByGroups(&lastVal, &step);
 			while (i != lastVal) {
 				auto* m_pRowGroup = rowGroup(i += step);
@@ -237,21 +238,24 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 					auto* cmpTr = m_pRowGroup->CStorage<tchar>::getObject(j);
 					m_playerIndex = playerIndexCycle - i * m_numPlayers;
 					const auto cmp = kmProcessMatrix(pMatrToTest, cmpTr, nRowsToTest);
-					if (cmp < 0) {
 						m_playerIndex += i * m_numPlayers;
+					if (cmp < 0) {
+						bRet = false;
+						if (!m_ignoreCanonizationMinus1)
 						return false;
 					}
-
-					if (!cmp)
+					else if (!cmp)
 						updateGroup(cmpTr);
 				}
 				i = i1;
 				if (++nGroupsTested == param(t_autGroupNumb))
 					break;
 			}
+			if (!bRet)
+				return false;
 		}
 
-		m_playerIndex = playerIndexCycle;
+		//???m_playerIndex = playerIndexCycle;
 
 		if (m_precalcMode != eCalculateRows && param(t_nestedGroups) > 1 && nrows > 2)
 		{
@@ -287,7 +291,9 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		{
 			a[i] = (p[i] = i) * m_groupSize;   // a[i] value is not revealed and can be arbitrary
 		}
-		if (ret = cnvCheckTgNew(a, nrows, ng) || m_ignoreCanonizationMinus1)
+		if (!cnvCheckTgNew(a, nrows, ng))
+			ret = false;
+		if (ret || m_ignoreCanonizationMinus1)
 		{
 			p[m_nGroups] = ng;//m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
 			auto i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
@@ -296,10 +302,10 @@ CC bool alldata::canonizator(int iMode, int nrows)
 				p[i]--;             // decrease index "weight" for i by one
 				const auto j = (i % 2) ? p[i] : 0;   // IF i is odd then j = p[i] otherwise j = 0
 				SWAP(a[i], a[j]);
-				if (!cnvCheckTgNew(a, nrows, ng) && !m_ignoreCanonizationMinus1)
-				{
+				if (!cnvCheckTgNew(a, nrows, ng)) {
 					ret = false;
-					break;////
+					if (!m_ignoreCanonizationMinus1)
+						break;
 				}
 				i = 0;              // reset index i to 1 (assumed)
 				while (!p[++i])     // while (p[i] == 0)

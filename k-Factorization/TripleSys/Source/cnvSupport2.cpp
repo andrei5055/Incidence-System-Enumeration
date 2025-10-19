@@ -21,6 +21,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 		bok = getCyclesAndPathFromNeighbors(&trCycles01, neighbors(0), neighbors(1), NULL, NULL, eCheckErrors) > 0;
 	ASSERT(!bok);
 	bool bUseTestedTrs = param(t_autSaveTestedTrs) > 0;
+	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
 
 	// get first row
 	for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
@@ -44,7 +45,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 							{
 								bRet = false;
 								if (m_ignoreCanonizationMinus1)
-									continue; // Calculate all automorphisms (even if matrix is not canonical)
+									continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 								goto ret;
 							}
 							if (icmp == 0)
@@ -71,6 +72,12 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						printTable("resj", result(indRow1), 1, m_numPlayers, 2);
 						printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
 						printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
+						if (any2RowsConvertToFirst2) {
+							bRet = false;
+							if (m_ignoreCanonizationMinus1)
+								continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
+							goto ret;
+						}
 						continue;
 					}
 
@@ -116,10 +123,11 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 							//TestkmProcessMatrix(nrows, nrows, tr, tr, 0);//icmp);
 							bRet = false;
 							if (m_ignoreCanonizationMinus1)
-								continue; // Calculate all automorphisms (even if matrix is not canonical)
+								continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 							goto ret;
 						}
-						// save Tr if icmp not -1, continue if it was already processed
+						// save Tr (if icmp not -1 or 1), continue if Tr was already processed
+						//if (bSaveTestedTrs && icmp != 1 && pTestedTRs->isProcessed(tr))
 						if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
 							continue;
 

@@ -290,15 +290,16 @@ void alldata::testCanonizatorSpeed()
 	kmProcessMatrix(result(), tr, iDay);
 	printTable("ktmp", m_Ktmp, iDay, 27, 3);
 #endif
-
+	m_precalcMode = eCalcResult; // 
 	// sort matrix from data.h
 	kmProcessMatrix(result(), NULL, iDay);
-	auto* bRes1 = m_Km;
-	int iret = memcmp(bRes1, result(), iDay * m_numPlayers);
+	auto* pRes1 = m_Km;
+	int iret = memcmp(pRes1, result(), iDay * m_numPlayers);
 	if (iret)
 	{
 		printfYellow("Sorted matrix different than original\n");
-		printTable("Sorted", m_Km, iDay, m_numPlayers, m_groupSize);
+		memcpy(result(), pRes1, iDay * m_numPlayers);
+		printTable("Sorted", result(), iDay, m_numPlayers, m_groupSize);
 	}
 	int errLine = 0, errGroup = 0, dubLine = 0;
 	if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
@@ -306,30 +307,26 @@ void alldata::testCanonizatorSpeed()
 		printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
 		abort();
 	}
-
-	tchar* v0 = new tchar[m_nGroups * m_maxCommonVSets];
-	int nv0;
-
-	memset(&m_TrCycles, 0, sizeof(m_TrCycles));
-
-	if (m_groupSize == 3)
-	{
-		nv0 = getAllV(v0, m_maxCommonVSets, 0, 1);
-	}
+	char stat[256];
 	clock_t tTime = clock();
-	int improveResult = m_improveResult;
 	const auto pProcessMatrix = m_pProcessMatrix;
 	m_pProcessMatrix = &alldata::kmProcessMatrix;
-	m_improveResult = 2;
-	int i, nTests = 1000;
+	int i, nTests = 100;
 	int order = 0;
+	bool bRet = false;
+	m_lastRowWithTestedTrs = 0;
+	int iTest = 0;
+	for (int j = 0; j < iDay; j++)
+		u1fSetTableRow(neighbors(j), result(j));
 	for (i = 1; i <= nTests; i++)
 	{
-		if (!cnvCheckNew(0, iDay))
+		iTest++;
+		bRet = cnvCheckNew(0, iDay);
+		if (!bRet)
 		{
 			order = orderOfGroup();
 			printf("Group Order=%d\n", order);
-			iret = memcmp(bRes1, result(), iDay * m_numPlayers);
+			iret = memcmp(pRes1, result(), iDay * m_numPlayers);
 			if (iret >= 0)
 			{
 				printfYellow("Start matrix rejected by cnvCheckNew\n");
@@ -337,9 +334,10 @@ void alldata::testCanonizatorSpeed()
 			}
 			printTable("Result ", result(), iDay, m_numPlayers, m_groupSize, 0, true);
 			printf("Result improved (%d):\n", i);
-			printTable("", bRes1, iDay, m_numPlayers, m_groupSize, 0, true);
+			printTable("", pRes1, iDay, m_numPlayers, m_groupSize, 0, true);
 #if 1
-			memcpy(result(0), bRes1, m_nLenResults);
+			memcpy(result(0), pRes1, m_nLenResults);
+			m_lastRowWithTestedTrs = 0;
 			errLine = errGroup = dubLine = 0;
 			if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
 			{
@@ -355,32 +353,40 @@ void alldata::testCanonizatorSpeed()
 		{
 			order = orderOfGroup();
 			printf("Group Order=%d\n", order);
-			//StatReportAfterEachResult(ResetStat, "Canonizator time", (int)((clock() - tTime)) / i, true);
+			//StatReportAfterEachResult(ResetStat, "Canonization time", (int)((clock() - tTime)) / i, true);
 			//printf("order=%d\n",  order);
 			break;
 		}
 	}
 
 	//printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, 0);
-	printf("End of Improved (%d):\n", i);
-	delete[] v0;
-	m_improveResult = improveResult;
-	m_pProcessMatrix = pProcessMatrix;
+	printf("End of Improvement (%d):\n", i);
 	//time2 = __rdtscp(&junk);
 	//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time2);
 	//QueryPerformanceCounter(&time2);
 	//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time2);
 	if (nTests > 0)
-		printf("+++ %.1f ms needed per one improvement check\n", (double(clock() - tTime)) / nTests);
+		printf("+++ %.1f ms needed per one improvement check\n", (double(clock() - tTime)) / iTest);
 	//printf(" %.1f ms (%.1f cpu) needed per one improvement check\n", (double(clock() - tTime)) / nTests);
 	//	(time2.QuadPart - time1.QuadPart) / nTests / 1000.0);
 	//	(double(time2.dwLowDateTime - time1.dwLowDateTime)) / nTests / 1000.0);
+
+	for (int j = 0; j < iDay; j++)
+		u1fSetTableRow(neighbors(j), result(j));
+
+	bool needOutput = false;
+	matrixStat(neighbors(), iDay, &needOutput);
+	if (needOutput) {
+		matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
+		printf("%d rows: %s, AUT=%d, %s\n", iDay,
+			bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
+	}
 }
 
 #if !USE_CUDA 
 bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode)
 {
-	if (!(iPrintMatrices & 16) || iCalcMode == eCalcSecondRow)
+	if (!(iPrintMatrices & 128) || iCalcMode == eCalcSecondRow)
 		return false;
 	else {
 		printf("Submatrices Automorphism and Cycles:\n");
@@ -399,6 +405,7 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 			}
 		}
 		printf("\n");
+		exit(1);
 	}
 	return true;
 }

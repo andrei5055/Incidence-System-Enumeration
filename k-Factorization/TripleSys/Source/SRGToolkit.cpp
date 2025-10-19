@@ -71,417 +71,38 @@ ushort autLost[] = {
 };
 #endif
 
-SRGToolkit::SRGToolkit(const kSysParam* p, int nCols, int nRows, int groupSize, const std::string& resFileName, int exploreMatrices) :
-	m_pParam(p), m_nCols(nCols), m_nRows(nRows), m_groupSize(groupSize), m_v(groupDegree()), m_nExploreMatrices(exploreMatrices),
-	m_len(groupDegree() * (groupDegree() - 1) / 2), m_lenGraphMatr(groupDegree() * groupDegree()),
-	m_resFileName(resFileName), Generators<ushort>(0, "\nVertex orbits and group generators of graph", nRows * nCols / groupSize) {
-	setOutFileName(NULL);
-	const int coeff = PRINT_MATRICES? 3 : 0;
+CGraphCanonizer::CGraphCanonizer(int nVert) : 
+	Generators<ushort>(0, "\nVertex orbits and group generators of graph", nVert) {
+	Init(nVert);
+}
+
+int CGraphCanonizer::Init(int nVert) {
+	if (nVert <= 0)
+		return -1;
+
+	releaseCanonizerMemory();
+
+	m_v = nVert;
+	m_lenGraphMatr = m_v * m_v;
+
+	const int coeff = PRINT_MATRICES ? 3 : 0;
 	m_pGraph[0] = new tchar[(2 + coeff) * m_lenGraphMatr];
 	m_pGraph[1] = m_pGraph[0] + m_lenGraphMatr;
-	m_subgraphVertex = new ushort[m_v];
-	m_pOrbits = new ushort[(1 + coeff) * m_v];
-	m_pNumOrbits = new ushort[2 * m_v];
+
+	m_pNumOrbits = new ushort[(3 + coeff) * m_v];
 	m_pGroupOrbits = m_pNumOrbits + m_v;
-	m_pLenOrbits = new ushort [3 * m_len];
-	m_pSavedOrbits = m_pLenOrbits + m_len;
-	m_pSavedOrbIdx = m_pSavedOrbits + m_len;
-	for (int i = 0; i < 2; i++) {
-		m_bChekMatr[i] = true;
-		m_pGraphParam[i] = new SRGParam();
-		m_pMarixStorage[i] = new CBinaryMatrixStorage((int)m_len, 50);
-	}
-
+	m_pOrbits = (m_pNumOrbits + m_v) + m_v;
 	m_bUsedFlags = new tchar[m_v * m_v];
+
+	const auto len = nVert * (nVert - 1) / 2;
+	m_pLenOrbits = new ushort[3 * len];
+	m_pSavedOrbits = m_pLenOrbits + len;
+	m_pSavedOrbIdx = m_pSavedOrbits + len;
+	return 0;
 }
 
-SRGToolkit::~SRGToolkit() { 
-	delete[] m_pGraph[0];
-	delete[] m_subgraphVertex;
-	delete[] m_pNumOrbits;
-	delete[] m_pOrbits;
-	delete[] outFileName();
-	delete[] m_bUsedFlags;
-	for (int i = 0; i < 2; i++) {
-		delete m_pMarixStorage[i];
-		delete m_pGraphParam[i];
-	}
-}
 
-static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
-	int i = 0, j = 0;
-	while (i < len && j < len) {
-		if (pArray1[i] == pArray2[j])
-			return true;
-
-		if (pArray1[i] < pArray2[j])
-			++i;
-		else
-			++j;
-	}
-	return false;
-}
-
-bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
-	int counter = 0;
-	for (int i = 0; i < 2; i++) {
-		if (!m_bChekMatr[i])
-			continue;
-
-		if (exploreMatrixOfType(i, pMatr, pGraphDB+i, sourceMatrID, srcGroupOrder))
-			counter++;			
-		else 
-			if (!(m_nExploreMatrices & 2))
-				m_bChekMatr[i] = false;
-	}
-
-	return counter > 0;
-}
-
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
-	const auto numGroups = m_nCols / m_groupSize;
-	const auto pVertexLast = pMatr + m_nRows * m_nCols;
-
-	auto graphParam = m_pGraphParam[typeIdx];
-	const auto cond = typeIdx != 0;
-	const auto mult = cond ? m_groupSize : numGroups - m_groupSize;
-	// Create graph
-	auto pAdjacencyMatrix = m_pGraph[0];
-	memset(pAdjacencyMatrix, 0, m_lenGraphMatr * sizeof(pAdjacencyMatrix[0]));
-	auto pVertex = pMatr;
-	int numVertex = 0;
-	for (int i = 0; i < m_nRows; i++) {
-		for (int j = 0; j < numGroups; j++, pVertex += m_groupSize, numVertex++) {
-			// Add edges to the graph for the vertices in the same matrix row
-			auto numNextVertex = numVertex;
-			for (int k = j; ++k < numGroups;) {
-				++numNextVertex;
-				pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
-					pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
-			}
-
-			// Add edges between vertex pairs whose corresponding tuples of size `m_groupSize`
-			// either share exactly one common element (if `cont == true`)
-			// or have no elements in common (if `cont == false`).
-			int nConnected = (m_nRows - i - 1) * mult;
-			auto* pNextVertex = pMatr + (i + 1) * m_nCols;
-			while (pNextVertex < pVertexLast) {
-				numNextVertex++;
-				// We do have two pointers (pVertex and pNextVertex).
-				// If one out of groupSize elements is the same, then we have an edge between two vertices.
-				if (one_common_element(pVertex, pNextVertex, m_groupSize) == cond) {
-					// Add edges to the graph for the vertices intersecting by one element
-					pAdjacencyMatrix[numVertex * m_v + numNextVertex] =
-						pAdjacencyMatrix[numNextVertex * m_v + numVertex] = 1;
-
-					if (!(--nConnected))
-						break;
-				}
-
-				// Move to the next vertex
-				pNextVertex += m_groupSize;
-			}
-		}
-	}
-
-	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
-	pGraphDB->setGraphType(graphType);
-	int flg = 1;
-	switch (graphType) {
-	case t_nonregular:
-	case t_complete:
-		delete graphParam;
-		m_pGraphParam[typeIdx] = NULL;
-		return false;
-	case t_regular:
-		flg = 2;
-	}
-
-	const bool canonize = m_nExploreMatrices > 0;
-	if (!((canonize? m_nExploreMatrices : -m_nExploreMatrices) & flg)) {
-		delete graphParam;
-		m_pGraphParam[typeIdx] = NULL;
-		return false;
-	}
-
-	bool rank3 = false;
-	tchar* pGraph[2] = { NULL, NULL };
-	tchar* pUpperDiag = NULL;
-	ctchar* pResGraph = NULL;
-	if (canonize) {
-		initCanonizer();
-		int i, firstVert = 0;
-		i = 0;
-#if PRINT_NUM_CUR_GRAPH
-		printfYellow("**** numCurrGraph = %d ****\n", ++numCurrGraph);
-#endif
-#if PRINT_MATRICES
-		auto* pInitOrbits = m_pOrbits + m_v;
-		auto* pResOrbits = pInitOrbits + m_v;
-		if (numCurrGraph == N_MATR) {
-			printFlag = true;
-			for (int j = m_v; j--;)
-				m_pOrbits[j] = j;
-
-			memcpy(pGraph[0] = m_pGraph[i] + 2 * m_lenGraphMatr, m_pGraph[0], m_lenGraphMatr * sizeof(m_pGraph[0][0]));
-			pGraph[1] = pGraph[0] + m_lenGraphMatr;
-			memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
-			PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
-		}
-		else
-			printFlag = false;
-#endif
-		while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
-			createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
-
-#if PRINT_MATRICES
-			if (printFlag) {
-				for (int j = m_v; j--;)
-					pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
-
-				memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
-				// Construct matrix from the original one by using pInitOrbits permutation
-				createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
-				PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
-				// Matrix after nIter iterations of canonization
-				// PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter, m_v);
-				// These two matrices should be identical
-				assert(!memcmp(pGraph[1], m_pGraph[1 - i], m_lenGraphMatr * sizeof(*pGraph[1])));
-				nIter++;
-			}
-#endif
-			i = 1 - i;
-		}
-
-#if 0
-		// Check if canonical graph is really canonical
-		// Warning: This call removes all previously determined generators of Aut(G).
-		//          For debugging use only.
-		ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
-#endif
-#if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES
-		if (printFlag) {
-			// Create the reverse permutation for pInitOrbits
-			for (int j = m_v; j--;)
-				pResOrbits[pInitOrbits[j]] = j;
-
-			// Construct matrix from the resulting one by using pResOrbits permutation
-			createGraphOut(pGraph[1], m_pGraph[1 - i], 0, 0, pResOrbits);
-			PRINT_ADJ_MATRIX(m_pGraph[1 - i], 0, m_v, pResOrbits, "ddd");
-			// The constructed graph must be identical to the original
-			assert(!memcmp(pGraph[0], m_pGraph[1 - i], m_lenGraphMatr * sizeof(*pGraph[0])));
-
-			// Save resulting permutation which convert matrix of the resulting graph into it's original state.
-			memcpy(pResOrbits + m_v, pResOrbits, m_v * sizeof(*pResOrbits));
-		}
-#endif
-		// Copy elements above the main diagonal into the array.
-		pResGraph = m_pGraph[i];
-		auto pFrom = m_pGraph[i];
-		auto pTo = pUpperDiag = m_pGraph[1 - i];
-		for (int j = m_v, i = 0; --j; pTo += j, pFrom += m_v)
-			memcpy(pTo, pFrom + ++i, j);
-
-		// Copying vertex orbits and trivial permutation
-		auto pntr = this->getObject(0);
-		memcpy(pntr, m_pGroupOrbits, m_v * sizeof(*pntr));
-		pntr += 2 * (i = m_v);
-		rank3 = true;
-		while (i--) {
-			pntr[i] = i;
-			if (rank3)
-				rank3 = !m_pGroupOrbits[i];
-		}
-
-		// Analyze the stabilizer of first vertex
-		pntr -= m_v;
-		const auto j = graphParam->k + 1;
-		for (i = 1; i < j; i++)
-			rank3 &= pntr[i] == 1;
-
-		while (i < m_v && rank3)
-			rank3 = pntr[i++] == j;
-
-#if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES
-		if (printFlag) {
-			// pInitOrbits - permutation, that canonize original matrix
-			const auto ppp = pResOrbits + m_v;
-			ushort s[49];
-#if PERMUT
-			// Convert it to the automorphism of the original matrix 
-			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
-			// s = q∘p∘q^−1.
-			// Note: q^−1 is in ppp = pResOrbits + m_v
-
-			for (int j = m_v; j--;)
-				pResOrbits[j] = ppp[autIni[j]];
-
-			for (int j = m_v; j--;)
-				s[j] = pResOrbits[pInitOrbits[j]];
-
-			createGraphOut(pResGraph, pGraph[1], 0, 0, s);
-			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
-
-			ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
-#else
-			pntr += (NUM_GENERATOR + 1) * m_v;  // pointer to the first non-trivial generator
-			// Check if it's an automorphism
-			createGraphOut(pResGraph, pGraph[1], 0, 0, pntr);
-			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-
-			// Multiply this automorphism by pInitOrbits
-			for (int j = m_v; j--;)
-				pResOrbits[j] = pInitOrbits[pntr[j]];
-
-			for (int j = m_v; j--;)
-				pInitOrbits[pResOrbits[j]] = j;
-
-			createGraphOut(pResGraph, pGraph[1], 0, 0, pInitOrbits);
-			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, pInitOrbits, "zzz");
-			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-			
-			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
-			// multiply q (saved in pResOrbits + m_v) by p^(-1) (which is pInitOrbits)
-			// s=q∘p^−1
-#define	A	1
-#if A
-			const auto q = ppp;
-			const auto p = pInitOrbits;
-#else
-			const auto q = pInitOrbits;
-			const auto p = ppp;
-#endif
-			for (int j = m_v; j--;)
-				pResOrbits[p[j]] = j;   // pResOrbits is p^(-1)
-
-			for (int j = m_v; j--;)
-				s[j] = pResOrbits[q[j]];
-
-			// Obtained permutation (pResOrbits) should be an automorphism of pGraph[0]
-			// Let's check it
-			createGraphOut(pGraph[0], pGraph[1], 0, 0, s);
-			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
-			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
-#endif
-		}
-#endif
-	}
-
-	const char* pGraphDescr = "";
-	if (rank3)
-		pGraphDescr = "rank 3 graph";
-	else
-	if (graphType == t_4_vert)
-		pGraphDescr = "4-vertex condition";
-
-	char buf[512], *pBuf = buf;
-	if (graphType != t_regular)
-		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ,μ) = (%d,%2d,%d,%d)",
-			m_v, graphParam->k, graphParam->λ, graphParam->μ);
-	else
-		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", m_v, graphParam->k);
-
-	pGraphDB->setTableTitle(buf);
-	if (rank3)
-		graphParam->m_cntr[4]++;
-
-	bool newGraph = true;
-	int prevMatrNumb = m_nPrevMatrNumb;
-	if (pUpperDiag) {
-		prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
-		m_pMarixStorage[typeIdx]->updateRepo(pUpperDiag);
-		newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
-	}
-	else
-		m_nPrevMatrNumb++;
-
-	if (newGraph) {
-		pBuf = buf;
-		// New SRG constructed
-		if (!prevMatrNumb) {
-			std::string fileName;
-#if OUT_SRG_TO_SEPARATE_FILE
-			SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
-			fileName = m_resFileName + buf;
-#else
-			fileName = m_resFileName;
-#endif			
-			const auto len = fileName.length() + 1;
-			delete[] outFileName();
-			memcpy(pBuf = new char[len], fileName.c_str(), len);
-			setOutFileName(pBuf, false);
-		}
-
-		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
-		SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
-		pBuf = buf;
-#if OUT_SRG_TO_SEPARATE_FILE
-		if (!prevMatrNumb) {
-			if (graphType != t_regular)
-				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
-			else
-				fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
-		}
-
-		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
-#else
-#if PRINT_NUM_CUR_GRAPH
-		SPRINTFD(pBuf, buf, "\n  *** numCurrGraph = %d ***", numCurrGraph);
-#endif
-		if (graphType != t_regular)
-			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd", 
-				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
-		else
-			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
-				prevMatrNumb + 1, typeIdx + 1, m_v, graphParam->k, groupOrder());
-#endif
-		if (rank3)
-			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
-		else
-		if (graphType == t_4_vert)
-			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
-
-
-		if (rank3 || graphType == t_4_vert)
-			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
-
-		if (graphType != t_regular) {
-			const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
-			const auto grOrder = canonize ? groupOrder() : 0;
-			srgSummary.outSRG_info(m_v, graphParam, graphType, rank3graph, grOrder, m_groupSize, m_nCols / m_groupSize, srcGroupOrder);
-		}
-
-		fprintf(f, "%s\n", buf);
-		if (pResGraph)
-			outAdjMatrix(pResGraph, f);
-
-		FCLOSE_F(f);
-
-		if (pResGraph && groupOrder() > 1)
-			makeGroupOutput(NULL, false, false);
-	}
-	else {
-		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
-		--graphParam->m_cntr[0];
-		--graphParam->m_cntr[1];
-		if (graphType != t_regular) 
-			--graphParam->m_cntr[2];
-
-		if (graphType == t_4_vert)
-			--graphParam->m_cntr[3];
-
-		if (rank3)
-			--graphParam->m_cntr[4];
-	}
-
-	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
-
-//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
-	return true;
-}
-
-void SRGToolkit::initCanonizer() {
+void CGraphCanonizer::initCanonizer() {
 	// Initialize orbits
 	m_pNumOrbits[0] = 1;
 	m_pLenOrbits[0] = m_v;
@@ -490,7 +111,69 @@ void SRGToolkit::initCanonizer() {
 	memset(m_bUsedFlags, 0, m_v * m_v);
 }
 
-void SRGToolkit::initVertexGroupOrbits() {
+void CGraphCanonizer::releaseCanonizerMemory() {
+	delete[] m_pGraph[0];
+	delete[] m_pNumOrbits;
+	delete[] m_bUsedFlags;
+	delete[] m_pLenOrbits;
+}
+
+
+ctchar* CGraphCanonizer::canonize_graph(ctchar *pGraph, int *pCanonIndex) {
+	initCanonizer();
+	if (pGraph)
+		memcpy(m_pGraph[0], pGraph, m_lenGraphMatr);
+
+	int i, firstVert = 0;
+	i = 0;
+#if PRINT_NUM_CUR_GRAPH
+	printfYellow("**** numCurrGraph = %d ****\n", ++numCurrGraph);
+#endif
+#if PRINT_MATRICES
+	auto* pInitOrbits = m_pOrbits + m_v;
+	auto* pResOrbits = pInitOrbits + m_v;
+	if (numCurrGraph == N_MATR) {
+		printFlag = true;
+		for (int j = m_v; j--;)
+			m_pOrbits[j] = j;
+
+		memcpy(pGraph[0] = m_pGraph[i] + 2 * m_lenGraphMatr, m_pGraph[0], m_lenGraphMatr * sizeof(m_pGraph[0][0]));
+		pGraph[1] = pGraph[0] + m_lenGraphMatr;
+		memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
+		PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
+	}
+	else
+		printFlag = false;
+#endif
+	while (firstVert = canonizeGraph(m_pGraph[i], m_pGraph[1 - i], firstVert)) {
+		createGraphOut(m_pGraph[i], m_pGraph[1 - i]);
+
+#if PRINT_MATRICES
+		if (printFlag) {
+			for (int j = m_v; j--;)
+				pResOrbits[j] = pInitOrbits[m_pOrbits[j]];
+
+			memcpy(pInitOrbits, pResOrbits, m_v * sizeof(m_pOrbits[0]));
+			// Construct matrix from the original one by using pInitOrbits permutation
+			createGraphOut(pGraph[0], pGraph[1], 0, 0, pInitOrbits);
+			PRINT_ADJ_MATRIX(pGraph[1], nIter, m_v, pInitOrbits, "bbb");
+			// Matrix after nIter iterations of canonization
+			// PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter, m_v);
+			// These two matrices should be identical
+			assert(!memcmp(pGraph[1], m_pGraph[1 - i], m_lenGraphMatr * sizeof(*pGraph[1])));
+			nIter++;
+		}
+#endif
+		i = 1 - i;
+	}
+
+	if (pCanonIndex)
+		*pCanonIndex = i;
+
+	return m_pGraph[i];
+}
+
+void CGraphCanonizer::initVertexGroupOrbits() {
 	setGroupOrder(1);
 	setStabilizerLengthAut(m_v);
 	for (int i = m_v; i--;)
@@ -498,7 +181,7 @@ void SRGToolkit::initVertexGroupOrbits() {
 	memcpy(this->getObject(1), m_pGroupOrbits, m_v * sizeof(m_pGroupOrbits[0]));
 }
 
-tchar *SRGToolkit::createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex, int endVertex, const ushort* pOrb) const {
+tchar * CGraphCanonizer::createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex, int endVertex, const ushort* pOrb) const {
 	if (!endVertex)
 		endVertex = m_v;
 
@@ -517,7 +200,7 @@ tchar *SRGToolkit::createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVer
 	return pVertexOutRet;
 }
 
-ushort* SRGToolkit::restoreParam(int &i, int iStart, ushort * pLenOrbits) {
+ushort* CGraphCanonizer::restoreParam(int &i, int iStart, ushort * pLenOrbits) {
 	do {
 		// Restore previous parameters;
 		while (i > iStart && !*(pLenOrbits -= m_v - i--));
@@ -530,7 +213,7 @@ ushort* SRGToolkit::restoreParam(int &i, int iStart, ushort * pLenOrbits) {
 	return pLenOrbits;
 }
 
-int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
+int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 #if PRINT_MATRICES
 	if (firstVert) {
 		// Copy the top part of the adjacency matrix
@@ -754,7 +437,7 @@ int SRGToolkit::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert) {
 	return 0;
 }
 
-int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
+int CGraphCanonizer::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 	ushort ** ppLenOrbits, int& idxRight, int flag, int &lastUnfixedVertexIndex) {
 
 	auto idxLast = vertIdx;
@@ -843,6 +526,340 @@ int SRGToolkit::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 	return flag;
 }
 
+static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
+	int i = 0, j = 0;
+	while (i < len && j < len) {
+		if (pArray1[i] == pArray2[j])
+			return true;
+
+		if (pArray1[i] < pArray2[j])
+			++i;
+		else
+			++j;
+	}
+	return false;
+}
+
+SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices) :
+	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
+	m_resFileName(resFileName), CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
+
+	setOutFileName(NULL);
+	const int coeff = PRINT_MATRICES ? 3 : 0;
+	m_subgraphVertex = new ushort[groupDegree()];
+	const auto len = groupDegree() * (groupDegree() - 1) / 2;
+	for (int i = 0; i < 2; i++) {
+		m_bChekMatr[i] = true;
+		m_pGraphParam[i] = new SRGParam();
+		m_pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50);
+	}
+}
+
+SRGToolkit::~SRGToolkit() {
+	delete[] m_subgraphVertex;
+	delete[] outFileName();
+	for (int i = 0; i < 2; i++) {
+		delete m_pMarixStorage[i];
+		delete m_pGraphParam[i];
+	}
+}
+
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
+	int counter = 0;
+	for (int i = 0; i < 2; i++) {
+		if (!m_bChekMatr[i])
+			continue;
+
+		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID, srcGroupOrder))
+			counter++;
+		else
+			if (!(m_nExploreMatrices & 2))
+				m_bChekMatr[i] = false;
+	}
+
+	return counter > 0;
+}
+
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
+	const auto groupSize = m_pParam->val[t_groupSize];
+	const auto nCols = m_pParam->val[t_numPlayers];
+	const auto numGroups = nCols / groupSize;
+	const auto pVertexLast = pMatr + m_nRows * nCols;
+
+	auto graphParam = m_pGraphParam[typeIdx];
+	const auto cond = typeIdx != 0;
+	const auto mult = cond ? groupSize : numGroups - groupSize;
+	// Create graph
+	auto pAdjacencyMatrix = graphPntr(0);
+	memset(pAdjacencyMatrix, 0, lenGraphMatr() * sizeof(pAdjacencyMatrix[0]));
+	auto pVertex = pMatr;
+	int numVertex = 0;
+	const auto v = groupDegree();
+	for (int i = 0; i < m_nRows; i++) {
+		for (int j = 0; j < numGroups; j++, pVertex += groupSize, numVertex++) {
+			// Add edges to the graph for the vertices in the same matrix row
+			auto numNextVertex = numVertex;
+			for (int k = j; ++k < numGroups;) {
+				++numNextVertex;
+				pAdjacencyMatrix[numVertex * v + numNextVertex] =
+					pAdjacencyMatrix[numNextVertex * v + numVertex] = 1;
+			}
+
+			// Add edges between vertex pairs whose corresponding tuples of size `groupSize`
+			// either share exactly one common element (if `cont == true`)
+			// or have no elements in common (if `cont == false`).
+			int nConnected = (m_nRows - i - 1) * mult;
+			auto* pNextVertex = pMatr + (i + 1) * nCols;
+			while (pNextVertex < pVertexLast) {
+				numNextVertex++;
+				// We do have two pointers (pVertex and pNextVertex).
+				// If one out of groupSize elements is the same, then we have an edge between two vertices.
+				if (one_common_element(pVertex, pNextVertex, groupSize) == cond) {
+					// Add edges to the graph for the vertices intersecting by one element
+					pAdjacencyMatrix[numVertex * v + numNextVertex] =
+						pAdjacencyMatrix[numNextVertex * v + numVertex] = 1;
+
+					if (!(--nConnected))
+						break;
+				}
+
+				// Move to the next vertex
+				pNextVertex += groupSize;
+			}
+		}
+	}
+
+	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
+	pGraphDB->setGraphType(graphType);
+	int flg = 1;
+	switch (graphType) {
+	case t_nonregular:
+	case t_complete:
+		delete graphParam;
+		m_pGraphParam[typeIdx] = NULL;
+		return false;
+	case t_regular:
+		flg = 2;
+	}
+
+	const bool canonize = m_nExploreMatrices > 0;
+	if (!((canonize ? m_nExploreMatrices : -m_nExploreMatrices) & flg)) {
+		delete graphParam;
+		m_pGraphParam[typeIdx] = NULL;
+		return false;
+	}
+
+	bool rank3 = false;
+	tchar* pGraph[2] = { NULL, NULL };
+	tchar* pUpperDiag = NULL;
+	ctchar* pResGraph = NULL;
+	if (canonize) {
+		int i = 0;
+		// Copy elements above the main diagonal into the array.
+		auto pFrom = pResGraph = canonize_graph(NULL, &i);
+		auto pTo = pUpperDiag = graphPntr(1 - i);
+		for (int j = v, i = 0; --j; pTo += j, pFrom += v)
+			memcpy(pTo, pFrom + ++i, j);
+
+		// Copying vertex orbits and trivial permutation
+		auto pntr = this->getObject(0);
+		auto *pGroupOrb = groupOrbits();
+		memcpy(pntr, groupOrbits(), v * sizeof(*pntr));
+		pntr += 2 * (i = v);
+		rank3 = true;
+		while (i--) {
+			pntr[i] = i;
+			if (rank3)
+				rank3 = !groupOrbits()[i];
+		}
+
+		// Analyze the stabilizer of first vertex
+		pntr -= v;
+		const auto j = graphParam->k + 1;
+		for (i = 1; i < j; i++)
+			rank3 &= pntr[i] == 1;
+
+		while (i < v && rank3)
+			rank3 = pntr[i++] == j;
+
+#if PRINT_NUM_CUR_GRAPH && PRINT_MATRICES
+		if (printFlag) {
+			// pInitOrbits - permutation, that canonize original matrix
+			const auto ppp = pResOrbits + m_v;
+			ushort s[49];
+#if PERMUT
+			// Convert it to the automorphism of the original matrix 
+			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
+			// s = q∘p∘q^−1.
+			// Note: q^−1 is in ppp = pResOrbits + m_v
+
+			for (int j = m_v; j--;)
+				pResOrbits[j] = ppp[autIni[j]];
+
+			for (int j = m_v; j--;)
+				s[j] = pResOrbits[pInitOrbits[j]];
+
+			createGraphOut(pResGraph, pGraph[1], 0, 0, s);
+			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			PRINT_ADJ_MATRIX(pGraph[1], 0, v, s, "vvv");
+
+			ASSERT(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
+#else
+			pntr += (NUM_GENERATOR + 1) * v;  // pointer to the first non-trivial generator
+			// Check if it's an automorphism
+			createGraphOut(pResGraph, pGraph[1], 0, 0, pntr);
+			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+
+			// Multiply this automorphism by pInitOrbits
+			for (int j = m_v; j--;)
+				pResOrbits[j] = pInitOrbits[pntr[j]];
+
+			for (int j = m_v; j--;)
+				pInitOrbits[pResOrbits[j]] = j;
+
+			createGraphOut(pResGraph, pGraph[1], 0, 0, pInitOrbits);
+			PRINT_ADJ_MATRIX(pGraph[1], 0, v, pInitOrbits, "zzz");
+			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+
+			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
+			// multiply q (saved in pResOrbits + m_v) by p^(-1) (which is pInitOrbits)
+			// s=q∘p^−1
+#define	A	1
+#if A
+			const auto q = ppp;
+			const auto p = pInitOrbits;
+#else
+			const auto q = pInitOrbits;
+			const auto p = ppp;
+#endif
+			for (int j = m_v; j--;)
+				pResOrbits[p[j]] = j;   // pResOrbits is p^(-1)
+
+			for (int j = m_v; j--;)
+				s[j] = pResOrbits[q[j]];
+
+			// Obtained permutation (pResOrbits) should be an automorphism of pGraph[0]
+			// Let's check it
+			createGraphOut(pGraph[0], pGraph[1], 0, 0, s);
+			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
+#endif
+		}
+#endif
+	}
+
+	const char* pGraphDescr = "";
+	if (rank3)
+		pGraphDescr = "rank 3 graph";
+	else
+		if (graphType == t_4_vert)
+			pGraphDescr = "4-vertex condition";
+
+	char buf[512], * pBuf = buf;
+	if (graphType != t_regular)
+		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ,μ) = (%d,%2d,%d,%d)",
+			v, graphParam->k, graphParam->λ, graphParam->μ);
+	else
+		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", v, graphParam->k);
+
+	pGraphDB->setTableTitle(buf);
+	if (rank3)
+		graphParam->m_cntr[4]++;
+
+	bool newGraph = true;
+	int prevMatrNumb = m_nPrevMatrNumb;
+	if (pUpperDiag) {
+		prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
+		m_pMarixStorage[typeIdx]->updateRepo(pUpperDiag);
+		newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
+	}
+	else
+		m_nPrevMatrNumb++;
+
+	if (newGraph) {
+		pBuf = buf;
+		// New SRG constructed
+		if (!prevMatrNumb) {
+			std::string fileName;
+#if OUT_SRG_TO_SEPARATE_FILE
+			SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
+			fileName = m_resFileName + buf;
+#else
+			fileName = m_resFileName;
+#endif			
+			const auto len = fileName.length() + 1;
+			delete[] outFileName();
+			memcpy(pBuf = new char[len], fileName.c_str(), len);
+			setOutFileName(pBuf, false);
+		}
+
+		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
+		SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
+		pBuf = buf;
+#if OUT_SRG_TO_SEPARATE_FILE
+		if (!prevMatrNumb) {
+			if (graphType != t_regular)
+				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+			else
+				fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
+		}
+
+		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
+#else
+#if PRINT_NUM_CUR_GRAPH
+		SPRINTFD(pBuf, buf, "\n  *** numCurrGraph = %d ***", numCurrGraph);
+#endif
+		if (graphType != t_regular)
+			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd",
+				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
+		else
+			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
+				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, groupOrder());
+#endif
+		if (rank3)
+			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
+		else
+			if (graphType == t_4_vert)
+				SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
+
+
+		if (rank3 || graphType == t_4_vert)
+			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
+
+		if (graphType != t_regular) {
+			const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
+			const auto grOrder = canonize ? groupOrder() : 0;
+			srgSummary.outSRG_info(v, graphParam, graphType, rank3graph, grOrder, groupSize, nCols / groupSize, srcGroupOrder);
+		}
+
+		fprintf(f, "%s\n", buf);
+		if (pResGraph)
+			outAdjMatrix(pResGraph, f);
+
+		FCLOSE_F(f);
+
+		if (pResGraph && groupOrder() > 1)
+			makeGroupOutput(NULL, false, false);
+	}
+	else {
+		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
+		--graphParam->m_cntr[0];
+		--graphParam->m_cntr[1];
+		if (graphType != t_regular)
+			--graphParam->m_cntr[2];
+
+		if (graphType == t_4_vert)
+			--graphParam->m_cntr[3];
+
+		if (rank3)
+			--graphParam->m_cntr[4];
+	}
+
+	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
+
+	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
+	return true;
+}
 
 t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	if (pGraphParam)
@@ -851,9 +868,10 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	// Check if constructed graph is regular
 	int graphDegree = 0;
 	auto pVertex = pGraph;
-	for (int i = 0; i < m_v; i++, pVertex += m_v) {
+	const auto v = groupDegree();
+	for (int i = 0; i < v; i++, pVertex += v) {
 		int vertexDegree = 0;
-		for (int j = 0; j < m_v; j++)
+		for (int j = 0; j < v; j++)
 			if (pVertex[j])
 				vertexDegree++;
 
@@ -878,17 +896,17 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	case t_complete:return graphType;
 
 	default: // Check if complementary graph is a complete graph or a set of complete graphs 
-		if (graphDegree == m_v - 1 || graphDegree == nCommon[1])
+		if (graphDegree == v - 1 || graphDegree == nCommon[1])
 			return t_complete;
 	}
 
 #if USE_COMPLEMENT != 0
-	if (USE_COMPLEMENT == 1 || 2 * graphDegree > m_v && graphDegree < m_v - 1) {
-		graphDegree = m_v - 1 - graphDegree;
+	if (USE_COMPLEMENT == 1 || 2 * graphDegree > v && graphDegree < v - 1) {
+		graphDegree = v - 1 - graphDegree;
 		// Compute the complement graph by inverting the adjacency relations.
 		auto pVertex = pGraph;
-		for (int i = 0; i < m_v; i++, pVertex += m_v) {
-			for (int j = 0; j < m_v; j++)
+		for (int i = 0; i < v; i++, pVertex += v) {
+			for (int j = 0; j < v; j++)
 				pVertex[j] = 1 - pVertex[j];
 
 			pVertex[i] = 0;
@@ -912,13 +930,14 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCo
 	memset(nCommon, 0, lenCommon);
 	flag = true;
 	auto pFirstVertex = pGraph;
-	for (int i = 0; i < m_v; i++, pFirstVertex += m_v) {
+	const auto v = groupDegree();
+	for (int i = 0; i < v; i++, pFirstVertex += v) {
 		auto pSecondVertex = pFirstVertex;
-		for (int j = i; ++j < m_v;) {
-			pSecondVertex += m_v;
+		for (int j = i; ++j < v;) {
+			pSecondVertex += v;
 			int nCommonCurr, alpha;
 			nCommonCurr = alpha = 0;
-			for (int k = 0; k < m_v; k++) {
+			for (int k = 0; k < v; k++) {
 				if (pFirstVertex[k] && pSecondVertex[k])
 					m_subgraphVertex[nCommonCurr++] = k;
 			}
@@ -930,7 +949,7 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCo
 				// Count the number of edges in the subgraph of two vertices common neighbors 
 				for (int k = 0; k < nCommonCurr; k++) {
 					for (int l = k + 1; l < nCommonCurr; l++) {
-						if (pGraph[m_subgraphVertex[k] * m_v + m_subgraphVertex[l]])
+						if (pGraph[m_subgraphVertex[k] * v + m_subgraphVertex[l]])
 							alpha++;
 					}
 				}
@@ -991,6 +1010,7 @@ t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {
 }
 
 void SRGToolkit::printStat() {
+	const auto v = groupDegree();
 	for (int i = 0; i < 2; i++) {
 		if (!m_pGraphParam[i])
 			continue;
@@ -1005,7 +1025,7 @@ void SRGToolkit::printStat() {
 		const char* pntr0 = plural ? "s" : "";
 		const char* pntr1 = plural ? "are" : "is";
 
-		printfYellow("\nConstructed %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, m_v);
+		printfYellow("\nConstructed %d graph%s of type %d with %d vertices\n", graphParam.m_cntr[0], pntr0, i + 1, v);
 		if (!graphParam.m_cntr[2]) {
 			printfYellow(" • %d %s regular of degree %d\n", graphParam.m_cntr[1], pntr1, graphParam.k);
 			continue;
@@ -1033,14 +1053,14 @@ void SRGToolkit::printStat() {
 			}
 		}
 		printfYellow(" • %d %s strongly regular with parameters: (v, k, λ, μ) = (%d,%2d,%d,%d)\n",
-			graphParam.m_cntr[2], pntr1, m_v, graphParam.k, graphParam.λ, graphParam.μ);
-		const auto v_2k = m_v - 2 * graphParam.k;
-		const auto k = m_v - graphParam.k - 1;
+			graphParam.m_cntr[2], pntr1, v, graphParam.k, graphParam.λ, graphParam.μ);
+		const auto v_2k = v - 2 * graphParam.k;
+		const auto k = v - graphParam.k - 1;
 		const auto λ = v_2k + graphParam.μ - 2;
 		const auto μ = v_2k + graphParam.λ;
 		//graphParam.α = λ * (λ - 1) / 2 - graphParam.α;
 		//graphParam.β = μ * (μ - 1) / 2 - graphParam.β;
-		printfYellow("Complementary graph parameters: (v, k, λ, μ) = (%d,%2d,%2d,%2d)\n", m_v, k, λ, μ);
+		printfYellow("Complementary graph parameters: (v, k, λ, μ) = (%d,%2d,%2d,%2d)\n", v, k, λ, μ);
 		const auto α = graphParam.k - graphParam.β;
 		const auto β = v_2k + graphParam.μ - graphParam.α - 2;
 		//if (n4VertCond)
@@ -1098,16 +1118,17 @@ void SRGToolkit::printAdjMatrix(ctchar* pGraphOut, const char* fileName, int end
 #endif
 
 void SRGToolkit::outAdjMatrix(ctchar* pGraphOut, FILE *f, int endVertex) const {
+	const auto v = groupDegree();
 	if (!endVertex)
-		endVertex = m_v;
+		endVertex = v;
 
 	char buf[1024], * pBuf;
-	for (int i = 0; i < endVertex; i++, pGraphOut += m_v) {
+	for (int i = 0; i < endVertex; i++, pGraphOut += v) {
 		pBuf = buf;
-		for (int j = 0; j < m_v; j++)
+		for (int j = 0; j < v; j++)
 			SPRINTFD(pBuf, buf, "%1d", pGraphOut[j]);
 
-		*(pBuf - m_v + i) = '*';		// *'s on diagonal
+		*(pBuf - v + i) = '*';		// *'s on diagonal
 		SPRINTFD(pBuf, buf, " %2d", i); // row #'s from left
 		fprintf(f, "%s\n", buf);
 	}

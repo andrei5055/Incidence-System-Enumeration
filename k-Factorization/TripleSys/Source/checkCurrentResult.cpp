@@ -65,7 +65,8 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			|| (param(t_submatrixGroupOrderMin) > 0)
 			|| (param(t_nestedGroups) > 1)
 			|| (m_use2RowsCanonization && m_groupSize == 3) // slightly faster (for 15,7,3)
-			|| (m_precalcMode == eCalculateRows && m_groupSize == 2) // significantly faster for gs=2
+			// next check makes 14x2 p1f x10 times faster. Supported by canonizator (SW checks only m_nPrecalcRows rows)
+			|| (m_precalcMode == eCalculateRows)// && m_groupSize == 2)
 			)
 		{
 			bool bPrev = true;
@@ -88,10 +89,16 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 #else
 				bPrev = cnvCheckNew(0, iDay);
 				if (iPrintMatrices & 8) {
-					if (!bPrev)
-						printf(" %d", m_playerIndex);
+					if (!bPrev) {
+						static int ccc = 0;
+						ccc++;
+						if (ccc == 1000) {
+							ccc = 0;
+							printf(" %d:%d", m_playerIndex, iDay);
+						}
+					}
 					else
-						printf(".");
+						;//printf(".");
 				}
 #if !USE_CUDA
 				if ((iPrintMatrices & 4) && iDay > 2)
@@ -102,7 +109,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 #endif
 			// print stat result after all transitions applied
 			StatReportAfterAllTr(ResetStat, "Stat for one improvement. iDay", iDay, bPrint);
-			if (!bPrev || orderOfGroup() < param(t_submatrixGroupOrderMin))
+			if (!bPrev || (m_precalcMode != eCalculateRows && orderOfGroup() < param(t_submatrixGroupOrderMin)))
 				return -1;
 			if (!semiCheck())
 				return -1;
@@ -218,7 +225,7 @@ bool alldata::semiCheck()
 	tchar* lnkT = links(m_numPlayers);
 	bool bSharedLink = false;
 	L2L(lnk, links(), m_numPlayers, unset);
-	if (m_test & 0x4) {
+	if (m_test & 4) {
 		L2L(lnkT, testL, m_numPlayers, 0);
 		if (MEMCMP(lnkT, lnk, nnd4))
 			return false;
@@ -241,7 +248,7 @@ bool alldata::semiCheck()
 	case 3: {
 		// Phase 2 or 3: DBs with links already created 
 		int idx = -1;
-		if (!(m_test & 0x8))
+		if (!(m_test & 8))
 			idx = mShLinks[0]->findObject(lnk, 0, mShLinks[0]->numObjects());
 		if (idx >= 0) {
 			bSharedLink = true;

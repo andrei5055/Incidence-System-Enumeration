@@ -37,6 +37,14 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 			if (m_bPrint) {
 				printf("Total number of precalculated row solutions = %5d\n", m_nRows4);
 				m_lastRowWithTestedTrs = 0;
+				if (m_test & 128) {
+					for (int i = 0; i < m_numPlayers; i++) {
+						for (int j = 0; j < m_pRows[i]->numObjects(); j++) {
+							printTable("\nRow4 and corresponding Row", m_pRows[i]->getObject(j), 2, m_numPlayers, m_groupSize);
+						}
+						m_pRows[i]->releaseAllObjects();
+					}
+				}
 			}
 			m_precalcMode = eCalculateMatrices;
 			m_playerIndex = 0;

@@ -14,10 +14,45 @@ typedef struct SRGParam {
 	t_graphType updateParam(int* pCommon, bool flag_4_ver);
 } SRGParam;
 
-class SRGToolkit : public Generators<ushort>
+class CGraphCanonizer : public Generators<ushort>
 {
 public:
-	SRGToolkit(const kSysParam* pParam, int nCols, int nRows, int groupSize, const std::string& resFileName, int exploreMatrices);
+	CGraphCanonizer(int nVer = 0);
+	~CGraphCanonizer()					{ releaseCanonizerMemory(); }
+
+	ctchar* canonize_graph(ctchar* pGraph = NULL, int* pCanonIdx = NULL);
+	inline auto* graphPntr(int idx = 0) const	{ ASSERT(idx >= 0 && idx <= 1); return m_pGraph[idx]; }
+protected:
+	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert = 0);
+	inline auto lenGraphMatr() const			{ return m_lenGraphMatr; }
+	inline auto* groupOrbits() const			{ return m_pGroupOrbits; }
+private:
+	int Init(int nVer);
+	void initCanonizer();
+	void releaseCanonizerMemory();
+	void initVertexGroupOrbits();
+	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx,
+		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
+	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0, const ushort* pOrb = NULL) const;
+	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
+
+	int m_v;
+	size_t m_lenGraphMatr;
+	tchar* m_pGraph[2] = { nullptr };
+	ushort* m_pOrbits = nullptr;
+	ushort* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
+	ushort* m_pGroupOrbits = nullptr;
+	tchar* m_bUsedFlags = nullptr;
+	ushort* m_pLenOrbits = nullptr;
+	ushort* m_pSavedOrbits = nullptr;
+	ushort* m_pSavedOrbIdx = nullptr;
+};
+
+class SRGToolkit : public CGraphCanonizer
+{
+public:
+	SRGToolkit(ctchar* pGraph, int nVert);
+	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	void printStat();
@@ -25,40 +60,20 @@ private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
-	void initCanonizer();
-	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVertex = 0);
-	int canonizeMatrixRow(ctchar* pGraph, tchar* pVertOut, int vertIdx, 
-		ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex);
-	ushort* restoreParam(int& i, int iStart, ushort* pLenOrbits);
 	void printAdjMatrix(ctchar* pGraphOut, int idx = 0, int endVertex = 0, ushort* pOrb = NULL, const char* fName = "aaa") const;
 	void printAdjMatrix(ctchar* pGraphOut, const char* fileName, int endVertex, int idx = 0, ushort* pOrb = NULL) const;
 	void outAdjMatrix(ctchar* pGraphOut, FILE* f, int endVertex = 0) const;
-	tchar* createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex = 0, int endVertex = 0, const ushort* pOrb = NULL) const;
-	void initVertexGroupOrbits();
 	inline int param(paramID id) const { return m_pParam->val[id]; }
 
-	const int m_nCols;
 	const int m_nRows; 
-	const int m_groupSize;
-	const int m_v;
 	const std::string m_resFileName;
 	const int m_nExploreMatrices;
-	const size_t m_len;
-	const size_t m_lenGraphMatr;
 
 	int m_nPrevMatrNumb = 0;
 	bool m_bChekMatr[2];
-	SRGParam *m_pGraphParam[2] = { nullptr };
-	tchar* m_pGraph[2] = { nullptr };
-	ushort* m_pOrbits = nullptr;
-	ushort* m_pSavedOrbits = nullptr;
-	ushort* m_pGroupOrbits = nullptr;
 	ushort* m_subgraphVertex = nullptr;
-	ushort* m_pNumOrbits = nullptr;     // Number of orbits for each vertex
-	ushort* m_pLenOrbits = nullptr;
-	ushort* m_pSavedOrbIdx = nullptr;
+	SRGParam *m_pGraphParam[2] = { nullptr };
 	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
-	tchar* m_bUsedFlags = nullptr;
 	const kSysParam* m_pParam;
 };
 

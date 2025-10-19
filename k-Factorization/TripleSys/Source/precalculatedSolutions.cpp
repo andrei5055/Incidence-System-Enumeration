@@ -99,12 +99,12 @@ ProcessPrecalculatedRow:
 				std::lock_guard<std::mutex> lock(mtxLinks);
 				if (mpLinks == NULL) {
 					mpLinks = new CStorageIdx<tchar>*[1];
-					mpLinks[0] = new CStorageIdx<tchar>(5000000, 16);
+					mpLinks[0] = new CStorageIdx<tchar>(50000000, 16);
 				}
 				if (mpLinks[0]->isProcessed((ctchar*)msk))
 					SemiPhase++;
 				else {
-					if (!(mpLinks[0]->numObjects() % 100000000))
+					if (!(mpLinks[0]->numObjects() % 1000000))
 						printfGreen(" nMasks(%d rows)=%d, same=%d\n", iDay, mpLinks[0]->numObjects(), SemiPhase);
 				}
 			}
@@ -121,8 +121,8 @@ ProcessPrecalculatedRow:
 			// continue to case 0:
 		}
 		case 0:
-#if 0 //!USE_CUDA
-			if (iDay == 10 && m_bPrint) {
+#if !USE_CUDA
+			if (iDay == 10 && (m_test & 64) && m_bPrint) {
 				m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 				linksFromMatrix(links(), result(), iDay);
 				printTable("Precalc matrix", result(), iDay, numPlayers(), m_groupSize);

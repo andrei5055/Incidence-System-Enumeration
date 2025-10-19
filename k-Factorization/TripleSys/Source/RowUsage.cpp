@@ -156,10 +156,11 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 			const auto pPrevA = (const ll*)(pCompSol);
 			auto pToA = (ll*)(pCompSol + m_lenMask);
 			const auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first));
-			const auto pPrevAStart = pPrevA + m_pRowStorage->numLongs2Skip(iRow);
-			int jNum = m_lenMask - m_pRowStorage->numLongs2Skip(iRow);
-			auto pToAStart = pToA + m_pRowStorage->numLongs2Skip(iRow);
-			const auto pFromAStart = pFromA + m_pRowStorage->numLongs2Skip(iRow);
+			unsigned int numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
+			const auto pPrevAStart = pPrevA + numLongs2Skip;
+			int jNum = m_lenMask - numLongs2Skip;
+			auto pToAStart = pToA + numLongs2Skip;
+			const auto pFromAStart = pFromA + numLongs2Skip;
 			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nc);
