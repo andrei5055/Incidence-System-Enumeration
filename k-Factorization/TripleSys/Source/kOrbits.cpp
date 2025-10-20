@@ -64,13 +64,12 @@ void CKOrbits::encodeSolution(ctchar* pSolution) {
 
 int CKOrbits::createGroupAndOrbits(const CRepository<tchar>* pElemGroup) {
     m_pKOrbGenerators->setOutFileName(outFileName(), false);
+    m_pKOrbGenerators->resetOrbits();
+    setOrbitsCreated(false);
     return RowGenerators::createGroupAndOrbits(pElemGroup);
 }
 
 void CKOrbits::createOrbitsSet(const CRepository<tchar>* pElemGroup) {
-    m_pKOrbGenerators->setGroupOrder(1);
-    m_pKOrbGenerators->setStabilizerLengthAut(groupDegree());
-    m_pKOrbGenerators->releaseAllObjects();
     // Adding orbits:
     auto *pOrb = m_pKOrbGenerators->getNextObject();
     const auto grDegree = m_pKOrbGenerators->groupDegree();
@@ -85,6 +84,6 @@ void CKOrbits::createOrbitsSet(const CRepository<tchar>* pElemGroup) {
         m_pKOrbGenerators->addAutomorphism(grDegree, c, pOrb, true, false, true);
     }
 
-    // In fact, we don't need to 
+    // In fact, we don't need to do that
     m_pKOrbGenerators->updateGroupOrder(grDegree, pOrb);
 }

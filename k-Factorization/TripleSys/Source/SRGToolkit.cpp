@@ -61,6 +61,17 @@ static bool one_common_element(ctchar* pArray1, ctchar* pArray2, int len) {
 	return false;
 }
 
+void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
+	if (retVal > 0) {
+		printfRed("Nested groups check failed on row %d\n", retVal);
+		myExit(1);
+	}
+	else {
+		if (outToScreen && !retVal)
+			printfGreen("Nested groups check OK\n");
+	}
+}
+
 SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices) :
 	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
 	m_resFileName(resFileName), CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
@@ -592,6 +603,7 @@ void SRGToolkit::printStat() {
 template<>
 void Generators<ushort>::makeGroupOutput(const CRepository<ushort>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
+	setOrbitsCreated(false);
 }
 
 template<>
@@ -604,5 +616,5 @@ void Generators<tchar>::makeGroupOutput(const CRepository<tchar>* pElemGroup, bo
 		reportNestedGroupCheckResult(retVal, outToScreen);
 	}
 
-	m_bOrbitsCreated = false;
+	setOrbitsCreated(false);
 }

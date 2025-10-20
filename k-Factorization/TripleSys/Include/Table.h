@@ -135,12 +135,19 @@ public:
 	void makeGroupOutput(const CRepository<T>* pElemGroup, bool outToScreen = false, bool checkNestedGroups = true) override;
 	virtual void createOrbits(const CRepository<T>* pElemGroup);
 	inline auto groupDegree() const			{ return this->m_nc; }
+	void resetOrbits() {
+		this->setGroupOrder(1);
+		this->setStabilizerLengthAut(m_lenStab = groupDegree());
+		this->releaseAllObjects();
+		//setOrbitsCreated(false);
+	}
 protected:
 	virtual void createOrbitsSet(const CRepository<T>* pElemGroup);
 	int testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup = NULL, int rowMin = 2, CKOrbits* pKOrb = NULL) const;
 	void resetGroup()						{ m_lenStab = groupDegree(); }
 	inline bool orbitsCreated() const		{ return m_bOrbitsCreated; }
 	inline void setOrbitsCreated(bool val)	{ m_bOrbitsCreated = val; }
+
 private:
 	CC virtual bool needUpdate(const T* permRow, const T* pOrbits) {
 		if (m_lenStab > this->stabilizerLength())
@@ -177,9 +184,8 @@ void Generators<T>::createOrbits(const CRepository<T>* pElemGroup) {
 
 template<typename T>
 void Generators<T>::createOrbitsSet(const CRepository<T>* pElemGroup) {
-	this->setGroupOrder(1);
-	this->setStabilizerLengthAut(m_lenStab = groupDegree());
-	this->releaseAllObjects();
+	resetOrbits();
+
 	// Adding orbits:
 	auto* pOrb = this->getNextObject();
 	for (int i = groupDegree(); i--;)

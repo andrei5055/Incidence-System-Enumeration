@@ -168,7 +168,6 @@
     <ClCompile Include="Source\convertLinksToResult.cpp" />
     <ClCompile Include="Source\endOfRowPrecalculation.cpp" />
     <ClCompile Include="Source\cycles.cpp" />
-    <ClCompile Include="Source\Generators.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
     <ClCompile Include="Source\getUnselected.cpp" />
     <ClCompile Include="Source\GraphCanonizer.cpp" />
