@@ -15,14 +15,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto iCalcModeOrg = iCalcMode;
 #if !USE_CUDA
 	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
-	m_iTime = clock();
 	m_fHdr = getFileNameAttr(sysParam());
-	m_rTime = m_iTime;
-	m_cTime = m_iTime;
+	m_cTime = m_rTime = m_iTime = clock();
+
 	const bool bNotSpecialMode = iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows;
 	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
 #endif
-	m_test = param(t_test);
 	m_bPrint = (m_printMatrices & 1) != 0;
 	bool bPrintCurrent = (m_printMatrices & 32) != 0;
 	int minRows = nrowsStart;

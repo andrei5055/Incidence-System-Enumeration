@@ -203,9 +203,14 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	}
 #endif
 
-	m_pRows = new CStorageSet<tchar>*[m_numPlayers];
-	for (int i = 0; i < m_numPlayers; i++) {
-		m_pRows[i] = new CStorageSet<tchar>(100, m_numPlayers * 2);
+	m_test = param(t_test);
+	if (m_test & 128) {
+		m_pRows = new CStorageSet<tchar>*[m_numPlayers];
+		int i = nPreconstructedRows + 2;
+		memset(m_pRows, 0, i * sizeof(m_pRows[0]));
+		while (i < m_numPlayers) {
+			m_pRows[i++] = new CStorageSet<tchar>(100, m_numPlayers * 2);
+		}
 	}
 #if Use_GroupOrbits
 	m_pOrbits = new CGroupOrbits<unsigned char>(m_numPlayers);
@@ -283,11 +288,13 @@ CC alldata::~alldata() {
 		delete m_pRowStorage;
 	delete m_pRowUsage;
 
-	for (int i = 0; i < m_numPlayers; i++)
-		delete m_pRows[i];
+	if (m_pRows) {
+		for (int i = 0; i < m_numPlayers; i++)
+			delete m_pRows[i];
 
-	delete[] m_pRows;
-	m_pRows = NULL;
+		delete[] m_pRows;
+	}
+
 	delete m_pGraphCanonizer;
 	releaseBinaryMatricesStorage();
 #if !USE_CUDA

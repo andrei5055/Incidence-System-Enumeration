@@ -358,7 +358,7 @@ CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 	uint last = 0;
 	if (selectPlayerByMask()) {
 		auto availablePlayers = getPlayersMask();
-		getSolutionRange(last, availablePlayers, m_numPreconstructedRows);
+		getSolutionRange(last, availablePlayers, numPreconstructedRows());
 	}
 	else
 		last = m_lastInFirstSet;
@@ -387,18 +387,19 @@ int ggg = 0;
 #endif
 
 
-CC bool CRowStorage::initCompatibilityMasks() {
+CC bool CRowStorage::initCompatibilityMasks(CStorageSet<tchar>** ppSolRecast) {
 #if !USE_CUDA && TRACE_MASKS
 	FOPEN_F(f, "aaa.txt", ggg++ ? "a" : "w");
 	fprintf(f, "Matrix #%4d", ggg);
 #endif
-	const auto pGroupInfo = m_pAllData->groupInfo(sysParam()->val[t_useAutForPrecRows]);
+	const auto* param = sysParam()->val;
+	const auto pGroupInfo = m_pAllData->groupInfo(param[t_useAutForPrecRows]);
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
 	// Define the number of first long long's we don't need to copy to the next row.
 	memset(m_pNumLongs2Skip, 0, m_numDaysResult * sizeof(m_pNumLongs2Skip[0]));
-	int i = m_numPreconstructedRows;
+	int i = numPreconstructedRows();
 	m_pNumLongs2Skip[i] = (m_lastInFirstSet = m_pPlayerSolutionCntr[i]) >> 6;
 
 	// Trivial groups will not be used.
@@ -412,7 +413,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 		return false;
 
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
-	int numRowToConstruct = m_numDaysResult - m_numPreconstructedRows;
+	int numRowToConstruct = m_numDaysResult - numPreconstructedRows();
 	if (numRowToConstruct > (int)m_numSolutionTotal) {
 		REPORT_REGECTION(1);
 		return false;
@@ -428,9 +429,9 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	FCLOSE_F(f);
 #endif
 
-	const auto useCombinedSolutions = sysParam()->val[t_useCombinedSolutions];
+	const auto useCombinedSolutions = param[t_useCombinedSolutions];
 	if (useCombinedSolutions) {
-		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pPlayerSolutionCntr[m_numPreconstructedRows + 1]) - m_numRecAdj));
+		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pPlayerSolutionCntr[numPreconstructedRows() + 1]) - m_numRecAdj));
 		delete [] m_pRowsCompatMasks[0];
 	}
 
@@ -472,7 +473,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 
 	bool skipAllowed = flg && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
-	i = m_numPreconstructedRows - 1;
+	i = numPreconstructedRows() - 1;
 
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
 	int numRemainingSolution = m_numSolutionTotal;
@@ -492,7 +493,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-			if (i == m_numPreconstructedRows || m_pMaskTestingCompleted || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
+			if (i == numPreconstructedRows() || m_pMaskTestingCompleted || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
 				unsigned int rem;
 				if (rem = REM(lastAdj)) {
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
@@ -549,7 +550,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			if (pUsedPlayers) {
 				// We need to mark players who will be potentially used with the last portion of solutions
 				for (; first < last; first++) {
-					ctchar* pSolution = getObject(first);
+					auto* pSolution = getObject(first);
 					for (auto i = m_pAllData->groupSize(); --i;)
 						*pUsedPlayers &= (ll)(-1) ^ ((ll)1 << pSolution[i]);
 				}
@@ -572,13 +573,13 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			const auto pSolution = getObject(last - 1);
 			if (*pUsedPlayers & ((ll)1 << pSolution[1])) {
 				REPORT_REGECTION(3);
-				return false; 
+				return false;
 			}
 		}
 	}
 
 	if (m_numRecAdj) {
-		for (int i = m_numPreconstructedRows; i < m_numPlayers; i++)
+		for (int i = numPreconstructedRows(); i < m_numPlayers; i++)
 			m_pPlayerSolutionCntr[i] -= m_numRecAdj;
 	}
 
@@ -620,7 +621,7 @@ CC bool CRowStorage::initCompatibilityMasks() {
 			// The transformed solutions of the 3rd row which are smaller than 
 			// the current one cannot be compatible with any solution of the 4th row
 			const auto lenRecord = shift + numPlayers();
-			auto const * pSolution = m_pFirstMatr - numPlayers();
+			auto const* pSolution = m_pFirstMatr - numPlayers();
 			my_counter = 0;
 			while (memcmp(pSolution += lenRecord, pCurrentMatr, numPlayers()) < 0)
 				updateMasksByAutForSolution(pSolution, pGroupInfo, m_pRowsCompatMasks[1], 0, m_lastInFirstSet, m_lastInFirstSet);
@@ -644,7 +645,142 @@ CC bool CRowStorage::initCompatibilityMasks() {
 	fprintf(f1, "Matrix #%4d is OK\n", ggg);
 	FCLOSE_F(f1);
 #endif
+
+	if (ppSolRecast) {
+#define COUNT_MASK_WEIGHT	1
+#if COUNT_MASK_WEIGHT
+		const auto prevWeight = countMaskFunc();
+#endif
+		modifyMask(ppSolRecast);
+#if COUNT_MASK_WEIGHT
+		countMaskFunc(prevWeight);
+#endif
+	}
+
 	return true;
+}
+
+size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
+	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
+	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
+	static tchar table[256];
+	const auto numMatrRow = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
+	if (!matrWeight) {
+		// Preparing the table to calculate the weight of the mask matrix.
+		table[0] = 0;
+		for (int i = 1; i < sizeof(table); i++)
+			table[i] = table[i >> 1] + i % 2;
+
+		matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
+		auto availablePlayers = getPlayersMask();
+		unsigned int first, last = 0;
+		int i = numPreconstructedRows() - 1;		
+		while (availablePlayers) {
+			first = getSolutionRange(last, availablePlayers, ++i);
+			const auto portion = last - first;
+			matrWeight -= portion * portion;
+			if (!numFirstSol)
+				numFirstSol = portion;
+		}
+	}
+
+	ctchar* pMask = (ctchar * )getSolutionMask(0);
+	size_t changingWeight, totalWeight = 0;
+	const auto ind = m_numSolutionTotalB * numFirstSol;
+	size_t i = m_numSolutionTotalB * numMatrRow;
+	while (i--) {
+		totalWeight += table[pMask[i]];
+		if (i == ind)
+			changingWeight = totalWeight;
+	}
+
+	changingWeight = totalWeight - changingWeight;
+
+	printf("\nMask matrix total weight: %zd  %5.2f%%\n", totalWeight, double(totalWeight) / matrWeight * 100);
+	printf("\nMask matrix changing weight: %zd  %5.2f%%\n", changingWeight, double(changingWeight) / matrWeight * 100);
+	if (prevWeight)
+		printf("Weight change is %zd:  %5.2f%%\n", prevWeight - changingWeight, double(prevWeight - changingWeight)/ prevWeight * 100);
+
+	return changingWeight;
+}
+
+int CRowStorage::findIndexInRange(int left, int right, ctchar* pSol) const {
+	while (left <= right) {
+		const int mid = left + (right - left) / 2;
+		const auto cmp = memcmp(getObject(mid), pSol, numPlayers());
+		if (!cmp)
+			return mid;
+
+		if (cmp < 0)
+			left = mid + 1;
+		else
+			right = mid - 1;
+	}
+
+	return -1;
+}
+
+CC void CRowStorage::modifyMask(CStorageSet<tchar>** ppSolRecast) {
+#define OUT_RECASTED_SOLUTIONS  1
+	// Update the masks to align with the recast solutions database.
+	char buf[64], * pBuf = buf;
+	SPRINTFD(pBuf, buf, "\nRow4 and corresponding Row #");
+	const auto len = sizeof(buf) - (pBuf - buf);
+	const auto groupSize = m_pAllData->groupSize();
+	int f1, f2, f3, f4;	f1 = f2 = f3 = f4 = 0;
+	int cntr = 0;
+	int i = numPreconstructedRows() + 1;
+	auto right = m_pPlayerSolutionCntr[numPreconstructedRows()];
+	while (++i < numPlayers()) {
+		int cmp = -1;
+		uint last = 0;
+		auto availablePlayers = getPlayersMask();
+		auto first = getSolutionRange(last, availablePlayers, numPreconstructedRows());
+		const auto left = right;
+		right = m_pPlayerSolutionCntr[i-1];
+		auto* pSolRecast = ppSolRecast[i];
+		printf("\ni = %2d: numObj = %3d", i, pSolRecast->numObjects());
+		for (int j = 0; j < pSolRecast->numObjects(); j++) {
+			const auto sol = pSolRecast->getObject(j);
+#if OUT_RECASTED_SOLUTIONS
+			sprintf_s(pBuf, len, "%d", ++cntr);
+			printTable(buf, sol, 2, numPlayers(), groupSize);
+#endif
+			int a = 0;
+			while (cmp < 0 && first < last) {
+				cmp = memcmp(getObject(first++), sol, numPlayers());
+				a++;
+			}
+
+			//ASSERT_IF(first >= last/* || cmp > 0 */);
+			// 
+			// Let's try to find index of the second solution
+			const auto idx = findIndexInRange(left, right, sol + numPlayers());
+			if (!cmp) {
+				f2++;
+				// First vector from current pair of vectors was found,
+				if (idx < 0)
+					f4++;
+
+				auto k = first;
+				auto *pSolMask = getSolutionMask(first) + ((idx) >> SHIFT);
+				const auto maskBit = (tmask)(-1) ^ MASK_BIT(idx);
+				while (++k < last) {
+					*(pSolMask += m_lenSolutionMask) &= maskBit;
+				}
+			}
+			else {
+				f1++;
+				// First vector from current pair of vectors was NOT found
+				if (idx < 0)
+					f3++;
+				first--; // for comparing the previous solution
+			}
+
+			cmp = -1;
+		}
+		pSolRecast->releaseAllObjects();
+	}
 }
 
 CC uint CRowStorage::getSolutionRange(uint& last, ll &availablePlayers, int i) const {

@@ -259,6 +259,7 @@ CStorageIdx<tchar>** mpLinks = NULL;
 CStorageIdx<tchar>** mShLinks = NULL;
 CStorageIdx<tchar>** mShLinks2 = NULL;
 int SemiPhase = 0;
+int NumMatricesProcessed = 0;
 
 void TopGun::finalizeSemiM()
 {
