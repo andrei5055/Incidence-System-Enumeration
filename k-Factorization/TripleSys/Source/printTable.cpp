@@ -223,7 +223,8 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 
 	m_reportInfo = std::format(
 		"T ={}: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
-		timeBuf, nProccesed, nMatrices, fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
+		timeBuf, nProccesed - param(t_nFirstIndexOfStartMatrices), nMatrices - param(t_nFirstIndexOfStartMatrices), 
+		fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
 
 	if (bPrintSetup)
 	{

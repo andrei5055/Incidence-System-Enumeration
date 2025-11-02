@@ -139,7 +139,6 @@ public:
 		this->setGroupOrder(1);
 		this->setStabilizerLengthAut(m_lenStab = groupDegree());
 		this->releaseAllObjects();
-		//setOrbitsCreated(false);
 	}
 protected:
 	virtual void createOrbitsSet(const CRepository<T>* pElemGroup);

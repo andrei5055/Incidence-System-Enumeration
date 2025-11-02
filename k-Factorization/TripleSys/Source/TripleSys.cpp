@@ -19,8 +19,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_fHdr = getFileNameAttr(sysParam());
 	m_rTime = m_iTime;
 	m_cTime = m_iTime;
-	const auto bSavingMatricesToDisk = (iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows) ?
-		param(t_savingMatricesToDisk) : false;
+	const bool bNotSpecialMode = iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows;
+	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
 #endif
 	m_test = param(t_test);
 	m_bPrint = (m_printMatrices & 1) != 0;
@@ -166,8 +166,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		memcpy(m_pResultsPrev2, result(), m_nLenResults);
 		printResultWithHistory("Generated KC-matrix", m_numDaysResult);
 		iDay = m_numDaysResult;
-	for (int i = 0; i < iDay; i++)
-		u1fSetTableRow(neighbors(i), result(i));
+		for (int i = 0; i < iDay; i++)
+			u1fSetTableRow(neighbors(i), result(i));
 	}
 #endif
 
@@ -236,6 +236,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		//testRightNeighbor(iDay + 1);
 		if ((m_test & 16) && !p1f16())
 			goto noResult;
+
+		if ((m_test & 32) && iDay >= m_matrixCanonInterval && m_matrixCanonInterval >= 3 && m_groupSize == 2 && m_numPlayers <= 16) {
+			ll msk[2];
+			addMaskToDB(msk, result(0), m_matrixCanonInterval, m_numPlayers, 1);
+		}
+
 		goto checkCurrentMatrix;
 	}
 
@@ -473,6 +479,7 @@ cont1:
 				*pcnt = -m_finalKMindex - 1;
 				*(pcnt + 1) = nLoops;
 			}
+			//printTable("Result", result(), iDay, m_numPlayers, m_groupSize, -1); // print comma separated values
 
 			const auto pMatrTest = sysParam()->strVal[t_matrTest];
 			if (pMatrTest) {
@@ -550,11 +557,21 @@ noResult:
 	printf("Matr# %4d: ********** cntr = %lld  = %lld\n", ++nMatr, cntr, cntrTotal += cntr);
 	cntr = 0;
 #endif
-#if 1
+#if !USE_CUDA
+#include <mutex>
+	extern std::mutex mtxLinks; // The mutex to protect the shared resource
 	extern CStorageIdx<tchar>** mpLinks;
 	extern int SemiPhase;
-	if (mpLinks && (m_test & 32) && m_groupSize == 2 && m_numPlayers == 16) {
-		printfGreen("Final nMasks(%d rows)=%d, same=%d\n", m_numDaysResult, mpLinks[0]->numObjects(), SemiPhase);
+	extern int NumMatricesProcessed;
+	if (m_bPrint) {
+		std::lock_guard<std::mutex> lock(mtxLinks);
+		if (mpLinks && (m_test & 32) && bNotSpecialMode && m_groupSize == 2 && m_numPlayers <= 16) {
+			printfYellow(" %d Total checked(%d are the same). Row:Links ", NumMatricesProcessed, SemiPhase);
+			for (int i = 3; i < m_numDaysResult; i++)
+				if (mpLinks[i])
+					printfGreen("%d:%d ", i + 1, mpLinks[i]->numObjects());
+			printf("\n");
+		}
 	}
 #endif
 	return nLoops;

@@ -6,10 +6,119 @@
 extern std::mutex mtxLinks; // The mutex to protect the shared resource
 extern CStorageIdx<tchar>** mpLinks;
 extern int SemiPhase;
+extern int NumMatricesProcessed;
+#define CheckMissingMatrix 0
+#if CheckMissingMatrix
+tchar missingMatrix[] = {
+  0,  1,   2,  3,   4,  5,   6,  7,   8,  9,  10, 11,  12, 13, 
+  0,  2,   1,  4,   3,  6,   5,  8,   7, 10,   9, 12,  11, 13, 
+  0,  3,   1,  5,   2,  7,   4,  9,   6, 12,   8, 11,  10, 13, 
+  0,  4,   1,  7,   2, 11,   3, 12,   5,  9,   6, 10,   8, 13, 
+  0,  5,   1, 12,   2, 13,   3, 10,   4,  6,   7,  8,   9, 11, 
+  0,  6,   1, 11,   2,  9,   3,  4,   5, 12,   7, 13,   8, 10, 
+  0,  7,   1, 10,   2,  5,   3, 11,   4, 13,   6,  9,   8, 12, 
+  0,  8,   1,  2,   3, 13,   4, 10,   5,  6,   7,  9,  11, 12, 
+  0,  9,   1, 13,   2,  8,   3,  5,   4,  7,   6, 11,  10, 12, 
+  0, 10,   1,  6,   2,  4,   3,  8,   5, 11,   7, 12,   9, 13, 
+  0, 11,   1,  3,   2, 12,   4,  8,   5,  7,   6, 13,   9, 10, 
+  0, 12,   1,  9,   2, 10,   3,  7,   4, 11,   5, 13,   6,  8, 
+  0, 13,   1,  8,   2,  6,   3,  9,   4, 12,   5, 10,   7, 11
+};
+tchar canonicalLinks[] = {
+  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0, 
+  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  0,  0, 
+  1,  1,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  1, 
+  1,  1,  1,  0,  1,  1,  1,  0,  0,  1,  1,  1,  1,  0, 
+  1,  1,  1,  1,  0,  1,  0,  1,  0,  1,  1,  0,  1,  1, 
+  1,  1,  1,  1,  1,  0,  0,  0,  1,  0,  1,  1,  1,  1, 
+  1,  1,  1,  1,  0,  0,  0,  1,  0,  1,  1,  1,  1,  1, 
+  1,  1,  1,  0,  1,  0,  1,  0,  1,  1,  0,  1,  1,  1, 
+  1,  1,  1,  0,  0,  1,  0,  1,  0,  1,  1,  1,  1,  1, 
+  1,  1,  0,  1,  1,  0,  1,  1,  1,  0,  1,  1,  0,  1, 
+  1,  0,  0,  1,  1,  1,  1,  0,  1,  1,  0,  1,  1,  1, 
+  0,  1,  0,  1,  0,  1,  1,  1,  1,  1,  1,  0,  1,  1, 
+  0,  0,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  0,  1, 
+  0,  0,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0, 
+};
+#endif
+int alldata::addMaskToDB(ll* msk, tchar* r, int nr, int nc, int np) {
+	msk[0] = msk[1] = 0;
+	memset(m_pGraph, 0, nc * nc);
+	
+	for (tchar i = 0; i < (nr * nc); i += 2) {
+		m_pGraph[r[i] * nc + r[i + 1]] = 1;
+		m_pGraph[r[i + 1] * nc + r[i]] = 1;
+	}
 
+#if CheckMissingMatrix
+	if (memcmp(missingMatrix, r, nr * nc) == 0) {
+		printfRed("%d rows 'missing' submatrix\n", nr);
+		printTable("'missing' submatrix", missingMatrix, nr, nc, m_groupSize);
+		printTableColor("'missing submatrix' links", m_pGraph, nc, nc, 0);
+	}
+#endif
+	if (np == 1)
+		printTableColor("\nInput links", m_pGraph, nc, nc, 0);
+
+	auto* pCanonGraph = ((CGraphCanonizer*)m_pGraphCanonizer)->canonize_graph();
+	if (np == 1)
+		printTableColor("Canonical links", pCanonGraph, nc, nc, 0);
+#if CheckMissingMatrix
+	if (memcmp(canonicalLinks, pCanonGraph, nc * nc) == 0 && 
+		memcmp(missingMatrix, r, nr * nc) != 0) {
+		printfYellow("Submatrix below has the same canonical Links table as the 'missing' submatrix\n");
+		printTable("Submatrix with same as 'missing' submatrix canonical Links table", r, nr, nc, m_groupSize);
+		printTable("'Missing' submatrix", missingMatrix, nr, nc, m_groupSize);
+		printTableColor("Canonical Links", pCanonGraph, nc, nc, 0);
+	}
+#endif
+	int m_lenMask = 16; // needed for assert in SetMask below
+	for (tchar i = 0; i < nc; i++) {
+		for (tchar j = i + 1; j < nc; j++) {
+			if (pCanonGraph[i * nc + j]) {
+				SetMask(msk, i, j);
+			}
+		}
+	}
+	std::lock_guard<std::mutex> lock(mtxLinks);
+	int id = nr - 1;
+	if (mpLinks == NULL) {
+		NumMatricesProcessed = 1;
+		mpLinks = new CStorageIdx<tchar>*[m_numDaysResult];
+		memset(mpLinks, 0, m_numDaysResult * sizeof(mpLinks[0]));
+	}
+	if (!mpLinks[id]) {
+		mpLinks[id] = new CStorageIdx<tchar>(50000000, 16);
+	}
+	bool bSame = false;
+	NumMatricesProcessed++;
+	//if (mpLinks[id]->isProcessed((ctchar*)msk)) {
+	if (mpLinks[id]->findObject((ctchar*)msk, 0, mpLinks[id]->numObjects()) != UINT_MAX) {
+#if CheckMissingMatrix
+		if (memcmp(missingMatrix, r, nr * nc) == 0) {
+			printfYellow("Canonical links table for 'missing' submatrix is already present in DB, Skipped\n");
+		}
+#endif
+		bSame = true;
+		SemiPhase++;
+	}
+
+	if (!(NumMatricesProcessed % np)) {
+		printfGreen(" %d Total checked(%d are the same). Row:Links ", NumMatricesProcessed, SemiPhase);
+		for (int i = 3; i < m_numDaysResult; i++)
+			if (mpLinks[i])
+				printfGreen("%d:%d ", i + 1, mpLinks[i]->numObjects());
+		printf("\n");
+	}
+	if (bSame)
+		return 0;
+	return id;
+}
 CC ePrecalculateReturn alldata::precalculatedSolutions(eThreadStartMode iCalcMode)
 {
+	ll msk[2];
 	int iDaySaved = 0;
+	int iLastDay = 0;
 ProcessPrecalculatedRow:
 	if (iDaySaved) {
 		if (m_pRowUsage->getMatrix2(result(), neighbors(), numDaysResult(), iDaySaved)) {
@@ -53,11 +162,15 @@ ProcessPrecalculatedRow:
 			}
 			if (iDay >= numDaysResult())
 			{
-				//ASSERT(1);
+				//ASSERT_IF(1);
 				return eNoResult;
 			}
 		}
-
+		if (iLastDay >= iDay) {
+			std::lock_guard<std::mutex> lock(mtxLinks);
+			mpLinks[iLastDay]->updateRepo((ctchar*)msk); 
+			iLastDay = 0;
+		}
 		if (m_lastRowWithTestedTrs >= iDay)
 			m_lastRowWithTestedTrs = iDay - 1;
 		const auto retVal = m_pRowUsage->getRow(iDay, ipx);
@@ -88,38 +201,22 @@ ProcessPrecalculatedRow:
 			}
 
 			m_pRowUsage->getMatrix(result(), neighbors(), iDay);
+#if CheckMissingMatrix
+			//if (memcmp(missingMatrix, result(), iDay * m_numPlayers) == 0) 
+			//	iDay = iDay;
+#endif
 #if 1
-			if (iDay == m_numDaysResult && (m_test & 32) && m_groupSize == 2 && m_numPlayers == 16) {
-				ll msk[2];
-				msk[0] = msk[1] = 0;
-				memset(m_pGraph, 0, 16 * 16);
-				tchar* r = result();
-				int m_lenMask = 16;
-				for (tchar i = 0; i < (m_numDaysResult * 16); i += 2) {
-					m_pGraph[r[i] * 16 + r[i + 1]] = 1;
-					m_pGraph[r[i + 1] * 16 + r[i]] = 1;
+			if ((m_test & 32) && checkCanonicity() && m_groupSize == 2 && m_numPlayers <= 16) {
+				if (iLastDay) {
+					printfRed("iLastDay not 0(%d)\n", iLastDay);
+					exit(1);
 				}
-				auto* pCanonGraph = ((CGraphCanonizer*)m_pGraphCanonizer)->canonize_graph();
-				
-				for (tchar i = 0; i < 16; i++) {
-					for (tchar j = i + 1; j < 16; j++) {
-						if (pCanonGraph[i * 16 + j]) {
-							SetMask(msk, i, j);
-						}
-					}
+				iLastDay = addMaskToDB(msk, result(0), iDay, m_numPlayers, 100000);
+				if (!iLastDay) {
+					iDay--;
 				}
-				std::lock_guard<std::mutex> lock(mtxLinks);
-				if (mpLinks == NULL) {
-					mpLinks = new CStorageIdx<tchar>*[1];
-					mpLinks[0] = new CStorageIdx<tchar>(50000000, 16);
-				}
-				if (mpLinks[0]->isProcessed((ctchar*)msk))
-					SemiPhase++;
-
-				if (!((SemiPhase + mpLinks[0]->numObjects()) % 1000000))
-					printfGreen(" nMasks(%d rows)=%d, same=%d\n", iDay, mpLinks[0]->numObjects(), SemiPhase);
-
-			}
+				goto ProcessPrecalculatedRow;
+			}	
 #endif
 			iDay--;
 #if !USE_CUDA

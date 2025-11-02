@@ -50,6 +50,8 @@ CC void printTable(char const* name, const T* c, int nl, int nc, int np, int ns 
 				printf(" ");
 
 			printValue<T>(v, scale);
+			if (!makeString && ns == -1)
+				printf(",");
 		}
 		if (j + 1 >= nl || ns <= 0 || ((j + 1) % ns) == 0)
 			makeString ? printf(" \"\n") : printf("\n");
