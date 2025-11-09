@@ -55,7 +55,7 @@ void alldata::reportCurrentMatrix()
 	m_rowTime[iDay] = m_cTime - m_iTime;
 	if (maxDays < iDay || m_cTime - m_rTime > ReportInterval)
 	{
-		if (m_bPrint)
+	//	if (m_bPrint)
 		{
 			printf("Thread %d: Current data for %s-matrix %zd: rows=%d, build time=%d, time since start=%d\n",
 				m_threadNumber, m_fHdr, nLoops + 1, iDay + 1, m_cTime - m_rTime, m_cTime - m_iTime);
@@ -66,6 +66,20 @@ void alldata::reportCurrentMatrix()
 			reportCheckLinksData();
 #endif
 		StatReportPeriodically(ResetStat, "Stat current. iDay", iDay, bPrint);
+
+#include <mutex>
+		extern std::mutex mtxLinks; // The mutex to protect the shared resource
+		extern CStorageIdx<tchar>** mpLinks;
+		extern int SemiPhase;
+		extern int NumMatricesProcessed;
+		if (mpLinks) {
+			printfGreen(" %d Total checked(%d are the same). Row:Links ", NumMatricesProcessed, SemiPhase);
+			for (int i = 3; i < m_numDaysResult; i++)
+				if (mpLinks[i])
+					printfGreen("%d:%d ", i + 1, mpLinks[i]->numObjects());
+			printf("\n");
+		}
+
 		m_rTime = m_cTime;
 		maxDays = iDay;
 	}

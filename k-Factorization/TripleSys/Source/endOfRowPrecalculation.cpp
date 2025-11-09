@@ -43,8 +43,9 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 
 			if (!m_pRowStorage->initCompatibilityMasks(m_pRows)) {
 #if !USE_CUDA
-				//printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
-				//ASSERT_IF(1);
+				printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
+				ASSERT_IF(1);
+				exit(101);
 #endif
 				if (param(t_MultiThreading)) {
 					nLoops = 0;

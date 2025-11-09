@@ -61,7 +61,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 			return -1;
 #if 1
 		if ((iDay == numDaysResult())
-			|| checkCanonicity()
+			|| checkSubmatrix()
 			|| (param(t_submatrixGroupOrderMin) > 0)
 			|| (param(t_nestedGroups) > 1)
 			|| (m_use2RowsCanonization && m_groupSize == 3) // slightly faster (for 15,7,3)

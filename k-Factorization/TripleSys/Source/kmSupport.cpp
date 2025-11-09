@@ -224,7 +224,17 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 		case 1: return coi[1] == mi[1] ? 1 : 2;
 		}
 	}
-	return (bPrecalcRow || param(t_nestedGroups) > 1) ? 3 : 0;
+	if (bPrecalcRow) {
+#if 0
+		if (*(coi + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
+			if (MEMCMP(coi, m_pRowStorage->m_firstPrecalcRow, nc) == 0)
+				return -1;
+			//printTableColor("c", coi, 1, nc, 2);
+		}
+#endif
+		return 3;
+	}
+	return (param(t_nestedGroups) > 1) ? 3 : 0;
 }
 CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int iDayCurrent, int ip) const
 {
@@ -503,7 +513,18 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			return 1;
 		}
 	}
-	return bPrecalcRow ? 3 : 0;
+	if (bPrecalcRow) {
+#if 0
+		if (tm[nrr] != unset) {
+			if (*(m_Ktmp + nrr * nc + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
+				if (MEMCMP(m_Ktmp + nrr * nc, m_pRowStorage->m_firstPrecalcRow, nc) < 0)
+					return -1;
+			}
+		}
+#endif
+		return 3;
+	}
+	return 0;
 }
 CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
 {
@@ -702,6 +723,16 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 		}
 		j++;
 		mii += nc;
+	}
+
+	if (bPrecalcRow) {
+#if 0
+		if (*(moi + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
+			if (MEMCMP(moi, m_pRowStorage->m_firstPrecalcRow, nc) < 0)
+				return -1;
+		}
+#endif
+		return 3;
 	}
 	return 0;
 }

@@ -135,11 +135,12 @@ int TopGun::Run()
 		if (bUseMultiThread2)
 		{
 			int icode = 0;
+			const auto reportPrecalculated = param(t_printMatrices);
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mfirst, nRowsStart(), NULL, &m_reportInfo)) {
-					if (param(t_printMatrices))
-						printfYellow("*** Number of pre-calculated solutions is 0 for matrix %d\n", m_iMatrix + 1);
+					if (reportPrecalculated)
+						printfYellow("*** There are no pre-calculated solutions for row %d od the matrix %d\n", sys.numRowWithNoSolution(), m_iMatrix + 1);
 				}
 				else {
 					for (uint iTask = 0; iTask < numThreads; iTask++)

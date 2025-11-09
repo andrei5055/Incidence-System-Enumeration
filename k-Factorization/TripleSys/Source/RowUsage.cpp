@@ -33,7 +33,7 @@ void multiplyAll(ll* aa, const ll* bb, const ll* cc, int n) {
 #include <algorithm>
 void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	int i = 0;
-#if 1
+#if 0
 	static int iAvx512Support = 0;
 	switch (iAvx512Support) {
 	case 0:
@@ -106,17 +106,10 @@ void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 }
 #endif
 CC void CRowUsage::init(int iThread, int numThreads) {
-	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
-	const auto iRow = m_pRowStorage->numPreconstructedRows();
-	if (iThread) {
-		// Determine the maximum number of solutions for the first non-predetermined row.  
-		m_pRowSolutionIdx[0] = 0;
-		uint last = iRow;
-		m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx, &last, m_pRowStorage->getPlayersMask());
-	}
-
-	m_threadID = m_pRowSolutionIdx[iRow] = iThread;
+	m_threadID = iThread;
 	m_step = numThreads;
+	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
+	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = 0;
 }
 
 #define nc 0//500000 // 100000000;
@@ -151,7 +144,16 @@ void testLogicalMultiplication(const long long* h_A, const long long* h_B, long 
 #define testLogicalMultiplication(...)
 #endif
 
+#if COUNT_GET_ROW_CALLS
+ll getRowCallsCalls = 0;
+size_t totalWeighChange = 0;
+#define incGetRowCalls()	getRowCallsCalls++
+#else
+#define incGetRowCalls()
+#endif
+
 CC int CRowUsage::getRow(int iRow, int ipx) {
+	incGetRowCalls();
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
 
@@ -162,6 +164,9 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 
 	uint last = iRow;
 	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
+	if (!first)
+		first += m_threadID;
+
 	if (last == UINT_MAX)
 		return availablePlayers ? 0 : -1;
 
@@ -194,6 +199,15 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	}
 	auto* pCompSol = m_pCompatibleSolutions + nRow * m_lenMask;
 	const auto lastB = IDX(last);
+#if 0
+	static int c[16], cc;
+	c[m_threadID]++;
+	cc++;
+	if (cc >= 10000000) {
+		printTable("nr", c, 1, 16, 0);
+		cc = 0;
+	}
+#endif
 
 	while (true) {
 		// Skip all bytes/longs equal to 0
@@ -239,7 +253,14 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 
 						// Check left, middle and right parts of the solution interval for i-th row
 						auto mask = pRowSolutionMasks[i - 1];
-
+						/*
+						static int c[16], cc;
+						c[i]++;
+						cc++;
+						if ((cc % 100000000) == 0) {
+							//printTable("nr", c, 1, 16, 0);
+							cc = 0;
+						}**/
 						if (mask) {
 							if (mask & pToA[j]) {
 								continue;  // at least one solution masked by left part of the interval is still valid
@@ -247,29 +268,31 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 							j++;
 						}
 						// middle part
+#if 0
+						while (j < jMax && !pToA[j]) {
+							j++;
+						}
+						// we do not need "if" below if we use "while" below instead of while above
+						if (j < jMax) {
+							continue;   // at least one solution masked by middle part of the interval is still valid
+						}
+#else
 						while (j + 4 <= jMax) {
-#if 0 // USE_INTRINSIC
+#if 1 // USE_INTRINSIC
 							__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
 							if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
 #else
-							if (pToA[j]) goto Cont1;
-							if (pToA[j + 1]) goto Cont1;
-							if (pToA[j + 2]) goto Cont1;
-							if (pToA[j + 3]) goto Cont1;
+							if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
+								goto Cont1;
 #endif
 							j += 4;
 						}
-						// middle part
 						switch (jMax - j) {
 						case 3: if (pToA[j + 2]) goto Cont1;
 						case 2: if (pToA[j + 1] ) goto Cont1;
 						case 1: if (pToA[j]) goto Cont1;
 						}
-
-						/** we do not need it (?)
-						if (j < jMax) {
-							continue;   // at least one solution masked by middle part of the interval is still valid
-						} **/
+#endif
 						// There are no valid solutions with the indices inside 
 						// the interval defined by set of long longs
 						mask = pRowSolutionMasks[i];

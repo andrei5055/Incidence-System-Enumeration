@@ -8,7 +8,12 @@
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
+
 #define TestOption1 3
+
+#define COUNT_MASK_WEIGHT		0
+#define OUT_RECASTED_SOLUTIONS  0
+#define COUNT_GET_ROW_CALLS		0          // Trace and print the number of calls of CRowUsage::getRow() method 
 
 #define UseRowsPrecalculation  0 // The number of first rows of the matrix from which we start to pre-calculate the remaining rows. 
                                  // ntd: change to parameter, check input params that numbers of rows in input is 3 or less
@@ -187,6 +192,7 @@ public:
 	CC inline tchar *result(int nDay = 0) const		{ return m_pResults + nDay * m_numPlayers; }
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
 	CC inline auto transformedMatrix() const		{ return m_Km; }
+	CC inline auto numRowWithNoSolution() const		{ return m_secondPlayerInRow4; }
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
 	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
@@ -271,8 +277,8 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkCanonicity() const { return (iDay == m_matrixCanonInterval); }
-	//CC inline bool checkCanonicity() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
+	CC inline bool checkSubmatrix() const { return (iDay <= m_matrixCanonInterval); }
+	//CC inline bool checkSubmatrix() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;

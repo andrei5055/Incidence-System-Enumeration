@@ -46,8 +46,8 @@ int alldata::addMaskToDB(ll* msk, tchar* r, int nr, int nc, int np) {
 	memset(m_pGraph, 0, nc * nc);
 	
 	for (tchar i = 0; i < (nr * nc); i += 2) {
-		m_pGraph[r[i] * nc + r[i + 1]] = 1;
-		m_pGraph[r[i + 1] * nc + r[i]] = 1;
+		auto const a = r[i], b = r[i + 1];
+		m_pGraph[b * nc + a] = m_pGraph[a * nc + b] = 1;
 	}
 
 #if CheckMissingMatrix
@@ -59,8 +59,17 @@ int alldata::addMaskToDB(ll* msk, tchar* r, int nr, int nc, int np) {
 #endif
 	if (np == 1)
 		printTableColor("\nInput links", m_pGraph, nc, nc, 0);
-
-	auto* pCanonGraph = ((CGraphCanonizer*)m_pGraphCanonizer)->canonize_graph();
+	/*leo*/
+	tchar tmp[16 * 16];
+	memcpy(tmp, m_pGraph, nc * nc);
+	auto* pCanonGraph = m_pGraphCanonizer->canonize_graph();
+	int ic = memcmp(tmp, pCanonGraph, nc * nc);
+	if (ic > 0) {
+		printTableColor("\nInput links", tmp, nc, nc, 0);
+		printTableColor("Canonized", pCanonGraph, nc, nc, 0);
+		exit(1);
+	}
+	return ic < 0 ? 0 : 1;
 	if (np == 1)
 		printTableColor("Canonical links", pCanonGraph, nc, nc, 0);
 #if CheckMissingMatrix
@@ -92,8 +101,8 @@ int alldata::addMaskToDB(ll* msk, tchar* r, int nr, int nc, int np) {
 	}
 	bool bSame = false;
 	NumMatricesProcessed++;
-	//if (mpLinks[id]->isProcessed((ctchar*)msk)) {
-	if (mpLinks[id]->findObject((ctchar*)msk, 0, mpLinks[id]->numObjects()) != UINT_MAX) {
+	if (mpLinks[id]->isProcessed((ctchar*)msk)) {
+	//if (mpLinks[id]->findObject((ctchar*)msk, 0, mpLinks[id]->numObjects()) != UINT_MAX) {
 #if CheckMissingMatrix
 		if (memcmp(missingMatrix, r, nr * nc) == 0) {
 			printfYellow("Canonical links table for 'missing' submatrix is already present in DB, Skipped\n");
@@ -166,11 +175,12 @@ ProcessPrecalculatedRow:
 				return eNoResult;
 			}
 		}
+		/**leo
 		if (iLastDay >= iDay) {
 			std::lock_guard<std::mutex> lock(mtxLinks);
 			mpLinks[iLastDay]->updateRepo((ctchar*)msk); 
 			iLastDay = 0;
-		}
+		}*/
 		if (m_lastRowWithTestedTrs >= iDay)
 			m_lastRowWithTestedTrs = iDay - 1;
 		const auto retVal = m_pRowUsage->getRow(iDay, ipx);
@@ -189,7 +199,7 @@ ProcessPrecalculatedRow:
 				m_rowTime[iDay] = m_cTime - m_iTime;
 			}
 #endif
-			if (++iDay < numDaysResult() && !checkCanonicity()) {
+			if (++iDay < numDaysResult() && !checkSubmatrix()) {
 
 #if 0   // Temporary
 				if (!p1f_counter || ((++m_p1f_counter) % p1f_counter))
@@ -206,15 +216,15 @@ ProcessPrecalculatedRow:
 			//	iDay = iDay;
 #endif
 #if 1
-			if ((m_test & 32) && checkCanonicity() && m_groupSize == 2 && m_numPlayers <= 16) {
+			if ((m_test & 32) && checkSubmatrix() && m_groupSize == 2 && m_numPlayers <= 16) {
+				/*leo
 				if (iLastDay) {
 					printfRed("iLastDay not 0(%d)\n", iLastDay);
 					exit(1);
-				}
+				}*/
 				iLastDay = addMaskToDB(msk, result(0), iDay, m_numPlayers, 100000);
-				if (!iLastDay) {
+				if (!iLastDay)
 					iDay--;
-				}
 				goto ProcessPrecalculatedRow;
 			}	
 #endif

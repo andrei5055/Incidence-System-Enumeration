@@ -549,11 +549,12 @@ noResult:
 
 #endif
 #if COUNT_GET_ROW_CALLS && !USE_CUDA
-	extern ll cntr;
+	extern ll getRowCallsCalls;
+	extern size_t totalWeighChange;
 	static int nMatr;
 	static ll cntrTotal;
-	printf("Matr# %4d: ********** cntr = %lld  = %lld\n", ++nMatr, cntr, cntrTotal += cntr);
-	cntr = 0;
+	printf("Matr# %4d: ********** cntr = %lld  = %lld  totalWeighChange = %zd\n", ++nMatr, getRowCallsCalls, cntrTotal += getRowCallsCalls, totalWeighChange);
+	getRowCallsCalls = 0;
 #endif
 #if !USE_CUDA
 #include <mutex>

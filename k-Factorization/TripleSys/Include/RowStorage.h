@@ -9,7 +9,6 @@
 #define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
-#define COUNT_GET_ROW_CALLS  0          // Trace and print the number of calls of CRowUsage::getRow() method 
 
 typedef long long ll;
 
@@ -51,7 +50,7 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
-	CC bool initCompatibilityMasks(CStorageSet<tchar>** ppSolRecast = NULL);
+	CC int initCompatibilityMasks(CStorageSet<tchar>** ppSolRecast = NULL);
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
@@ -195,6 +194,8 @@ private:
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 	bool m_bUseAut;
+	public:
+		tchar m_firstPrecalcRow[MAX_PLAYER_NUMBER];
 };
 
 class CRowUsage : public CompSolStorage {
