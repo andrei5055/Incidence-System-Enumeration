@@ -1,77 +1,5 @@
-#include "TripleSys.h"  
-void aq()
-{
-#define N 28
-	tchar v[N];
-	tchar vk[N];
-	tchar tr[N];
-	int trib[N];
-	int cnt[N*2];
-	trib[0] = 0;
-	trib[1] = 1;
-	trib[2] = 1;
-	double nsOld = 1;
-	for (int i = 3; i < N; i++)
-		trib[i] = trib[i - 1] + trib[i - 2] + trib[i - 3];
-	for (int i = 0;i < N;i++)
-		v[i] = i + 1;
-	for (int nv = 3; nv <= 8; nv++) {
-		int nvm2 = nv - 1;
-		int n2 = 1 << nvm2;
-		int ns = 0;
-		int nlast = 0;
-		memset(cnt, 0, sizeof(cnt));
-		for (int j = 0; j < n2; j++) {
-			int km = nv;
-			int k1 = 0;
-			for (int n = 0; n < nv; n++) {
-				if (j & (1 << n))
-					vk[--km] = n + 1;
-				else
-					vk[k1++] = n + 1;
-			}
-			k1 = 0;
+#include "TripleSys.h"
 
-			for (int n = 0; n < nv; n++)
-				tr[vk[n] - 1] = n + 1;
-			
-			//printTableColor("tr", tr, 1, nv, 1);
-			//printTableColor("vks", vk, 1, nv, 1);
-			for (int n = 0; n < nv; n++) {
-				if (tr[k1] == 0)
-					goto err1;
-				int k0 = k1;
-				k1 = tr[k1] - 1;
-				tr[k0] = 0;
-			}
-			ns++;
-			printf(" %d", j);
-			if (vk[1] == nv)
-				nlast++;
-			//cnt[vk[0] - 1]++;
-			for (int ic = 1; ic < nv; ic++)
-				cnt[(vk[ic] - vk[ic-1] + nv)]++;
-			//printTableColor("vkr", vk, 1, nv, 1);
-		err1: continue;
-		}
-		int is = 0;
-		trib[0] = 1;
-		for (int ic = nv - 3; ic >= 0; ic--)
-			is += trib[ic];
-
-		//printf("N=%2d S=%6d %6d TF=%6d nl=%d", nv, ns, trib[nv - 2], is, nlast);
-		//printf("N=%2d S=%6d R=%.3f log2=%.3f", nv, ns, ns / nsOld, log2(ns) - nv + 6);
-		printf("\nN=%2d S=%6d R=%.3f log2=%.3f", nv, ns, ns / nsOld, log2(ns) - nv + 6);
-		nsOld = ns;
-		/**
-		for (int ic = 0; ic < sizeof(cnt) / sizeof(cnt[0]); ic++)
-			if (cnt[ic])
-				printf(" %d:%d", ic - nv, cnt[ic]);**/
-		printf("\n");
-		//printf("N=%2d S=%6d approximation=%.0f\n", nv, ns, pow(1.74, nv-2));
-	}
-	exit(0);
-}
 bool addRow(tchar* allPaths, int maxP, int* pnp, tchar* path, int pathLength)
 {
 	int np = *pnp;
@@ -283,104 +211,108 @@ void alldata::TestkmProcessMatrix(int nrows, unsigned char n, const tchar* tr, c
 		icmp = (this->*m_pProcessMatrix)(res, ttr, nrows, n, NULL);
 	}
 }
-void alldata::testCanonizatorSpeed()
+bool alldata::canonizeMatrix(int nRows)
 {
-#if 0
-	tchar tr[] = { 0,2,1,6,8,7,3,5,4,18,20,19,24,26,25,21,23,22,9,11,10,15,17,16,12,14,13 };
-	kmProcessMatrix(result(), tr, iDay);
-	printTable("ktmp", m_Ktmp, iDay, 27, 3);
-#endif
-	m_precalcMode = eCalcResult; // 
-	// sort matrix from data.h
-	kmProcessMatrix(result(), NULL, iDay);
+	auto precalcMode = m_precalcMode;
+	m_precalcMode = eCalcResult;
+	//printTable("Input matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+
+	tchar tm[MAX_PLAYER_NUMBER];
+	memset(tm, 0, sizeof(tm));
+	memcpy(m_Km, result(), nRows * m_numPlayers);
+	(this->*m_pSortGroups)(m_Km, nRows);
+	auto* coi = m_Ktmp;
+	auto* cii = m_Km;
+	for (int i = 0; i < nRows; i++, coi += m_numPlayers, cii += m_numPlayers)
+		kmSortGroupsByFirstValue(cii, coi);
+	// Result of the loop above is in m_Ktmp, sort and send it to m_Km.
+	kmSortRowsBy2ndValue(nRows, tm);
+	memcpy(result(), m_Km, nRows * m_numPlayers);
+	// sort matrix 
+	kmProcessMatrix(result(), NULL, nRows);
 	auto* pRes1 = m_Km;
-	int iret = memcmp(pRes1, result(), iDay * m_numPlayers);
+	int iret = memcmp(pRes1, result(), nRows * m_numPlayers);
 	if (iret)
 	{
-		printfYellow("Sorted matrix different than original\n");
-		memcpy(result(), pRes1, iDay * m_numPlayers);
-		printTable("Sorted", result(), iDay, m_numPlayers, m_groupSize);
+		if (m_printMatrices & 64)
+			printfYellow("Sorted matrix different than original\n");
+		memcpy(result(), pRes1, nRows * m_numPlayers);
+		if (m_printMatrices & 64)
+			printTable("Sorted", result(), nRows, m_numPlayers, m_groupSize);
 	}
-	int errLine = 0, errGroup = 0, dubLine = 0;
-	if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
-	{
-		printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
-		abort();
-	}
-	char stat[256];
-	clock_t tTime = clock();
+	char stat[1024];
 	const auto pProcessMatrix = m_pProcessMatrix;
 	m_pProcessMatrix = &alldata::kmProcessMatrix;
-	int i, nTests = 100;
 	int order = 0;
 	bool bRet = false;
 	m_lastRowWithTestedTrs = 0;
-	int iTest = 0;
-	for (int j = 0; j < iDay; j++)
-		u1fSetTableRow(neighbors(j), result(j));
-	for (i = 1; i <= nTests; i++)
+	int i = 0;
+	while (1)
 	{
-		iTest++;
-		bRet = cnvCheckNew(0, iDay);
-		if (!bRet)
-		{
-			order = orderOfGroup();
-			printf("Group Order=%d\n", order);
-			iret = memcmp(pRes1, result(), iDay * m_numPlayers);
-			if (iret >= 0)
-			{
-				printfYellow("Start matrix rejected by cnvCheckNew\n");
-				break;
-			}
-			printTable("Result ", result(), iDay, m_numPlayers, m_groupSize, 0, true);
-			printf("Result improved (%d):\n", i);
-			printTable("", pRes1, iDay, m_numPlayers, m_groupSize, 0, true);
-#if 1
-			memcpy(result(0), pRes1, m_nLenResults);
-			m_lastRowWithTestedTrs = 0;
-			errLine = errGroup = dubLine = 0;
-			if (!CheckMatrix(result(0), iDay, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
-			{
-				printf("Duplicate pair in group %d on line %d (already present in line %d)\n", errGroup, errLine, dubLine);
-				abort();
-			}
-			for (int j = 0; j < iDay; j++)
-				u1fSetTableRow(neighbors(j), result(j));
-			//printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, 0);
-#endif
+		i++;
+
+		m_lastRowWithTestedTrs = 0;
+
+		for (int j = 0; j < nRows; j++) {
+			setArraysForLastRow(nRows);
+			u1fSetTableRow(neighbors(j), result(j));
 		}
-		else
+		if (!linksFromMatrix(links(), result(), nRows, false)) {
+
+			if (m_printMatrices & 64)
+				printTable("Input matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+			return false;
+		}
+
+		int errLine = 0, errGroup = 0, dubLine = 0;
+		if (!CheckMatrix(result(), nRows, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
 		{
-			order = orderOfGroup();
-			printf("Group Order=%d\n", order);
-			//StatReportAfterEachResult(ResetStat, "Canonization time", (int)((clock() - tTime)) / i, true);
-			//printf("order=%d\n",  order);
+			if (m_printMatrices & 64)
+				printTable("Input matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+			printfYellow("Duplicate pair in group=%d row=%d (already present in row=%d)\n", errGroup, errLine, dubLine);
+			return false;
+		}
+		m_lastRowWithTestedTrs = 0;
+		bRet = cnvCheckNew(0, nRows);
+		if (bRet)
 			break;
+
+		if (i == 1) {
+			if (m_printMatrices & 64)
+				printTable("Initial matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
 		}
+		else {
+			if (m_printMatrices & 64) {
+				printf("Result of canonization (iteration %d):\n", i);
+				printTable("", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+			}
+		}
+		iret = memcmp(pRes1, result(), nRows * m_numPlayers);
+		if (iret >= 0)
+		{
+			printfRed("Start matrix rejected. Check for conflict(s) with your params (AllowUndefinedCycles, Any2RowsConvertToFirst2)\n");
+			return false;
+		}
+		memcpy(result(0), pRes1, m_nLenResults);
 	}
 
-	//printTableColor("Links improved", links(0), m_numPlayers, m_numPlayers, 0);
-	printf("End of Improvement (%d):\n", i);
-	//time2 = __rdtscp(&junk);
-	//GetProcessTimes(hwnd, &dum1, &dum2, &dum3, &time2);
-	//QueryPerformanceCounter(&time2);
-	//GetThreadTimes(hwnd, &dum1, &dum2, &dum3, &time2);
-	if (nTests > 0)
-		printf("+++ %.1f ms needed per one improvement check\n", (double(clock() - tTime)) / iTest);
-	//printf(" %.1f ms (%.1f cpu) needed per one improvement check\n", (double(clock() - tTime)) / nTests);
-	//	(time2.QuadPart - time1.QuadPart) / nTests / 1000.0);
-	//	(double(time2.dwLowDateTime - time1.dwLowDateTime)) / nTests / 1000.0);
-
-	for (int j = 0; j < iDay; j++)
-		u1fSetTableRow(neighbors(j), result(j));
+	memcpy(m_pResultsPrev, result(), nRows * m_numPlayers);
+	memcpy(m_pResultsPrev2, result(), nRows * m_numPlayers);
 
 	bool needOutput = false;
-	matrixStat(neighbors(), iDay, &needOutput);
-	if (needOutput) {
-		matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
-		printf("%d rows: %s, AUT=%d, %s\n", iDay,
-			bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
+	getAllCycles(neighbors(), nRows);
+	matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
+	if (m_printMatrices & 64) {
+		printf("%d rows: AUT=%d, %s\n", nRows, orderOfGroup(), stat);
+		if (i == 1)
+			printTable("Input matrix (canonical)", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+		else {
+			printf("Input matrix (after %d canonization iterations):\n", i);
+			printTable("", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+		}
 	}
+	m_precalcMode = precalcMode;
+	return true;
 }
 
 #if !USE_CUDA 
@@ -395,14 +327,11 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 		for (int i = 2; i <= iDay; i++) {
 			char stat[256];
 			bool bRet = cnvCheckNew(0, i, false);
-			bool bRet2 = matrixStat(neighbors(), i, NULL);
-			bool needOutput = false;
-			matrixStat(neighbors(), i, &needOutput);
-			if (needOutput) {
-				matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
-				printf("%d rows: %s, AUT=%d, %s\n", i,
-					bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
-			}
+			//bool bRet2 = checkNewRow(neighbors(), i);
+			getAllCycles(neighbors(), i);
+			matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
+			printf("%d rows: %s, AUT=%d, %s\n", i,
+				bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
 		}
 		printf("\n");
 		exit(1);
@@ -410,19 +339,54 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 	return true;
 }
 
-/*
-void alldata::testPrintGroupRows()
-{
-	tchar trm[MAX_PLAYER_NUMBER];
-	for (int i = 0; i < m_numDays; i++) {
-
+bool alldata::generateMatrixExample() {
+	if (m_groupSize == 3 && !(m_nGroups & 1)) {
+		printfYellow("*** Warning: can't generate matrix (%dx%dx%d): with GroupSize=%d 'number of groups'(%d) must be odd number\n",
+			m_numPlayers, m_numDays, m_groupSize, m_groupSize, m_nGroups);
+		return false;
 	}
-		
-	for (int i = 0; i < numObjects(); i++) {
-		tchar* tr;
 
-
+	int is = param(t_generateMatrixExample);
+	if (is > 1 && m_groupSize <= 2) {
+		auto* ls = links(0); // use links as a temporary storage for latin square, we wll recreate links later in this function
+		getLS(ls, m_nGroups, is);
+		for (int i = 0; i < m_numDays; i++) {
+			auto* r = result(i);
+			auto* lsRow = ls + i * m_nGroups;
+			for (int j = 0, k = 0; j < m_numPlayers; j += m_groupSize, k++, r += m_groupSize) {
+				r[0] = k * 2;
+				r[1] = lsRow[k] * 2 + 1;
+			}
+		}
+		//printTableColor("r", result(), m_numDays, m_numPlayers, m_groupSize);
+		tchar tr[MAX_PLAYER_NUMBER];
+		memset(tr, 0, m_numPlayers);
+		for (int i = 0;i < m_numPlayers; i++)
+			tr[result(0)[i]] = i;
+		kmTranslate(result(0), result(0), tr, m_numDays * m_numPlayers);
+		//printTableColor("r", result(), m_numDays, m_numPlayers, m_groupSize);
 	}
+	else {
+
+		for (int i = 0; i < m_numDays; i++) {
+			auto* r = result(i);
+			for (int j = 0; j < m_numPlayers; j += m_groupSize, r += m_groupSize) {
+				for (int k = 0; k < m_groupSize; k++) {
+					int ip = ((j / m_groupSize + i * k) % m_numDays);
+					ip = ip * m_groupSize + k;
+					r[k] = ip;
+				}
+			}
+		}
+	}
+
+	if (!canonizeMatrix(m_numDays))
+		return false;
+	if (!linksFromMatrix(links(), result(), iDay, false)) {
+		printfRed("*** Error: can't generate matrix for number of groups=%d and group size=%d\n", m_nGroups, m_groupSize);
+		printfRed("***        number of groups (NPlayers / GroupSize) with group size > 3 must be prime number\n");
+		return false;
+	}
+	return true;
 }
-*/
 #endif

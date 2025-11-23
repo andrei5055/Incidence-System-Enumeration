@@ -15,13 +15,15 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		v1 = pfj[v2];
 	}
 #if _DEBUG
-	int s = 0;	for (itr = 0; itr < m_numPlayers; itr++) {
+	ll s[2] = { 0 };
+	for (itr = 0; itr < m_numPlayers; itr++) {
 		if (tr[itr] == unset || tr[itr] >= m_numPlayers)
 			break;
 		ASSERT_IF(tr[itr] == unset || tr[itr] >= m_numPlayers);
-		s |= (1 << tr[itr]);
+		s[tr[itr] / 64] |= ((ll)1 << (tr[itr] % 64));
 	}
-	if (s != (1 << m_numPlayers) - 1)
+		if ((m_numPlayers < 64 && s[0] != ((ll)1 << m_numPlayers) - 1) ||
+			(m_numPlayers >= 64 && (s[0] != -1 || s[1] != ((ll)1 << (m_numPlayers % 64)) - 1)))
 	{/**/
 		printTable("pf0", pf0, 1, m_numPlayers, 2);
 		printTable("pf1", pf1, 1, m_numPlayers, 2);
@@ -210,7 +212,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 		printf("\n");
 	if (i == m_nGroups)
 	{
-		int s = 0;
+		ll s[2] = { 0 };
 		for (i = 0; i < m_numPlayers; i++)
 		{
 			if (tr[i] == unset)
@@ -224,9 +226,10 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 #endif
 				goto falseret;
 			}
-			s |= 1 << tr[i];
+			s[tr[i]/64] |= (ll)1 << (tr[i] % 64);
 		}
-		if (s != (1 << m_numPlayers) - 1)
+		if ((m_numPlayers < 64 && s[0] != ((ll)1 << m_numPlayers) - 1) ||
+			(m_numPlayers >= 64 && (s[0] != -1 || s[1] != ((ll)1 << (m_numPlayers % 64)) - 1)))
 			goto falseret;
 		return true;
 	}
@@ -260,7 +263,9 @@ CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v
 	memset(tr, unset, m_numPlayers);
 	//printTable("t1", trCycles.fullPath, 1, m_numPlayers * 2, 3);
 	//printTable("t2", m_TrCycles.fullPath, 1, m_numPlayers * 2, 3);
-	for (int i = 0; i < MAX_CYCLES_PER_SET; i++)
+	int i = 0;
+	ASSERT_IF(MAX_CYCLES_PER_SET >= sizeof(i) * 8);
+	for (i = 0; i < MAX_CYCLES_PER_SET; i++)
 	{
 		if (!trCycles.length[i])
 			break;

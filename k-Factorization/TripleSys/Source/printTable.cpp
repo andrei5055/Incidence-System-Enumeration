@@ -62,23 +62,10 @@ void alldata::reportCurrentMatrix()
 			printResultWithHistory("Current matrix", iDay + 1);
 		}
 #if ReportCheckLinksData
-		if (bFirstThread)
+		if (m_bPrint)
 			reportCheckLinksData();
 #endif
 		StatReportPeriodically(ResetStat, "Stat current. iDay", iDay, bPrint);
-
-#include <mutex>
-		extern std::mutex mtxLinks; // The mutex to protect the shared resource
-		extern CStorageIdx<tchar>** mpLinks;
-		extern int SemiPhase;
-		extern int NumMatricesProcessed;
-		if (mpLinks) {
-			printfGreen(" %d Total checked(%d are the same). Row:Links ", NumMatricesProcessed, SemiPhase);
-			for (int i = 3; i < m_numDaysResult; i++)
-				if (mpLinks[i])
-					printfGreen("%d:%d ", i + 1, mpLinks[i]->numObjects());
-			printf("\n");
-		}
 
 		m_rTime = m_cTime;
 		maxDays = iDay;

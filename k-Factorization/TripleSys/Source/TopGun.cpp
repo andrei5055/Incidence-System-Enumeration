@@ -88,6 +88,8 @@ int TopGun::Run()
 			//
 			resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
 			if (resultMatr == 0) {
+				if (param(t_generateMatrixExample))
+					return 0;
 				printfRed("*** Cannot create second row(s) with these parameters. Exit\n");
 				myExit(1);
 			}
@@ -97,10 +99,9 @@ int TopGun::Run()
 		if (readMatrices() < 0)
 			myExit(1);
 		const auto exploreMatrices = param(t_exploreMatrices);
-		if (!param(t_nFirstIndexOfStartMatrices) && !exploreMatrices)
+		if (!exploreMatrices) // && !param(t_nFirstIndexOfStartMatrices))
 			deleteOldFiles();
 
-		//myTemporaryCheck();
 		if (orderMatrixMode) {
 			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, exploreMatrices > 1);
 			if (orderMatrixMode == 2)
@@ -140,7 +141,7 @@ int TopGun::Run()
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mfirst, nRowsStart(), NULL, &m_reportInfo)) {
 					if (reportPrecalculated)
-						printfYellow("*** There are no pre-calculated solutions for row %d od the matrix %d\n", sys.numRowWithNoSolution(), m_iMatrix + 1);
+						printfYellow("*** There are no pre-calculated solutions for row %d of the matrix %d\n", sys.numRowWithNoSolution(), m_iMatrix + 1);
 				}
 				else {
 					for (uint iTask = 0; iTask < numThreads; iTask++)
@@ -248,8 +249,7 @@ int TopGun::Run()
 	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
 	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
-	else
-		finalizeSemiM();
+	
 	return m_errCode;
 }
 
@@ -262,10 +262,3 @@ CStorageIdx<tchar>** mShLinks2 = NULL;
 int SemiPhase = 0;
 int NumMatricesProcessed = 0;
 
-void TopGun::finalizeSemiM()
-{
-	const auto nSemiM = mShLinks ? mShLinks[0]->numObjects() : -1;
-	if (nSemiM < 0)
-		return;
-	SemiPhase++;
-}

@@ -129,4 +129,5 @@ void reportEOJ(int code);
 void setConsoleOutputMode();
 CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len);
 CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn);
+int getLS(unsigned char* ls, const int n, const int iRandomStart);
 

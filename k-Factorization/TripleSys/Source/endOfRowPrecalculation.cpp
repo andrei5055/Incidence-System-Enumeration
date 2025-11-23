@@ -1,5 +1,5 @@
-#include <iostream>
 #include "TripleSys.h"
+#include <iostream>
 
 CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMode)
 {
@@ -144,10 +144,10 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 	const auto iCalc = m_precalcMode;
 	m_precalcMode = eCalcResult;
 	if (!param(t_autGroupNumb)) {
-		if (param(t_useAutForPrecRows) > 1 && iDay >= param(t_useAutForPrecRows)) {
-			auto* pGroupInfo = groupInfo(param(t_useAutForPrecRows));
+		if (m_nPrecalcRows > 1 && iDay >= m_nPrecalcRows) {
+			auto* pGroupInfo = groupInfo(m_nPrecalcRows);
 			if (pGroupInfo) {
-				cnvCheckNew(0, param(t_useAutForPrecRows), false); // create initial set of tr for first i rows
+				cnvCheckNew(0, m_nPrecalcRows, false); // create initial set of tr for first i rows
 				pGroupInfo->copyIndex(*this);
 				resetGroupOrder();
 			}

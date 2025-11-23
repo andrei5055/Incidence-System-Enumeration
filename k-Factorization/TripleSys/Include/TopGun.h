@@ -92,11 +92,9 @@ private:
 	void deleteOldFiles();
 	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
 	//void orderAndExploreMatices(int nRows, bool exploreMatrices) const;
-	void myTemporaryCheck();
 	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
 	void waitAllThreadFinished();
-	void finalizeSemiM();
 
 	sLongLong *m_cntTotal = NULL;
 	sLongLong dNumMatrices[2];

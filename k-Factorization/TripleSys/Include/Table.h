@@ -322,7 +322,7 @@ unsigned char *pMatrixStorage = NULL;
 template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, const char* pStartLine, const int *idx)
 {
-	char buffer[512], *pBuf = buffer;
+	char buffer[1024], *pBuf = buffer;
 	FOPEN_F(f, this->m_pFileName, "a");
 	if (outCntr)
 		m_cntr++;

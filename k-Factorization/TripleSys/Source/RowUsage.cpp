@@ -311,7 +311,6 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				}
 				else {
 					multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
-					//???break;
 				}
 			}
 			else

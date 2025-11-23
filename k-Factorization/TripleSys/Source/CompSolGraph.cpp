@@ -27,10 +27,11 @@ CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenG
 CC CompSolStorage::~CompSolStorage() {
 	for (int i = 0; i < m_nGroups; i++)
 		delete m_ppCompSol[i];
-
-	delete[] m_ppCompSol;
-	delete[] m_solDB;
-	delete[] m_idxUsedSol;
+	if (m_nGroups) {
+		delete[] m_ppCompSol;
+		delete[] m_solDB;
+		delete[] m_idxUsedSol;
+	}
 }
 
 

@@ -46,7 +46,7 @@ CC bool alldata::processOneDay()
 				memcpy(result(iDay), tmpPlayers, m_numPlayers);
 				//printTableColor("r2", result(1), 1, m_numPlayers, m_groupSize);
 				m_playerIndex = m_numPlayers * (iDay + 1) - m_groupSize - 1;
-				if (/**m_groupSize <= 3 && **/ !matrixStat(neighbors(), iDay + 1))
+				if (/**m_groupSize <= 3 && **/ !checkNewRow(neighbors(), iDay + 1))
 				{
 					while (iDay * m_numPlayers + iPlayer > m_playerIndex)
 						getPrevPlayer();

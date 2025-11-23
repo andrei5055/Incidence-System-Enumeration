@@ -157,7 +157,6 @@ class alldata : public CGroupUtilisation, public CChecklLink, private CGroupInfo
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;
 	typedef bool(alldata::*checkInvalidCycle)(int ncycles, ctchar* cycles) const;
 public:
-	bool p1f16();
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, const int createSecondRow = 0, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
@@ -229,10 +228,11 @@ private:
 	CC bool cnvCheck3U1F(int nrows, int nrowsToUseForTrs);
 	void testPrintGroupRows();
 	bool testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode);
-	void testCanonizatorSpeed();
+	bool canonizeMatrix(int nRows);
 	void testRightNeighbor(int nr);
 	void TestkmProcessMatrix(int nrows, tchar n, ctchar* tr, ctchar* ttr, int icmp) const;
-	CC bool matrixStat(ctchar* table, int nr, bool* pNeedOutput = NULL);
+	CC bool checkNewRow(ctchar* table, int nr);
+	CC bool getAllCycles(ctchar* table, int nr);
 	char *matrixStatOutput(char* str, int maxStr, TrCycles* trs) const;
 	CC void resetTrCycles(TrCycles* trc) const;
 	CC void cyclesFor2Rows(TrCycles* trcAll, TrCycles* trc, ctchar* neighbors0, ctchar* neighbors1,
@@ -252,7 +252,6 @@ private:
 	CC int getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar* tt2, ctchar* tt3, ctchar* tt4,
 		eCheckForErrors checkError) const;
 	CC int checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer = NULL);
-	CC bool semiCheck();
 	CC int kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1);
 	CC void goBack();
 	CC void p1fCheckStartMatrix(int nr);
@@ -271,6 +270,7 @@ private:
 	CC void updateIndexPlayerMinMax();
 	CC bool cyclesOfTwoRowsOk(TrCycles* trc) const;
 	CC int collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indRow0, int indRow1, eCheckForErrors checkError);
+	CC bool checkCBMPtr(tchar* tr);
 	void printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows);
 	void cnvPrintAuto(ctchar* tr, int nrows);
 	void reportCurrentMatrix();
@@ -295,7 +295,7 @@ private:
 	void checkCommonValues(ctchar* pBaseValues, int numSets);
     void checkCommonValues();
 	void printResultWithHistory(char const* name, int nRows);
-	int addMaskToDB(ll* msk, tchar* r, int nr, int nc, int np);
+	bool generateMatrixExample();
 
 	CC void setArraysForLastRow(int nrows);
 	CC void adjustPlayerPosition(tchar* path, tchar length, tchar nrows);
@@ -404,6 +404,7 @@ private:
 	const char* m_fHdr = NULL;
 	int m_threadNumber = 0;
 	bool m_bPrint = false;
+	bool m_bPrintAll;
 	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 	int m_printMatrices = 0;
 

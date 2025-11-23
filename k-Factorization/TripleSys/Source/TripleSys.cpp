@@ -15,18 +15,19 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto iCalcModeOrg = iCalcMode;
 #if !USE_CUDA
 	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
+	m_bPrint = (m_printMatrices & 1) != 0;
+	bool bPrintPeriodic = (m_printMatrices & 32) != 0;
+	m_bPrintAll = m_bPrint || bPrintPeriodic;
 	m_fHdr = getFileNameAttr(sysParam());
 	m_cTime = m_rTime = m_iTime = clock();
 
 	const bool bNotSpecialMode = iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows;
 	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
 #endif
-	m_bPrint = (m_printMatrices & 1) != 0;
-	bool bPrintCurrent = (m_printMatrices & 32) != 0;
 	int minRows = nrowsStart;
-	m_ignoreCanonizationMinus1 = (m_test & 2) != 0 || param(t_generateMatrixExample) != 0;
+	m_ignoreCanonizationMinus1 = (m_test & 2) != 0; // || param(t_generateMatrixExample) != 0;
 	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
-	m_allRowPairsSameCycles = param(t_any2RowsConvertToFirst2) != 0;
+	m_allRowPairsSameCycles = param(t_any2RowsConvertToFirst2) != 0 || param(t_allowUndefinedCycles) == 0;
 	m_lastRowWithTestedTrs = 0;
 	m_threadNumber = threadNumber;
 	const auto p1f_counter = param(t_p1f_counter);
@@ -89,8 +90,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if !USE_CUDA
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
-	//extern void aq();
-	//aq();
 	unsigned char* bResults = NULL;
 
 	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
@@ -120,52 +119,17 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
 #if !USE_CUDA
-	// Generate KC matrix
 	if (param(t_generateMatrixExample)) {
-		if (!m_createSecondRow && m_groupSize == 3 && !(m_nGroups & 1)) {
-			printfRed("*** Error: can't generate matrix. Number of groups(%d) must be odd number with group size=%d\n", m_nGroups, m_groupSize);
-			goto noResult; 
-		}
 		iDay = m_numDaysResult;
 		nrowsStart = m_numDaysResult;
-
-		for (int i = 0; i < m_numDays; i++) {
-			tchar* r = m_Km + i * m_numPlayers;
-			for (int j = 0; j < m_numPlayers; j += m_groupSize, r += m_groupSize) {
-				for (int k = 0; k < m_groupSize; k++) {
-					int ip = ((j / m_groupSize + i * k) % m_numDays);
-					ip = ip * m_groupSize + k;
-					r[k] = ip;
-				}
-			}
-		}
-		tchar tm[MAX_PLAYER_NUMBER];
-		memset(tm, 0, sizeof(tm));
-		(this->*m_pSortGroups)(m_Km, m_numDays);
-		auto* coi = m_Ktmp;
-		auto* cii = m_Km;
-		for (int i = 0; i < m_numDays; i++, coi += m_numPlayers, cii += m_numPlayers)
-			kmSortGroupsByFirstValue(cii, coi);
-		// Result of the loop above is in m_Ktmp, sort and send it to m_Km.
-		kmSortRowsBy2ndValue(m_numDays, tm);
-		memcpy(result(), m_Km, m_nLenResults);
+		if (!generateMatrixExample())
+			goto noResult;
 		if (m_createSecondRow) {
 			memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
 			m_finalKMindex = 1;
 			nLoops = 1;
 			goto noResult;
 		}
-		if (!linksFromMatrix(links(), result(), nrowsStart, false)) {
-			printfRed("*** Error: can't generate matrix for number of groups=%d and group size=%d\n", m_nGroups, m_groupSize);
-			printfRed("***        number of groups (NPlayers / GroupSize) with group size > 3 must be prime number\n");
-			goto noResult;
-		}
-		memcpy(m_pResultsPrev, result(), m_nLenResults);
-		memcpy(m_pResultsPrev2, result(), m_nLenResults);
-		printResultWithHistory("Generated KC-matrix", m_numDaysResult);
-		iDay = m_numDaysResult;
-		for (int i = 0; i < iDay; i++)
-			u1fSetTableRow(neighbors(i), result(i));
 	}
 #endif
 
@@ -180,15 +144,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	if ((m_test & 1) && (iCalcModeOrg != eCalcSecondRow)){
 		if (!iDay) {
 			printfRed("*** Error: parameter Test=%d, but matrix not defined in data.h\n", m_test);
-			//testCanonizatorSpeed();
 			myExit(1);
 		}
 		printfGreen(" SW uses input matrix from data.h (Test=%d)\n", m_test);
-		testCanonizatorSpeed();
-		setArraysForLastRow(iDay);
-		//minRows = iDay--;
-		//goto checkCurrentMatrix;
-		exit(0);
+		canonizeMatrix(iDay);
+#if 0
+		minRows = iDay--;
+		goto checkCurrentMatrix;
+		//exit(0);
+#endif
 	}
 #endif
 #endif
@@ -231,14 +195,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
 		minRows = iDay--;
-		//testRightNeighbor(iDay + 1);
-		if ((m_test & 16) && !p1f16())
-			goto noResult;
-
-		if ((m_test & 32) && iDay >= m_matrixCanonInterval && m_matrixCanonInterval >= 3 && m_groupSize == 2 && m_numPlayers <= 16) {
-			ll msk[2];
-			addMaskToDB(msk, result(0), m_matrixCanonInterval, m_numPlayers, 1);
-		}
 
 		goto checkCurrentMatrix;
 	}
@@ -331,7 +287,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				m_lastRowWithTestedTrs = iDay - 1;
 
 #if !USE_CUDA
-			if (bPrintCurrent)
+			if (bPrintPeriodic)
 				reportCurrentMatrix();
 #endif
 			iDay++;
@@ -343,7 +299,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			Stat(">12", 5, iDay > 12);
 #endif
 #if !USE_CUDA
-			if (m_bPrint && (int)((++nMCreated) % 10000000) == 0)
+			if (m_bPrintAll && (int)((++nMCreated) % 10000000) == 0)
 				printf(" %zdM calls to checkCurrentResult\n", nMCreated / 1000000);
 #endif
 
@@ -388,7 +344,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			flag = i > 3;
 		}
 
-		if (flag && orderOfGroup() >= param(t_resultGroupOrderMin)) {
+		if (flag && (m_createSecondRow || orderOfGroup() >= param(t_resultGroupOrderMin))) {
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0
 			if (pIS_Canonizer) {
 				const auto* pCanonBinaryMatr = runCanonizer(pIS_Canonizer, result(0), m_groupSize, iDay);
@@ -404,7 +360,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if !USE_CUDA
 			if (m_createSecondRow) {
 				memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
-				if (m_bPrint) {
+				if (m_bPrintAll) {
 					const auto nr = secondRowsDB->numObjects();
 					if (nr) {
 						printf("Second row %04d:", nr);
@@ -428,17 +384,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				printf("\n%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, m_fHdr, matr_cntr);
 #endif
 			}
-
 			if (m_bPrint || bSavingMatricesToDisk)
 			{
-				char stat[256];
-				bool needOutput = false;
-				matrixStat(neighbors(), iDay, &needOutput);
-				if (needOutput)
-					m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				else
-					stat[0] = '\0';
-
+				char stat[1024];
+				getAllCycles(neighbors(), iDay);
+				m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				Result.setInfo(stat);
 				Result.setGroupOrder(orderOfGroup());
 #if 0			// record result and print on screen (if m_bPrint==true)
@@ -555,23 +505,6 @@ noResult:
 	static ll cntrTotal;
 	printf("Matr# %4d: ********** cntr = %lld  = %lld  totalWeighChange = %zd\n", ++nMatr, getRowCallsCalls, cntrTotal += getRowCallsCalls, totalWeighChange);
 	getRowCallsCalls = 0;
-#endif
-#if !USE_CUDA
-#include <mutex>
-	extern std::mutex mtxLinks; // The mutex to protect the shared resource
-	extern CStorageIdx<tchar>** mpLinks;
-	extern int SemiPhase;
-	extern int NumMatricesProcessed;
-	if (m_bPrint) {
-		std::lock_guard<std::mutex> lock(mtxLinks);
-		if (mpLinks && (m_test & 32) && bNotSpecialMode && m_groupSize == 2 && m_numPlayers <= 16) {
-			printfYellow(" %d Total checked(%d are the same). Row:Links ", NumMatricesProcessed, SemiPhase);
-			for (int i = 3; i < m_numDaysResult; i++)
-				if (mpLinks[i])
-					printfGreen("%d:%d ", i + 1, mpLinks[i]->numObjects());
-			printf("\n");
-		}
-	}
 #endif
 	return nLoops;
 }

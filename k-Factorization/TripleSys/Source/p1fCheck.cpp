@@ -28,32 +28,34 @@ CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri, bool bNeighbors)
 }
 CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int nc)
 {
-	unsigned int cyclesBitsDef = 0;
-	unsigned int checked = 0;
+	ll cyclesBitsDef[2] = { 0 };
+	unsigned int checked[2] = { 0 };
 	int ncycles = 0;
 	if (u1fCycles) {
-		while (ncycles < MAX_CYCLES_PER_SET && u1fCycles[1 + ncycles])
-			cyclesBitsDef |= 1 << u1fCycles[1 + ncycles++];
+		while (ncycles < MAX_CYCLES_PER_SET && u1fCycles[1 + ncycles]) {
+			auto ind = u1fCycles[1 + ncycles++];
+			cyclesBitsDef[ind / 64] |= (ll)1 << (ind % 64);
+		}
 	}
 	else {
-		cyclesBitsDef = 1 << nc;
+		cyclesBitsDef[nc / 64] = (ll)1 << (nc % 64);
 		ncycles = 1;
 	}
 	tchar k = 0;
 	for (tchar m = 0; m < nc; m++)
 	{
-		if (!(checked & (1 << m))) {
+		if (!(checked[m / 64] & ((ll)1 << (m % 64)))) {
 			k = m;
 			for (int i = 2; i <= nc; i += 2)
 			{
 				if ((k = neighborsj[neighborsi[k]]) == m) {
-					if (!(cyclesBitsDef & (1 << i)))
+					if (!(cyclesBitsDef[i / 64] & ((ll)1 << (i % 64))))
 						return false;
 					if (!(--ncycles))
 						return true;
 					break;
 				}
-				checked |= 1 << k;
+				checked[k/64] |= (ll)1 << (k % 64);
 			}
 		}
 	}
@@ -353,25 +355,20 @@ CC int alldata::u1fGetCycleLength3(TrCycles * trc, ctchar * t1, ctchar * t2, ctc
 	return ncycles;
 }
 
-CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
+CC bool alldata::checkNewRow(ctchar* table, int nr)
 {
 	/**???
-	if (m_groupSize > 3 && !pNeedOutput)
+	if (m_groupSize > 3)
 		return true;**/
-	if (!pNeedOutput && m_allowUndefinedCycles)
+	if (m_allowUndefinedCycles)
 		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
-	const eCheckForErrors checkErrors = pNeedOutput ? eNoErrorCheck : eCheckErrors;
-	if (pNeedOutput) {
-		memset(m_TrCyclesAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);
-		m_TrCyclesCollection = m_TrCyclesAll;
-	}
-	else if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3)
+	const eCheckForErrors checkErrors = eCheckErrors;
+#if 0
+	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3)
 	{
-		//if (!(m_p1f_counter % 10000000))
-		//	printTable("LR", result(nr - 1), 1, nc, m_groupSize);
-		if (pNeedOutput && param(t_p1f_counter) && (++m_p1f_counter >= param(t_p1f_counter)) && nr > 2) {
+		if (param(t_p1f_counter) && (++m_p1f_counter >= param(t_p1f_counter)) && nr > 2) {
 			m_p1f_counter = 0;
 			if (!((this->*m_pCheckFunc)(nr, nr - 1))) {
 #if !USE_CUDA
@@ -382,6 +379,41 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 			}
 		}
 	}
+#endif
+	int m = nr - 1;
+	auto* rowm = table + m * nc;
+	auto* rowi = table;
+	int iend = m;
+	m_TrCycles.irow2 = m;
+	for (int i = 0; i < iend; i++, rowi += nc)
+	{
+		m_TrCycles.irow1 = i;
+		const auto iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eCheckErrors);
+		// in case of incorrect one cycle length u1fGetCycleLength reports only one cycle (with error)
+		if (iret == 0)
+		{
+			tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
+			int fpLength = m_TrCycles.length[0] * 2;
+			adjustPlayerPosition(fp, fpLength, nr);
+			ret = false;
+			break;
+		}
+		if (iret == -1)
+		{
+			ret = false;
+			break;
+		}
+	}
+	return ret; // check new row only
+}
+
+CC bool alldata::getAllCycles(ctchar* table, int nr)
+{
+	bool ret = true;
+	const auto nc = m_numPlayers;
+	const eCheckForErrors checkErrors = eNoErrorCheck;
+	memset(m_TrCyclesAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);
+	m_TrCyclesCollection = m_TrCyclesAll;
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only
 	{
 		auto* rowm = table + m * nc;
@@ -391,44 +423,18 @@ CC bool alldata::matrixStat(ctchar* table, int nr, bool *pNeedOutput)
 		for (int i = 0; i < iend; i++, rowi += nc)
 		{
 			m_TrCycles.irow1 = i;
-			if (checkErrors == eCheckErrors)
-			{
-				const auto iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eCheckErrors);
-				// in case of incorrect one cycle length u1fGetCycleLength reports only one cycle (with error)
-				if (iret == 0)
-				{
-					tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
-					int fpLength = m_TrCycles.length[0] * 2;
-					adjustPlayerPosition(fp, fpLength, nr);
-					ret = false;
-					break;
-				}
-				if (iret == -1)
-				{
-					ret = false;
-					break;
-				}
-			}
-			else
-			{
-				int iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eNoErrorCheck);
+			int iret = u1fGetCycleLength(&m_TrCycles, rowi, rowm, result(i), result(m), eNoErrorCheck);
 #if 0 // print information about each pair cycles and path
-				if (nr == m_numDaysResult) {
+			if (nr == m_numDaysResult) {
 				printf("\nRows %d:", i);
 				printTable("", result(i), 1, m_numPlayers, m_groupSize);
 				printf("Rows %d:", m);
 				printTable("", result(m), 1, m_numPlayers, m_groupSize);
-				}
-#endif
 			}
+#endif
 		}
-		if (checkErrors == eCheckErrors)
-			return ret; // check new row only
 	}
-	if (pNeedOutput) {
-		*pNeedOutput = true;
-		m_TrCyclesCollection = NULL;
-	}
+	m_TrCyclesCollection = NULL;
 	return ret;
 }
 char *alldata::matrixStatOutput(char* str, int maxStr, TrCycles* trs) const

@@ -8,8 +8,8 @@ CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : C
 		m_remainder3[i] = i % 3;
 	initArray(&m_pU1Ftable, len);
 	initArray(&m_pLinksCopy, m_numPlayers * m_numPlayers);
-	initArray(&m_v, m_numPlayers);
-	initArray(&m_vo, m_numPlayers);
+	initArray(&m_v, m_numPlayers * 2);
+	initArray(&m_vo, m_numPlayers * 2);
 
 #if PrintNVminmax
 	initArray(&nvmn, len, (char)99);
@@ -38,7 +38,8 @@ void CChecklLink::setNV_MinMax(int id, int idx, char nv) {
 		nvmx[idx] = nv;
 }
 #endif
-CC bool CChecklLink::checkLinks(tchar* pLinks, int id, bool printLinksStatTime)
+
+CC bool CChecklLink::checkLinks(tchar* pLinks, int id)
 {
 	const auto cbmpGraph = !completeGraph();
 	int idMin = cbmpGraph ? 3 : (m_numPlayers < 27 ? 2 : 5);
@@ -105,5 +106,5 @@ CC bool CChecklLink::checkLinks(tchar* pLinks, int id, bool printLinksStatTime)
 		}
 	}
 	UpdateCntOK(ret)
-	return ret;
+		return ret;
 }

@@ -11,7 +11,7 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 			const auto ivId = iv_id[j];
 			if (ivId >= np) {
 #if !USE_CUDA
-				printfRed("*** Init: value(%d) for day %d position %d is incorrect\n", ivId, i, j);
+				printfRed("*** Init: value(%d) in row %d position %d is incorrect\n", ivId, i, j);
 #endif
 				if (exitIfError)
 					myExit(1);
@@ -25,7 +25,7 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 					const auto lDay = *(lnk + ivId * np + iv0);
 					if (lDay != unset) {
 #if !USE_CUDA
-						printfRed("*** Init: pair (%d,%d) in day %d already defined in day %d\n", iv0, ivId, i, lDay);
+						printfRed("*** Init: pair (%d,%d) in row %d already defined in row %d\n", iv0, ivId, i, lDay);
 						if (exitIfError)
 							myExit(1);
 						return false;
@@ -108,7 +108,7 @@ doneInit:
 		id++;
 	else
 	{
-		printfRed("*** Init: values for day %d positions %d-%d not defined\n", id, lastInd + 1, m_numPlayers - 1);
+		printfRed("*** Init: values in row %d positions %d-%d not defined\n", id, lastInd + 1, m_numPlayers - 1);
 		printTable("Initial result", result(0), m_numDays, m_numPlayers, m_groupSize);
 		myExit(1);
 	}

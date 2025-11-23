@@ -55,20 +55,20 @@ protected:
 	CReportCheckLinksData(const SizeParam& sizeParam);
 	~CReportCheckLinksData();
 	void reportCheckLinksData();
-	bool checkLinksT(ctchar* pLinks, int id, bool printLinksStatTime = false);
+	bool checkLinksT(ctchar* pLinks, int id);
 private:
 	bool checkLinksTR(ctchar* v, int nvAll, int nv, int ind) const;
 	int getAllUnlinked(int ic, tchar* v, int nvMax) const;
-protected:
-	sLongLong m_cnt = 0;
-	sLongLong m_tmtotal = 0;
-	sLongLong m_tmtotalFalse = 0;
-	sLongLong m_tmtotalOk = 0;
-	sLongLong m_cntErr = 0;
-	sLongLong m_cntOk = 0;
-	sLongLong* m_tmok = NULL;
-	sLongLong* m_tmfalse = NULL;
-	sLongLong* m_counts = NULL;
+public:
+	long long m_cnt = 0;
+	long long m_tmtotal = 0;
+	long long m_tmtotalFalse = 0;
+	long long m_tmtotalOk = 0;
+	long long m_cntErr = 0;
+	long long m_cntOk = 0;
+	long long* m_tmok = NULL;
+	long long* m_tmfalse = NULL;
+	long long* m_counts = NULL;
 	tchar* m_pLinksCopy = NULL;
 	tchar* m_faults = NULL;
 };
@@ -78,10 +78,10 @@ class CChecklLink : protected CChecklLinkBase {
 public:
 	CC CChecklLink(const SizeParam& sizeParam, const kSysParam* p);
 	CC ~CChecklLink();
-	CC bool checkLinks(tchar* c, int id, bool printLinksStatTime = false);
+	CC bool checkLinks2(tchar* c, int id);
+	CC bool checkLinks(tchar* c, int id);
 	CC bool cycleLengthOk(tchar length) const;
 	CC bool cyclesNotOk(int ncycles, tchar* cycles, eCheckForErrors checkErrors) const;
-	CC bool checkLinksV2(ctchar* lnks, int nr) const;
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline auto completeGraph() const				{ return m_param->completeGraph();}
 protected:

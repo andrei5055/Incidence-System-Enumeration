@@ -26,7 +26,6 @@ const char* intParamNames[]{
 	"UseCheckLinksV",
 	"UseRowsPrecalculation",
 	"UseSolutionCliquesAfterRow",
-	"UseAutForPrecRows",	// Use the Automorphism group of precalculated rows.
 	"LastRowSecondPlayer",	// Stop invoking addRow after processing all row solutions for this second player
 	"PrintMatrices",
 	"SavingMatricesToDisk",
@@ -135,16 +134,20 @@ void setAutLevels(int *val) {
 
 int main(int argc, const char* argv[])
 {
+#if _DEBUG
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetBreakAlloc(207);
+#endif
 	SetConsoleOutputCP(CP_UTF8);
 	enableAnsiColors();
 	std::cout << "k - Sys 10.62\n";
 	// Get the handle to the current process
 	HANDLE hProcess = GetCurrentProcess();
 
-	// Set the priority class to ABOVE_NORMAL_PRIORITY_CLASS
-	if (!SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS)) {
+	// Set the priority class to BELOW_NORMAL_PRIORITY_CLASS
+	if (!SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS)) {
 		// Handle error if priority setting fails
-		printfRed("Can't set prority above normal\n");
+		printfRed("Can't set priority below normal\n");
 		exit(1);
 	}
 	ifstream* infile = NULL;
@@ -350,6 +353,9 @@ int main(int argc, const char* argv[])
 	delete infile;
 	delete testToRun;
 	delete TopGun::secondRowDB();
+
+	_CrtDumpMemoryLeaks();
+
 	return numErrors;
 }
 

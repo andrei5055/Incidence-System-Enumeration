@@ -509,7 +509,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 				auto const pRow = m_pRows[i]->getNextObject(); // jRow is from 5 to nc - 1
 				memcpy(pRow, result(i - 1), nc);
 				memcpy(pRow + nc, m_Ktmp + shift, nc);
-			}*/ // we will reject this row in conanizator for 4 rows
+			}*/ // we will reject this row during canonization for 4 rows
 			return 1;
 		}
 	}

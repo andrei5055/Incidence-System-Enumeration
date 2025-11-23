@@ -38,7 +38,8 @@ CC CRowStorage::~CRowStorage() {
 }
 
 CC void CRowStorage::initMaskStorage(uint numObjects) {
-	m_pMaskStorage = new CStorage<tchar>(numObjects, (((m_numPlayers * (m_numPlayers - 1) / 2) + 63) / 64) * 8);
+	if (!m_pMaskStorage)
+		m_pMaskStorage = new CStorage<tchar>(numObjects, (((m_numPlayers * (m_numPlayers - 1) / 2) + 63) / 64) * 8);
 	memset(m_pPlayerSolutionCntr, 0, m_numPlayers * sizeof(m_pPlayerSolutionCntr[0]));
 	reset();
 }
@@ -136,13 +137,14 @@ CC bool CRowStorage::p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const 
 #endif
 
 CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2) {
+	//printTableColor("addRow", pRow, 1, m_numPlayers, m_pAllData->groupSize());
 	if (m_numObjects == 0)
 		memcpy(m_firstPrecalcRow, pRow, m_numPlayers);
 	if (m_numObjects == m_numObjectsMax) {
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if 0 && !USE_CUDA
+#if 1 && !USE_CUDA
 	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
 	char buf[32];
 	if (!m_numObjects) {
@@ -151,7 +153,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 		outMatrix(m_pAllData->result() + (m_numPreconstructedRows-1) * m_numPlayers, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf);
 	}
 	sprintf_s(buf, "%3d: ", m_numObjects);
-	outMatrix(pRow, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf);
+	outMatrix(pRow, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf, -1, NULL, false);
 	FCLOSE_F(f);
 #endif
 	(this->*m_fRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
@@ -353,6 +355,18 @@ CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroup
 	//		ASSERT_IF(true);
 			// Just in case, we'll reset the mask.
 			memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
+#if 0
+			FOPEN_F(f, "aaa.txt", "a");
+			fprintf(f, "\nsolIdx = %d  idx = %d  last = %d, m_numSolutionTotal = %d\n", solIdx, idx, last, m_numSolutionTotal);
+			char buffer[256];
+			strcpy_s(buffer, "pSol =");
+			outMatrix(pSolution, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buffer, -1, NULL, false);
+			strcpy_s(buffer, "pTr  =");
+			outMatrix(pGroupInfo->getObject(i), 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buffer, -1, NULL, false);
+			strcpy_s(buffer, "pIdx =");
+			outMatrix(getObject(idx), 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buffer, -1, NULL, false);
+			FCLOSE_F(f);
+#endif
 		}
 		else {
 			// All solutions: solIdx < solutionIdx <= solIdxLast cannot use 
@@ -411,7 +425,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageSet<tchar>** ppSolRecast) {
 	fprintf(f, "Matrix #%4d", ggg);
 #endif
 	const auto* param = sysParam()->val;
-	const auto pGroupInfo = m_pAllData->groupInfo(param[t_useAutForPrecRows]);
+	const auto pGroupInfo = m_pAllData->groupInfo(param[t_useRowsPrecalculation]);
 	for (int i = 1; i < m_numPlayers; i++)
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
@@ -798,13 +812,6 @@ CC void CRowStorage::modifyMask(CStorageSet<tchar>** ppSolRecast) {
 				// First vector from current pair of vectors was found,
 				if (idx < 0)
 					f4++;
-
-				auto k = first;
-				auto *pSolMask = getSolutionMask(first) + ((idx) >> SHIFT);
-				const auto maskBit = (tmask)(-1) ^ MASK_BIT(idx);
-				while (++k < last) {
-					*(pSolMask += m_lenSolutionMask) &= maskBit;
-				}
 			}
 			else {
 				f1++;
@@ -813,14 +820,14 @@ CC void CRowStorage::modifyMask(CStorageSet<tchar>** ppSolRecast) {
 					f3++;
 				first--; // for comparing the previous solution
 			}
-/*
+
 			auto k = first;
 			auto *pSolMask = getSolutionMask(first) + ((idx) >> SHIFT);
 			const auto maskBit = (tmask)(-1) ^ MASK_BIT(idx);
 			while (++k < last) {
 				*(pSolMask += m_lenSolutionMask) &= maskBit;
 			}
-*/
+
 			cmp = -1;
 		}
 		pSolRecast->releaseAllObjects();
@@ -905,8 +912,11 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 
 CC int CRowStorage::initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const {
 	const auto lenMask = m_numSolutionTotalB >> (SHIFT - 3);
-	const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
-	*ppCompatibleSolutions = new tmask[len];
+	if (!*ppCompatibleSolutions) {
+		const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
+		*ppCompatibleSolutions = new tmask[len];
+	}
+
 	*pUsePlayersMask = selectPlayerByMask();
 	return lenMask;
 }

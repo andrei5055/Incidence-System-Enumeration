@@ -48,6 +48,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				val[t_generateMatrixExample], val[t_CBMP_Graph]);
 			return false;
 		}
+		if (val[t_generateMatrixExample] > 1 && (val[t_CBMP_Graph] < 2 || val[t_CBMP_Graph] > 3)) {
+			printfRed("*** With GenerateMatrixExample > 1 this program supports only 2-partite graphs (CBMP_Graph=2). Exit\n");
+			return false;
+		}
 	}
 	if (cbmpGraph) {
 		numDays = numPlayers / groupSize;
@@ -153,16 +157,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			return false;
 		}
 
-		if (groupSize == 3 && val[t_useAutForPrecRows] != 3) {
-			printfRed("*** With GroupSize = 3 the value of %s(%d), must be 3. Exit\n", 
-				paramNames[t_useAutForPrecRows], val[t_useAutForPrecRows]);
-			return false;
-		}
-		if (groupSize == 2 && val[t_useAutForPrecRows] != 2 && val[t_useAutForPrecRows] != 3) {
-			printfRed("*** With GroupSize = 2 the value of %s(%d), can be 2 or 3. Exit\n", 
-				paramNames[t_useAutForPrecRows], val[t_useAutForPrecRows]);
-			return false;
-		}
 		if (USE_GROUP_4_2_ROWS && multiThreading == 2) {
 			printfRed("*** With %s=%d the use of the Aut(M) on 2 rows (USE_GROUP_4_2_ROWS) is not implemented. Exit\n", 
 				paramNames[t_MultiThreading], multiThreading);

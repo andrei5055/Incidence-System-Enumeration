@@ -1,7 +1,7 @@
+#include "TopGun.h"
 #include <fstream>
 #include <algorithm>
 #include <regex>
-#include "TopGun.h"
 
 using namespace std;
 

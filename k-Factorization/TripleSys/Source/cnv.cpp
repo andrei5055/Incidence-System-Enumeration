@@ -31,13 +31,15 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 
 CC bool checkSet(const tchar* tr, int nt)
 {
-	int n = 1<<tr[0];
+	ll msk[(MAX_PLAYER_NUMBER + (64 - 1)) / 64] = {0};
+	msk[tr[0] / 64] = (ll)1 << (tr[0] % 64);
 	for (int i = 1; i < nt; i++)
 	{
-		const int m = 1<<tr[i];
-		if (n & m)
+		ll bit = (ll)1 << (tr[i] % 64);
+		int mskInd = tr[i] / 64;
+		if (msk[mskInd] & bit)
 			return false;
-		n |= m;
+		msk[mskInd] |= bit;
 	}
 	return true;
 }

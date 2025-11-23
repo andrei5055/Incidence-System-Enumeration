@@ -57,7 +57,7 @@ bool CReportCheckLinksData::checkLinksTR(const tchar* v, int nvAll, int nv, int 
 	}
 	return false;
 }
-bool CReportCheckLinksData::checkLinksT(const tchar* pLinks, int id, bool printLinksStatTime)
+bool CReportCheckLinksData::checkLinksT(const tchar* pLinks, int id)
 {
 	id--;
 	Stat_checkLinksT("all checkLinksT", 0, true);

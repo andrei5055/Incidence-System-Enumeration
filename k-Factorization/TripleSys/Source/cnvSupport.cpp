@@ -97,7 +97,6 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 	if (nrows < 2)
 		return true;
 	TrCycles trCycles;
-	tchar gtest[MAX_PLAYER_NUMBER];
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 	auto v1 = getV1();
@@ -226,21 +225,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 									const bool btr = createU1FTr(tr, &m_TrCyclesAll[itr0], &trCycles, pDir, pIdx, pStartOut);
 									if (btr) {
 										if (bCBMP) {
-											tchar is = 0;
-											for (int i = 0; i < m_groupSize;i++) {
-												auto gind = m_groupSizeRemainder[tr[i]];
-												gtest[i] = gind;
-												is |= (1 << gind);
-											}
-											if (is != (1 << m_groupSize) - 1)
-												continue;
-											auto i = m_groupSize;
-											for (; i < m_numPlayers; i += m_groupSize) {
-												for (int j = 0; j < m_groupSize; j++)
-													if (m_groupSizeRemainder[tr[i+j]] != gtest[j])
-														break;
-											}
-											if (i != m_numPlayers)
+											if (!checkCBMPtr(tr))
 												continue;
 										}
 										m_TrInd++;
@@ -317,12 +302,15 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 					}
 #endif
 					if (bCurrentSet) {
-						if (!nTrsForPair) {
+						if (!nTrsForPair) {/**
+							if (nrows == 7 && trCycles.length[0] == 21)//bCollectInfo)
+								printfRed("nrows=%d: Rows %d,%d with Cycles(%d:%d:%d) cannot be converted to rows 0,1\n",
+									nrows, indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);**/
 							if (any2RowsConvertToFirst2) {
 #if !USE_CUDA
 								if (bCollectInfo)
-									printfRed("Rows %d,%d with Cycles(%d:%d:%d) cannot be converted to rows 0,1\n",
-										indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);
+									printfRed("nrows=%d: Rows %d,%d with Cycles(%d:%d:%d) cannot be converted to rows 0,1\n",
+										nrows, indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);
 #endif
 								bRet = false;
 								if (m_ignoreCanonizationMinus1)
@@ -375,6 +363,25 @@ void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 			printTable("ttr", ttr, 1, m_numPlayers, m_groupSize);
 		}
 	}
+}
+bool alldata::checkCBMPtr(tchar* tr) {
+	tchar gtest[MAX_PLAYER_NUMBER];
+	int is = 0;
+	ASSERT_IF(m_groupSize >= sizeof(is) * 8);// the code below will not work if group size > 31
+	for (int i = 0; i < m_groupSize;i++) {
+		auto gind = m_groupSizeRemainder[tr[i]];
+		gtest[i] = gind;
+		is |= (1 << gind);
+	}
+	if (is != (1 << m_groupSize) - 1)
+		return false;
+	auto i = m_groupSize;
+	for (; i < m_numPlayers; i += m_groupSize) {
+		for (int j = 0; j < m_groupSize; j++)
+			if (m_groupSizeRemainder[tr[i + j]] != gtest[j])
+				break;
+	}
+	return i == m_numPlayers;
 }
 void alldata::printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows)
 {

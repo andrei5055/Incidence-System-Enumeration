@@ -112,10 +112,11 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <ForcedIncludeFiles>MemoryLeak.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalDependencies>WINMM.lib;Utils.lib;EngineGPU.lib;OneApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
@@ -169,6 +170,7 @@
     <ClCompile Include="Source\convertLinksToResult.cpp" />
     <ClCompile Include="Source\endOfRowPrecalculation.cpp" />
     <ClCompile Include="Source\cycles.cpp" />
+    <ClCompile Include="Source\generateLatinSquare.cpp" />
     <ClCompile Include="Source\getNextPlayer.cpp" />
     <ClCompile Include="Source\getUnselected.cpp" />
     <ClCompile Include="Source\GraphCanonizer.cpp" />
@@ -178,7 +180,6 @@
     <ClCompile Include="Source\kmSupport.cpp" />
     <ClCompile Include="Source\kOrbits.cpp" />
     <ClCompile Include="Source\MatrixDB.cpp" />
-    <ClCompile Include="Source\p1f16.cpp" />
     <ClCompile Include="Source\p1fCheck.cpp" />
     <ClCompile Include="Source\p1fSupport.cpp" />
     <ClCompile Include="Source\PlayerPermutation.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="Include\GraphCanonizer.h" />
     <ClInclude Include="Include\groupInfo.h" />
     <ClInclude Include="Include\kOrbits.h" />
+    <ClInclude Include="Include\MemoryLeak.h" />
     <ClInclude Include="Include\ResultDB.h" />
     <ClInclude Include="Include\MatrixDB.h" />
     <ClInclude Include="Include\p1fCheck.h" />

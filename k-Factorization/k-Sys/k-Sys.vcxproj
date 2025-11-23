@@ -118,10 +118,11 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../TripleSys/Include;../Utils/Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <ForcedIncludeFiles>MemoryLeak.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
       <AdditionalDependencies>TripleSys.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

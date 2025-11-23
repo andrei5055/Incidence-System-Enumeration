@@ -1,4 +1,12 @@
 #pragma once
+/*
+#if _DEBUG
+#include <stdlib.h>
+#include <crtdbg.h>
+#define new DBG_NEW
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#endif
+*/
 
 class CRowStorage;
 
@@ -74,9 +82,9 @@ protected:
 	const CRowStorage* const m_pRowStorage;
 	int m_nRowMax;				// Maximum value of iRow
 private:
-	int m_nGroups;
-	CompSolSet** m_ppCompSol;
-	std::vector<CompSol *> *m_solDB;
+	int m_nGroups = 0;
+	CompSolSet** m_ppCompSol = NULL;
+	std::vector<CompSol *> *m_solDB = NULL;
 	int* m_idxUsedSol = NULL;  // Indices of the solutions from m_solDB used for each row.  
 };
 #else
