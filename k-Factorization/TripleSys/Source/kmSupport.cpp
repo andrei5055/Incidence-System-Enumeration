@@ -24,6 +24,18 @@
 		sort3bytes(a, b, c); \
 		ta[a] = a; tb[a] = b; tc[a] = c
 
+CC void alldata::firstPrecalcRowUpdate(tchar * row) const {
+	if (m_test & 128) {
+		auto const jRow = row[1];
+		if (jRow == m_secondPlayerInRow4First) {
+			if (MEMCMP(m_firstPrecalcRow, row, m_numPlayers) > 0) {
+				//printTableColor("old", m_firstPrecalcRow, 1, 14, 2);
+				//printTableColor("new", row, 1, 14, 2);
+				memcpy(m_firstPrecalcRow, row, m_numPlayers);
+			}
+		}
+	}
+}
 CC void alldata::kmSortGroupsByFirstValue(ctchar* mi, tchar * mo) const
 {
 	ctchar* pmi[MAX_PLAYER_NUMBER];
@@ -202,11 +214,6 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 	bool bPrecalcRow = false;
 	if (m_precalcMode == eCalculateRows) {
 		bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
-		/**
-		switch (m_groupSize) {
-		case 2: bPrecalcRow = nr > nrr && *(mi + nc * nrr + 1) != nrr + 1; break;
-		case 3: bPrecalcRow = nrr == 3 && nr > nrr && *(mi + nc * 2 + 1) != 5; break;
-		}*/
 	}
 	if (bPrecalcRow)
 		nr = nrr;
@@ -225,13 +232,7 @@ CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar
 		}
 	}
 	if (bPrecalcRow) {
-#if 0
-		if (*(coi + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
-			if (MEMCMP(coi, m_pRowStorage->m_firstPrecalcRow, nc) == 0)
-				return -1;
-			//printTableColor("c", coi, 1, nc, 2);
-		}
-#endif
+		firstPrecalcRowUpdate(coi);
 		return 3;
 	}
 	return (param(t_nestedGroups) > 1) ? 3 : 0;
@@ -438,7 +439,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 			continue;
 		iRet = kmProcessOneNot1stRow2(mi, i, tb, tr, nr, 3);
 		row2ndValue = tb[0];
-		if (row2ndValue == 3 && (!bPrecalcRow || nrr > 2))
+		if (row2ndValue == 3)
 		{
 			if (iRet)
 			{
@@ -447,7 +448,7 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 					setPlayerIndex(tr, rowMax, i, m_Ktmp + nc * 2, mi + nc * 2, mi + nc * i);
 					return  -1;
 				}
-	//			printf("%d %d %d:", i, ind0, ind1);
+				//			printf("%d %d %d:", i, ind0, ind1);
 				return iRet;
 			}
 			rowMax = MAX2(rowMax, i);
@@ -469,34 +470,18 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		}
 		tm[row2ndValue] = i;
 	}
-	if (!bProc3 && (!bPrecalcRow || nrr > 2))
+	if (!bProc3)
 	{
 		return 2;
 	}
 
-	if (bPrecalcRow)
+	if (bPrecalcRow) {
 		nr = nrr;
+	}
 	
 	for (int i = 4; i <= nr; i++)
 	{
 		if (tm[i] == unset) { // all values of tm are >= 0; unset indicates that row is missing
-			if ((m_test & 128) && i == 4 && nrr == 3 && m_precalcMode == eCalculateRows) {
-				// 3 rows precalculation mode, 4 rows input, 
-				// rows#4 is 0, 4, ..., 
-				// after tr we have same 3 rows on top and one row somewhere (from position 5 to (nc - 1))
-				int ind = nc * i;
-				for (int j = i + 1; j < nc; j++, ind += nc) {
-					if (tm[j] != unset) {
-						auto const jRow = m_Ktmp[ind + 1];
-						ASSERT_IF(jRow != j);
-						auto const pRow = m_pRows[jRow]->getNextObject(); // jRow is from 5 to nc - 1
-						memcpy(pRow, result(i - 1), nc);
-						memcpy(pRow + nc, m_Ktmp + ind, nc);
-						return 2;
-					}
-				}
-				ASSERT_IF(1); // something wrong
-			}
 			return 2;
 		}
 		const auto shift = nc * (i - 1);
@@ -505,23 +490,13 @@ CC int alldata::kmProcessMatrix2p1f(tchar* tr, int nr, int ind0, int ind1)
 		{
 		case -1: setPlayerIndex(tr, rowMax, tm[i], m_Ktmp + shift, mi + shift, mi + nc * tm[i]); return -1;
 		case 0: rowMax = MAX2(tm[i], rowMax); continue;
-		case 1: /**if ((m_test & 128) && i == 4 && nrr == 3 && m_precalcMode == eCalculateRows) {
-				auto const pRow = m_pRows[i]->getNextObject(); // jRow is from 5 to nc - 1
-				memcpy(pRow, result(i - 1), nc);
-				memcpy(pRow + nc, m_Ktmp + shift, nc);
-			}*/ // we will reject this row during canonization for 4 rows
-			return 1;
+		case 1: return 1;
 		}
 	}
 	if (bPrecalcRow) {
-#if 0
-		if (tm[nrr] != unset) {
-			if (*(m_Ktmp + nrr * nc + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
-				if (MEMCMP(m_Ktmp + nrr * nc, m_pRowStorage->m_firstPrecalcRow, nc) < 0)
-					return -1;
-			}
-		}
-#endif
+		// tm[i] - 255 or index of input row i. tm[4] index of input row 3, tm[5] - index of input row 4 (counted from 0)
+		if (tm[nrr + 1] != unset)
+			firstPrecalcRowUpdate(m_Ktmp + nc * nrr);
 		return 3;
 	}
 	return 0;
@@ -559,6 +534,9 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	}
 	ASSERT_IF(row2ndValue >= nc);
 	tm[row2ndValue] = r2ind;
+	 
+	const int nrr = param(t_useRowsPrecalculation);
+	const bool bPrecalcRow = m_precalcMode == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
 
 	for (tchar i = 0; i < nr; i++)
 	{
@@ -600,6 +578,9 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	{
 		return 2;
 	}
+	if (bPrecalcRow) {
+		nr = nrr;
+	}
 	for (int i = 3; i <= nr; i++)
 	{
 		if (tm[i] == unset) // all values of tm are >= 0; unset indicates that row is missing
@@ -611,6 +592,12 @@ CC int alldata::kmProcessMatrix2(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 		case 0: rowMax = MAX2(tm[i], rowMax); continue;
 		case 1: return 1;
 		}
+	}
+	if (bPrecalcRow) {
+		// tm[i] - 255 or index of input row i. tm[4] index of input row 3, tm[5] - index of input row 4 (counted from 0)
+		if (tm[nrr + 1] != unset)
+			firstPrecalcRowUpdate(m_Ktmp + nc * nrr);
+		return 3;
 	}
 	return 0;
 }
@@ -624,8 +611,6 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	memset(tm, unset, nc);
 	int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = m_precalcMode == eCalculateRows && nr > nrr && *(mi + nc * nrr + 1) != m_secondPlayerInRow4First;
-	if (bPrecalcRow)
-		nr = nrr;
 	auto rowMax = tm[0] = ind; // indices of input rows in result matrices
 	auto r2ind = m_Km2ndRowInd[ind];
 	if (r2ind >= nr)
@@ -640,7 +625,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	Stat("2nd row first", 1, row2ndValue == 3);
 	Stat("fast returns", 2, row2ndValue == 3 && iRet);
 #endif
-	if (row2ndValue == 3) // 2nd row
+	if (row2ndValue == 3) // check if this is 2nd row (for group size 3 second players in first 4 rows are always 1, 3, 4, 5)
 	{
 		if (iRet)
 		{
@@ -658,6 +643,9 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 
 	auto* moi = mo + nc * 3;
 	auto* mii = mi + nc * 2;
+	// tm contains indices of the corresponding input rows: tm[0] - index of first input row, 
+	// tm[1], tm[2], tm[3] - indices of input rows 2nd, 3rd and 4th, 
+	// tm[4, ...] - index of next input row or "unset"
 	tm[row2ndValue - 2] = r2ind;
 
 	for (tchar i = 0; i < nr; i++)
@@ -705,6 +693,8 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	{
 		return 2;
 	}
+	if (bPrecalcRow)
+		nr = nrr;
 	rowMax = MAX2(tm[0], tm[1]); // tm[0] - first row index, tm[1] - second row index
 
 	// following loop checks all rows starting from row 3 
@@ -712,7 +702,7 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	{
 		if (tm[i] == unset) // all values of tm are >= 0; unset indicates that row is missing
 			continue;
-		if (*(moi + 1) != *(mii + 1)) //????
+		if (*(moi + 1) != *(mii + 1))
 			return 2;
 
 		switch (MEMCMP(moi, mii, nc))
@@ -726,12 +716,10 @@ CC int alldata::kmProcessMatrix3(ctchar* mi, ctchar* tr, int nr, tchar ind, tcha
 	}
 
 	if (bPrecalcRow) {
-#if 0
-		if (*(moi + 1) == m_pRowStorage->m_firstPrecalcRow[1]) {
-			if (MEMCMP(moi, m_pRowStorage->m_firstPrecalcRow, nc) < 0)
-				return -1;
+		// tm[i] - 255 or index of input row i. tm[3] index of input row 3, tm[5] - index of input row 4 (counted from 0)
+		if (tm[nrr == 3 ? 3 : 5] != unset) {
+			firstPrecalcRowUpdate(moi);
 		}
-#endif
 		return 3;
 	}
 	return 0;

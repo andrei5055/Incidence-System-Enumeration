@@ -15,15 +15,14 @@ CC bool alldata::create2P1FTr(tchar* tr, tchar kStart, ctchar* pf0, ctchar* pf1,
 		v1 = pfj[v2];
 	}
 #if _DEBUG
-	ll s[2] = { 0 };
+	PLAYER_BITS(s);
 	for (itr = 0; itr < m_numPlayers; itr++) {
 		if (tr[itr] == unset || tr[itr] >= m_numPlayers)
 			break;
 		ASSERT_IF(tr[itr] == unset || tr[itr] >= m_numPlayers);
-		s[tr[itr] / 64] |= ((ll)1 << (tr[itr] % 64));
+		SET_PLAYER_BIT(s, tr[itr]);
 	}
-		if ((m_numPlayers < 64 && s[0] != ((ll)1 << m_numPlayers) - 1) ||
-			(m_numPlayers >= 64 && (s[0] != -1 || s[1] != ((ll)1 << (m_numPlayers % 64)) - 1)))
+	if (!ALL_PLAYER_BITS_ON(s, m_numPlayers))
 	{/**/
 		printTable("pf0", pf0, 1, m_numPlayers, 2);
 		printTable("pf1", pf1, 1, m_numPlayers, 2);
@@ -212,7 +211,7 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 		printf("\n");
 	if (i == m_nGroups)
 	{
-		ll s[2] = { 0 };
+		PLAYER_BITS(s);
 		for (i = 0; i < m_numPlayers; i++)
 		{
 			if (tr[i] == unset)
@@ -263,9 +262,8 @@ CC bool alldata::create3U1FTr(tchar* tr, tchar k0Start, tchar k1Start, ctchar* v
 	memset(tr, unset, m_numPlayers);
 	//printTable("t1", trCycles.fullPath, 1, m_numPlayers * 2, 3);
 	//printTable("t2", m_TrCycles.fullPath, 1, m_numPlayers * 2, 3);
-	int i = 0;
-	ASSERT_IF(MAX_CYCLES_PER_SET >= sizeof(i) * 8);
-	for (i = 0; i < MAX_CYCLES_PER_SET; i++)
+	ASSERT_IF(MAX_CYCLES_PER_SET >= sizeof(int) * 8); // in the loop below idir and (1<<i) are 4 bytes (32 bit). Value of i must be <32
+	for (int i = 0; i < MAX_CYCLES_PER_SET; i++)
 	{
 		if (!trCycles.length[i])
 			break;

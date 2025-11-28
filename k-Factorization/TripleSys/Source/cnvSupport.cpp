@@ -31,7 +31,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 							if (icmp < 0)
 							{
 								bRet = false;
-								if (m_ignoreCanonizationMinus1)
+								if (m_doNotExitEarlyIfNotCanonical)
 									continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 								goto ret;
 							}
@@ -50,7 +50,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 					if (!create2P1FTr(tr, k, neighbors0, neighbors1, neighborsi, neighborsj)) {
 						if (any2RowsConvertToFirst2) {
 							bRet = false;
-							if (m_ignoreCanonizationMinus1)
+							if (m_doNotExitEarlyIfNotCanonical)
 								break; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 							goto ret;
 						}
@@ -69,7 +69,7 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 					// save Tr if icmp not -1, and not 1; continue if it was already processed
 					if (icmp < 0) {
 						bRet = false;
-						if (m_ignoreCanonizationMinus1)
+						if (m_doNotExitEarlyIfNotCanonical)
 							continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 #if PRINT_TRANSFORMED
 						printTransformed(nrows, m_numPlayers, m_groupSize, tr, tr, result(), cmpGraph? m_Km:m_Ktmp, 0, 0, 0);
@@ -190,7 +190,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								updateGroup(trt);
 							else if (icmp < 0) {
 								bRet = false;
-								if (m_ignoreCanonizationMinus1)
+								if (m_doNotExitEarlyIfNotCanonical)
 									continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 								goto ret;
 							}
@@ -260,7 +260,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											}
 #endif
 											bRet = false;
-											if (m_ignoreCanonizationMinus1)
+											if (m_doNotExitEarlyIfNotCanonical)
 												continue; // Calculate |Aut| and/or minimum player to return
 											goto ret;
 										}
@@ -285,7 +285,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											trCycles.length[0], trCycles.length[1], trCycles.length[2], indRow0, indRow1);
 #endif
 									bRet = false;
-									if (m_ignoreCanonizationMinus1)
+									if (m_doNotExitEarlyIfNotCanonical)
 										continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 									goto ret;
 								}
@@ -313,7 +313,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 										nrows, indRow0, indRow1, trCycles.length[0], trCycles.length[1], trCycles.length[2]);
 #endif
 								bRet = false;
-								if (m_ignoreCanonizationMinus1)
+								if (m_doNotExitEarlyIfNotCanonical)
 									continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 								goto ret;
 							}

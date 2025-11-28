@@ -28,28 +28,28 @@ CC void CChecklLink::u1fSetTableRow(tchar* ro, const tchar* ri, bool bNeighbors)
 }
 CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int nc)
 {
-	ll cyclesBitsDef[2] = { 0 };
-	unsigned int checked[2] = { 0 };
+	PLAYER_BITS(cyclesBitsDef);
+	PLAYER_BITS(checked);
 	int ncycles = 0;
 	if (u1fCycles) {
 		while (ncycles < MAX_CYCLES_PER_SET && u1fCycles[1 + ncycles]) {
 			auto ind = u1fCycles[1 + ncycles++];
-			cyclesBitsDef[ind / 64] |= (ll)1 << (ind % 64);
+			SET_PLAYER_BIT(cyclesBitsDef, ind);
 		}
 	}
 	else {
-		cyclesBitsDef[nc / 64] = (ll)1 << (nc % 64);
+		SET_PLAYER_BIT(cyclesBitsDef, nc);
 		ncycles = 1;
 	}
 	tchar k = 0;
 	for (tchar m = 0; m < nc; m++)
 	{
-		if (!(checked[m / 64] & ((ll)1 << (m % 64)))) {
+		if (!CHECK_PLAYER_BIT(checked, m)) {
 			k = m;
 			for (int i = 2; i <= nc; i += 2)
 			{
 				if ((k = neighborsj[neighborsi[k]]) == m) {
-					if (!(cyclesBitsDef[i / 64] & ((ll)1 << (i % 64))))
+					if (!CHECK_PLAYER_BIT(cyclesBitsDef, i))
 						return false;
 					if (!(--ncycles))
 						return true;

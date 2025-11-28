@@ -23,6 +23,26 @@ public:
 	CC inline int getElementIndex(const T* obj, uint nElem) const {
 		return binarySearch(obj, 0, nElem, true);
 	}
+	CC int findNextObject(const T* pObj, long low, long high) const {
+		high--;
+		long mid = 0;
+		int cmp = -1;
+		while (low <= high) {
+			mid = low + ((high - low) >> 1);
+			cmp = compareObjects(mid, pObj);
+
+			if (cmp == 0)
+				return mid + 1;
+
+			if (cmp < 0)
+				low = mid + 1;
+			else
+				high = mid - 1;
+		}
+
+		// Not found
+		return (cmp <= 0) ? mid + 1 : mid;
+	}
 protected:
 	const int m_lenObj;
 private:

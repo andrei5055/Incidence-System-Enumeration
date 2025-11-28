@@ -101,7 +101,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		else
 			m_pRowStorage = pRowStorage;
 
-		if (pRowStorage || !(param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation)))
+		if (pRowStorage || !(param(t_MultiThreading) == 2))
 			m_pRowUsage = new CRowUsage(m_pRowStorage);
 	}
 	m_TrCyclesAll = new TrCycles[MAX_CYCLE_SETS];
@@ -202,14 +202,14 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		}
 	}
 #endif
-
+	m_firstPrecalcRow = new tchar[2 * m_numPlayers];
 	m_test = param(t_test);
 	if (m_test & 128) {
-		m_pRows = new CStorageSet<tchar>*[m_numPlayers];
+		m_pRows = new CStorageIdx<tchar>*[m_numPlayers];
 		int i = nPreconstructedRows + 2;
 		memset(m_pRows, 0, i * sizeof(m_pRows[0]));
 		while (i < m_numPlayers) {
-			m_pRows[i++] = new CStorageSet<tchar>(100, m_numPlayers * 2);
+			m_pRows[i++] = new CStorageIdx<tchar>(100, m_numPlayers * 2);
 		}
 	}
 #if Use_GroupOrbits
@@ -287,7 +287,7 @@ CC alldata::~alldata() {
 	if (m_bRowStorageOwner)
 		delete m_pRowStorage;
 	delete m_pRowUsage;
-
+	delete m_firstPrecalcRow;
 	if (m_pRows) {
 		for (int i = 0; i < m_numPlayers; i++)
 			delete m_pRows[i];

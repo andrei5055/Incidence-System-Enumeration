@@ -25,7 +25,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
 #endif
 	int minRows = nrowsStart;
-	m_ignoreCanonizationMinus1 = (m_test & 2) != 0; // || param(t_generateMatrixExample) != 0;
+	m_doNotExitEarlyIfNotCanonical = (m_test & 2) != 0; // || param(t_generateMatrixExample) != 0;
 	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
 	m_allRowPairsSameCycles = param(t_any2RowsConvertToFirst2) != 0 || param(t_allowUndefinedCycles) == 0;
 	m_lastRowWithTestedTrs = 0;
@@ -254,6 +254,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)
 						printf("m_secondPlayerInRow4=%d m_nRows4Day=%d\n", m_secondPlayerInRow4, m_nRows4Day);
+					if (!m_nRows4Day)
+						goto noResult;
 					const auto iRet = endOfRowPrecalculation(iCalcMode);
 					switch (iRet) {
 					case eCheckCurrentMatrix: goto checkCurrentMatrix;

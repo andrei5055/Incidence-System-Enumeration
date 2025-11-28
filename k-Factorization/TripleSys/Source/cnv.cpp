@@ -31,15 +31,13 @@ const char *getFileNameAttr(const kSysParam* param, const char** uf) {
 
 CC bool checkSet(const tchar* tr, int nt)
 {
-	ll msk[(MAX_PLAYER_NUMBER + (64 - 1)) / 64] = {0};
-	msk[tr[0] / 64] = (ll)1 << (tr[0] % 64);
+	PLAYER_BITS(msk);
+	SET_PLAYER_BIT(msk, tr[0]);
 	for (int i = 1; i < nt; i++)
 	{
-		ll bit = (ll)1 << (tr[i] % 64);
-		int mskInd = tr[i] / 64;
-		if (msk[mskInd] & bit)
+		if (CHECK_PLAYER_BIT(msk, tr[i]))
 			return false;
-		msk[mskInd] |= bit;
+		SET_PLAYER_BIT(msk, tr[i]);
 	}
 	return true;
 }
@@ -161,7 +159,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 				//continue;
 			}
 #endif
-			if (m_ignoreCanonizationMinus1)
+			if (m_doNotExitEarlyIfNotCanonical)
 				continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 			break;
 		}
@@ -200,7 +198,7 @@ CC bool alldata::cnvCheckTgNew(ctchar* tr, int nrows, int ngroups)
 		if (!cnvCheckKm(tr, tg, nrows))
 		{
 			ret = false;
-			if (!m_ignoreCanonizationMinus1)
+			if (!m_doNotExitEarlyIfNotCanonical)
 				break;
 		}
 		int i = ng;
@@ -243,7 +241,7 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 						m_playerIndex += i * m_numPlayers;
 					if (cmp < 0) {
 						bRet = false;
-						if (!m_ignoreCanonizationMinus1)
+						if (!m_doNotExitEarlyIfNotCanonical)
 						return false;
 					}
 					else if (!cmp)
@@ -276,6 +274,8 @@ CC bool alldata::cnvCheckNew(int iMode, int nrows, bool useAutomorphisms)
 CC bool alldata::canonizator(int iMode, int nrows)
 {
 	bool ret = true;
+	if (m_precalcMode == eCalculateRows && (m_test & 128))
+		memset(m_firstPrecalcRow, -1, m_numPlayers);
 	initCheckByGroup(nrows, 1);
 	m_cnvMode = iMode;
 	/**/
@@ -295,7 +295,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		}
 		if (!cnvCheckTgNew(a, nrows, ng))
 			ret = false;
-		if (ret || m_ignoreCanonizationMinus1)
+		if (ret || m_doNotExitEarlyIfNotCanonical)
 		{
 			p[m_nGroups] = ng;//m_nGroups; // p[N] > 0 controls iteration and the index boundary for i
 			auto i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
@@ -306,7 +306,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 				SWAP(a[i], a[j]);
 				if (!cnvCheckTgNew(a, nrows, ng)) {
 					ret = false;
-					if (!m_ignoreCanonizationMinus1)
+					if (!m_doNotExitEarlyIfNotCanonical)
 						break;
 				}
 				i = 0;              // reset index i to 1 (assumed)
@@ -322,6 +322,25 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		//m_playerIndex = 0;
 		if (m_precalcMode != eCalculateRows || nrows < param(t_useRowsPrecalculation))
 			saveGroup(*this, nrows);
+
+		// leo
+		if (m_bPrint && (m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
+			/**/
+			static int c; c++; if (!(c % 1000)) {
+				printf("c=%d\n", c);
+				printTableColor("i", result(3), 1, m_numPlayers, 2);
+				printTableColor("r", m_firstPrecalcRow, 1, m_numPlayers, 2);
+			}/**/
+			auto jRow = result(m_nPrecalcRows)[1];
+#if 1
+			memcpy(m_firstPrecalcRow + m_numPlayers, result(m_nPrecalcRows), m_numPlayers);
+			m_pRows[jRow]->updateRepo(m_firstPrecalcRow);
+#else
+			auto const pRow = m_pRows[jRow]->getNextObject(); // jRow is from 5 to nc - 1
+			memcpy(pRow, m_firstPrecalcRow, m_numPlayers);
+			memcpy(pRow + m_numPlayers, result(m_nPrecalcRows), m_numPlayers);
+#endif
+		}
 	}
 	return ret;
 }

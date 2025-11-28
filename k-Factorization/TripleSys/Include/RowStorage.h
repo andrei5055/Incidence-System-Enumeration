@@ -50,7 +50,7 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
-	CC int initCompatibilityMasks(CStorageSet<tchar>** ppSolRecast = NULL);
+	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
@@ -139,7 +139,7 @@ private:
 #endif
 	}
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
-	CC void modifyMask(CStorageSet<tchar>** ppSolRecast);
+	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
 	CC size_t countMaskFunc(size_t prevWeight = 0) const;
 	int findIndexInRange(int left, int right, ctchar* pSol) const;
 
@@ -194,8 +194,6 @@ private:
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 	bool m_bUseAut;
-	public:
-		tchar m_firstPrecalcRow[MAX_PLAYER_NUMBER];
 };
 
 class CRowUsage : public CompSolStorage {

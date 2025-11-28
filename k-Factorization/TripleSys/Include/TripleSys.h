@@ -98,6 +98,13 @@
 #define SetBit(a, n) (*((char*)a+((n) / 8)) |= (1<<(7-((n) & 7))))
 #define ResetBit(a, n) (*((char*)a+((n) / 8)) &= ~(1<<(7-((n) & 7))))
 
+#define PLAYER_BITS(pBits) ll pBits[2] = {0}
+#define SET_PLAYER_BIT(pBits, iBit)  pBits[(iBit) / 64] |= ((ll)1 << ((iBit) % 64))
+#define CHECK_PLAYER_BIT(pBits, iBit)  (pBits[(iBit) / 64] & ((ll)1 << ((iBit) % 64)))
+#define ALL_PLAYER_BITS_ON(pBits, np) (((np) < 64 && pBits[0] == ((ll)1 << (np)) - 1) || \
+ ((np) >= 64 && pBits[0] == -1 && pBits[1] == ((ll)1 << ((np) % 64)) - 1))
+
+
 #define SWAP(a, b)          a ^= (b ^= (a ^= b))
 
 typedef enum {
@@ -192,6 +199,7 @@ public:
 	CC inline auto sortGroupsFn(tchar *pntr) const	{ return (this->*m_pSortGroups)(pntr, 1); }
 	CC inline auto transformedMatrix() const		{ return m_Km; }
 	CC inline auto numRowWithNoSolution() const		{ return m_secondPlayerInRow4; }
+	CC void firstPrecalcRowUpdate(tchar* row) const;
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
 	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
@@ -277,7 +285,7 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkSubmatrix() const { return (iDay <= m_matrixCanonInterval); }
+	CC inline bool checkSubmatrix() const { return (iDay == m_matrixCanonInterval); }
 	//CC inline bool checkSubmatrix() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
@@ -351,7 +359,7 @@ private:
 	int m_lastRowWithTestedTrs;
 	int m_test = 0;
 
-	bool m_ignoreCanonizationMinus1 = false;
+	bool m_doNotExitEarlyIfNotCanonical = false;
 
 	tchar* m_Km;
 	tchar* m_Km2;
@@ -408,7 +416,8 @@ private:
 	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 	int m_printMatrices = 0;
 
-	CStorageSet<tchar>** m_pRows = NULL;
+	CStorageIdx<tchar>** m_pRows = NULL;
+	tchar *m_firstPrecalcRow;
 
 	public:
 	mutable TrCycles* m_TrCyclesFirst2Rows = NULL;

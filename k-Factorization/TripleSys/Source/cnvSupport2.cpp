@@ -4,6 +4,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 {
 	if (nrows < 2)
 		return true;
+
 	tchar tr[MAX_PLAYER_NUMBER];
 	bool bRet = true;
 	TrCycles trCycles;
@@ -44,7 +45,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 							if (icmp < 0)
 							{
 								bRet = false;
-								if (m_ignoreCanonizationMinus1)
+								if (m_doNotExitEarlyIfNotCanonical)
 									continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 								goto ret;
 							}
@@ -74,7 +75,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
 						if (any2RowsConvertToFirst2) {
 							bRet = false;
-							if (m_ignoreCanonizationMinus1)
+							if (m_doNotExitEarlyIfNotCanonical)
 								continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 							goto ret;
 						}
@@ -122,7 +123,7 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						{
 							//TestkmProcessMatrix(nrows, nrows, tr, tr, 0);//icmp);
 							bRet = false;
-							if (m_ignoreCanonizationMinus1)
+							if (m_doNotExitEarlyIfNotCanonical)
 								continue; // Calculate |Aut| and minimum player index to comeback for all such tr's 
 							goto ret;
 						}
