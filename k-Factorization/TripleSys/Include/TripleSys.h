@@ -24,15 +24,14 @@
 #define NThreads 10				  // number of threads to calculate matrices		
 #define NRowsInStartMatrix 3	  // number of rows in initial set of matrices for threads
 #define NRowsInResultMatrix 5	  // number of rows in result, if 0 then calculate full matrix
-#define MaxNumberOfStartMatrices 1000000
-#define FirstIndexOfStartMatrices 0 // 12220
 #else
 #define NThreads 1
 #define NRowsInStartMatrix 0 // must be 0
 #define NRowsInResultMatrix 2
-#define MaxNumberOfStartMatrices  1
-#define FirstIndexOfStartMatrices 0
 #endif
+
+#define MaxNumberOfStartMatrices 1000000
+#define FirstIndexOfStartMatrices 0 // 12220
 
 #define NRBase					  2
 #define UseP1fCheckGroups         1
@@ -204,6 +203,7 @@ public:
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
 	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
 		eCheckForErrors checkErrors) const;
+	CC int getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const;
 private:
 	CC void Init();
 	inline auto numDays() const						{ return m_numDays; }
@@ -420,8 +420,9 @@ private:
 	tchar *m_firstPrecalcRow;
 
 	public:
-	mutable TrCycles* m_TrCyclesFirst2Rows = NULL;
-	mutable bool m_allRowPairsSameCycles = false;
+	tchar * m_firstCycleSet = NULL;
+	TrCycles* m_TrCyclesFirst2Rows = NULL;
+	bool m_allRowPairsSameCycles = false;
 };
 
 inline bool is_number(const std::string& s)

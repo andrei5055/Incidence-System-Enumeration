@@ -324,13 +324,15 @@ CC bool alldata::canonizator(int iMode, int nrows)
 			saveGroup(*this, nrows);
 
 		// leo
-		if (m_bPrint && (m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
-			/**/
-			static int c; c++; if (!(c % 1000)) {
-				printf("c=%d\n", c);
-				printTableColor("i", result(3), 1, m_numPlayers, 2);
-				printTableColor("r", m_firstPrecalcRow, 1, m_numPlayers, 2);
-			}/**/
+		if ((m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
+			if (m_bPrint) {
+				static int c; c++; 
+				if (!(c % 1000)) {
+					printf("c=%d\n", c);
+					printTableColor("i", result(3), 1, m_numPlayers, 2);
+					printTableColor("r", m_firstPrecalcRow, 1, m_numPlayers, 2);
+				}
+			}
 			auto jRow = result(m_nPrecalcRows)[1];
 #if 1
 			memcpy(m_firstPrecalcRow + m_numPlayers, result(m_nPrecalcRows), m_numPlayers);

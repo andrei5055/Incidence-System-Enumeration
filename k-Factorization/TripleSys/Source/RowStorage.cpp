@@ -11,15 +11,15 @@ int my_counter = 0;
 #define TRACE_MASKS					0
 #if !USE_CUDA && TRACE_MASKS
 int ggg = 0;
-#define REPORT_REGECTION(reason)	fprintf(f, "  Rejected %d\n", reason); \
+#define REPORT_REJECTION(reason)	fprintf(f, "  Rejected %d\n", reason); \
 									FCLOSE_F(f)
 #else
-#define REPORT_REGECTION(reason)
+#define REPORT_REJECTION(reason)
 #endif
 
 #define TRACE_INIT_MASKS			1
 #if !USE_CUDA && TRACE_INIT_MASKS
-#define REPORT_REGECTION_ON_SCREEN(frmt, ...)   printfYellow(frmt, __VA_ARGS__)
+#define REPORT_REJECTION_ON_SCREEN(frmt, ...)   printfYellow(frmt, __VA_ARGS__)
 #else
 #define REPORT_REGECTION_ON_SCREEN(...)
 #endif
@@ -265,10 +265,14 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 
 	TrCycles tcs;
 	tcs.irow1 = tcs.irow2 = 0;
-	const auto iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers,
-		neighborsi - m_numPlayers, pObj, eCheckErrors);
+	if (m_pAllData->m_firstCycleSet)
+		return m_pAllData->getCyclesFromNeighbors2(neighborsi + m_numPlayers, pObj + m_numPlayers * 2);
+
+	const auto iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, pObj + m_numPlayers, neighborsi - m_numPlayers, 
+		pObj, eCheckErrors);
 	if (iret <= 0)
 		return false;
+
 	for (int itr0 = 0; itr0 < MAX_CYCLE_SETS; itr0++, tc++)
 	{
 		if (tc->counter == 0)
@@ -441,17 +445,17 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
 	if (m_numSolutionTotal != m_numObjects) {
-		REPORT_REGECTION_ON_SCREEN("Something wrong with DB of precompiled solution: m_numSolutionTotal(%d) !=  m_numObjects(%d)\n", m_numSolutionTotal, m_numObjects);
-		REPORT_REGECTION(1);
+		REPORT_REJECTION_ON_SCREEN("Something wrong with DB of precompiled solution: m_numSolutionTotal(%d) !=  m_numObjects(%d)\n", m_numSolutionTotal, m_numObjects);
+		REPORT_REJECTION(1);
 		return 0;
 	}
 
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
 	auto numRowToConstruct = (uint)(m_numDaysResult - numPreconstructedRows());
 	if (numRowToConstruct > m_numSolutionTotal) {
-		REPORT_REGECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
+		REPORT_REJECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
 			numRowToConstruct, m_numSolutionTotal);
-		REPORT_REGECTION(1);
+		REPORT_REJECTION(1);
 		return 0;
 	}
 #endif
@@ -571,9 +575,9 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #if LATEST_IMPROVEMENT_FOR_TRIPLES
 		numRemainingSolution -= last - first;
 		if (--numRowToConstruct > numRemainingSolution) {
-			REPORT_REGECTION_ON_SCREEN("Cannot construct %d last rows: only %d remaining solutions available.\n",
+			REPORT_REJECTION_ON_SCREEN("Cannot construct %d last rows: only %d remaining solutions available.\n",
 				numRowToConstruct, numRemainingSolution);
-			REPORT_REGECTION(2);
+			REPORT_REJECTION(2);
 			return 0;
 		}
 #endif
@@ -610,10 +614,10 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			// Let's check if player #1 of any solution from that interval was used in one of previous solutions
 			const auto pSolution = getObject(last - 1);
 			if (*pUsedPlayers & ((ll)1 << pSolution[1])) {
-				REPORT_REGECTION_ON_SCREEN("Any solution from the interval [%d, %d) is not compatible with any remaining solution\n"
+				REPORT_REJECTION_ON_SCREEN("Any solution from the interval [%d, %d) is not compatible with any remaining solution\n"
 					"and the player#1 of any solution from that interval was NOT used in previous solutions\n", first, last);
-				REPORT_REGECTION(3);
-				return 0;
+				REPORT_REJECTION(3);
+				return -1;
 			}
 		}
 	}
@@ -625,8 +629,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 
 	if (LATEST_IMPROVEMENT_FOR_TRIPLES && pUsedPlayers && *pUsedPlayers) {
-		REPORT_REGECTION_ON_SCREEN("At least one player (%llx) was not present with player 0 in any matrix row solution\n", *pUsedPlayers);
-		REPORT_REGECTION(4);
+		REPORT_REJECTION_ON_SCREEN("At least one player (%llx) was not present with player 0 in any matrix row solution\n", *pUsedPlayers);
+		REPORT_REJECTION(4);
 		return 0;
 	}
 
@@ -700,7 +704,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	return 1;
 }
 
-
+#if COUNT_MASK_WEIGHT
 size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
 	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
@@ -737,7 +741,7 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 
 	changingWeight = totalWeight - changingWeight;
 
-#if COUNT_MASK_WEIGHT
+#if 0
 	printf("\nMask matrix total weight: %zd  %5.2f%%", totalWeight, double(totalWeight) / matrWeight * 100);
 	printf("\nMask matrix changing weight: %zd  %5.2f%%", changingWeight, double(changingWeight) / matrWeight * 100);
 	if (prevWeight) {
@@ -750,6 +754,7 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 #endif
 	return changingWeight;
 }
+#endif
 
 int CRowStorage::findIndexInRange(int left, int right, ctchar* pSol) const {
 	while (left <= right) {
@@ -768,7 +773,6 @@ int CRowStorage::findIndexInRange(int left, int right, ctchar* pSol) const {
 }
 
 CC void CRowStorage::modifyMask(CStorageIdx<tchar>** ppSolRecast) {
-	static int ccc;
 	// Update the masks to align with the recast solutions database.
 #if OUT_RECASTED_SOLUTIONS
 	char buf[64], * pBuf = buf;
@@ -780,7 +784,6 @@ CC void CRowStorage::modifyMask(CStorageIdx<tchar>** ppSolRecast) {
 	int i = numPreconstructedRows() + 1;
 	auto right = m_pPlayerSolutionCntr[numPreconstructedRows()];
 	while (++i < numPlayers()) {
-		int cmp = -1;
 		uint last = 0;
 		auto availablePlayers = getPlayersMask();
 		auto first = getSolutionRange(last, availablePlayers, numPreconstructedRows());
@@ -796,26 +799,8 @@ CC void CRowStorage::modifyMask(CStorageIdx<tchar>** ppSolRecast) {
 			sprintf_s(pBuf, len, "%d", ++cntr);
 			printTable(buf, sol, 2, numPlayers(), groupSize);
 #endif
-//#if 0
-			ccc++;
-			auto first_ = first;
-			int cmp_ = -1;
-			while (cmp_ < 0 && first_ < last)
-				cmp_ = memcmp(getObject(first_++), sol, numPlayers());
-
-			if (!cmp_) {
-				// First vector from current pair of vectors was found,
-			}
-			else {
-				// First vector from current pair of vectors was NOT found
-				first_--; // for comparing the previous solution
-			}
-
 			first = findNextObject(sol, first, last);
-			ASSERT_IF(first_ != first)
 
-			//ASSERT_IF(first >= last/* || cmp > 0 */);
-			// 
 			// Let's try to find index of the second solution
 			const auto idx = findIndexInRange(left, right, sol + numPlayers());
 			ASSERT_IF(idx < 1);
@@ -823,10 +808,10 @@ CC void CRowStorage::modifyMask(CStorageIdx<tchar>** ppSolRecast) {
 			auto k = first;
 			auto *pSolMask = getSolutionMask(first) + ((idx) >> SHIFT);
 			const auto maskBit = (tmask)(-1) ^ MASK_BIT(idx);
-			while (++k < last) {
+			while (++k < last)
 				*(pSolMask += m_lenSolutionMask) &= maskBit;
-			}
 		}
+
 		pSolRecast->releaseAllObjects();
 	}
 }

@@ -225,10 +225,9 @@ CC bool alldata::create3U1FTr1(tchar* tr, tchar k0Start, tchar k1Start, ctchar* 
 #endif
 				goto falseret;
 			}
-			s[tr[i]/64] |= (ll)1 << (tr[i] % 64);
+			SET_PLAYER_BIT(s, tr[i]);
 		}
-		if ((m_numPlayers < 64 && s[0] != ((ll)1 << m_numPlayers) - 1) ||
-			(m_numPlayers >= 64 && (s[0] != -1 || s[1] != ((ll)1 << (m_numPlayers % 64)) - 1)))
+		if (!ALL_PLAYER_BITS_ON(s, m_numPlayers))
 			goto falseret;
 		return true;
 	}

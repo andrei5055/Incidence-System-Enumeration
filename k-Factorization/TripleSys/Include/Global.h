@@ -74,6 +74,7 @@ typedef enum {
 	t_semiSymmetricGraphs,
 	t_rejectCycleLength,
 	t_test,
+	t_keepPrevResult,
 	t_lastParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,

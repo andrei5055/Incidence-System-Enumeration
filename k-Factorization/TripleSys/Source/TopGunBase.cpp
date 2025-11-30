@@ -94,7 +94,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 
 		nfr++;
 		if (param(t_printMatrices) & 1)
-		printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRows, pMatrixType, sfn.c_str());
+			printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRows, pMatrixType, sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
 		nMax -= nMatricesFromOneFile;
 		if (nMax <= 0)
@@ -102,7 +102,8 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 	}
 
 	if (nMatricesAll)
-		printf("\n%d %d-rows '%s Matrices' loaded from %d file(s)\n", nMatricesAll, nRows, pMatrixType, nfr);
+		printf("\n%d %d-rows '%s Matrices' loaded from %d file(s). Process will start from FirstIndexOfStartMatrices(%d)\n",
+			nMatricesAll, nRows, pMatrixType, nfr, param(t_nFirstIndexOfStartMatrices));
 	else
 		printfRed("*** Can't load '%s-matrices' from folder %s\n", ch.c_str(), path_name.c_str());
 

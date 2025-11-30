@@ -61,10 +61,17 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	bool bCBMP = !pSysParam->completeGraph();
 	m_matrixCanonInterval = param(t_matrixCanonInterval);
 	m_checkForUnexpectedCycle = !m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
-		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); // assume all cycle sets are sorted
+		param(t_u1f) && (!pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][1] > 4); 
 	if (param(t_rejectCycleLength) == 4)
-		m_checkForUnexpectedCycle = true; // reject cycle length 4
+		m_checkForUnexpectedCycle = true;
+	// m_checkForUnexpectedCycle = true will reject new row only if cycle=4 present between this row and first row
 
+	m_firstCycleSet = NULL; // address of the cycle set if group size 2, one only cycle set defined and need to be checked
+	if (!m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
+		param(t_u1f) && (pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][0] == 1)) {
+		if (pSysParam->u1fCycles[0])
+			m_firstCycleSet = pSysParam->u1fCycles[0] + 1;
+	}
 	iPlayerIni = m_numPlayers - 1;
 	if (m_numPlayers > m_groupSize)
 		iPlayerIni -= m_groupSize;
@@ -202,7 +209,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		}
 	}
 #endif
-	m_firstPrecalcRow = new tchar[2 * m_numPlayers];
+	m_firstPrecalcRow = new tchar[m_numPlayers * 2];
 	m_test = param(t_test);
 	if (m_test & 128) {
 		m_pRows = new CStorageIdx<tchar>*[m_numPlayers];
@@ -335,7 +342,8 @@ bool alldata::FindIsomorphicBaseElements(const string& fn) {
 	auto const lenSet = m_numPlayers / 3;
 	CStorage<tchar> baseElements(2, lenSet);
 	int reserved = 2;
-	const auto nSets = readTable(fn, -1, lenSet, 1, 0, baseElements.getObjectsPntr(), reserved, param(t_nMaxNumberOfStartMatrices));
+	const auto nSets = readTable(fn, -1, lenSet, 1, 0, baseElements.getObjectsPntr(), reserved, 
+		param(t_nMaxNumberOfStartMatrices) + param(t_nFirstIndexOfStartMatrices));
 	if (!nSets) {
 		printfRed("Cannot read file \"%s\"\n", fn.c_str());
 		return false;

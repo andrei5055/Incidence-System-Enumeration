@@ -71,6 +71,12 @@ void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	for (; i + 4 <= n; i += 4) {
 		// Load 4 `long long` elements from each array
 		__m256i vec_b = _mm256_loadu_si256((__m256i*) & b[i]);
+#if 1
+		if (_mm256_testz_si256(vec_b, vec_b)) {
+			_mm256_storeu_si256((__m256i*) & a[i], vec_b);
+			continue;
+		}
+#endif
 		__m256i vec_c = _mm256_loadu_si256((__m256i*) & c[i]);
 
 		// Perform bitwise AND operation
@@ -249,8 +255,23 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 						jMax = pRowSolutionMasksIdx[i];
 						jNum = jMax - j + 1;
 						testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nc);
-						multiplyAll(pToA + j, pFromA + j, pPrevA + j, jNum); // from j to <= jMax 
+						multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
+						/**
+						if (i == m_nRowMax - 2)
+						{
+							static int ic = 0, c = 0;
+							for (int k = 3; k <= jNum; k+=4)
+							{
 
+								if (pToA[k] || pToA[k - 1] || pToA[k - 2] || pToA[k - 3])
+									ic++;
+							}
+							c += jNum / 4;
+							if (c > 1000000) {
+								printf("%d ", ic * 100 / c); c = ic = 0;
+							}
+						}
+						*/
 						// Check left, middle and right parts of the solution interval for i-th row
 						auto mask = pRowSolutionMasks[i - 1];
 						/*
@@ -311,6 +332,21 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				}
 				else {
 					multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
+#if 0
+					{
+						static int ic = 0, c = 0;
+						for (int k = 3; k <= jNum; k += 4)
+						{
+
+							if (pPrevAStart[k] || pPrevAStart[k - 1] || pPrevAStart[k - 2] || pPrevAStart[k - 3])
+								ic++;
+						}
+						c += jNum / 4;
+						if (c > 100000000) {
+							printf("%d:%d ", jNum, ic * 100 / c); c = ic = 0;
+						}
+					}
+#endif
 				}
 			}
 			else

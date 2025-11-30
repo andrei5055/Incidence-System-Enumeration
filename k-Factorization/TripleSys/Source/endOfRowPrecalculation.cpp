@@ -40,12 +40,14 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 			}
 			m_precalcMode = eCalculateMatrices;
 			m_playerIndex = 0;
-
-			if (!m_pRowStorage->initCompatibilityMasks(m_pRows)) {
+			int iRet = m_pRowStorage->initCompatibilityMasks(m_pRows);
+			if (iRet <= 0) {
 #if !USE_CUDA
-				printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
-				ASSERT_IF(1);
-				exit(101);
+				if (!iRet) {
+					printfRed("*** Unexpected error returned by initCompatibilityMask()\n");
+					ASSERT_IF(1);
+					exit(101);
+				}
 #endif
 				if (param(t_MultiThreading)) {
 					nLoops = 0;

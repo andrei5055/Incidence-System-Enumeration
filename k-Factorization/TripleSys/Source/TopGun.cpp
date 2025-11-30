@@ -99,7 +99,7 @@ int TopGun::Run()
 		if (readMatrices() < 0)
 			myExit(1);
 		const auto exploreMatrices = param(t_exploreMatrices);
-		if (!exploreMatrices) // && !param(t_nFirstIndexOfStartMatrices))
+		if (!param(t_keepPrevResult))
 			deleteOldFiles();
 
 		if (orderMatrixMode) {
@@ -238,7 +238,8 @@ int TopGun::Run()
 		m_reportInfo += str;
 	}
 	else {
-		deleteOldFiles();
+		if (!param(t_keepPrevResult))
+			deleteOldFiles();
 		alldata sys(*this, paramPtr());
 		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);

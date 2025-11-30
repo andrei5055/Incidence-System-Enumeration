@@ -55,7 +55,7 @@ CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neighborsi, ctchar* neighborsj, int
 						return true;
 					break;
 				}
-				checked[k/64] |= (ll)1 << (k % 64);
+				SET_PLAYER_BIT(checked, k);
 			}
 		}
 	}
@@ -225,6 +225,74 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 
 	return ncycles;
 }
+CC int alldata::getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const
+{
+	// calculate cycle(s) between two rows (for group size 2, one cycle set defined).
+	// returns: >0 - number of cycles calculated.
+	//           0 - if one of the cycle not selected
+	// tt1, tt2 contains values of "neighbor of player"
+	ASSERT_IF(!m_firstCycleSet);
+	tchar cycleSet[MAX_CYCLES_PER_SET];
+	const auto nc = m_numPlayers;
+	tchar ics = 0;
+	tchar tt2tmp[MAX_PLAYER_NUMBER];
+	int ncycles = 0;
+	memset(cycleSet, 0, sizeof(cycleSet));
+	memcpy(tt2tmp, tt2, nc);
+	tchar k = 0, k0, k1 = 0, ip = 0;
+	for (k0 = 0; k0 < nc; k0++)
+	{
+		if (tt2tmp[k0] != unset) {
+			ASSERT_IF(k0 == tt2tmp[k0]);
+			k1 = tt2tmp[k = k0];
+			int i = 0;
+			for (; i < nc; i+=2) {
+				if (k == unset || k1 == unset)
+					break;
+				ASSERT_IF(k >= nc);
+				tt2tmp[k] = tt2tmp[k1] = unset;
+				k = tt2tmp[k1 = tt1[k]];
+			}
+			ASSERT_IF(ics >= MAX_CYCLES_PER_SET);
+			if (m_firstCycleSet[3] == 0) {
+				if (m_firstCycleSet[0] != i && m_firstCycleSet[1] != i && m_firstCycleSet[2] != i)
+					return 0;
+			}
+			else {
+				int j = 0;
+				for (; j < MAX_CYCLES_PER_SET; j++) {
+					if (m_firstCycleSet[j] == i)
+						break;
+					if (m_firstCycleSet[j] == 0)
+						return 0;
+				}
+				if (j >= MAX_CYCLES_PER_SET)
+					return 0;
+			}
+			cycleSet[ics] = i;
+			ics++;
+		}
+	}
+	switch (ics) {
+	case 0: return 0;
+	case 1: break;
+	case 2: if (cycleSet[1] < cycleSet[0]) SWAP(cycleSet[1], cycleSet[0]); break;
+	case 3: if (cycleSet[1] < cycleSet[0]) SWAP(cycleSet[1], cycleSet[0]); 
+		if (cycleSet[2] < cycleSet[1]) SWAP(cycleSet[2], cycleSet[1]);
+		if (cycleSet[1] < cycleSet[0]) SWAP(cycleSet[0], cycleSet[1]); break;
+	default:
+		for (int i = 1; i < ics; i++) {
+			for (int j = 1; j <= ics - i; j++) {
+				if (cycleSet[j] < cycleSet[j - 1])
+					SWAP(cycleSet[j], cycleSet[j - 1]);
+			}
+		}
+		break;
+	}
+	if (memcmp(cycleSet, m_firstCycleSet, ics) == 0)
+		return 1;
+	return 0;
+}
 CC void getTT14ForG3(tchar* tt1, tchar* tt2, tchar* tt3, tchar* tt4, ctchar* v, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, int gn)
 {
 	res1 -= 2;
@@ -280,7 +348,7 @@ CC int alldata::p3Cycles(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* v, ctcha
 CC int alldata::u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, 
 	eCheckForErrors checkErrors) const
 {
-	// returns > 0  ok, 0 - one of the cycle not in any set, -1 - cycle set not defined
+	// return: > 0 - ok, 0 - one of the cycle not in any set, -1 - cycle set not defined
 	// calculate cycle(s) length for rows res1, res2.
 	// t1, t2 - precalculated arrays with 
 	// for group size = 2: neighbor for each player (for example t1[7] - neighbor of player 7 in row res1)
@@ -491,7 +559,7 @@ CC bool CChecklLink::cycleLengthOk(tchar length) const
 	tchar symb;
 	for (int i = 0; i < ngrp; i++) {
 		int k = 0;
-		while (symb = pntr[k++])
+		while (k < MAX_CYCLES_PER_SET && (symb = pntr[k++]) != 0)
 			if (symb == length)
 				return true;
 		pntr += MAX_CYCLES_PER_SET;
