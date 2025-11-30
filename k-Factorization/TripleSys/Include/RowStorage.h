@@ -3,7 +3,7 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
-#define SAME_MASK_IDX		0			// We allow the same mask index to be used for tree consecutive row. 
+#define SAME_MASK_IDX		0			// We allow the same mask index to be used for three consecutive rows. 
                                         // If 0, we will not apply the acceleration method that analyzes valid solutions for the remaining rows in such situations. 
 #define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionCliques	!USE_CUDA	

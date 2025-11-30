@@ -522,7 +522,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	auto availablePlayers = playerMask = getPlayersMask();
 	ll* pUsedPlayers = flg ? NULL : &playerMask;
 	while (availablePlayers) {
-		first = getSolutionRange(last, availablePlayers, ++i);
+		const auto firstStart = first = getSolutionRange(last, availablePlayers, ++i);
 		if (first >= last) {
 			if (flg)
 				break;
@@ -615,7 +615,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			const auto pSolution = getObject(last - 1);
 			if (*pUsedPlayers & ((ll)1 << pSolution[1])) {
 				REPORT_REJECTION_ON_SCREEN("Any solution from the interval [%d, %d) is not compatible with any remaining solution\n"
-					"and the player#1 of any solution from that interval was NOT used in previous solutions\n", first, last);
+					"and the player %d of any solution from that interval was NOT used in previous solutions\n", firstStart, last, pSolution[1]);
 				REPORT_REJECTION(3);
 				return -1;
 			}
