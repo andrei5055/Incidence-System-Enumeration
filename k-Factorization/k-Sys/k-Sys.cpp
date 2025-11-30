@@ -1,5 +1,6 @@
 // k-Sys.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
+#include <filesystem>
 #include <fstream>
 #include "TopGun.h"
 
@@ -66,6 +67,7 @@ const char* intParamNames[]{
 	"SemiSymmetricGraphs",
 	"RejectCycleLength",
 	"Test",
+	"KeepPrevResult",
 };
 
 const char* strParamNames[]{
@@ -167,6 +169,11 @@ int main(int argc, const char* argv[])
 		printfRed("Program was launched without parameters.\n");
 		return -1;
 	}
+	std::filesystem::path pathToParam = argv[1];
+	pathToParam = std::filesystem::absolute(pathToParam);
+	std::filesystem::path homePath = "./";
+	homePath = std::filesystem::absolute(homePath);
+	printfYellow("Input file with parameters='%ws'\nHome directory='%ws'\n", pathToParam.c_str(), homePath.c_str());
 
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames),

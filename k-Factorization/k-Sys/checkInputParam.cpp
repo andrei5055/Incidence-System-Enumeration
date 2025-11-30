@@ -139,18 +139,23 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			// When we order the set of matrices, we need to read all of them.
 			printfRed("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
 				"\"%s\"=%d is ignored and replaced with the maximum integer value (%d)\n", 
-				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], INT_MAX);
-			*(int *)(val + t_nMaxNumberOfStartMatrices) = INT_MAX;
+				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], MaxNumberOfStartMatrices);
+			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices];
 		}
 	}
-	// current version does not work with multiThreading equal 1 and nRowStart != val[t_useRowsPrecalculation]
-	if (multiThreading /* == 2 */ && val[t_useRowsPrecalculation] && nRowStart != val[t_useRowsPrecalculation]) {
+	// current version does not work with nRowStart != val[t_useRowsPrecalculation]
+	if (multiThreading && val[t_useRowsPrecalculation] && nRowStart != val[t_useRowsPrecalculation]) {
 		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], multiThreading,
 			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
 		return false;
 	}
 
 	if (val[t_useRowsPrecalculation]) {
+		if (groupSize == 2 && val[t_useRowsPrecalculation] != 3 && val[t_useRowsPrecalculation] != 4) {
+			printfRed("*** With GroupSize = 2 the value of %s(%d), can be 0,3 or 4. Exit\n",
+				paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+			return false;
+		}
 		if (groupSize == 3 && val[t_useRowsPrecalculation] != 3) {
 			printfRed("*** With GroupSize = 3 the value of %s(%d), can be 0 or 3. Exit\n",
 				paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
