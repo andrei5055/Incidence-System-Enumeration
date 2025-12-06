@@ -76,15 +76,13 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 #endif
 	if (m_TrInd == 100000000)
 	{
-		printf("%d ", m_TrInd);
+#if !USE_CUDA
+			printf("%d - current Trs counter reset to 1\n", m_TrInd);
+#endif
 		m_TrInd = 1;
 	}
-	//return 1;
-	//bool first = false;
 	if (!m_TrInd && !orderOfGroup())
 	{
-		//first = true;
-		//printf("cnvCheckStart\n");
 		updateGroup(res);
 		day = 1;
 	}
@@ -125,13 +123,11 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 #endif
 		Stat_cnvCheckKm1("cmp(2)", 4, icmp == 2);
 		Stat_cnvCheckKm1("cmp(all)", 5, true);
-
 		if (icmp == 0) {
 #if NEED_TO_DEBUG
 			if (incGroupOrder())
 				orbits()->UpdateOrbits(ttr);
 #else
-			//printTable("ttr", ttr, 1, 21, 3);
 			updateGroup(ttr);
 #endif
 #if USE_EQUAL
@@ -319,11 +315,9 @@ CC bool alldata::canonizator(int iMode, int nrows)
 	}
 
 	if (ret) {
-		//m_playerIndex = 0;
 		if (m_precalcMode != eCalculateRows || nrows < param(t_useRowsPrecalculation))
 			saveGroup(*this, nrows);
 
-		// leo
 		if ((m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
 			if (m_bPrint) {
 				static int c; c++; 

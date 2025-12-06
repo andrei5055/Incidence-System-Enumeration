@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "k-SysSupport.h"
 
 #define USE_GPU	  0
@@ -85,12 +86,14 @@ typedef enum {
 	t_testName,
 	t_matrTest, // parameter, which will define the test to be launched for constructed matrix or matrices
 	t_CSV_FileName,
+	t_ResultsName,
 	t_lastStrParam
 } paramID;
 
 typedef struct {
 	const char** paramNames;
 	int numParams;
+	std::vector<int>* m_pTmpParamStorage;
 } paramDescr;
 
 class kSysParam {

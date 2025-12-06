@@ -113,7 +113,8 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 	return nMatricesAll;
 }
 
-void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet, const char* pResFileName) {
+void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet) {
+	const char* pResFileName = paramPtr()->strVal[t_ResultsName]->c_str();
 	const auto exploreMatrices = param(t_exploreMatrices);
 	if (exploreMatrices < -3)
 		return;

@@ -31,7 +31,7 @@ public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase();
 	int virtual Run() = 0;
-	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0, const char* pResults = "_Results.txt");
+	void K_SYS_LIBRARY_API outputIntegratedResults(const paramDescr *pParSet = NULL, int numParamSet = 0);
 	inline auto numPlayers() const			{ return m_numPlayers; }
 	inline auto groupSize() const			{ return m_groupSize; }
 	inline auto groupSizeFactorial() const	{ return m_groupSizeFactorial; }

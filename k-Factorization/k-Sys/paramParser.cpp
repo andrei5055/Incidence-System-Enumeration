@@ -227,7 +227,7 @@ static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* 
 	return 1;
 }
 
-int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& param) {
+int getParameter(string& line, paramDescr* par, int nDescr, kSysParam& param) {
 	const auto pos = line.find_first_of("=:");
 	if (pos != string::npos) {
 		auto beg = line.substr(0, pos);
@@ -245,11 +245,16 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 		}
 	}
 
+	const auto tmpParam = line[0] == '_';
+	if (tmpParam) {
+		line = line.substr(1);
+	}
 	auto j = nDescr;
 	while (j--) {
-		auto paramNames = (par + j)->paramNames;
+		auto* paramSet = par + j;
+		auto paramNames = paramSet->paramNames;
 		bool rc = false;
-		int i = (par + j)->numParams;
+		int i = paramSet->numParams;
 		while (!rc && i--) {
 			if (j == 0)
 				rc = getParam<int>(line, paramNames[i], param.val + i);
@@ -263,8 +268,11 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 				}
 		}
 
-		if (i >= 0)
+		if (i >= 0) {
+			if (tmpParam)
+				paramSet->m_pTmpParamStorage->push_back(i);
 			return 3;
+		}
 	}
 
 	if (j < 0)
@@ -273,7 +281,7 @@ int getParameter(string& line, const paramDescr* par, int nDescr, kSysParam& par
 	return 0;
 }
 
-bool getParameters(ifstream& infile, const paramDescr* par, int nDescr, kSysParam& param, bool& firstSet, bool& endJob) {
+bool getParameters(ifstream& infile, paramDescr* par, int nDescr, kSysParam& param, bool& firstSet, bool& endJob) {
 	bool retVal = false;
 	string line;
 	while (getline(infile, line)) {		// For all the lines of the file

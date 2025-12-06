@@ -68,9 +68,9 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 
 	m_firstCycleSet = NULL; // address of the cycle set if group size 2, one only cycle set defined and need to be checked
 	if (!m_allowUndefinedCycles && m_groupSize == 2 && m_numPlayers > 4 &&
-		param(t_u1f) && (pSysParam->u1fCycles[0] || pSysParam->u1fCycles[0][0] == 1)) {
-		if (pSysParam->u1fCycles[0])
-			m_firstCycleSet = pSysParam->u1fCycles[0] + 1;
+		param(t_u1f) && pSysParam->u1fCycles[0] && pSysParam->u1fCycles[0][0] == 1 && pSysParam->u1fCycles[0][1] != m_numPlayers) {
+		// one cycle set defined and this set is u1f (not p1f)
+		m_firstCycleSet = pSysParam->u1fCycles[0] + 1; // will be used to speedup cycle check between rows in precalc
 	}
 	iPlayerIni = m_numPlayers - 1;
 	if (m_numPlayers > m_groupSize)

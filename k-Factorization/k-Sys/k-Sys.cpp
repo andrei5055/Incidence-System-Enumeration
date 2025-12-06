@@ -79,6 +79,7 @@ const char* strParamNames[]{
 	"TestName",
 	"MatrTest",
 	"CSV_FileName",     // If such file exists, add new SRG info into the copy of that file
+	"ResultsName",
 };
 
 const char* arrayParamNames[]{
@@ -87,7 +88,7 @@ const char* arrayParamNames[]{
 
 using namespace std;
 
-bool getParameters(ifstream& infile, const paramDescr* par, int nDescr, kSysParam& param, bool& firstSet, bool& endJob);
+bool getParameters(ifstream& infile, paramDescr* par, int nDescr, kSysParam& param, bool& firstSet, bool& endJob);
 bool checkInputParam(const kSysParam& param, const char** paramNames);
 string getUF(const tchar* pU1F);
 
@@ -176,12 +177,15 @@ int main(int argc, const char* argv[])
 	printfYellow("Input file with parameters='%ws'\nHome directory='%ws'\n", pathToParam.c_str(), homePath.c_str());
 
 	paramDescr params[] = {
-		intParamNames, countof(intParamNames),
-		strParamNames, countof(strParamNames),
-		arrayParamNames, countof(arrayParamNames)
+		intParamNames, countof(intParamNames), NULL,
+		strParamNames, countof(strParamNames), NULL,
+		arrayParamNames, countof(arrayParamNames), NULL
 	};
 
-	kSysParam param;
+	for (auto i = countof(params); i--;)
+		params[i].m_pTmpParamStorage = new std::vector<int>;
+
+	kSysParam param, paramDefault;
 	param.pParamDescr = params;
 	// Set default integer parameters:
 	auto& val = param.val;
@@ -221,10 +225,17 @@ int main(int argc, const char* argv[])
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
 	strVal[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
+	strVal[t_ResultsName] = new string("_Result.txt");
 
 	for (int i = 0; i < countof(param.u1fCycles); i++)
 		param.u1fCycles[i] = 0;
 
+	memcpy(paramDefault.val, param.val, sizeof(paramDefault.val));
+	auto* strValDef = paramDefault.strVal;
+	strValDef[t_StartFolder] = new string(StartFolder);
+	strValDef[t_ResultFolder] = new string(ResultFolder);
+	strValDef[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
+	strValDef[t_ResultsName] = new string("_Result.txt");
 
 	// Job is defined by external file
 	vector<string> failedTests;
@@ -332,6 +343,19 @@ int main(int argc, const char* argv[])
 			}
 		}
 
+		for (auto i = countof(params); i--;) {
+			auto& tmpParam = params[i].m_pTmpParamStorage;
+			for (size_t j = 0; j < tmpParam->size(); j++) {
+				const int idx = (*tmpParam)[j];
+				switch (i) {
+				case 0:	param.val[idx] = paramDefault.val[idx]; break;
+				case 1: *strVal[idx] = *strValDef[idx]; break;
+				case 2: break;   // not implemented
+				}
+			}
+			tmpParam->clear();
+		}
+
 		delete testName;
 		testName = NULL;
 	} while (infile && !endJob);
@@ -350,12 +374,17 @@ int main(int argc, const char* argv[])
 	printf("There's nothing left to do.\n");
 	speakText(L"There's nothing left to do");
 
-	for (int j = t_lastStrParam; j--;)
+	for (int j = t_lastStrParam; j--;) {
 		delete strVal[j];
+		delete strValDef[j];
+	}
 
 	for (int j = params[2].numParams; j--;)
 		for (int i = 0; i < countof(param.u1fCycles); i++)
 			delete [] param.u1fCycles[i];
+
+	for (auto i = countof(params); i--;)
+		delete params[i].m_pTmpParamStorage;
 
 	delete infile;
 	delete testToRun;

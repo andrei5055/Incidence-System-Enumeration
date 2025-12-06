@@ -289,7 +289,7 @@ CC int alldata::getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const
 		}
 		break;
 	}
-	if (memcmp(cycleSet, m_firstCycleSet, ics) == 0)
+	if (MEMCMP(cycleSet, m_firstCycleSet, ics) == 0)
 		return 1;
 	return 0;
 }

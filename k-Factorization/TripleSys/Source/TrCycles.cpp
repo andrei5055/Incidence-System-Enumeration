@@ -7,8 +7,11 @@ CC bool alldata::createU1FTr(tchar* tr, const TrCycles* trCycles01, const TrCycl
 		return false;
 	int ntr = 0;
 	memset(tr, unset, m_numPlayers);
-	//printTable("t1", trCycles->fullPath, 1, m_numPlayers * 2, m_groupSize);
-	//printTable("t2", trCycles01->fullPath, 1, m_numPlayers * 2, m_groupSize);
+#if 0
+	printf("dir=%d,%d offset=%d,%d start=%d,%d\n", dir[0], dir[1], offset[0], offset[1], start[0], start[1]);
+	printTableColor("t1", trCycles->fullPath, 1, m_numPlayers * 2, m_groupSize);
+	printTableColor("t2", trCycles01->fullPath, 1, m_numPlayers * 2, m_groupSize);
+#endif
 	for (int i = 0; i < trCycles->ncycles; i++)
 	{
 		m_numCycles++;

@@ -174,7 +174,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 						for (int itr = 0; itr < nTrs; itr++) {
 #if 1
 							const auto * trt = pTestedTRs->getObject(itr);
-#else,,
+#else
 							// Take tr in the order they were added to the database
 							const auto* trt = pTestedTRs->CStorage<tchar>::getObject(itr);
 #endif
@@ -377,9 +377,10 @@ bool alldata::checkCBMPtr(tchar* tr) {
 		return false;
 	auto i = m_groupSize;
 	for (; i < m_numPlayers; i += m_groupSize) {
-		for (int j = 0; j < m_groupSize; j++)
+		for (int j = 0; j < m_groupSize; j++) {
 			if (m_groupSizeRemainder[tr[i + j]] != gtest[j])
-				break;
+				return false;
+		}
 	}
 	return i == m_numPlayers;
 }

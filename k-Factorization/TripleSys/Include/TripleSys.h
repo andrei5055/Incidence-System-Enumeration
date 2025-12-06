@@ -357,7 +357,10 @@ private:
 	int m_secondPlayerInRow4Last;
 	int m_numDaysResult;
 	int m_lastRowWithTestedTrs;
-	int m_test = 0;
+	int m_test = 0; // 1-use matrix from data.h, 
+					// 2-use all tr during canonization (do not exit early). 
+					// 8-if one of requested cycle length=4 then allow only rows with "first cycle" length equal 4
+					//   "first cycle" is the cycle (that starts from 0) between a row and first row. Only for group size 2
 
 	bool m_doNotExitEarlyIfNotCanonical = false;
 

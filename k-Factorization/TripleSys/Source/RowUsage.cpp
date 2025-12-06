@@ -299,7 +299,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 						}
 #else
 						while (j + 4 <= jMax) {
-#if 1 // USE_INTRINSIC
+#if USE_INTRINSIC
 							__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
 							if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
 #else

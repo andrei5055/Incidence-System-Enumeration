@@ -96,7 +96,7 @@ int TopGun::Run()
 		}
 	}
 	if (MatrixFromDatah[0] == '\0' && (orderMatrixMode || param(t_MultiThreading))) {
-		if (readMatrices() < 0)
+		if (readMatrices() <= 0)
 			myExit(1);
 		const auto exploreMatrices = param(t_exploreMatrices);
 		if (!param(t_keepPrevResult))
