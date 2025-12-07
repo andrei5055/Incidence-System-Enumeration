@@ -113,6 +113,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 }
 
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
+	std::cout << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 	const auto groupSize = m_pParam->val[t_groupSize];
 	const auto nCols = m_pParam->val[t_numPlayers];
 	const auto numGroups = nCols / groupSize;
@@ -342,11 +343,14 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		SPRINTFD(pBuf, buf, "\n  *** numCurrGraph = %d ***", numCurrGraph);
 #endif
 		if (graphType != t_regular)
-			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d): |Aut(G)| = %zd",
-				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, graphParam->λ, graphParam->μ, groupOrder());
+			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):",
+				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, graphParam->λ, graphParam->μ);
 		else
-			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d): |Aut(G)| = %zd",
-				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, groupOrder());
+			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d):",
+				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k);
+
+		SPRINTFD(pBuf, buf, " |Aut(G)| = %zd", groupOrder());
+		std::cout << buf << "\n";
 #endif
 		if (rank3)
 			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
