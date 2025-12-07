@@ -113,6 +113,22 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 	return nMatricesAll;
 }
 
+#include <io.h>
+void truncate_at_current_pos(FILE* f)
+{
+	fflush(f);                           // flush stdio buffer
+
+	long pos = ftell(f);                 // current offset
+	int fd = _fileno(f);                 // C runtime FD
+	HANDLE h = (HANDLE)_get_osfhandle(fd);
+
+	if (h == INVALID_HANDLE_VALUE)
+		return;                          // handle error if needed
+
+	SetFilePointer(h, pos, NULL, FILE_BEGIN);
+	SetEndOfFile(h);                     // truncate
+}
+
 void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParamSet) {
 	const char* pResFileName = paramPtr()->strVal[t_ResultsName]->c_str();
 	const auto exploreMatrices = param(t_exploreMatrices);
@@ -156,7 +172,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			while (fgets(buffer, sizeof(buffer), f) && !(pStr = strstr(buffer, DATE_TIME_TAG))); 
 			
 			if (pStr) {
-				const auto offset = (long)strlen(pStr) + 2;
+				const auto offset = (long)strlen(pStr) + 3;
 				fseek(f, -offset, SEEK_CUR);
 			}
 			numParamSet = 0;
@@ -212,6 +228,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			}
 		}
 	}
+	fprintf(f, "\n");
 
 	if (!finalReport) {
 		reportResult(f);
@@ -219,6 +236,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			fprintf(f, m_reportInfo.c_str());
 	}
 
+	truncate_at_current_pos(f);
 	FCLOSE_F(f);
 }
 

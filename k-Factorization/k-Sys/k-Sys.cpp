@@ -255,6 +255,13 @@ int main(int argc, const char* argv[])
 			const auto groupSize = val[t_groupSize];
 			const auto useGPU = val[t_useGPU];
 
+			const auto dirParam = { t_StartFolder, t_ResultFolder, t_ImprovedResultFolder };
+			for (const auto dirIdx : dirParam) {
+				auto& dirPath = *strVal[dirIdx];
+				if (!dirPath.empty() && dirPath.back() != '\\' && dirPath.back() != '/')
+					dirPath += '/';
+			}
+
 			char buffer[64];
 			if (testName)
 				sprintf_s(buffer, "\"%s\" ", testName->c_str());
