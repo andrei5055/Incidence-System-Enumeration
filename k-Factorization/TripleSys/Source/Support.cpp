@@ -27,7 +27,7 @@ void reportEOJ(int code)
 	if (code)
 		printfRed("Exit with error(%d). See error explanation above.\n\n", code);
 	else
-		printfGreen("End of job(%d)\n\n", code);
+		printfGreen("\nEnd of job(%d)\n\n", code);
 	if (code)
 	{
 		speakText(L"Oops. k task error");

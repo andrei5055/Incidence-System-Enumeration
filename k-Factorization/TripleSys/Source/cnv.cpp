@@ -320,10 +320,11 @@ CC bool alldata::canonizator(int iMode, int nrows)
 
 		if ((m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
 			if (m_bPrint) {
-				static int c; c++; 
-				if (!(c % 1000)) {
+				static int prevRow, c; c++; 
+				if (prevRow != result(m_nPrecalcRows)[1]) {
+					prevRow = result(m_nPrecalcRows)[1];
 					printf("c=%d\n", c);
-					printTableColor("i", result(3), 1, m_numPlayers, 2);
+					printTableColor("i", result(m_nPrecalcRows), 1, m_numPlayers, 2);
 					printTableColor("r", m_firstPrecalcRow, 1, m_numPlayers, 2);
 				}
 			}

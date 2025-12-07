@@ -113,7 +113,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 }
 
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
-	std::cout << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
+	std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID;
 	const auto groupSize = m_pParam->val[t_groupSize];
 	const auto nCols = m_pParam->val[t_numPlayers];
 	const auto numGroups = nCols / groupSize;

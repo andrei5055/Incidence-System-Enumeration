@@ -44,6 +44,16 @@ CC int alldata::getNextPlayer()
 				tchar* lnk = links(iPrevPlayer);
 				if (lnk[iPlayerNumber] != unset)
 					continue;
+				if ((m_test & 8) && iPlayer == 3 && iDay && param(t_CBMP_Graph) <= 2 && m_firstCycleSet && m_firstCycleSet[0] == 4) {
+					int ip = tmpPlayers[1];
+					ip = (param(t_CBMP_Graph) == 2 || (ip & 1)) ? ip - 1 : ip + 1;
+					if (iPlayerNumber > ip)
+						return m_numPlayers;
+					else if (iPlayerNumber != ip) {
+						iPlayerNumber = ip;
+						goto checkPlayerNumber;
+					}
+				}
 				tmpPlayers[iPlayer] = iPlayerNumber;
 				lnk[iPlayerNumber] = iDay;
 				links(iPlayerNumber)[iPrevPlayer] = iDay;

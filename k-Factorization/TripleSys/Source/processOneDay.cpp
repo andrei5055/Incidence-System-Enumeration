@@ -20,12 +20,7 @@ CC bool alldata::processOneDay()
 #endif
 		if (iPlayer < 0)
 			return false;
-		/* const */ auto iPlayerNumber = getNextPlayer();
-		if ((m_test & 8) && iPlayer == 3 && iDay >= 2 && param(t_CBMP_Graph) == 2 && m_firstCycleSet && m_firstCycleSet[0] == 4) {
-			if (iPlayerNumber >= tmpPlayers[1])
-				iPlayerNumber = m_numPlayers;
-			else iPlayerNumber = tmpPlayers[1] - 1;
-		}
+		const auto iPlayerNumber = getNextPlayer();
 
 		if (iPlayerNumber >= m_numPlayers)
 		{

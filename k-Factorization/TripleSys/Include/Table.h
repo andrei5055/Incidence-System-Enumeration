@@ -7,6 +7,7 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 	const unsigned char* pDayPerm=NULL, bool empty_line = true) {
 	char buffer[8192];
 	const auto* endLine = makeString ? " \"\n" : "\n";
+	const auto* elemFrmt = nc < 10 ? " %1d" : (nc < 100 ? " %2d" : " %3d");
 	for (int j = 0; j < nl; j++) {
 		char* pBuf = buffer;
 		SPRINTFD(pBuf, buffer, pStartLine);
@@ -17,7 +18,7 @@ void outMatrix(const T* c, int nl, int nc, int np, int ns, FILE* f, bool makeStr
 			if (*c == -1 && !f)
 				printfGreen(" %3d", *c);
 			else */
-				SPRINTFD(pBuf, buffer, " %2d", *c);
+				SPRINTFD(pBuf, buffer, elemFrmt, *c);
 		}
 
 		if (cntr < 0) {

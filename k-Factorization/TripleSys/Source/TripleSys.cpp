@@ -6,6 +6,7 @@
 #include "k-SysSupport.h"
 #include "CDTools.h"
 #endif
+#include <filesystem>
 
 using namespace std;
 
@@ -106,6 +107,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 		Result.allocateBuffer(32);
 		const auto pResFile = ResultFile.c_str();
+		if (param(t_keepPrevResult) && std::filesystem::exists(pResFile)) {
+			printfRed("*** Error: Request to override existing file rejected (KeepPrevResult=%d, file name=%s)\n", 
+				param(t_keepPrevResult), pResFile);
+			myExit(1);
+		}
 		Result.setOutFileName(pResFile);
 		m_pRes = &Result;
 
