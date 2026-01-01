@@ -91,6 +91,12 @@ const char* arrayParamNames[]{
 	"U1FCycles"
 };
 
+#ifdef GPU_SUPPORT
+#define TopGun_GPU TopGunGPU
+#else
+#define TopGun_GPU TopGun
+#endif
+
 using namespace std;
 
 bool getParameters(ifstream& infile, paramDescr* par, int nDescr, kSysParam& param, bool& firstSet, bool& endJob);
@@ -336,7 +342,7 @@ int main(int argc, const char* argv[])
 				param.setup();					
 				TopGunBase* topGun;
 				if (useGPU)
-					topGun = new TopGunGPU(param);
+					topGun = new TopGun_GPU(param);
 				else
 					topGun = new TopGun(param);
 

@@ -1,3 +1,5 @@
+#ifdef GPU_SUPPORT
+
 #include "TopGun.h"
 
 int TopGunGPU::Run()
@@ -19,3 +21,4 @@ TopGunGPU::~TopGunGPU() {
     __declspec(dllimport) int closeGPU();
     closeGPU();
 }
+#endif

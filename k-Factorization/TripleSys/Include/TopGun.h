@@ -111,6 +111,7 @@ private:
 	int m_errCode;
 };
 
+#ifdef GPU_SUPPORT
 class TopGunGPU : public TopGunBase {
 public:
 	K_SYS_LIBRARY_API TopGunGPU(const kSysParam& param) : TopGunBase(param)		{}
@@ -119,3 +120,4 @@ public:
 	inline int gridSize() const		{ return param(t_gridSize); }
 	inline int blockSize() const	{ return param(t_blockSize); }  // 32 x 28 also works
 };
+#endif
