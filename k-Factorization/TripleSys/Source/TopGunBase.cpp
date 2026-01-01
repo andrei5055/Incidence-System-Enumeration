@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <set>
+#include <fstream>
 #include "TopGun.h"
 #include "Table.h"
 #include "SRGToolkit.h"
@@ -22,8 +23,15 @@ TopGunBase::~TopGunBase() {
 }
 
 int TopGunBase::readMatrices(int tFolder, int nRows) {
-	if ((m_nMatrices = loadMatrices(tFolder, nRows)) < 1)
-	{
+	const std::string mf = *m_param.strVal[t_InputDataFileName];
+	if (nRows == 0 && mf.length() && param(t_CBMP_Graph) == 2) {
+		if ((m_nMatrices = readInputDataFile(mf, m_pInputMatrices, nMatricesReserved(), m_numDays, m_numPlayers)) < 1) {
+			printfRed("*** Can't load input matrices data from file '%s'. Exit\n", mf.c_str());
+			return m_nMatrices;
+		}
+		printf("%d '%s Matrices' (%d,%d,%d) created from data in file '%s'\n", m_nMatrices, matrixType(nRows), m_numPlayers, m_numDays, m_groupSize, mf.c_str());
+	}
+	else if ((m_nMatrices = loadMatrices(tFolder, nRows)) < 1) {
 		printfRed("*** Can't load '%s Matrices'. Exit\n", matrixType(nRows));
 		return m_nMatrices;
 	}
@@ -35,7 +43,144 @@ int TopGunBase::readMatrices(int tFolder, int nRows) {
 	}
 	return m_nMatrices;
 }
+int TopGunBase::readInputDataFile(const std::string& fn, tchar *pData, int nMatricesMax, int nRows, int numColumnsInResult) {
+#define LatinSquareData 1
+	if (fn.length() == 0)
+		return 0;
+	std::ifstream mf;
+	mf.open(fn, std::ios::in);
+	if (!mf)
+		return 0;
+	std::string digits = "0123456789";
+	tchar lineWithData = '*';
+	const auto lenMatr = numColumnsInResult * nRows;
+	int maxValue = 0, maxValuesOnLine = 0;
+	int maxSize = lenMatr * nMatricesMax;
+	std::string line;
+	size_t start, end;
+	bool bDataTypeDefined = false; // input data type must be defined in first input data line, for example: Format=LS
+	int currentLineNumber = 0;
+	int resultRow = 0;
+	int numValuesInResultMatrix = 0, numValuesInResult = 0;
+	int numMatricesInResult = 0;
+	int inputDataType = 1; // input data type: 1 - Latin Square
+	int inputLStype = param(t_inputLatinSquareType); // Latin Square data type can be (1-6) - all permutations of R,C,S
+	while (!mf.eof()) {
+		if (!getline(mf, line)) {
+			mf.close();
+			return numMatricesInResult;
+		}
+		currentLineNumber++;
+		trim(line);
+		if (line.empty() || line[0] == '#')
+			continue;
+		if (!bDataTypeDefined) {
+			if (line.starts_with("Data=LS"))
+				lineWithData = 'X';
+			else
+				lineWithData = '*';
+			inputDataType = LatinSquareData;
+			maxValue = numColumnsInResult / 2 - 1;
+			maxValuesOnLine = maxValue + 1;
+			bDataTypeDefined = true;
+			continue;
+		}
+		if (line[0] != lineWithData && lineWithData != 'X')
+			continue;
 
+		start = lineWithData == 'X' ? 0 : 1;
+		if (inputDataType == LatinSquareData && numValuesInResultMatrix == 0 && line.find("Latin Square") != std::string::npos) {
+			// Temporary test for input LS data saved previously by this program
+			// *1(3) : row - Hamiltonian RCS Latin Square(Atomic) :
+			const char* lsName[] = { "RCS", "CRS", "SCR", "RSC", "CSR", "SRC" };
+			for (int k = 0; k < 6; k++) {
+				if (line.find(lsName[k]) != std::string::npos) {
+					inputLStype = k + 1;
+					break;
+				}
+			}
+			continue;
+		}
+		auto nCol = line.length();
+		for (int k = 0; k < maxValuesOnLine; k++) {
+			start = line.find_first_of(digits, start);
+			if (start == std::string::npos)
+				end = std::string::npos;
+			else {
+				end = line.find_first_not_of(digits, start);
+				if (end == std::string::npos)
+					end = line.length();
+			}
+			if (end <= start) {
+				printfRed("*** Error in data (# of values %d is less than expected %d): %s\n", k, maxValuesOnLine, line.c_str());
+				printfRed("*** line %d, file: '%s'\n", currentLineNumber, fn.c_str());
+				mf.close();
+				return 0;
+			}
+			int iv = stoi(line.substr(start, end - start));
+			start = end + 1;
+			if (iv < 0 || iv > maxValue) {
+				printfRed("*** Error in data (value #%d is above max=%d): %s\n", k + 1, maxValue, line.c_str());
+				printfRed("*** line %d, file: '%s'\n", currentLineNumber, fn.c_str());
+				mf.close();
+				return 0;
+			}
+			if (inputDataType == LatinSquareData && numValuesInResultMatrix == 0) {
+				numValuesInResult += lenMatr;
+				if (numValuesInResult > maxSize) {
+					printfYellow("*** Warning: input number of matrices exceeds limit(%d): line %d, file: '%s'\n", nMatricesMax, currentLineNumber, fn.c_str());
+					mf.close();
+					return numMatricesInResult;
+				}
+				memset(pData, 0, lenMatr);
+			}
+			if (inputDataType == LatinSquareData) {/**
+				if (numValuesInResultMatrix == 0 && iv != 0) {
+					printfRed("*** Error in data (first value of LS must be equal 0): %s\n", line.c_str());
+					printfRed("*** line %d, file: '%s'\n", currentLineNumber, fn.c_str());
+					mf.close();
+					return 0;
+				} **/
+				// inputLStype (1-6):"RCS", "CRS", "SCR", "RSC", "CSR", "SRC" 
+				int R = 0, C = 0, S = 0;
+				int r = resultRow, c = k, s = iv;
+				switch (inputLStype) {
+				default:
+				case 1: R = r; C = c; S = s; break;
+				case 2: R = c; C = r; S = s; break;
+				case 3: R = s; C = c; S = r; break;
+				case 4: R = r; C = s; S = c; break;
+				case 5: R = c; C = s; S = r; break;
+				case 6: R = s; C = r; S = c; break;
+				}
+				if (R * numColumnsInResult + C * 2 + 1 >= lenMatr || S > maxValue) {
+					printfRed("*** Error in data (value(s) out of range): %s\n", line.c_str());
+					printfRed("*** line %d, file: '%s'\n", currentLineNumber, fn.c_str());
+					mf.close();
+					return 0;
+				}
+				*(pData + R * numColumnsInResult + C * 2) = C * 2;
+				*(pData + R * numColumnsInResult + C * 2 + 1) = S * 2 + 1;
+				numValuesInResultMatrix += 2;
+			}
+		}
+		resultRow++;
+		if (numValuesInResultMatrix >= lenMatr) {
+			if (numMatricesInResult > 0) {
+				if (MEMCMP(pData, pData + lenMatr, lenMatr) == 0) {
+					printfYellow("* 2-partite Matrix #%d (created from input file with Latin Squares) is the same as previous\n", numMatricesInResult + 1);
+					printfYellow("* line %d, file: '%s'\n", currentLineNumber, fn.c_str());
+				}
+			}
+			pData += lenMatr;
+			numMatricesInResult++;
+			resultRow = 0;
+			numValuesInResultMatrix = 0;
+		}
+	}
+	mf.close();
+	return numMatricesInResult;
+}
 int TopGunBase::loadMatrices(int tFolder, int nRows)
 {
 	// Matrix file name with folders: StartFolder/ColumnsxRowsxGroupSize[U1FName]/MatrixID.txt

@@ -184,7 +184,6 @@ public:
 			return itr;
 
 		auto* cmpTr = getObjAddr(nElem);
-
 		if (itr < nElem)
 			insert(itr, nElem);
 		else
@@ -198,3 +197,4 @@ private:
 	int* m_pIdx = NULL;
 };
 
+typedef CStorageIdx<tchar> trDB;

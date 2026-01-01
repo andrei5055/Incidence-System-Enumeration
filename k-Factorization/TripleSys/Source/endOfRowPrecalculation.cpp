@@ -10,9 +10,17 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 	else if (m_nPrecalcRows == iDay) {
 		ASSERT_IF(m_secondPlayerInRow4 == 0);
 		const bool bCBMP = !completeGraph();
-		m_secondPlayerInRow4++;
-		if (bCBMP && !m_groupSizeRemainder[m_secondPlayerInRow4])
+		while (m_secondPlayerInRow4 <= m_secondPlayerInRow4Last) {
 			m_secondPlayerInRow4++;
+#if 0
+			if (m_secondPlayerInRow4 != 7 && m_secondPlayerInRow4 != 10 && m_secondPlayerInRow4 != 14 && m_secondPlayerInRow4 != 17)
+				continue;
+#endif
+			if (bCBMP && !m_groupSizeRemainder[m_secondPlayerInRow4])
+				continue;
+			if (links(m_secondPlayerInRow4)[0] == unset)
+				break;
+		}
 		if (!m_nRows4Day && m_groupSize == 2)
 		{
 			m_secondPlayerInRow4 = m_secondPlayerInRow4First;
@@ -38,9 +46,14 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 				printf("Total number of precalculated row solutions = %5d\n", m_nRows4);
 				m_lastRowWithTestedTrs = 0;
 			}
+			int mode = -1;
+			cnv3RowsCheck2P1F(NULL, NULL, NULL, NULL, mode);
 			m_precalcMode = eCalculateMatrices;
-			m_playerIndex = 0;
+
 			int iRet = m_pRowStorage->initCompatibilityMasks(m_pRows);
+
+			m_playerIndex = 0;
+
 			if (iRet <= 0) {
 #if !USE_CUDA
 				if (!iRet) {
@@ -130,7 +143,7 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 	else
 		m_precalcMode = iCalcMode;
 
-	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : m_groupSize + 1 + m_numDays - m_numDaysResult);
+	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : (m_groupSize + 1 + m_numDays - m_numDaysResult));
 	tchar m_secondPlayerInRow4First = 0;
 	if (bCBMP) {
 		secondPlayerMax = m_numPlayers - 1 - (m_groupSize - 2) * m_groupSize;

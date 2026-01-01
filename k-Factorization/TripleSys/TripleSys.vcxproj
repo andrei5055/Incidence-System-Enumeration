@@ -293,6 +293,7 @@
     <ClCompile Include="Source\checkPlayer1.cpp" />
     <ClCompile Include="Source\checkPlayer3.cpp" />
     <ClCompile Include="Source\cnv.cpp" />
+    <ClCompile Include="Source\cnv3RowsCheck2P1F.cpp" />
     <ClCompile Include="Source\cnvSupport.cpp" />
     <ClCompile Include="Source\cnvSupport2.cpp" />
     <ClCompile Include="Source\cnvSupport3.cpp" />
@@ -345,6 +346,7 @@
     <ClInclude Include="Include\Global.h" />
     <ClInclude Include="Include\GraphCanonizer.h" />
     <ClInclude Include="Include\groupInfo.h" />
+    <ClInclude Include="Include\TableLS.h" />
     <ClInclude Include="Include\kOrbits.h" />
     <ClInclude Include="Include\MemoryLeak.h" />
     <ClInclude Include="Include\ResultDB.h" />

@@ -4,7 +4,11 @@ extern const char* arrayParamNames[];
 
 bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto& val = param.val;
+	const auto& strVal = param.strVal;
 	const auto numPlayers = val[t_numPlayers];
+	const auto vCBMPgraph = val[t_CBMP_Graph];
+	const auto bCBMPgraph = vCBMPgraph> 1;
+	const auto nRowStart = val[t_nRowsInStartMatrix];
 	if (numPlayers > MAX_PLAYER_NUMBER) {
 		printfRed("*** Program is compiled for %d players maximum, but %s=%d is used\n", MAX_PLAYER_NUMBER, paramNames[t_numPlayers], numPlayers);
 		return false;
@@ -34,7 +38,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	int numDays;
-	const auto cbmpGraph = val[t_CBMP_Graph] > 1;
 	
 	if (val[t_generateMatrixExample]) {
 		if (val[t_MultiThreading] > 0) {
@@ -43,22 +46,29 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			return false;
 		}
 
-		if (!cbmpGraph) {
-			printfRed("*** Program can generate (GenerateMatrixExample=%d) only n-partite matrix, but CBMP_Graph=%d, Exit\n",
-				val[t_generateMatrixExample], val[t_CBMP_Graph]);
+		if (!bCBMPgraph) {
+			printfRed("*** Program can generate (GenerateMatrixExample=%d) only n-partite graph, but CBMP_Graph=%d, Exit\n",
+				val[t_generateMatrixExample], vCBMPgraph);
 			return false;
 		}
-		if (val[t_generateMatrixExample] > 1 && (val[t_CBMP_Graph] < 2 || val[t_CBMP_Graph] > 3)) {
+		if (val[t_generateMatrixExample] > 1 && vCBMPgraph != 2) {
 			printfRed("*** With GenerateMatrixExample > 1 this program supports only 2-partite graphs (CBMP_Graph=2). Exit\n");
 			return false;
 		}
 	}
-	if (cbmpGraph) {
+
+	if (strVal[t_InputDataFileName]->length() && (vCBMPgraph != 2  || nRowStart != numPlayers / 2)) {
+		printfRed("*** Incorrect parameters: InputDataFileName('%s') can be used only with %s=2; NRowsInStartMatrix=%d. Exit\n",
+			strVal[t_InputDataFileName]->c_str(), paramNames[t_CBMP_Graph], numPlayers / 2);
+		return false;
+	}
+
+	if (bCBMPgraph) {
 		numDays = numPlayers / groupSize;
 		if (numDays < 1 || numDays * groupSize != numPlayers || groupSize < 0)
 		{
 			printfRed("*** Incorrect parameters: %s=%d %s=%d %s=%d, Exit\n", 
-				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_CBMP_Graph], cbmpGraph);
+				paramNames[t_numPlayers], numPlayers, paramNames[t_groupSize], groupSize, paramNames[t_CBMP_Graph], vCBMPgraph);
 			return false;
 		}
 	}
@@ -108,9 +118,9 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	if (val[t_use2RowsCanonization]) {
-		if (groupSize > 3 && val[t_CBMP_Graph] <= 1)
+		if (groupSize > 3 && vCBMPgraph <= 1)
 		{
-			printfRed("*** %s with CBMP_Graph < 2 cannot be used with %s=%d. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize], groupSize);
+			printfRed("*** %s with CBMP_Graph < 2 cannot be used with %s > 3. Exit\n", paramNames[t_use2RowsCanonization], paramNames[t_groupSize]);
 			return false;
 		}
 		if (!val[t_u1f])
@@ -120,7 +130,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		}
 	}
 
-	const auto nRowStart = val[t_nRowsInStartMatrix];
 	const auto multiThreading = val[t_MultiThreading];
 	if (nRowStart) {
 		const auto nRowRes = val[t_nRowsInResultMatrix];	

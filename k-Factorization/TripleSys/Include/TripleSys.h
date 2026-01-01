@@ -204,6 +204,9 @@ public:
 	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
 		eCheckForErrors checkErrors) const;
 	CC int getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const;
+	CC int cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors, int& mode) const;
+	inline bool printFlag() const					{ return m_bPrint; }
+	inline auto testedTrs() const					{ return m_pTestedTRs; }
 private:
 	CC void Init();
 	inline auto numDays() const						{ return m_numDays; }
@@ -234,6 +237,7 @@ private:
 	CC bool cnvCheck2U1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck2P1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck3U1F(int nrows, int nrowsToUseForTrs);
+	bool cnvCheckOneRow(ctchar* tr, ctchar* pRow, const bool bCheckLength) const;
 	void testPrintGroupRows();
 	bool testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode);
 	bool canonizeMatrix(int nRows);
@@ -391,6 +395,9 @@ private:
 	int m_matrixCanonInterval;   // 0 - Canonicity will be verified only for fully constructed matrices.
 	                             // != 0 Canonicality will be checked on lines with numbers proportional to m_matrixCanonInterval
 	int m_finalKMindex;
+	int m_nLS;
+	int m_atomicLS;
+	int m_symmetricLS;
 #if !USE_CUDA
 	std::string ImprovedResultFile;
 	std::string ResultFile;
@@ -426,6 +433,7 @@ private:
 	tchar * m_firstCycleSet = NULL;
 	TrCycles* m_TrCyclesFirst2Rows = NULL;
 	bool m_allRowPairsSameCycles = false;
+	trDB* m_pTestedTRs = NULL;
 };
 
 inline bool is_number(const std::string& s)

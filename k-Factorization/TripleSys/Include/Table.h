@@ -70,15 +70,17 @@ public:
 	virtual void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) {
 		this->printTable((const T*)pElemInfo->getObject(), false, outToScreen, pElemInfo->orderOfGroup(), "", pElemInfo->getIndices());
 	}
+	virtual void outLS(ctchar* c, int nl, FILE* f, bool outToScreen) {}
+	virtual bool isLSCreated() const			{ return false; }
 protected:
 	inline auto groupSize() const				{ return m_np; }
 
 	const char * m_pName;
 	const ushort m_nc;
-private:
 	const int m_nl;
 	const int m_ns;
 	const int m_np;
+private:
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
 public:
@@ -90,7 +92,7 @@ class TableAut : public Table<tchar>
 public:
 	TableAut(char const* name, int nl, int nc, int ns, int np, bool makeString = false, bool outCntr = false) :
 		Table<tchar>(name, nl, nc, ns, np, makeString, outCntr) {}
-	~TableAut()									{ delete[] m_pBuffer; }
+	virtual ~TableAut()							{ delete[] m_pBuffer; }
 	inline void allocateBuffer(size_t len)		{ m_pBuffer = new char[m_nLenBuffer = len]; }
 	inline void setGroupOrder(int groupOrder) 	{ m_groupOrder = groupOrder; }
 	inline void setInfo(const char* pInfo)		{ m_pInfo = pInfo; }
@@ -351,6 +353,7 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 	} else
 		outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
 
+	outLS((ctchar *)c, nl, f, outToScreen);
 #if OUTPUT_VECTOR_STAT
 	// Output of a vector with the i-th coordinate equal to the number  
 	// of appearances of the i-th player first player in the group.

@@ -113,7 +113,10 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 }
 
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
-	std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID;
+	const bool reportOnScreen = m_pParam->val[t_printMatrices] & t_printExploringSRG;
+	if (reportOnScreen)
+		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
+
 	const auto groupSize = m_pParam->val[t_groupSize];
 	const auto nCols = m_pParam->val[t_numPlayers];
 	const auto numGroups = nCols / groupSize;
@@ -350,7 +353,8 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k);
 
 		SPRINTFD(pBuf, buf, " |Aut(G)| = %zd", groupOrder());
-		std::cout << buf << "\n";
+		if (reportOnScreen)
+			std::cout << buf << "\n";
 #endif
 		if (rank3)
 			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");

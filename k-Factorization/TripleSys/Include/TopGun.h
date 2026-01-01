@@ -65,6 +65,7 @@ protected:
 	GraphDB *m_pGraphDB = NULL;
 private:
 	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
+	int readInputDataFile(const std::string& fn, tchar* pData, int nMatricesMax, int nRows, int nCols);
 	int loadMatrices(int tFolder, int nRows);
 	int readInputData(const std::string& fn, int nRows, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
 		return readTable(fn, nRows, numPlayers(), nm, nTotal, ppSm, reservedElem, nMatricesMax(), pMatrixInfo);

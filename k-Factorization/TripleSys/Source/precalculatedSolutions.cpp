@@ -61,7 +61,7 @@ ProcessPrecalculatedRow:
 		}*/
 		if (m_lastRowWithTestedTrs >= iDay)
 			m_lastRowWithTestedTrs = iDay - 1;
-		const auto retVal = m_pRowUsage->getRow(iDay, ipx);
+		const auto retVal = m_pRowUsage->getRow(iDay, ipx, this);
 		switch (retVal) {
 		case 2:
 			iDaySaved = iDay;

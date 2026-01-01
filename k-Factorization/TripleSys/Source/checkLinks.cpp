@@ -7,6 +7,8 @@ CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : C
 	for (int i = 0; i < m_numPlayers; i++)
 		m_remainder3[i] = i % 3;
 	initArray(&m_pU1Ftable, len);
+	initArray(&m_pU1FtablePC, 5 * m_numPlayers);
+	initArray(&m_prevP2, m_numPlayers);
 	initArray(&m_pLinksCopy, m_numPlayers * m_numPlayers);
 	initArray(&m_v, m_numPlayers * 2);
 	initArray(&m_vo, m_numPlayers * 2);
@@ -20,6 +22,8 @@ CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : C
 CC CChecklLink::~CChecklLink() {
 	delete[] m_remainder3;
 	delete[] m_pU1Ftable;
+	delete[] m_pU1FtablePC;
+	delete[] m_prevP2;
 	delete[] m_pLinksCopy;
 	delete[] m_v;
 	delete[] m_vo;

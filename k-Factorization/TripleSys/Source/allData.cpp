@@ -142,6 +142,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	else
 		m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
 
+	m_pTestedTRs = new CStorageIdx<tchar>(50, m_numPlayers);
 #if !USE_CUDA
 	const auto* binaryCanonRows = sysParam()->strVal[t_binaryCanonizer];
 	if (binaryCanonRows) {
@@ -304,6 +305,7 @@ CC alldata::~alldata() {
 
 	delete m_pGraphCanonizer;
 	releaseBinaryMatricesStorage();
+	delete m_pTestedTRs;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

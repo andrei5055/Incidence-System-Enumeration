@@ -181,8 +181,15 @@ CC void alldata::updateIndexPlayerMinMax()
 			if (m_numPlayers >= 4)
 			{
 				if (m_precalcMode == eCalculateRows && iDay == param(t_useRowsPrecalculation) &&
-					m_secondPlayerInRow4)
+					m_secondPlayerInRow4) {
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = m_secondPlayerInRow4;
+					if (m_secondPlayerInRow4 == param(t_v4Row))
+						m_indexPlayerMin[3] = m_indexPlayerMax[3] = param(t_v4); // 3,9,10; // leo
+					else {
+						m_indexPlayerMin[3] = 2;
+						m_indexPlayerMax[3] = m_numPlayers;
+					}
+				}
 				else
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = completeGraph() ? iDay + 1 : iDay * 2 + 1;
 				m_indexPlayerMax[2] = 1;

@@ -174,6 +174,30 @@ CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len)
 		mo[i] = tr[mi[i]];
 	}
 }
+CC bool kmTranslate2AndCheck(tchar* mo, ctchar* mi, ctchar* tr, int len, tchar tRow)
+{
+	for (int i = 0; i < len; i+=2)
+	{
+		auto a = tr[mi[i]];
+		auto b = tr[mi[i + 1]];
+		if (a > b)
+			SWAP(a, b);
+		mo[i] = a;
+		mo[i + 1] = b;
+		if (a == 0 && b == tRow) {
+			for (i += 2; i < len; i += 2) {
+				a = tr[mi[i]];
+				b = tr[mi[i + 1]];
+				if (a > b)
+					SWAP(a, b);
+				mo[i] = a;
+				mo[i + 1] = b;
+			}
+			return true;
+		}
+	}
+	return false;
+}
 CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups, CKOrbits* pKOrb) const {
 	tchar* mo = m_Km;
 	const auto nc = m_numPlayers;
@@ -241,15 +265,16 @@ CC void alldata::setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int
 {
 	tchar ttr[MAX_PLAYER_NUMBER];
 	tchar tpr[MAX_PLAYER_NUMBER];
-	int i, j = 0;
+	tchar i, j = 0, k;
 	for (i = 0; i < m_numPlayers; i++)
 	{
 		tpr[ciFrom[i]] = ttr[tr[i]] = i;
 	}
 	for (i = 0; i <= ip; i++)
 	{
-		if (j < tpr[ttr[co[i]]])
-			j = tpr[ttr[co[i]]];
+		k = ttr[co[i]];
+		if (j < tpr[k])
+			j = tpr[k];
 	}
 	const auto playerIndex = iDayCurrent * m_numPlayers + j;
 	if (m_playerIndex > playerIndex)

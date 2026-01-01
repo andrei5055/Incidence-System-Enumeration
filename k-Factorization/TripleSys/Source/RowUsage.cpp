@@ -158,7 +158,7 @@ size_t totalWeighChange = 0;
 #define incGetRowCalls()
 #endif
 
-CC int CRowUsage::getRow(int iRow, int ipx) {
+CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	incGetRowCalls();
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
@@ -170,8 +170,6 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 
 	uint last = iRow;
 	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
-	if (!first)
-		first += m_threadID;
 
 	if (last == UINT_MAX)
 		return availablePlayers ? 0 : -1;
@@ -182,6 +180,11 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 	ASSERT_IF(last > m_pRowStorage->getNumSolution());
 
 	if (iRow == numPreconstructedRows) {
+		if (!first) {
+			int mode = -1;
+			pAllData->cnv3RowsCheck2P1F(NULL, NULL, NULL, NULL, mode);
+			first += m_threadID;
+		}
 		if (first >= last)
 			return 0;
 
@@ -191,7 +194,7 @@ CC int CRowUsage::getRow(int iRow, int ipx) {
 				return 0;
 		}
 		else {
-			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last);
+			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData);
 		}
 		first += m_step;
 		return 1;

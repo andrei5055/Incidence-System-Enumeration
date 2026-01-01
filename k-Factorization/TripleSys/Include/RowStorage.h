@@ -44,7 +44,7 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
-	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last) const;
+	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
@@ -101,7 +101,7 @@ private:
 
 private:
 	CC uint& solInterval(uint* pRowSolutionIdx, int iRow, uint* pLast, ll availablePlayers) const;
-	CC bool generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx, ll* pUsedPlayers = NULL) const;
+	CC bool generateCompatibilityMasks(tmask* pMask, uint solIdx, uint idx, const alldata* pAllData = NULL, ll* pUsedPlayers = NULL) const;
 	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
 		memset(bm, 0, m_lenMask);
@@ -122,7 +122,7 @@ private:
 	}
 	CC void initMaskStorage(uint numObjects);
 	CC bool p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const;
-	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx) const;
+	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx, const alldata* pAllData, int& sameP1) const;
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC void updateMasksByAut(const CGroupInfo* pGroupInfo) const;
@@ -152,6 +152,7 @@ private:
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
+	const bool m_use3RowCheck;
 	int m_stepCombSolution;
 
 	ctchar* m_pFirstMatr = NULL;                         // Pointer to the array of initial matrices
@@ -207,7 +208,7 @@ public:
 		delete[] m_pCompatibleSolutions;
 	}
 	CC void init(int iThread = 0, int numThreads = 1);
-	CC int getRow(int iRow, int ipx);
+	CC int getRow(int iRow, int ipx, const alldata* pAllData);
 	CC inline bool getMatrix2(tchar* row, tchar* neighbors, int nRows, int iRow) {
 		getMatrix(row, neighbors, ++iRow);
 		return completeMatrix(row, neighbors, nRows, iRow);

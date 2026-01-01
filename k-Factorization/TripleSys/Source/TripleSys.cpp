@@ -1,4 +1,5 @@
 #include <iostream>
+#include "TableLS.h"
 #include "TripleSys.h"
 #include "kOrbits.h"
 
@@ -59,6 +60,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	if (mStart0)
 	{
 		memcpy(result(), mStart0, nrowsStart * m_numPlayers);
+		if (m_printMatrices & 64)
+			printTable("Input matrix", result(), iDay, m_numPlayers, m_groupSize, 0, true);
 		linksFromMatrix(links(), result(), nrowsStart);
 	}
 
@@ -93,7 +96,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	auto mTime = clock();
 	unsigned char* bResults = NULL;
 
-	TableAut Result(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+	
+	TableAut* pResult = NULL;
+	int iSaveLS = m_groupSize <= 3 ? param(t_saveLatinSquareType) : 0;
+	if (iSaveLS)
+		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
+	else
+		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
 	if (bSavingMatricesToDisk) {
 		string fName = format("{:0>10}.txt", threadNumber);
@@ -105,15 +114,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 		createFolderAndFileName(ResultFile, sysParam(), t_ResultFolder, numDaysResult(), fName);
 
-		Result.allocateBuffer(32);
+		pResult->allocateBuffer(32);
 		const auto pResFile = ResultFile.c_str();
 		if (param(t_keepPrevResult) && std::filesystem::exists(pResFile)) {
 			printfRed("*** Error: Request to override existing file rejected (KeepPrevResult=%d, file name=%s)\n", 
 				param(t_keepPrevResult), pResFile);
 			myExit(1);
 		}
-		Result.setOutFileName(pResFile);
-		m_pRes = &Result;
+		pResult->setOutFileName(pResFile);
+		m_pRes = pResult;
 
 		if (outAutGroup) {
 			for (int i = 0; i < countof(pAutGroup); i++) {
@@ -134,6 +143,20 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
 			m_finalKMindex = 1;
 			nLoops = 1;
+			goto noResult;
+		}
+	}
+	else if (sysParam()->strVal[t_InputDataFileName]->length() && !m_createSecondRow) {
+
+		tchar tr[MAX_PLAYER_NUMBER];
+		memset(tr, 0, m_numPlayers);
+		for (int i = 0;i < m_numPlayers; i++)
+			tr[result(0)[i]] = i;
+		kmTranslate(result(0), result(0), tr, m_numDays * m_numPlayers);
+		if (!canonizeMatrix(m_numDays))
+			goto noResult;
+		if (!linksFromMatrix(links(), result(), m_numDays, false)) {
+			printfRed("*** Internal error\n");
 			goto noResult;
 		}
 	}
@@ -255,12 +278,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 			}
 #endif
-			if (!processOneDay())
-			{
+			if (!processOneDay()) {
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)
 						printf("m_secondPlayerInRow4=%d m_nRows4Day=%d\n", m_secondPlayerInRow4, m_nRows4Day);
-					if (!m_nRows4Day)
+					if (!m_nRows4Day && m_groupSize == 2 && param(t_MultiThreading))
 						goto noResult;
 					const auto iRet = endOfRowPrecalculation(iCalcMode);
 					switch (iRet) {
@@ -397,13 +419,25 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				char stat[1024];
 				getAllCycles(neighbors(), iDay);
 				m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				Result.setInfo(stat);
-				Result.setGroupOrder(orderOfGroup());
+				pResult->setInfo(stat);
+				pResult->setGroupOrder(orderOfGroup());
 #if 0			// record result and print on screen (if m_bPrint==true)
-				Result.printTable(result(), true, m_bPrint, numDaysResult());
+				pResult->printTable(result(), true, m_bPrint, numDaysResult());
 #else			// record result without print on screen
-				if (bSavingMatricesToDisk)
-					Result.printTable(result(), true, false, numDaysResult());
+				if (bSavingMatricesToDisk) {
+					pResult->printTable(result(), true, false, numDaysResult());
+					if (pResult->isLSCreated()) {
+						m_nLS++;
+						auto* pResultLS = static_cast<const TableLS*>(pResult);
+						if (pResultLS->isAtomicLS())
+							m_atomicLS++;
+						if (pResultLS->isSymmetricLS())
+							m_symmetricLS++;
+						if (m_bPrint)
+							printfYellow("Latin Square (%sAtomic, %sTotally symmetric) saved with the matrix below\n",
+								pResultLS->isAtomicLS() ? "" : "Not ", pResultLS->isSymmetricLS() ? "" : "Not ");
+					}
+				}
 
 				if (m_bPrint) {
 					printf("%d(%zd): " AUT "%d, % s\n", threadNumber, nLoops, orderOfGroup(), stat);
@@ -475,6 +509,9 @@ noResult:
 #if USE_BINARY_CANONIZER
 	releaseCanonizer(pIS_Canonizer);
 #endif
+
+	if (m_bPrint && param(t_saveLatinSquareType) && m_nLS)
+		printfYellow("Thread %d: Latin Squares=%d, Atomic=%d, Totally symmetric=%d\n", threadNumber, m_nLS, m_atomicLS, m_symmetricLS);
 	if (pcnt)
 	{
 		*pcnt = m_finalKMindex;
@@ -491,7 +528,10 @@ noResult:
 			else {
 				str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
 					threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
-
+				/**
+				if (param(t_saveLatinSquareType))
+					str += format("Latin Squares {}, Atomic: {}, Totally symmetric: {}\n", m_nLS, m_atomicLS, m_symmetricLS);
+				**/
 				str += format("Thread execution time = {} ms\n", clock() - m_iTime);
 			}
 			printf(str.c_str());
@@ -500,6 +540,8 @@ noResult:
 		}
 	}
 	StatReportAfterThreadEnd(ResetStat, "Thread ended, processed", (int)nLoops, bFirstThread); // see stat.h to enable
+
+	delete pResult;
 	delete[] bResults;
 
 	for (int i = 0; i < countof(pAutGroup); i++)

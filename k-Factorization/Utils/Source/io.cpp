@@ -1,5 +1,45 @@
 #include <fstream>
 #include "k-SysSupport.h"
+bool isRowHamiltonian(tchar* pls, tchar* tmp, int nr, int nc) {
+	for (int i = 0; i < nr - 1; i++) {
+		tchar* p = pls + i * nc;
+		tchar m0 = p[0];
+		for (int k = 0; k < nc; k++)
+			tmp[p[k]] = k;
+		for (int j = i + 1; j < nr; j++) {
+			tchar* v = pls + j * nc;
+			tchar m = 0;
+			m = v[m];
+			for (int k = 2; k < nc; k++) {
+				tchar m1 = tmp[m];
+				m = v[m1];
+				if (m == m0)
+					return false;
+			}
+		}
+	}
+	return true;
+}
+void sortLS(tchar* pls, tchar* tmp, int nr, int nc) {
+	memcpy(tmp, pls, nr * nc);
+	for (int i = 0; i < nc; i++) {
+		int k = pls[i];
+		if (i == k)
+			continue;
+		tchar* plsj = pls + i;
+		tchar* tmpj = tmp + k;
+		for (int j = 0; j < nr; j++, plsj += nc, tmpj += nc) {
+			*tmpj = *plsj;
+		}
+	}
+	memcpy(pls, tmp, nr * nc);
+	for (int i = 0; i < nr; i++) {
+		int k = tmp[i * nc];
+		if (k != i) {
+			memcpy(pls + k * nc, tmp + i * nc, nc);
+		}
+	}
+}
 
 int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, tchar** ppSm, 
 	int& reservedElement, int nMatricesMax, CMatrixInfo * pMatrixInfo, char infoSymb) {
@@ -73,7 +113,7 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 				}
 			}
 			trim(line);
-			if (line.empty())
+			if (line.empty() || line[0] == LatinSquareData1stColumn)
 				continue;
 
 			if (line[0] == infoSymb) {

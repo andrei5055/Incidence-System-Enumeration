@@ -76,6 +76,10 @@ typedef enum {
 	t_rejectCycleLength,
 	t_test,
 	t_keepPrevResult,
+	t_saveLatinSquareType,
+	t_inputLatinSquareType,
+	t_v4,
+	t_v4Row,
 	t_lastParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,
@@ -87,8 +91,14 @@ typedef enum {
 	t_matrTest, // parameter, which will define the test to be launched for constructed matrix or matrices
 	t_CSV_FileName,
 	t_ResultsName,
-	t_lastStrParam
+	t_InputDataFileName,
+	t_lastStrParam,
 } paramID;
+
+typedef enum {
+	t_printNothing = 0,
+	t_printExploringSRG = 1 << 6, // report the process of SRG's exploring 
+} printFlags;
 
 typedef struct {
 	const char** paramNames;

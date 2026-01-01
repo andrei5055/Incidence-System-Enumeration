@@ -1,4 +1,4 @@
-Test=128
+Test=256
 PrintMatrices=0
 ExploreMatrices=3
 Out_CSV_File=-1
@@ -121,7 +121,6 @@ ExpectedResult=1
 RUN_JOB
 
 UseRowsPrecalculation=3
-UseAutForPrecRows=3
 
 TestName = "P1F_14x13x2_10Threads"
 nPlayers=14

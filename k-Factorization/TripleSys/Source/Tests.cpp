@@ -215,8 +215,6 @@ bool alldata::canonizeMatrix(int nRows)
 {
 	auto precalcMode = m_precalcMode;
 	m_precalcMode = eCalcResult;
-	//printTable("Input matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
-
 	tchar tm[MAX_PLAYER_NUMBER];
 	memset(tm, 0, sizeof(tm));
 	memcpy(m_Km, result(), nRows * m_numPlayers);

@@ -28,6 +28,7 @@
 #define K_SYS_LIBRARY_API
 #endif
 
+#define LatinSquareData1stColumn '*'
 #define AUT			"|Aut(M)| = "
 #define MATR_ATTR	"\n\n"##AUT
 
@@ -62,7 +63,7 @@ CC T* reallocStorageMemory(T** pObjects, size_t lenObj, size_t lenObjPrev = 0, b
 		memset(pNewObjMemory + lenObjPrev, 0, (lenObj - lenObjPrev) * sizeof(void *));
 	}
 
-	delete[] * pObjects;
+	delete[] *pObjects;
 	return (*pObjects = pNewObjMemory) + lenObjPrev;
 }
 
@@ -115,6 +116,10 @@ private:
 	int m_nMatrReserved = 0;
 };
 
+UTIL_LIBRARY bool isRowHamiltonian(tchar* pls, tchar* tmp, int nr, int nc);
+UTIL_LIBRARY void sortLS(tchar* pls, tchar* tmp, int nr, int nc);
 UTIL_LIBRARY int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nTotal, tchar** ppSm, int& reservedElement, int nMatricesMax, CMatrixInfo* pMatrixInfos = NULL, char infoSymb = '"');
 K_SYS_LIBRARY_API void speakText(LPCWSTR text);
+
+
 

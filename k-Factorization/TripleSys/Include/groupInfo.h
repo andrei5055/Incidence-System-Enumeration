@@ -87,6 +87,8 @@ public:
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri, bool bNeighbors = false) const;
 	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
+	CC inline auto* neighborsPC(int nDay = 0) const		{ return m_pU1FtablePC + nDay * m_numPlayers; }
+	CC inline auto* prevP2() const						{ return m_prevP2; }
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
 	CC inline const kSysParam* sysParam() const			{ return m_param; }
 private:
@@ -94,6 +96,8 @@ private:
 
 	tchar* m_remainder3;
 	tchar* m_pU1Ftable;
+	tchar* m_pU1FtablePC;
+	tchar* m_prevP2;
 	tchar* m_pLinksCopy = NULL;
 	tchar* m_v = NULL;
 	tchar* m_vo = NULL;

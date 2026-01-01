@@ -68,6 +68,10 @@ const char* intParamNames[]{
 	"RejectCycleLength",
 	"Test",
 	"KeepPrevResult",
+	"SaveLatinSquareType",
+	"InputLatinSquareType",
+	"v4",
+	"v4Row",
 };
 
 const char* strParamNames[]{
@@ -80,6 +84,7 @@ const char* strParamNames[]{
 	"MatrTest",
 	"CSV_FileName",     // If such file exists, add new SRG info into the copy of that file
 	"ResultsName",
+	"InputDataFileName",
 };
 
 const char* arrayParamNames[]{
@@ -139,11 +144,11 @@ int main(int argc, const char* argv[])
 {
 #if _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(207);
+	//_CrtSetBreakAlloc(202);
 #endif
 	SetConsoleOutputCP(CP_UTF8);
 	enableAnsiColors();
-	std::cout << "k - Sys 10.62\n";
+	cout << "k-Sys 12.15.2025\n";
 	// Get the handle to the current process
 	HANDLE hProcess = GetCurrentProcess();
 
@@ -170,11 +175,12 @@ int main(int argc, const char* argv[])
 		printfRed("Program was launched without parameters.\n");
 		return -1;
 	}
-	std::filesystem::path pathToParam = argv[1];
-	pathToParam = std::filesystem::absolute(pathToParam);
-	std::filesystem::path homePath = "./";
-	homePath = std::filesystem::absolute(homePath);
+
+	filesystem::path pathToParam = filesystem::absolute(argv[1]);
+	filesystem::path homePath = filesystem::absolute("./");
 	printfYellow("Input file with parameters='%ws'\nHome directory='%ws'\n", pathToParam.c_str(), homePath.c_str());
+	pathToParam.clear();
+	homePath.clear();
 
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames), NULL,
@@ -183,7 +189,7 @@ int main(int argc, const char* argv[])
 	};
 
 	for (auto i = countof(params); i--;)
-		params[i].m_pTmpParamStorage = new std::vector<int>;
+		params[i].m_pTmpParamStorage = new vector<int>;
 
 	kSysParam param, paramDefault;
 	param.pParamDescr = params;
@@ -225,7 +231,8 @@ int main(int argc, const char* argv[])
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
 	strVal[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
-	strVal[t_ResultsName] = new string("_Result.txt");
+	strVal[t_ResultsName] = new string("_Results.txt");
+	strVal[t_InputDataFileName] = new string("");
 
 	for (int i = 0; i < countof(param.u1fCycles); i++)
 		param.u1fCycles[i] = 0;
@@ -235,7 +242,8 @@ int main(int argc, const char* argv[])
 	strValDef[t_StartFolder] = new string(StartFolder);
 	strValDef[t_ResultFolder] = new string(ResultFolder);
 	strValDef[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
-	strValDef[t_ResultsName] = new string("_Result.txt");
+	strValDef[t_ResultsName] = new string("_Results.txt");
+	strValDef[t_InputDataFileName] = new string("");
 
 	// Job is defined by external file
 	vector<string> failedTests;
@@ -287,7 +295,7 @@ int main(int argc, const char* argv[])
 							*ufName += '_';
 							auto lenCycle = lenCycles;
 							while (*lenCycle)
-								*ufName += std::to_string(*lenCycle++);
+								*ufName += to_string(*lenCycle++);
 						}
 						if (param.val[t_allowUndefinedCycles])
 							*ufName += "_all";

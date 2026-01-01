@@ -17,7 +17,6 @@ typedef struct SRGParam {
 class SRGToolkit : public CGraphCanonizer
 {
 public:
-	SRGToolkit(ctchar* pGraph, int nVert);
 	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
