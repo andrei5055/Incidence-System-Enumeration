@@ -16,10 +16,12 @@
 slnx.*
 /CDTools/CDTools/x64/
 /k-Factorization/EngineGPU/x64/
-/k-Factorization/TripleSys/x64/*
+/k-Factorization/TripleSys/x64/
 /k-Factorization/Utils/x64/
-/k_Factorization/OneApp/x64/Debug/*
+/k_Factorization/OneApp/x64/
 /k-Factorization/Logs*
 /k-Factorization/CI/
 /k-Factorization/*.tar
 /Log*
+/k-Factorization/OneApp/x64
+/k-Factorization/TripleSys/x64/Debug/TripleSys.dll.recipe
