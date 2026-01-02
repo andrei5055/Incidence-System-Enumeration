@@ -47,7 +47,7 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 				m_lastRowWithTestedTrs = 0;
 			}
 			int mode = -1;
-			cnv3RowsCheck2P1F(NULL, NULL, NULL, NULL, mode);
+			cnvPrecalcRowsCompCheck(mode);
 			m_precalcMode = eCalculateMatrices;
 
 			int iRet = m_pRowStorage->initCompatibilityMasks(m_pRows);

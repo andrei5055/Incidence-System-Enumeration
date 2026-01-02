@@ -182,7 +182,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	if (iRow == numPreconstructedRows) {
 		if (!first) {
 			int mode = -1;
-			pAllData->cnv3RowsCheck2P1F(NULL, NULL, NULL, NULL, mode);
+			pAllData->cnvPrecalcRowsCompCheck(mode);
 			first += m_threadID;
 		}
 		if (first >= last)

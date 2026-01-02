@@ -7,7 +7,7 @@ CC CChecklLink::CChecklLink(const SizeParam & sizeParam, const kSysParam* p) : C
 	for (int i = 0; i < m_numPlayers; i++)
 		m_remainder3[i] = i % 3;
 	initArray(&m_pU1Ftable, len);
-	initArray(&m_pU1FtablePC, 5 * m_numPlayers);
+	initArray(&m_pU1FtablePC, MAX_PRECALC_ROWS * m_numPlayers);
 	initArray(&m_prevP2, m_numPlayers);
 	initArray(&m_pLinksCopy, m_numPlayers * m_numPlayers);
 	initArray(&m_v, m_numPlayers * 2);

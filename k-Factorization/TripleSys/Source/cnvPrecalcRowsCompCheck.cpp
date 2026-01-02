@@ -3,7 +3,7 @@
 
 #define FIND_ERROR 0
 #if FIND_ERROR && _DEBUG
-// Function to find error in cnv3RowsCheck2P1F defining non-compatible solutions
+// Function to find error in cnvPrecalcRowsCompCheck defining non-compatible solutions
 // between pre-calculated ones. to be 
 bool findError(ctchar* sol1, ctchar* sol2, int lenSol, bool assert = false)
 {
@@ -50,18 +50,18 @@ bool findError(ctchar* sol1, ctchar* sol2, int lenSol, bool assert = false)
 #define findError(sol1, sol2, lenSol, assert)
 #endif
 
-CC int alldata::cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors, int& mode) const
+CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors) const
 {
 	//if (mode == 0 && (p1[1] > 7 || p2[1] > 7))
 	//	return 0; //leo
 
-	// p1, p2 - rows to calculate compatibilities with first 3 rows
+	// p1, p2 - rows to calculate compatibilities with first precalculate rows rows
 	// mode: = 0 - p1 is new,
 	//       > 0 - p1 is the same as in prev call and mode is a length of solution to check.
-
+	const auto nRowsPrecalc = param(t_useRowsPrecalculation);
 	m_playerIndex = m_numPlayers;
 	if (mode == -1) {
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < nRowsPrecalc; i++)
 			u1fSetTableRow(neighborsPC(i), result(i), true);
 		return 0;
 	}
@@ -69,19 +69,18 @@ CC int alldata::cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, c
 	tchar tr[MAX_PLAYER_NUMBER];
 	int iRet = 0;
 	auto* pTestedTRs = testedTrs();
-	const auto* neighbor0 = neighborsPC(0);
-	const auto* neighbor1 = neighborsPC(1);
-	const auto* neighbor2 = neighborsPC(2);
+	const auto* neighbors0 = neighborsPC(0);
+	const auto* neighbors1 = neighborsPC(1);
 
 	if (!mode) {
 		pTestedTRs->resetGroupOrder();
 
 		// create all tr to convert (p1, p2) to result(0,1) and to result(1,0))
 		for (int j = 0; j < 2; j++) {
-			auto* pf0 = j == 0 ? neighbor0 : neighbor1;
-			auto* pf1 = j == 0 ? neighbor1 : neighbor0;
+			auto* pf0 = j == 0 ? neighbors0 : neighbors1;
+			auto* pf1 = j == 0 ? neighbors1 : neighbors0;
 			for (int k = 0; k < m_numPlayers; k++) {
-				for (int i = 0; i < 3; i++) {
+				for (int i = 0; i < nRowsPrecalc; i++) {
 					if (create2P1FTr(tr, k, pf0, pf1, neighborsPC(i), p1Neighbors)) {
 						pTestedTRs->isProcessed(tr);
 					} else {
@@ -110,11 +109,11 @@ CC int alldata::cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, c
 
 	mode = m_numPlayers;
 	for (int j = 0; j < 2; j++) {
-		auto* pf0 = j == 0 ? neighbor0 : neighbor1;
-		auto* pf1 = j == 0 ? neighbor1 : neighbor0;
+		auto* pf0 = j == 0 ? neighbors0 : neighbors1;
+		auto* pf1 = j == 0 ? neighbors1 : neighbors0;
 		for (int k = 0; k < m_numPlayers; k++) {
 			if (create2P1FTr(tr, k, pf0, pf1, p1Neighbors, p2Neighbors)) {
-				for (int i = 0; i < 3; i++) {
+				for (int i = 0; i < nRowsPrecalc; i++) {
 					if (cnvCheckOneRow(tr, result(i), false)) { // if true : result(i) with applied tr is a third row and less than result(2)
 						findError(p1, p2, m_numPlayers, false);
 						iRet = -1;
@@ -131,10 +130,6 @@ CC int alldata::cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, c
 		}
 	}
 Ret:
-#if 0	
-	for (int i = 0; i < 3; i++)
-		u1fSetTableRow(neighborsPC(i), result(i));
-#endif
 	if (iRet < 0) {
 		memcpy(prevP2(), p2, m_numPlayers);
 		return mode;
@@ -142,7 +137,7 @@ Ret:
 	return 0;
 }
 bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, bool bCalcLength) const {
-	tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3;
+	tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
 #if 1
 	if (!kmTranslate2AndCheck(m_Km, pRow, tr, m_numPlayers, tRow))
 		return false;
@@ -154,7 +149,7 @@ bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, bool bCalcLength) const {
 	if (m_Ktmp[1] != tRow)
 		return false;
 #endif
-	const auto* r = result(2);
+	const auto* r = result(2); // check 3rd row even if param(t_useRowsPrecalculation) == 4
 	if (MEMCMP(m_Ktmp, r, m_numPlayers) != -1)
 		return false;
 

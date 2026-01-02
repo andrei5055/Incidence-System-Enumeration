@@ -9,6 +9,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto vCBMPgraph = val[t_CBMP_Graph];
 	const auto bCBMPgraph = vCBMPgraph> 1;
 	const auto nRowStart = val[t_nRowsInStartMatrix];
+	const auto nPrecalcRows = val[t_useRowsPrecalculation];
 	if (numPlayers > MAX_PLAYER_NUMBER) {
 		printfRed("*** Program is compiled for %d players maximum, but %s=%d is used\n", MAX_PLAYER_NUMBER, paramNames[t_numPlayers], numPlayers);
 		return false;
@@ -152,22 +153,22 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices];
 		}
 	}
-	// current version does not work with nRowStart != val[t_useRowsPrecalculation]
-	if (multiThreading && val[t_useRowsPrecalculation] && nRowStart != val[t_useRowsPrecalculation]) {
+	// current version does not work with nRowStart != nPrecalcRows
+	if (multiThreading && nPrecalcRows && nRowStart != nPrecalcRows) {
 		printfRed("*** With %s=%d, %s(%d) should be equal %s(%d). Exit\n", paramNames[t_MultiThreading], multiThreading,
-			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_useRowsPrecalculation], nPrecalcRows);
 		return false;
 	}
 
-	if (val[t_useRowsPrecalculation]) {
-		if (groupSize == 2 && val[t_useRowsPrecalculation] != 3 && val[t_useRowsPrecalculation] != 4) {
-			printfRed("*** With GroupSize = 2 the value of %s(%d), can be 0,3 or 4. Exit\n",
-				paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+	if (nPrecalcRows) {
+		if (groupSize == 2 && nPrecalcRows != 0 && !(nPrecalcRows >= 3 && nPrecalcRows <= MAX_PRECALC_ROWS)) {
+			printfRed("*** With GroupSize = 2 the value of %s(%d), can be 0, or from 3 to %d. Exit\n",
+				paramNames[t_useRowsPrecalculation], nPrecalcRows, MAX_PRECALC_ROWS);
 			return false;
 		}
-		if (groupSize == 3 && val[t_useRowsPrecalculation] != 3) {
+		if (groupSize == 3 && nPrecalcRows != 3) {
 			printfRed("*** With GroupSize = 3 the value of %s(%d), can be 0 or 3. Exit\n",
-				paramNames[t_useRowsPrecalculation], val[t_useRowsPrecalculation]);
+				paramNames[t_useRowsPrecalculation], nPrecalcRows);
 			return false;
 		}
 

@@ -426,7 +426,7 @@
     <ClCompile Include="Source\checkPlayer1.cpp" />
     <ClCompile Include="Source\checkPlayer3.cpp" />
     <ClCompile Include="Source\cnv.cpp" />
-    <ClCompile Include="Source\cnv3RowsCheck2P1F.cpp" />
+    <ClCompile Include="Source\cnvPrecalcRowsCompCheck.cpp" />
     <ClCompile Include="Source\cnvSupport.cpp" />
     <ClCompile Include="Source\cnvSupport2.cpp" />
     <ClCompile Include="Source\cnvSupport3.cpp" />

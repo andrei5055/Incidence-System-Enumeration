@@ -201,10 +201,9 @@ public:
 	CC void firstPrecalcRowUpdate(tchar* row) const;
 	CC void kmSortGroupsByFirstValue(ctchar* mi, tchar* mo) const;
 	CC int kmSortMatrixForReorderedPlayers(ctchar* mi, int numRow, ctchar* tr, tchar* ts = NULL, bool useNestedGroups = false, CKOrbits* pKOrb = NULL) const;
-	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2,
-		eCheckForErrors checkErrors) const;
+	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, eCheckForErrors checkErrors) const;
 	CC int getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const;
-	CC int cnv3RowsCheck2P1F(ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors, int& mode) const;
+	CC int cnvPrecalcRowsCompCheck(int& mode, ctchar* p1 = NULL, ctchar* p1Neighbors = NULL, ctchar* p2 = NULL, ctchar* p2Neighbors = NULL) const;
 	inline bool printFlag() const					{ return m_bPrint; }
 	inline auto testedTrs() const					{ return m_pTestedTRs; }
 private:

@@ -271,7 +271,7 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 			return false;
 		if (m_use3RowCheck) {
 			const auto p1 = p1Neighbors - m_numPlayers * 2;
-			if (pAllData->cnv3RowsCheck2P1F(p1, p1Neighbors, p2, p2Neighbors, sameP1) > 0) {
+			if (pAllData->cnvPrecalcRowsCompCheck(sameP1, p1, p1Neighbors, p2, p2Neighbors) > 0) {
 				globPairsNotComp2++;
 				return false;
 			}

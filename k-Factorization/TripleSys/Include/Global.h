@@ -13,6 +13,7 @@
 #define MAX_CYCLE_SETS		32
 #define MAX_CYCLES_PER_SET	(MAX_PLAYER_NUMBER / 4)
 #define USE_GROUP_4_2_ROWS   0  // The use of the Aut(M) of the 2-row matrix
+#define MAX_PRECALC_ROWS     4
 
 #define unset ((tchar)(-1))
 
