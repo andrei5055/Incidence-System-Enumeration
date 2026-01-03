@@ -15,6 +15,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	const auto iCalcModeOrg = iCalcMode;
+	const auto v4Row = param(t_v4Row);
+	const auto v4 = param(t_v4);
 #if !USE_CUDA
 	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
 	m_bPrint = (m_printMatrices & 1) != 0;
@@ -103,7 +105,16 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
 	else
 		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
-
+	if (iDay > 0) {
+		if (v4Row) {
+			if (links(1)[v4] != unset) {
+				printfRed("Group (1,%d) requested by v4=%d to be in v4Row=%d already used in start matrix rows\n", v4, v4, v4Row);
+				//ASSERT_IF(1);
+				//myExit(110);
+				goto noResult;
+			}
+		}
+	}
 	if (bSavingMatricesToDisk) {
 		string fName = format("{:0>10}.txt", threadNumber);
 		if (m_improveResult) {
@@ -278,6 +289,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 			}
 #endif
+			if (v4Row && m_secondPlayerInRow4) {
+				if (m_secondPlayerInRow4 == v4Row)
+					links(1)[v4] = links(v4)[1] = unset;
+				else
+					links(1)[v4] = links(v4)[1] = v4Row;
+			}
 			if (!processOneDay()) {
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)
