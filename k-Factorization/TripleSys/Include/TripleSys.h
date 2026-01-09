@@ -236,7 +236,7 @@ private:
 	CC bool cnvCheck2U1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck2P1F(int nrows, int nrowsToUseForTrs);
 	CC bool cnvCheck3U1F(int nrows, int nrowsToUseForTrs);
-	bool cnvCheckOneRow(ctchar* tr, ctchar* pRow, const bool bCheckLength) const;
+	bool cnvCheckOneRow(ctchar* tr, ctchar* pRow, ctchar tRow, const bool bCheckLength) const;
 	void testPrintGroupRows();
 	bool testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode iCalcMode);
 	bool canonizeMatrix(int nRows);

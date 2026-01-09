@@ -289,7 +289,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 			}
 #endif
-			if (v4Row && m_secondPlayerInRow4) {
+			if (v4Row && m_precalcMode == eCalculateRows) {
 				if (m_secondPlayerInRow4 == v4Row)
 					links(1)[v4] = links(v4)[1] = unset;
 				else
@@ -298,7 +298,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			if (!processOneDay()) {
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)
-						printf("m_secondPlayerInRow4=%d m_nRows4Day=%d\n", m_secondPlayerInRow4, m_nRows4Day);
+						printf("%9d solutions for row %d\n", m_nRows4Day, m_secondPlayerInRow4);
 					if (!m_nRows4Day && m_groupSize == 2 && param(t_MultiThreading))
 						goto noResult;
 					const auto iRet = endOfRowPrecalculation(iCalcMode);

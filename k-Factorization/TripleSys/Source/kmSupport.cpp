@@ -176,22 +176,27 @@ CC void kmTranslate(tchar* mo, ctchar* mi, ctchar* tr, int len)
 }
 CC bool kmTranslate2AndCheck(tchar* mo, ctchar* mi, ctchar* tr, int len, tchar tRow)
 {
+	bool bRow = false;
 	for (int i = 0; i < len; i+=2)
 	{
 		auto a = tr[mi[i]];
 		auto b = tr[mi[i + 1]];
-		if (a > b)
-			SWAP(a, b);
-		mo[i] = a;
-		mo[i + 1] = b;
-		if (a == 0 && b == tRow) {
+		if (a > b) {
+			mo[i] = b; mo[i + 1] = a; if (b == 0 && a == tRow) bRow = true;
+		}
+		else {
+			mo[i] = a; mo[i + 1] = b; if (a == 0 && b == tRow) bRow = true;
+		}
+		if (bRow) {
 			for (i += 2; i < len; i += 2) {
 				a = tr[mi[i]];
 				b = tr[mi[i + 1]];
-				if (a > b)
-					SWAP(a, b);
-				mo[i] = a;
-				mo[i + 1] = b;
+				if (a > b) {
+					mo[i] = b; mo[i + 1] = a;
+				}
+				else {
+					mo[i] = a; mo[i + 1] = b;
+				}
 			}
 			return true;
 		}

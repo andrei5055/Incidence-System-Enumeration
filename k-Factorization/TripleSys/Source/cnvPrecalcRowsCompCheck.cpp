@@ -1,6 +1,18 @@
 #include "TripleSys.h"
 #include "Table.h"
 
+#define USE_INTRINSIC		1
+#if USE_INTRINSIC
+#include <immintrin.h>
+#include <iostream>
+#include <algorithm>
+
+bool transform_and_find_pair(tchar* pOut, ctchar* pIn, ctchar* pTr); //, tchar v1, tchar v2);
+__m128i swap_mask = _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+__m128i merge_mask = _mm_setr_epi8(0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1);
+__m128i search_vec;
+#endif
+
 #define FIND_ERROR 0
 #if FIND_ERROR && _DEBUG
 // Function to find error in cnvPrecalcRowsCompCheck defining non-compatible solutions
@@ -59,8 +71,30 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 	// mode: = 0 - p1 is new,
 	//       > 0 - p1 is the same as in prev call and mode is a length of solution to check.
 	const auto nRowsPrecalc = param(t_useRowsPrecalculation);
+	const tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
+	/**
+	tchar out[16];
+	tchar inp[16] = { 0,1,2,3,4,5,6,7,8,9,10,15,14,13,12,11 };
+	tchar ttr[16] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0 };
+	printTable("out0", out, 1, m_numPlayers, 2);
+	for (int i = 0; i < 1000000000; i++)
+		kmTranslate2AndCheck(out, inp, ttr, m_numPlayers, 11);
+	printTable("out1", out, 1, m_numPlayers, 2);
+	bool ret = false;
+	for (int i = 0; i < 1000000000; i++)
+		ret = transform_and_find_pair(out, inp, ttr, 0, 11);
+	
+	printf("ret=%s\n", ret ? "pair exists" : "not exists");
+	printTable("out2", out, 1, m_numPlayers, 2);
+	exit(1);
+	**/
 	m_playerIndex = m_numPlayers;
 	if (mode == -1) {
+#if USE_INTRINSIC
+		ctchar v1 = 0;
+		uint16_t target = (static_cast<uint16_t>(tRow) << 8) | v1;
+		search_vec = _mm_set1_epi16(target);
+#endif
 		for (int i = 0; i < nRowsPrecalc; i++)
 			u1fSetTableRow(neighborsPC(i), result(i), true);
 		return 0;
@@ -98,7 +132,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 	const int nTrs = pTestedTRs->numObjects();
 	for (int itr = 0; itr < nTrs; itr++) {
 		tchar* trt = pTestedTRs->getObject(itr);
-		if (cnvCheckOneRow(trt, p2, true)) { // if true : p2 with applied trt is a third row and less than result(2)
+		if (cnvCheckOneRow(trt, p2, tRow, true)) { // if true : p2 with applied trt is a third row and less than result(2)
 			iRet = -1;
 			mode = m_playerIndex;
 			if (m_doNotExitEarlyIfNotCanonical)
@@ -106,7 +140,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 			goto Ret;
 		}
 	}
-
+	/**/
 	mode = m_numPlayers;
 	for (int j = 0; j < 2; j++) {
 		auto* pf0 = j == 0 ? neighbors0 : neighbors1;
@@ -114,7 +148,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 		for (int k = 0; k < m_numPlayers; k++) {
 			if (create2P1FTr(tr, k, pf0, pf1, p1Neighbors, p2Neighbors)) {
 				for (int i = 0; i < nRowsPrecalc; i++) {
-					if (cnvCheckOneRow(tr, result(i), false)) { // if true : result(i) with applied tr is a third row and less than result(2)
+					if (cnvCheckOneRow(tr, result(i), tRow, false)) { // if true : result(i) with applied tr is a third row and less than result(2)
 						findError(p1, p2, m_numPlayers, false);
 						iRet = -1;
 						if (m_doNotExitEarlyIfNotCanonical)
@@ -129,6 +163,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 			}
 		}
 	}
+	/**/
 Ret:
 	if (iRet < 0) {
 		memcpy(prevP2(), p2, m_numPlayers);
@@ -136,10 +171,16 @@ Ret:
 	}
 	return 0;
 }
-bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, bool bCalcLength) const {
-	tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
+bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, ctchar tRow, bool bCalcLength) const {
 #if 1
-	if (!kmTranslate2AndCheck(m_Km, pRow, tr, m_numPlayers, tRow))
+	bool ret;
+#if USE_INTRINSIC
+	if (m_numPlayers == 16)
+		ret = transform_and_find_pair(m_Km, pRow, tr);
+	else
+#endif
+		ret = kmTranslate2AndCheck(m_Km, pRow, tr, m_numPlayers, tRow);
+	if (!ret)
 		return false;
 	kmSortGroupsByFirstValue(m_Km, m_Ktmp);
 #else
@@ -160,24 +201,44 @@ bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, bool bCalcLength) const {
 				break;
 		}
 		setPlayerIndexByPos(tr, m_Ktmp, pRow, 0, minLength);
-		/**
-		if (minLength > m_numPlayers - 3) { // leo
-			return -1;
-		}
-		tchar ttr1[MAX_PLAYER_NUMBER];
-		tchar ttr2[MAX_PLAYER_NUMBER];
-		for (int i = 0; i < m_numPlayers; i++) {
-			ttr1[m_Ktmp[i]] = i;
-		}
-		int mxLength = 0;
-		for (int i = 0; i < m_numPlayers; i++) {
-			if (ttr[pRow[i]])
-		}
-		*/
 	}
-	//printTable("r3", result(2), 1, 18, 2);
-	//printTable("n3", m_Ktmp, 1, 18, 2);
-	//setPlayerIndex(tr, 0, 0, m_Ktmp, m_Km, pRow);
 
 	return true;
 }
+#if USE_INTRINSIC
+// Function to translate 16 bytes and sort each internal pair
+// Returns true if specific pair (v1, v2) is found among the 8 pairs (we use it to verify if this is expected row)
+bool transform_and_find_pair(tchar* pOut, ctchar* pIn, ctchar* pTr) { //, tchar v1, tchar v2) {
+	// 1. Load Data
+	__m128i inp = _mm_loadu_si128((__m128i*)pIn);
+	__m128i trTable = _mm_loadu_si128((__m128i*)pTr);
+
+	// 2. Translate: pIn values 0-15 pick from trTable
+	__m128i src = _mm_shuffle_epi8(trTable, inp);
+
+	// 3. Internal Pair Sort: [min, max] for each consecutive pair
+	//__m128i swap_mask = _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+	__m128i swapped = _mm_shuffle_epi8(src, swap_mask);
+	__m128i min_v = _mm_min_epu8(src, swapped);
+	__m128i max_v = _mm_max_epu8(src, swapped);
+
+	// Merge: Byte 0=min, Byte 1=max...
+	__m128i result = _mm_blendv_epi8(min_v, max_v, merge_mask);
+	//	_mm_setr_epi8(0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1));
+
+	// 4. Store current result
+	_mm_storeu_si128((__m128i*)pOut, result);
+	/**
+	// 5. Search for specific pair (v1, v2)
+	// We treat the target as a 16-bit word: (v2 << 8) | v1
+	uint16_t target = (static_cast<uint16_t>(v2) << 8) | v1;
+	__m128i search_vec = _mm_set1_epi16(target);
+	**/
+	// Compare each of the 8 pairs simultaneously
+	__m128i cmp = _mm_cmpeq_epi16(result, search_vec);
+
+	// Movemask returns bits; if any pair matched, mask will be non-zero
+	return (_mm_movemask_epi8(cmp) != 0);
+}
+
+#endif

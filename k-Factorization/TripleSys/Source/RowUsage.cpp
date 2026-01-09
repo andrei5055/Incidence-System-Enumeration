@@ -152,10 +152,13 @@ void testLogicalMultiplication(const long long* h_A, const long long* h_B, long 
 
 #if COUNT_GET_ROW_CALLS
 ll getRowCallsCalls = 0;
-size_t totalWeighChange = 0;
 #define incGetRowCalls()	getRowCallsCalls++
 #else
 #define incGetRowCalls()
+#endif
+
+#if COUNT_MASK_WEIGHT
+size_t totalWeighChange = 0;
 #endif
 
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
