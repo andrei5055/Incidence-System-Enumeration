@@ -10,7 +10,7 @@ copy %ROOT%\*.dll .
 
 @echo off
 
-SET paramRel=param_rel.txt
+SET paramRel=..\..\param.txt
 
 IF NOT "%1" == "" (
     SET paramRel=%1

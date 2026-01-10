@@ -72,6 +72,8 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 	//       > 0 - p1 is the same as in prev call and mode is a length of solution to check.
 	const auto nRowsPrecalc = param(t_useRowsPrecalculation);
 	const tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
+														 // you can modify the code and add check of row4 if row3 is the same as before
+														 // and row you check for compatibility converted to row4
 	/**
 	tchar out[16];
 	tchar inp[16] = { 0,1,2,3,4,5,6,7,8,9,10,15,14,13,12,11 };
