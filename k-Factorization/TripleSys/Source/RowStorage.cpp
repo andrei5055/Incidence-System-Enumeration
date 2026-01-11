@@ -1,6 +1,5 @@
 #include "Table.h"
 
-#define LATEST_IMPROVEMENT_FOR_TRIPLES   1
 #define PRINT_PRECOMPILED_SOLUTIONS      0
 
 #define USE_PREVIOUS_SOLUTIONS	0
@@ -19,7 +18,7 @@ int ggg = 0;
 
 #define TRACE_INIT_MASKS			1
 #if !USE_CUDA && TRACE_INIT_MASKS
-#define REPORT_REJECTION_ON_SCREEN(frmt, ...)   printfYellow(frmt, __VA_ARGS__)
+#define REPORT_REJECTION_ON_SCREEN(frmt, ...)   if (sysParam()->val[t_printMatrices]) printfYellow(frmt, __VA_ARGS__)
 #else
 #define REPORT_REJECTION_ON_SCREEN(...)
 #endif
@@ -467,18 +466,16 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		return 0;
 	}
 
-#if LATEST_IMPROVEMENT_FOR_TRIPLES
 	auto numRowToConstruct = (uint)(m_numDaysResult - numPreconstructedRows());
 	if (numRowToConstruct > m_numSolutionTotal) {
 		if (m_pAllData->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
 				numRowToConstruct, m_numSolutionTotal);
-			REPORT_REJECTION(1);
+			REPORT_REJECTION(5);
 			return 0;
 		} else
 			return -1; // can happen with group size 3
 	}
-#endif
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
 	static int ccc = 0;
@@ -535,9 +532,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	unsigned int first, last = 0;
 	i = numPreconstructedRows() - 1;
 
-#if LATEST_IMPROVEMENT_FOR_TRIPLES
 	auto numRemainingSolution = m_numSolutionTotal;
-#endif
 	ll playerMask;
 	auto availablePlayers = playerMask = getPlayersMask();
 	ll* pUsedPlayers = flg ? NULL : &playerMask;
@@ -592,7 +587,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #endif
 		}
 
-#if LATEST_IMPROVEMENT_FOR_TRIPLES
+
 		if (numRowToConstruct--) {
 			numRemainingSolution -= last - first;
 			if (numRowToConstruct > numRemainingSolution) {
@@ -602,7 +597,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 				return -1; // can happen with any group size
 			}
 		}
-#endif
+
 		if (skipAllowed) {
 			// Skip construction of masks for the first set of solutions.
 			// The threads will do this latter.
@@ -637,19 +632,15 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		globPairsComp = globPairsNotComp2 = 0;
 
 
-		if (LATEST_IMPROVEMENT_FOR_TRIPLES && !flag && pUsedPlayers) {
+		if (!flag && pUsedPlayers) {
 			// Any solution from [first, last) is not compatible with any remaining solution
 			// Let's check if player #1 of any solution from that interval was used in one of previous solutions
 			const auto pSolution = getObject(last - 1);
 			if (*pUsedPlayers & ((ll)1 << pSolution[1])) {
-				if (m_pAllData->groupSize() == 2) {
-					REPORT_REJECTION_ON_SCREEN("Any solution from the interval [%d, %d) is not compatible with any remaining solution\n"
-						"and the player %d of any solution from that interval was NOT used in previous solutions\n", firstStart, last, pSolution[1]);
-					REPORT_REJECTION(3);
-					return 0;
-				}
-				else
-					return -1;
+				REPORT_REJECTION_ON_SCREEN("Any solution from the interval [%d, %d) is not compatible with any remaining solution\n"
+					"and the player %d of any solution from that interval was NOT used in previous solutions\n", firstStart, last, pSolution[1]);
+				REPORT_REJECTION(3);
+				return -1;  // can happen with any group size 3
 			}
 		}
 	}
@@ -660,7 +651,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	}
 
 
-	if (LATEST_IMPROVEMENT_FOR_TRIPLES && pUsedPlayers && *pUsedPlayers) {
+	if (pUsedPlayers && *pUsedPlayers) {
 		if (m_pAllData->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("At least one player (%llx) was not present with player 0 in any matrix row solution\n", *pUsedPlayers);
 			REPORT_REJECTION(4);

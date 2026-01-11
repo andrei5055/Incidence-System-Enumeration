@@ -140,7 +140,7 @@ int TopGun::Run()
 			while (m_iMatrix < nMatrices) {
 				alldata sys(*this, paramPtr());
 				if (!sys.Run(1, eCalculateRows, m_pSecondRowsDB, mstart, mfirst, nRowsStart(), NULL, &m_reportInfo)) {
-					if (reportPrecalculated)
+					if (reportPrecalculated && sys.numRowWithNoSolution())
 						printfYellow("*** There are no pre-calculated solutions for row %d of the matrix %d\n", sys.numRowWithNoSolution(), m_iMatrix + 1);
 				}
 				else {
