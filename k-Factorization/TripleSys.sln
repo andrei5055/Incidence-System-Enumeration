@@ -21,6 +21,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Utils", "Utils\Utils.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OneApp", "OneApp\OneApp.vcxproj", "{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{D5B35DF9-9508-4A13-93C1-81AF1680FC70}"
+	ProjectSection(SolutionItems) = preProject
+		CI\param.txt = CI\param.txt
+		CI\paramU1F.txt = CI\paramU1F.txt
+		CI\param_rel.txt = CI\param_rel.txt
+		CI\run.bat = CI\run.bat
+		CI\runRelease.bat = CI\runRelease.bat
+		CI\run_st.bat = CI\run_st.bat
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with GPU|Any CPU = Debug with GPU|Any CPU

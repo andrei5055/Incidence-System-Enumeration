@@ -20,7 +20,8 @@ slnx.*
 /k-Factorization/Utils/x64/
 /k_Factorization/OneApp/x64/
 /k-Factorization/Logs*
-/k-Factorization/CI/
+/k-Factorization/CI/*.dll
+/k-Factorization/CI/*.exe
 /k-Factorization/*.tar
 /Log*
 /k-Factorization/OneApp/x64

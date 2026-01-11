@@ -1,0 +1,40 @@
+PrintMatrices=0; ExploreMatrices=0; orderMatrices=0; UseFastCanonizerForG2=0
+NPlayers=26
+GroupSize=2; CBMP_Graph=2
+NPlayersMax=0
+AutSaveTestedTrs=1; NThreads=10 //8
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1; 
+AutDirection=1; AutLevelMinDef=2; AutLevelMaxDef=3; AutLevelMinApp=2; AutLevelMaxApp=3; AutGroupsToTest=0
+MatrixCanonInterval=0; SavingMatricesToDisk=1; UseCheckLinksV=1 //
+CSV_FileName="../../SRG.csv"
+
+//U1FCycles={{4,4,18}} // NRowsInResultMatrix=11
+U1FCycles={{4,6,16}} // NRowsInResultMatrix=9 // up to 1500, then 8 up to 2500 then 7 to the end
+//U1FCycles={{4,8,14}} // NRowsInResultMatrix=9
+
+KeepPrevResult=1
+StartFolder=../../LogsTestN1/; ResultFolder=../../LogsTestN1/
+
+// Create 3-rows matrices
+UseMultiThreading=0; NRowsInStartMatrix=0; NRowsInResultMatrix=3; ExpectedResult=-1;
+Run_Job
+
+FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=4000; UseRowsPrecalculation=3
+MaxNumberOfStartMatrices=15 // time test ***
+UseMultiThreading=1; NRowsInStartMatrix=3; NRowsInResultMatrix=9; ExpectedResult=-1;
+Run_Job
+
+FirstIndexOfStartMatrices=4000; MaxNumberOfStartMatrices=100000; UseRowsPrecalculation=3
+MaxNumberOfStartMatrices=15 // time test ***
+UseMultiThreading=1; NRowsInStartMatrix=3; NRowsInResultMatrix=7; ExpectedResult=-1;
+Run_Job
+
+FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+UseMultiThreading=1; NRowsInStartMatrix=9; NRowsInResultMatrix=0; ExpectedResult=0;
+Run_Job
+
+FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+UseMultiThreading=1; NRowsInStartMatrix=7; NRowsInResultMatrix=0; ExpectedResult=0;
+
+End_Job
