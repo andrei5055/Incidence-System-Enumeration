@@ -1,5 +1,7 @@
 #include "TripleSys.h"
+//#if !USE_CUDA
 #include "OneApp.h"
+//#endif
 //#include <ppl.h>
 //#include <array>
 //#include <sstream>
@@ -94,7 +96,7 @@ void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	}
 }
 #else
-void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
+CC void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	const int n8max = n & (~7);
 	int j = 0;
 	for (; j < n8max; j += 8) {
@@ -111,6 +113,24 @@ void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 		a[j] = b[j] & c[j];
 }
 #endif
+
+#ifdef USE_CUDA
+#define BIT_SCAN_FORWARD64 BitScanForward64_Cuda
+// Dummy function written by AI and never tested
+CC void BitScanForward64_Cuda(unsigned long* _Index, unsigned long long _Mask) {
+	unsigned long index = 0;
+	if (_Mask == 0)
+		return;
+	while (!(_Mask & 1)) {
+		_Mask >>= 1;
+		index++;
+	}
+	*_Index = index;
+}
+#else
+#define BIT_SCAN_FORWARD64  _BitScanForward64
+#endif
+
 CC void CRowUsage::init(int iThread, int numThreads) {
 	m_threadID = iThread;
 	m_step = numThreads;
@@ -118,8 +138,8 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = 0;
 }
 
-#define nc 0//500000 // 100000000;
-#if nc
+#define nRep 0//500000 // 100000000;
+#if nRep
 void testLogicalMultiplication(const long long* h_A, const long long* h_B, long long* h_C, long long *pCPU_res, int N, int nRep)
 {
 #define MULT_FLG 3
@@ -232,7 +252,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 		unsigned long iBit;
 		//iBit = (unsigned long)_tzcnt_u64(*(pCompSol + firstB));
-		_BitScanForward64(&iBit, *(pCompSol + firstB));
+		BIT_SCAN_FORWARD64(&iBit, *(pCompSol + firstB));
 		if ((first = (firstB << SHIFT) + iBit) >= last)
 			return 0;
 
@@ -249,7 +269,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			const auto pFromAStart = pFromA + numLongs2Skip;
 			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
-				testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nc);
+				testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
 				if (!selectPlayerByMask()) {
 					// Usually, we should be here only when groupSize == 2 and it's NOT 
 					// a complete balanced multipartite graph case.
@@ -260,7 +280,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 						auto j = jMax;
 						jMax = pRowSolutionMasksIdx[i];
 						jNum = jMax - j + 1;
-						testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nc);
+						testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
 						multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
 						/**
 						if (i == m_nRowMax - 2)

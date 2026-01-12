@@ -269,8 +269,10 @@ protected:
 	const int m_lenElem;
 };
 
+
 template<typename T>
 void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
+#ifndef USE_CUDA
 	char errBuf[48], * pErr = NULL;
 	const auto retVal = createGroupAndOrbits(pElemGroup);
 	if (retVal > 0)
@@ -292,7 +294,9 @@ void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool ou
 
 	m_bGroupConstructed = false;
 	reportNestedGroupCheckResult(retVal, outToScreen);
+#endif
 }
+
 
 template<typename T>
 int RowGenerators<T>::getGroup(const CRepository<tchar>* pElemGroup) {

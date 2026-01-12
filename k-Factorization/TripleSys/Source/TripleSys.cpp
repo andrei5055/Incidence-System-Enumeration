@@ -24,10 +24,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_bPrintAll = m_bPrint || bPrintPeriodic;
 	m_fHdr = getFileNameAttr(sysParam());
 	m_cTime = m_rTime = m_iTime = clock();
-
+#endif
 	const bool bNotSpecialMode = iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows;
 	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
-#endif
+
 	int minRows = nrowsStart;
 	m_doNotExitEarlyIfNotCanonical = (m_test & 2) != 0; // || param(t_generateMatrixExample) != 0;
 	memset(m_rowTime, 0, m_numDaysResult * sizeof(m_rowTime[0]));
@@ -73,9 +73,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	initPrecalculationData(iCalcModeOrg, nrowsStart);
 
 	int maxPlayerInFirstGroup = groupSize_2 ? m_secondPlayerInRow4Last : m_numPlayers;
-
+#if !USE_CUDA
 	const auto semiSymGraph = !m_createSecondRow && numDaysResult() > 2 && param(t_semiSymmetricGraphs) == 1;
-	const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
 	const auto outAutGroup = param(t_outAutomorphismGroup);
 	IOutGroupHandle<tchar>* pAutGroup[4] = { NULL };
 	if (semiSymGraph || outAutGroup) {
@@ -93,7 +92,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		if (semiSymGraph || bSavingMatricesToDisk && (outAutGroup & 48))
 			pAutGroup[3] = new CKOrbits(outAutGroup, m_numPlayers, m_groupSize, numDaysResult());
 	}
-#if !USE_CUDA
+
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
 	unsigned char* bResults = NULL;
@@ -375,7 +374,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		}
 		ASSERT_IF(iDay < numDaysResult());
 
+#if !USE_CUDA
 		auto flag = true;
+		const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
 		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {
 			int i = 2;
 			for (; i <= 3; i++) {
@@ -390,6 +391,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 			flag = i > 3;
 		}
+#else
+		bool flag = true;
+#endif
 
 		if (flag && (m_createSecondRow || orderOfGroup() >= param(t_resultGroupOrderMin))) {
 #if !USE_CUDA && USE_BINARY_CANONIZER && 0

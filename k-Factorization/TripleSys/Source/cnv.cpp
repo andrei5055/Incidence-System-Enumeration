@@ -319,6 +319,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 			saveGroup(*this, nrows);
 
 		if ((m_test & 128) && m_precalcMode == eCalculateRows && nrows == m_nPrecalcRows + 1 && m_firstPrecalcRow[0] == 0) {
+#ifndef USE_CUDA
 			if (m_bPrint) {
 				static int prevRow, c; c++; 
 				if (prevRow != result(m_nPrecalcRows)[1]) {
@@ -328,6 +329,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 					printTableColor("r", m_firstPrecalcRow, 1, m_numPlayers, 2);
 				}
 			}
+#endif
 			auto jRow = result(m_nPrecalcRows)[1];
 #if 1
 			memcpy(m_firstPrecalcRow + m_numPlayers, result(m_nPrecalcRows), m_numPlayers);

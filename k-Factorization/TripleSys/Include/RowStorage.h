@@ -141,7 +141,7 @@ private:
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
 	CC size_t countMaskFunc(size_t prevWeight = 0) const;
-	int findIndexInRange(int left, int right, ctchar* pSol) const;
+	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;

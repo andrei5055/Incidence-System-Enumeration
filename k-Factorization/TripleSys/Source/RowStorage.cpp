@@ -31,7 +31,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
-	m_use3RowCheck((pSysParam->val[t_test] & 256) && pAllData->groupSize() == 2 && pSysParam->val[t_CBMP_Graph] <= 1),
+	m_use3RowCheck((pSysParam->val[t_test] & 256) && pAllData->groupSize() == 2),
 	CStorage<tchar>(numObjects, 3 * numPlayers) {
 	m_numObjectsMax = numObjects;
 	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
@@ -271,7 +271,9 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		if (m_use3RowCheck) {
 			const auto p1 = p1Neighbors - m_numPlayers * 2;
 			if (pAllData->cnvPrecalcRowsCompCheck(sameP1, p1, p1Neighbors, p2, p2Neighbors) > 0) {
+#ifndef USE_CUDA
 				globPairsNotComp2++;
+#endif
 				return false;
 			}
 		}
@@ -357,7 +359,9 @@ CC bool CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 			const auto newIdx = idx - m_numRecAdj;
 			SET_MASK_BIT(pMaskOut, newIdx);     // 1 - means OK
 			compSolFound = true;
+#ifndef USE_CUDA
 			globPairsComp++;
+#endif
 		}
 	}
 
@@ -626,11 +630,12 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			pCompatMask += m_lenSolutionMask;
 		}
 
+#ifndef USE_CUDA
 		if (m_pAllData->printFlag())
 			printf("Row %2d Comp=%d NotComp=%d\n", i+1, globPairsComp, globPairsNotComp2);
 
 		globPairsComp = globPairsNotComp2 = 0;
-
+#endif
 
 		if (!flag && pUsedPlayers) {
 			// Any solution from [first, last) is not compatible with any remaining solution
@@ -785,7 +790,7 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 int CRowStorage::findIndexInRange(int left, int right, ctchar* pSol) const {
 	while (left <= right) {
 		const int mid = left + (right - left) / 2;
-		const auto cmp = memcmp(getObject(mid), pSol, numPlayers());
+		const auto cmp = MEMCMP(getObject(mid), pSol, numPlayers());
 		if (!cmp)
 			return mid;
 

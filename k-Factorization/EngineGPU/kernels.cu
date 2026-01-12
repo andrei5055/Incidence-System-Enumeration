@@ -1,15 +1,16 @@
-﻿#include "cuda_runtime_api.h"
+﻿#ifdef USE_CUDA
+#include "cuda_runtime_api.h"
 __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 
 #include "TopGun.h"
 
-#if 0 //USE_GPU
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
 #include "TripleSys.cpp"
 #include "endOfRowPrecalculation.cpp"
 #include "precalculatedSolutions.cpp"
+#include "cnvPrecalcRowsCompCheck.cpp"
 #include "alldata.cpp"
 #include "p1fCheck.cpp"
 #include "p1fSupport.cpp"
@@ -36,7 +37,6 @@ __device__ void memcpy_gpu(unsigned char* to, const unsigned char* from);
 #include "TrCycles.cpp"
 #include "cycles.cpp"
 #include "TrRepo.cpp"
-
 
 #define GLOBAL_SYNCHRONIZE  1
 #if GLOBAL_SYNCHRONIZE
@@ -294,13 +294,5 @@ __declspec(dllexport) int closeGPU() {
 
 CC bool alldata::improveMatrix(int improveResult, tchar* bResults, const int lenResult, tchar** pbRes1) {
     return true;
-}
-#else
-__declspec(dllexport) sLongLong runWithCuda(const TopGunGPU* pTG) {
-    return -1;
-}
-
-__declspec(dllexport) int closeGPU() {
-    return 0;
 }
 #endif

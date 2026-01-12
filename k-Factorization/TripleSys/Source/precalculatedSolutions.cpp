@@ -5,7 +5,10 @@
 CC ePrecalculateReturn alldata::precalculatedSolutions(eThreadStartMode iCalcMode)
 {
 	int iDaySaved = 0;
+#define LEO_LOCK 0
+#if LEO_LOCK
 	int iLastDay = 0;
+#endif
 ProcessPrecalculatedRow:
 	if (iDaySaved) {
 		if (m_pRowUsage->getMatrix2(result(), neighbors(), numDaysResult(), iDaySaved)) {
@@ -53,12 +56,13 @@ ProcessPrecalculatedRow:
 				return eNoResult;
 			}
 		}
-		/**leo
+#if LEO_LOCK
 		if (iLastDay >= iDay) {
 			std::lock_guard<std::mutex> lock(mtxLinks);
 			mpLinks[iLastDay]->updateRepo((ctchar*)msk); 
 			iLastDay = 0;
-		}*/
+		}
+#endif
 		if (m_lastRowWithTestedTrs >= iDay)
 			m_lastRowWithTestedTrs = iDay - 1;
 		const auto retVal = m_pRowUsage->getRow(iDay, ipx, this);

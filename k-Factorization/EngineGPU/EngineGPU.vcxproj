@@ -119,8 +119,9 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
-      <Defines>USE_CUDA</Defines>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
+      <Defines>
+      </Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
       <AdditionalOptions>-diag-suppress=128,550 %(AdditionalOptions)</AdditionalOptions>
@@ -142,7 +143,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
       <Defines>USE_CUDA</Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
@@ -165,8 +166,9 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
-      <Defines>USE_CUDA</Defines>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
+      <Defines>
+      </Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
       <AdditionalOptions>-diag-suppress=128,550 %(AdditionalOptions)</AdditionalOptions>
@@ -191,8 +193,9 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
-      <Defines>USE_CUDA</Defines>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
+      <Defines>
+      </Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
       <AdditionalOptions>-diag-suppress=128,550 %(AdditionalOptions)</AdditionalOptions>
@@ -217,7 +220,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
       <Defines>USE_CUDA</Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
@@ -243,8 +246,9 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include</Include>
-      <Defines>USE_CUDA</Defines>
+      <Include>../TripleSys/Include, ../TripleSys/Source, ../Utils/Include,../OneApp</Include>
+      <Defines>
+      </Defines>
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
       <AdditionalOptions>-diag-suppress=128,550 %(AdditionalOptions)</AdditionalOptions>

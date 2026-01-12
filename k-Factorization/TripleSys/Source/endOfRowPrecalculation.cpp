@@ -131,7 +131,7 @@ CC void alldata::addPrecalculatedRow()
 }
 CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsStart)
 {
-	const bool bCBMP = !completeGraph();
+	m_secondPlayerInRow4First = 0;
 	m_nPrecalcRows = param(t_useRowsPrecalculation);
 	if (iCalcMode == eCalcSecondRow) {
 		iCalcMode = eCalcResult;
@@ -144,17 +144,15 @@ CC void alldata::initPrecalculationData(eThreadStartMode iCalcMode, int nRowsSta
 		m_precalcMode = iCalcMode;
 
 	tchar secondPlayerMax = m_numPlayers - (m_groupSize == 2 ? 1 : (m_groupSize + 1 + m_numDays - m_numDaysResult));
-	tchar m_secondPlayerInRow4First = 0;
+	const bool bCBMP = !completeGraph();
 	if (bCBMP) {
 		secondPlayerMax = m_numPlayers - 1 - (m_groupSize - 2) * m_groupSize;
 	}
 	m_secondPlayerInRow4Last = MIN2(param(t_lastRowSecondPlayer), secondPlayerMax);
 	if (!m_secondPlayerInRow4Last)
 		m_secondPlayerInRow4Last = m_groupSize == 2 ? (bCBMP ? m_numDaysResult * 2 - 1 : m_numDaysResult) : secondPlayerMax;
-	m_secondPlayerInRow4 = 0;
 
-	m_nRows4 = 0;
-	m_nRows4Day = 0;
+	m_nRows4Day = m_nRows4 = m_secondPlayerInRow4 = 0;
 #if 1 // preset automorphism groups
 	const auto iCalc = m_precalcMode;
 	m_precalcMode = eCalcResult;

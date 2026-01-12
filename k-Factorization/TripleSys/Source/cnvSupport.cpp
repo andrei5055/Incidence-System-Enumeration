@@ -342,6 +342,28 @@ CC int alldata::collectOneCyclesSet(TrCycles* trc, tchar* pV1, int ind, int indR
 		iRet = getCyclesAndPath3(trc, pV1, neighbors(indRow0), neighbors(indRow1), result(indRow0), result(indRow1), checkErrors);
 	return iRet;
 }
+
+bool alldata::checkCBMPtr(tchar* tr) {
+	tchar gtest[MAX_PLAYER_NUMBER];
+	int is = 0;
+	ASSERT_IF(m_groupSize >= sizeof(is) * 8);// the code below will not work if group size > 31
+	for (int i = 0; i < m_groupSize; i++) {
+		auto gind = m_groupSizeRemainder[tr[i]];
+		gtest[i] = gind;
+		is |= (1 << gind);
+	}
+	if (is != (1 << m_groupSize) - 1)
+		return false;
+	auto i = m_groupSize;
+	for (; i < m_numPlayers; i += m_groupSize) {
+		for (int j = 0; j < m_groupSize; j++) {
+			if (m_groupSizeRemainder[tr[i + j]] != gtest[j])
+				return false;
+		}
+	}
+	return i == m_numPlayers;
+}
+
 #if !USE_CUDA
 void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 {
@@ -363,26 +385,6 @@ void alldata::cnvPrintAuto(ctchar* tr, int nrows)
 			printTable("ttr", ttr, 1, m_numPlayers, m_groupSize);
 		}
 	}
-}
-bool alldata::checkCBMPtr(tchar* tr) {
-	tchar gtest[MAX_PLAYER_NUMBER];
-	int is = 0;
-	ASSERT_IF(m_groupSize >= sizeof(is) * 8);// the code below will not work if group size > 31
-	for (int i = 0; i < m_groupSize;i++) {
-		auto gind = m_groupSizeRemainder[tr[i]];
-		gtest[i] = gind;
-		is |= (1 << gind);
-	}
-	if (is != (1 << m_groupSize) - 1)
-		return false;
-	auto i = m_groupSize;
-	for (; i < m_numPlayers; i += m_groupSize) {
-		for (int j = 0; j < m_groupSize; j++) {
-			if (m_groupSizeRemainder[tr[i + j]] != gtest[j])
-				return false;
-		}
-	}
-	return i == m_numPlayers;
 }
 void alldata::printCyclesInfoNotCanonical(TrCycles* trCycles, tchar* tr, int indRow0, int indRow1, int nrows)
 {

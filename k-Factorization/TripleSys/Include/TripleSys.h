@@ -376,8 +376,8 @@ private:
 	tchar* m_groupSizeRemainder;
 	tchar* m_tx = NULL;
 
-	CGraphCanonizer* m_pGraphCanonizer;
-	tchar* m_pGraph;
+	CGraphCanonizer* m_pGraphCanonizer = NULL;
+	tchar* m_pGraph = NULL;
 
 	mutable int m_numCycles;
 	mutable int m_NumDaysToTransform;

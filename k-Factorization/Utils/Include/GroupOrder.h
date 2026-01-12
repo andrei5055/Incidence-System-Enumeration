@@ -77,7 +77,7 @@ public:
 	}
     CC inline void setStabilizerLengthAut(ushort l) { m_nStabLengthAut = l; }
 protected:
-	void UpdateOrbits(const T* permut, ushort lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
+	CC void UpdateOrbits(const T* permut, ushort lenPerm, T* pOrb, bool rowPermut, bool calcGroupOrder=false) {
 		const T lenStab = udpdateStabLength(permut, lenPerm, pOrb, calcGroupOrder, rowPermut);
 		Update_Orbits(permut, lenPerm, pOrb, lenStab);
 	}

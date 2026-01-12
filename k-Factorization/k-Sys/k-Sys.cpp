@@ -8,8 +8,8 @@ const char* intParamNames[]{
 	"nPlayers",
 	"nPlayersMax",
 	"GroupSize",
-	"CBMP_Graph",				// Complete Balanced Multi-Partite Graph
-	"generateMatrixExample",  // 1 - Construct just one ("generated") factorization (implemented only for CBMP_Graph > 0)
+	"CBMP_Graph",				// Number of parts in Complete Balanced Multi-Partite Graph (0 or 1 - complete graph, 2 - bipartite, etc.)
+	"generateMatrixExample",	// 1 - Construct just one ("generated") factorization (implemented only for CBMP_Graph > 0)
 	                            // 0 - Construct all existing factorizations (default) 
 	"UseUniform1Factorization",
 	"Use2RowsCanonization",
@@ -91,7 +91,7 @@ const char* arrayParamNames[]{
 	"U1FCycles"
 };
 
-#ifdef GPU_SUPPORT
+#ifdef USE_CUDA
 #define TopGun_GPU TopGunGPU
 #else
 #define TopGun_GPU TopGun
@@ -208,7 +208,11 @@ int main(int argc, const char* argv[])
 	val[t_use2RowsCanonization] = Use2RowsCanonization;
 	val[t_submatrixGroupOrderMin] = SubmatrixGroupOrderMin;
 	val[t_resultGroupOrderMin] = ResultGroupOrderMin;
-	val[t_useGPU] = USE_GPU;
+#ifdef USE_CUDA
+	val[t_useGPU] = 1;
+#else
+	val[t_useGPU] = 0;
+#endif
 	val[t_MultiThreading] = UseMultiThreading;
 	val[t_numThreads] = NThreads;
 	val[t_nRowsInStartMatrix] = NRowsInStartMatrix;
@@ -340,12 +344,7 @@ int main(int argc, const char* argv[])
 
 				setAutLevels(val);
 				param.setup();					
-				TopGunBase* topGun;
-				if (useGPU)
-					topGun = new TopGun_GPU(param);
-				else
-					topGun = new TopGun(param);
-
+				TopGunBase* topGun = useGPU? new TopGun_GPU(param) : new TopGun(param);
 				topGun->outputIntegratedResults(NULL, 0);
 				if (topGun->Run())
 					testOK = false;

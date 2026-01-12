@@ -6,10 +6,12 @@
 typedef struct SRGParam {
 	unsigned int m_cntr[5];   // 0 - total, 1 - regular, 2 - SRG, 3 - 4-vert cond; 4 - rank 3 
 	int k;
+#ifndef USE_CUDA
 	int λ;
 	int μ;
 	int α;
 	int β;
+#endif
 	SRGParam() { memset(this, 0, sizeof(*this)); }
 	t_graphType updateParam(int* pCommon, bool flag_4_ver);
 } SRGParam;

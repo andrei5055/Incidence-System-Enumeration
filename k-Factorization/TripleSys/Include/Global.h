@@ -2,7 +2,6 @@
 #include <vector>
 #include "k-SysSupport.h"
 
-#define USE_GPU	  0
 #define nPlayers  21
 #define GroupSize 3
 

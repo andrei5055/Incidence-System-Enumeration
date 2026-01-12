@@ -1,4 +1,4 @@
-#ifdef GPU_SUPPORT
+#ifdef USE_CUDA
 
 #include "TopGun.h"
 

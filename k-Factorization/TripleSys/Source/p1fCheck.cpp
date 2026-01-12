@@ -236,10 +236,9 @@ CC int alldata::getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const
 	const auto nc = m_numPlayers;
 	tchar ics = 0;
 	tchar tt2tmp[MAX_PLAYER_NUMBER];
-	int ncycles = 0;
 	memset(cycleSet, 0, sizeof(cycleSet));
 	memcpy(tt2tmp, tt2, nc);
-	tchar k = 0, k0, k1 = 0, ip = 0;
+	tchar k = 0, k0, k1 = 0;
 	for (k0 = 0; k0 < nc; k0++)
 	{
 		if (tt2tmp[k0] != unset) {
@@ -432,7 +431,6 @@ CC bool alldata::checkNewRow(ctchar* table, int nr)
 		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
-	const eCheckForErrors checkErrors = eCheckErrors;
 #if 0
 	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3)
 	{
@@ -479,7 +477,6 @@ CC bool alldata::getAllCycles(ctchar* table, int nr)
 {
 	bool ret = true;
 	const auto nc = m_numPlayers;
-	const eCheckForErrors checkErrors = eNoErrorCheck;
 	memset(m_TrCyclesAll, 0, sizeof(TrCycles) * MAX_CYCLE_SETS);
 	m_TrCyclesCollection = m_TrCyclesAll;
 	for (int m = nr - 1; m > 0; m--) // start from last row to have option to exit loop if we run it for new row only

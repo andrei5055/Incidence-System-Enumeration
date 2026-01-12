@@ -12,9 +12,10 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 			if (ivId >= np) {
 #if !USE_CUDA
 				printfRed("*** Init: value(%d) in row %d position %d is incorrect\n", ivId, i, j);
-#endif
+
 				if (exitIfError)
 					myExit(1);
+#endif				
 				return false;
 			}
 
@@ -28,8 +29,8 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 						printfRed("*** Init: pair (%d,%d) in row %d already defined in row %d\n", iv0, ivId, i, lDay);
 						if (exitIfError)
 							myExit(1);
-						return false;
 #endif
+						return false;
 					}
 				}
 			}

@@ -111,7 +111,7 @@ private:
 	int m_errCode;
 };
 
-#ifdef GPU_SUPPORT
+#ifdef USE_CUDA
 class TopGunGPU : public TopGunBase {
 public:
 	K_SYS_LIBRARY_API TopGunGPU(const kSysParam& param) : TopGunBase(param)		{}

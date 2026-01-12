@@ -4,10 +4,17 @@ extern const char* arrayParamNames[];
 
 bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto& val = param.val;
+#ifndef USE_CUDA
+    if (val[t_useGPU]) {
+		printfRed("*** Program is compiled without GPU support, but %s=%d is used\n", paramNames[t_useGPU], val[t_useGPU]);
+		return false;
+	}
+#endif
+
 	const auto& strVal = param.strVal;
 	const auto numPlayers = val[t_numPlayers];
 	const auto vCBMPgraph = val[t_CBMP_Graph];
-	const auto bCBMPgraph = vCBMPgraph> 1;
+	const auto bCBMPgraph = vCBMPgraph > 1;
 	const auto nRowStart = val[t_nRowsInStartMatrix];
 	const auto nPrecalcRows = val[t_useRowsPrecalculation];
 	if (numPlayers > MAX_PLAYER_NUMBER) {

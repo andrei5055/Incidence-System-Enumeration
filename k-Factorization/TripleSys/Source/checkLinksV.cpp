@@ -45,7 +45,7 @@ CC bool CChecklLink::checkLinksV(ctchar* links, ctchar* v, int nv, int ind, tcha
 				break;
 			default:
 				ASSERT_IF(1);
-				exit(104);
+				EXIT_(104);
 				return false;
 			}
 		//printTableColor("v", m_vo, 1, vo + 2 - m_vo, 0);

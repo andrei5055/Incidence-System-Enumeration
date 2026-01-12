@@ -1,6 +1,7 @@
 #include "TripleSys.h"
 #include "Table.h"
 
+#ifndef USE_CUDA
 #define USE_INTRINSIC		1
 #if USE_INTRINSIC
 #include <immintrin.h>
@@ -61,17 +62,26 @@ bool findError(ctchar* sol1, ctchar* sol2, int lenSol, bool assert = false)
 #else
 #define findError(sol1, sol2, lenSol, assert)
 #endif
-
+bool notCBMPtr(short int* tr, int nc) {
+	// return true if tr not CBMP tr.
+	// Note: looks like this function never return true. Do we need it?
+	const short int trMask = tr[0] & 0x0101;
+	if (trMask != 0x0001 && trMask != 0x0100)
+		return true;
+	for (int i = 1; i < nc / 2; i++) {
+		if ((tr[i] & 0x0101) != trMask)
+			return true;
+	}
+	return false;
+}
 CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors) const
 {
-	//if (mode == 0 && (p1[1] > 7 || p2[1] > 7))
-	//	return 0; //leo
-
 	// p1, p2 - rows to calculate compatibilities with first precalculate rows rows
 	// mode: = 0 - p1 is new,
 	//       > 0 - p1 is the same as in prev call and mode is a length of solution to check.
 	const auto nRowsPrecalc = param(t_useRowsPrecalculation);
-	const tchar tRow = param(t_CBMP_Graph) == 2 ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
+	const bool bCBMP = param(t_CBMP_Graph) == 2;
+	const tchar tRow = bCBMP ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
 														 // you can modify the code and add check of row4 if row3 is the same as before
 														 // and row you check for compatibility converted to row4
 	/**
@@ -102,22 +112,28 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 		return 0;
 	}
 
-	tchar tr[MAX_PLAYER_NUMBER];
+	alignas(16) tchar tr[MAX_PLAYER_NUMBER];
 	int iRet = 0;
 	auto* pTestedTRs = testedTrs();
 	const auto* neighbors0 = neighborsPC(0);
 	const auto* neighbors1 = neighborsPC(1);
-
-	if (!mode) {
+	
+	if (mode > 0 && mode < m_numPlayers) {
+		if (MEMCMP(prevP2(), p2, mode) == 0)
+			return mode;
+	}
+	else if (mode == 0) {
 		pTestedTRs->resetGroupOrder();
-
-		// create all tr to convert (p1, p2) to result(0,1) and to result(1,0))
+		// create 2 rows target: result(0,1) or result(1,0))
 		for (int j = 0; j < 2; j++) {
 			auto* pf0 = j == 0 ? neighbors0 : neighbors1;
 			auto* pf1 = j == 0 ? neighbors1 : neighbors0;
 			for (int k = 0; k < m_numPlayers; k++) {
 				for (int i = 0; i < nRowsPrecalc; i++) {
+					// create all tr's to convert 2 rows (result(i), p1) to target: (result(0,1) or to result(1,0))
 					if (create2P1FTr(tr, k, pf0, pf1, neighborsPC(i), p1Neighbors)) {
+						if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers))
+							continue;
 						pTestedTRs->isProcessed(tr);
 					} else {
 						ASSERT_IF(1);
@@ -126,11 +142,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 				}
 			}
 		}
-	} else {
-		if (MEMCMP(prevP2(), p2, mode) == 0)
-			return mode;
 	}
-
 	const int nTrs = pTestedTRs->numObjects();
 	for (int itr = 0; itr < nTrs; itr++) {
 		tchar* trt = pTestedTRs->getObject(itr);
@@ -142,15 +154,25 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 			goto Ret;
 		}
 	}
-	/**/
 	mode = m_numPlayers;
 	for (int j = 0; j < 2; j++) {
+		// create 2 rows target: result(0,1) or result(1,0))
 		auto* pf0 = j == 0 ? neighbors0 : neighbors1;
 		auto* pf1 = j == 0 ? neighbors1 : neighbors0;
 		for (int k = 0; k < m_numPlayers; k++) {
+			// create all tr's to convert 2 rows (p1, p2) to target: (result(0,1) or to result(1,0))
 			if (create2P1FTr(tr, k, pf0, pf1, p1Neighbors, p2Neighbors)) {
+				if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers))
+					continue;
 				for (int i = 0; i < nRowsPrecalc; i++) {
 					if (cnvCheckOneRow(tr, result(i), tRow, false)) { // if true : result(i) with applied tr is a third row and less than result(2)
+						/**
+						printTable("tr", tr, 1, m_numPlayers, 2);
+						printTable("result", result(0), 3, m_numPlayers, 2);
+						printTable("p1", p1, 1, m_numPlayers, 2);
+						printTable("p2", p2, 1, m_numPlayers, 2);
+						printTable("p3", m_Ktmp, 1, m_numPlayers, 2);
+						**/
 						findError(p1, p2, m_numPlayers, false);
 						iRet = -1;
 						if (m_doNotExitEarlyIfNotCanonical)
@@ -243,4 +265,10 @@ bool transform_and_find_pair(tchar* pOut, ctchar* pIn, ctchar* pTr) { //, tchar 
 	return (_mm_movemask_epi8(cmp) != 0);
 }
 
+#endif
+#else
+// For the version that uses GPU, the following function needs to be implemented.
+CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbors, ctchar* p2, ctchar* p2Neighbors) const {
+	return 0;
+}
 #endif
