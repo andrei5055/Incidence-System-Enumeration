@@ -153,7 +153,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 				ASSERT_IF(1);
 			}
 		}
-		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & 16);
+		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & t_printTransformed);
 		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
 		bool bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
 		// get first row

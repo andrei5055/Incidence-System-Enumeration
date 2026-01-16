@@ -238,7 +238,7 @@ int TopGunBase::loadMatrices(int tFolder, int nRows)
 		}
 
 		nfr++;
-		if (param(t_printMatrices) & 1)
+		if (param(t_printMatrices) & t_printLoadedMatrices)
 			printf("\n%d %d-rows '%s Matrices' loaded from file %s", nMatricesFromOneFile, nRows, pMatrixType, sfn.c_str());
 		nMatricesAll += nMatricesFromOneFile;
 		nMax -= nMatricesFromOneFile;

@@ -97,7 +97,10 @@ typedef enum {
 
 typedef enum {
 	t_printNothing = 0,
-	t_printExploringSRG = 1 << 6, // report the process of SRG's exploring 
+	t_printLoadedMatrices = 1 << 0,
+	t_printRejectionReason = 1 << 1,
+	t_printTransformed = 1 << 4,
+	t_printExploringSRG = 1 << 6,   // report the process of SRG's exploring 
 } printFlags;
 
 typedef struct {

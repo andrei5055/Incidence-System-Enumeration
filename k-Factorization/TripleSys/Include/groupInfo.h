@@ -141,7 +141,7 @@ protected:
 		const auto& val = p->val;
 		const auto numPlayers = val[t_numPlayers];
 		const auto nRows = p->numFactors();
-		if ((val[t_printMatrices] & 16) || val[t_autSaveTestedTrs])
+		if ((val[t_printMatrices] & t_printTransformed) || val[t_autSaveTestedTrs])
 			m_pTrRepo = new CTrRepo(nRows, numPlayers);
 
 		m_numLevels = m_autLevelDef[1] - m_autLevelDef[0] + 1;

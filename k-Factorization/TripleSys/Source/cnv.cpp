@@ -150,7 +150,7 @@ CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 		if (icmp < 0) {
 			ret = -1;
 #if !USE_CUDA //PRINT_TRANSFORMED
-			if (param(t_printMatrices) & 16) {
+			if (param(t_printMatrices) & t_printTransformed) {
 				printTransformed(nrows, m_numPlayers, m_groupSize, tr, ttr, res, m_Km, n, nLoops, m_finalKMindex);
 				//continue;
 			}

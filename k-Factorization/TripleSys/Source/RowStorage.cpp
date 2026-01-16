@@ -18,7 +18,7 @@ int ggg = 0;
 
 #define TRACE_INIT_MASKS			1
 #if !USE_CUDA && TRACE_INIT_MASKS
-#define REPORT_REJECTION_ON_SCREEN(frmt, ...)   if (sysParam()->val[t_printMatrices]) printfYellow(frmt, __VA_ARGS__)
+#define REPORT_REJECTION_ON_SCREEN(frmt, ...)   if (sysParam()->val[t_printMatrices] & t_printRejectionReason) printfYellow(frmt, __VA_ARGS__)
 #else
 #define REPORT_REJECTION_ON_SCREEN(...)
 #endif
