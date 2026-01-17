@@ -177,10 +177,6 @@ ll getRowCallsCalls = 0;
 #define incGetRowCalls()
 #endif
 
-#if COUNT_MASK_WEIGHT
-size_t totalWeighChange = 0;
-#endif
-
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	incGetRowCalls();
 	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
@@ -200,13 +196,11 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	if (last > m_pRowStorage->getNumSolution())
 		return 0;
 
-	ASSERT_IF(last > m_pRowStorage->getNumSolution());
-
 	if (iRow == numPreconstructedRows) {
 		if (!first) {
 			int mode = -1;
 			pAllData->cnvPrecalcRowsCompCheck(mode);
-			first += m_threadID;
+			first = m_threadID;
 		}
 		if (first >= last)
 			return 0;

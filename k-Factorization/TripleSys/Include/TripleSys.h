@@ -11,7 +11,7 @@
 
 #define TestOption1 3
 
-#define COUNT_MASK_WEIGHT		0
+#define COUNT_MASK_WEIGHT		1
 #define OUT_RECASTED_SOLUTIONS  0
 #define COUNT_GET_ROW_CALLS		0          // Trace and print the number of calls of CRowUsage::getRow() method 
 

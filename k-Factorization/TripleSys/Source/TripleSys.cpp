@@ -297,7 +297,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			if (!processOneDay()) {
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)
-						printf("%9d solutions for row %d\n", m_nRows4Day, m_secondPlayerInRow4);
+						printf("%9d solutions for row starting with (0 %2d ...\n", m_nRows4Day, m_secondPlayerInRow4);
 					if (!m_nRows4Day && m_groupSize == 2 && param(t_MultiThreading))
 						goto noResult;
 					const auto iRet = endOfRowPrecalculation(iCalcMode);

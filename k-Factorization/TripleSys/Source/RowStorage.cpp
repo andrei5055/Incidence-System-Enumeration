@@ -477,7 +477,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 				numRowToConstruct, m_numSolutionTotal);
 			REPORT_REJECTION(5);
 			return 0;
-		} else
+		}
+		else
 			return -1; // can happen with group size 3
 	}
 
@@ -493,7 +494,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	const auto useCombinedSolutions = param[t_useCombinedSolutions];
 	if (useCombinedSolutions) {
 		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pPlayerSolutionCntr[numPreconstructedRows() + 1]) - m_numRecAdj));
-		delete [] m_pRowsCompatMasks[0];
+		delete[] m_pRowsCompatMasks[0];
 	}
 
 	const auto flg = !selectPlayerByMask();
@@ -632,7 +633,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 #ifndef USE_CUDA
 		if (m_pAllData->printFlag())
-			printf("Row %2d Comp=%d NotComp=%d\n", i+1, globPairsComp, globPairsNotComp2);
+			printf("Row %2d Comp=%d NotComp=%d\n", i + 1, globPairsComp, globPairsNotComp2);
 
 		globPairsComp = globPairsNotComp2 = 0;
 #endif
@@ -661,7 +662,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			REPORT_REJECTION_ON_SCREEN("At least one player (%llx) was not present with player 0 in any matrix row solution\n", *pUsedPlayers);
 			REPORT_REJECTION(4);
 			return 0;
-		} else
+		}
+		else
 			return -1; // can happen with group size 3
 	}
 
@@ -722,6 +724,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	FCLOSE_F(f1);
 #endif
 
+	const auto weight = countMaskFunc();
 	if (ppSolRecast) {
 #if COUNT_MASK_WEIGHT
 		const auto prevWeight = countMaskFunc();
@@ -731,12 +734,15 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		countMaskFunc(prevWeight);
 #endif
 	}
-
 	return 1;
 }
 
 #if COUNT_MASK_WEIGHT
+size_t totalWeighChange = 0;
+#endif
+
 size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
+#define OUT_MASK_WEIGHT	1
 	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
 	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
 	static tchar table[256];
@@ -749,15 +755,19 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 
 		matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
 		auto availablePlayers = getPlayersMask();
-		unsigned int first, last = 0;
+		unsigned int last = 0;
 		int i = numPreconstructedRows() - 1;		
+		unsigned int first = getSolutionRange(last, availablePlayers, ++i);
+		numFirstSol = last - first;
+#if OUT_MASK_WEIGHT
 		while (availablePlayers) {
 			first = getSolutionRange(last, availablePlayers, ++i);
 			const auto portion = last - first;
 			matrWeight -= portion * portion;
-			if (!numFirstSol)
-				numFirstSol = portion;
 		}
+#else
+		numFirstSol = m_pPlayerSolutionCntr[numPreconstructedRows()];	
+#endif
 	}
 
 	ctchar* pMask = (ctchar * )getSolutionMask(0);
@@ -772,11 +782,10 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 
 	changingWeight = totalWeight - changingWeight;
 
-#if 0
+#if OUT_MASK_WEIGHT
 	printf("\nMask matrix total weight: %zd  %5.2f%%", totalWeight, double(totalWeight) / matrWeight * 100);
 	printf("\nMask matrix changing weight: %zd  %5.2f%%", changingWeight, double(changingWeight) / matrWeight * 100);
 	if (prevWeight) {
-		extern size_t totalWeighChange;
 		const auto weightChange = prevWeight - changingWeight;
 		totalWeighChange += weightChange;
 		printf("\nWeight change is %zd:  %5.2f%%\n", weightChange, double(weightChange) / prevWeight * 100);
@@ -785,7 +794,6 @@ size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
 #endif
 	return changingWeight;
 }
-#endif
 
 int CRowStorage::findIndexInRange(int left, int right, ctchar* pSol) const {
 	while (left <= right) {
