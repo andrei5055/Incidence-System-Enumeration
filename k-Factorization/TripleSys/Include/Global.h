@@ -96,6 +96,12 @@ typedef enum {
 } paramID;
 
 typedef enum {
+	t_noTest = 0,
+	t_use3RowCheck = 1 << 8,
+	t_useCompressedMasks = 1 << 9,
+} featureFlags;
+
+typedef enum {
 	t_printNothing = 0,
 	t_printLoadedMatrices = 1 << 0,
 	t_printRejectionReason = 1 << 1,
@@ -122,6 +128,9 @@ public:
 			u1fCycles[0] = NULL;
 		}
 	}
+	CC inline auto paramVal(paramID id) const { return val[id]; }
+	CC inline bool useFeature(featureFlags msk) const 
+											{ return val[t_test] & msk; }
 	CC inline auto partiteNumb() const		{ return val[t_CBMP_Graph]; }
 	CC inline auto completeGraph() const	{ return partiteNumb() == 1; }
 	inline auto partitionSize() const		{ return val[t_numPlayers] / partiteNumb(); }

@@ -31,7 +31,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
-	m_use3RowCheck((pSysParam->val[t_test] & 256) && pAllData->groupSize() == 2),
+	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2),
 	CStorage<tchar>(numObjects, 3 * numPlayers) {
 	m_numObjectsMax = numObjects;
 	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
@@ -463,24 +463,25 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	while (++i < m_numDaysResult)
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - m_numRecAdj) >> 6);
 
-	m_numSolutionTotal = m_pPlayerSolutionCntr[m_numPlayers - 1];
-	if (m_numSolutionTotal != m_numObjects) {
+	if (m_pPlayerSolutionCntr[m_numPlayers - 1] != m_numObjects) {
 		REPORT_REJECTION_ON_SCREEN("Something wrong with DB of precompiled solution: m_numSolutionTotal(%d) !=  m_numObjects(%d)\n", m_numSolutionTotal, m_numObjects);
 		REPORT_REJECTION(1);
 		return 0;
 	}
 
 	auto numRowToConstruct = (uint)(m_numDaysResult - numPreconstructedRows());
-	if (numRowToConstruct > m_numSolutionTotal) {
+	if (numRowToConstruct > m_numObjects) {
 		if (m_pAllData->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
-				numRowToConstruct, m_numSolutionTotal);
+				numRowToConstruct, m_numObjects);
 			REPORT_REJECTION(5);
 			return 0;
 		}
 		else
 			return -1; // can happen with group size 3
 	}
+
+	setNumSolutions(m_numObjects);
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
 	static int ccc = 0;
@@ -503,10 +504,10 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
 
 	m_solAdj = useCombinedSolutions || m_bUseAut ? m_numRecAdj : 0;
-	const auto len = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
+	const auto numMatrRows = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
 	delete[] m_pRowsCompatMasks[1];
-	m_pRowsCompatMasks[1] = new tmask[len * m_lenSolutionMask];
-	memset(m_pRowsCompatMasks[1], 0, len * m_numSolutionTotalB);
+	m_pRowsCompatMasks[1] = new tmask[numMatrRows * m_lenSolutionMask];
+	memset(m_pRowsCompatMasks[1], 0, numMatrRows * m_numSolutionTotalB);
 
 	releaseSolMaskInfo();
 	const auto lenMasks = flg ? numDaysResult() : m_numPlayers;
@@ -724,14 +725,14 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	FCLOSE_F(f1);
 #endif
 
-	const auto weight = countMaskFunc();
+
 	if (ppSolRecast) {
 #if COUNT_MASK_WEIGHT
-		const auto prevWeight = countMaskFunc();
+		const auto prevWeight = countMaskFunc(getSolutionMask(0), numMatrRows);
 #endif
 		modifyMask(ppSolRecast);
 #if COUNT_MASK_WEIGHT
-		countMaskFunc(prevWeight);
+		countMaskFunc(getSolutionMask(0), numMatrRows, prevWeight);
 #endif
 	}
 	return 1;
@@ -741,36 +742,34 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 size_t totalWeighChange = 0;
 #endif
 
-size_t CRowStorage::countMaskFunc(size_t prevWeight) const {
+size_t CRowStorage::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow, size_t prevWeight) const {
 #define OUT_MASK_WEIGHT	1
 	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
 	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
 	static tchar table[256];
-	const auto numMatrRow = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
 	if (!matrWeight) {
 		// Preparing the table to calculate the weight of the mask matrix.
 		table[0] = 0;
 		for (int i = 1; i < sizeof(table); i++)
 			table[i] = table[i >> 1] + i % 2;
 
-		matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
 		auto availablePlayers = getPlayersMask();
 		unsigned int last = 0;
 		int i = numPreconstructedRows() - 1;		
 		unsigned int first = getSolutionRange(last, availablePlayers, ++i);
 		numFirstSol = last - first;
+		matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
 #if OUT_MASK_WEIGHT
+		matrWeight -= numFirstSol * numFirstSol;
 		while (availablePlayers) {
 			first = getSolutionRange(last, availablePlayers, ++i);
 			const auto portion = last - first;
 			matrWeight -= portion * portion;
 		}
-#else
-		numFirstSol = m_pPlayerSolutionCntr[numPreconstructedRows()];	
 #endif
 	}
 
-	ctchar* pMask = (ctchar * )getSolutionMask(0);
+	ctchar* pMask = (ctchar *)pCompSolutions;
 	size_t changingWeight = 0, totalWeight = 0;
 	const auto ind = m_numSolutionTotalB * numFirstSol;
 	size_t i = m_numSolutionTotalB * numMatrRow;
@@ -975,6 +974,10 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 	}
 	else {
 		memcpy(pCompatibleSolutions, m_pRowsCompatMasks[1] + first * m_lenSolutionMask, m_numSolutionTotalB);
+	}
+
+	if (m_pSysParam->useFeature(t_useCompressedMasks)) {
+		const auto nValidSol = countMaskFunc(pCompatibleSolutions);
 	}
 
 	if (m_pTRTSN_Storage && first) {
