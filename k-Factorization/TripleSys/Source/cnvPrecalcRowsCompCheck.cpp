@@ -2,7 +2,7 @@
 #include "Table.h"
 
 #ifndef USE_CUDA
-#define USE_INTRINSIC		1
+#define USE_INTRINSIC		0
 #if USE_INTRINSIC
 #include <immintrin.h>
 #include <iostream>
@@ -82,24 +82,24 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 	const auto nRowsPrecalc = param(t_useRowsPrecalculation);
 	const bool bCBMP = param(t_CBMP_Graph) == 2;
 	const tchar tRow = bCBMP ? 5 : 3; // check 3rd row even if param(t_useRowsPrecalculation) == 4 (not 3)
-														 // you can modify the code and add check of row4 if row3 is the same as before
-														 // and row you check for compatibility converted to row4
-	/**
-	tchar out[16];
-	tchar inp[16] = { 0,1,2,3,4,5,6,7,8,9,10,15,14,13,12,11 };
-	tchar ttr[16] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0 };
-	printTable("out0", out, 1, m_numPlayers, 2);
-	for (int i = 0; i < 1000000000; i++)
-		kmTranslate2AndCheck(out, inp, ttr, m_numPlayers, 11);
-	printTable("out1", out, 1, m_numPlayers, 2);
-	bool ret = false;
-	for (int i = 0; i < 1000000000; i++)
-		ret = transform_and_find_pair(out, inp, ttr, 0, 11);
-	
-	printf("ret=%s\n", ret ? "pair exists" : "not exists");
-	printTable("out2", out, 1, m_numPlayers, 2);
-	exit(1);
-	**/
+	// you can modify the code and add check of row4 if row3 is the same as before
+	// and row you check for compatibility converted to row4
+/**
+tchar out[16];
+tchar inp[16] = { 0,1,2,3,4,5,6,7,8,9,10,15,14,13,12,11 };
+tchar ttr[16] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0 };
+printTable("out0", out, 1, m_numPlayers, 2);
+for (int i = 0; i < 1000000000; i++)
+	kmTranslate2AndCheck(out, inp, ttr, m_numPlayers, 11);
+printTable("out1", out, 1, m_numPlayers, 2);
+bool ret = false;
+for (int i = 0; i < 1000000000; i++)
+	ret = transform_and_find_pair(out, inp, ttr, 0, 11);
+
+printf("ret=%s\n", ret ? "pair exists" : "not exists");
+printTable("out2", out, 1, m_numPlayers, 2);
+exit(1);
+**/
 	m_playerIndex = m_numPlayers;
 	if (mode == -1) {
 #if USE_INTRINSIC
@@ -117,7 +117,7 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 	auto* pTestedTRs = testedTrs();
 	const auto* neighbors0 = neighborsPC(0);
 	const auto* neighbors1 = neighborsPC(1);
-	
+
 	if (mode > 0 && mode < m_numPlayers) {
 		if (MEMCMP(prevP2(), p2, mode) == 0)
 			return mode;
@@ -135,7 +135,8 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 						if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers))
 							continue;
 						pTestedTRs->isProcessed(tr);
-					} else {
+					}
+					else {
 						ASSERT_IF(1);
 						exit(106);
 					}
@@ -155,35 +156,37 @@ CC int alldata::cnvPrecalcRowsCompCheck(int& mode, ctchar* p1, ctchar* p1Neighbo
 		}
 	}
 	mode = m_numPlayers;
-	for (int j = 0; j < 2; j++) {
-		// create 2 rows target: result(0,1) or result(1,0))
-		auto* pf0 = j == 0 ? neighbors0 : neighbors1;
-		auto* pf1 = j == 0 ? neighbors1 : neighbors0;
-		for (int k = 0; k < m_numPlayers; k++) {
-			// create all tr's to convert 2 rows (p1, p2) to target: (result(0,1) or to result(1,0))
-			if (create2P1FTr(tr, k, pf0, pf1, p1Neighbors, p2Neighbors)) {
-				if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers))
-					continue;
-				for (int i = 0; i < nRowsPrecalc; i++) {
-					if (cnvCheckOneRow(tr, result(i), tRow, false)) { // if true : result(i) with applied tr is a third row and less than result(2)
-						/**
-						printTable("tr", tr, 1, m_numPlayers, 2);
-						printTable("result", result(0), 3, m_numPlayers, 2);
-						printTable("p1", p1, 1, m_numPlayers, 2);
-						printTable("p2", p2, 1, m_numPlayers, 2);
-						printTable("p3", m_Ktmp, 1, m_numPlayers, 2);
-						**/
-						findError(p1, p2, m_numPlayers, false);
-						iRet = -1;
-						if (m_doNotExitEarlyIfNotCanonical)
-							continue;
-						goto Ret;
+	if (0) {
+		for (int j = 0; j < 2; j++) {
+			// create 2 rows target: result(0,1) or result(1,0))
+			auto* pf0 = j == 0 ? neighbors0 : neighbors1;
+			auto* pf1 = j == 0 ? neighbors1 : neighbors0;
+			for (int k = 0; k < m_numPlayers; k++) {
+				// create all tr's to convert 2 rows (p1, p2) to target: (result(0,1) or to result(1,0))
+				if (create2P1FTr(tr, k, pf0, pf1, p1Neighbors, p2Neighbors)) {
+					if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers))
+						continue;
+					for (int i = 0; i < nRowsPrecalc; i++) {
+						if (cnvCheckOneRow(tr, result(i), tRow, false)) { // if true : result(i) with applied tr is a third row and less than result(2)
+							/**
+							printTable("tr", tr, 1, m_numPlayers, 2);
+							printTable("result", result(0), 3, m_numPlayers, 2);
+							printTable("p1", p1, 1, m_numPlayers, 2);
+							printTable("p2", p2, 1, m_numPlayers, 2);
+							printTable("p3", m_Ktmp, 1, m_numPlayers, 2);
+							**/
+							findError(p1, p2, m_numPlayers, false);
+							iRet = -1;
+							if (m_doNotExitEarlyIfNotCanonical)
+								continue;
+							goto Ret;
+						}
 					}
 				}
-			}
-			else {
-				ASSERT_IF(1);
-				exit(107);
+				else {
+					ASSERT_IF(1);
+					exit(107);
+				}
 			}
 		}
 	}

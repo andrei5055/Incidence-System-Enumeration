@@ -34,15 +34,20 @@ class alldata;
 
 class CMaskHandle {
 public:
-	CC inline auto numSolutionTotalB() const { return m_numSolutionTotalB; }
+	~CMaskHandle()								{ releaseCompatMaskMemory(); }
+	CC inline auto numSolutionTotalB() const	{ return m_numSolutionTotalB; }
 protected:
-	inline void setNumSolutions(uint numSol) { m_numSolutionTotal = numSol; }
-//	inline void 
-//	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (flg ? 0 : 8);
-//	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
+	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj);
+	inline auto numMasks() const				{ return m_numMasks; }
+	inline void setNumSolutions(uint numSol)	{ m_numSolutionTotal = numSol; }
+private:
+	inline void releaseCompatMaskMemory()		{ delete[] m_pRowsCompatMasks; }
+protected:
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB;
 	uint m_lenSolutionMask;
+	uint m_numMasks;
+	tmask* m_pRowsCompatMasks;
 };
 
 class CRowStorage : public CStorage<tchar>, CMaskHandle {
@@ -68,7 +73,7 @@ public:
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
-	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks[1] + (solNumb + m_solAdj) * m_lenSolutionMask; }
+	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
@@ -188,7 +193,6 @@ private:
 	solutionInterval m_fSolutionInterval;
 
 	uint* m_pPlayerSolutionCntr = NULL;
-	tmask* m_pRowsCompatMasks[2];
 	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
 	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
 	tmask* m_pRowSolutionMasks = NULL;

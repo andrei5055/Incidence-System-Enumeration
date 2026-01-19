@@ -40,7 +40,6 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_lenMask = m_pMaskStorage->lenObject();
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : m_numDaysResult;
-	memset(m_pRowsCompatMasks, 0, sizeof(m_pRowsCompatMasks));
 	m_fRowToBitmask = groupSize2() ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
 	m_fSolutionInterval = !selectPlayerByMask() ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
 	m_lenDayResults = m_numDaysResult + 1;
@@ -50,8 +49,6 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 
 CC CRowStorage::~CRowStorage() {
 	delete[] m_pPlayerSolutionCntr;
-	for (int i = countof(m_pRowsCompatMasks); i--;)
-		delete[] m_pRowsCompatMasks[i];
 
 	delete m_pMaskStorage;
 	delete[] m_pSolMemory;
@@ -398,7 +395,7 @@ CC void CRowStorage::updateMasksByAutForSolution(ctchar *pSolution, const CGroup
 			// Should never happen if all first non-fixed row solutions are canonical. 
 	//		ASSERT_IF(true);
 			// Just in case, we'll reset the mask.
-			memset(m_pRowsCompatMasks[1] + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
+			memset(m_pRowsCompatMasks + m_lenSolutionMask * idx, 0, m_numSolutionTotalB);
 #if 0
 			FOPEN_F(f, "aaa.txt", "a");
 			fprintf(f, "\nsolIdx = %d  idx = %d  last = %d, m_numSolutionTotal = %d\n", solIdx, idx, last, m_numSolutionTotal);
@@ -434,7 +431,7 @@ CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 		last = m_lastInFirstSet;
 
 	const auto solIdxLast = last - 1;
-	auto pMask = m_pRowsCompatMasks[1];
+	auto pMask = m_pRowsCompatMasks;
 	for (uint solIdx = 0; solIdx < solIdxLast; solIdx++) {
 		const auto pSolution = getObject(solIdx);
 		updateMasksByAutForSolution(pSolution, pGroupInfo, pMask, solIdx, last);
@@ -481,7 +478,6 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			return -1; // can happen with group size 3
 	}
 
-	setNumSolutions(m_numObjects);
 
 #if 0   // Output of table with total numbers of solutions for different input matrices 
 	static int ccc = 0;
@@ -493,21 +489,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #endif
 
 	const auto useCombinedSolutions = param[t_useCombinedSolutions];
-	if (useCombinedSolutions) {
-		m_lastInFirstSet *= (m_numRec[1] = ((m_numRecAdj2 = m_pPlayerSolutionCntr[numPreconstructedRows() + 1]) - m_numRecAdj));
-		delete[] m_pRowsCompatMasks[0];
-	}
-
 	const auto flg = !selectPlayerByMask();
-	// Adding additional long long when we use groupSize > 2
-	m_numSolutionTotalB = ((m_numSolutionTotal - m_numRecAdj + 7) / 8 + 7) / 8 * 8 + (flg ? 0 : 8);
-	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
-
-	m_solAdj = useCombinedSolutions || m_bUseAut ? m_numRecAdj : 0;
-	const auto numMatrRows = m_numSolutionTotal - (m_numRecAdj - m_solAdj);
-	delete[] m_pRowsCompatMasks[1];
-	m_pRowsCompatMasks[1] = new tmask[numMatrRows * m_lenSolutionMask];
-	memset(m_pRowsCompatMasks[1], 0, numMatrRows * m_numSolutionTotalB);
+	initMaskMemory(m_numObjects, (flg ? 0 : 8), m_numRecAdj, m_solAdj = useCombinedSolutions || m_bUseAut ? m_numRecAdj : 0);
 
 	releaseSolMaskInfo();
 	const auto lenMasks = flg ? numDaysResult() : m_numPlayers;
@@ -531,8 +514,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
 #endif
 
-	tmask* pRowsCompatMasks[] = { m_pRowsCompatMasks[0], m_pRowsCompatMasks[1] };
-	tmask* pCompatMask = pRowsCompatMasks[1];
+	tmask* pCompatMask = m_pRowsCompatMasks;
 
 	bool skipAllowed = flg && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
@@ -703,7 +685,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			auto const* pSolution = m_pFirstMatr - numPlayers();
 			my_counter = 0;
 			while (memcmp(pSolution += lenRecord, pCurrentMatr, numPlayers()) < 0)
-				updateMasksByAutForSolution(pSolution, pGroupInfo, m_pRowsCompatMasks[1], 0, m_lastInFirstSet, m_lastInFirstSet);
+				updateMasksByAutForSolution(pSolution, pGroupInfo, m_pRowsCompatMasks, 0, m_lastInFirstSet, m_lastInFirstSet);
 #endif
 		}
 	}
@@ -728,11 +710,11 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 	if (ppSolRecast) {
 #if COUNT_MASK_WEIGHT
-		const auto prevWeight = countMaskFunc(getSolutionMask(0), numMatrRows);
+		const auto prevWeight = countMaskFunc(getSolutionMask(0), numMasks());
 #endif
 		modifyMask(ppSolRecast);
 #if COUNT_MASK_WEIGHT
-		countMaskFunc(getSolutionMask(0), numMatrRows, prevWeight);
+		countMaskFunc(getSolutionMask(0), numMasks(), prevWeight);
 #endif
 	}
 	return 1;
@@ -973,7 +955,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 		generateCompatibilityMasks(pCompatibleSolutions, first, last, pAllData);
 	}
 	else {
-		memcpy(pCompatibleSolutions, m_pRowsCompatMasks[1] + first * m_lenSolutionMask, m_numSolutionTotalB);
+		memcpy(pCompatibleSolutions, m_pRowsCompatMasks + first * m_lenSolutionMask, m_numSolutionTotalB);
 	}
 
 	if (m_pSysParam->useFeature(t_useCompressedMasks)) {
@@ -998,7 +980,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 					solIdxTr = p[0];
 				}
 
-				auto pMaskOut = m_pRowsCompatMasks[1] + m_lenSolutionMask * minIdxTr + (solIdxTr >> SHIFT);
+				auto pMaskOut = m_pRowsCompatMasks + m_lenSolutionMask * minIdxTr + (solIdxTr >> SHIFT);
 				*pMaskOut &= ~MASK_BIT(solIdxTr);
 			}
 		}
@@ -1031,3 +1013,16 @@ CC void CRowStorage::outSelectedSolution(int iRow, uint first, uint last, int th
 	FCLOSE_F(f);
 }
 #endif
+
+void CMaskHandle::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
+{
+	// Adding additional long long when we use groupSize > 2
+	setNumSolutions(numSolutions);
+	m_numSolutionTotalB = ((numSolutions - numRecAdj + 7) / 8 + 7) / 8 * 8 + lenUsedMask;
+	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
+
+	const auto numMatrRows = m_numSolutionTotal - (numRecAdj - numSolAdj);
+	releaseCompatMaskMemory();
+	m_pRowsCompatMasks = new tmask[numMatrRows * m_lenSolutionMask];
+	memset(m_pRowsCompatMasks, 0, numMatrRows* m_numSolutionTotalB);
+}
