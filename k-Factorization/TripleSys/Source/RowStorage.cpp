@@ -32,10 +32,9 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
 	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2),
-	CStorage<tchar>(numObjects, 3 * numPlayers) {
+	CStorage<tchar>(numObjects, 3 * numPlayers),
+	CMaskHandle(pSysParam, pAllData->numDaysResult()) {
 	m_numObjectsMax = numObjects;
-	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
-	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
 	initMaskStorage(numObjects);
 	m_lenMask = m_pMaskStorage->lenObject();
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
@@ -951,11 +950,11 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll a
 
 CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last, const alldata* pAllData) const {
 	if (!m_bUseAut) {
-		memset(pCompatibleSolutions, 0, m_numSolutionTotalB);
+		memset(pCompatibleSolutions, 0, numSolutionTotalB());
 		generateCompatibilityMasks(pCompatibleSolutions, first, last, pAllData);
 	}
 	else {
-		memcpy(pCompatibleSolutions, rowsCompatMasks() + first * lenSolutionMask(), m_numSolutionTotalB);
+		memcpy(pCompatibleSolutions, rowsCompatMasks() + first * lenSolutionMask(), numSolutionTotalB());
 	}
 
 	if (m_pSysParam->useFeature(t_useCompressedMasks)) {
@@ -1013,6 +1012,12 @@ CC void CRowStorage::outSelectedSolution(int iRow, uint first, uint last, int th
 	FCLOSE_F(f);
 }
 #endif
+
+CMaskHandle::CMaskHandle(const kSysParam* pSysParam, int numDayReslt) {
+	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
+	m_pPlayerSolutionCntr = new uint[numPlayers + numDayReslt];
+	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
+}
 
 void CMaskHandle::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
 {

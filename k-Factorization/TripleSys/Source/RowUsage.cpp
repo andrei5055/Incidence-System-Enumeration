@@ -256,7 +256,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			const auto pPrevA = (const ll*)(pCompSol);
 			auto pToA = (ll*)(pCompSol + m_lenMask);
 			const auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first));
-			unsigned int numLongs2Skip = m_pRowStorage->numLongs2Skip(iRow);
+			unsigned int numLongs2Skip = m_pMasks->numLongs2Skip(iRow);
 			const auto pPrevAStart = pPrevA + numLongs2Skip;
 			int jNum = m_lenMask - numLongs2Skip;
 			auto pToAStart = pToA + numLongs2Skip;
