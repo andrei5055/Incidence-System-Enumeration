@@ -34,23 +34,29 @@ class alldata;
 
 class CMaskHandle {
 public:
-	~CMaskHandle()								{ releaseCompatMaskMemory(); }
-	CC inline auto numSolutionTotalB() const	{ return m_numSolutionTotalB; }
+	~CMaskHandle()									{ releaseCompatMaskMemory(); }
+	CC inline auto numSolutionTotalB() const		{ return m_numSolutionTotalB; }
+	CC inline tmask *getSolutionMask(uint solNumb) const { return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
 protected:
 	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj);
-	inline auto numMasks() const				{ return m_numMasks; }
-	inline void setNumSolutions(uint numSol)	{ m_numSolutionTotal = numSol; }
+	inline auto numMasks() const					{ return m_numMasks; }
+	inline auto lenSolutionMask() const				{ return m_lenSolutionMask; }
+	inline void setNumSolutions(uint numSol)		{ m_numSolutionTotal = numSol; }
+	inline void resetSolutionMask(uint idx) const	{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
+	inline auto rowsCompatMasks() const				{ return m_pRowsCompatMasks; }
 private:
-	inline void releaseCompatMaskMemory()		{ delete[] m_pRowsCompatMasks; }
+	inline void releaseCompatMaskMemory()			{ delete[] rowsCompatMasks(); }
 protected:
 	uint m_numSolutionTotal;
-	uint m_numSolutionTotalB;
-	uint m_lenSolutionMask;
+	uint m_numSolutionTotalB; // length of one solution mask in bytes
+	uint m_lenSolutionMask;   // length of one solution mask in tmask units 
 	uint m_numMasks;
+private:
+	int m_solAdj = 0;
 	tmask* m_pRowsCompatMasks;
 };
 
-class CRowStorage : public CStorage<tchar>, CMaskHandle {
+class CRowStorage : public CStorage<tchar>, public CMaskHandle {
 	typedef void (CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
 	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 public:
@@ -73,7 +79,6 @@ public:
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
-	CC inline auto getSolutionMask(uint solNumb) const  { return m_pRowsCompatMasks + (solNumb + m_solAdj) * m_lenSolutionMask; }
 	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
@@ -205,7 +210,6 @@ private:
 	uint m_numRec[2];			   // Number of solutions for first and second nonfixed rows.
 	uint m_numRecAdj2;
 	uint m_lastInFirstSet;
-	int m_solAdj = 0;
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 	bool m_bUseAut;
