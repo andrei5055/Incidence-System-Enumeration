@@ -179,8 +179,8 @@ ll getRowCallsCalls = 0;
 
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	incGetRowCalls();
-	const auto numPreconstructedRows = m_pRowStorage->numPreconstructedRows();
-	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pRowStorage->numDaysResult());
+	const auto numPreconstructedRows = m_pMasks->numPreconstructedRows();
+	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pMasks->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	const ll availablePlayers = nRow >= 0
@@ -255,7 +255,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			// Construct the intersection of compatible solutions only if we will use it.
 			const auto pPrevA = (const ll*)(pCompSol);
 			auto pToA = (ll*)(pCompSol + m_lenMask);
-			const auto pFromA = (const ll*)(m_pRowStorage->getSolutionMask(first));
+			const auto pFromA = (const ll*)(m_pMasks->getSolutionMask(first));
 			unsigned int numLongs2Skip = m_pMasks->numLongs2Skip(iRow);
 			const auto pPrevAStart = pPrevA + numLongs2Skip;
 			int jNum = m_lenMask - numLongs2Skip;

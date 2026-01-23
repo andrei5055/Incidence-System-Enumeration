@@ -35,26 +35,36 @@ class alldata;
 class CMaskHandle {
 public:
 	CMaskHandle(const kSysParam* pSysParam, int numDayReslt);
-	~CMaskHandle()									{ releaseCompatMaskMemory(); }
-	CC inline auto numSolutionTotalB() const		{ return m_numSolutionTotalB; }
+	~CMaskHandle()										{ releaseCompatMaskMemory(); 	delete[] numPlayerSolutionsPtr(); }
+	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline tmask *getSolutionMask(uint solNumb) const { return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
-	CC inline auto numLongs2Skip(int iRow) const	{ return m_pNumLongs2Skip[iRow]; }
+	CC inline auto numLongs2Skip(int iRow) const		{ return m_pNumLongs2Skip[iRow]; }
+	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
+	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
+	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
 protected:
 	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj);
-	inline auto numMasks() const					{ return m_numMasks; }
-	inline auto lenSolutionMask() const				{ return m_lenSolutionMask; }
-	inline void setNumSolutions(uint numSol)		{ m_numSolutionTotal = numSol; }
-	inline void resetSolutionMask(uint idx) const	{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
-	inline auto rowsCompatMasks() const				{ return m_pRowsCompatMasks; }
-	CC inline auto numPlayerSolutionsPtr() const	{ return m_pPlayerSolutionCntr; }
+	inline auto numMasks() const						{ return m_numMasks; }
+	inline auto lenSolutionMask() const					{ return m_lenSolutionMask; }
+	inline void setNumSolutions(uint numSol)			{ m_numSolutionTotal = numSol; }
+	inline void resetSolutionMask(uint idx) const		{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
+	inline auto rowsCompatMasks() const					{ return m_pRowsCompatMasks; }
+	CC inline auto numPlayerSolutionsPtr() const		{ return m_pPlayerSolutionCntr; }
 private:
-	inline void releaseCompatMaskMemory()			{ delete[] rowsCompatMasks(); }
+	inline void releaseCompatMaskMemory()				{ delete[] rowsCompatMasks(); }
 protected:
 	uint m_numSolutionTotal;
 	uint m_numSolutionTotalB; // length of one solution mask in bytes
 	uint* m_pPlayerSolutionCntr = NULL;
 	uint* m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
+	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
+	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
+	tmask* m_pRowSolutionMasks = NULL;
+	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
+	uint* m_pRowSolutionMasksIdx = NULL;
 private:
+	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
+	const int m_numDaysResult;
 	uint m_lenSolutionMask;   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	int m_solAdj = 0;
@@ -78,12 +88,9 @@ public:
 	CC inline auto useFeature(featureFlags mask) const	{ return m_pSysParam->useFeature(mask); }
 	CC inline void reset()								{ m_numObjects = 0; }
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
-	CC inline auto numDaysResult() const				{ return m_numDaysResult; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);
 	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
-	CC inline auto numPreconstructedRows() const		{ return m_numPreconstructedRows; }
-	CC inline const auto rowSolutionMasksIdx() const	{ return m_pRowSolutionMasksIdx; }
 	CC inline const auto rowSolutionMasks() const		{ return m_pRowSolutionMasks; }
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
@@ -103,9 +110,9 @@ public:
 		return sysParam()->val[t_useCombinedSolutions];
 	}
 	CC void releaseSolMaskInfo() {
-		delete[] m_pRowSolutionMasks;
-		delete[] m_pRowSolutionMasksIdx;
-		delete[] m_pMaskTestingCompleted;
+		delete[] rowSolutionMasks();
+		delete[] rowSolutionMasksIdx();
+		delete[] maskTestingCompleted();
 	}
 
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const;
@@ -172,8 +179,6 @@ private:
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
-	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
-	const int m_numDaysResult;
 	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
@@ -201,11 +206,6 @@ private:
 	rowToBitmask m_fRowToBitmask;
 	solutionInterval m_fSolutionInterval;
 
-	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
-	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
-	tmask* m_pRowSolutionMasks = NULL;
-	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
-	uint* m_pRowSolutionMasksIdx = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
 	int m_useCliquesAfterRow;
 	uint m_numRecAdj = 0;
@@ -225,7 +225,7 @@ public:
 		if (pRowStorage->useFeature(t_useCompressedMasks))
 			m_pMasks = new CMaskHandle(pRowStorage->sysParam(), pRowStorage->numDaysResult());
 		else
-			m_pMasks = (CMaskHandle *)pRowStorage;
+			m_pMasks = pRowStorage;
 	}
 	CC ~CRowUsage() {
 		delete[] m_pRowSolutionIdx;
@@ -253,7 +253,7 @@ private:
 	bool m_bSelectPlayerByMask = false;
 	bool m_bPlayerByMask = false;
 	int m_threadID = 0;
-	CMaskHandle *m_pMasks = NULL;
+	const CMaskHandle *m_pMasks = NULL;
 };
 
 #define PERMUTATION_OF_PLAYERS(numPlayers, pLayersIn, permut, pLayersOut)	for (auto j = numPlayers; j--;) \

@@ -25,8 +25,7 @@ int ggg = 0;
 
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
-	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
-	m_numDaysResult(pAllData->numDaysResult()), m_pAllData(pAllData),
+	m_pAllData(pAllData),
 	m_bGroupSize2(pAllData->groupSize() == 2),
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
@@ -38,17 +37,15 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	initMaskStorage(numObjects);
 	m_lenMask = m_pMaskStorage->lenObject();
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
-	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : m_numDaysResult;
+	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numDaysResult();
 	m_fRowToBitmask = groupSize2() ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
 	m_fSolutionInterval = !selectPlayerByMask() ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
-	m_lenDayResults = m_numDaysResult + 1;
+	m_lenDayResults = numDaysResult() + 1;
 	m_pSolMemory = new tchar[2 * numPlayers];
 	setLenCompare(m_numPlayers);
 }
 
 CC CRowStorage::~CRowStorage() {
-	delete[] m_pPlayerSolutionCntr;
-
 	delete m_pMaskStorage;
 	delete[] m_pSolMemory;
 	releaseSolMaskInfo();
@@ -449,14 +446,14 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
 
 	// Define the number of first long long's we don't need to copy to the next row.
-	memset(m_pNumLongs2Skip, 0, m_numDaysResult * sizeof(m_pNumLongs2Skip[0]));
+	memset(m_pNumLongs2Skip, 0, numDaysResult() * sizeof(m_pNumLongs2Skip[0]));
 	int i = numPreconstructedRows();
 	m_pNumLongs2Skip[i] = (m_lastInFirstSet = m_pPlayerSolutionCntr[i]) >> 6;
 
 	// Trivial groups will not be used.
 	m_bUseAut = pGroupInfo && pGroupInfo->numObjects() > 1;
 	m_numRecAdj = !m_bUseAut ? m_lastInFirstSet : 0;
-	while (++i < m_numDaysResult)
+	while (++i < numDaysResult())
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - m_numRecAdj) >> 6);
 
 	if (m_pPlayerSolutionCntr[m_numPlayers - 1] != m_numObjects) {
@@ -465,7 +462,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		return 0;
 	}
 
-	auto numRowToConstruct = (uint)(m_numDaysResult - numPreconstructedRows());
+	auto numRowToConstruct = (uint)(numDaysResult() - numPreconstructedRows());
 	if (numRowToConstruct > m_numObjects) {
 		if (m_pAllData->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
@@ -535,7 +532,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 		if (m_pRowSolutionMasksIdx) {
 			const auto lastAdj = last - m_numRecAdj;
 			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-			if (i == numPreconstructedRows() || m_pMaskTestingCompleted || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
+			if (i == numPreconstructedRows() || maskTestingCompleted() || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
 				unsigned int rem;
 				if (rem = REM(lastAdj)) {
 					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
@@ -1013,7 +1010,9 @@ CC void CRowStorage::outSelectedSolution(int iRow, uint first, uint last, int th
 }
 #endif
 
-CMaskHandle::CMaskHandle(const kSysParam* pSysParam, int numDayReslt) {
+CMaskHandle::CMaskHandle(const kSysParam* pSysParam, int numDayReslt) : 
+	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
+	m_numDaysResult(numDayReslt) {
 	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
 	m_pPlayerSolutionCntr = new uint[numPlayers + numDayReslt];
 	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
