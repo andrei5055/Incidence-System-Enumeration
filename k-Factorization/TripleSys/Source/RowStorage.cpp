@@ -32,7 +32,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
 	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2),
 	CStorage<tchar>(numObjects, 3 * numPlayers),
-	CMaskHandle(pSysParam, pAllData->numDaysResult()) {
+	CCompatMasks(pSysParam, pAllData->numDaysResult()) {
 	m_numObjectsMax = numObjects;
 	initMaskStorage(numObjects);
 	m_lenMask = m_pMaskStorage->lenObject();
@@ -48,7 +48,6 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 CC CRowStorage::~CRowStorage() {
 	delete m_pMaskStorage;
 	delete[] m_pSolMemory;
-	releaseSolMaskInfo();
 	delete m_pTRTSN_Storage;
 }
 
@@ -550,9 +549,6 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 				// We cannot use code for UseSolutionMasks, because now our code is not ready for such cases
 				// Actually, in that case m_pRowSolutionMasks for the start and the end of the interval are stored in the same element of the array m_pRowSolutionMasks. 
 				releaseSolMaskInfo();
-				m_pRowSolutionMasksIdx = NULL;
-				m_pRowSolutionMasks = NULL;
-				m_pMaskTestingCompleted = NULL;
 			}
 
 #if 0
@@ -945,7 +941,7 @@ CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll a
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }
 
-CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last, const alldata* pAllData) const {
+CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** ppCompMaskHandle) const {
 	if (!m_bUseAut) {
 		memset(pCompatibleSolutions, 0, numSolutionTotalB());
 		generateCompatibilityMasks(pCompatibleSolutions, first, last, pAllData);
@@ -954,8 +950,19 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 		memcpy(pCompatibleSolutions, rowsCompatMasks() + first * lenSolutionMask(), numSolutionTotalB());
 	}
 
-	if (m_pSysParam->useFeature(t_useCompressedMasks)) {
+	if (ppCompMaskHandle && m_pSysParam->useFeature(t_useCompressedMasks)) {
+		// Counting the number of valid solutions in the compatibility mask for current solution of first non-predefined row.
 		const auto nValidSol = countMaskFunc(pCompatibleSolutions);
+		CCompatMasks* pCompMasks;
+		if (!*ppCompMaskHandle)
+			pCompMasks = *ppCompMaskHandle = new CCompatMasks(sysParam(), numDaysResult());
+		else {
+			// Clean from previous usage;
+			pCompMasks = *ppCompMaskHandle;
+			pCompMasks->releaseCompatMaskMemory();
+		}
+
+
 	}
 
 	if (m_pTRTSN_Storage && first) {
@@ -1010,7 +1017,7 @@ CC void CRowStorage::outSelectedSolution(int iRow, uint first, uint last, int th
 }
 #endif
 
-CMaskHandle::CMaskHandle(const kSysParam* pSysParam, int numDayReslt) : 
+CCompatMasks::CCompatMasks(const kSysParam* pSysParam, int numDayReslt) : 
 	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
 	m_numDaysResult(numDayReslt) {
 	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
@@ -1018,7 +1025,21 @@ CMaskHandle::CMaskHandle(const kSysParam* pSysParam, int numDayReslt) :
 	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
 }
 
-void CMaskHandle::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
+CCompatMasks::~CCompatMasks() { 
+	releaseCompatMaskMemory();
+	releaseSolMaskInfo();
+	delete[] numPlayerSolutionsPtr(); 
+}
+
+CC void CCompatMasks::releaseSolMaskInfo() {
+	delete[] rowSolutionMasks();
+	delete[] rowSolutionMasksIdx();
+	delete[] maskTestingCompleted();
+	m_pRowSolutionMasksIdx = NULL;
+	m_pRowSolutionMasks = NULL;
+	m_pMaskTestingCompleted = NULL;
+}
+void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
 {
 	// Adding additional long long when we use groupSize > 2
 	setNumSolutions(numSolutions);

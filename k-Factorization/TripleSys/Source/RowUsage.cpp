@@ -179,8 +179,8 @@ ll getRowCallsCalls = 0;
 
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	incGetRowCalls();
-	const auto numPreconstructedRows = m_pMasks->numPreconstructedRows();
-	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pMasks->numDaysResult());
+	const auto numPreconstructedRows = m_pCompatMasks->numPreconstructedRows();
+	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	const ll availablePlayers = nRow >= 0
@@ -193,7 +193,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	if (last == UINT_MAX)
 		return availablePlayers ? 0 : -1;
 
-	if (last > m_pRowStorage->getNumSolution())
+	if (last > m_pCompatMasks->getNumSolution())
 		return 0;
 
 	if (iRow == numPreconstructedRows) {
@@ -211,7 +211,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				return 0;
 		}
 		else {
-			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData);
+			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData, (CCompatMasks **)&m_pCompatMasks);
 		}
 		first += m_step;
 		return 1;
@@ -255,19 +255,19 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			// Construct the intersection of compatible solutions only if we will use it.
 			const auto pPrevA = (const ll*)(pCompSol);
 			auto pToA = (ll*)(pCompSol + m_lenMask);
-			const auto pFromA = (const ll*)(m_pMasks->getSolutionMask(first));
-			unsigned int numLongs2Skip = m_pMasks->numLongs2Skip(iRow);
+			const auto pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
+			unsigned int numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
 			const auto pPrevAStart = pPrevA + numLongs2Skip;
 			int jNum = m_lenMask - numLongs2Skip;
 			auto pToAStart = pToA + numLongs2Skip;
 			const auto pFromAStart = pFromA + numLongs2Skip;
-			const auto pRowSolutionMasksIdx = m_pRowStorage->rowSolutionMasksIdx();
+			const auto pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
 			if (pRowSolutionMasksIdx) {
 				testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
 				if (!selectPlayerByMask()) {
 					// Usually, we should be here only when groupSize == 2 and it's NOT 
 					// a complete balanced multipartite graph case.
-					auto pRowSolutionMasks = m_pRowStorage->rowSolutionMasks();
+					auto pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
 					int i = iRow;
 					auto jMax = pRowSolutionMasksIdx[iRow];
 					for (; ++i <= m_nRowMax;) {

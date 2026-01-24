@@ -150,7 +150,7 @@ int main(int argc, const char* argv[])
 {
 #if _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(202);
+	//_CrtSetBreakAlloc(226);
 #endif
 	SetConsoleOutputCP(CP_UTF8);
 	enableAnsiColors();
@@ -184,10 +184,9 @@ int main(int argc, const char* argv[])
 
 	filesystem::path pathToParam = filesystem::absolute(argv[1]);
 	filesystem::path homePath = filesystem::absolute("./");
-	printfYellow("Input file with parameters='%ws'\nHome directory='%ws'\n", pathToParam.c_str(), homePath.c_str());
-	pathToParam.clear();
-	homePath.clear();
-
+	std::cout << "Input file with parameters='" << YellowText << pathToParam << ResetTextColor
+		      << "'\nHome directory='" << YellowText << homePath<< ResetTextColor << "'\n";
+		
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames), NULL,
 		strParamNames, countof(strParamNames), NULL,
