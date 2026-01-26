@@ -432,6 +432,7 @@
     <ClCompile Include="Source\cnvSupport3.cpp" />
     <ClCompile Include="Source\cnvSupport4.cpp" />
     <ClCompile Include="Source\Combination.cpp" />
+    <ClCompile Include="Source\CompatMasks.cpp" />
     <ClCompile Include="Source\CompSolGraph.cpp" />
     <ClCompile Include="Source\consSupport.cpp" />
     <ClCompile Include="Source\convertLinksToResult.cpp" />
@@ -470,9 +471,11 @@
     <ClCompile Include="Source\TrRepo.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CompatMasks.h" />
     <ClInclude Include="Include\allSupports.h" />
     <ClInclude Include="Include\CheckCanon.h" />
     <ClInclude Include="Include\Combination.h" />
+    <ClInclude Include="Include\CompatMasks.h" />
     <ClInclude Include="Include\CudaInfo.h" />
     <ClInclude Include="Include\cycles.h" />
     <ClInclude Include="Include\data.h" />

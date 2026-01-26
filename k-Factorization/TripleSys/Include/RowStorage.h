@@ -1,4 +1,6 @@
 #pragma once
+#include "CompatMasks.h"
+/*
 #include <vector>
 #include "k-SysSupport.h"
 #include "Storage.h"
@@ -34,7 +36,7 @@ class alldata;
 
 class CCompatMasks {
 public:
-	CCompatMasks(const kSysParam* pSysParam, int numDayReslt);
+	CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData);
 	~CCompatMasks();
 	CC inline auto numSolutionTotalB() const			{ return m_numSolutionTotalB; }
 	CC inline tmask *getSolutionMask(uint solNumb) const { return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
@@ -48,8 +50,9 @@ public:
 	CC inline auto maskTestingCompleted() const			{ return m_pMaskTestingCompleted; }
 	CC void releaseSolMaskInfo();
 	inline void releaseCompatMaskMemory()				{ delete[] rowsCompatMasks(); }
+	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj = 0, int numSolAdj = 0);
+	CC inline auto selectPlayerByMask() const { return m_bSelectPlayerByMask; }
 protected:
-	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj);
 	inline auto numMasks() const						{ return m_numMasks; }
 	inline auto lenSolutionMask() const					{ return m_lenSolutionMask; }
 	inline void setNumSolutions(uint numSol)			{ m_numSolutionTotal = numSol; }
@@ -71,13 +74,14 @@ protected:
 private:
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numDaysResult;
-	uint m_lenSolutionMask;   // length of one solution mask in tmask units 
+	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
+	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	int m_solAdj = 0;
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
 };
-
+*/
 class CRowStorage : public CStorage<tchar>, public CCompatMasks {
 	typedef void (CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
 	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
@@ -106,7 +110,6 @@ public:
 	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
-	CC inline auto selectPlayerByMask() const			{ return m_bSelectPlayerByMask; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[m_lenDayResults * (selectPlayerByMask() ? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
@@ -172,14 +175,13 @@ private:
 	}
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
-	CC size_t countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, size_t prevWeight = 0) const;
+	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
 	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
 	const kSysParam* m_pSysParam;
 	const int m_numPlayers;
 	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
-	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
 	const bool m_use3RowCheck;

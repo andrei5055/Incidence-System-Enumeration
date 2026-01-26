@@ -27,12 +27,11 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_pSysParam(pSysParam), m_numPlayers(numPlayers),
 	m_pAllData(pAllData),
 	m_bGroupSize2(pAllData->groupSize() == 2),
-	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
 	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2),
 	CStorage<tchar>(numObjects, 3 * numPlayers),
-	CCompatMasks(pSysParam, pAllData->numDaysResult()) {
+	CCompatMasks(pSysParam, pAllData) {
 	m_numObjectsMax = numObjects;
 	initMaskStorage(numObjects);
 	m_lenMask = m_pMaskStorage->lenObject();
@@ -302,9 +301,9 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 		if (CHECK_MASK_BIT(rm1, idx2)) {
 			const auto numLongs2Skip = m_pNumLongs2Skip[numPreconstructedRows()];
 			const auto numBites2Skip = numLongs2Skip << 3;
-			const auto len = m_numSolutionTotalB - numBites2Skip;
+			const auto len = numSolutionTotalB() - numBites2Skip;
 			auto pMaskOutStart = (tmask *)((tchar *)pMaskOut + numBites2Skip);
-			auto pCompSol = (tmask*)((tchar *)pMaskOut - m_numSolutionTotalB);
+			auto pCompSol = (tmask*)((tchar *)pMaskOut - numSolutionTotalB());
 			memcpy(pMaskOutStart, ((const ll*)getSolutionMask(solIdx % n)) + numLongs2Skip, len);
 			memcpy((long long*)pCompSol + numLongs2Skip, pMaskOutStart, len);
 
@@ -498,7 +497,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 #if SAME_MASK_IDX
 	m_pMaskTestingCompleted = new bool[lenMasks];
-	memset(m_pMaskTestingCompleted, 0, lenMasks * sizeof(m_pMaskTestingCompleted[0]));
+	memset(maskTestingCompleted(), 0, lenMasks * sizeof(m_pMaskTestingCompleted[0]));
 #endif
 
 
@@ -540,7 +539,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 						// Clear the bits in the previous mask that do not correspond to the solutions of the previous row
 						m_pRowSolutionMasks[i - 1] ^= m_pRowSolutionMasksIdx[i];
 #if SAME_MASK_IDX
-						m_pMaskTestingCompleted[i - 1] = 1;
+						maskTestingCompleted()[i - 1] = 1;
 #endif
 					}
 				}
@@ -677,7 +676,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			auto const* pSolution = m_pFirstMatr - numPlayers();
 			my_counter = 0;
 			while (memcmp(pSolution += lenRecord, pCurrentMatr, numPlayers()) < 0)
-				updateMasksByAutForSolution(pSolution, pGroupInfo, m_pRowsCompatMasks, 0, m_lastInFirstSet, m_lastInFirstSet);
+				updateMasksByAutForSolution(pSolution, pGroupInfo, rowsCompatMasks(), 0, m_lastInFirstSet, m_lastInFirstSet);
 #endif
 		}
 	}
@@ -716,7 +715,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 size_t totalWeighChange = 0;
 #endif
 
-size_t CRowStorage::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow, size_t prevWeight) const {
+uint CRowStorage::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow, uint prevWeight) const {
 #define OUT_MASK_WEIGHT	1
 	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
 	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
@@ -744,9 +743,9 @@ size_t CRowStorage::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow
 	}
 
 	ctchar* pMask = (ctchar *)pCompSolutions;
-	size_t changingWeight = 0, totalWeight = 0;
-	const auto ind = m_numSolutionTotalB * numFirstSol;
-	size_t i = m_numSolutionTotalB * numMatrRow;
+	uint changingWeight = 0, totalWeight = 0;
+	const auto ind = numSolutionTotalB() * numFirstSol;
+	size_t i = numSolutionTotalB() * numMatrRow;
 	while (i--) {
 		totalWeight += table[pMask[i]];
 		if (i == ind)
@@ -756,12 +755,12 @@ size_t CRowStorage::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow
 	changingWeight = totalWeight - changingWeight;
 
 #if OUT_MASK_WEIGHT
-	printf("\nMask matrix total weight: %zd  %5.2f%%", totalWeight, double(totalWeight) / matrWeight * 100);
-	printf("\nMask matrix changing weight: %zd  %5.2f%%", changingWeight, double(changingWeight) / matrWeight * 100);
+	printf("\nMask matrix total weight: %d  %5.2f%%", totalWeight, double(totalWeight) / matrWeight * 100);
+	printf("\nMask matrix changing weight: %d  %5.2f%%", changingWeight, double(changingWeight) / matrWeight * 100);
 	if (prevWeight) {
 		const auto weightChange = prevWeight - changingWeight;
 		totalWeighChange += weightChange;
-		printf("\nWeight change is %zd:  %5.2f%%\n", weightChange, double(weightChange) / prevWeight * 100);
+		printf("\nWeight change is %d:  %5.2f%%\n", weightChange, double(weightChange) / prevWeight * 100);
 
 	}
 #endif
@@ -856,7 +855,7 @@ CC bool CRowStorage::checkSolutionByMask(int iRow, const tmask* pToASol) const {
 			continue;  // at least one solution masked by left part of the interval is still valid
 
 #if SAME_MASK_IDX
-		if (m_pMaskTestingCompleted[i - 1])
+		if (maskTestingCompleted()[i - 1])
 			return false;
 #endif
 
@@ -953,16 +952,16 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 	if (ppCompMaskHandle && m_pSysParam->useFeature(t_useCompressedMasks)) {
 		// Counting the number of valid solutions in the compatibility mask for current solution of first non-predefined row.
 		const auto nValidSol = countMaskFunc(pCompatibleSolutions);
-		CCompatMasks* pCompMasks;
-		if (!*ppCompMaskHandle)
-			pCompMasks = *ppCompMaskHandle = new CCompatMasks(sysParam(), numDaysResult());
+		CCompressedMask* pCompMasks;
+		if (*ppCompMaskHandle == this)
+			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), m_pAllData);
 		else {
 			// Clean from previous usage;
-			pCompMasks = *ppCompMaskHandle;
+			pCompMasks = static_cast<CCompressedMask *>(*ppCompMaskHandle);
 			pCompMasks->releaseCompatMaskMemory();
 		}
 
-
+		pCompMasks->compressCompatMasks(pCompatibleSolutions, nValidSol, last, this);
 	}
 
 	if (m_pTRTSN_Storage && first) {
@@ -1016,38 +1015,3 @@ CC void CRowStorage::outSelectedSolution(int iRow, uint first, uint last, int th
 	FCLOSE_F(f);
 }
 #endif
-
-CCompatMasks::CCompatMasks(const kSysParam* pSysParam, int numDayReslt) : 
-	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
-	m_numDaysResult(numDayReslt) {
-	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
-	m_pPlayerSolutionCntr = new uint[numPlayers + numDayReslt];
-	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
-}
-
-CCompatMasks::~CCompatMasks() { 
-	releaseCompatMaskMemory();
-	releaseSolMaskInfo();
-	delete[] numPlayerSolutionsPtr(); 
-}
-
-CC void CCompatMasks::releaseSolMaskInfo() {
-	delete[] rowSolutionMasks();
-	delete[] rowSolutionMasksIdx();
-	delete[] maskTestingCompleted();
-	m_pRowSolutionMasksIdx = NULL;
-	m_pRowSolutionMasks = NULL;
-	m_pMaskTestingCompleted = NULL;
-}
-void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
-{
-	// Adding additional long long when we use groupSize > 2
-	setNumSolutions(numSolutions);
-	m_numSolutionTotalB = ((numSolutions - numRecAdj + 7) / 8 + 7) / 8 * 8 + lenUsedMask;
-	m_lenSolutionMask = m_numSolutionTotalB / sizeof(tmask);
-
-	m_numMasks = m_numSolutionTotal - (numRecAdj - (m_solAdj = numSolAdj));
-	releaseCompatMaskMemory();
-	m_pRowsCompatMasks = new tmask[numMasks() * lenSolutionMask()];
-	memset(m_pRowsCompatMasks, 0, numMasks() * m_numSolutionTotalB);
-}

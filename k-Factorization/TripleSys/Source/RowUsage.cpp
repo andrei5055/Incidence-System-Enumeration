@@ -251,127 +251,129 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			return 0;
 
 		pCompSol[firstB] ^= (tmask)1 << iBit;
-		if (iRow < m_nRowMax) {
-			// Construct the intersection of compatible solutions only if we will use it.
-			const auto pPrevA = (const ll*)(pCompSol);
-			auto pToA = (ll*)(pCompSol + m_lenMask);
-			const auto pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
-			unsigned int numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
-			const auto pPrevAStart = pPrevA + numLongs2Skip;
-			int jNum = m_lenMask - numLongs2Skip;
-			auto pToAStart = pToA + numLongs2Skip;
-			const auto pFromAStart = pFromA + numLongs2Skip;
-			const auto pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
-			if (pRowSolutionMasksIdx) {
-				testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
-				if (!selectPlayerByMask()) {
-					// Usually, we should be here only when groupSize == 2 and it's NOT 
-					// a complete balanced multipartite graph case.
-					auto pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
-					int i = iRow;
-					auto jMax = pRowSolutionMasksIdx[iRow];
-					for (; ++i <= m_nRowMax;) {
-						auto j = jMax;
-						jMax = pRowSolutionMasksIdx[i];
-						jNum = jMax - j + 1;
-						testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
-						multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
-						/**
-						if (i == m_nRowMax - 2)
-						{
-							static int ic = 0, c = 0;
-							for (int k = 3; k <= jNum; k+=4)
-							{
+		if (iRow >= m_nRowMax)
+			break;
 
-								if (pToA[k] || pToA[k - 1] || pToA[k - 2] || pToA[k - 3])
-									ic++;
-							}
-							c += jNum / 4;
-							if (c > 1000000) {
-								printf("%d ", ic * 100 / c); c = ic = 0;
-							}
-						}
-						*/
-						// Check left, middle and right parts of the solution interval for i-th row
-						auto mask = pRowSolutionMasks[i - 1];
-						/*
-						static int c[16], cc;
-						c[i]++;
-						cc++;
-						if ((cc % 100000000) == 0) {
-							//printTable("nr", c, 1, 16, 0);
-							cc = 0;
-						}**/
-						if (mask) {
-							if (mask & pToA[j]) {
-								continue;  // at least one solution masked by left part of the interval is still valid
-							}
-							j++;
-						}
-						// middle part
-#if 0
-						while (j < jMax && !pToA[j]) {
-							j++;
-						}
-						// we do not need "if" below if we use "while" below instead of while above
-						if (j < jMax) {
-							continue;   // at least one solution masked by middle part of the interval is still valid
-						}
-#else
-						while (j + 4 <= jMax) {
-#if USE_INTRINSIC
-							__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
-							if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
-#else
-							if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
-								goto Cont1;
-#endif
-							j += 4;
-						}
-						switch (jMax - j) {
-						case 3: if (pToA[j + 2]) goto Cont1;
-						case 2: if (pToA[j + 1] ) goto Cont1;
-						case 1: if (pToA[j]) goto Cont1;
-						}
-#endif
-						// There are no valid solutions with the indices inside 
-						// the interval defined by set of long longs
-						mask = pRowSolutionMasks[i];
-						// If mask != 0, we need to check the right side of the intervals.
-
-						if (!mask || !((~mask) & pToA[jMax])) {
-							break;
-						}
-					Cont1: continue;
-					}
-
-					if (i <= m_nRowMax) {
-						first++;
-						continue;
-					}
-				}
-				else {
-					multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
-#if 0
+		// Construct the intersection of compatible solutions only if we will use it.
+		const auto pPrevA = (const ll*)(pCompSol);
+		auto pToA = (ll*)(pCompSol + m_lenMask);
+		const auto pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
+		unsigned int numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
+		const auto pPrevAStart = pPrevA + numLongs2Skip;
+		int jNum = m_lenMask - numLongs2Skip;
+		auto pToAStart = pToA + numLongs2Skip;
+		const auto pFromAStart = pFromA + numLongs2Skip;
+		const auto pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
+		if (pRowSolutionMasksIdx) {
+			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
+			if (!selectPlayerByMask()) {
+				// Usually, we should be here only when groupSize == 2 and it's NOT 
+				// a complete balanced multipartite graph case.
+				auto pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
+				int i = iRow;
+				auto jMax = pRowSolutionMasksIdx[iRow];
+				for (; ++i <= m_nRowMax;) {
+					auto j = jMax;
+					jMax = pRowSolutionMasksIdx[i];
+					jNum = jMax - j + 1;
+					testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
+					multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
+					/**
+					if (i == m_nRowMax - 2)
 					{
 						static int ic = 0, c = 0;
-						for (int k = 3; k <= jNum; k += 4)
+						for (int k = 3; k <= jNum; k+=4)
 						{
 
-							if (pPrevAStart[k] || pPrevAStart[k - 1] || pPrevAStart[k - 2] || pPrevAStart[k - 3])
+							if (pToA[k] || pToA[k - 1] || pToA[k - 2] || pToA[k - 3])
 								ic++;
 						}
 						c += jNum / 4;
-						if (c > 100000000) {
-							printf("%d:%d ", jNum, ic * 100 / c); c = ic = 0;
+						if (c > 1000000) {
+							printf("%d ", ic * 100 / c); c = ic = 0;
 						}
 					}
+					*/
+					// Check left, middle and right parts of the solution interval for i-th row
+					auto mask = pRowSolutionMasks[i - 1];
+					/*
+					static int c[16], cc;
+					c[i]++;
+					cc++;
+					if ((cc % 100000000) == 0) {
+						//printTable("nr", c, 1, 16, 0);
+						cc = 0;
+					}**/
+					if (mask) {
+						if (mask & pToA[j]) {
+							continue;  // at least one solution masked by left part of the interval is still valid
+						}
+						j++;
+					}
+					// middle part
+#if 0
+					while (j < jMax && !pToA[j]) {
+						j++;
+					}
+					// we do not need "if" below if we use "while" below instead of while above
+					if (j < jMax) {
+						continue;   // at least one solution masked by middle part of the interval is still valid
+					}
+#else
+					while (j + 4 <= jMax) {
+#if USE_INTRINSIC
+						__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
+						if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
+#else
+						if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
+							goto Cont1;
 #endif
+						j += 4;
+					}
+					switch (jMax - j) {
+					case 3: if (pToA[j + 2]) goto Cont1;
+					case 2: if (pToA[j + 1] ) goto Cont1;
+					case 1: if (pToA[j]) goto Cont1;
+					}
+#endif
+					// There are no valid solutions with the indices inside 
+					// the interval defined by set of long longs
+					mask = pRowSolutionMasks[i];
+					// If mask != 0, we need to check the right side of the intervals.
+
+					if (!mask || !((~mask) & pToA[jMax])) {
+						break;
+					}
+				Cont1: continue;
+				}
+
+				if (i <= m_nRowMax) {
+					first++;
+					continue;
 				}
 			}
-			else
+			else {
 				multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
+#if 0
+				{
+					static int ic = 0, c = 0;
+					for (int k = 3; k <= jNum; k += 4)
+					{
+
+						if (pPrevAStart[k] || pPrevAStart[k - 1] || pPrevAStart[k - 2] || pPrevAStart[k - 3])
+							ic++;
+					}
+					c += jNum / 4;
+					if (c > 100000000) {
+						printf("%d:%d ", jNum, ic * 100 / c); c = ic = 0;
+					}
+				}
+#endif
+			}
 		}
+		else
+			multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
+
 		break;
 	}
 	first++;
