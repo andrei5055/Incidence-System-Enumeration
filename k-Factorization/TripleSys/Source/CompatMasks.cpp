@@ -8,6 +8,7 @@ CCompatMasks::CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData) 
 	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
 	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
 	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
+	memset(numPlayerSolutionsPtr(), 0, m_numDaysResult * sizeof(m_pPlayerSolutionCntr[0]));
 }
 
 CCompatMasks::~CCompatMasks() {
@@ -40,21 +41,22 @@ void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRec
 	memset(rowsCompatMasks(), 0, numMasks() * numSolutionTotalB());
 }
 
-void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, uint last, const CCompatMasks* pCompMask)
+void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const CCompatMasks* pCompMask)
 {
 	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));
+	releaseSolIndices();
+	m_pSolIdx = new uint[nValidSol];
 
-	auto first = last;
-	last = pCompMask->numMasks();
-	const auto lastB = IDX(last);
-	while (true) {
+	auto const *pSolMasksIniIdx = pCompMask->numPlayerSolutionsPtr() + numPreconstructedRows();
+	auto pSolMasksCompIdx = numPlayerSolutionsPtr() + numPreconstructedRows();
+	auto first = *pSolMasksIniIdx;
+	const auto lastB = IDX(pCompMask->numMasks());
+	uint idxSol = 0;
+	while (idxSol < nValidSol) {
 		// Skip all bytes/longs equal to 0
 		auto firstB = first >> SHIFT;
 		while (firstB < lastB && !pCompSol[firstB])
 			firstB++;
-
-		if (firstB >= lastB)
-			return;
 
 #if USE_64_BIT_MASK
 		unsigned long iBit;
@@ -62,9 +64,21 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, uint 
 #else
 		const auto iBit = this->firstOnePosition(pCompSol[firstB]);
 #endif
-		if ((first = (firstB << SHIFT) + iBit) >= last)
-			break;
-
+		first = (firstB << SHIFT) + iBit;
 		pCompSol[firstB] ^= (tmask)1 << iBit;
+
+		if ((m_pSolIdx[idxSol++] = first) >= *pSolMasksIniIdx) {
+			*pSolMasksCompIdx++ = idxSol;
+			pSolMasksIniIdx++;
+		}
+
+		for (uint j = 1; j < idxSol; j++) {
+			const auto idx = m_pSolIdx[j];
+			if (CHECK_MASK_BIT(pCompMask->getSolutionMask(idx), idx)) {
+				SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
+			}
+		}
 	}
+
+	*pSolMasksCompIdx = idxSol;
 }

@@ -961,7 +961,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 			pCompMasks->releaseCompatMaskMemory();
 		}
 
-		pCompMasks->compressCompatMasks(pCompatibleSolutions, nValidSol, last, this);
+		pCompMasks->compressCompatMasks(pCompatibleSolutions, nValidSol, this);
 	}
 
 	if (m_pTRTSN_Storage && first) {

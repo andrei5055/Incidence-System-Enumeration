@@ -23,9 +23,9 @@ typedef tchar tmask;
 #define MASK_BIT(idx)				((tmask)1 << ((idx) & ((1<<SHIFT) - 1)))	
 #define IDX(n)						(n + (1<<SHIFT) - 1) >> SHIFT
 #define REM(n)						(n % ((tmask)1<<SHIFT))			// remainder from division
-#define SET_MASK_BIT(mask, idx)		mask[(idx) >> SHIFT] |= MASK_BIT(idx)
-#define RESET_MASK_BIT(mask, idx)	mask[(idx) >> SHIFT] ^= MASK_BIT(idx)
-#define CHECK_MASK_BIT(mask, idx)	(mask[(idx) >> SHIFT] & MASK_BIT(idx))
+#define SET_MASK_BIT(mask, idx)		(mask)[(idx) >> SHIFT] |= MASK_BIT(idx)
+#define RESET_MASK_BIT(mask, idx)	(mask)[(idx) >> SHIFT] ^= MASK_BIT(idx)
+#define CHECK_MASK_BIT(mask, idx)	((mask)[(idx) >> SHIFT] & MASK_BIT(idx))
 
 
 #include "CompSolGraph.h"
@@ -35,28 +35,28 @@ class alldata;
 class CCompatMasks {
 public:
 	CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData);
-	~CCompatMasks();
+	virtual ~CCompatMasks();
 	CC inline auto numSolutionTotalB() const				{ return m_numSolutionTotalB; }
 	CC inline tmask* getSolutionMask(uint solNumb) const	{ return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
 	CC inline auto numLongs2Skip(int iRow) const			{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const		{ return m_pRowSolutionMasksIdx; }
 	CC inline auto numDaysResult() const					{ return m_numDaysResult; }
-	CC inline auto numPreconstructedRows() const { return m_numPreconstructedRows; }
-	CC inline void reset() { m_numObjects = 0; }
-	CC inline auto getNumSolution() const { return m_numObjects; }
-	CC inline const auto rowSolutionMasks() const { return m_pRowSolutionMasks; }
-	CC inline auto maskTestingCompleted() const { return m_pMaskTestingCompleted; }
+	CC inline auto numPreconstructedRows() const			{ return m_numPreconstructedRows; }
+	CC inline void reset()									{ m_numObjects = 0; }
+	CC inline auto getNumSolution() const					{ return m_numObjects; }
+	CC inline const auto rowSolutionMasks() const			{ return m_pRowSolutionMasks; }
+	CC inline auto maskTestingCompleted() const				{ return m_pMaskTestingCompleted; }
 	CC void releaseSolMaskInfo();
-	inline void releaseCompatMaskMemory() { delete[] rowsCompatMasks(); }
+	inline void releaseCompatMaskMemory()					{ delete[] rowsCompatMasks(); }
 	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj = 0, int numSolAdj = 0);
-	CC inline auto selectPlayerByMask() const { return m_bSelectPlayerByMask; }
-	inline auto numMasks() const { return m_numMasks; }
+	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
+	inline auto numMasks() const							{ return m_numMasks; }
+	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
 protected:
-	inline auto lenSolutionMask() const { return m_lenSolutionMask; }
-	inline void setNumSolutions(uint numSol) { m_numSolutionTotal = numSol; }
-	inline void resetSolutionMask(uint idx) const { memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
-	inline auto rowsCompatMasks() const { return m_pRowsCompatMasks; }
-	CC inline auto numPlayerSolutionsPtr() const { return m_pPlayerSolutionCntr; }
+	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }
+	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
+	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
+	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
 private:
 protected:
 	uint m_numSolutionTotal;
@@ -83,5 +83,11 @@ private:
 class CCompressedMask : public CCompatMasks {
 public:
 	CCompressedMask(const kSysParam* pSysParam, const alldata* pAllData) : CCompatMasks(pSysParam, pAllData) {}
-	void compressCompatMasks(tmask* pCompSol, uint first, uint last, const CCompatMasks* pCompMask);
+	~CCompressedMask()						{ releaseSolIndices(); }
+	void compressCompatMasks(tmask* pCompSol, uint first, const CCompatMasks* pCompMask);
+private:
+	inline auto solIndices() const			{ return m_pSolIdx; }
+	inline void releaseSolIndices()	const	{ delete[] solIndices(); }
+
+	uint* m_pSolIdx = NULL;					// Indices of the solutions stored in compressed mask
 };
