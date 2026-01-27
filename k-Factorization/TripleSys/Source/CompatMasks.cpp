@@ -41,6 +41,16 @@ void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRec
 	memset(rowsCompatMasks(), 0, numMasks() * numSolutionTotalB());
 }
 
+CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlayersMask) const {
+	const auto lenMask = m_numSolutionTotalB >> (SHIFT - 3);
+	if (!*ppCompatibleSolutions) {
+		const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
+		*ppCompatibleSolutions = new tmask[len];
+	}
+
+	*pUsePlayersMask = selectPlayerByMask();
+}
+
 void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const CCompatMasks* pCompMask)
 {
 	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));

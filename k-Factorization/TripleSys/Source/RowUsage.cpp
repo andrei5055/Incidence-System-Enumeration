@@ -134,7 +134,7 @@ CC void BitScanForward64_Cuda(unsigned long* _Index, unsigned long long _Mask) {
 CC void CRowUsage::init(int iThread, int numThreads) {
 	m_threadID = iThread;
 	m_step = numThreads;
-	m_lenMask = m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
+	m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
 	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = 0;
 }
 
@@ -183,8 +183,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
+	const auto lenMask = m_pCompatMasks->lenSolutionMask();
 	const ll availablePlayers = nRow >= 0
-		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * m_lenMask) - 1)
+		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * lenMask) - 1)
 		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
@@ -206,16 +207,24 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			return 0;
 
 		if (m_bUseCombinedSolutions) {
-			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions(m_pCompatibleSolutions + m_lenMask, first);
+			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions(m_pCompatibleSolutions + lenMask, first);
 			if (!m_bSolutionReady)
 				return 0;
 		}
 		else {
 			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData, (CCompatMasks **)&m_pCompatMasks);
+			if (m_pCompatMasks != m_pRowStorage) {
+				delete[] m_pCompatibleSolutions;
+				m_pCompatibleSolutions = NULL;
+				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
+				// NOTE; Let's make a trivial mask for now and improve it later 
+				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
+			}
 		}
 		first += m_step;
 		return 1;
 	}
+
 	if (m_bUseCombinedSolutions && !nRow) {
 		if (m_bSolutionReady) {
 			m_bSolutionReady = false;
@@ -223,7 +232,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		}
 		return 0;
 	}
-	auto* pCompSol = m_pCompatibleSolutions + nRow * m_lenMask;
+
+	auto* pCompSol = m_pCompatibleSolutions + nRow * lenMask;
 	const auto lastB = IDX(last);
 #if 0
 	static int c[16], cc;
@@ -256,11 +266,11 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 		// Construct the intersection of compatible solutions only if we will use it.
 		const auto pPrevA = (const ll*)(pCompSol);
-		auto pToA = (ll*)(pCompSol + m_lenMask);
+		auto pToA = (ll*)(pCompSol + lenMask);
 		const auto pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
 		unsigned int numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
 		const auto pPrevAStart = pPrevA + numLongs2Skip;
-		int jNum = m_lenMask - numLongs2Skip;
+		int jNum = lenMask - numLongs2Skip;
 		auto pToAStart = pToA + numLongs2Skip;
 		const auto pFromAStart = pFromA + numLongs2Skip;
 		const auto pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();

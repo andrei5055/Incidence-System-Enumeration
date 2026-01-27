@@ -20,7 +20,6 @@ public:
 	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);
-	CC int initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const;
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
 	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
@@ -158,7 +157,6 @@ public:
 	}
 private:
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
-	uint m_lenMask = 0;				// Count of tmask elements, each encoding mutually compatible solutions
 	uint* m_pRowSolutionIdx = NULL;
 	tmask* m_pCompatibleSolutions = NULL;
 	int m_step = 0;

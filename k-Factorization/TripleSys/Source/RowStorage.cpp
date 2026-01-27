@@ -903,17 +903,6 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 		pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
 }
 
-CC int CRowStorage::initRowUsage(tmask** ppCompatibleSolutions, bool *pUsePlayersMask) const {
-	const auto lenMask = m_numSolutionTotalB >> (SHIFT - 3);
-	if (!*ppCompatibleSolutions) {
-		const auto len = (numDaysResult() - numPreconstructedRows()) * lenMask;
-		*ppCompatibleSolutions = new tmask[len];
-	}
-
-	*pUsePlayersMask = selectPlayerByMask();
-	return lenMask;
-}
-
 CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, uint* pLast,  ll availablePlayers) const {
 	const auto iRow = *pLast;
 	*pLast = pRowSolutionIdx[1] = m_pPlayerSolutionCntr[iRow];

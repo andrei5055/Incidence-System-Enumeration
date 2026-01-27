@@ -52,8 +52,9 @@ public:
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	inline auto numMasks() const							{ return m_numMasks; }
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
-protected:
 	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }
+	CC void initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlayersMask) const;
+protected:
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
