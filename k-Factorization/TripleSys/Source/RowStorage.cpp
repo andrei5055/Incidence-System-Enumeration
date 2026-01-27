@@ -38,8 +38,6 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	const auto useCliquesAfterRow = pSysParam->val[t_useSolutionCliquesAfterRow];
 	m_useCliquesAfterRow = useCliquesAfterRow ? useCliquesAfterRow : numDaysResult();
 	m_fRowToBitmask = groupSize2() ? &CRowStorage::rowToBitmask2 : &CRowStorage::rowToBitmask3;
-	m_fSolutionInterval = !selectPlayerByMask() ? &CRowStorage::solutionInterval2 : &CRowStorage::solutionInterval3;
-	m_lenDayResults = numDaysResult() + 1;
 	m_pSolMemory = new tchar[2 * numPlayers];
 	setLenCompare(m_numPlayers);
 }
@@ -334,7 +332,7 @@ CC bool CRowStorage::maskForCombinedSolutions(tmask* pMaskOut, uint & solIdx) co
 
 			return true;
 		}
-	} while ((solIdx += m_step) < m_lastInFirstSet);
+	} while ((solIdx += m_step) < lastInFirstSet());
 
 	return false;
 }
@@ -422,7 +420,7 @@ CC void CRowStorage::updateMasksByAut(const CGroupInfo* pGroupInfo) const {
 		getSolutionRange(last, availablePlayers, numPreconstructedRows());
 	}
 	else
-		last = m_lastInFirstSet;
+		last = lastInFirstSet();
 
 	const auto solIdxLast = last - 1;
 	auto pMask = rowsCompatMasks();
@@ -446,11 +444,12 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	// Define the number of first long long's we don't need to copy to the next row.
 	memset(m_pNumLongs2Skip, 0, numDaysResult() * sizeof(m_pNumLongs2Skip[0]));
 	int i = numPreconstructedRows();
-	m_pNumLongs2Skip[i] = (m_lastInFirstSet = m_pPlayerSolutionCntr[i]) >> 6;
+	setLastInFirstSet(m_pPlayerSolutionCntr[i]);
+	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
 
 	// Trivial groups will not be used.
 	m_bUseAut = pGroupInfo && pGroupInfo->numObjects() > 1;
-	m_numRecAdj = !m_bUseAut ? m_lastInFirstSet : 0;
+	m_numRecAdj = !m_bUseAut ? lastInFirstSet() : 0;
 	while (++i < numDaysResult())
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - m_numRecAdj) >> 6);
 
@@ -512,7 +511,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 	bool skipAllowed = flg && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
-	i = numPreconstructedRows() - 1;
+	/*auto */i = numPreconstructedRows() - 1;
 
 	auto numRemainingSolution = m_numSolutionTotal;
 	ll playerMask;
@@ -655,10 +654,10 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			uint solInfo[2];
 			// This will be used for triples
 			//auto availablePlayers = getPlayersMask();
-			//first = getSolutionRange(m_lastInFirstSet, availablePlayers, 2);
+			//first = getSolutionRange(lastInFirstSet(), availablePlayers, 2);
 			for (auto i = 0; ++i < groupOrder;) {
 				// Transform the 3rd row solution and search results among all solutions.
-				solInfo[0] = getTransformerSolIndex(pRow, pGroupInfo->getObject(i), m_numSolutionTotal, m_lastInFirstSet);
+				solInfo[0] = getTransformerSolIndex(pRow, pGroupInfo->getObject(i), m_numSolutionTotal, lastInFirstSet());
 
 				if (solInfo[0] != UINT_MAX) {
 					solInfo[1] = i;
@@ -676,7 +675,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 			auto const* pSolution = m_pFirstMatr - numPlayers();
 			my_counter = 0;
 			while (memcmp(pSolution += lenRecord, pCurrentMatr, numPlayers()) < 0)
-				updateMasksByAutForSolution(pSolution, pGroupInfo, rowsCompatMasks(), 0, m_lastInFirstSet, m_lastInFirstSet);
+				updateMasksByAutForSolution(pSolution, pGroupInfo, rowsCompatMasks(), 0, lastInFirstSet(), lastInFirstSet());
 #endif
 		}
 	}
@@ -903,32 +902,6 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 		pRowSolutionIdx[numPreconstructedRows()] = savedIdx;
 }
 
-CC uint& CRowStorage::solutionInterval2(uint* pRowSolutionIdx, uint* pLast,  ll availablePlayers) const {
-	const auto iRow = *pLast;
-	*pLast = pRowSolutionIdx[1] = m_pPlayerSolutionCntr[iRow];
-	if (iRow == numPreconstructedRows())
-		*pLast = lastInFirstSet();
-
-	return *pRowSolutionIdx;
-}
-
-CC uint& CRowStorage::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
-	pRowSolutionIdx[1] = 0;
-	if (pRowSolutionIdx[0]) {
-		*pLast = pRowSolutionIdx[m_lenDayResults];
-		return *pRowSolutionIdx;
-	}
-
-	if (!availablePlayers) {
-		*pLast = UINT_MAX;
-		return m_pPlayerSolutionCntr[0];  // Dummy return, it will not be used.
-	}
-
-	const auto iBit = minPlayer(availablePlayers);
-	*pLast = pRowSolutionIdx[m_lenDayResults] = m_pPlayerSolutionCntr[iBit - 1];
-	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
-}
-
 CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** ppCompMaskHandle) const {
 	if (!m_bUseAut) {
 		memset(pCompatibleSolutions, 0, numSolutionTotalB());
@@ -962,7 +935,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 			uint minIdxTr;
 			for (int i = 0; i < m_pTRTSN_Storage->numObjects(); i++) {
 				const auto *p = (const uint*)m_pTRTSN_Storage->getObject(i);
-				uint solIdxTr = getTransformerSolIndex(pSol, pGroupInfo->getObject(p[1]), m_numSolutionTotal, m_lastInFirstSet);
+				uint solIdxTr = getTransformerSolIndex(pSol, pGroupInfo->getObject(p[1]), m_numSolutionTotal, lastInFirstSet());
 				if (solIdxTr == UINT_MAX)
 					continue;
 

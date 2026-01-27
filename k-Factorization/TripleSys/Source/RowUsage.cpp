@@ -189,7 +189,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
-	auto& first = m_pRowStorage->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
+	auto& first = m_pCompatMasks->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
 
 	if (last == UINT_MAX)
 		return availablePlayers ? 0 : -1;
@@ -219,6 +219,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
 				// NOTE; Let's make a trivial mask for now and improve it later 
 				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
+				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be increased by m_step
+				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be ised first for next row
 			}
 		}
 		first += m_step;

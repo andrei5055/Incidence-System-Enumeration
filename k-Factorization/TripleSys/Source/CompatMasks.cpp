@@ -6,9 +6,11 @@ CCompatMasks::CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData) 
 	m_numDaysResult(pAllData->numDaysResult()),
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1) {
 	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
-	m_pPlayerSolutionCntr = new uint[numPlayers + m_numDaysResult];
+	m_pPlayerSolutionCntr = new uint[numPlayers + numDaysResult()];
 	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
-	memset(numPlayerSolutionsPtr(), 0, m_numDaysResult * sizeof(m_pPlayerSolutionCntr[0]));
+	memset(numPlayerSolutionsPtr(), 0, numDaysResult() * sizeof(m_pPlayerSolutionCntr[0]));
+	m_lenDayResults = numDaysResult() + 1;
+	m_fSolutionInterval = !selectPlayerByMask() ? &CCompatMasks::solutionInterval2 : &CCompatMasks::solutionInterval3;
 }
 
 CCompatMasks::~CCompatMasks() {
@@ -51,6 +53,43 @@ CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlay
 	*pUsePlayersMask = selectPlayerByMask();
 }
 
+CC uint& CCompatMasks::solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+	const auto iRow = *pLast;
+	*pLast = pRowSolutionIdx[1] = m_pPlayerSolutionCntr[iRow];
+	if (iRow == numPreconstructedRows())
+		*pLast = lastInFirstSet();
+
+	return *pRowSolutionIdx;
+}
+
+CC uint& CCompatMasks::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+	pRowSolutionIdx[1] = 0;
+	if (pRowSolutionIdx[0]) {
+		*pLast = pRowSolutionIdx[lenDayResults()];
+		return *pRowSolutionIdx;
+	}
+
+	if (!availablePlayers) {
+		*pLast = UINT_MAX;
+		return m_pPlayerSolutionCntr[0];  // Dummy return, it will not be used.
+	}
+
+	const auto iBit = minPlayer(availablePlayers);
+	*pLast = pRowSolutionIdx[lenDayResults()] = m_pPlayerSolutionCntr[iBit - 1];
+	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
+}
+
+void CCompatMasks::setNumLongs2Skip(int recAdj)
+{
+	// Define the number of first long long's we don't need to copy to the next row.
+	int i = numPreconstructedRows();
+	setLastInFirstSet(m_pPlayerSolutionCntr[i]);
+	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
+
+	while (++i < numDaysResult())
+		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - recAdj) >> 6);
+}
+
 void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const CCompatMasks* pCompMask)
 {
 	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));
@@ -91,4 +130,6 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const
 	}
 
 	*pSolMasksCompIdx = idxSol;
+//	setLastInFirstSet(1);
+	setNumLongs2Skip();
 }

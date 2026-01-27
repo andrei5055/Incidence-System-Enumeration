@@ -3,16 +3,12 @@
 
 class CRowStorage : public CStorage<tchar>, public CCompatMasks {
 	typedef void (CRowStorage::* rowToBitmask)(ctchar* pRow, tmask *pMask) const;
-	typedef uint& (CRowStorage::* solutionInterval)(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 public:
 	CC CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects = 1000, const alldata* pAllData = NULL);
 	CC ~CRowStorage();
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC void initPlayerMask(ctchar* pFirstMatr = NULL, ctchar lastNeighborOfPlayer0 = 0);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
-		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
-	}
 	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** pCompMaskHandle = NULL) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline auto useFeature(featureFlags mask) const	{ return m_pSysParam->useFeature(mask); }
@@ -25,11 +21,10 @@ public:
 	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
 	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
-	CC inline const auto lastInFirstSet() const			{ return m_lastInFirstSet; }
 	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
-		*ppRowSolutionIdx = new uint[m_lenDayResults * (selectPlayerByMask() ? 2 : 1)];
+		*ppRowSolutionIdx = new uint[lenDayResults() * (selectPlayerByMask() ? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
@@ -76,21 +71,9 @@ private:
 	CC void initMaskStorage(uint numObjects);
 	CC bool p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const;
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx, const alldata* pAllData, int& sameP1) const;
-	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
-	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC void updateMasksByAut(const CGroupInfo* pGroupInfo) const;
 	CC void updateMasksByAutForSolution(ctchar* pSolution, const CGroupInfo* pGroupInfo, tmask* pMask, uint solIdx, uint last, uint idxMin = 0) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
-	CC inline unsigned long minPlayer(ll availablePlayers) const {
-#if USE_64_BIT_MASK
-		unsigned long iBit;
-		_BitScanForward64(&iBit, availablePlayers);
-		return iBit;
-#else
-		#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
-		return 0;
-#endif
-	}
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
 	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
@@ -117,17 +100,14 @@ private:
 	ll cnt5[18] = { 0 };
 #endif
 	uint m_numObjectsMax;
-	int m_lenDayResults;
 
 	int m_lenMask;
 	rowToBitmask m_fRowToBitmask;
-	solutionInterval m_fSolutionInterval;
 
 	int m_useCliquesAfterRow;
 	uint m_numRecAdj = 0;
 	uint m_numRec[2];			   // Number of solutions for first and second nonfixed rows.
 	uint m_numRecAdj2;
-	uint m_lastInFirstSet;
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 	bool m_bUseAut;

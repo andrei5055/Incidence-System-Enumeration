@@ -33,6 +33,7 @@ typedef tchar tmask;
 class alldata;
 
 class CCompatMasks {
+	typedef uint& (CCompatMasks::* solutionInterval)(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 public:
 	CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData);
 	virtual ~CCompatMasks();
@@ -54,10 +55,27 @@ public:
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
 	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }
 	CC void initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlayersMask) const;
+	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
+		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
+	}
 protected:
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
+	CC inline const auto lastInFirstSet() const				{ return m_lastInFirstSet; }
+	inline void setLastInFirstSet(uint val)					{ m_lastInFirstSet = val; }
+	inline auto lenDayResults() const						{ return m_lenDayResults; }
+	void setNumLongs2Skip(int recAdj = 0);
+	CC inline unsigned long minPlayer(ll availablePlayers) const {
+#if USE_64_BIT_MASK
+		unsigned long iBit;
+		_BitScanForward64(&iBit, availablePlayers);
+		return iBit;
+#else
+#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
+		return 0;
+#endif
+	}
 private:
 protected:
 	uint m_numSolutionTotal;
@@ -71,14 +89,21 @@ protected:
 	uint* m_pRowSolutionMasksIdx = NULL;
 	uint m_numObjects;
 private:
+	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numDaysResult;
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
 	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
 	uint m_numMasks;
+	uint m_lastInFirstSet;
+	int m_lenDayResults;
 	int m_solAdj = 0;
+
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
+	solutionInterval m_fSolutionInterval;
 };
 
 class CCompressedMask : public CCompatMasks {
