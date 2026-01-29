@@ -19,17 +19,16 @@ public:
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
 	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
-	CC inline const auto numRecAdj() const				{ return m_numRecAdj; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
-	CC inline const auto getPlayersMask() const			{ return m_playersMask[0]; }
 	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[lenDayResults() * (selectPlayerByMask() ? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->val[t_useCombinedSolutions];
 	}
+	const alldata* allData() const						{ return m_pAllData; }
 
-	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx) const;
+	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx, const CCompatMasks* pCompMask) const;
 	CC void outSelectedSolution(int iRow, uint first, uint last, int threadID = 0) const;
 #if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
@@ -73,10 +72,8 @@ private:
 	CC bool checkCompatibility(ctchar* neighborsi, const ll* rm, uint idx, const alldata* pAllData, int& sameP1) const;
 	CC void updateMasksByAut(const CGroupInfo* pGroupInfo) const;
 	CC void updateMasksByAutForSolution(ctchar* pSolution, const CGroupInfo* pGroupInfo, tmask* pMask, uint solIdx, uint last, uint idxMin = 0) const;
-	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	CC uint getTransformerSolIndex(ctchar* pSol, ctchar* pPerm, uint last, uint first = 0) const;
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
-	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
 	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
 	const kSysParam* m_pSysParam;
@@ -105,10 +102,8 @@ private:
 	rowToBitmask m_fRowToBitmask;
 
 	int m_useCliquesAfterRow;
-	uint m_numRecAdj = 0;
 	uint m_numRec[2];			   // Number of solutions for first and second nonfixed rows.
-	uint m_numRecAdj2;
-	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	uint m_numRecAdj2 = 0;         // used only in combined solutions mode (it seems, that it never been properly initialized)
 	tchar* m_pSolMemory = NULL;    // Memory allocated to support the use of the automorphism group of the matrix with with pre-constructed rows.
 	bool m_bUseAut;
 };
@@ -133,7 +128,7 @@ public:
 		return completeMatrix(row, neighbors, nRows, iRow);
 	}
 	CC inline void getMatrix(tchar* row, tchar* neighbors, int nRows) {
-		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx);
+		m_pRowStorage->getMatrix(row, neighbors, nRows, m_pRowSolutionIdx, m_pCompatMasks);
 	}
 private:
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }

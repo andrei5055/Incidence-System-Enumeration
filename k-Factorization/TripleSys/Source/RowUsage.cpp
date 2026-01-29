@@ -1,4 +1,5 @@
 #include "TripleSys.h"
+#include "Table.h"
 //#if !USE_CUDA
 #include "OneApp.h"
 //#endif
@@ -182,11 +183,18 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	const auto numPreconstructedRows = m_pCompatMasks->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
 
+#if CHECK_GET_ROW
+	static int cntr = 0;
+#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000001.txt"
+	FOPEN_F(f, FILE_NAME, cntr++ ? "a" : "w");
+	fprintf(f, "cntr = %3d: iRow = %2d\n", cntr, iRow);
+	FCLOSE_F(f);
+#endif
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	const auto lenMask = m_pCompatMasks->lenSolutionMask();
 	const ll availablePlayers = nRow >= 0
 		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * lenMask) - 1)
-		: m_pRowStorage->getPlayersMask();
+		: m_pCompatMasks->getPlayersMask();
 
 	uint last = iRow;
 	auto& first = m_pCompatMasks->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
@@ -219,8 +227,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
 				// NOTE; Let's make a trivial mask for now and improve it later 
 				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
-				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be increased by m_step
-				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be ised first for next row
+				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be inreased by m_step
+				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be used first for next row
 			}
 		}
 		first += m_step;
@@ -388,6 +396,17 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 		break;
 	}
+
 	first++;
+#if CHECK_GET_ROW
+	FOPEN_F(f1, FILE_NAME, "a");
+	fprintf(f1, "first = %2d\n", first);
+	FCLOSE_F(f1);
+
+	extern TableAut * pReslt;
+	auto pRes = m_pRowStorage->allData()->result();
+	getMatrix(pRes, m_pRowStorage->allData()->neighbors(), iRow+1);
+	pReslt->printTable(pRes, true, false, iRow+1);
+#endif
 	return 1;
 }

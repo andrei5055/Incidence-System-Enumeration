@@ -3,6 +3,9 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
+#define COUNT_MASK_WEIGHT	0
+#define OUT_MASK_WEIGHT		0
+
 #define SAME_MASK_IDX		0			// We allow the same mask index to be used for three consecutive rows. 
 // If 0, we will not apply the acceleration method that analyzes valid solutions for the remaining rows in such situations. 
 #define USE_64_BIT_MASK		!USE_CUDA
@@ -58,14 +61,22 @@ public:
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
+	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
+	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
+	virtual uint solutionIndex(uint idx) const				{ return idx; }
+	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
+	CC inline const auto numRecAdj() const					{ return m_numRecAdj; }
 protected:
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
+	void setPlayersMask(ll mask)							{ m_playersMask[0] = m_playersMask[1] = mask; }
+	CC inline void updatePlayersMask(ll val)				{ m_playersMask[1] &= val; }
 	CC inline const auto lastInFirstSet() const				{ return m_lastInFirstSet; }
 	inline void setLastInFirstSet(uint val)					{ m_lastInFirstSet = val; }
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
-	void setNumLongs2Skip(int recAdj = 0);
+	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
+	int setNumLongs2Skip(bool adjustRecCounter = false);
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK
 		unsigned long iBit;
@@ -100,20 +111,23 @@ private:
 	uint m_lastInFirstSet;
 	int m_lenDayResults;
 	int m_solAdj = 0;
+	int m_numRecAdj = 0;
 
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
 	solutionInterval m_fSolutionInterval;
+	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 };
 
 class CCompressedMask : public CCompatMasks {
 public:
 	CCompressedMask(const kSysParam* pSysParam, const alldata* pAllData) : CCompatMasks(pSysParam, pAllData) {}
-	~CCompressedMask()						{ releaseSolIndices(); }
-	void compressCompatMasks(tmask* pCompSol, uint first, const CCompatMasks* pCompMask);
+	~CCompressedMask()							{ releaseSolIndices(); }
+	void compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask);
+	virtual uint solutionIndex(uint idx) const	{ return *(solIndices() + idx); }
 private:
-	inline auto solIndices() const			{ return m_pSolIdx; }
-	inline void releaseSolIndices()	const	{ delete[] solIndices(); }
+	inline auto solIndices() const				{ return m_pSolIdx; }
+	inline void releaseSolIndices()	const		{ delete[] solIndices(); }
 
 	uint* m_pSolIdx = NULL;					// Indices of the solutions stored in compressed mask
 };

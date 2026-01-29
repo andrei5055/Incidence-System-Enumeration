@@ -79,19 +79,95 @@ CC uint& CCompatMasks::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll 
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }
 
-void CCompatMasks::setNumLongs2Skip(int recAdj)
+int CCompatMasks::setNumLongs2Skip(bool adjustRecCounter)
 {
 	// Define the number of first long long's we don't need to copy to the next row.
 	int i = numPreconstructedRows();
 	setLastInFirstSet(m_pPlayerSolutionCntr[i]);
-	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
+	int recAdj = adjustRecCounter ? lastInFirstSet() : 0;
 
+	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
 	while (++i < numDaysResult())
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - recAdj) >> 6);
+
+	return recAdj;
 }
 
-void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const CCompatMasks* pCompMask)
+CC uint CCompatMasks::getSolutionRange(uint& last, ll& availablePlayers, int i) const {
+	const uint first = last;
+	if (selectPlayerByMask()) {
+		const auto iBit = minPlayer(availablePlayers);
+		last = m_pPlayerSolutionCntr[iBit - 1];
+		availablePlayers ^= (ll)1 << iBit;
+	}
+	else {
+		last = m_pPlayerSolutionCntr[i];
+		availablePlayers &= (availablePlayers - 1);
+	}
+
+	return first;
+}
+
+#if COUNT_MASK_WEIGHT || OUT_MASK_WEIGHT
+size_t totalWeighChange = 0;
+#endif
+
+uint CCompatMasks::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow, uint prevWeight) const {
+	static size_t matrWeight = 0;  // Max number of ones located above the upper main diagonal
+	static uint numFirstSol = 0;   // Number of solutions for the first non-preconstruted row 
+	static tchar table[256];
+	if (!matrWeight) {
+		// Preparing the table to calculate the weight of the mask matrix.
+		table[0] = 0;
+		for (int i = 1; i < sizeof(table); i++)
+			table[i] = table[i >> 1] + i % 2;
+
+		auto availablePlayers = getPlayersMask();
+		unsigned int last = 0;
+		int i = numPreconstructedRows() - 1;
+		unsigned int first = getSolutionRange(last, availablePlayers, ++i);
+		numFirstSol = last - first;
+		matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
+#if OUT_MASK_WEIGHT
+		matrWeight -= numFirstSol * numFirstSol;
+		while (availablePlayers) {
+			first = getSolutionRange(last, availablePlayers, ++i);
+			const auto portion = last - first;
+			matrWeight -= portion * portion;
+		}
+#endif
+	}
+
+	ctchar* pMask = (ctchar*)pCompSolutions;
+	uint changingWeight = 0, totalWeight = 0;
+	const auto ind = numSolutionTotalB() * numFirstSol;
+	size_t i = numSolutionTotalB() * numMatrRow;
+	while (i--) {
+		totalWeight += table[pMask[i]];
+		if (i == ind)
+			changingWeight = totalWeight;
+	}
+
+	changingWeight = totalWeight - changingWeight;
+
+#if OUT_MASK_WEIGHT
+	printf("\nMask matrix total weight: %d  %5.2f%%", totalWeight, double(totalWeight) / matrWeight * 100);
+	printf("\nMask matrix changing weight: %d  %5.2f%%", changingWeight, double(changingWeight) / matrWeight * 100);
+	if (prevWeight) {
+		const auto weightChange = prevWeight - changingWeight;
+		totalWeighChange += weightChange;
+		printf("\nWeight change is %d:  %5.2f%%\n", weightChange, double(weightChange) / prevWeight * 100);
+
+	}
+#endif
+	return changingWeight;
+}
+
+void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask)
 {
+	// Counting the number of valid solutions in the compatibility mask for current solution of first non-predefined row.
+	const auto nValidSol = pCompMask->countMaskFunc(pCompSol) + 1;
+
 	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));
 	releaseSolIndices();
 	m_pSolIdx = new uint[nValidSol];
@@ -130,6 +206,6 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, uint nValidSol, const
 	}
 
 	*pSolMasksCompIdx = idxSol;
-//	setLastInFirstSet(1);
+	setNumSolutions(nValidSol);
 	setNumLongs2Skip();
 }

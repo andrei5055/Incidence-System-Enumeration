@@ -11,6 +11,10 @@
 
 using namespace std;
 
+#if CHECK_GET_ROW
+TableAut* pReslt = NULL;
+#endif
+
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
@@ -104,6 +108,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
 	else
 		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
+
+#if CHECK_GET_ROW
+	pReslt = pResult;
+#endif
 	if (iDay > 0) {
 		if (v4Row) {
 			if (links(1)[v4] != unset) {

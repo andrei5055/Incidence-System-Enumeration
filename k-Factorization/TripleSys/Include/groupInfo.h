@@ -84,9 +84,9 @@ public:
 	CC bool cyclesNotOk(int ncycles, tchar* cycles, eCheckForErrors checkErrors) const;
 	CC inline int param(paramID id)	const				{ return m_param->val[id]; }
 	CC inline auto completeGraph() const				{ return m_param->completeGraph();}
+	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
 protected:
 	CC void u1fSetTableRow(tchar* ro, ctchar* ri, bool bNeighbors = false) const;
-	CC inline auto* neighbors(int nDay = 0) const		{ return m_pU1Ftable + nDay * m_numPlayers; }
 	CC inline auto* neighborsPC(int nDay = 0) const		{ return m_pU1FtablePC + nDay * m_numPlayers; }
 	CC inline auto* prevP2() const						{ return m_prevP2; }
 	CC inline void set_kSysParam(const kSysParam* p)	{ m_param = p; }
