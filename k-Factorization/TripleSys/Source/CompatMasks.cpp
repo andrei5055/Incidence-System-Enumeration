@@ -2,15 +2,16 @@
 //#include "CompatMasks.h"
 
 CCompatMasks::CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData) :
-	m_numPreconstructedRows(pSysParam->val[t_useRowsPrecalculation]),
+	m_numPlayers(pSysParam->paramVal(t_numPlayers)),
+	m_numPreconstructedRows(pSysParam->paramVal(t_useRowsPrecalculation)),
 	m_numDaysResult(pAllData->numDaysResult()),
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1) {
-	const auto numPlayers = pSysParam->paramVal(t_numPlayers);
-	m_pPlayerSolutionCntr = new uint[numPlayers + numDaysResult()];
-	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers;
+	m_pPlayerSolutionCntr = new uint[numPlayers() + numDaysResult()];
+	m_pNumLongs2Skip = m_pPlayerSolutionCntr + numPlayers();
 	memset(numPlayerSolutionsPtr(), 0, numDaysResult() * sizeof(m_pPlayerSolutionCntr[0]));
 	m_lenDayResults = numDaysResult() + 1;
 	m_fSolutionInterval = !selectPlayerByMask() ? &CCompatMasks::solutionInterval2 : &CCompatMasks::solutionInterval3;
+	initSolMaskIndices();
 }
 
 CCompatMasks::~CCompatMasks() {
@@ -30,6 +31,21 @@ CC void CCompatMasks::releaseSolMaskInfo() {
 #endif
 }
 
+void CCompatMasks::initSolMaskIndices() {
+	const auto lenMaskIdx = selectPlayerByMask() ? numPlayers() : numDaysResult();
+	releaseSolMaskInfo();
+	m_pRowSolutionMasksIdx = new uint[lenMaskIdx];
+	memset(m_pRowSolutionMasksIdx, 0, lenMaskIdx * sizeof(m_pRowSolutionMasksIdx[0]));
+
+	m_pRowSolutionMasks = new tmask[lenMaskIdx];
+	memset(m_pRowSolutionMasks, 0, lenMaskIdx * sizeof(m_pRowSolutionMasks[0]));
+	m_pRowSolutionMasksIdx[0] = 0;
+#if SAME_MASK_IDX
+	m_pMaskTestingCompleted = new bool[lenMaskIdx];
+	memset(maskTestingCompleted(), 0, lenMaskIdx * sizeof(m_pMaskTestingCompleted[0]));
+#endif
+}
+
 void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj, int numSolAdj)
 {
 	// Adding additional long long when we use groupSize > 2
@@ -41,6 +57,7 @@ void CCompatMasks::initMaskMemory(uint numSolutions, int lenUsedMask, int numRec
 	releaseCompatMaskMemory();
 	m_pRowsCompatMasks = new tmask[numMasks() * lenSolutionMask()];
 	memset(rowsCompatMasks(), 0, numMasks() * numSolutionTotalB());
+//	initSolMaskIndices();
 }
 
 CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlayersMask) const {
@@ -166,9 +183,9 @@ uint CCompatMasks::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow,
 void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask)
 {
 	// Counting the number of valid solutions in the compatibility mask for current solution of first non-predefined row.
-	const auto nValidSol = pCompMask->countMaskFunc(pCompSol) + 1;
+	const auto nValidSol = pCompMask->countMaskFunc(pCompSol);
 
-	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));
+	initMaskMemory(nValidSol + 1, (selectPlayerByMask() ? 8 : 0));
 	releaseSolIndices();
 	m_pSolIdx = new uint[nValidSol];
 
@@ -177,6 +194,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 	auto first = *pSolMasksIniIdx;
 	const auto lastB = IDX(pCompMask->numMasks());
 	uint idxSol = 0;
+	m_pSolIdx[0] = 0;   
 	while (idxSol < nValidSol) {
 		// Skip all bytes/longs equal to 0
 		auto firstB = first >> SHIFT;
@@ -192,7 +210,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 		first = (firstB << SHIFT) + iBit;
 		pCompSol[firstB] ^= (tmask)1 << iBit;
 
-		if ((m_pSolIdx[idxSol++] = first) >= *pSolMasksIniIdx) {
+		if ((m_pSolIdx[++idxSol] = first) >= *pSolMasksIniIdx) {
 			*pSolMasksCompIdx++ = idxSol;
 			pSolMasksIniIdx++;
 		}
@@ -206,6 +224,5 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 	}
 
 	*pSolMasksCompIdx = idxSol;
-	setNumSolutions(nValidSol);
 	setNumLongs2Skip();
 }

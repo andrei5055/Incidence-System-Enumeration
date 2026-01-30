@@ -12,8 +12,6 @@ public:
 	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** pCompMaskHandle = NULL) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC inline auto useFeature(featureFlags mask) const	{ return m_pSysParam->useFeature(mask); }
-
-	CC inline auto numPlayers() const					{ return m_numPlayers; }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
@@ -37,7 +35,7 @@ private:
 #endif
 
 #define SetMask(bm, ir, ic) \
-	const int ib = ir * m_numPlayers + ic - (1 + ir) * (2 + ir) / 2; \
+	const int ib = ir * numPlayers() + ic - (1 + ir) * (2 + ir) / 2; \
 	ASSERT_IF(ib / 8 >= m_lenMask); \
 	SET_MASK_BIT(bm, ib)
 
@@ -52,7 +50,7 @@ private:
 	CC void rowToBitmask2(ctchar* pRow, tmask* bm) const
 	{
 		memset(bm, 0, m_lenMask);
-		for (int i = 0; i < m_numPlayers; i += 2) {
+		for (int i = 0; i < numPlayers(); i += 2) {
 			SetMask(bm, pRow[i], pRow[i + 1]);
 		}
 	}
@@ -60,8 +58,8 @@ private:
 	{
 		int ib;
 		memset(bm, 0, m_lenMask);
-		for (int i = 0; i < m_numPlayers; i += 3, pRow += 3) {
-			const int iOffset = pRow[0] * m_numPlayers - (1 + pRow[0]) * (2 + pRow[0]) / 2;
+		for (int i = 0; i < numPlayers(); i += 3, pRow += 3) {
+			const int iOffset = pRow[0] * numPlayers() - (1 + pRow[0]) * (2 + pRow[0]) / 2;
 			SetMaskWithOffset(bm, iOffset, pRow[1]);
 			SetMaskWithOffset(bm, iOffset, pRow[2]);
 			SetMask(bm, pRow[1], pRow[2]);
@@ -77,7 +75,6 @@ private:
 	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
 	const kSysParam* m_pSysParam;
-	const int m_numPlayers;
 	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
 	const bool m_bUseCombinedSolutions;

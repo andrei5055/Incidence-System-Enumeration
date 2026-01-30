@@ -66,7 +66,9 @@ public:
 	virtual uint solutionIndex(uint idx) const				{ return idx; }
 	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 	CC inline const auto numRecAdj() const					{ return m_numRecAdj; }
+	CC inline auto numPlayers() const						{ return m_numPlayers; }
 protected:
+	void initSolMaskIndices();
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
@@ -103,6 +105,7 @@ private:
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 
+	const int m_numPlayers;
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numDaysResult;
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players

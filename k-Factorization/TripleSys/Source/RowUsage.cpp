@@ -226,7 +226,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				m_pCompatibleSolutions = NULL;
 				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
 				// NOTE; Let's make a trivial mask for now and improve it later 
-				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
+				memset(m_pCompatibleSolutions + 1, 0xff, m_pCompatMasks->numSolutionTotalB() - 1);
+				m_pCompatibleSolutions[0] = 0xfe;
 				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be inreased by m_step
 				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be used first for next row
 			}
