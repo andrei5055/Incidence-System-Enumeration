@@ -12,13 +12,23 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_bCheckLinkV(m_groupSize == 3 && param(t_useCheckLinksV)),
 	m_bCheckLinkT(m_groupSize == 3 && useCheckLinksT),
 	m_nLenResults(m_numDays * numPlayers()) {
+	// we need to move the following code to intrinsic class init
+#if USE_INTRINSIC
+	extern uint8_t BYTE_MASKS[32];
+	char* mask = (char*)BYTE_MASKS;
+	if (numPlayers() <= 32) {
+		memset(mask, 255, numPlayers());
+		memset(mask + numPlayers(), 0, 32 - numPlayers());
+	}
+#endif
 	m_improveResult = improveResult;
 	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
 		m_numDaysResult = m_numDays;
 	m_createSecondRow = createSecondRow;
 	m_rowTime = new int[m_numDaysResult];
 	m_rowTime[0] = 0;
-	m_pResults = new tchar[m_nLenResults];
+	m_pResults = new tchar[m_nLenResults + 64]; // extra bytes at the end for intrinsics
+	memset(m_pResults, 0, m_nLenResults + 64);
 	m_pResultsPrev = new tchar[m_nLenResults * 2];
 	m_pResultsPrev2 = m_pResultsPrev + m_nLenResults;
 	const auto numPlayers64 = (m_numPlayers + 7) / 8 * 8;
@@ -51,7 +61,8 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_Ktmp = new tchar[np2];	// m_Ktmp can be used for sort and needs m_numPlayers rows
 	m_Km2ndRowInd = new tchar[m_numPlayers];
 	memset(m_Km2ndRowInd, 0, m_numPlayers);
-	m_trmk = new tchar[m_numPlayers];
+	m_trmk = new tchar[m_numPlayers + 32];
+	memset(m_trmk, 0, m_numPlayers + 32);
 	m_groups = new tchar[m_groupSizeFactorial * m_groupSize];
 	m_pLinks = new tchar[np2 * 2];
 	m_pSecondRowsDB = NULL;
@@ -141,8 +152,8 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 		m_pProcessMatrix = &alldata::kmProcessMatrix;
 	else
 		m_pProcessMatrix = createImprovedMatrix || m_groupSize > 3 ? &alldata::kmProcessMatrix : (m_groupSize == 2 ? &alldata::kmProcessMatrix2 : &alldata::kmProcessMatrix3);
-
-	m_pTestedTRs = new CStorageIdx<tchar>(50, m_numPlayers);
+	const int iSize = (m_numPlayers + 4 + 31) / 32 * 32; // we need m_numPlayers for Tr + 2x2 bytes for revers search
+	m_pTestedTRs = new CStorageIdx<tchar>(64, iSize);
 #if !USE_CUDA
 	const auto* binaryCanonRows = sysParam()->strVal[t_binaryCanonizer];
 	if (binaryCanonRows) {

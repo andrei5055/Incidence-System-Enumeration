@@ -123,9 +123,9 @@ int readTable(const std::string& fn, int nRows, int nCols, int nmax, int nUsed, 
 				for (int k = 0; k < nCols; k++) {
 					start = line.find_first_not_of(dl, end);
 					end = line.find(" ", start);
-					iv = stoi(line.substr(start, end - start));
-					if (checkFirstElem && (k == 0 && iv)) {
-						printfRed("*** Error in data line %d, file: %s\n", nl, fn.c_str());
+					iv = (start < end && end < line.size()) ? stoi(line.substr(start, end - start)) : -9999;
+					if (iv < 0 || (checkFirstElem && (k == 0 && iv))) {
+						printfRed("*** Error in data line %d, file: %s\n   line: %s\n", nl, fn.c_str(), line.c_str());
 						mf.close();
 						return 0;
 					}

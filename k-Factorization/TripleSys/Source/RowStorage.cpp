@@ -29,7 +29,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_bGroupSize2(pAllData->groupSize() == 2),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
-	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2),
+	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2 && numPlayers <= 32),
 	CStorage<tchar>(numObjects, 3 * numPlayers),
 	CCompatMasks(pSysParam, pAllData) {
 	m_numObjectsMax = numObjects;
@@ -100,7 +100,7 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr, ctchar lastNeighborOfPla
 CC bool CRowStorage::p1fCheck2P1F(ctchar* neighborsi, ctchar* neighborsj) const {
 #if 1
 	tchar k = 0;
-	for (tchar i = 2; i < (tchar)numPlayers(); i += 2)
+	for (auto i = 2; i < numPlayers(); i += 2)
 	{
 		if ((k = neighborsj[neighborsi[k]]) == 0)
 			return false;
@@ -159,10 +159,10 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 	if (!m_numObjects) {
 		// Output of the last precomputed row
 		sprintf_s(buf, "%3d: ", -1);
-		outMatrix(m_pAllData->result() + (m_numPreconstructedRows-1) * m_numPlayers, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf);
+		outMatrix(m_pAllData->result() + (numPreconstructedRows() - 1) * numPlayers(), 1, numPlayers(), m_pAllData->groupSize(), 0, f, false, false, buf);
 	}
 	sprintf_s(buf, "%3d: ", m_numObjects);
-	outMatrix(pRow, 1, m_numPlayers, m_pAllData->groupSize(), 0, f, false, false, buf, -1, NULL, false);
+	outMatrix(pRow, 1, numPlayers(), m_pAllData->groupSize(), 0, f, false, false, buf, -1, NULL, false);
 	FCLOSE_F(f);
 #endif
 	(this->*m_fRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
@@ -252,14 +252,14 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		return true;
 
 	TrCycles* tc = &m_pAllData->m_TrCyclesFirst2Rows[0];
+	const auto p1Neighbors = neighborsi + numPlayers();
+	const auto p2Neighbors = p2 + numPlayers() * 2;
+	const auto p1 = p1Neighbors - numPlayers() * 2;
 	if (groupSize2() && tc->length[0] == numPlayers()) {
-		const auto p1Neighbors = neighborsi + numPlayers();
-		const auto p2Neighbors = p2 + numPlayers() * 2;
 		bool bRet = p1fCheck2P1F(p1Neighbors, p2Neighbors);
 		if (!bRet)
 			return false;
 		if (m_use3RowCheck) {
-			const auto p1 = p1Neighbors - numPlayers() * 2;
 			if (pAllData->cnvPrecalcRowsCompCheck(sameP1, p1, p1Neighbors, p2, p2Neighbors) > 0) {
 #ifndef USE_CUDA
 				globPairsNotComp2++;
@@ -272,11 +272,21 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 
 	TrCycles tcs;
 	tcs.irow1 = tcs.irow2 = 0;
-	if (m_pAllData->m_firstCycleSet)
-		return m_pAllData->getCyclesFromNeighbors2(neighborsi + numPlayers(), p2 + numPlayers() * 2);
+	int iret;
+	if (m_pAllData->m_firstCycleSet) {
+		iret = m_pAllData->getCyclesFromNeighbors2(p1Neighbors, p2Neighbors);
+		if (iret <= 0)
+			return false;
+		if (m_use3RowCheck) {
+			if (pAllData->cnvPrecalcRowsCompCheck(sameP1, p1, p1Neighbors, p2, p2Neighbors) > 0) {
+				globPairsNotComp2++;
+				return false;
+			}
+		}
+		return true;
+	}
 
-	const auto iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, p2 + numPlayers(), neighborsi - numPlayers(),
-		p2, eCheckErrors);
+	iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, p2 + numPlayers(), neighborsi - numPlayers(), p2, eCheckErrors);
 	if (iret <= 0)
 		return false;
 
@@ -505,46 +515,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 			continue;
 		}
-
-		if (m_pRowSolutionMasksIdx) {
-			const auto lastAdj = last - numRecAdj();
-			m_pRowSolutionMasksIdx[i] = lastAdj >> SHIFT;
-			if (i == numPreconstructedRows() || maskTestingCompleted() || m_pRowSolutionMasksIdx[i] > m_pRowSolutionMasksIdx[i - 1]) {
-				unsigned int rem;
-				if (rem = REM(lastAdj)) {
-					m_pRowSolutionMasks[i] = (tmask)(-1) << rem;
-					if (m_pRowSolutionMasksIdx[i - 1] == m_pRowSolutionMasksIdx[i]) {
-						// At this point, the solutions for three consecutive rows are masked by the same `tmask` element
-						// Clear the bits in the previous mask that do not correspond to the solutions of the previous row
-						m_pRowSolutionMasks[i - 1] ^= m_pRowSolutionMasksIdx[i];
-#if SAME_MASK_IDX
-						maskTestingCompleted()[i - 1] = 1;
-#endif
-					}
-				}
-			}
-			else {
-				// We cannot use code for UseSolutionMasks, because now our code is not ready for such cases
-				// Actually, in that case m_pRowSolutionMasks for the start and the end of the interval are stored in the same element of the array m_pRowSolutionMasks. 
-				releaseSolMaskInfo();
-			}
-
-#if 0
-			FOPEN_F(f, "aaa.txt", "w");
-			char buf[256], * pBuf = buf;
-			for (int j = 0; j <= i; j++)
-				SPRINTFD(pBuf, buf, "%18d", m_pRowSolutionMasksIdx[j]);
-
-			fprintf(f, "%s\n", buf);
-			pBuf = buf;
-			for (int j = 0; j <= i; j++)
-				SPRINTFD(pBuf, buf, "  %016llx", m_pRowSolutionMasks[j]);
-
-			fprintf(f, "%s\n", buf);
-			FCLOSE_F(f);
-#endif
-		}
-
+        
+		defineMask4SolutionIntervals(i, last);
 
 		if (numRowToConstruct--) {
 			numRemainingSolution -= last - first;

@@ -204,6 +204,9 @@ public:
 	CC int u1fGetCycleLength(TrCycles* trc, ctchar* t1, ctchar* t2, ctchar* res1, ctchar* res2, eCheckForErrors checkErrors) const;
 	CC int getCyclesFromNeighbors2(ctchar* tt1, ctchar* tt2) const;
 	CC int cnvPrecalcRowsCompCheck(int& mode, ctchar* p1 = NULL, ctchar* p1Neighbors = NULL, ctchar* p2 = NULL, ctchar* p2Neighbors = NULL) const;
+	CC bool create2U1FTr(trDB* trdb, tchar* tr, ctchar* pf0, ctchar* pf1, ctchar* pfi, ctchar* pfj, int nRows, tchar tRow) const;
+	CC void setReversSearchValues(tchar* tr, int nc, tchar tRow) const;
+	CC bool notCBMPtr(short int* tr, int nc) const;
 	inline bool printFlag() const					{ return m_bPrint; }
 	inline auto testedTrs() const					{ return m_pTestedTRs; }
 private:
@@ -288,8 +291,8 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkSubmatrix() const { return (iDay == m_matrixCanonInterval); }
-	//CC inline bool checkSubmatrix() const      { return m_matrixCanonInterval ? (iDay % m_matrixCanonInterval) == 0 : false;}
+	CC inline bool checkSubmatrix() const		{ return iDay == m_matrixCanonInterval; }
+	//CC inline bool checkSubmatrix() const       { return m_matrixCanonInterval != 0 && (iDay % m_matrixCanonInterval) == 0; }
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
 	CC void kmSortGroups(tchar* mi, int nr) const;

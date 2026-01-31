@@ -72,6 +72,8 @@ const char* intParamNames[]{
 	"InputLatinSquareType",
 	"v4",
 	"v4Row",
+	"UseCompatibilityCheck",
+	"HalfRowMode",
 };
 
 const char* strParamNames[]{
@@ -154,7 +156,7 @@ int main(int argc, const char* argv[])
 #endif
 	SetConsoleOutputCP(CP_UTF8);
 	enableAnsiColors();
-	cout << "k-Sys 12.15.2025\n";
+	cout << "k-Sys 1.15.2026\n";
 	// Get the handle to the current process
 	HANDLE hProcess = GetCurrentProcess();
 

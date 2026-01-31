@@ -7,11 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TripleSys", "TripleSys\Trip
 	ProjectSection(ProjectDependencies) = postProject
 		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C} = {BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}
 		{BA86F27F-F92D-4C5F-8B2D-6D5782A2617B} = {BA86F27F-F92D-4C5F-8B2D-6D5782A2617B}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "k-Sys", "k-Sys\k-Sys.vcxproj", "{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}"
-	ProjectSection(ProjectDependencies) = postProject
-		{DD293748-8D62-4F87-8E07-A57D00D84BD4} = {DD293748-8D62-4F87-8E07-A57D00D84BD4}
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3} = {FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}
 	EndProjectSection
 EndProject
@@ -29,6 +24,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{D5B35DF9-9508-
 		CI\run.bat = CI\run.bat
 		CI\runRelease.bat = CI\runRelease.bat
 		CI\run_st.bat = CI\run_st.bat
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "k-Sys", "k-Sys\k-Sys.vcxproj", "{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C} = {BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}
+		{DD293748-8D62-4F87-8E07-A57D00D84BD4} = {DD293748-8D62-4F87-8E07-A57D00D84BD4}
+		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3} = {FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}
 	EndProjectSection
 EndProject
 Global
@@ -89,42 +91,6 @@ Global
 		{DD293748-8D62-4F87-8E07-A57D00D84BD4}.Release|x64.Build.0 = Release|x64
 		{DD293748-8D62-4F87-8E07-A57D00D84BD4}.Release|x86.ActiveCfg = Release|Win32
 		{DD293748-8D62-4F87-8E07-A57D00D84BD4}.Release|x86.Build.0 = Release|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|Any CPU.ActiveCfg = Debug with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|Any CPU.Build.0 = Debug with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x64.ActiveCfg = Debug with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x64.Build.0 = Debug with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x86.ActiveCfg = Debug with GPU|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x86.Build.0 = Debug with GPU|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|Any CPU.ActiveCfg = Debug without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|Any CPU.Build.0 = Debug without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x64.ActiveCfg = Debug without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x64.Build.0 = Debug without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x86.ActiveCfg = Debug without OneApp|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x86.Build.0 = Debug without OneApp|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|Any CPU.Build.0 = Debug|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x64.ActiveCfg = Debug|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x64.Build.0 = Debug|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x86.ActiveCfg = Debug|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x86.Build.0 = Debug|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|Any CPU.ActiveCfg = Release with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|Any CPU.Build.0 = Release with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x64.ActiveCfg = Release with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x64.Build.0 = Release with GPU|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x86.ActiveCfg = Release with GPU|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x86.Build.0 = Release with GPU|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|Any CPU.ActiveCfg = Release without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|Any CPU.Build.0 = Release without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x64.ActiveCfg = Release without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x64.Build.0 = Release without OneApp|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x86.ActiveCfg = Release without OneApp|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x86.Build.0 = Release without OneApp|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|Any CPU.ActiveCfg = Release|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|Any CPU.Build.0 = Release|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x64.ActiveCfg = Release|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x64.Build.0 = Release|x64
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.ActiveCfg = Release|Win32
-		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.Build.0 = Release|Win32
 		{BA86F27F-F92D-4C5F-8B2D-6D5782A2617B}.Debug with GPU|Any CPU.ActiveCfg = Debug with GPU|x64
 		{BA86F27F-F92D-4C5F-8B2D-6D5782A2617B}.Debug with GPU|Any CPU.Build.0 = Debug with GPU|x64
 		{BA86F27F-F92D-4C5F-8B2D-6D5782A2617B}.Debug with GPU|x64.ActiveCfg = Debug with GPU|x64
@@ -223,6 +189,42 @@ Global
 		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|x64.ActiveCfg = Release|x64
 		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|x86.ActiveCfg = Release|x64
 		{BA20C1B3-8B5A-44DD-B66D-7873EAB3692C}.Release|x86.Build.0 = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|Any CPU.ActiveCfg = Debug with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|Any CPU.Build.0 = Debug with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x64.ActiveCfg = Debug with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x64.Build.0 = Debug with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x86.ActiveCfg = Debug with GPU|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with GPU|x86.Build.0 = Debug with GPU|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|Any CPU.ActiveCfg = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|Any CPU.Build.0 = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x64.ActiveCfg = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x64.Build.0 = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x86.ActiveCfg = Debug|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug with OneApp|x86.Build.0 = Debug|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|Any CPU.Build.0 = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x64.ActiveCfg = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x64.Build.0 = Debug|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x86.ActiveCfg = Debug|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Debug|x86.Build.0 = Debug|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|Any CPU.ActiveCfg = Release with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|Any CPU.Build.0 = Release with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x64.ActiveCfg = Release with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x64.Build.0 = Release with GPU|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x86.ActiveCfg = Release with GPU|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with GPU|x86.Build.0 = Release with GPU|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|Any CPU.ActiveCfg = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|Any CPU.Build.0 = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x64.ActiveCfg = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x64.Build.0 = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x86.ActiveCfg = Release|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release with OneApp|x86.Build.0 = Release|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|Any CPU.ActiveCfg = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|Any CPU.Build.0 = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x64.ActiveCfg = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x64.Build.0 = Release|x64
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.ActiveCfg = Release|Win32
+		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,99 +1,33 @@
 #include "TripleSys.h"
 #include "Table.h"
-//#if !USE_CUDA
+
 #include "OneApp.h"
-//#endif
-//#include <ppl.h>
-//#include <array>
-//#include <sstream>
-
-#define USE_INTRINSIC		!USE_CUDA
-#if 0
-#include <DirectXMath.h>
-using namespace DirectX;
-void multiplyAll(ll* aa, const ll* bb, const ll* cc, int n) {
-	XMUINT4* a = (XMUINT4*)aa, * b = (XMUINT4*)bb, * c = (XMUINT4*)cc;
-	int i = 0;
-	n += n;
-	// Process 4 `uint` elements at a time 
-	for (; i + 4 <= n; i += 4) {  // Load four unsigned integer components from each input array.
-		XMVECTOR v1 = XMLoadUInt4(&b[i]);
-		XMVECTOR v2 = XMLoadUInt4(&c[i]);
-
-		// Perform the bitwise AND operation on the vectors.
-		XMVECTOR v_result = XMVectorAndInt(v1, v2);
-
-		// Store the result back into the output array.
-		XMStoreUInt4(&a[i], v_result);
-	}
-	// Handle the remainder elements (if `size` is not a multiple of 4)
-	for (; i < n; ++i) {
-		*((uint*)(b + i)) = *((uint *)(b+i)) & *((uint*)(c + i));
-	}
-}
-#elif USE_INTRINSIC
+#define UseIPX				0 // works faster with 0
+#if USE_INTRINSIC
 #include <immintrin.h> // Header for AVX2 intrinsics
 #include <algorithm>
 void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	int i = 0;
-#if 0
-	static int iAvx512Support = 0;
-	switch (iAvx512Support) {
-	case 0:
-		if (n >= 8) {
-			__try {
-				__m512i vec1 = _mm512_loadu_si512(&b[0]);
-				__m512i vec2 = _mm512_loadu_si512(&c[0]);
-				__m512i and_result = _mm512_and_si512(vec1, vec2);
-				_mm512_storeu_si512(&a[0], and_result);
-				iAvx512Support = 1;
-				i += 8;
-			}
-			__except (GetExceptionCode() == EXCEPTION_ILLEGAL_INSTRUCTION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-				iAvx512Support = -1;
-			}
-		}
-		break;
-	case 1:
-		for (; i + 8 <= n; i += 8) {
-			// Load 8 64-bit integers from arr1 into a 512-bit register (zmm)
-			__m512i vec1 = _mm512_loadu_si512(&b[i]);
-			// Load 8 64-bit integers from arr2 into a 512-bit register
-			__m512i vec2 = _mm512_loadu_si512(&c[i]);
-
-			// Perform the bitwise AND operation on the two registers
-			__m512i and_result = _mm512_and_si512(vec1, vec2);
-
-			// Store the result back into the output array
-			_mm512_storeu_si512(&a[i], and_result);
-		}
-		break;
+	// Unroll to process 8 elements (2 vectors) at a time
+	for (; i + 8 <= n; i += 8) {
+		__m256i v_b1 = _mm256_loadu_si256((__m256i*) & b[i]);
+		__m256i v_b2 = _mm256_loadu_si256((__m256i*) & b[i + 4]);
+		__m256i v_c1 = _mm256_loadu_si256((__m256i*) & c[i]);
+		_mm256_storeu_si256((__m256i*) & a[i], _mm256_and_si256(v_b1, v_c1));
+		__m256i v_c2 = _mm256_loadu_si256((__m256i*) & c[i + 4]);
+		_mm256_storeu_si256((__m256i*) & a[i + 4], _mm256_and_si256(v_b2, v_c2));
 	}
-#endif
-	// Process 4 `long long` elements at a time using AVX2
+
+	// Process remaining 4-element chunks if they exist
 	for (; i + 4 <= n; i += 4) {
-		// Load 4 `long long` elements from each array
-		__m256i vec_b = _mm256_loadu_si256((__m256i*) & b[i]);
-#if 1
-		if (_mm256_testz_si256(vec_b, vec_b)) {
-			_mm256_storeu_si256((__m256i*) & a[i], vec_b);
-			continue;
-		}
-#endif
-		__m256i vec_c = _mm256_loadu_si256((__m256i*) & c[i]);
-
-		// Perform bitwise AND operation
-		__m256i vec_a = _mm256_and_si256(vec_b, vec_c);
-
-		// Store the result back to the result array
-		_mm256_storeu_si256((__m256i*) & a[i], vec_a);
+		__m256i v_b = _mm256_loadu_si256((__m256i*) & b[i]);
+		__m256i v_c = _mm256_loadu_si256((__m256i*) & c[i]);
+		_mm256_storeu_si256((__m256i*) & a[i], _mm256_and_si256(v_b, v_c));
 	}
 
-	// Handle the remainder elements (if `size` is not a multiple of 4)
-	switch (n - i) {
-	case 3: a[i + 2] = b[i + 2] & c[i + 2];
-	case 2: a[i + 1] = b[i + 1] & c[i + 1];
-	case 1: a[i] = b[i] & c[i];
+	// Scalar remainder loop
+	for (; i < n; ++i) {
+		a[i] = b[i] & c[i];
 	}
 }
 #else
@@ -225,7 +159,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				delete[] m_pCompatibleSolutions;
 				m_pCompatibleSolutions = NULL;
 				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
-				// NOTE; Let's make a trivial mask for now and improve it later 
+				// NOTE; Let's make a trivial mask for now and improve it later
+//				memcpy(m_pCompatibleSolutions, m_pCompatMasks->rowsCompatMasks(), m_pCompatMasks->numSolutionTotalB());
 				memset(m_pCompatibleSolutions + 1, 0xff, m_pCompatMasks->numSolutionTotalB() - 1);
 				m_pCompatibleSolutions[0] = 0xfe;
 				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be inreased by m_step
@@ -245,17 +180,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	}
 
 	auto* pCompSol = m_pCompatibleSolutions + nRow * lenMask;
-	const auto lastB = IDX(last);
-#if 0
-	static int c[16], cc;
-	c[m_threadID]++;
-	cc++;
-	if (cc >= 10000000) {
-		printTable("nr", c, 1, 16, 0);
-		cc = 0;
-	}
+#if UseIPX
+	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
 #endif
-
+	const auto lastB = IDX(last);
 	while (true) {
 		// Skip all bytes/longs equal to 0
 		auto firstB = first >> SHIFT;
@@ -275,6 +203,14 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		if (iRow >= m_nRowMax)
 			break;
 
+#if		UseIPX
+		// Previous solution should be different in first ipx bytes
+		if (ipx && nRow > 0 && pPrevSolution && !memcmp(pPrevSolution, m_pRowStorage->getObject(first), ipx + 1)) {
+			//printTable("Skipped", m_pRowStorage->getObject(first), 1, 24, 2);
+			first++; // We need to try next solution 
+			continue;
+		}
+#endif
 		// Construct the intersection of compatible solutions only if we will use it.
 		const auto pPrevA = (const ll*)(pCompSol);
 		auto pToA = (ll*)(pCompSol + lenMask);
@@ -299,32 +235,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 					jNum = jMax - j + 1;
 					testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
 					multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
-					/**
-					if (i == m_nRowMax - 2)
-					{
-						static int ic = 0, c = 0;
-						for (int k = 3; k <= jNum; k+=4)
-						{
 
-							if (pToA[k] || pToA[k - 1] || pToA[k - 2] || pToA[k - 3])
-								ic++;
-						}
-						c += jNum / 4;
-						if (c > 1000000) {
-							printf("%d ", ic * 100 / c); c = ic = 0;
-						}
-					}
-					*/
 					// Check left, middle and right parts of the solution interval for i-th row
 					auto mask = pRowSolutionMasks[i - 1];
-					/*
-					static int c[16], cc;
-					c[i]++;
-					cc++;
-					if ((cc % 100000000) == 0) {
-						//printTable("nr", c, 1, 16, 0);
-						cc = 0;
-					}**/
 					if (mask) {
 						if (mask & pToA[j]) {
 							continue;  // at least one solution masked by left part of the interval is still valid
@@ -375,21 +288,6 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			}
 			else {
 				multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
-#if 0
-				{
-					static int ic = 0, c = 0;
-					for (int k = 3; k <= jNum; k += 4)
-					{
-
-						if (pPrevAStart[k] || pPrevAStart[k - 1] || pPrevAStart[k - 2] || pPrevAStart[k - 3])
-							ic++;
-					}
-					c += jNum / 4;
-					if (c > 100000000) {
-						printf("%d:%d ", jNum, ic * 100 / c); c = ic = 0;
-					}
-				}
-#endif
 			}
 		}
 		else

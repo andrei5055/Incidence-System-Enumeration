@@ -1,7 +1,11 @@
 #include "TripleSys.h"
 #include "p1fCheck.h"
 #include "kOrbits.h"
-
+#if USE_INTRINSIC
+extern void transform16_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut);
+extern void transform32_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut, int count);
+extern void sortGroupsI(tchar* pIn, tchar* pOut, int nPairs);
+#endif
 #define SetUpToTwoGroups2(i, m, j, ta, tb) \
 		if (ta[i]) \
 		{m[j] = ta[i]; m[j + 1] = tb[i]; j += 2;} \
@@ -182,10 +186,20 @@ CC bool kmTranslate2AndCheck(tchar* mo, ctchar* mi, ctchar* tr, int len, tchar t
 		auto a = tr[mi[i]];
 		auto b = tr[mi[i + 1]];
 		if (a > b) {
-			mo[i] = b; mo[i + 1] = a; if (b == 0 && a == tRow) bRow = true;
+			mo[i] = b; mo[i + 1] = a; 
+			if (b == 0) {
+				if (a != tRow)
+					return false;
+				bRow = true;
+			}
 		}
 		else {
-			mo[i] = a; mo[i + 1] = b; if (a == 0 && b == tRow) bRow = true;
+			mo[i] = a; mo[i + 1] = b; 
+			if (a == 0) {
+				if (b != tRow)
+					return false;
+				bRow = true;
+			}
 		}
 		if (bRow) {
 			for (i += 2; i < len; i += 2) {
@@ -205,22 +219,49 @@ CC bool kmTranslate2AndCheck(tchar* mo, ctchar* mi, ctchar* tr, int len, tchar t
 }
 CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups, CKOrbits* pKOrb) const {
 	tchar* mo = m_Km;
+	auto* coi = m_Ktmp;
 	const auto nc = m_numPlayers;
 	const auto len = nc * nr;
-	if (tr)
-		kmTranslate(mo, mi, tr, len);
+#if USE_INTRINSIC
+	if (m_groupSize == 2 && nc <= 32 && tr) {
+		alignas(32) tchar pTmp[32];
+		auto * cii = mi;
+		for (int i = 0; i < nr; i++, coi += nc, cii += nc) {
+			transform32_and_sort_each_pair(cii, tr, pTmp, nc);
+			sortGroupsI(pTmp, coi, m_nGroups);
+#if 0
+			tchar pTmp2[32];
+			tchar pTmp3[32];
+			kmTranslate(pTmp2, cii, tr, nc);
+			 (this->*m_pSortGroups)(pTmp2, 1);
+			 kmSortGroupsByFirstValue(pTmp2, pTmp3);
+			 if (memcmp(pTmp3, coi, nc) != 0) {
+				 printTable("tr ", tr, 1, nc, 2);
+				 printTable("cii", cii, 1, nc, 2);
+				 printTable("tmp", pTmp, 1, nc, 2);
+				 printTable("coi", coi, 1, nc, 2);
+				 printTable("exp", pTmp3, 1, nc, 2);
+				 i = i;
+			 }
+#endif
+		}
+	}
 	else
-		memcpy(mo, mi, len);
-
-	(this->*m_pSortGroups)(mo, nr);
-
+#endif
+	{
+		auto * cii = mo;
+		if (tr)
+			kmTranslate(mo, mi, tr, len);
+		else
+			memcpy(mo, mi, len);
+	
+		(this->*m_pSortGroups)(mo, nr);
+	
+		for (int i = 0; i < nr; i++, coi += nc, cii += nc)
+			kmSortGroupsByFirstValue(cii, coi);
+	}
 	if (pKOrb)
 		pKOrb->UpdateGroup(mo);
-
-	auto* cii = mo;
-	auto* coi = m_Ktmp;
-	for (int i = 0; i < nr; i++, coi += nc, cii += nc)
-		kmSortGroupsByFirstValue(cii, coi);
 
 	if (useNestedGroups && MEMCMP(mi, m_Ktmp, len) == 0)
 		return 0;
@@ -313,6 +354,27 @@ CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* 
 {
 	const auto nc = m_numPlayers;
 	auto* mii = mi + mind * nc;
+#if USE_INTRINSIC
+	if (m_numPlayers <= 32) {
+		alignas(32) tchar pRow[32];
+		alignas(32) tchar pTr[32];
+		alignas(32) tchar pTmp[32];
+		alignas(32) tchar pSorted[32];
+		memcpy(pRow, mii, nc);
+		memcpy(pTr, tr, nc);
+		transform32_and_sort_each_pair(pRow, pTr, pTmp, nc);
+		sortGroupsI(pTmp, pSorted, m_nGroups);
+		const auto row2ndValue = pSorted[1];
+		ASSERT_IF(row2ndValue >= nc);
+		const int ncc = (row2ndValue - 1) * nc;
+		auto* mon = m_Ktmp + ncc; // needed for macros below
+		memcpy(mon, pSorted, nc);
+		tb[0] = row2ndValue;
+		if (row2ndValue == irow)
+			return MEMCMP(mon, mi + ncc, nc);
+		return 0;
+	}
+#endif
 	auto* ta = m_tx;
 	memset(ta, 0, nc);
 	tchar va, vb;

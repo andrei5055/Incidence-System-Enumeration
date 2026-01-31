@@ -97,7 +97,12 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	}
 
 	const auto pCycles = param.u1fCycles[0];
-	if (/*val[t_u1f] */ pCycles) {
+	bool bP1f = (!pCycles || pCycles[1] == numPlayers) && !val[t_allowUndefinedCycles];
+	if (bP1f && val[t_useCompatibilityCheck] > 1) {
+		printfRed("*** %s(%d) > 1 can be used only with P1F\n", paramNames[t_useCompatibilityCheck], val[t_useCompatibilityCheck]);
+		return false;
+	}
+	if (pCycles) {
 		auto pU1F = pCycles + 1;
 		for (tchar j = 0; j < *pCycles; j++) {
 			// Iterating through all prescribed combinations of cycle versions. 

@@ -145,3 +145,61 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 ret:
 	return bRet;
 }
+
+
+CC bool alldata::create2U1FTr(trDB* trdb, tchar* tr, ctchar* pf0, ctchar* pf1, ctchar* pfi, ctchar* pfj, int nRows, tchar tRow) const
+{
+	bool bRet = true;
+	const bool bCBMP = param(t_CBMP_Graph) == 2;
+	TrCycles trCycles;
+	TrCycles trCycles01;
+#if 0
+	static tchar a[] = { 0,3,1,4,2,7,5,8,6,9 };
+	if (memcmp(a, result(1), sizeof(a)) == 0)
+		bRet = bRet;
+#endif
+	const auto any2RowsConvertToFirst2 = param(t_any2RowsConvertToFirst2);
+	bool bok = getCyclesAndPathFromNeighbors(&trCycles01, pf0, pf1, NULL, NULL, eCheckErrors) > 0;
+	ASSERT_IF(!bok);
+
+	for (int i = 0; i < nRows; i++) {
+
+		bok = getCyclesAndPathFromNeighbors(&trCycles, pfi + i * m_numPlayers, pfj, NULL, NULL, eNoErrorCheck) > 0;
+
+		if (!bok || MEMCMP(trCycles01.length, trCycles.length, MAX_CYCLES_PER_SET)) {/**
+			printTable("result", result(), nrows, m_numPlayers, 2);
+			printTable("resi", result(indRow0), 1, m_numPlayers, 2);
+			printTable("resj", result(indRow1), 1, m_numPlayers, 2);
+			printTable("neii", neighbors(indRow0), 1, m_numPlayers, 2);
+			printTable("neij", neighbors(indRow1), 1, m_numPlayers, 2);*/
+			bRet = false;
+			goto ret;
+		}
+		else {
+			ctchar* pDir, * pStartOut;
+			auto pIdx = const_cast<alldata*>(this)->InitCycleMapping(trCycles.length, trCycles.start, trCycles.ncycles, 2, &pDir, &pStartOut);
+
+			do {
+#if 0
+				printTable("pDir", pDir, 1, 2, 2);
+				printTable("pIdx", pIdx, 1, 2, 2);
+				printTable("pStartOut", pStartOut, 1, 2, 2);
+#endif
+				const bool btr = const_cast<alldata*>(this)->createU1FTr(tr, &trCycles01, &trCycles, pDir, pIdx, pStartOut);
+				if (bCBMP && notCBMPtr((short int*)tr, m_numPlayers)) {
+					//exit(222);
+					continue;
+				}
+				if (!btr)
+					return false;
+				setReversSearchValues(tr, m_numPlayers, tRow);
+				trdb->isProcessed(tr);
+				//if (trdb->numObjects() > 3)
+				//	return true;
+			} while (const_cast<alldata*>(this)->ProceedToNextMapping());
+		}
+	}
+
+ret:
+	return bRet;
+}

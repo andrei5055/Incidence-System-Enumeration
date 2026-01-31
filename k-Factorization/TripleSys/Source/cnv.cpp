@@ -65,7 +65,8 @@ CC void alldata::cnvInit()
 CC int alldata::cnvCheckKm1(ctchar* tr, int nrows, tchar* pOrbits)
 {
 	int ret = 1;
-	tchar ttr1[MAX_PLAYER_NUMBER], *ttr = (tchar *)tr;
+	alignas(32) tchar ttr1[MAX_PLAYER_NUMBER];
+	tchar * ttr = (tchar*)tr;
 	const auto * res = result();
 	tchar n = 0, day = 0;
 #if !USE_CUDA

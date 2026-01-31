@@ -41,7 +41,7 @@ public:
 	CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData);
 	virtual ~CCompatMasks();
 	CC inline auto numSolutionTotalB() const				{ return m_numSolutionTotalB; }
-	CC inline tmask* getSolutionMask(uint solNumb) const	{ return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
+	CC inline tmask* getSolutionMask(uint solNumb = 0) const{ return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
 	CC inline auto numLongs2Skip(int iRow) const			{ return m_pNumLongs2Skip[iRow]; }
 	CC inline const auto rowSolutionMasksIdx() const		{ return m_pRowSolutionMasksIdx; }
 	CC inline auto numDaysResult() const					{ return m_numDaysResult; }
@@ -67,11 +67,11 @@ public:
 	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 	CC inline const auto numRecAdj() const					{ return m_numRecAdj; }
 	CC inline auto numPlayers() const						{ return m_numPlayers; }
+	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
 protected:
 	void initSolMaskIndices();
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
-	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
 	void setPlayersMask(ll mask)							{ m_playersMask[0] = m_playersMask[1] = mask; }
 	CC inline void updatePlayersMask(ll val)				{ m_playersMask[1] &= val; }
 	CC inline const auto lastInFirstSet() const				{ return m_lastInFirstSet; }
@@ -79,6 +79,7 @@ protected:
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
 	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
 	int setNumLongs2Skip(bool adjustRecCounter = false);
+	void defineMask4SolutionIntervals(int nRow, unsigned int last);
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
 #if USE_64_BIT_MASK
 		unsigned long iBit;
@@ -95,11 +96,7 @@ protected:
 	uint m_numSolutionTotalB; // length of one solution mask in bytes
 	uint* m_pPlayerSolutionCntr = NULL;
 	uint* m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
-	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
-	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
-	tmask* m_pRowSolutionMasks = NULL;
-	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
-	uint* m_pRowSolutionMasksIdx = NULL;
+
 	uint m_numObjects;
 private:
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
@@ -116,8 +113,14 @@ private:
 	int m_solAdj = 0;
 	int m_numRecAdj = 0;
 
+	// For each row of the matrix, we define two masks, each containing an interval of consecutive bits set to 1
+	// These intervals represent the row's first and last sets of solutions that lie outside the separately tested 64-bit intervals.
+	tmask* m_pRowSolutionMasks = NULL;
+	//  ... and the the set of indices of the long long elements which corresponds to two mask's sets.                           
+	uint* m_pRowSolutionMasksIdx = NULL;
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
+
 	solutionInterval m_fSolutionInterval;
 	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 };
