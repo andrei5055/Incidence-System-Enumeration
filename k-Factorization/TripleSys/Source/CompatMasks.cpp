@@ -227,7 +227,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 
 	initMaskMemory(nValidSol, (selectPlayerByMask() ? 8 : 0));
 	releaseSolIndices();
-	m_pSolIdx = new uint[nValidSol];
+	m_pSolIdx = new uint[nValidSol+1];
 
 	auto const *pSolMasksIniIdx = pCompMask->numPlayerSolutionsPtr() + numPreconstructedRows();
 	auto pSolMasksCompIdx = numPlayerSolutionsPtr() + numPreconstructedRows();
@@ -235,7 +235,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 	const auto lastB = IDX(pCompMask->numMasks());
 	uint idxSol = 0;
 	m_pSolIdx[0] = 0;
-	//const auto n = m_numRec[1];
+	auto nRow = numPreconstructedRows();
 	while (idxSol < nValidSol) {
 		// Skip all bytes/longs equal to 0
 		auto firstB = first >> SHIFT;
@@ -254,18 +254,11 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 		if ((m_pSolIdx[++idxSol] = first) >= *pSolMasksIniIdx) {
 			*pSolMasksCompIdx++ = idxSol;
 			pSolMasksIniIdx++;
+			defineMask4SolutionIntervals(nRow++, idxSol);
 		}
 
 		for (uint j = 1; j < idxSol; j++) {
 			const auto idx = m_pSolIdx[j];
-			/*
-			for (auto k = j + 1; k < idxSol; k++) {
-				const auto solIdx = m_pSolIdx[k];
-				ASSERT_IF(solIdx >= idxSol);
-				if (CHECK_MASK_BIT(pCompMask->getSolutionMask(solIdx), idxIniSol)) {
-					SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
-				}
-			}*/
 
 			if (CHECK_MASK_BIT(pCompMask->getSolutionMask(idx), first)) {
 				SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
