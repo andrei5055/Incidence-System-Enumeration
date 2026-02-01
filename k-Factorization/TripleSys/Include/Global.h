@@ -101,8 +101,7 @@ typedef enum {
 
 typedef enum {
 	t_noTest = 0,
-	t_use3RowCheck = 1 << 8,
-	t_useCompressedMasks = 1 << 9,
+	t_useCompressedMasks = 1 << 8,
 } featureFlags;
 
 typedef enum {

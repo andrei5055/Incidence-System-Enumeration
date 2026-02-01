@@ -258,9 +258,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 		}
 
 		for (uint j = 1; j < idxSol; j++) {
-			const auto idx = m_pSolIdx[j];
-
-			if (CHECK_MASK_BIT(pCompMask->getSolutionMask(idx), first)) {
+			if (CHECK_MASK_BIT(pCompMask->getSolutionMask(m_pSolIdx[j]), first)) {
 				SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
 			}
 		}

@@ -125,15 +125,15 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	FCLOSE_F(f);
 #endif
 	const auto nRow = iRow - numPreconstructedRows - 1;
-	const auto lenMask = m_pCompatMasks->lenSolutionMask();
-	const ll availablePlayers = nRow >= 0
-		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * lenMask) - 1)
-		: m_pRowStorage->getPlayersMask();
-
 	if (nRow < 0 && m_pCompatMasks != m_pRowStorage) {
 		delete m_pCompatMasks;
 		m_pCompatMasks = m_pRowStorage;
 	}
+
+	const auto lenMask = m_pCompatMasks->lenSolutionMask();
+	const ll availablePlayers = nRow >= 0
+		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * lenMask) - 1)
+		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
 	auto& first = m_pCompatMasks->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);

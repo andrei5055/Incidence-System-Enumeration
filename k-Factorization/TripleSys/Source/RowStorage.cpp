@@ -29,7 +29,7 @@ CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numO
 	m_bGroupSize2(pAllData->groupSize() == 2),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
-	m_use3RowCheck(pSysParam->useFeature(t_use3RowCheck) && pAllData->groupSize() == 2 && numPlayers <= 32),
+	m_use3RowCheck(pSysParam->val[t_useCompatibilityCheck] && pAllData->groupSize() == 2 && numPlayers <= 32),
 	CStorage<tchar>(numObjects, 3 * numPlayers),
 	CCompatMasks(pSysParam, pAllData) {
 	m_numObjectsMax = numObjects;
