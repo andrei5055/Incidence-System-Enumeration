@@ -792,19 +792,6 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 		memcpy(pCompatibleSolutions, rowsCompatMasks() + first * lenSolutionMask(), numSolutionTotalB());
 	}
 
-	if (ppCompMaskHandle && m_pSysParam->useFeature(t_useCompressedMasks)) {
-		CCompressedMask* pCompMasks;
-		if (*ppCompMaskHandle == this)
-			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), m_pAllData);
-		else {
-			// Clean from previous usage;
-			pCompMasks = static_cast<CCompressedMask *>(*ppCompMaskHandle);
-			pCompMasks->releaseCompatMaskMemory();
-		}
-
-		pCompMasks->compressCompatMasks(pCompatibleSolutions, this);
-	}
-
 	if (m_pTRTSN_Storage && first) {
 		// Using the group of automorphisms on 2 rows of matrix.
 		const auto pGroupInfo = m_pAllData->groupInfo(2);
@@ -827,6 +814,19 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 				*pMaskOut &= ~MASK_BIT(solIdxTr);
 			}
 		}
+	}
+
+	if (ppCompMaskHandle && m_pSysParam->useFeature(t_useCompressedMasks)) {
+		CCompressedMask* pCompMasks;
+		if (*ppCompMaskHandle == this)
+			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), m_pAllData);
+		else {
+			// Clean from previous usage;
+			pCompMasks = static_cast<CCompressedMask*>(*ppCompMaskHandle);
+			pCompMasks->releaseCompatMaskMemory();
+		}
+
+		pCompMasks->compressCompatMasks(pCompatibleSolutions, this);
 	}
 }
 

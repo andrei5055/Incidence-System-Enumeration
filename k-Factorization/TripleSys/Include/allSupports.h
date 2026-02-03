@@ -4,6 +4,7 @@
 typedef signed long long sLongLong;
 
 K_SYS_LIBRARY_API const char* getFileNameAttr(const kSysParam* param, const char** uf = NULL);
+K_SYS_LIBRARY_API void initTripleSysData();
 void convertLinksToResult(const char* ci, char* res, int np, int gs, bool cmpGraph);
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr = NULL);
 void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns = 0, bool makeString = false, ctchar* co=NULL, int* t=NULL);

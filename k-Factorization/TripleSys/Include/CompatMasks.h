@@ -40,6 +40,7 @@ class CCompatMasks {
 public:
 	CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData);
 	virtual ~CCompatMasks();
+	static void initBitsInByteTable();
 	CC inline auto numSolutionTotalB() const				{ return m_numSolutionTotalB; }
 	CC inline tmask* getSolutionMask(uint solNumb = 0) const{ return rowsCompatMasks() + (solNumb + m_solAdj) * lenSolutionMask(); }
 	CC inline auto numLongs2Skip(int iRow) const			{ return m_pNumLongs2Skip[iRow]; }
@@ -122,7 +123,8 @@ private:
 	bool* m_pMaskTestingCompleted = NULL;
 
 	solutionInterval m_fSolutionInterval;
-	ll m_playersMask[2] = { 0, 0 };// Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	ll m_playersMask[2] = { 0, 0 };		   // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
+	static tchar m_pBitsInByte[256];	   // Table for fast counting of bits in byte
 };
 
 class CCompressedMask : public CCompatMasks {

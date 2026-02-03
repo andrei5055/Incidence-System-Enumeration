@@ -256,6 +256,8 @@ int main(int argc, const char* argv[])
 	strValDef[t_ResultsName] = new string("_Results.txt");
 	strValDef[t_InputDataFileName] = new string("");
 
+	initTripleSysData();
+
 	// Job is defined by external file
 	vector<string> failedTests;
 	auto& testName = strVal[t_testName];

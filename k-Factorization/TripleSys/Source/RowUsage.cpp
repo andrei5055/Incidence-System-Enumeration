@@ -167,7 +167,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				// NOTE; Let's make a trivial mask for now and improve it later
 				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
 				m_pCompatibleSolutions[0]--;
-				m_pRowSolutionIdx[iRow] = 0;     // first on current row to 0 - it will be inreased by m_step
+				m_pRowSolutionIdx[iRow] = first; // first on current row to 0 - it will be inreased by m_step
 				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be used first for next row
 			}
 		}
@@ -243,9 +243,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 					// Check left, middle and right parts of the solution interval for i-th row
 					auto mask = pRowSolutionMasks[i - 1];
 					if (mask) {
-						if (mask & pToA[j]) {
+						if (mask & pToA[j])
 							continue;  // at least one solution masked by left part of the interval is still valid
-						}
+
 						j++;
 					}
 					// middle part
@@ -268,9 +268,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 #endif
 						j += 4;
 					}
+
 					switch (jMax - j) {
 					case 3: if (pToA[j + 2]) goto Cont1;
-					case 2: if (pToA[j + 1] ) goto Cont1;
+					case 2: if (pToA[j + 1]) goto Cont1;
 					case 1: if (pToA[j]) goto Cont1;
 					}
 #endif
@@ -282,7 +283,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 					if (!mask || !((~mask) & pToA[jMax])) {
 						break;
 					}
-				Cont1: continue;
+					
+				Cont1:;
 				}
 
 				if (i <= m_nRowMax) {
