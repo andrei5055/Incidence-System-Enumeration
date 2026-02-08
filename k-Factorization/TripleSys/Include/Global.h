@@ -101,6 +101,7 @@ typedef enum {
 
 typedef enum {
 	t_noTest = 0,
+	t_ShortestCyclesFirst = 1 << 3,
 	t_useCompressedMasks = 1 << 8,
 } featureFlags;
 

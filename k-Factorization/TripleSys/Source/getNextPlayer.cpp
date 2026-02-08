@@ -55,7 +55,7 @@ CC int alldata::getNextPlayer()
 						goto checkPlayerNumber;
 					}
 				}
-				else if ((m_test & 8) && iPlayer == 3 && iDay && m_groupSize == 2 && m_firstCycleSet && m_firstCycleSet[0] == 4) {
+				else if ((m_test & t_ShortestCyclesFirst) && iPlayer == 3 && iDay && m_groupSize == 2 && m_firstCycleSet && m_firstCycleSet[0] == 4) {
 					int ip = tmpPlayers[1];
 					ip = (param(t_CBMP_Graph) == 2 || (ip & 1)) ? ip - 1 : ip + 1;
 					if (iPlayerNumber > ip)

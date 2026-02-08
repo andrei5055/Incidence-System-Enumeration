@@ -29,6 +29,7 @@ typedef tchar tmask;
 #define SET_MASK_BIT(mask, idx)		(mask)[(idx) >> SHIFT] |= MASK_BIT(idx)
 #define RESET_MASK_BIT(mask, idx)	(mask)[(idx) >> SHIFT] ^= MASK_BIT(idx)
 #define CHECK_MASK_BIT(mask, idx)	((mask)[(idx) >> SHIFT] & MASK_BIT(idx))
+#define AVALABLE_PLAYER_MASK_LENGTH  8
 
 
 #include "CompSolGraph.h"
@@ -53,22 +54,34 @@ public:
 	CC inline auto maskTestingCompleted() const				{ return m_pMaskTestingCompleted; }
 	CC void releaseSolMaskInfo();
 	inline void releaseCompatMaskMemory()					{ delete[] rowsCompatMasks(); }
-	void initMaskMemory(uint numSolutions, int lenUsedMask, int numRecAdj = 0, int numSolAdj = 0);
+	void initMaskMemory(uint numSolutions, int numRecAdj = 0, int numSolAdj = 0);
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	inline auto numMasks() const							{ return m_numMasks; }
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
-	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }
-	CC void initRowUsage(tmask** ppCompatibleSolutions, bool* pUsePlayersMask) const;
+	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }   // inumber of tmask's
+	CC void initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll availablePlayerMask = 0) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
 	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	virtual uint solutionIndex(uint idx) const				{ return idx; }
+	virtual ctchar* getSolution(uint idx) const				{ return NULL; }
 	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 	CC inline const auto numRecAdj() const					{ return m_numRecAdj; }
 	CC inline auto numPlayers() const						{ return m_numPlayers; }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
+	inline auto availablePlayerMaskPntr(int idx = 0) const	{ return rowsCompatMasks() + (idx + 1) * lenSolutionMask() - 1; }
+	CC inline auto useFeature(featureFlags mask) const		{ return sysParam()->useFeature(mask); }
+	CC inline const kSysParam* sysParam() const				{ return m_pSysParam; }
+	inline auto compatibleSolutions() const					{ return m_pCompatSolutions; }
+	inline auto compatibleSolutionsPntr() const				{ return &m_pCompatSolutions; }
+
+#if !USE_64_BIT_MASK
+	CC inline auto firstOnePosition(tchar byte) const { return m_FirstOnePosition[byte]; }
+private:
+	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
+#endif
 protected:
 	void initSolMaskIndices();
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
@@ -79,6 +92,8 @@ protected:
 	inline void setLastInFirstSet(uint val)					{ m_lastInFirstSet = val; }
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
 	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
+	CC inline auto setNumSolution(uint val)					{ m_numObjects = val; }
+	CC void defineSolutionIntervals();
 	int setNumLongs2Skip(bool adjustRecCounter = false);
 	void defineMask4SolutionIntervals(int nRow, unsigned int last);
 	CC inline unsigned long minPlayer(ll availablePlayers) const {
@@ -107,6 +122,7 @@ private:
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
 	const int m_numDaysResult;
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
+	const kSysParam* m_pSysParam;
 	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	uint m_lastInFirstSet;
@@ -122,6 +138,7 @@ private:
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
 
+	tmask* m_pCompatSolutions = NULL;
 	solutionInterval m_fSolutionInterval;
 	ll m_playersMask[2] = { 0, 0 };		   // Mask with bits corresponding to players from first group of predefined rows equal to zeros.
 	static tchar m_pBitsInByte[256];	   // Table for fast counting of bits in byte

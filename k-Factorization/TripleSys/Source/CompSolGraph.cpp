@@ -3,7 +3,7 @@
 CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup) :
 	m_pRowStorage(pRowStorage) {
 	m_nRowMax = pRowStorage->numPlayers() - 2;
-	const int nRowsRes = pRowStorage->sysParam()->val[t_nRowsInResultMatrix];
+	const int nRowsRes = pRowStorage->sysParam()->paramVal(t_nRowsInResultMatrix);
 	if (nRowsRes && m_nRowMax > nRowsRes - 1)
 		m_nRowMax = nRowsRes - 1;
 

@@ -2,7 +2,7 @@
 
 #define ReportCheckLinksData	0  && !USE_CUDA // print information about CheckLinks execution
 #define PrintNVminmax 0 && !USE_CUDA
-#define ReportInterval			120000
+#define ReportInterval			120000      // (ms) interval to run canonizer 
 #define Report					1			// to enable and disable reporting
 #define ReportPeriodically		Report && 1 // print current matrix if "current number of rows" changed, or after ReportInterval ms timeout
 #define ReportStatPeriodically	Report && 0 // print stat when "ReportPeriodically" triggered

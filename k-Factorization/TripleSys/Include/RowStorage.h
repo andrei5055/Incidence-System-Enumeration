@@ -11,28 +11,22 @@ public:
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
 	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** pCompMaskHandle = NULL) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
-	CC inline auto useFeature(featureFlags mask) const	{ return m_pSysParam->useFeature(mask); }
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);
 	CC inline auto useCliquesAfterRow() const			{ return m_useCliquesAfterRow; }
 	CC inline auto useCliques(int iRow) const			{ return iRow > m_useCliquesAfterRow; }
-	CC inline const kSysParam* sysParam() const			{ return m_pSysParam; }
 	CC inline const auto numRec(int idx) const			{ return m_numRec[1]; }
 	CC inline auto groupSize2() const					{ return m_bGroupSize2; }
 	CC bool initRowSolution(uint **ppRowSolutionIdx) const {
 		*ppRowSolutionIdx = new uint[lenDayResults() * (selectPlayerByMask() ? 2 : 1)];
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
-		return sysParam()->val[t_useCombinedSolutions];
+		return sysParam()->paramVal(t_useCombinedSolutions);
 	}
-	const alldata* allData() const						{ return m_pAllData; }
+	inline const alldata* allData() const				{ return m_pAllData; }
+	ctchar* getSolution(uint idx) const override		{ return getObject(idx); }
 
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx, const CCompatMasks* pCompMask) const;
 	CC void outSelectedSolution(int iRow, uint first, uint last, int threadID = 0) const;
-#if !USE_64_BIT_MASK
-	CC inline auto firstOnePosition(tchar byte) const	{ return m_FirstOnePosition[byte]; }
-private:
-	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
-#endif
 
 #define SetMask(bm, ir, ic) \
 	const int ib = ir * numPlayers() + ic - (1 + ir) * (2 + ir) / 2; \
@@ -74,7 +68,6 @@ private:
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
 	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
-	const kSysParam* m_pSysParam;
 	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
 	const bool m_bUseCombinedSolutions;
@@ -131,6 +124,7 @@ private:
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	uint* m_pRowSolutionIdx = NULL;
 	tmask* m_pCompatibleSolutions = NULL;
+	tmask* m_pCompatSolutions = NULL;
 	int m_step = 0;
 	bool m_bUseCombinedSolutions;
 	bool m_bSolutionReady = false;   // true, when solution was prepared ar a part of combined solution. 

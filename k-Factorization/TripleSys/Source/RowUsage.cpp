@@ -11,9 +11,9 @@ void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	// Unroll to process 8 elements (2 vectors) at a time
 	for (; i + 8 <= n; i += 8) {
 		__m256i v_b1 = _mm256_loadu_si256((__m256i*) & b[i]);
-		__m256i v_b2 = _mm256_loadu_si256((__m256i*) & b[i + 4]);
 		__m256i v_c1 = _mm256_loadu_si256((__m256i*) & c[i]);
 		_mm256_storeu_si256((__m256i*) & a[i], _mm256_and_si256(v_b1, v_c1));
+		__m256i v_b2 = _mm256_loadu_si256((__m256i*) & b[i + 4]);
 		__m256i v_c2 = _mm256_loadu_si256((__m256i*) & c[i + 4]);
 		_mm256_storeu_si256((__m256i*) & a[i + 4], _mm256_and_si256(v_b2, v_c2));
 	}
@@ -69,7 +69,9 @@ CC void BitScanForward64_Cuda(unsigned long* _Index, unsigned long long _Mask) {
 CC void CRowUsage::init(int iThread, int numThreads) {
 	m_threadID = iThread;
 	m_step = numThreads;
-	m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
+	const auto fullMatrix = !m_pRowStorage->sysParam()->useFeature(t_useCompressedMasks);
+	m_pRowStorage->initRowUsage(&m_pCompatibleSolutions, fullMatrix, &m_bSelectPlayerByMask);
+	m_pCompatSolutions = m_pCompatibleSolutions;
 	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = 0;
 }
 
@@ -119,10 +121,14 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 #if CHECK_GET_ROW
 	static int cntr = 0;
-#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000001.txt"
+//#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000001.txt"
+#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB24\\2-Partite_graphs\\12\\24x12x2_420\\UC0000000001.txt"
 	FOPEN_F(f, FILE_NAME, cntr++ ? "a" : "w");
 	fprintf(f, "cntr = %3d: iRow = %2d\n", cntr, iRow);
 	FCLOSE_F(f);
+	if (cntr == 6777) {
+		cntr += 0;
+	}
 #endif
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	if (nRow < 0 && m_pCompatMasks != m_pRowStorage) {
@@ -131,8 +137,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	}
 
 	const auto lenMask = m_pCompatMasks->lenSolutionMask();
-	const ll availablePlayers = nRow >= 0
-		? *((const ll*)(m_pCompatibleSolutions + (nRow + 1) * lenMask) - 1)
+	ll availablePlayers = nRow >= 0
+		? *((const ll*)(m_pCompatSolutions + (nRow + 1) * lenMask) - 1)
 		: m_pRowStorage->getPlayersMask();
 
 	uint last = iRow;
@@ -161,14 +167,12 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		else {
 			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData, (CCompatMasks **)&m_pCompatMasks);
 			if (m_pCompatMasks != m_pRowStorage) {
-				delete[] m_pCompatibleSolutions;
-				m_pCompatibleSolutions = NULL;
-				m_pCompatMasks->initRowUsage(&m_pCompatibleSolutions, &m_bSelectPlayerByMask);
-				// NOTE; Let's make a trivial mask for now and improve it later
-				memset(m_pCompatibleSolutions, 0xff, m_pCompatMasks->numSolutionTotalB());
-				m_pCompatibleSolutions[0]--;
-				m_pRowSolutionIdx[iRow] = first; // first on current row to 0 - it will be inreased by m_step
-				m_pRowSolutionIdx[iRow + 1] = 1; // index of the solution from the compressed set which will be used first for next row
+				availablePlayers = m_pCompatibleSolutions[m_pRowStorage->lenSolutionMask() - 1];
+				auto pPntr = (tmask **)m_pCompatMasks->compatibleSolutionsPntr();
+				m_pCompatMasks->initRowUsage(pPntr, true, &m_bSelectPlayerByMask, availablePlayers);
+				m_pCompatSolutions = m_pCompatMasks->compatibleSolutions();
+				m_pRowSolutionIdx[iRow] = first;
+				m_pRowSolutionIdx[iRow + 1] = 0;
 			}
 		}
 		first += m_step;
@@ -183,7 +187,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		return 0;
 	}
 
-	auto* pCompSol = m_pCompatibleSolutions + nRow * lenMask;
+	auto* pCompSol = m_pCompatSolutions + nRow * lenMask;
 #if UseIPX
 	ctchar* pPrevSolution = ipx > 0 ? m_pRowStorage->getObject(first - 1) : NULL;
 #endif
@@ -305,7 +309,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	first++;
 #if CHECK_GET_ROW
 	FOPEN_F(f1, FILE_NAME, "a");
-	fprintf(f1, "first = %2d\n", first);
+	//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
+	fprintf(f1, "availablePlayers = %lld\n", availablePlayers);
 	FCLOSE_F(f1);
 
 	extern TableAut * pReslt;

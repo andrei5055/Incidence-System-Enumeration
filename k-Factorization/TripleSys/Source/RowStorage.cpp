@@ -24,7 +24,6 @@ int ggg = 0;
 #endif
 
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
-	m_pSysParam(pSysParam),
 	m_pAllData(pAllData),
 	m_bGroupSize2(pAllData->groupSize() == 2),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
@@ -51,7 +50,7 @@ CC CRowStorage::~CRowStorage() {
 CC void CRowStorage::initMaskStorage(uint numObjects) {
 	if (!m_pMaskStorage)
 		m_pMaskStorage = new CStorage<tchar>(numObjects, (((numPlayers() * (numPlayers() - 1) / 2) + 63) / 64) * 8);
-	memset(m_pPlayerSolutionCntr, 0, numPlayers() * sizeof(m_pPlayerSolutionCntr[0]));
+
 	reset();
 }
 
@@ -449,8 +448,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #endif
 	const auto* param = sysParam()->val;
 	const auto pGroupInfo = m_pAllData->groupInfo(param[t_useRowsPrecalculation]);
-	for (int i = 1; i < numPlayers(); i++)
-		m_pPlayerSolutionCntr[i] += m_pPlayerSolutionCntr[i - 1];
+	defineSolutionIntervals();
 
 	// Define the number of first long long's we don't need to copy to the next row.
 	memset(m_pNumLongs2Skip, 0, numDaysResult() * sizeof(m_pNumLongs2Skip[0]));
@@ -487,18 +485,11 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #endif
 
 	const auto useCombinedSolutions = param[t_useCombinedSolutions];
-	const auto flg = !selectPlayerByMask();
-	initMaskMemory(m_numObjects, (flg ? 0 : 8), numRecAdj(), useCombinedSolutions || m_bUseAut ? numRecAdj() : 0);
-
-#if !USE_64_BIT_MASK
-	// Filling the lookup table m_FirstOnePosition
-	memset(m_FirstOnePosition, 0, sizeof(m_FirstOnePosition));
-	for (int i = 2; i < 256; i += 2)
-		m_FirstOnePosition[i] = m_FirstOnePosition[i >> 1] + 1;
-#endif
+	initMaskMemory(m_numObjects, numRecAdj(), useCombinedSolutions || m_bUseAut ? numRecAdj() : 0);
 
 	tmask* pCompatMask = rowsCompatMasks();
 
+	const auto flg = !selectPlayerByMask();
 	bool skipAllowed = flg && !(useCombinedSolutions || m_bUseAut);
 	unsigned int first, last = 0;
 	auto i = numPreconstructedRows() - 1;
@@ -816,7 +807,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 		}
 	}
 
-	if (ppCompMaskHandle && m_pSysParam->useFeature(t_useCompressedMasks)) {
+	if (ppCompMaskHandle && sysParam()->useFeature(t_useCompressedMasks)) {
 		CCompressedMask* pCompMasks;
 		if (*ppCompMaskHandle == this)
 			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), m_pAllData);

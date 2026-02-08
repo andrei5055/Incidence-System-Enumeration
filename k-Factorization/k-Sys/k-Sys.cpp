@@ -184,10 +184,10 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
-	filesystem::path pathToParam = filesystem::absolute(argv[1]);
-	filesystem::path homePath = filesystem::absolute("./");
-	std::cout << "Input file with parameters='" << YellowText << pathToParam << ResetTextColor
-		      << "'\nHome directory='" << YellowText << homePath<< ResetTextColor << "'\n";
+	auto pathToParam = filesystem::absolute(argv[1]).string();
+	auto homePath = filesystem::absolute("./").string();
+	std::cout << "Input file with parameters = " << YellowText << pathToParam << ResetTextColor
+		      << "\nHome directory = " << YellowText << homePath << ResetTextColor << "\n";
 		
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames), NULL,
