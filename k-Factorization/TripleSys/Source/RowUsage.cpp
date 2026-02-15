@@ -119,17 +119,6 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	const auto numPreconstructedRows = m_pCompatMasks->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
 
-#if CHECK_GET_ROW
-	static int cntr = 0;
-//#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000001.txt"
-#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB24\\2-Partite_graphs\\12\\24x12x2_420\\UC0000000001.txt"
-	FOPEN_F(f, FILE_NAME, cntr++ ? "a" : "w");
-	fprintf(f, "cntr = %3d: iRow = %2d\n", cntr, iRow);
-	FCLOSE_F(f);
-	if (cntr == 6777) {
-		cntr += 0;
-	}
-#endif
 	const auto nRow = iRow - numPreconstructedRows - 1;
 	if (nRow < 0 && m_pCompatMasks != m_pRowStorage) {
 		delete m_pCompatMasks;
@@ -141,6 +130,14 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		? *((const ll*)(m_pCompatSolutions + (nRow + 1) * lenMask) - 1)
 		: m_pRowStorage->getPlayersMask();
 
+#if CHECK_GET_ROW
+	static int cntr = 0;
+#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000004.txt"
+//#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB24\\2-Partite_graphs\\12\\24x12x2_420\\UC0000000001.txt"
+	FOPEN_F(f, FILE_NAME, cntr++ ? "a" : "w");
+	fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", cntr, iRow, selectPlayerByMask() || nRow < 0? availablePlayers : -1);
+	FCLOSE_F(f);
+#endif
 	uint last = iRow;
 	auto& first = m_pCompatMasks->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
 
@@ -169,10 +166,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			if (m_pCompatMasks != m_pRowStorage) {
 				availablePlayers = m_pCompatibleSolutions[m_pRowStorage->lenSolutionMask() - 1];
 				auto pPntr = (tmask **)m_pCompatMasks->compatibleSolutionsPntr();
-				m_pCompatMasks->initRowUsage(pPntr, true, &m_bSelectPlayerByMask, availablePlayers);
+				m_pCompatMasks->initRowUsage(pPntr, true, &m_bSelectPlayerByMask, &availablePlayers);
 				m_pCompatSolutions = m_pCompatMasks->compatibleSolutions();
 				m_pRowSolutionIdx[iRow] = first;
-				m_pRowSolutionIdx[iRow + 1] = 0;
+				m_pRowSolutionIdx[iRow + 1] = 1;
 			}
 		}
 		first += m_step;
@@ -274,9 +271,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 					}
 
 					switch (jMax - j) {
-					case 3: if (pToA[j + 2]) goto Cont1;
-					case 2: if (pToA[j + 1]) goto Cont1;
-					case 1: if (pToA[j]) goto Cont1;
+					case 3: if (pToA[j + 2]) continue;
+					case 2: if (pToA[j + 1]) continue;
+					case 1: if (pToA[j]) continue;
 					}
 #endif
 					// There are no valid solutions with the indices inside 
@@ -284,9 +281,8 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 					mask = pRowSolutionMasks[i];
 					// If mask != 0, we need to check the right side of the intervals.
 
-					if (!mask || !((~mask) & pToA[jMax])) {
+					if (!mask || !((~mask) & pToA[jMax]))
 						break;
-					}
 					
 				Cont1:;
 				}
@@ -307,11 +303,15 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	}
 
 	first++;
-#if CHECK_GET_ROW
-	FOPEN_F(f1, FILE_NAME, "a");
-	//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
-	fprintf(f1, "availablePlayers = %lld\n", availablePlayers);
-	FCLOSE_F(f1);
+
+#if CHECK_GET_ROW	
+	if (selectPlayerByMask()) {
+		FOPEN_F(f1, FILE_NAME, "a");
+		//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
+		availablePlayers = *((const ll*)(m_pCompatSolutions + (nRow + 2) * lenMask) - 1);
+		fprintf(f1, "availablePlayers = %llx\n", availablePlayers);
+		FCLOSE_F(f1);
+	}
 
 	extern TableAut * pReslt;
 	auto pRes = m_pRowStorage->allData()->result();

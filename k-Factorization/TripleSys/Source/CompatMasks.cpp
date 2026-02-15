@@ -19,7 +19,7 @@ CCompatMasks::CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData) 
 	m_numPreconstructedRows(pSysParam->paramVal(t_useRowsPrecalculation)),
 	m_numDaysResult(pAllData->numDaysResult()),
 	m_bSelectPlayerByMask(pAllData->groupSize() > 2 || pAllData->param(t_CBMP_Graph) > 1),
-	m_pSysParam(pSysParam) {
+	m_pSysParam(pSysParam), m_pAllData(pAllData) {
 	m_pPlayerSolutionCntr = new uint[numPlayers() + numDaysResult()];
 	m_pNumLongs2Skip = numPlayerSolutionsPtr() + numPlayers();
 	memset(numPlayerSolutionsPtr(), 0, numPlayers() * sizeof(m_pPlayerSolutionCntr[0]));
@@ -81,7 +81,7 @@ void CCompatMasks::initMaskMemory(uint numSolutions, int numRecAdj, int numSolAd
 	memset(rowsCompatMasks(), 0, numMasks() * numSolutionTotalB());
 }
 
-CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll availablePlayerMask) const {
+CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll* pAvailablePlayerMask) const {
 	if (!*ppCompatibleSolutions) {
 		auto lenMask = numSolutionTotalB() >> (SHIFT - 3);
 		if (fullMatrix)
@@ -91,13 +91,13 @@ CC void CCompatMasks::initRowUsage(tmask** ppCompatibleSolutions, bool fullMatri
 	}
 
 	*pUsePlayersMask = selectPlayerByMask();
-	if (availablePlayerMask) {
+	if (pAvailablePlayerMask) {
 		auto pCompatibleSolutions = *ppCompatibleSolutions;
 		// NOTE; Let's make a trivial mask for now and improve it later
 		memset(pCompatibleSolutions, 0xff, numSolutionTotalB());
 		pCompatibleSolutions[0]--;
 		if (selectPlayerByMask())
-			pCompatibleSolutions[lenSolutionMask() - 1] = availablePlayerMask;
+			pCompatibleSolutions[lenSolutionMask() - 1] = *pAvailablePlayerMask;
 	}
 }
 
@@ -122,7 +122,7 @@ CC uint& CCompatMasks::solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll 
 		return m_pPlayerSolutionCntr[0];  // Dummy return, it will not be used.
 	}
 
-	const auto iBit = minPlayer(availablePlayers);
+	const auto iBit = minBit(availablePlayers);
 	*pLast = pRowSolutionIdx[lenDayResults()] = m_pPlayerSolutionCntr[iBit - 1];
 	return *pRowSolutionIdx = m_pPlayerSolutionCntr[iBit - 2];
 }
@@ -132,7 +132,7 @@ int CCompatMasks::setNumLongs2Skip(bool adjustRecCounter)
 	// Define the number of first long long's we don't need to copy to the next row.
 	int i = numPreconstructedRows();
 	setLastInFirstSet(m_pPlayerSolutionCntr[i]);
-	int recAdj = adjustRecCounter ? lastInFirstSet() : 0;
+	const int recAdj = adjustRecCounter ? lastInFirstSet() : 0;
 
 	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
 	while (++i < numDaysResult())
@@ -144,7 +144,7 @@ int CCompatMasks::setNumLongs2Skip(bool adjustRecCounter)
 CC uint CCompatMasks::getSolutionRange(uint& last, ll& availablePlayers, int i) const {
 	const uint first = last;
 	if (selectPlayerByMask()) {
-		const auto iBit = minPlayer(availablePlayers);
+		const auto iBit = minBit(availablePlayers);
 		last = m_pPlayerSolutionCntr[iBit - 1];
 		availablePlayers ^= (ll)1 << iBit;
 	}
@@ -163,8 +163,23 @@ void CCompatMasks::defineSolutionIntervals() {
 	setNumSolution(m_pPlayerSolutionCntr[numPlayers() - 1]);
 }
 
-void CCompatMasks::defineMask4SolutionIntervals(int nRow, unsigned int last)
+void CCompatMasks::defineMask4SolutionIntervals(int nRow, uint last)
 {
+#if PRINT_MASK_SOLUTION_INTERVALS
+	static int fff = 0;
+	static int ggg = 0;
+	static int ccc = 0;
+	FOPEN_F(f, "ccc.txt", ccc++? "a" : "w");
+	if (fff > nRow) {
+		fprintf(f, "\n*** %3d: Compressed Matrix info ***\n", ++ggg);
+		if (ggg >= 428)
+			ggg += 0;
+	}
+
+	fff = nRow;
+	fprintf(f, "nRow = %2d  last = %4d\n", nRow, last);
+	FCLOSE_F(f);
+#endif
 	if (!m_pRowSolutionMasksIdx)
 		return;
 
@@ -265,8 +280,23 @@ uint CCompatMasks::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow,
 	return weight;
 }
 
-void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask)
+void CCompatMasks::outputPrecalcSolution(int num_obj, ctchar* pSol, const char* pFileName) const {
+	FOPEN_F(f, pFileName, num_obj ? "a" : "w");
+	char buf[32];
+	if (!num_obj) {
+		// Output of the last precomputed row
+		sprintf_s(buf, "%5d: ", -1);
+		outMatrix(allData()->result() + (numPreconstructedRows() - 1) * numPlayers(), 1, numPlayers(), allData()->groupSize(), 0, f, false, false, buf);
+	}
+	sprintf_s(buf, "%5d: ", num_obj);
+	outMatrix(pSol, 1, numPlayers(), allData()->groupSize(), 0, f, false, false, buf, -1, NULL, false);
+	FCLOSE_F(f);
+}
+
+void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask, uint solIdx)
 {
+	// solIdx - index of the solution used for first non-predefined row
+
 	// Count the number of valid solutions in the compatibility mask 
 	// for the current solution of the first non-predefined row (including itself)
 	const auto nValidSol = pCompMask->countMaskFunc(pCompSol); 
@@ -274,63 +304,72 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 	initMaskMemory(nValidSol);
 	releaseSolIndices();
 	m_pSolIdx = new uint[nValidSol+1];
-	auto const *pSolMasksIniIdx = pCompMask->numPlayerSolutionsPtr() + numPreconstructedRows();
-	auto pSolMasksCompIdx = numPlayerSolutionsPtr();
-	auto first = *pSolMasksIniIdx;
-	const auto last = pCompMask->numMasks();
-	const auto lastB = IDX(last);
+
+	//auto playerIdx = pCompMask->getSolution(0)[1];  // neighbourd of player 0 in first non-preconstructed row
+	auto const* pSolMasksIniIdx = pCompMask->numPlayerSolutionsPtr() - 1;// -(selectPlayerByMask() ? 0 : 1); // Andrei: It would be better fo fix this discrepancy;
+	auto pSolMasksCompIdx = numPlayerSolutionsPtr() - 1;// +(selectPlayerByMask() ? 1 : 0);
+
 	uint idxSol = 0;
 	m_pSolIdx[0] = 0;
 
 	auto* pUnusedPlaeyerMask = selectPlayerByMask()? rowsCompatMasks() - 1 : NULL;
 	const auto offsetSrc = pCompMask->lenSolutionMask() - 1;
 	auto nRow = numPreconstructedRows();
+	pSolMasksCompIdx[nRow] = 1;
+	OUTPUT_PRECALC_SOLUTION(idxSol, pCompMask->getSolution(solIdx), "bbb.txt");
+
 	bool maskDefined = true;
-	auto playerIdx = pCompMask->getSolution(0)[1] - 1;
-	while (true) {
-		// Skip all bytes/longs equal to 0
-		auto firstB = first >> SHIFT;
-		while (firstB < lastB && !pCompSol[firstB])
-			firstB++;
+	auto availablePlayers = pCompMask->getPlayersMask();
+	auto playerIdx = minBit(availablePlayers);
+	auto last = pSolMasksIniIdx[playerIdx];
+	defineMask4SolutionIntervals(nRow++, idxSol + 1);
+	const auto recAdj = pCompMask->numRecAdj();
+	while (availablePlayers ^= (ll)1 << playerIdx) {
+		auto first = last;
+		last = pSolMasksIniIdx[playerIdx = minBit(availablePlayers)];
+		const auto lastB = IDX(last);
+		while (true) {
+			// Skip all bytes/longs equal to 0
+			auto firstB = first >> SHIFT;
+			while (firstB < lastB && !pCompSol[firstB])
+				firstB++;
 
-		if (firstB >= lastB)
-			break;
+			if (firstB >= lastB)
+				break;
 
-#if USE_64_BIT_MASK
-		unsigned long iBit;
-		_BitScanForward64(&iBit, pCompSol[firstB]);
-#else
-		const auto iBit = this->firstOnePosition(pCompSol[firstB]);
-#endif
-		if ((first = (firstB << SHIFT) + iBit) >= last)
-			break;
+			const auto iBit = minBit(pCompSol[firstB]);
+			if ((first = (firstB << SHIFT) + iBit) >= last)
+				break;
 
-		pCompSol[firstB] ^= (tmask)1 << iBit;
+			pCompSol[firstB] ^= (tmask)1 << iBit;
 
-		pSolMasksCompIdx[playerIdx]++;
-		maskDefined = (m_pSolIdx[++idxSol] = first) >= *pSolMasksIniIdx;
-		if (maskDefined) {
-			playerIdx = pCompMask->getSolution(first)[1] - 1;
-			pSolMasksIniIdx++;
-			defineMask4SolutionIntervals(nRow++, idxSol);
-		}
 
-		if (pUnusedPlaeyerMask) {
-			// Copying the mask of avalable players.
-			memcpy(pUnusedPlaeyerMask += lenSolutionMask(), pCompMask->getSolutionMask(m_pSolIdx[idxSol]) + offsetSrc,
-				AVALABLE_PLAYER_MASK_LENGTH);
-		}
+			pSolMasksCompIdx[playerIdx]++;
+			m_pSolIdx[++idxSol] = first;
+			OUTPUT_PRECALC_SOLUTION(idxSol, pCompMask->getSolution(first + recAdj), "bbb.txt");
 
-		for (uint j = 1; j < idxSol; j++) {
-			if (CHECK_MASK_BIT(pCompMask->getSolutionMask(m_pSolIdx[j]), first)) {
-				SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
+			if (pUnusedPlaeyerMask) {
+				// Copying the mask of avalable players.
+				memcpy(pUnusedPlaeyerMask += lenSolutionMask(), pCompMask->getSolutionMask(first) + offsetSrc,
+					AVALABLE_PLAYER_MASK_LENGTH);
+			}
+
+			for (uint j = 1; j < idxSol; j++) {
+				if (CHECK_MASK_BIT(pCompMask->getSolutionMask(m_pSolIdx[j]), first)) {
+					SET_MASK_BIT(rowsCompatMasks() + lenSolutionMask() * j, idxSol);
+				}
 			}
 		}
+
+		defineMask4SolutionIntervals(nRow++, idxSol+1);
 	}
 
 	ASSERT_IF(idxSol != nValidSol);
-	if (!maskDefined)
-		defineMask4SolutionIntervals(nRow, nValidSol);
+	if (recAdj) {
+		// Adjust the solution indices.
+		for (uint j = 1; j < idxSol; j++)
+			m_pSolIdx[j] += recAdj;
+	}
 
 	defineSolutionIntervals();
 	setNumLongs2Skip();

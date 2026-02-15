@@ -3,6 +3,11 @@
 #include "k-SysSupport.h"
 #include "Storage.h"
 
+
+#define PRINT_PRECALC_SOLUTIONS			0
+#define CHECK_GET_ROW					0
+#define PRINT_MASK_SOLUTION_INTERVALS	0
+
 #define COUNT_MASK_WEIGHT	0
 #define OUT_MASK_WEIGHT		0
 
@@ -31,6 +36,11 @@ typedef tchar tmask;
 #define CHECK_MASK_BIT(mask, idx)	((mask)[(idx) >> SHIFT] & MASK_BIT(idx))
 #define AVALABLE_PLAYER_MASK_LENGTH  8
 
+#if PRINT_PRECALC_SOLUTIONS 
+#define OUTPUT_PRECALC_SOLUTION(num_obj, pSol, pFileName)	outputPrecalcSolution(num_obj, pSol, pFileName)
+#else
+#define OUTPUT_PRECALC_SOLUTION(...)
+#endif
 
 #include "CompSolGraph.h"
 
@@ -54,12 +64,11 @@ public:
 	CC inline auto maskTestingCompleted() const				{ return m_pMaskTestingCompleted; }
 	CC void releaseSolMaskInfo();
 	inline void releaseCompatMaskMemory()					{ delete[] rowsCompatMasks(); }
-	void initMaskMemory(uint numSolutions, int numRecAdj = 0, int numSolAdj = 0);
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	inline auto numMasks() const							{ return m_numMasks; }
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
 	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }   // inumber of tmask's
-	CC void initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll availablePlayerMask = 0) const;
+	CC void initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll* pAvailablePlayerMask = NULL) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
@@ -67,7 +76,6 @@ public:
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	virtual uint solutionIndex(uint idx) const				{ return idx; }
 	virtual ctchar* getSolution(uint idx) const				{ return NULL; }
-	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 	CC inline const auto numRecAdj() const					{ return m_numRecAdj; }
 	CC inline auto numPlayers() const						{ return m_numPlayers; }
 	inline auto rowsCompatMasks() const						{ return m_pRowsCompatMasks; }
@@ -76,6 +84,8 @@ public:
 	CC inline const kSysParam* sysParam() const				{ return m_pSysParam; }
 	inline auto compatibleSolutions() const					{ return m_pCompatSolutions; }
 	inline auto compatibleSolutionsPntr() const				{ return &m_pCompatSolutions; }
+	inline const auto allData() const						{ return m_pAllData; }
+	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 
 #if !USE_64_BIT_MASK
 	CC inline auto firstOnePosition(tchar byte) const { return m_FirstOnePosition[byte]; }
@@ -84,6 +94,7 @@ private:
 #endif
 protected:
 	void initSolMaskIndices();
+	void initMaskMemory(uint numSolutions, int numRecAdj = 0, int numSolAdj = 0);
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	void setPlayersMask(ll mask)							{ m_playersMask[0] = m_playersMask[1] = mask; }
@@ -93,17 +104,17 @@ protected:
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
 	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
 	CC inline auto setNumSolution(uint val)					{ m_numObjects = val; }
+	void outputPrecalcSolution(int num_obj, ctchar* pSol, const char* pFileName) const;
 	CC void defineSolutionIntervals();
 	int setNumLongs2Skip(bool adjustRecCounter = false);
 	void defineMask4SolutionIntervals(int nRow, unsigned int last);
-	CC inline unsigned long minPlayer(ll availablePlayers) const {
+	CC inline unsigned long minBit(ll availablePlayers) const {
 #if USE_64_BIT_MASK
 		unsigned long iBit;
 		_BitScanForward64(&iBit, availablePlayers);
 		return iBit;
 #else
-#pragma message("A GPU-equivalent function similar to `_BitScanForward64` needs to be implemented.")
-		return 0;
+		return this->firstOnePosition(availablePlayers);
 #endif
 	}
 private:
@@ -123,6 +134,8 @@ private:
 	const int m_numDaysResult;
 	const bool m_bSelectPlayerByMask;      // Find players by mask of unused players
 	const kSysParam* m_pSysParam;
+	const alldata* m_pAllData;
+
 	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	uint m_lastInFirstSet;
@@ -148,7 +161,7 @@ class CCompressedMask : public CCompatMasks {
 public:
 	CCompressedMask(const kSysParam* pSysParam, const alldata* pAllData) : CCompatMasks(pSysParam, pAllData) {}
 	~CCompressedMask()							{ releaseSolIndices(); }
-	void compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask);
+	void compressCompatMasks(tmask* pCompSol, const CCompatMasks* pCompMask, uint solIdx);
 	virtual uint solutionIndex(uint idx) const	{ return *(solIndices() + idx); }
 private:
 	inline auto solIndices() const				{ return m_pSolIdx; }

@@ -1,7 +1,5 @@
 #include "Table.h"
 
-#define PRINT_PRECOMPILED_SOLUTIONS      0
-
 #define USE_PREVIOUS_SOLUTIONS	0
 #if USE_PREVIOUS_SOLUTIONS
 int my_counter = 0;
@@ -24,7 +22,6 @@ int ggg = 0;
 #endif
 
 CC CRowStorage::CRowStorage(const kSysParam* pSysParam, int numPlayers, int numObjects, const alldata* pAllData) :
-	m_pAllData(pAllData),
 	m_bGroupSize2(pAllData->groupSize() == 2),
 	m_bUseCombinedSolutions(pSysParam->val[t_useCombinedSolutions]),
 	m_step(pSysParam->val[t_MultiThreading] == 2 ? pSysParam->val[t_numThreads] : 1),
@@ -59,12 +56,12 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr, ctchar lastNeighborOfPla
 	m_stepCombSolution = 0;
 	ll playersMask = -1;
 	int shift = numPlayers();
-	const auto groupSize = m_pAllData->groupSize();
+	const auto groupSize = allData()->groupSize();
 	if (!groupSize2()) {
 		// Create a mask to manage players utilized in the predefined rows of the matrix.
 		// Excluding players of the first group from ...
 		playersMask <<= groupSize;						// ...first row
-		auto const* pSolution = m_pAllData->result();
+		auto const* pSolution = allData()->result();
 		for (int j = numPreconstructedRows(); --j;) {   // ... remaining pre-constructed rows
 			pSolution += numPlayers();
 			for (auto i = groupSize; --i;)
@@ -84,7 +81,7 @@ CC void CRowStorage::initPlayerMask(ctchar* pFirstMatr, ctchar lastNeighborOfPla
 		}
 	}
 
-	if (m_pAllData->param(t_CBMP_Graph) > 1) {
+	if (allData()->param(t_CBMP_Graph) > 1) {
 		// Remove players flagged as ineligible from all generated solutions
 		for (int i = groupSize; i < numPlayers(); i += groupSize)
 			playersMask &= ((ll)-1 ^ ((ll)1 << i));
@@ -152,24 +149,15 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 		reallocStorageMemory(m_numObjectsMax <<= 1);
 		m_pMaskStorage->reallocStorageMemory(m_numObjectsMax);
 	}
-#if PRINT_PRECOMPILED_SOLUTIONS && !USE_CUDA
-	FOPEN_F(f, "aaa.txt", m_numObjects ? "a" : "w");
-	char buf[32];
-	if (!m_numObjects) {
-		// Output of the last precomputed row
-		sprintf_s(buf, "%3d: ", -1);
-		outMatrix(m_pAllData->result() + (numPreconstructedRows() - 1) * numPlayers(), 1, numPlayers(), m_pAllData->groupSize(), 0, f, false, false, buf);
-	}
-	sprintf_s(buf, "%3d: ", m_numObjects);
-	outMatrix(pRow, 1, numPlayers(), m_pAllData->groupSize(), 0, f, false, false, buf, -1, NULL, false);
-	FCLOSE_F(f);
-#endif
+
+	OUTPUT_PRECALC_SOLUTION(m_numObjects, pRow, "aaa.txt");
+
 	(this->*m_fRowToBitmask)(pRow, (tmask*)(m_pMaskStorage->getObject(m_numObjects)));
 	auto* pntr = getObject(m_numObjects++);
 #if !USE_CUDA
 	const auto ptr = pntr - lenObject() + 1;
 
-	auto i = m_pAllData->groupSize();
+	auto i = allData()->groupSize();
 	while (--i) {
 		if (!(getPlayersMask() & ((ll)1 << pRow[i]))) {
 			PRINT_RED("\nSolution rejected : Player %d was already assigned to one of predefined rows, violating constraints.\n", pRow[i]);
@@ -178,7 +166,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 	}
 
 	const auto playersMask = getPlayersMask(1);
-	if (!groupSize2() && playersMask && pRow[1] > (i = minPlayer(playersMask))) {
+	if (!groupSize2() && playersMask && pRow[1] > (i = minBit(playersMask))) {
 		//PRINT_RED(".");
 		//printTable("Solution", pRow, 1, m_numPlayers, m_pAllData->groupSize(), 0, true);
 		//PRINT_RED("\nSolution rejected : The solution involving player #%d, should precede the solution for player #%d\n", i, pRow[1]);
@@ -220,7 +208,7 @@ CC bool CRowStorage::addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors
 
 	if (selectPlayerByMask()) {
 		// Mark referenced players:
-		for (int i = m_pAllData->groupSize(); --i;)
+		for (int i = allData()->groupSize(); --i;)
 			updatePlayersMask((ll)-1 ^ ((ll)1 << pRow[i]));
 	}
 #endif
@@ -247,10 +235,10 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 	const auto p2 = getObject(idx);
 	ASSERT_IF(!p2);
 
-	if (!m_pAllData->m_allRowPairsSameCycles)
+	if (!allData()->m_allRowPairsSameCycles)
 		return true;
 
-	TrCycles* tc = &m_pAllData->m_TrCyclesFirst2Rows[0];
+	TrCycles* tc = &allData()->m_TrCyclesFirst2Rows[0];
 	const auto p1Neighbors = neighborsi + numPlayers();
 	const auto p2Neighbors = p2 + numPlayers() * 2;
 	const auto p1 = p1Neighbors - numPlayers() * 2;
@@ -272,8 +260,8 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 	TrCycles tcs;
 	tcs.irow1 = tcs.irow2 = 0;
 	int iret;
-	if (m_pAllData->m_firstCycleSet) {
-		iret = m_pAllData->getCyclesFromNeighbors2(p1Neighbors, p2Neighbors);
+	if (allData()->m_firstCycleSet) {
+		iret = allData()->getCyclesFromNeighbors2(p1Neighbors, p2Neighbors);
 		if (iret <= 0)
 			return false;
 		if (m_use3RowCheck) {
@@ -285,7 +273,7 @@ CC bool CRowStorage::checkCompatibility(ctchar* neighborsi, const ll* rm, uint i
 		return true;
 	}
 
-	iret = m_pAllData->u1fGetCycleLength(&tcs, neighborsi, p2 + numPlayers(), neighborsi - numPlayers(), p2, eCheckErrors);
+	iret = allData()->u1fGetCycleLength(&tcs, neighborsi, p2 + numPlayers(), neighborsi - numPlayers(), p2, eCheckErrors);
 	if (iret <= 0)
 		return false;
 
@@ -370,7 +358,7 @@ CC bool CRowStorage::generateCompatibilityMasks(tmask* pMaskOut, uint solIdx, ui
 		// We will store it as 0's of corresponding bites.
 		auto* pMaskOutLong = (ll*)pMaskOut + lenSolutionMask() - 1;
 		*pMaskOutLong = getPlayersMask();
-		for (auto i = m_pAllData->groupSize(); --i;)
+		for (auto i = allData()->groupSize(); --i;)
 			*pMaskOutLong ^= (ll)1 << pSolution[i];
 
 		if (pUsedPlayers)
@@ -447,7 +435,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	fprintf(f, "Matrix #%4d", ggg);
 #endif
 	const auto* param = sysParam()->val;
-	const auto pGroupInfo = m_pAllData->groupInfo(param[t_useRowsPrecalculation]);
+	const auto pGroupInfo = allData()->groupInfo(param[t_useRowsPrecalculation]);
 	defineSolutionIntervals();
 
 	// Define the number of first long long's we don't need to copy to the next row.
@@ -464,7 +452,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 	auto numRowToConstruct = (uint)(numDaysResult() - numPreconstructedRows());
 	if (numRowToConstruct > m_numObjects) {
-		if (m_pAllData->groupSize() == 2) {
+		if (allData()->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("Cannot construct %d rows: only %d preconstructed solutions available.\n",
 				numRowToConstruct, m_numObjects);
 			REPORT_REJECTION(5);
@@ -531,7 +519,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 				// We need to mark players who will be potentially used with the last portion of solutions
 				for (; first < last; first++) {
 					auto* pSolution = getObject(first);
-					for (auto i = m_pAllData->groupSize(); --i;)
+					for (auto i = allData()->groupSize(); --i;)
 						*pUsedPlayers &= (ll)(-1) ^ ((ll)1 << pSolution[i]);
 				}
 			}
@@ -543,12 +531,12 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 		bool flag = false;
 		for (; first < last; first++) {
-			flag |= generateCompatibilityMasks(pCompatMask, first, last, m_pAllData, pUsedPlayers);
+			flag |= generateCompatibilityMasks(pCompatMask, first, last, allData(), pUsedPlayers);
 			pCompatMask += lenSolutionMask();
 		}
 
 #ifndef USE_CUDA
-		if (m_pAllData->printFlag())
+		if (allData()->printFlag())
 			printf("Row %2d Comp=%d NotComp=%d\n", i + 1, globPairsComp, globPairsNotComp2);
 
 		globPairsComp = globPairsNotComp2 = 0;
@@ -574,7 +562,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 
 	if (pUsedPlayers && *pUsedPlayers) {
-		if (m_pAllData->groupSize() == 2) {
+		if (allData()->groupSize() == 2) {
 			REPORT_REJECTION_ON_SCREEN("At least one player (%llx) was not present with player 0 in any matrix row solution\n", *pUsedPlayers);
 			REPORT_REJECTION(4);
 			return 0;
@@ -585,11 +573,11 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 
 	ASSERT_IF(last != m_numSolutionTotal);
 	if (USE_GROUP_4_2_ROWS) {
-		const auto pGroupInfo = m_pAllData->groupInfo(2);
+		const auto pGroupInfo = allData()->groupInfo(2);
 		const auto groupOrder = pGroupInfo->orderOfGroup();
 		if (groupOrder > 1) {
 			m_pTRTSN_Storage = new CRepository<uint>(2 * sizeof(uint), 32);
-			const auto pRow = m_pAllData->result(numPreconstructedRows() - 1);
+			const auto pRow = allData()->result(numPreconstructedRows() - 1);
 
 			// Populate the database with all solutions that the current 
 			// solution of the 3rd row transforms into.
@@ -677,7 +665,7 @@ CC void CRowStorage::modifyMask(CStorageIdx<tchar>** ppSolRecast) {
 	const auto len = sizeof(buf) - (pBuf - buf);
 	int cntr = 0;
 #endif
-	const auto groupSize = m_pAllData->groupSize();
+	const auto groupSize = allData()->groupSize();
 	int i = numPreconstructedRows() + 1;
 	auto right = m_pPlayerSolutionCntr[numPreconstructedRows()];
 	while (++i < numPlayers()) {
@@ -758,8 +746,8 @@ CC void CRowStorage::getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pR
 	}
 
 	size_t shift = iRow * numPlayers();
-	const int adj = numRecAdj() - 1;
-	auto* pObj = getObject(pCompMask->solutionIndex(pRowSolutionIdx[iRow] - m_step));
+	const int adj = pCompMask->numRecAdj() - 1;
+	auto* pObj = getObject(this->solutionIndex(pRowSolutionIdx[iRow] - m_step));
 	while (true) {
 		memcpy(row + shift, pObj, numPlayers());
 		memcpy(neighbors + shift, pObj + numPlayers(), numPlayers());
@@ -785,7 +773,7 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 
 	if (m_pTRTSN_Storage && first) {
 		// Using the group of automorphisms on 2 rows of matrix.
-		const auto pGroupInfo = m_pAllData->groupInfo(2);
+		const auto pGroupInfo = allData()->groupInfo(2);
 		// For all previous solution of 4-th row which were NOT yet used for 2-row Aut elimination 
 		for (uint solIdx = first - m_step; solIdx < first; solIdx++) {
 			auto* pSol = getObject(solIdx);
@@ -809,23 +797,24 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 
 	if (ppCompMaskHandle && sysParam()->useFeature(t_useCompressedMasks)) {
 		CCompressedMask* pCompMasks;
-		if (*ppCompMaskHandle == this)
-			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), m_pAllData);
+		if (*ppCompMaskHandle == this) {
+			*ppCompMaskHandle = pCompMasks = new CCompressedMask(sysParam(), allData());
+		}
 		else {
 			// Clean from previous usage;
 			pCompMasks = static_cast<CCompressedMask*>(*ppCompMaskHandle);
 			pCompMasks->releaseCompatMaskMemory();
 		}
 
-		pCompMasks->compressCompatMasks(pCompatibleSolutions, this);
+		pCompMasks->compressCompatMasks(pCompatibleSolutions, this, first);
 	}
 }
 
 CC uint CRowStorage::getTransformerSolIndex(ctchar* pSol, ctchar *pPerm, uint last, uint first) const {
 	auto* pPermSolution = m_pSolMemory + numPlayers();
 	PERMUTATION_OF_PLAYERS(numPlayers(), pSol, pPerm, m_pSolMemory);
-	(m_pAllData->sortGroupsFn)(m_pSolMemory);
-	m_pAllData->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
+	(allData()->sortGroupsFn)(m_pSolMemory);
+	allData()->kmSortGroupsByFirstValue(m_pSolMemory, pPermSolution);
 #if USE_PREVIOUS_SOLUTIONS && !USE_CUDA
 	FOPEN_F(f, "bbb.txt", my_counter ? "a" : "w");
 	char buf[32];

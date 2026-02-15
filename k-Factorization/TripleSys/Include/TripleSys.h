@@ -11,7 +11,6 @@
 
 #define TestOption1 3
 
-#define CHECK_GET_ROW			0
 #define OUT_RECASTED_SOLUTIONS  0
 #define COUNT_GET_ROW_CALLS		0          // Trace and print the number of calls of CRowUsage::getRow() method 
 

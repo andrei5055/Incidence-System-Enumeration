@@ -22,7 +22,6 @@ public:
 		(*ppRowSolutionIdx)[numPreconstructedRows()] = 0;
 		return sysParam()->paramVal(t_useCombinedSolutions);
 	}
-	inline const alldata* allData() const				{ return m_pAllData; }
 	ctchar* getSolution(uint idx) const override		{ return getObject(idx); }
 
 	CC void getMatrix(tchar* row, tchar* neighbors, int nRows, uint* pRowSolutionIdx, const CCompatMasks* pCompMask) const;
@@ -68,7 +67,6 @@ private:
 	CC void modifyMask(CStorageIdx<tchar>** ppSolRecast);
 	CC int findIndexInRange(int left, int right, ctchar* pSol) const;
 
-	const alldata* m_pAllData;
 	const bool m_bGroupSize2;
 	const bool m_bUseCombinedSolutions;
 	const int m_step;
