@@ -120,8 +120,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
 
 	const auto nRow = iRow - numPreconstructedRows - 1;
+	CCompressedMask* pCompatMasksTmp = NULL;
 	if (nRow < 0 && m_pCompatMasks != m_pRowStorage) {
-		delete m_pCompatMasks;
+		pCompatMasksTmp = (CCompressedMask *)m_pCompatMasks;
 		m_pCompatMasks = m_pRowStorage;
 	}
 
@@ -132,10 +133,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 #if CHECK_GET_ROW
 	static int cntr = 0;
-#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB\\Complete_graphs\\14\\14x13x2\\P0000000004.txt"
-//#define FILE_NAME "C:\\Users\\andre\\source\\repos\\andrei5055\\Incidence-System-Enumeration\\LogsTestB24\\2-Partite_graphs\\12\\24x12x2_420\\UC0000000001.txt"
-	FOPEN_F(f, FILE_NAME, cntr++ ? "a" : "w");
-	fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", cntr, iRow, selectPlayerByMask() || nRow < 0? availablePlayers : -1);
+	extern TableAut* pReslt;
+	const char* fileName = pReslt->outFileName();
+	FOPEN_F(f, fileName, "a");
+	fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", ++cntr, iRow, selectPlayerByMask() || nRow < 0? availablePlayers : -1);
 	FCLOSE_F(f);
 #endif
 	uint last = iRow;
@@ -153,8 +154,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			pAllData->cnvPrecalcRowsCompCheck(mode);
 			first = m_threadID;
 		}
-		if (first >= last)
+		if (first >= last) {
+			delete pCompatMasksTmp;
 			return 0;
+		}
 
 		if (m_bUseCombinedSolutions) {
 			m_bSolutionReady = m_pRowStorage->maskForCombinedSolutions(m_pCompatibleSolutions + lenMask, first);
@@ -162,14 +165,14 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				return 0;
 		}
 		else {
-			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData, (CCompatMasks **)&m_pCompatMasks);
+			m_pRowStorage->passCompatibilityMask(m_pCompatibleSolutions, first, last, pAllData, (CCompatMasks**)&m_pCompatMasks, pCompatMasksTmp);
 			if (m_pCompatMasks != m_pRowStorage) {
 				availablePlayers = m_pCompatibleSolutions[m_pRowStorage->lenSolutionMask() - 1];
 				auto pPntr = (tmask **)m_pCompatMasks->compatibleSolutionsPntr();
 				m_pCompatMasks->initRowUsage(pPntr, true, &m_bSelectPlayerByMask, &availablePlayers);
 				m_pCompatSolutions = m_pCompatMasks->compatibleSolutions();
 				m_pRowSolutionIdx[iRow] = first;
-				m_pRowSolutionIdx[iRow + 1] = 1;
+				m_pRowSolutionIdx[iRow + 1] = selectPlayerByMask()? 0 : 1;
 			}
 		}
 		first += m_step;
@@ -306,14 +309,13 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 #if CHECK_GET_ROW	
 	if (selectPlayerByMask()) {
-		FOPEN_F(f1, FILE_NAME, "a");
+		FOPEN_F(f1, fileName, "a");
 		//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
 		availablePlayers = *((const ll*)(m_pCompatSolutions + (nRow + 2) * lenMask) - 1);
 		fprintf(f1, "availablePlayers = %llx\n", availablePlayers);
 		FCLOSE_F(f1);
 	}
 
-	extern TableAut * pReslt;
 	auto pRes = m_pRowStorage->allData()->result();
 	getMatrix(pRes, m_pRowStorage->allData()->neighbors(), iRow+1);
 	pReslt->printTable(pRes, true, false, iRow+1);

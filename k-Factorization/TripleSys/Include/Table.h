@@ -50,8 +50,8 @@ public:
 		if ((m_pFileName = pFileName) && resetFile)
 			std::remove(pFileName);
 	}
-protected:
 	const auto outFileName() const				{ return m_pFileName; }
+protected:
 	const char* m_pFileName = NULL;
 };
 

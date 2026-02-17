@@ -93,9 +93,9 @@ private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
 #endif
 protected:
-	void initSolMaskIndices();
 	void initMaskMemory(uint numSolutions, int numRecAdj = 0, int numSolAdj = 0);
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
+	inline auto numSolutions() const						{ return m_numSolutionTotal; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
 	void setPlayersMask(ll mask)							{ m_playersMask[0] = m_playersMask[1] = mask; }
 	CC inline void updatePlayersMask(ll val)				{ m_playersMask[1] &= val; }
@@ -104,6 +104,7 @@ protected:
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
 	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
 	CC inline auto setNumSolution(uint val)					{ m_numObjects = val; }
+	void resetSolMaskIndices(bool resetSolutionForPlaers = true);
 	void outputPrecalcSolution(int num_obj, ctchar* pSol, const char* pFileName) const;
 	CC void defineSolutionIntervals();
 	int setNumLongs2Skip(bool adjustRecCounter = false);
@@ -120,14 +121,13 @@ protected:
 private:
 protected:
 	uint m_numSolutionTotal;
-	uint m_numSolutionTotalB; // length of one solution mask in bytes
 	uint* m_pPlayerSolutionCntr = NULL;
-	uint* m_pNumLongs2Skip = NULL; // Pointer to the number of long long's that we don't need to copy for each row.
 
 	uint m_numObjects;
 private:
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	void initSolMaskIndices();
 
 	const int m_numPlayers;
 	const int m_numPreconstructedRows;     // Number of preconstructed matrix rows
@@ -136,6 +136,7 @@ private:
 	const kSysParam* m_pSysParam;
 	const alldata* m_pAllData;
 
+	uint m_numSolutionTotalB;			   // length of one solution mask in bytes
 	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	uint m_lastInFirstSet;
@@ -150,6 +151,7 @@ private:
 	uint* m_pRowSolutionMasksIdx = NULL;
 	tmask* m_pRowsCompatMasks = NULL;
 	bool* m_pMaskTestingCompleted = NULL;
+	uint* m_pNumLongs2Skip = NULL;			// Pointer to the number of long long's that we don't need to copy for each row.
 
 	tmask* m_pCompatSolutions = NULL;
 	solutionInterval m_fSolutionInterval;

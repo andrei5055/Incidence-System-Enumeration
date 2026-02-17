@@ -9,7 +9,7 @@ public:
 	CC inline void init()								{ initMaskStorage(m_numObjectsMax); }
 	CC void initPlayerMask(ctchar* pFirstMatr = NULL, ctchar lastNeighborOfPlayer0 = 0);
 	CC bool maskForCombinedSolutions(tmask* pMaskOut, uint& solIdx) const;
-	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** pCompMaskHandle = NULL) const;
+	CC void passCompatibilityMask(tmask *pCompatibleSolutions, uint first, uint last, const alldata* pAllData, CCompatMasks** pCompMaskHandle = NULL, CCompressedMask* pCompressedMask = NULL) const;
 	CC bool checkSolutionByMask(int iRow, const tmask* pToASol) const;
 	CC bool addRow(ctchar* pRow, ctchar* pNeighbors, ctchar* pNeighbors2);
 	CC int initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast = NULL);

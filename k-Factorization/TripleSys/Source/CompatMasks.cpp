@@ -57,7 +57,6 @@ void CCompatMasks::initSolMaskIndices() {
 	const auto lenMaskIdx = selectPlayerByMask() ? numPlayers() : numDaysResult();
 	releaseSolMaskInfo();
 	m_pRowSolutionMasksIdx = new uint[lenMaskIdx];
-	memset(m_pRowSolutionMasksIdx, 0, lenMaskIdx * sizeof(m_pRowSolutionMasksIdx[0]));
 
 	m_pRowSolutionMasks = new tmask[lenMaskIdx];
 	memset(m_pRowSolutionMasks, 0, lenMaskIdx * sizeof(m_pRowSolutionMasks[0]));
@@ -68,14 +67,25 @@ void CCompatMasks::initSolMaskIndices() {
 #endif
 }
 
-void CCompatMasks::initMaskMemory(uint numSolutions, int numRecAdj, int numSolAdj)
+void CCompatMasks::resetSolMaskIndices(bool resetSolutionForPlaers) {
+	if (!m_pRowSolutionMasksIdx) // Previously allocated memory for thee indices could be released 
+		initSolMaskIndices();    // Let's allocate it again 
+
+	const auto lenMaskIdx = selectPlayerByMask() ? numPlayers() : numDaysResult();
+	memset(m_pRowSolutionMasksIdx, 0, lenMaskIdx * sizeof(m_pRowSolutionMasksIdx[0]));
+	memset(m_pRowSolutionMasks, 0, lenMaskIdx * sizeof(m_pRowSolutionMasks[0]));
+	if (resetSolutionForPlaers)
+		memset(numPlayerSolutionsPtr(), 0, numPlayers() * sizeof(m_pPlayerSolutionCntr[0]));
+}
+
+void CCompatMasks::initMaskMemory(uint nSolutions, int numRecAdj, int numSolAdj)
 {
 	// Adding additional long long when we use groupSize > 2
-	setNumSolutions(numSolutions);
-	m_numSolutionTotalB = ((numSolutions - numRecAdj + 7) / 8 + 7) / 8 * 8 + (selectPlayerByMask() ? AVALABLE_PLAYER_MASK_LENGTH : 0);
+	setNumSolutions(nSolutions);
+	m_numSolutionTotalB = ((numSolutions() - numRecAdj + 7) / 8 + 7) / 8 * 8 + (selectPlayerByMask() ? AVALABLE_PLAYER_MASK_LENGTH : 0);
 	m_lenSolutionMask = numSolutionTotalB() / sizeof(tmask);
 
-	m_numMasks = m_numSolutionTotal - (numRecAdj - (m_solAdj = numSolAdj));
+	m_numMasks = numSolutions() - (numRecAdj - (m_solAdj = numSolAdj));
 	releaseCompatMaskMemory();
 	m_pRowsCompatMasks = new tmask[numMasks() * lenSolutionMask()];
 	memset(rowsCompatMasks(), 0, numMasks() * numSolutionTotalB());
@@ -245,7 +255,7 @@ uint CCompatMasks::countMaskFunc(const tmask* pCompSolutions, size_t numMatrRow,
 			int i = numPreconstructedRows() - 1;
 			unsigned int first = getSolutionRange(last, availablePlayers, ++i);
 			numFirstSol = last - first;
-			matrWeight = numMatrRow * (m_numSolutionTotal - m_numRecAdj);
+			matrWeight = numMatrRow * (numSolutions() - m_numRecAdj);
 
 			matrWeight -= numFirstSol * numFirstSol;
 			while (availablePlayers) {
@@ -302,6 +312,7 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 	const auto nValidSol = pCompMask->countMaskFunc(pCompSol); 
 
 	initMaskMemory(nValidSol);
+	resetSolMaskIndices();
 	releaseSolIndices();
 	m_pSolIdx = new uint[nValidSol+1];
 
