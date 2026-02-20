@@ -2,11 +2,12 @@
 
 CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup) :
 	m_pRowStorage(pRowStorage) {
-	m_nRowMax = pRowStorage->numPlayers() - 2;
+	m_nRowMax = pRowStorage->sysParam()->numFactors();
 	const int nRowsRes = pRowStorage->sysParam()->paramVal(t_nRowsInResultMatrix);
-	if (nRowsRes && m_nRowMax > nRowsRes - 1)
-		m_nRowMax = nRowsRes - 1;
+	if (nRowsRes && m_nRowMax > nRowsRes)
+		m_nRowMax = nRowsRes;
 
+	m_nRowMax--;
 	m_nGroups = m_nRowMax + 2 - pRowStorage->useCliquesAfterRow();
 	if (m_nGroups > 3) {
 		m_nGroups -= 3;

@@ -25,5 +25,6 @@ slnx.*
 
 /k-Factorization/Logs*
 /k-Factorization/*.tar
+/k-Factorization/*/*/Debug*/*
 /Log*
 

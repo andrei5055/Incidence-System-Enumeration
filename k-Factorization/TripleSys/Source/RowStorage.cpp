@@ -469,8 +469,8 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 	FCLOSE_F(f);
 #endif
 
-	const auto useCombinedSolutions = param[t_useCombinedSolutions];
-	initMaskMemory(m_numObjects, numRecAdj(), useCombinedSolutions || m_bUseAut ? numRecAdj() : 0);
+	const auto useCombinedSolutions = param[t_useCombinedSolutions];   
+	initMaskMemory(m_numObjects, setNumMasks(), numRecAdj(), useCombinedSolutions || m_bUseAut ? numRecAdj() : 0);
 	resetSolMaskIndices(false);
 
 	tmask* pCompatMask = rowsCompatMasks();
@@ -633,7 +633,7 @@ CC int CRowStorage::initCompatibilityMasks(CStorageIdx<tchar>** ppSolRecast) {
 #endif
 		modifyMask(ppSolRecast);
 #if COUNT_MASK_WEIGHT
-		countMaskFunc(getSolutionMask(0), numMasks(), prevWeight);
+		countMaskFunc(getSolutionMask(0), numMasks(), 0, prevWeight);
 #endif
 	}
 	return 1;

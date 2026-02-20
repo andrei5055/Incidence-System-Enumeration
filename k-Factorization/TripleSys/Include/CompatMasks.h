@@ -65,14 +65,13 @@ public:
 	CC void releaseSolMaskInfo();
 	inline void releaseCompatMaskMemory()					{ delete[] rowsCompatMasks(); }
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
-	inline auto numMasks() const							{ return m_numMasks; }
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
 	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }   // inumber of tmask's
 	CC void initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll* pAvailablePlayerMask = NULL) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
 	}
-	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, uint prevWeight = 0) const;
+	CC uint countMaskFunc(const tmask* pCompatibleSolutions, size_t numMatrRow = 1, int bytes2skeep = 0, uint prevWeight = 0) const;
 	CC uint getSolutionRange(uint& last, ll& availablePlayers, int i) const;
 	virtual uint solutionIndex(uint idx) const				{ return idx; }
 	virtual ctchar* getSolution(uint idx) const				{ return NULL; }
@@ -85,6 +84,7 @@ public:
 	inline auto compatibleSolutions() const					{ return m_pCompatSolutions; }
 	inline auto compatibleSolutionsPntr() const				{ return &m_pCompatSolutions; }
 	inline const auto allData() const						{ return m_pAllData; }
+	inline auto numMasks() const							{ return m_numMasks; }
 	CC inline const auto getPlayersMask(int idx = 0) const	{ return m_playersMask[0]; }
 
 #if !USE_64_BIT_MASK
@@ -93,7 +93,8 @@ private:
 	tchar m_FirstOnePosition[256]; // Table for fast determination of the first 1's position in byte.
 #endif
 protected:
-	void initMaskMemory(uint numSolutions, int numRecAdj = 0, int numSolAdj = 0);
+	int setNumMasks();
+	void initMaskMemory(uint numSolutions, int numMasks = 0, int numRecAdj = 0, int numSolAdj = 0);
 	inline void setNumSolutions(uint numSol)				{ m_numSolutionTotal = numSol; }
 	inline auto numSolutions() const						{ return m_numSolutionTotal; }
 	inline void resetSolutionMask(uint idx) const			{ memset(rowsCompatMasks() + lenSolutionMask() * idx, 0, numSolutionTotalB()); }
@@ -104,6 +105,7 @@ protected:
 	inline auto lenDayResults() const						{ return m_lenDayResults; }
 	void setNumRecAdj(int val)								{ m_numRecAdj = val; }
 	CC inline auto setNumSolution(uint val)					{ m_numObjects = val; }
+	inline auto solAdj() const								{ return m_solAdj; }
 	void resetSolMaskIndices(bool resetSolutionForPlaers = true);
 	void outputPrecalcSolution(int num_obj, ctchar* pSol, const char* pFileName) const;
 	CC void defineSolutionIntervals();
