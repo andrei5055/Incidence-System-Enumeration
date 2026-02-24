@@ -115,6 +115,7 @@ ll getRowCallsCalls = 0;
 #endif
 
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
+	static int ggg; ggg++; // 1444331332
 	incGetRowCalls();
 	const auto numPreconstructedRows = m_pCompatMasks->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
@@ -220,29 +221,33 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		}
 #endif
 		// Construct the intersection of compatible solutions only if we will use it.
-		const auto pPrevA = (const ll*)(pCompSol);
+		const auto* const pPrevA = (const ll*)(pCompSol);
 		auto pToA = (ll*)(pCompSol + lenMask);
-		const auto pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
-		unsigned int numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
-		const auto pPrevAStart = pPrevA + numLongs2Skip;
+		const auto* const pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
+		const auto numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
+		const auto* const pPrevAStart = pPrevA + numLongs2Skip;
 		int jNum = lenMask - numLongs2Skip;
 		auto pToAStart = pToA + numLongs2Skip;
-		const auto pFromAStart = pFromA + numLongs2Skip;
-		const auto pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
+		const auto* const pFromAStart = pFromA + numLongs2Skip;
+		const auto* const pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
 		if (pRowSolutionMasksIdx) {
 			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
 			if (!selectPlayerByMask()) {
-				// Usually, we should be here only when groupSize == 2 and it's NOT 
-				// a complete balanced multipartite graph case.
-				auto pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
+				// Usually, we should be here only when groupSize == 2 and 
+				// it's NOT a complete balanced multipartite graph case.
+				const auto* const pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
 				int i = iRow;
-				auto jMax = pRowSolutionMasksIdx[iRow];
+				auto jMax = pRowSolutionMasksIdx[i];
+				int k = 0;
 				for (; ++i <= m_nRowMax;) {
 					auto j = jMax;
 					jMax = pRowSolutionMasksIdx[i];
-					jNum = jMax - j + 1;
+					const auto jRead = j + k;
+					jNum = jMax - jRead + 1;
+					k = 1;
 					testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
-					multiplyAll(pToA + j, pPrevA + j, pFromA + j, jNum); // from j to <= jMax 
+					ASSERT_IF(jRead + jNum > lenMask);
+					multiplyAll(pToA + jRead, pPrevA + jRead, pFromA + jRead, jNum); // from j to <= jMax 
 
 					// Check left, middle and right parts of the solution interval for i-th row
 					auto mask = pRowSolutionMasks[i - 1];
