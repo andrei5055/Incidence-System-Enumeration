@@ -53,7 +53,10 @@
   <ItemGroup>
     <ClInclude Include="Include\CDTools.h" />
     <ClInclude Include="Include\CudaAttributes.h" />
+    <ClInclude Include="Include\CudaInfo.h" />
+    <ClInclude Include="Include\CudaSupport.h" />
     <ClInclude Include="Include\GroupOrder.h" />
+    <ClInclude Include="Include\Intrinsics.h" />
     <ClInclude Include="Include\k-SysSupport.h" />
   </ItemGroup>
   <ItemGroup>

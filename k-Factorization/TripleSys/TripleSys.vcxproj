@@ -444,6 +444,7 @@
     <ClCompile Include="Source\GraphCanonizer.cpp" />
     <ClCompile Include="Source\improveMatrix.cpp" />
     <ClCompile Include="Source\initStartValues.cpp" />
+    <ClCompile Include="Source\Intrinsics.cpp" />
     <ClCompile Include="Source\ioSupport.cpp" />
     <ClCompile Include="Source\kmSupport.cpp" />
     <ClCompile Include="Source\kOrbits.cpp" />
@@ -476,7 +477,6 @@
     <ClInclude Include="Include\CheckCanon.h" />
     <ClInclude Include="Include\Combination.h" />
     <ClInclude Include="Include\CompatMasks.h" />
-    <ClInclude Include="Include\CudaInfo.h" />
     <ClInclude Include="Include\cycles.h" />
     <ClInclude Include="Include\data.h" />
     <ClInclude Include="Include\Global.h" />

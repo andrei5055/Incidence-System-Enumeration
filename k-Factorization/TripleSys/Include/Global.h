@@ -5,8 +5,6 @@
 #define nPlayers  21
 #define GroupSize 3
 
-#define USE_INTRINSIC		!USE_CUDA
-
 // The maximum numbers of players and groups per day for which the program is compiled.
 #define MAX_PLAYER_NUMBER			92
 #define MAX_GROUP_NUMBER			(MAX_PLAYER_NUMBER / 2)
