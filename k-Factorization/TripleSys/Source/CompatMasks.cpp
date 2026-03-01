@@ -38,8 +38,8 @@ CCompatMasks::CCompatMasks(const kSysParam* pSysParam, const alldata* pAllData) 
 CCompatMasks::~CCompatMasks() {
 	releaseCompatMaskMemory();
 	releaseSolMaskInfo();
+	releaseCompatibleSolutionMasks();
 	delete[] numPlayerSolutionsPtr();
-	delete[] m_pCompatSolutions;
 }
 
 CC void CCompatMasks::releaseSolMaskInfo() {
@@ -78,12 +78,20 @@ void CCompatMasks::resetSolMaskIndices(bool resetSolutionForPlayers) {
 		memset(numPlayerSolutionsPtr(), 0, lenMaskIdx * sizeof(m_pPlayerSolutionCntr[0]));
 }
 
+void CCompatMasks::releaseCompatibleSolutionMasks() {
+	delete[] compatibleSolutions();
+	m_pCompatSolutions = NULL;
+}
+
 void CCompatMasks::initMaskMemory(uint nSolutions, int nMasks, int numRecAdj, int numSolAdj)
 {
 	// Adding additional long long when we use groupSize > 2
 	setNumSolutions(nSolutions);
 	m_numSolutionTotalB = ((numSolutions() - numRecAdj + 7) / 8 + 7) / 8 * 8 + (selectPlayerByMask() ? AVALABLE_PLAYER_MASK_LENGTH : 0);
+	const auto prevLenSolMask = lenSolutionMask();
 	m_lenSolutionMask = numSolutionTotalB() / sizeof(tmask);
+	if (prevLenSolMask < lenSolutionMask())
+		releaseCompatibleSolutionMasks();
 
 	m_solAdj = numSolAdj;
 	releaseCompatMaskMemory();
@@ -188,7 +196,9 @@ void CCompatMasks::defineMask4SolutionIntervals(int nRow, uint last)
 	}
 
 	fff = nRow;
-	fprintf(f, "nRow = %2d  last = %4d\n", nRow, last);
+	
+	const auto remm = REM(last);
+	fprintf(f, "nRow = %2d  last = %4d  %016llx\n", nRow, last, remm? ((ll)-1)<<remm : 0);
 	FCLOSE_F(f);
 #endif
 	auto* pRowSolutionMasksIdx = rowSolutionMasksIdx();
@@ -382,9 +392,6 @@ void CCompressedMask::compressCompatMasks(tmask* pCompSol, const CCompatMasks* p
 			pSolMasksCompIdx[playerIdx]++;
 			m_pSolIdx[++idxSol] = first;
 			OUTPUT_PRECALC_SOLUTION(idxSol, pCompMask->getSolution(first + recAdj), "bbb.txt");
-
-			//if (idxSol >= nMasks)
-			//	continue;
 
 			if (pUnusedPlaeyerMask && idxSol < nMasks) {
 				// Copying the mask of available players.

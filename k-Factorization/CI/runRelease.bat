@@ -11,5 +11,6 @@ SET paramRel=..\..\param.txt
 IF NOT "%1" == "" (
     SET paramRel=%1
 )
-cmd /k k-Sys.exe %paramRel%
+
+cmd /k k-Sys.exe "%paramRel%"
 

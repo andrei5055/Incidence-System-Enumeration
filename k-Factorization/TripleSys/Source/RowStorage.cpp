@@ -801,7 +801,6 @@ CC void CRowStorage::passCompatibilityMask(tmask* pCompatibleSolutions, uint fir
 		else {
 			// Clean from previous usage;
 			pCompMasks = static_cast<CCompressedMask*>(*ppCompMaskHandle);
-//			pCompMasks->releaseCompatMaskMemory();
 		}
 
 		pCompMasks->compressCompatMasks(pCompatibleSolutions, this, first);

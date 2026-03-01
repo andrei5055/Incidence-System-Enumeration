@@ -115,7 +115,6 @@ ll getRowCallsCalls = 0;
 #endif
 
 CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
-	static int ggg; ggg++; // 1444331332
 	incGetRowCalls();
 	const auto numPreconstructedRows = m_pCompatMasks->numPreconstructedRows();
 	ASSERT_IF(iRow < numPreconstructedRows || iRow >= m_pCompatMasks->numDaysResult());
@@ -133,12 +132,16 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		: m_pRowStorage->getPlayersMask();
 
 #if CHECK_GET_ROW
+	static ll ggg; ggg++;
+	const ll gBnd = 15405721;// 1444331332;// 1685633 //6486548; //
 	static int cntr = 0;
 	extern TableAut* pReslt;
 	const char* fileName = pReslt->outFileName();
-	FOPEN_F(f, fileName, "a");
-	fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", ++cntr, iRow, selectPlayerByMask() || nRow < 0? availablePlayers : -1);
-	FCLOSE_F(f);
+	if (ggg > gBnd - 50) {
+		FOPEN_F(f, fileName, "a");
+		fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", ++cntr, iRow, selectPlayerByMask() || nRow < 0 ? availablePlayers : -1);
+		FCLOSE_F(f);
+	}
 #endif
 	uint last = iRow;
 	auto& first = m_pCompatMasks->getSolutionInterval(m_pRowSolutionIdx + last, &last, availablePlayers);
@@ -224,88 +227,84 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 		const auto* const pPrevA = (const ll*)(pCompSol);
 		auto pToA = (ll*)(pCompSol + lenMask);
 		const auto* const pFromA = (const ll*)(m_pCompatMasks->getSolutionMask(first));
-		const auto numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
-		const auto* const pPrevAStart = pPrevA + numLongs2Skip;
-		int jNum = lenMask - numLongs2Skip;
-		auto pToAStart = pToA + numLongs2Skip;
-		const auto* const pFromAStart = pFromA + numLongs2Skip;
 		const auto* const pRowSolutionMasksIdx = m_pCompatMasks->rowSolutionMasksIdx();
-		if (pRowSolutionMasksIdx) {
-			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, jNum, nRep);
-			if (!selectPlayerByMask()) {
-				// Usually, we should be here only when groupSize == 2 and 
-				// it's NOT a complete balanced multipartite graph case.
-				const auto* const pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
-				int i = iRow;
-				auto jMax = pRowSolutionMasksIdx[i];
-				int k = 0;
-				for (; ++i <= m_nRowMax;) {
-					auto j = jMax;
-					jMax = pRowSolutionMasksIdx[i];
-					const auto jRead = j + k;
-					jNum = jMax - jRead + 1;
-					k = 1;
-					testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
-					ASSERT_IF(jRead + jNum > lenMask);
-					multiplyAll(pToA + jRead, pPrevA + jRead, pFromA + jRead, jNum); // from j to <= jMax 
+		if (pRowSolutionMasksIdx && !selectPlayerByMask()) {
+			// Usually, we should be here only when groupSize == 2 and 
+			// it's NOT a complete balanced multipartite graph case.
+			const auto* const pRowSolutionMasks = m_pCompatMasks->rowSolutionMasks();
+			int i = iRow;
+			auto jMax = pRowSolutionMasksIdx[i];
+			int k = 0;
+			for (; ++i <= m_nRowMax;) {
+				auto j = jMax;
+				jMax = pRowSolutionMasksIdx[i];
+				const auto jRead = j + k;
+				const auto jNum = jMax - jRead + 1;
+				k = 1;
+				auto mask = pRowSolutionMasks[i - 1];
+				testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
+				ASSERT_IF(jRead + jNum > lenMask);
+				multiplyAll(pToA + jRead, pPrevA + jRead, pFromA + jRead, jNum); // from j to <= jMax 
 
-					// Check left, middle and right parts of the solution interval for i-th row
-					auto mask = pRowSolutionMasks[i - 1];
-					if (mask) {
-						if (mask & pToA[j])
-							continue;  // at least one solution masked by left part of the interval is still valid
+				// Check left, middle and right parts of the solution interval for i-th row
+				if (mask) {
+					if (mask & pToA[j])
+						continue;  // at least one solution masked by left part of the interval is still valid
 
-						j++;
-					}
-					// middle part
+					j++;
+				}
+
+				// middle part
 #if 0
-					while (j < jMax && !pToA[j]) {
-						j++;
-					}
-					// we do not need "if" below if we use "while" below instead of while above
-					if (j < jMax) {
-						continue;   // at least one solution masked by middle part of the interval is still valid
-					}
+				while (j < jMax && !pToA[j])
+					j++;
+						
+				// we do not need "if" below if we use "while" below instead of while above
+				if (j < jMax)
+					continue;   // at least one solution masked by middle part of the interval is still valid					}
 #else
-					while (j + 4 <= jMax) {
+				while (j + 4 <= jMax) {
 #if USE_INTRINSIC
-						__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
-						if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
+					__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
+					if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
 #else
-						if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
-							goto Cont1;
+					if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
+						goto Cont1;
 #endif
-						j += 4;
-					}
+					j += 4;
+				}
 
-					switch (jMax - j) {
-					case 3: if (pToA[j + 2]) continue;
-					case 2: if (pToA[j + 1]) continue;
-					case 1: if (pToA[j]) continue;
-					}
+				switch (jMax - j) {
+				case 3: if (pToA[j + 2]) continue;
+				case 2: if (pToA[j + 1]) continue;
+				case 1: if (pToA[j]) continue;
+				}
 #endif
-					// There are no valid solutions with the indices inside 
-					// the interval defined by set of long longs
-					mask = pRowSolutionMasks[i];
-					// If mask != 0, we need to check the right side of the intervals.
+				// There are no valid solutions with the indices inside 
+				// the interval defined by set of long longs
+				mask = pRowSolutionMasks[i];
+				// If mask != 0, we need to check the right side of the intervals.
 
-					if (!mask || !((~mask) & pToA[jMax]))
-						break;
+				if (!mask || !((~mask) & pToA[jMax]))
+					break;
 					
-				Cont1:;
-				}
-
-				if (i <= m_nRowMax) {
-					first++;
-					continue;
-				}
+			Cont1:;
 			}
-			else {
-				multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
+
+			if (i <= m_nRowMax) {
+				first++;
+				continue;
 			}
 		}
-		else
-			multiplyAll(pToAStart, pPrevAStart, pFromAStart, jNum);
+		else {
+			const auto numLongs2Skip = m_pCompatMasks->numLongs2Skip(iRow);
+			auto pToAStart = pToA + numLongs2Skip;
+			const auto* const pPrevAStart = pPrevA + numLongs2Skip;
+			const auto* const pFromAStart = pFromA + numLongs2Skip;
+			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, lenMask - numLongs2Skip, nRep);
+			multiplyAll(pToAStart, pPrevAStart, pFromAStart, lenMask - numLongs2Skip);
+		}
+
 
 		break;
 	}
@@ -313,17 +312,19 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 	first++;
 
 #if CHECK_GET_ROW	
-	if (selectPlayerByMask()) {
-		FOPEN_F(f1, fileName, "a");
-		//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
-		availablePlayers = *((const ll*)(m_pCompatSolutions + (nRow + 2) * lenMask) - 1);
-		fprintf(f1, "availablePlayers = %llx\n", availablePlayers);
-		FCLOSE_F(f1);
-	}
+	if (ggg > gBnd - 50) {
+		if (selectPlayerByMask()) {
+			FOPEN_F(f1, fileName, "a");
+			//fprintf(f1, "first = %2d  availablePlayers = %lld\n", first, availablePlayers);
+			availablePlayers = *((const ll*)(m_pCompatSolutions + (nRow + 2) * lenMask) - 1);
+			fprintf(f1, "availablePlayers = %llx\n", availablePlayers);
+			FCLOSE_F(f1);
+		}
 
-	auto pRes = m_pRowStorage->allData()->result();
-	getMatrix(pRes, m_pRowStorage->allData()->neighbors(), iRow+1);
-	pReslt->printTable(pRes, true, false, iRow+1);
+		auto pRes = m_pRowStorage->allData()->result();
+		getMatrix(pRes, m_pRowStorage->allData()->neighbors(), iRow + 1);
+		pReslt->printTable(pRes, true, false, iRow + 1);
+	}
 #endif
 	return 1;
 }

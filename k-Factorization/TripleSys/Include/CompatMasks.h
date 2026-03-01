@@ -129,6 +129,7 @@ protected:
 private:
 	CC uint& solutionInterval2(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
 	CC uint& solutionInterval3(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const;
+	void releaseCompatibleSolutionMasks();
 	void initSolMaskIndices();
 
 	const int m_numPlayers;
@@ -139,7 +140,7 @@ private:
 	const alldata* m_pAllData;
 
 	uint m_numSolutionTotalB;			   // length of one solution mask in bytes
-	uint m_lenSolutionMask;				   // length of one solution mask in tmask units 
+	uint m_lenSolutionMask = 0;			   // length of one solution mask in tmask units 
 	uint m_numMasks;
 	uint m_lastInFirstSet;
 	int m_lenDayResults;

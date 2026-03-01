@@ -2,8 +2,9 @@
 
 CC CompSolStorage::CompSolStorage(const CRowStorage* const pRowStorage, int lenGroup) :
 	m_pRowStorage(pRowStorage) {
-	m_nRowMax = pRowStorage->sysParam()->numFactors();
-	const int nRowsRes = pRowStorage->sysParam()->paramVal(t_nRowsInResultMatrix);
+	const auto pParam = pRowStorage->sysParam();
+	m_nRowMax = pParam->numFactors();
+	const int nRowsRes = pParam->paramVal(t_nRowsInResultMatrix);
 	if (nRowsRes && m_nRowMax > nRowsRes)
 		m_nRowMax = nRowsRes;
 
