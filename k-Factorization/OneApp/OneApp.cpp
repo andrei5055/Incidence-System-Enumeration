@@ -118,6 +118,33 @@ void MultArrays(const long long* a, const long long* b,
     printf("gpu x %d iterations  lenArray = %d: %ld ms\n", nc, num, clock() - tm);
 }
 
+void testLogicalMultiplication(const long long* h_A, const long long* h_B, long long* h_C, long long* pCPU_res, int N)
+{
+#define MULT_FLG 3
+#if MULT_FLG & 1
+    __declspec(dllimport) void logical_mul(const long long* h_A, const long long* h_B, long long* h_C, int N, int nRepet);
+    logical_mul(h_A, h_B, h_C, N, nRep);
+#endif
+#if MULT_FLG & 2
+
+    MultArrays(h_A, h_B, h_C, N, nRep); // from j to <= jMax
+#endif
+
+    if (pCPU_res) {
+        auto tm = clock();
+
+        for (int k = 0; k < nRep; k++)
+            multiplyAll(pCPU_res, h_A, h_B, N); // from j to <= jMax 
+
+        printfYellow("cpu x %d iterations  lenArray = %d: %ld ms\n", nRep, N, clock() - tm);
+        const char* cmpRes = memcmp(h_C, pCPU_res, N * sizeof(*h_C)) == 0 ?
+            "the same as" : "different than";
+        printfYellow("Graphic card data are %s cpu", cmpRes);
+    }
+    exit(0);
+
+}
+
 //************************************
 // Initialize the vector from 0 to vector_size - 1
 //************************************

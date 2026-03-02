@@ -222,8 +222,7 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 	auto* coi = m_Ktmp;
 	const auto nc = m_numPlayers;
 	const auto len = nc * nr;
-#if USE_INTRINSIC
-	if (m_groupSize == 2 && nc <= 32 && tr) {
+	if (USE_INTRINSIC && m_groupSize == 2 && nc <= 32 && tr) {
 		alignas(32) tchar pTmp[32];
 		auto * cii = mi;
 		for (int i = 0; i < nr; i++, coi += nc, cii += nc) {
@@ -247,7 +246,6 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 		}
 	}
 	else
-#endif
 	{
 		auto * cii = mo;
 		if (tr)
@@ -353,9 +351,8 @@ CC void alldata::setPlayerIndex(ctchar* tr, int iDayMax, int iDayCurrent, ctchar
 CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* tr, int nr, int irow) const
 {
 	const auto nc = m_numPlayers;
-	auto* mii = mi + mind * nc;
-#if USE_INTRINSIC
-	if (m_numPlayers <= 32) {
+	auto* mii = mi + mind * nc; 
+	if (USE_INTRINSIC && m_numPlayers <= 32) {
 		alignas(32) tchar pRow[32];
 		alignas(32) tchar pTr[32];
 		alignas(32) tchar pTmp[32];
@@ -374,7 +371,7 @@ CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* 
 			return MEMCMP(mon, mi + ncc, nc);
 		return 0;
 	}
-#endif
+
 	auto* ta = m_tx;
 	memset(ta, 0, nc);
 	tchar va, vb;

@@ -30,34 +30,9 @@ CC void CRowUsage::init(int iThread, int numThreads) {
 	m_pRowSolutionIdx[m_pRowStorage->numPreconstructedRows()] = 0;
 }
 
-#define nRep 0//500000 // 100000000;
-#if nRep
-void testLogicalMultiplication(const long long* h_A, const long long* h_B, long long* h_C, long long *pCPU_res, int N, int nRep)
-{
-#define MULT_FLG 3
-#if MULT_FLG & 1
-	__declspec(dllimport) void logical_mul(const long long* h_A, const long long* h_B, long long* h_C, int N, int nRep);
-	logical_mul(h_A, h_B, h_C, N, nRep);
-#endif
-#if MULT_FLG & 2
-
-	MultArrays(h_A, h_B, h_C, N, nRep); // from j to <= jMax
-#endif
-
-	if (pCPU_res) {
-		auto tm = clock();
-
-		for (int k = 0; k < nRep; k++)
-			multiplyAll(pCPU_res, h_A, h_B, N); // from j to <= jMax 
-
-		printfYellow("cpu x %d iterations  lenArray = %d: %ld ms\n", nRep, N, clock() - tm);
-		const char* cmpRes = memcmp(h_C, pCPU_res, N * sizeof(*h_C)) == 0 ?
-			"the same as" : "different than";
-		printfYellow("Graphic card data are %s cpu", cmpRes);
-	}
-	exit(0);
-
-}
+#define nRep 0 // 500000 // 100000000;
+#if ONE_APP && nRep != 0
+void testLogicalMultiplication(const long long* h_A, const long long* h_B, long long* h_C, long long* pCPU_res, int N);
 #else
 #define testLogicalMultiplication(...)
 #endif
@@ -197,7 +172,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				const auto jNum = jMax - jRead + 1;
 				k = 1;
 				auto mask = pRowSolutionMasks[i - 1];
-				testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum, nRep);
+				testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum);
 				ASSERT_IF(jRead + jNum > lenMask);
 				multiplyAll(pToA + jRead, pPrevA + jRead, pFromA + jRead, jNum); // from j to <= jMax 
 
@@ -256,7 +231,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			auto pToAStart = pToA + numLongs2Skip;
 			const auto* const pPrevAStart = pPrevA + numLongs2Skip;
 			const auto* const pFromAStart = pFromA + numLongs2Skip;
-			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, lenMask - numLongs2Skip, nRep);
+			testLogicalMultiplication(pPrevAStart, pFromAStart, pToAStart, pToAStart, lenMask - numLongs2Skip);
 			multiplyAll(pToAStart, pPrevAStart, pFromAStart, lenMask - numLongs2Skip);
 		}
 

@@ -12,15 +12,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_bCheckLinkV(m_groupSize == 3 && param(t_useCheckLinksV)),
 	m_bCheckLinkT(m_groupSize == 3 && useCheckLinksT),
 	m_nLenResults(m_numDays * numPlayers()) {
-	// we need to move the following code to intrinsic class init
-#if USE_INTRINSIC
-	extern uint8_t BYTE_MASKS[32];
-	char* mask = (char*)BYTE_MASKS;
-	if (numPlayers() <= 32) {
-		memset(mask, 255, numPlayers());
-		memset(mask + numPlayers(), 0, 32 - numPlayers());
-	}
-#endif
+	initIntrinsics(numPlayers());
 	m_improveResult = improveResult;
 	if (!(m_numDaysResult = pSysParam->val[t_nRowsInResultMatrix]))
 		m_numDaysResult = m_numDays;
