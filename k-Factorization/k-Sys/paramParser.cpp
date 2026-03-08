@@ -287,8 +287,10 @@ bool getParameters(ifstream& infile, paramDescr* par, int nDescr, kSysParam& par
 	while (getline(infile, line)) {		// For all the lines of the file
 		trim(line);
 		size_t pos = line.find("//");
-		if (pos != string::npos)
+		if (pos != string::npos) {
 			line = line.substr(0, pos);	// deleting a comment at the end of a line
+			trim(line);
+		}
 
 		if (!line.size() || line[0] == ';')
 			continue;					// Skip line if it is a comment OR empty

@@ -63,13 +63,13 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 
 #if CHECK_GET_ROW
 	static ll ggg; ggg++;
-	const ll gBnd = 15405721;// 1444331332;// 1685633 //6486548; //
+	const ll gBnd = 0;// 1444331332;// 1685633 //6486548; //
 	static int cntr = 0;
 	extern TableAut* pReslt;
 	const char* fileName = pReslt->outFileName();
 	if (ggg > gBnd - 50) {
 		FOPEN_F(f, fileName, "a");
-		fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %llx\n", ++cntr, iRow, selectPlayerByMask() || nRow < 0 ? availablePlayers : -1);
+		fprintf(f, "cntr = %3d: iRow = %2d  availablePlayers = %016llx\n", ++cntr, iRow, selectPlayerByMask() || nRow < 0 ? availablePlayers : -1);
 		FCLOSE_F(f);
 	}
 #endif
@@ -168,13 +168,20 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 			for (; ++i <= m_nRowMax;) {
 				auto j = jMax;
 				jMax = pRowSolutionMasksIdx[i];
-				const auto jRead = j + k;
-				const auto jNum = jMax - jRead + 1;
+				const auto jStart = j + k;
+				const auto jNum = jMax - jStart + 1;
 				k = 1;
 				auto mask = pRowSolutionMasks[i - 1];
 				testLogicalMultiplication(pFromA + j, pPrevA + j, pToA + j, pToA + jMax + 1, jNum);
-				ASSERT_IF(jRead + jNum > lenMask);
-				multiplyAll(pToA + jRead, pPrevA + jRead, pFromA + jRead, jNum); // from j to <= jMax 
+#if CHECK_GET_ROW
+				if (ggg > gBnd - 50) {
+					FOPEN_F(f, fileName, "a");
+					fprintf(f, "i = %2d  jStart = %3d  mask = %016llx  jNum = %d  lenMask = %2d\n", i, jStart, mask, jNum, lenMask);
+					FCLOSE_F(f);
+				}
+#endif
+				ASSERT_IF(jStart + jNum > lenMask);
+				multiplyAll(pToA + jStart, pPrevA + jStart, pFromA + jStart, jNum); // from jStart to <= jMax 
 
 				// Check left, middle and right parts of the solution interval for i-th row
 				if (mask) {

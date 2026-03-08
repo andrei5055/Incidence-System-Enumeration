@@ -19,8 +19,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	const auto iCalcModeOrg = iCalcMode;
-	const auto v4Row = param(t_v4Row);
-	const auto v4 = param(t_v4);
+	m_v4Row[0] = param(t_v4Row); m_v4Row[1] = param(t_v4RowB); m_v4Row[2] = param(t_v4RowC); m_v4Row[3] = param(t_v4RowD);
+	if (m_v4Row[0] || m_v4Row[1] || m_v4Row[2] || m_v4Row[3]) {
+		m_bAdjustRow4 = true;
+		m_v4[0] = param(t_v4); m_v4[1] = param(t_v4B); m_v4[2] = param(t_v4C); m_v4[3] = param(t_v4D);
+	}
 #if !USE_CUDA
 	m_printMatrices = (iThread == 0 || param(t_numThreads) < 2) ? param(t_printMatrices) : 0;
 	m_bPrint = (m_printMatrices & 1) != 0;
@@ -113,12 +116,16 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	pReslt = pResult;
 #endif
 	if (iDay > 0) {
-		if (v4Row) {
-			if (links(1)[v4] != unset) {
-				printfRed("Group (1,%d) requested by v4=%d to be in v4Row=%d already used in start matrix rows\n", v4, v4, v4Row);
-				//ASSERT_IF(1);
-				//myExit(110);
-				goto noResult;
+		for (int i = 0; i < 4; i++) {
+			if (m_v4Row[i]) {
+				if (links(1)[m_v4[i]] != unset) {
+					char rowInd = i == 0 ? ' ' : 'A' + (char)i;
+					printfRed("Precalculation: Group (1,%d) requested by v4%c=%d to be in v4Row%c=%d, but already used in start matrix rows\n", 
+						m_v4[i], rowInd, m_v4[i], rowInd, m_v4Row[i]);
+					//ASSERT_IF(1);
+					//myExit(110);
+					goto noResult;
+				}
 			}
 		}
 	}
@@ -296,12 +303,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				}
 			}
 #endif
-			if (v4Row && m_precalcMode == eCalculateRows) {
-				if (m_secondPlayerInRow4 == v4Row)
-					links(1)[v4] = links(v4)[1] = unset;
-				else
-					links(1)[v4] = links(v4)[1] = v4Row;
-			}
 			if (!processOneDay()) {
 				if (m_nPrecalcRows && m_precalcMode == eCalculateRows && m_secondPlayerInRow4) {
 					if (m_bPrint)

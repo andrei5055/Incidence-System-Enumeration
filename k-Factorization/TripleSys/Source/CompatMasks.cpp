@@ -85,7 +85,7 @@ void CCompatMasks::releaseCompatibleSolutionMasks() {
 
 void CCompatMasks::initMaskMemory(uint nSolutions, int nMasks, int numRecAdj, int numSolAdj)
 {
-	// Adding additional long long when we use groupSize > 2
+	// Adding extra long long when we use groupSize > 2
 	setNumSolutions(nSolutions);
 	m_numSolutionTotalB = ((numSolutions() - numRecAdj + 7) / 8 + 7) / 8 * 8 + (selectPlayerByMask() ? AVALABLE_PLAYER_MASK_LENGTH : 0);
 	const auto prevLenSolMask = lenSolutionMask();
@@ -153,6 +153,8 @@ int CCompatMasks::setNumLongs2Skip(bool adjustRecCounter)
 	setLastInFirstSet(m_pPlayerSolutionCntr[i]);
 	const int recAdj = adjustRecCounter ? lastInFirstSet() : 0;
 
+	// This method works for complete graphs and doesn't seem to cause 
+	// errors in other cases, but it definitely needs to be reconsidered.
 	m_pNumLongs2Skip[i] = lastInFirstSet() >> 6;
 	while (++i < numDaysResult())
 		m_pNumLongs2Skip[i] = ((m_pPlayerSolutionCntr[i] - recAdj) >> 6);
@@ -184,6 +186,13 @@ void CCompatMasks::defineSolutionIntervals() {
 
 void CCompatMasks::defineMask4SolutionIntervals(int nRow, uint last)
 {
+	auto* pRowSolutionMasksIdx = rowSolutionMasksIdx();
+	if (!pRowSolutionMasksIdx)
+		return;
+
+	const auto lastAdj = last - numRecAdj();
+	m_pRowSolutionMasksIdx[nRow] = lastAdj >> SHIFT;
+
 #if PRINT_MASK_SOLUTION_INTERVALS
 	static int fff = 0;
 	static int ggg = 0;
@@ -197,16 +206,11 @@ void CCompatMasks::defineMask4SolutionIntervals(int nRow, uint last)
 
 	fff = nRow;
 	
-	const auto remm = REM(last);
-	fprintf(f, "nRow = %2d  last = %4d  %016llx\n", nRow, last, remm? ((ll)-1)<<remm : 0);
+	const auto remm = REM(lastAdj);
+	fprintf(f, "m_pRowSolutionMasksIdx[%2d] = %3d  lastAdj = %4d  %016llx\n", nRow, m_pRowSolutionMasksIdx[nRow], lastAdj, remm? ((ll)-1)<<remm : 0);
 	FCLOSE_F(f);
 #endif
-	auto* pRowSolutionMasksIdx = rowSolutionMasksIdx();
-	if (!pRowSolutionMasksIdx)
-		return;
 
-	const auto lastAdj = last - numRecAdj();
-	m_pRowSolutionMasksIdx[nRow] = lastAdj >> SHIFT;
 	if (nRow == numPreconstructedRows() || maskTestingCompleted() || m_pRowSolutionMasksIdx[nRow] > m_pRowSolutionMasksIdx[nRow - 1]) {
 		unsigned int rem;
 		if (rem = REM(lastAdj)) {
@@ -219,6 +223,10 @@ void CCompatMasks::defineMask4SolutionIntervals(int nRow, uint last)
 				maskTestingCompleted()[nRow - 1] = 1;
 #endif
 			}
+		}
+		else {
+			if (nRow == numDaysResult() - 1)
+				m_pRowSolutionMasksIdx[nRow]--;
 		}
 	}
 	else {

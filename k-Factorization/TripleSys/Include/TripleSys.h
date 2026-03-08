@@ -426,6 +426,8 @@ private:
 	bool m_bPrintAll;
 	int m_maxCommonVSets;  // for 15 we need 13, for 21 - 40(54?), for 27 we need it to be 217 (probably)
 	int m_printMatrices = 0;
+	tchar m_v4Row[4] = { 0 }, m_v4[4] = { 0 };
+	bool m_bAdjustRow4 = false;
 
 	CStorageIdx<tchar>** m_pRows = NULL;
 	tchar *m_firstPrecalcRow;

@@ -39,6 +39,23 @@ CC int alldata::getNextPlayer()
 
 		if (m0 != 0)
 		{
+			if (iPlayer == 3) { // set player 3 value to defined in parameters
+				if ((m_precalcMode == eCalculateRows) && m_bAdjustRow4) {
+					for (int i = 0; i < 4; i++) {
+						if (m_v4Row[i]) {
+							if (tmpPlayers[1] == m_v4Row[i]) {
+								if (iPlayerNumber > m_v4[i])
+									return m_numPlayers;
+								if (iPlayerNumber < m_v4[i]) {
+									iPlayerNumber = m_v4[i];
+									goto checkPlayerNumber;
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
 			if (m_groupSize == 2)
 			{
 				tchar* lnk = links(iPrevPlayer);

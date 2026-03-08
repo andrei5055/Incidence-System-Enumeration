@@ -70,8 +70,8 @@ const char* intParamNames[]{
 	"KeepPrevResult",
 	"SaveLatinSquareType",
 	"InputLatinSquareType",
-	"v4",
-	"v4Row",
+	"v4", "v4B", "v4C", "v4D",
+	"v4Row", "v4RowB", "v4RowC", "v4RowD",
 	"UseCompatibilityCheck",
 	"HalfRowMode",
 };

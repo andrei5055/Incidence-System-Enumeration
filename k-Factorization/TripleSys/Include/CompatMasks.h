@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
-#include "IntrinsicS.h"
-//#include "k-SysSupport.h"
+#include "Intrinsics.h"
 #include "Storage.h"
 
 
@@ -67,7 +66,7 @@ public:
 	inline void releaseCompatMaskMemory()					{ delete[] rowsCompatMasks(); }
 	CC inline auto selectPlayerByMask() const				{ return m_bSelectPlayerByMask; }
 	CC inline auto numPlayerSolutionsPtr() const			{ return m_pPlayerSolutionCntr; }
-	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }   // inumber of tmask's
+	inline auto lenSolutionMask() const						{ return m_lenSolutionMask; }   // number of tmask's
 	CC void initRowUsage(tmask** ppCompatibleSolutions, bool fullMatrix, bool* pUsePlayersMask, ll* pAvailablePlayerMask = NULL) const;
 	CC inline uint& getSolutionInterval(uint* pRowSolutionIdx, uint* pLast, ll availablePlayers) const {
 		return (this->*m_fSolutionInterval)(pRowSolutionIdx, pLast, availablePlayers);
