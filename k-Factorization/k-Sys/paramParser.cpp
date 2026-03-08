@@ -266,7 +266,7 @@ bool setParameter(int** ppIntArray, const string& str, size_t* pos) {
 		}
 	}
 
-	arr[0] = count;
+	arr[0] = count - 1;
 	*ppIntArray = arr;
 	return true;
 }
