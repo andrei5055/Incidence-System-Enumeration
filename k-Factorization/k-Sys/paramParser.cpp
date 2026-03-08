@@ -78,6 +78,11 @@ void setDefaultValue(int* pValue) {
 }
 
 template<typename T>
+void setDefaultValue(int** pValue) {
+	*pValue = NULL;
+}
+
+template<typename T>
 void setDefaultValue(string** pValue) {
 	if (*pValue)
 		**pValue = "";
@@ -193,6 +198,80 @@ bool setParameter(tchar** pValue, const string& str, size_t* pos) {
 }
 
 template <typename T>
+bool setParameter(int** ppIntArray, const string& str, size_t* pos) {
+	const char* p = str.c_str();
+
+	while (*p && (isspace(*p) || *p != '[')) p++;
+
+	if (!*p)
+		return false;
+
+	int capacity = 8;
+	int count = 1;
+
+	int* arr = (int*)malloc(capacity * sizeof(int));
+	if (!arr)
+		return false;
+
+	p++;
+	while (1)
+	{
+		while (isspace(*p)) p++;
+
+		if (*p == ']')
+			break;
+
+		char* end;
+		const auto val = strtol(p, &end, 10);
+
+		if (p == end)
+		{
+			free(arr);
+			return false;
+		}
+
+		if (count == capacity)
+		{
+			capacity *= 2;
+			int* tmp = (int*)realloc(arr, capacity * sizeof(int));
+			if (!tmp)
+			{
+				free(arr);
+				return false;
+			}
+			arr = tmp;
+		}
+
+		arr[count++] = (int)val;
+
+		p = end;
+
+		while (isspace(*p)) p++;
+
+		if (*p == ',')
+		{
+			p++;
+			continue;
+		}
+		
+		if (*p == ']')
+		{
+			p++;
+			break;
+		}
+		else
+		{
+			free(arr);
+			return false;
+		}
+	}
+
+	arr[0] = count;
+	*ppIntArray = arr;
+	return true;
+}
+
+template <typename T>
 static int getParam(const string& str, const char* pKeyWord, T* pValue, size_t* pPos = nullptr) {
 	size_t pos = find(str, pKeyWord);
 	if (pos == string::npos)
@@ -256,16 +335,17 @@ int getParameter(string& line, paramDescr* par, int nDescr, kSysParam& param) {
 		bool rc = false;
 		int i = paramSet->numParams;
 		while (!rc && i--) {
-			if (j == 0)
+			if (j == t_intValue)
 				rc = getParam<int>(line, paramNames[i], param.val + i);
-			else
-				if (j == 1)
-					rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
-				else {
-					// As of 08/04/2025, only param.u1fCycles[0] is valid for use 
-					// (see the definition of class kSysParam for details).
-					rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
-				}
+			if (j == t_intArray)
+				rc = getParam<int*>(line, paramNames[i], &param.arrVal[i]);
+			if (j == t_strValue)
+				rc = getParam<string*>(line, paramNames[i], &param.strVal[i]);
+			if (j == t_strArray) {
+				// As of 08/04/2025, only param.u1fCycles[0] is valid for use 
+				// (see the definition of class kSysParam for details).
+				rc = getParam<tchar*>(line, paramNames[i], &param.u1fCycles[i]);
+			}
 		}
 
 		if (i >= 0) {

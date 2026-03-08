@@ -76,6 +76,10 @@ const char* intParamNames[]{
 	"HalfRowMode",
 };
 
+const char* intArraysParamNames[]{
+	"v4Array",
+};
+
 const char* strParamNames[]{
 	"U1FName",
 	"StartFolder",
@@ -191,6 +195,7 @@ int main(int argc, const char* argv[])
 		
 	paramDescr params[] = {
 		intParamNames, countof(intParamNames), NULL,
+		intArraysParamNames, countof(intArraysParamNames), NULL,
 		strParamNames, countof(strParamNames), NULL,
 		arrayParamNames, countof(arrayParamNames), NULL
 	};
@@ -371,9 +376,12 @@ int main(int argc, const char* argv[])
 			for (size_t j = 0; j < tmpParam->size(); j++) {
 				const int idx = (*tmpParam)[j];
 				switch (i) {
-				case 0:	param.val[idx] = paramDefault.val[idx]; break;
-				case 1: *strVal[idx] = *strValDef[idx]; break;
-				case 2: break;   // not implemented
+				case t_intValue: param.val[idx] = paramDefault.val[idx]; break;
+				case t_intArray: delete[] param.arrVal[idx]; 
+					             param.arrVal[idx] = NULL;
+								 break;
+				case t_strValue: *strVal[idx] = *strValDef[idx]; break;
+				case t_strArray: break;   // not implemented
 				}
 			}
 			tmpParam->clear();
@@ -402,7 +410,11 @@ int main(int argc, const char* argv[])
 		delete strValDef[j];
 	}
 
-	for (int j = params[2].numParams; j--;)
+	for (int j = t_lastIntArryParam; j--;) {
+		delete[] param.arrVal[j];
+	}
+
+	for (int j = params[t_strArray].numParams; j--;)
 		for (int i = 0; i < countof(param.u1fCycles); i++)
 			delete [] param.u1fCycles[i];
 

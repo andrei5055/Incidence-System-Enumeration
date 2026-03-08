@@ -83,6 +83,9 @@ typedef enum {
 	t_useCompatibilityCheck,
 	t_halfRowMode,
 	t_lastParam,
+	// Indeces of parameters with the int* type values
+	t_v4Array = 0,
+	t_lastIntArryParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,
 	t_StartFolder,
@@ -96,6 +99,13 @@ typedef enum {
 	t_InputDataFileName,
 	t_lastStrParam,
 } paramID;
+
+typedef enum {
+	t_intValue,
+	t_intArray,
+	t_strValue,
+	t_strArray,
+} t_ParamType;
 
 typedef enum {
 	t_noTest = 0,
@@ -143,12 +153,14 @@ public:
 	int groupSizeFactorial;
 	int m_numFactors;
 	std::string* strVal[t_lastStrParam];
+	int* arrVal[t_lastIntArryParam];
 	tchar* u1fCycles[1];
 	paramDescr* pParamDescr;
 private:
 	void Init(ctchar* pU1fCycles) {
 		pParamDescr = NULL;
 		memset(strVal, 0, sizeof(strVal));
+		memset(arrVal, 0, sizeof(arrVal));
 		if (m_b_dataOwner = (pU1fCycles != NULL)) {
 			const auto len = 1 + *pU1fCycles * MAX_CYCLES_PER_SET;
 			u1fCycles[0] = new tchar[len];
