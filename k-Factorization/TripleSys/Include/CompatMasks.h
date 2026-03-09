@@ -13,28 +13,9 @@
 
 #define SAME_MASK_IDX		0			// We allow the same mask index to be used for three consecutive rows. 
 // If 0, we will not apply the acceleration method that analyzes valid solutions for the remaining rows in such situations. 
-#define USE_64_BIT_MASK		!USE_CUDA
 #define UseSolutionCliques	!USE_CUDA	
 										// The graph whose vertices are the remaining solutions must have a maximum 
 										// clique whose size is equal to the number of unconstructed rows of the matrix.
-
-typedef long long ll;
-
-#if USE_64_BIT_MASK
-typedef ll tmask;
-#define SHIFT						6
-#else
-typedef tchar tmask;
-#define SHIFT						3
-#endif
-
-#define MASK_BIT(idx)				((tmask)1 << ((idx) & ((1<<SHIFT) - 1)))	
-#define IDX(n)						(n + (1<<SHIFT) - 1) >> SHIFT
-#define REM(n)						(n % ((tmask)1<<SHIFT))			// remainder from division
-#define SET_MASK_BIT(mask, idx)		(mask)[(idx) >> SHIFT] |= MASK_BIT(idx)
-#define RESET_MASK_BIT(mask, idx)	(mask)[(idx) >> SHIFT] ^= MASK_BIT(idx)
-#define CHECK_MASK_BIT(mask, idx)	((mask)[(idx) >> SHIFT] & MASK_BIT(idx))
-#define AVALABLE_PLAYER_MASK_LENGTH  8
 
 #if PRINT_PRECALC_SOLUTIONS 
 #define OUTPUT_PRECALC_SOLUTION(num_obj, pSol, pFileName)	outputPrecalcSolution(num_obj, pSol, pFileName)

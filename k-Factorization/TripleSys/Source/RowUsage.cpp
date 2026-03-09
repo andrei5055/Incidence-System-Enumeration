@@ -4,23 +4,6 @@
 #include "OneApp.h"
 #define UseIPX				0 // works faster with 0
 
-#ifdef USE_CUDA
-#define BIT_SCAN_FORWARD64 BitScanForward64_Cuda
-// Dummy function written by AI and never tested
-CC void BitScanForward64_Cuda(unsigned long* _Index, unsigned long long _Mask) {
-	unsigned long index = 0;
-	if (_Mask == 0)
-		return;
-	while (!(_Mask & 1)) {
-		_Mask >>= 1;
-		index++;
-	}
-	*_Index = index;
-}
-#else
-#define BIT_SCAN_FORWARD64  _BitScanForward64
-#endif
-
 CC void CRowUsage::init(int iThread, int numThreads) {
 	m_threadID = iThread;
 	m_step = numThreads;
@@ -127,21 +110,9 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 #endif
 	const auto lastB = IDX(last);
 	while (true) {
-		// Skip all bytes/longs equal to 0
-		auto firstB = first >> SHIFT;
-		while (firstB < lastB && !pCompSol[firstB])
-			firstB++;
-
-		if (firstB >= lastB)
+		if (!findAndClearNextBit(first, last, pCompSol))
 			return 0;
 
-		unsigned long iBit;
-		//iBit = (unsigned long)_tzcnt_u64(*(pCompSol + firstB));
-		BIT_SCAN_FORWARD64(&iBit, *(pCompSol + firstB));
-		if ((first = (firstB << SHIFT) + iBit) >= last)
-			return 0;
-
-		pCompSol[firstB] ^= (tmask)1 << iBit;
 		if (iRow >= m_nRowMax)
 			break;
 
@@ -192,22 +163,10 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				}
 
 				// middle part
-#if 0
-				while (j < jMax && !pToA[j])
-					j++;
-						
-				// we do not need "if" below if we use "while" below instead of while above
-				if (j < jMax)
-					continue;   // at least one solution masked by middle part of the interval is still valid					}
-#else
 				while (j + 4 <= jMax) {
-#if USE_INTRINSIC
-					__m256i fourValues = _mm256_loadu_si256((__m256i*) & pToA[j]);
-					if (!_mm256_testz_si256(fourValues, fourValues)) goto Cont1;
-#else
-					if (pToA[j] || pToA[j + 1] || pToA[j + 2] || pToA[j + 3]) 
+					if (NOT_ALL_4_ZEROS(pToA, j))
 						goto Cont1;
-#endif
+
 					j += 4;
 				}
 
@@ -216,7 +175,7 @@ CC int CRowUsage::getRow(int iRow, int ipx, const alldata* pAllData) {
 				case 2: if (pToA[j + 1]) continue;
 				case 1: if (pToA[j]) continue;
 				}
-#endif
+
 				// There are no valid solutions with the indices inside 
 				// the interval defined by set of long longs
 				mask = pRowSolutionMasks[i];
