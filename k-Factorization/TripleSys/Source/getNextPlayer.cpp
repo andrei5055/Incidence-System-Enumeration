@@ -40,7 +40,7 @@ CC int alldata::getNextPlayer()
 		if (m0 != 0)
 		{
 			if (iPlayer == 3) { // set player 3 value to defined in parameters
-				if ((m_precalcMode == eCalculateRows) && m_bAdjustRow4) {
+				if (m_bAdjustRow4) {
 					for (int i = 0; i < 4; i++) {
 						if (m_v4Row[i]) {
 							if (tmpPlayers[1] == m_v4Row[i]) {

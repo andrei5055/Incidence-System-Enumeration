@@ -1,4 +1,6 @@
 #include "TripleSys.h"
+#include "k1212_4_20.h"
+#include "k16p1f.h"
 #include "CheckCanon.h"
 #include "GraphCanonizer.h"
 
@@ -309,6 +311,8 @@ CC alldata::~alldata() {
 	delete m_pGraphCanonizer;
 	releaseBinaryMatricesStorage();
 	delete m_pTestedTRs;
+	delete m_pK1212_4_20;
+	delete m_pK16p1f;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

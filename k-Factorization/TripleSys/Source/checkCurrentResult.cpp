@@ -86,6 +86,8 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 					bPrev = !cnvCheckNew(0, iDay);
 #else
 				bPrev = cnvCheckNew(0, iDay);
+				//if (bPrev) printf(".");
+				//else printf("%d", iDay);
 				if ((iPrintMatrices & 8) && m_precalcMode != eCalculateRows) {
 					if (!bPrev) {
 						if (m_playerIndex / m_numPlayers < iDay - 1)

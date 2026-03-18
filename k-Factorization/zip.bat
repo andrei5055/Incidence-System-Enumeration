@@ -1,18 +1,33 @@
 @echo off
+cd /d "%~dp0"
 
+REM Archive name
 set ARX=TripleSys
-set YEAR=%DATE:~12,2%
-set MONTH=%DATE:~4,2%
-set DAY=%DATE:~7,2%
-copy /Y zip.bat zip.ba
-copy /Y .\CI\run.bat .\CI\run.ba
-copy /Y .\CI\run_st.bat .\CI\run_st.ba
-copy /Y .\CI\runRelease.bat .\CI\runRelease.ba
 
-tar -c -J -f "%ARX%_%YEAR%%MONTH%%DAY%.tar" "./k-Sys/*.vcxproj*" "./k-Sys/*.cpp"  "./TripleSys/Source" "./TripleSys/Include" "./TripleSys/Manuals" "*.sln" ^
-"./TripleSys/TripleSys.*" "./EngineGPU/EngineGPU.*" "./EngineGPU/*.cu" "./Utils/Include" "./Utils/Source" "./Utils/Utils.*" "zip.ba" "./CI/param*.txt" "./CI/*.ba" "./OneApp/*.cpp" "./OneApp/*.h" "./OneApp/*.vcxproj" ./OneApp/sycl_target_flags.props
+REM Use PowerShell for robust date (yyyyMMdd)
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyMMdd"') do set TODAY=%%i
 
-del zip.ba
-if exist .\CI\run.bat del .\CI\run.ba
-if exist .\CI\run_st.bat del .\CI\run_st.ba
-if exist .\CI\runRelease.bat del .\CI\runRelease.ba
+REM Copy all *.bat into *.ba
+for /r %%f in (*.bat) do (
+   copy "%%f" "%%~dpnf.ba" >nul
+)
+
+REM Build list of files for tar
+set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals
+set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.* ./EngineGPU/EngineGPU.* ./EngineGPU/*.cu
+set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
+set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
+
+REM Conditionally add CI files if they exist
+set CI_FILES=
+if exist "./CI/param*.txt" set CI_FILES=%CI_FILES% ./CI/param*.txt
+if exist "./CI/*.ba" set CI_FILES=%CI_FILES% ./CI/*.ba
+
+REM Append CI files to archive list
+if defined CI_FILES set TARFILES=%TARFILES% %CI_FILES%
+
+REM Create archive, ignore missing files
+tar -c -J -f "%ARX%_%TODAY%.tar" %TARFILES%
+
+REM Cleanup: delete all *.ba files
+del /s /q /f *.ba >nul 2>&1

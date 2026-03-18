@@ -32,13 +32,21 @@
 #define AUT			"|Aut(M)| = "
 #define MATR_ATTR	"\n\n"##AUT
 
-#define RedText "\x1b[1;31m"
-#define GreenText "\x1b[1;32m"
-#define YellowText "\x1b[1;33m"
-#define ResetTextColor "\x1b[0m"
-#define printfRed(fmt, ...) printf(RedText fmt ResetTextColor, __VA_ARGS__)
-#define printfGreen(fmt, ...) printf(GreenText fmt ResetTextColor, __VA_ARGS__)
-#define printfYellow(fmt, ...) printf(YellowText fmt ResetTextColor, __VA_ARGS__)
+extern UTIL_LIBRARY bool g_useColors;
+
+#define ANSI_RED "\x1b[1;31m"
+#define ANSI_GREEN "\x1b[1;32m"
+#define ANSI_YELLOW "\x1b[1;33m"
+#define ANSI_RESET "\x1b[0m"
+
+#define RedText (g_useColors ? ANSI_RED : "")
+#define GreenText (g_useColors ? ANSI_GREEN : "")
+#define YellowText (g_useColors ? ANSI_YELLOW : "")
+#define ResetTextColor (g_useColors ? ANSI_RESET : "")
+
+#define printfRed(fmt, ...) (g_useColors ? printf(ANSI_RED fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
+#define printfGreen(fmt, ...) (g_useColors ? printf(ANSI_GREEN fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
+#define printfYellow(fmt, ...) (g_useColors ? printf(ANSI_YELLOW fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
 
 void myAssert(int code, const char* file, int line);
 

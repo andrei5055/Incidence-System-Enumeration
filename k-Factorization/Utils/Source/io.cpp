@@ -1,5 +1,7 @@
 #include <fstream>
 #include "k-SysSupport.h"
+
+UTIL_LIBRARY bool g_useColors = true;
 bool isRowHamiltonian(tchar* pls, tchar* tmp, int nr, int nc) {
 	for (int i = 0; i < nr - 1; i++) {
 		tchar* p = pls + i * nc;

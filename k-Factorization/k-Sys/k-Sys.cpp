@@ -1,8 +1,10 @@
-// k-Sys.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+#include <io.h>
+#include <iostream>
 #include <filesystem>
 #include <fstream>
 #include "TopGun.h"
+
+#pragma comment(lib, "Utils.lib")
 
 const char* intParamNames[]{
 	"nPlayers",
@@ -19,6 +21,7 @@ const char* intParamNames[]{
 	"USE_GPU",
 	"UseMultiThreading",
 	"NThreads",
+	"KThreads",
 	"NRowsInStartMatrix",
 	"NRowsInResultMatrix",
 	"MaxNumberOfStartMatrices",
@@ -154,13 +157,17 @@ void setAutLevels(int *val) {
 
 int main(int argc, const char* argv[])
 {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    g_useColors = _isatty(_fileno(stdout));
 #if _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	//_CrtSetBreakAlloc(226);
 #endif
 	SetConsoleOutputCP(CP_UTF8);
-	enableAnsiColors();
-	cout << "k-Sys 1.15.2026\n";
+	if (g_useColors) {
+		enableAnsiColors();
+	}
+	cout << "k-Sys 1.03.14.2026\n";
 	// Get the handle to the current process
 	HANDLE hProcess = GetCurrentProcess();
 
@@ -221,6 +228,7 @@ int main(int argc, const char* argv[])
 #endif
 	val[t_MultiThreading] = UseMultiThreading;
 	val[t_numThreads] = NThreads;
+	val[t_numKThreads] = 1;
 	val[t_nRowsInStartMatrix] = NRowsInStartMatrix;
 	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;
 	val[t_nMaxNumberOfStartMatrices] = MaxNumberOfStartMatrices;
@@ -247,7 +255,7 @@ int main(int argc, const char* argv[])
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
 	strVal[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
-	strVal[t_ResultsName] = new string("_Results.txt");
+	strVal[t_ResultsName] = new string("_Results");
 	strVal[t_InputDataFileName] = new string("");
 
 	for (int i = 0; i < countof(param.u1fCycles); i++)
@@ -258,7 +266,7 @@ int main(int argc, const char* argv[])
 	strValDef[t_StartFolder] = new string(StartFolder);
 	strValDef[t_ResultFolder] = new string(ResultFolder);
 	strValDef[t_ImprovedResultFolder] = new string(ImprovedResultFolder);
-	strValDef[t_ResultsName] = new string("_Results.txt");
+	strValDef[t_ResultsName] = new string("_Results");
 	strValDef[t_InputDataFileName] = new string("");
 
 	initTripleSysData();

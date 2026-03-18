@@ -26,6 +26,7 @@
     <ClCompile Include="OneApp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{ba20c1b3-8b5a-44dd-b66d-7873eab3692c}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>OneApp</RootNamespace>

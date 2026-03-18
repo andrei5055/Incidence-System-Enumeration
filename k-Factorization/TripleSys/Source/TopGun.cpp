@@ -131,6 +131,8 @@ int TopGun::Run()
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
 
 		cTime = clock();
+		bool bResearch = (param(t_test) & (t_run_U1F_24_4_20 | 8192)) != 0;
+		int waitInterval  = bResearch ? 100 : 5;
 
 		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
 		if (bUseMultiThread2)
@@ -149,7 +151,7 @@ int TopGun::Run()
 
 					while (1) {
 
-						std::this_thread::sleep_for(std::chrono::milliseconds(5));
+						std::this_thread::sleep_for(std::chrono::milliseconds(waitInterval));
 
 						int iTask = 0;
 						nThreadsRunning = 0;
@@ -180,7 +182,8 @@ int TopGun::Run()
 				nMatricesProc++;
 				if (clock() - cTime > 20000)
 				{
-					printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+					if (!bResearch)
+						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
 					cTime = clock();
 				}
 				mstart += inputMatrixSize();
@@ -221,11 +224,12 @@ int TopGun::Run()
 					iTask++;
 				}
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				std::this_thread::sleep_for(std::chrono::milliseconds(waitInterval));
 
 				if (clock() - cTime > 20000)
 				{
-					printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+					if (!bResearch)
+						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
 					cTime = clock();
 				}
 			}
@@ -243,6 +247,7 @@ int TopGun::Run()
 		alldata sys(*this, paramPtr());
 		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
+		m_iMatrix = (uint)resultMatr;
 		transferMatrixDB(sys.matrixDB());
 	}
 

@@ -114,7 +114,7 @@ PlayerOk1:
 					case 5: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
 					case 6: return (iPlayerNumber <= 11) ? iPlayerNumber : m_numPlayers;
 					case 9: return (iPlayerNumber <= 14) ? iPlayerNumber : m_numPlayers;
-					default: return iPlayerNumber + 1;
+					//default: return iPlayerNumber + 1; // ???
 					}
 					break;
 				}

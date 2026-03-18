@@ -190,15 +190,6 @@ CC void alldata::updateIndexPlayerMinMax()
 				else
 					m_indexPlayerMin[1] = m_indexPlayerMax[1] = iSecondPlayer;
 				m_indexPlayerMax[2] = 1;
-
-				if (param(t_v4Row)) {
-					if (m_secondPlayerInRow4 == param(t_v4Row))
-						m_indexPlayerMin[3] = m_indexPlayerMax[3] = param(t_v4);
-					else {
-						m_indexPlayerMin[3] = 2;
-						m_indexPlayerMax[3] = m_numPlayers;
-					}
-				}
 			}
 			break;
 			default:

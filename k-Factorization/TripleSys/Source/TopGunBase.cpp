@@ -285,11 +285,12 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	if (!nRows)
 		nRows = m_numDays;
 
+	char buffer[128];
 	const auto finalReport = pParSet != NULL;
-	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, pResFileName);
+	sprintf_s(buffer, "%s%05d.txt", pResFileName, param(t_nFirstIndexOfStartMatrices));
+	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, buffer);
 	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
 	
-	char buffer[128];
 	if (finalReport) {
 		const auto nParts = param(t_CBMP_Graph);
 		if (nParts <= 1) 
@@ -383,6 +384,12 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 
 	truncate_at_current_pos(f);
 	FCLOSE_F(f);
+	if (finalReport) {
+		char buffer[16];
+		sprintf_s(buffer, "-%05d.txt", m_iMatrix - 1);
+		std::string finalName = IntegratedResults.substr(0, IntegratedResults.size() - 4) + buffer;
+		std::filesystem::rename(IntegratedResults, finalName);
+	}
 }
 
 int matrixSize;

@@ -63,6 +63,7 @@ protected:
 	const kSysParam m_param;
 	std::string m_reportInfo;
 	GraphDB *m_pGraphDB = NULL;
+	uint m_iMatrix;
 private:
 	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
 	int readInputDataFile(const std::string& fn, tchar* pData, int nMatricesMax, int nRows, int nCols);
@@ -104,7 +105,6 @@ private:
 	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
 	ctchar* mstart = NULL, *mfirst = NULL;
 	uint numThreads;
-	uint m_iMatrix;
 	int m_iPrintCount;
 	std::vector<std::thread> threads;//(NThreads);
 	static RowDB* m_pSecondRowsDB;
