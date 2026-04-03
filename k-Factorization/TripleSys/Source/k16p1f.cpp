@@ -12,12 +12,16 @@
 
 K16P1F::K16P1F() {
     int id_cnt = 0;
-    diag_cnt = 0;
     memset(edge_id_table, -1, sizeof(edge_id_table));
     for (int i = 0; i < K16_N; i++) {
         for (int j = i + 1; j < K16_N; j++) {
-            edge_id_table[i][j] = id_cnt++;
-            edge_id_table[j][i] = edge_id_table[i][j];
+            int eid = id_cnt++;
+            edge_id_table[i][j] = eid;
+            edge_id_table[j][i] = eid;
+            if (eid < 128) {
+                edge_to_u[eid] = (uint8_t)i;
+                edge_to_v[eid] = (uint8_t)j;
+            }
         }
     }
     for (int t = 0; t < 256; t++) {
@@ -58,8 +62,10 @@ void K16P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3
     this->cbClass = cbClassPtr;
     start_time = std::chrono::steady_clock::now();
     last_print_time = start_time;
+    bTimeSet = false;
+    call_counter = 0;
 
-    fixedEdgesMask = { 0, 0, 0 };
+    fixedEdgesMask = Mask256();
     for (int s = 0; s < K16_FIXED; s++) {
         memcpy(fixedRows[s].src, first3Rows + s * K16_N, K16_N);
         for (int i = 0; i < K16_N; i += 2) {
@@ -68,7 +74,6 @@ void K16P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3
             int eid = edge_id_table[a][b];
             if (eid < 64) fixedEdgesMask.m[0] |= (1ULL << eid);
             else if (eid < 128) fixedEdgesMask.m[1] |= (1ULL << (eid - 64));
-            else fixedEdgesMask.m[2] |= (1ULL << (eid - 128));
         }
     }
 
@@ -76,24 +81,9 @@ void K16P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3
     for (int s = 0; s < K16_FIXED; s++) fixedRows[s].fs = get_fast_sorted(fixedRows[s].adj);
     r1_can = fixedRows[0].fs;
     r2_can = fixedRows[1].fs;
-
-#if K16_USE_SIMD_CYCLE_CHECK
-    for (int i = 0; i < K16_FIXED; i++) {
-        alignas(16) uint8_t e2o[16] = { 0 };
-        alignas(16) uint8_t o2e[16] = { 0 };
-        for (int j = 0; j < 8; j++) {
-            e2o[j] = fixedRows[i].adj[j * 2] / 2;
-            o2e[j] = fixedRows[i].adj[j * 2 + 1] / 2;
-        }
-        fixedRows[i].v_e2o = _mm_loadu_si128((const __m128i*)e2o);
-        fixedRows[i].v_o2e = _mm_loadu_si128((const __m128i*)o2e);
-        fixed_packed[i] = pack_factor_adj(fixedRows[i].adj);
-    }
-#else
     for (int i = 0; i < K16_FIXED; i++) {
         fixed_packed[i] = pack_factor_adj(fixedRows[i].adj);
     }
-#endif
 
     get_transformations(fixedRows[0], fixedRows[1], fixed_trans[0]);
     get_transformations(fixedRows[0], fixedRows[2], fixed_trans[1]);
@@ -107,8 +97,12 @@ void K16P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3
         temp_slot_ids[i].clear();
         row_factor_ids[i].clear();
     }
-    memset(roots_done, 0, sizeof(roots_done));
+    for (int t = 0; t < 256; t++) {
+        thread_root_idx[t] = 0x7fffffff;
+        roots_done[t] = 0;
+    }
     num_results = 0;
+    num_notCanon = 0;
     g_total_pairs_checked = 0;
     g_rejected_edges = 0;
     g_rejected_cycles = 0;
@@ -131,15 +125,14 @@ bool K16P1F::addRow(int iRow, const unsigned char* source) {
         f.adj[a] = b; f.adj[b] = a; 
     }
 
-    f.edge_mask = { 0, 0, 0 };
+    f.edge_mask = Mask256();
     for (int i = 0; i < K16_N; i += 2) {
         int eid = edge_id_table[f.src[i]][f.src[i+1]];
         if (eid < 64) f.edge_mask.m[0] |= (1ULL << eid);
         else if (eid < 128) f.edge_mask.m[1] |= (1ULL << (eid - 64));
-        else f.edge_mask.m[2] |= (1ULL << (eid - 128));
     }
 
-    if ((f.edge_mask.m[0] & fixedEdgesMask.m[0]) || (f.edge_mask.m[1] & fixedEdgesMask.m[1]) || (f.edge_mask.m[2] & fixedEdgesMask.m[2])) {
+    if ((f.edge_mask.m[0] & fixedEdgesMask.m[0]) || (f.edge_mask.m[1] & fixedEdgesMask.m[1])) {
         printf("\n*** Error: Row has common edges with fixed rows!\n");
         exit(1);
     }
@@ -289,33 +282,36 @@ void K16P1F::solve() {
     search_to_factor.assign(MS, -1); 
     for (int i = 0; i < MS; ++i) if (items[i].global_id != -1) search_to_factor[i] = items[i].global_id;
     
-    factor_edge_masks.assign(MS, { 0, 0, 0 });
+    factor_edge_masks.assign(MS, Mask256());
     for (int i = 0; i < MS; i++) {
         if (items[i].global_id == -1) continue;
         const Factor& f = global_pool[items[i].global_id];
-        for (int u = 0; u < K16_N; u += 2) { 
+        for (int u = 0; u < K16_N; u++) { 
             int v = f.adj[u];
-            int id = edge_id_table[u][v];
-            if (id != -1) {
-                if (id < 64) factor_edge_masks[i].m[0] |= (1ULL << id);
-                else if (id < 128) factor_edge_masks[i].m[1] |= (1ULL << (id - 64));
-                else factor_edge_masks[i].m[2] |= (1ULL << (id - 128));
+            if (u < v) {
+                int id = edge_id_table[u][v];
+                if (id != -1) {
+                    if (id < 64) factor_edge_masks[i].m[0] |= (1ULL << id);
+                    else if (id < 128) factor_edge_masks[i].m[1] |= (1ULL << (id - 64));
+                }
             }
         }
     }
 
-    row_ranges.assign(K16_SEARCH, {0, 0});
+    row_ranges.assign(K16_SEARCH + 1, { 0, 0 });
     int cp = 0;
     for (int s = 0; s < K16_SEARCH; ++s) {
         row_ranges[s].start_word = cp / 64;
         int count = 0; for (const auto& it : items) if (it.row_id == s) count++;
         cp += count; row_ranges[s].end_word = (cp + 63) / 64;
     }
+    row_ranges[K16_SEARCH].start_word = cp / 64;
+    row_ranges[K16_SEARCH].end_word = (cp + 63) / 64;
 
     factor_offsets.assign(MS, 0); size_t coff = 0;
+    const int total_words = (row_ranges[K16_SEARCH - 1].end_word + 3) / 4 * 4;
     for (int i = 0; i < MS; i++) {
-        factor_offsets[i] = coff; int d = items[i].row_id;
-        if (d + 1 < K16_SEARCH) { int wn = (row_ranges[K16_SEARCH - 1].end_word - row_ranges[d + 1].start_word + 3) / 4 * 4; coff += wn; }
+        factor_offsets[i] = coff; coff += total_words;
     }
     adj_matrix.assign(coff, 0);
     if (bPrint) { printf("Populating adj_matrix (%%): "); }
@@ -332,22 +328,23 @@ void K16P1F::solve() {
 
     parallel_for(0, MS, [&](int i, int tid) {
         if (items[i].global_id == -1) return;
-        int d = items[i].row_id; if (d + 1 >= K16_SEARCH) return;
         const PackedAdj& pi = sorted_packed[i];
         const uint8_t* adj_i = global_pool[items[i].global_id].adj;
         __m256i mi = _mm256_load_si256((const __m256i*)&pi);
         
         uint64_t* row_i = &adj_matrix[factor_offsets[i]];
-        int sw = row_ranges[d + 1].start_word;
+        int sw = 0;
+        int j_start = 0;
 
-        int j_start = row_ranges[d + 1].start_word * 64;
-        if (j_start < i + 1) j_start = i + 1;
-
+        const Mask256& mi_e = factor_edge_masks[i];
         for (int j = j_start; j < MS; ++j) {
             if (items[j].global_id == -1) continue;
             const PackedAdj& pj = sorted_packed[j];
             if (is_perfect_packed(pi, pj)) {
-                row_i[(j / 64) - sw] |= (1ULL << (j % 64));
+                const Mask256& mj_e = factor_edge_masks[j];
+                if (!((mi_e.m[0] & mj_e.m[0]) | (mi_e.m[1] & mj_e.m[1]))) {
+                    row_i[(j / 64) - sw] |= (1ULL << (j % 64));
+                }
             }
         }
         int done = ++matrix_done;
@@ -392,70 +389,6 @@ void K16P1F::solve() {
         int local_checked = 0, local_kept = 0;
         int local_rej_edge = 0, local_rej_cycle = 0, local_rej_canon = 0;
 
-#if !K16_DISABLE_IS_CANONICAL_R45_CHECK
-#if K16_USE_STABILIZER_CANON
-        // 1. New: Pre-calculate 4-row stabilizer (Automorphisms of prefix r1..r4)
-        auto stabilizer_buf = std::make_unique<Permutation24[]>(512); 
-        int stab_count = 0;
-        
-        // Find automorphisms (non-trivial only as requested)
-        static const int pairs4[6][2] = { {0,1}, {0,2}, {0,3}, {1,2}, {1,3}, {2,3} };
-        const Factor* r_factors4[4] = { &fixedRows[0], &fixedRows[1], &fixedRows[2], &global_pool[r4_fid] };
-
-        bool r4_canonical = true;
-        TransInfo info;
-        for (int p_idx = 0; p_idx < 6; p_idx++) {
-            get_transformations(*r_factors4[pairs4[p_idx][0]], *r_factors4[pairs4[p_idx][1]], info);
-            for (int k = 0; k < info.count; k++) {
-                const auto& perm = info.perms[k];
-                
-                // Image of the 4-row set
-                FastSortedFactor img[4];
-                for (int m = 0; m < 4; m++) {
-                    uint8_t tr_m[16];
-                    apply_perm_16(r_factors4[m]->adj, perm, tr_m);
-                    img[m] = get_fast_sorted(tr_m);
-                }
-                std::sort(img, img + 4, compare_fast_sorted);
-                
-                bool smaller = false, identical = true;
-                for (int m = 0; m < 4; m++) {
-                    if (compare_fast_sorted(img[m], r_factors4[m]->fs)) { smaller = true; identical = false; break; }
-                    if (compare_fast_sorted(r_factors4[m]->fs, img[m])) { identical = false; break; }
-                }
-                
-                if (smaller) { r4_canonical = false; break; }
-                if (identical) {
-                    // Check if non-trivial
-                    bool trivial = true;
-                    for (int n = 0; n < 16; n++) if (perm.p[n] != n) { trivial = false; break; }
-                    if (!trivial && stab_count < 512) stabilizer_buf[stab_count++] = perm;
-                }
-            }
-            if (!r4_canonical) break;
-        }
-
-        if (!r4_canonical) {
-            int branch_size = 0;
-            for (int r5_v = row_ranges[1].start_word * 64; r5_v < row_ranges[1].end_word * 64; r5_v++) {
-                if (r5_v >= MS || items[r5_v].row_id != 1 || items[r5_v].global_id == -1) continue;
-                if (r5_v <= r4_v) continue;
-                branch_size++;
-            }
-            g_total_pairs_checked += branch_size;
-            g_rejected_canon += branch_size;
-            g_total_rejected += branch_size;
-            canon_done++;
-            return;
-        }
-
-        // Update stabilizer stats
-        int cur_min = min_stab_size.load();
-        while (stab_count < cur_min && !min_stab_size.compare_exchange_weak(cur_min, stab_count));
-        int cur_max = max_stab_size.load();
-        while (stab_count > cur_max && !max_stab_size.compare_exchange_weak(cur_max, stab_count));
-#endif
-#endif
         const __m128i v_e2o_4 = _mm_load_si128(&p4.v_e2o);
         const __m128i v_id = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
         for (int r5_v = row_ranges[1].start_word * 64; r5_v < row_ranges[1].end_word * 64; r5_v++) {
@@ -467,7 +400,7 @@ void K16P1F::solve() {
             
             // 1. Edge compatibility check (Fastest)
             const Mask256& m5 = factor_edge_masks[r5_v];
-            if ((m4.m[0] & m5.m[0]) || (m4.m[1] & m5.m[1]) || (m4.m[2] & m5.m[2])) {
+            if ((m4.m[0] & m5.m[0]) || (m4.m[1] & m5.m[1])) {
                 local_rej_edge++;
                 continue;
             }
@@ -480,17 +413,10 @@ void K16P1F::solve() {
 
             // 3. Canonicity check
 #if !K16_DISABLE_IS_CANONICAL_R45_CHECK
-#if K16_USE_STABILIZER_CANON
-            if (!is_canonical_stab(r5_fid, stabilizer_buf.get(), stab_count)) {
-                local_rej_canon++;
-                continue;
-            }
-#else
             if (!is_canonical(r4_fid, r5_fid, r4_trans.get())) {
                 local_rej_canon++;
                 continue;
             }
-#endif
 #endif
             local_kept++; 
             local_roots.push_back({ r4_v, r5_v });
@@ -550,9 +476,19 @@ void K16P1F::solve() {
     last_print_time = solve_start_time;
     if (bPrint) { printf("Solving with Group-by-r4 optimization. Groups: %zd\n", r4_groups.size()); }
 
-    parallel_for(0, (int)r4_groups.size(), [&](int group_idx, int tid) {
+    restart_index = 0;//3000000;//800;//2111111;
+    if (restart_index)
+        printf("[RESTART] Starting with restart_index = %d\n", restart_index);
 
-        const int start_i = r4_groups[group_idx].first;
+    if (total_roots <= restart_index) {
+        printf("*** number of roots(%d) <= restart index(%d), exit(1)\n", total_roots, restart_index);
+        exit(1);
+    }
+    //total_roots -= restart_index;
+
+    parallel_for(0, (int)r4_groups.size(), [&](int group_idx, int tid) {
+        if (restart_index < r4_groups[group_idx].second) {
+            const int start_i = r4_groups[group_idx].first < restart_index ? restart_index : r4_groups[group_idx].first;
         const int end_i = r4_groups[group_idx].second;
         const int r4_v = potential_roots[start_i].r4_v;
         const int r4_fid = search_to_factor[r4_v];
@@ -563,10 +499,14 @@ void K16P1F::solve() {
         if (buf.global_to_s4.empty()) buf.global_to_s4.assign(K16_M_MAX, -1);
         if (buf.g_to_l.empty()) buf.g_to_l.assign(K16_M_MAX, -1);
         
+            // Defensive: ensure clean state when starting potentially in middle of a group
         buf.s4_to_global.clear();
-        buf.active_words.clear(); 
+        buf.active_words.clear();
         
         // 1. S4 = {f | f compatible with r4, row(f) >= 2}
+        Mask256 mask_r4;
+        mask_r4.m[0] = fixedEdgesMask.m[0] | factor_edge_masks[r4_v].m[0];
+        mask_r4.m[1] = fixedEdgesMask.m[1] | factor_edge_masks[r4_v].m[1];
 
         for (int r = 2; r < K16_SEARCH; r++) {
             while (buf.s4_to_global.size() % 64 != 0) buf.s4_to_global.push_back(-1); // Align row starts for bitwise logic
@@ -574,17 +514,31 @@ void K16P1F::solve() {
             const int ew = row_ranges[r].end_word;
             for (int w = sw; w < ew; w++) {
                 if (w < r4_col_sw) continue;
-                uint64_t word = r4_bits[w - r4_col_sw];
+                    uint64_t word = r4_bits[w];
                 if (word) {
-                    buf.active_words.push_back({ w, word, (int)buf.s4_to_global.size() });
-                    while (word) {
-                        int bit = (int)_tzcnt_u64(word);
+                    uint64_t filtered_word = 0;
+                    uint64_t temp_word = word;
+                    while (temp_word) {
+                        int bit = (int)_tzcnt_u64(temp_word);
                         int g_idx = w * 64 + bit;
-                        if (g_idx < MS && items[g_idx].row_id == r && items[g_idx].global_id != -1) {
-                            buf.global_to_s4[g_idx] = (int)buf.s4_to_global.size();
-                            buf.s4_to_global.push_back(g_idx);
+                            if (g_idx < MS && items[g_idx].row_id == r && items[g_idx].global_id != -1) {
+                            const Mask256& fm = factor_edge_masks[g_idx];
+                            if (!((mask_r4.m[0] & fm.m[0]) || (mask_r4.m[1] & fm.m[1]))) {
+                                filtered_word |= (1ULL << bit);
+                            }
                         }
-                        word &= (word - 1);
+                        temp_word &= (temp_word - 1);
+                    }
+                    if (filtered_word) {
+                        buf.active_words.push_back({ w, filtered_word, (int)buf.s4_to_global.size() });
+                            uint64_t word_to_process = filtered_word;
+                            while (word_to_process) {
+                                int bit = (int)_tzcnt_u64(word_to_process);
+                            int g_idx = w * 64 + bit;
+                                buf.global_to_s4[g_idx] = (int)buf.s4_to_global.size();
+                            buf.s4_to_global.push_back(g_idx);
+                                word_to_process &= (word_to_process - 1);
+                        }
                     }
                 }
             }
@@ -592,7 +546,8 @@ void K16P1F::solve() {
 
         const int S4K = (int)buf.s4_to_global.size();
         if (S4K == 0) {
-            for (int i = start_i; i < end_i; i++) roots_done[tid]++;
+                roots_done[tid] += (end_i - start_i);
+                thread_root_idx[tid] = end_i - 1;
             return;
         }
 
@@ -602,7 +557,8 @@ void K16P1F::solve() {
         try {
             buf.s4_adj.assign((size_t)S4K * s4_words, 0);
             buf.s4_offsets.assign(S4K, 0);
-        } catch (...) {
+            }
+            catch (...) {
             printf("Error: Memory allocation failed for S4 matrix (S4K=%d, words=%d)\n", S4K, s4_words);
             exit(1);
         }
@@ -617,19 +573,16 @@ void K16P1F::solve() {
             s4_ew[r] = (s4_l_cur + 63) / 64;
         }
 
-
         for (int j = 0; j < S4K; j++) {
             int gj = buf.s4_to_global[j];
             if (gj == -1) continue; // Skip alignment padding
             int r_j = items[gj].row_id;
             uint64_t* s4_row = &buf.s4_adj[buf.s4_offsets[j]];
-            if (r_j + 1 >= K16_SEARCH) continue;
             const uint64_t* g_row = &adj_matrix[factor_offsets[gj]];
             const int g_sw = row_ranges[r_j + 1].start_word;
             
             for (const auto& aw : buf.active_words) {
-                if (aw.global_word_idx < g_sw) continue;
-                uint64_t g_word = g_row[aw.global_word_idx - g_sw];
+                    uint64_t g_word = g_row[aw.global_word_idx];
                 if (g_word & aw.mask) {
                     uint64_t extracted = _pext_u64(g_word, aw.mask);
                     int s4_bit_start = aw.local_bit_start;
@@ -642,6 +595,7 @@ void K16P1F::solve() {
         }
         // 3. Process r5 mates
         for (int i = start_i; i < end_i; i++) {
+                if (i < restart_index) { printf("internal error 3, exit(3)\n"); exit(3); }
             int r5_v = potential_roots[i].r5_v;
             int r5_fid = search_to_factor[r5_v];
             const uint64_t* r5_bits = &adj_matrix[factor_offsets[r5_v]];
@@ -654,16 +608,21 @@ void K16P1F::solve() {
             buf.local_ranges.assign(K16_SEARCH + 1, { 0, 0 });
             buf.local_to_global.clear();
             buf.local_s_to_f.clear();
-            // NEW: Use heap-allocated buffers from ThreadLocalBuffers to avoid stack overflow
+            // Use heap-allocated buffers from ThreadLocalBuffers to avoid stack overflow
             SearchContext& local_ctx = buf.local_ctx;
             for (int r = 2; r < K16_SEARCH; r++) {
                 for (int j = 0; j < buf.dirty_s4_count[r]; j++) buf.r5_row_mask_in_s4[r][buf.dirty_s4_words[r][j]] = 0;
                 buf.dirty_s4_count[r] = 0;
                 buf.sub_sampling_plan_sizes[r] = 0;
             }
+            memset(buf.local_edge_presence, 0, sizeof(buf.local_edge_presence));
             int l_idx = 0;
+            l_idx = 0; // Reset l_idx for the actual processing loop
+            for (int gi : buf.local_to_global) if (gi != -1) buf.g_to_l[gi] = -1;
             buf.local_to_global.clear();
             buf.local_s_to_f.clear();
+
+            const Mask256& m5 = factor_edge_masks[r5_v];
 
             for (int r = 2; r < K16_SEARCH; r++) {
                 l_idx = (l_idx + 255) / 256 * 256;
@@ -672,21 +631,39 @@ void K16P1F::solve() {
                 const int g_ew = row_ranges[r].end_word;
 
                 for (int w = g_sw; w < g_ew; w++) {
-                    uint64_t g_word = r5_bits[w - r5_col_sw];
+                        uint64_t g_word = r5_bits[w];
                     while (g_word) {
                         int bit = (int)_tzcnt_u64(g_word);
                         int g_idx = w * 64 + bit;
                         if (g_idx < MS && items[g_idx].row_id == r && items[g_idx].global_id != -1) {
-                            int s4_idx = buf.global_to_s4[g_idx];
-                            if (s4_idx != -1) {
-                                int w_idx = s4_idx / 64;
-                                if (buf.r5_row_mask_in_s4[r][w_idx] == 0) {
-                                    if (buf.dirty_s4_count[r] < K16_WORDS) buf.dirty_s4_words[r][buf.dirty_s4_count[r]++] = w_idx;
+                            const Mask256& fm = factor_edge_masks[g_idx];
+                            if (!((m5.m[0] & fm.m[0]) | (m5.m[1] & fm.m[1]))) {
+                                int s4_idx = buf.global_to_s4[g_idx];
+                                if (s4_idx != -1) {
+                                    int w_idx = s4_idx / 64;
+                                    if (buf.r5_row_mask_in_s4[r][w_idx] == 0) {
+                                        if (buf.dirty_s4_count[r] < K16_WORDS) buf.dirty_s4_words[r][buf.dirty_s4_count[r]++] = w_idx;
+                                    }
+                                    buf.r5_row_mask_in_s4[r][w_idx] |= (1ULL << (s4_idx % 64));
+                                        buf.g_to_l[g_idx] = l_idx;
+                                    buf.local_to_global.push_back(g_idx);
+                                    buf.local_s_to_f.push_back(search_to_factor[g_idx]);
+
+                                    // Populate local edge presence
+                                    uint64_t e0 = fm.m[0];
+                                    uint64_t e1 = fm.m[1] & 0x00FFFFFFFFFFFFFFULL;
+                                    while (e0) {
+                                        int b = (int)_tzcnt_u64(e0);
+                                            buf.local_edge_presence[b].bits[l_idx >> 6] |= (1ULL << (l_idx & 63));
+                                        e0 &= (e0 - 1);
+                                    }
+                                    while (e1) {
+                                        int b = (int)_tzcnt_u64(e1);
+                                            buf.local_edge_presence[b + 64].bits[l_idx >> 6] |= (1ULL << (l_idx & 63));
+                                        e1 &= (e1 - 1);
+                                    }
+                                        l_idx++;
                                 }
-                                buf.r5_row_mask_in_s4[r][w_idx] |= (1ULL << (s4_idx % 64));
-                                buf.g_to_l[g_idx] = l_idx++;
-                                buf.local_to_global.push_back(g_idx);
-                                buf.local_s_to_f.push_back(search_to_factor[g_idx]);
                             }
                         }
                         g_word &= (g_word - 1);
@@ -702,7 +679,7 @@ void K16P1F::solve() {
             buf.local_s_to_f.resize(l_idx);
             size_t l_coff = 0;
             int K = (int)buf.local_to_global.size();
-            local_ctx.local_compression = (double)Global_M_total / K;
+            buf.local_compression = (double)Global_M_total / K;
 
             for (int j = 0; j < K; j++) {
                 int gi = buf.local_to_global[j];
@@ -711,10 +688,9 @@ void K16P1F::solve() {
                 buf.local_s_to_f[li] = search_to_factor[gi];
                 buf.local_offsets[li] = l_coff;
                 int d = items[gi].row_id;
-                if (d + 1 < K16_SEARCH) {
-                    int wn = (buf.local_ranges[K16_SEARCH - 1].end_word - buf.local_ranges[d + 1].start_word + 3) / 4 * 4;
+                    int wn = (buf.local_ranges[K16_SEARCH - 1].end_word + 3) / 4 * 4;
                     l_coff += (size_t)wn;
-                }
+
             }
             buf.local_adj.assign(l_coff + 16, 0);
             uint64_t* aligned_base = (uint64_t*)(((uintptr_t)buf.local_adj.data() + 63) & ~63);
@@ -749,11 +725,11 @@ void K16P1F::solve() {
                 
                 uint64_t* l_row = &aligned_base[buf.local_offsets[li]];
                 const uint64_t* s4_row_ptr = &buf.s4_adj[buf.s4_offsets[s4_j]];
-                const int l_row_sw = buf.local_ranges[d + 1].start_word;
+                    const int l_row_sw = 0;
                 const int l_row_ew = buf.local_ranges[K16_SEARCH - 1].end_word;
                 const int l_row_wn = l_row_ew - l_row_sw;
 
-                for (int r = d + 1; r < K16_SEARCH; r++) {
+                    for (int r = 2; r < K16_SEARCH; r++) {
                     int p_size = buf.sub_sampling_plan_sizes[r];
                     const auto* plan = buf.sub_sampling_plans[r];
                     for (int j = 0; j < p_size; j++) {
@@ -770,57 +746,245 @@ void K16P1F::solve() {
                 }
             }
 
-            local_ctx.ranges = buf.local_ranges.data();
-            local_ctx.adj = aligned_base;
-            local_ctx.adj_size = l_coff;
-            local_ctx.offsets = buf.local_offsets.data();
-            local_ctx.edge_masks = buf.local_edge_masks.data();
-            local_ctx.s_to_f = buf.local_s_to_f.data();
-            local_ctx.r4_idx = r4_v; local_ctx.r5_idx = r5_v;
+            buf.ranges = buf.local_ranges.data();
+            buf.adj = aligned_base;
+            buf.offsets = buf.local_offsets.data();
+            buf.edge_masks = buf.local_edge_masks.data();
+            buf.s_to_f = buf.local_s_to_f.data();
+            buf.local_compression = (double)Global_M_total / K;
+
+                local_ctx.r4_idx = r4_v; local_ctx.r5_idx = r5_v; local_ctx.root_idx = i;
+                memset(local_ctx.counts_valid, 0, sizeof(local_ctx.counts_valid));
+                memset(local_ctx.mrv_counts, 0, sizeof(local_ctx.mrv_counts));
 
             memset(local_ctx.pool, 0, sizeof(local_ctx.pool));
-            for (int j = 0; j < l_idx; j++) {
-                local_ctx.pool[2].bits[j / 64] |= (1ULL << (j % 64));
+                for (int j = 0; j < (int)buf.local_to_global.size(); j++) {
+                    int gi = buf.local_to_global[j];
+                    int li = buf.g_to_l[gi];
+                    local_ctx.pool[2].bits[li / 64] |= (1ULL << (li % 64));
             }
             buf.cl.clear(); buf.cl.push_back(r4_fid); buf.cl.push_back(r5_fid);
             const Mask256& m4 = factor_edge_masks[r4_v];
-            const Mask256& m5 = factor_edge_masks[r5_v];
             local_ctx.used_edges.m[0] = fixedEdgesMask.m[0] | m4.m[0] | m5.m[0];
             local_ctx.used_edges.m[1] = fixedEdgesMask.m[1] | m4.m[1] | m5.m[1];
-            local_ctx.used_edges.m[2] = fixedEdgesMask.m[2] | m4.m[2] | m5.m[2];
+                for (int s = 0; s < K16_SEARCH; s++) local_ctx.slots[s] = (uint8_t)s;
 
-            for (int idx = 0; idx < K; idx++) local_ctx.pool[2].bits[buf.g_to_l[buf.local_to_global[idx]] / 64] |= (1ULL << (buf.g_to_l[buf.local_to_global[idx]] % 64));
-
-            internal_solve(2, buf.cl, local_ctx);
+                local_ctx.r4_idx = r4_v; local_ctx.r5_idx = r5_v; local_ctx.root_idx = i;
+                if (thread_root_idx[tid] < restart_index) { printf("internal error 4, exit(4)\n"); exit(4); }
+                internal_solve(2, buf.cl, local_ctx, &buf);
             roots_done[tid]++;
+
             thread_root_idx[tid] = 0x7fffffff;
         }
         for (int gi : buf.s4_to_global) if (gi != -1) buf.global_to_s4[gi] = -1;
+            // Also clear g_to_l mappings to be safe for next group/restart
+            for (int gi : buf.local_to_global) if (gi != -1) buf.g_to_l[gi] = -1;
+        }
     }, 1);
 }
 
-
-void K16P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx) {
+void VECTOR_CALL K16P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* pBuf) {
+    ThreadLocalBuffers& buf = *pBuf;
+    buf.meter.calls++;
+#if K16_Use_rdtsc
+    uint64_t t0 = __rdtsc();
+#endif
+    if (depth == 2 && bPrint) diagnostic_printout(buf.local_compression);
+    
     if (depth == K16_SEARCH) {
         unsigned char results[K16_MATCH * K16_N];
-        for (int i = 0; i < K16_FIXED; i++) memcpy(results + i * K16_N, fixedRows[i].src, K16_N);
+        for (int i = 0; i < K16_FIXED; i++) memcpy(results + i * K16_N, this->fixedRows[i].src, K16_N);
         std::vector<Factor> sol_factors;
-        for (int fid : clique) sol_factors.push_back(global_pool[fid]);
+        for (int fid : clique) sol_factors.push_back(this->global_pool[fid]);
         std::sort(sol_factors.begin(), sol_factors.end(), [](const Factor& a, const Factor& b) { return a.src[1] < b.src[1]; });
         for (int i = 0; i < K16_SEARCH; i++) memcpy(results + (i + K16_FIXED) * K16_N, sol_factors[i].src, K16_N);
         
         {
-            std::lock_guard<std::mutex> lock(result_mutex);
-            if (resultCallback(cbClass, results, ctx.r4_idx, ctx.r5_idx))
+            std::lock_guard<std::mutex> lock(this->result_mutex);
+            if (this->resultCallback(this->cbClass, results, ctx.r4_idx, ctx.r5_idx)) {
                 num_results++;
+                printf("[CAN] Found canonical result at Root Index %d (r4:%d, r5:%d) | Total: %d\n",
+                    ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_results);
+            }
+            else {
+                num_notCanon++;
+                printf("[NC] Found non-canonical result at Root Index %d (r4:%d, r5:%d) | Total NC: %d\n",
+                    ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_notCanon);
+            }
         }
         return;
     }
 
-    State& P = ctx.pool[depth];
-    int start = ctx.ranges[depth].start_word;
-    int end = ctx.ranges[depth].end_word;
+#if K16_USE_MRV
+    if (depth >= 2 && depth < K16_MRV_DEPTH_LIMIT) {
+        int best_idx = depth;
+        int min_count = 1000000;
+        
+        if (ctx.counts_valid[depth]) {
+            for (int i = depth; i < K16_SEARCH; i++) {
+                int slot = ctx.slots[i];
+                int count = ctx.mrv_counts[depth][slot];
+                if (count < min_count) {
+                    min_count = count;
+                    best_idx = i;
+                    if (min_count <= K16_MRV_EARLY_EXIT_THRESHOLD) break;
+                }
+            }
+            ctx.counts_valid[depth] = false; // Consumption
+        } else {
+            for (int i = depth; i < K16_SEARCH; i++) {
+                int slot = ctx.slots[i];
+                int count = 0;
+                const int wStart = buf.ranges[slot].start_word;
+                const int wEnd = buf.ranges[slot].end_word;
+                for (int w = wStart; w < wEnd; w++) {
+                    count += (int)_mm_popcnt_u64(ctx.pool[depth].bits[w]);
+                }
+                if (count < min_count) {
+                    min_count = count;
+                    best_idx = i;
+#if K16_MRV_EARLY_EXIT
+                    if (min_count <= K16_MRV_EARLY_EXIT_THRESHOLD) break;
+#endif
+                }
+            }
+        }
+        
+        // MRV: Swap the most constrained slot to the front
+        uint8_t tmp = ctx.slots[depth];
+        ctx.slots[depth] = ctx.slots[best_idx];
+        ctx.slots[best_idx] = tmp;
+        
+        if (min_count == 0) return;
+    }
+#endif
 
+    int s = ctx.slots[depth];
+    State& P = ctx.pool[depth];
+
+    // --- High-Speed Bit-Sliced Edge Coverage Optimization ---
+#if K16_EDGE_PRUNE_ENABLED
+    if (depth >= K16_EDGE_PRUNE_START && depth <= K16_EDGE_PRUNE_END) {
+        const int uStart = 0;
+        const int uEnd = buf.ranges[K16_SEARCH - 1].end_word;
+
+        // Ultra-Lazy Threshold: Zero overhead for main search, only prunes final branches
+        const int threshold = K16_PRUNE_THRESHOLD_LOW;
+
+        int total_remaining = 0;
+        for (int w = uStart; w < uEnd; w++) {
+            total_remaining += (int)__popcnt64(P.bits[w]);
+            if (total_remaining > threshold) break; 
+        }
+
+        if (total_remaining <= threshold) {
+            uint64_t u0 = 0, u1 = 0;
+            const Mask256* masks = buf.edge_masks;
+            uint64_t m0_needed = ~ctx.used_edges.m[0];
+            uint64_t m1_needed = (~ctx.used_edges.m[1]) & 0x00FFFFFFFFFFFFFFULL;
+
+            for (int w = uStart; w < uEnd; w++) {
+                uint64_t word = P.bits[w];
+                if (!word) continue;
+                int base = w << 6;
+                do {
+                    int bit = (int)_tzcnt_u64(word);
+                    const Mask256& fm = masks[base + bit];
+                    u0 |= fm.m[0];
+                    u1 |= fm.m[1];
+                    // Early Exit: if all needed edges are now covered, we can stop
+                    if (((u0 & m0_needed) == m0_needed) && ((u1 & m1_needed) == m1_needed)) break;
+                    word &= (word - 1);
+                } while (word);
+                if (((u0 & m0_needed) == m0_needed) && ((u1 & m1_needed) == m1_needed)) break;
+            }
+
+            if ((m0_needed & ~u0) || (m1_needed & ~u1)) {
+                return; 
+            }
+
+            // The Acceleration: Only if pool is very small
+            if (total_remaining <= 50) {
+                int forced_v = -1;
+                bool conflict = false;
+
+                for (int e = 0; e < 120; e++) {
+                    bool is_needed = (e < 64) ? (m0_needed & (1ULL << e)) : (m1_needed & (1ULL << (e - 64)));
+                    if (!is_needed) continue;
+
+                    int total_e_count = 0;
+                    int last_e_v = -1;
+                    for (int w = uStart; w < uEnd; w += 4) {
+                        __m256i p_vec = _mm256_load_si256((__m256i*) & P.bits[w]);
+                        __m256i e_vec = _mm256_load_si256((__m256i*) & buf.local_edge_presence[e].bits[w]);
+                        __m256i res_vec = _mm256_and_si256(p_vec, e_vec);
+                        if (!_mm256_testz_si256(res_vec, res_vec)) {
+                            uint64_t m0 = _mm256_extract_epi64(res_vec, 0);
+                            uint64_t m1 = _mm256_extract_epi64(res_vec, 1);
+                            uint64_t m2 = _mm256_extract_epi64(res_vec, 2);
+                            uint64_t m3 = _mm256_extract_epi64(res_vec, 3);
+                            total_e_count += (int)(__popcnt64(m0) + __popcnt64(m1) + __popcnt64(m2) + __popcnt64(m3));
+                            if (total_e_count == 1) {
+                                if (m0) last_e_v = w * 64 + (int)_tzcnt_u64(m0);
+                                else if (m1) last_e_v = (w + 1) * 64 + (int)_tzcnt_u64(m1);
+                                else if (m2) last_e_v = (w + 2) * 64 + (int)_tzcnt_u64(m2);
+                                else if (m3) last_e_v = (w + 3) * 64 + (int)_tzcnt_u64(m3);
+                            }
+                            if (total_e_count > 1) break; 
+                        }
+                    }
+
+                    if (total_e_count == 1) {
+                        int r_s = ctx.slots[depth];
+                        int r_start = buf.ranges[r_s].start_word;
+                        int r_end = buf.ranges[r_s].end_word;
+                        if (last_e_v / 64 >= r_start && last_e_v / 64 < r_end) {
+                            if (forced_v != -1 && forced_v != last_e_v) { conflict = true; break; }
+                            forced_v = last_e_v;
+                        }
+                    }
+                }
+
+                if (conflict) return;
+                if (forced_v != -1) {
+                    int v = forced_v;
+                    const Mask256& fm = buf.edge_masks[v];
+                    State& next_P = ctx.pool[depth + 1];
+                    const uint64_t* rel_adj = &buf.adj[buf.offsets[v]];
+                    
+                    bool domain_wipeout = false;
+                    for (int n = depth + 1; n < K16_SEARCH; n++) {
+                        int next_s = ctx.slots[n];
+                        __m256i row_acc = _mm256_setzero_si256();
+                        const int wStart = buf.ranges[next_s].start_word;
+                        const int wEnd = buf.ranges[next_s].end_word;
+                        for (int w = wStart; w < wEnd; w += 4) {
+                            __m256i p_vec = _mm256_load_si256((__m256i*) & P.bits[w]);
+                            __m256i a_vec = _mm256_load_si256((__m256i*) & rel_adj[w]);
+                            __m256i res_vec = _mm256_and_si256(p_vec, a_vec);
+                            _mm256_store_si256((__m256i*) & next_P.bits[w], res_vec);
+                            row_acc = _mm256_or_si256(row_acc, res_vec);
+                        }
+                        if (_mm256_testz_si256(row_acc, row_acc)) { domain_wipeout = true; break; }
+                    }
+                    if (!domain_wipeout) {
+                        Mask256 old = ctx.used_edges;
+                        ctx.used_edges.m[0] |= fm.m[0]; ctx.used_edges.m[1] |= fm.m[1];
+                        clique.push_back(buf.s_to_f[v]);
+                        internal_solve(depth + 1, clique, ctx, &buf);
+                        clique.pop_back();
+                        ctx.used_edges = old;
+                    }
+                    return;
+                }
+            }
+        }
+    }
+#endif
+
+    int start = buf.ranges[s].start_word;
+    int end = buf.ranges[s].end_word;
+    // 40% cpu below
     for (int i = start; i < end; i += 4) {
         __m256i combined = _mm256_load_si256((__m256i*) & P.bits[i]);
         if (_mm256_testz_si256(combined, combined)) continue;
@@ -830,45 +994,50 @@ void K16P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& 
             uint64_t word = ((uint64_t*)&combined)[sub];
             while (word) {
                 int v = (i + sub) * 64 + (int)_tzcnt_u64(word);
-                if (depth == 2 && bPrint) diagnostic_printout(ctx.local_compression);
 
-                const Mask256& fm = ctx.edge_masks[v];
-#if K16_USE_BRANCH_FREE_EDGE
-                if ((ctx.used_edges.m[0] & fm.m[0]) | (ctx.used_edges.m[1] & fm.m[1]) | (ctx.used_edges.m[2] & fm.m[2])) {
-#else
-                if ((ctx.used_edges.m[0] & fm.m[0]) || (ctx.used_edges.m[1] & fm.m[1]) || (ctx.used_edges.m[2] & fm.m[2])) {
-#endif
-                    word &= (word - 1); continue;
-                }
+                // No inline edge check needed! Baked into adjacency and pool filtering.
                 if (depth + 1 < K16_SEARCH) {
                     State& next_P = ctx.pool[depth + 1];
-                    const uint64_t* rel_adj = &ctx.adj[ctx.offsets[v]];
-                    int n_start = ctx.ranges[depth + 1].start_word;
-                    int n_end = ctx.ranges[K16_SEARCH - 1].end_word;
-                    for (int j = 0; j < (n_end - n_start); j += 4) {
-                        __m256i p_vec = _mm256_load_si256((__m256i*) & P.bits[j + n_start]);
-                        __m256i a_vec = _mm256_load_si256((__m256i*) & rel_adj[j]);
-                        _mm256_store_si256((__m256i*) & next_P.bits[j + n_start], _mm256_and_si256(p_vec, a_vec));
+                    const uint64_t* rel_adj = &buf.adj[buf.offsets[v]];
+                    
+                    bool domain_wipeout = false;
+
+                    for (int n = depth + 1; n < K16_SEARCH; n++) {
+                        int next_s = ctx.slots[n];
+                        int slot_count = 0;
+                        const int wStart = buf.ranges[next_s].start_word;
+                        const int wEnd = buf.ranges[next_s].end_word;
+                        for (int w = wStart; w < wEnd; w += 4) {
+                            __m256i p_vec = _mm256_load_si256((__m256i*) & P.bits[w]);
+                            __m256i a_vec = _mm256_load_si256((__m256i*) & rel_adj[w]);
+                            __m256i res_vec = _mm256_and_si256(p_vec, a_vec);
+                            _mm256_store_si256((__m256i*) & next_P.bits[w], res_vec);
+                            
+                            uint64_t m0 = _mm256_extract_epi64(res_vec, 0);
+                            uint64_t m1 = _mm256_extract_epi64(res_vec, 1);
+                            uint64_t m2 = _mm256_extract_epi64(res_vec, 2);
+                            uint64_t m3 = _mm256_extract_epi64(res_vec, 3);
+                            slot_count += (int)(__popcnt64(m0) + __popcnt64(m1) + __popcnt64(m2) + __popcnt64(m3));
+                        }
+                        ctx.mrv_counts[depth + 1][next_s] = (uint16_t)slot_count;
+                        if (slot_count == 0) { domain_wipeout = true; break; }
                     }
+                    if (domain_wipeout) { word &= (word - 1); continue; }
+                    ctx.counts_valid[depth + 1] = true;
                 }
 
-                bool domain_wipeout = false;
-                for (int d = depth + 1; d < K16_SEARCH; d++) {
-                    bool row_possible = false;
-                    int w = ctx.ranges[d].start_word;
-                    int wMax = ctx.ranges[d].end_word;
-                    for (; w < wMax; w += 4) {
-                        const __m256i val = _mm256_load_si256((__m256i*) & ctx.pool[depth + 1].bits[w]);
-                        if (!_mm256_testz_si256(val, val)) { row_possible = true; break; }
-                    }
-                    if (!row_possible) { domain_wipeout = true; break; }
+                // --- NEW: Odd Component Pruning ---
+                const Mask256& fm = buf.edge_masks[v];
+
+                // Safety check: ensure no edge conflict with the prefix
+                if ((ctx.used_edges.m[0] & fm.m[0]) | (ctx.used_edges.m[1] & fm.m[1])) {
+                    word &= (word - 1); continue;
                 }
-                if (domain_wipeout) { word &= (word - 1); continue; }
 
                 Mask256 old = ctx.used_edges;
-                ctx.used_edges.m[0] |= fm.m[0]; ctx.used_edges.m[1] |= fm.m[1]; ctx.used_edges.m[2] |= fm.m[2];
-                clique.push_back(ctx.s_to_f[v]);
-                internal_solve(depth + 1, clique, ctx);
+                ctx.used_edges.m[0] |= fm.m[0]; ctx.used_edges.m[1] |= fm.m[1];
+                clique.push_back(buf.s_to_f[v]);
+                internal_solve(depth + 1, clique, ctx, &buf);
                 clique.pop_back();
                 ctx.used_edges = old;
                 word &= (word - 1);
@@ -876,7 +1045,6 @@ void K16P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& 
         }
     }
 }
-
 
 
 K16P1F::PackedAdj K16P1F::pack_factor_adj(const uint8_t* adj) {
@@ -887,23 +1055,11 @@ K16P1F::PackedAdj K16P1F::pack_factor_adj(const uint8_t* adj) {
         if (i < v) {
             int eid = edge_id_table[i][v];
             if (eid != -1) {
-                if (eid < 64) res.m[0] |= (1ULL << eid);
-                else if (eid < 128) res.m[1] |= (1ULL << (eid - 64));
-                else if (eid < 192) res.m[2] |= (1ULL << (eid - 128));
-                else res.m[3] |= (1ULL << (eid - 192));
+                if (eid < 64) res.edge_mask.m[0] |= (1ULL << eid);
+                else if (eid < 128) res.edge_mask.m[1] |= (1ULL << (eid - 64));
             }
         }
     }
-#if K16_USE_SIMD_CYCLE_CHECK
-    alignas(16) uint8_t e2o[16] = { 0 };
-    alignas(16) uint8_t o2e[16] = { 0 };
-    for (int j = 0; j < 8; j++) {
-        e2o[j] = adj[j * 2] / 2;
-        o2e[j] = adj[j * 2 + 1] / 2;
-    }
-    res.v_e2o = _mm_loadu_si128((const __m128i*)e2o);
-    res.v_o2e = _mm_loadu_si128((const __m128i*)o2e);
-#endif
     return res;
 }
 
@@ -998,7 +1154,7 @@ K16P1F::FastSortedFactor K16P1F::get_fast_sorted(const uint8_t* adj) {
         __m128i pairs = _mm_unpacklo_epi8(p_idx, p_adj);
         _mm_storeu_si128((__m128i*)out, pairs);
         out += __popcnt(m) * 2;
-        };
+    };
 
     process_chunk(mask & 0xFF, adj, 0);
     process_chunk((mask >> 8) & 0xFF, adj + 8, 8);
@@ -1090,31 +1246,71 @@ bool K16P1F::is_canonical_stab(int r5_fid, const Permutation24* stab, int stab_c
 }
 
 void K16P1F::diagnostic_printout(double current_compr) {
-    if (diag_cnt++ % 32) return;
-    auto now = std::chrono::steady_clock::now();
-    if (std::chrono::duration_cast<std::chrono::seconds>(now - last_print_time).count() >= 20) {
-        static int report_count = 0;
+    if (!bTimeSet) {
         std::lock_guard<std::mutex> lock(result_mutex);
-        {
-            last_print_time = now;
-            auto elap_solve = std::chrono::duration_cast<std::chrono::seconds>(now - solve_start_time).count();
-            auto elap = elap_solve;
-            int n_roots_done = 0;
-            for (int t = 0; t < kThreads; ++t) {
-                n_roots_done += roots_done[t];
-            }
-            double pct = (total_roots > 0) ? (100.0 * n_roots_done) / total_roots : 0;
-            int expected = (pct > 0.001) ? (int)(elap_solve * 100.0 / pct + 0.5) : 0;
-            printf("[RUN] M:%05d | %%:%6.3f | T/E:%4d/%4d | Results:%3d | Compr:%7.4f | kThreads:%d\n",
-                fixed3RowsIndex, pct, (int)elap, expected, (int)num_results, current_compr, kThreads);
+        solve_start_time = std::chrono::steady_clock::now();
+        last_print_time = solve_start_time;
+        bTimeSet = true;
+        return;
+    }
+    if (call_counter++ < 20) return; call_counter = 0; // reduce calls to timer
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - last_print_time).count() >= 30) {
+        std::lock_guard<std::mutex> lock(result_mutex);
+    last_print_time = now;
+        auto elap = std::chrono::duration_cast<std::chrono::seconds>(now - solve_start_time).count();
+
+        static int print_count = 0;
+        print_count++;
+
+        double pct = 0.0, pct_global = 0.0;
+        int expected_run_time = 0;
+        int total_done = 0;
+        for (int t = 0; t < kThreads; t++) total_done += roots_done[t];
+
+        if (total_roots > restart_index) {
+            pct = (100.0 * total_done) / (double)(total_roots - restart_index);
+            pct_global = (100.0 * (total_done + restart_index)) / (double)total_roots;
+            if (pct > 0.0001) expected_run_time = (int)(elap * 100.0 / pct + 0.5);
         }
+
+        int min_idx = 0x7fffffff;
+        for (int t = 0; t < kThreads; t++) {
+            if (thread_root_idx[t] < restart_index) { printf("internal error 6, exit(6)\n"); exit(6); }
+            if (thread_root_idx[t] < min_idx) min_idx = thread_root_idx[t];
+        }
+
+        uint64_t sum_total = 0, sum_prop = 0, sum_mask = 0, sum_calls = 0, sum_pm = 0, sum_pp = 0;
+    for (int t = 0; t < kThreads; t++) {
+        sum_total += thread_buffers[t]->meter.total_cycles;
+        sum_prop += thread_buffers[t]->meter.prop_cycles;
+        sum_mask += thread_buffers[t]->meter.mask_cycles;
+            sum_calls += thread_buffers[t]->meter.calls;
+        sum_pm += thread_buffers[t]->meter.masks_checked;
+        sum_pp += thread_buffers[t]->meter.props_done;
+    }
+    
+        uint64_t avg_t = sum_calls ? sum_total / sum_calls : 0;
+        uint64_t avg_p = sum_pp ? sum_prop / sum_pp : 0;
+        uint64_t avg_m = sum_pm ? sum_mask / sum_pm : 0;
+
+        printf("[RUN] M/Restart: %04d/%5d | ", fixed3RowsIndex, min_idx);
+        printf("%%:%6.3f | Time/Exp:%4d/%4d | Results/NC:%3d/%2d ",
+            pct_global, (int)elap, expected_run_time, (int)num_results.load(), (int)num_notCanon.load());
+        printf("| Compr:%.1f | Threads:%d\n", current_compr, kThreads);
+#if K16_Use_rdtsc
+        const char* status = (avg_t < 5000) ? "ok" : (avg_t < 10000 ? "warn" : "slow");
+        printf("[RDTSC] AvgCyc Total:%llu (%s) | Prop:%llu | Mask:%llu\n", avg_t, status, avg_p, avg_m);
+#endif
+
+#if K16_BENCHMARK_EXIT
+        if (elap >= 100) {
+            printf("[RUN] Reached 100 seconds. Terminating for benchmarking...\n");
+        exit(0);
+    }
+#endif
     }
 }
-
-
-
-
-
 bool K16P1F::compare_fast_sorted(const K16P1F::FastSortedFactor& a, const K16P1F::FastSortedFactor& b) { return memcmp(a.pairs, b.pairs, 16) < 0; }
 bool K16P1F::equal_fast_sorted(const K16P1F::FastSortedFactor& a, const K16P1F::FastSortedFactor& b) { return memcmp(a.pairs, b.pairs, 16) == 0; }
 bool K16P1F::compare_triplets(const K16P1F::FastRowTriplet& a, const K16P1F::FastRowTriplet& b) {
