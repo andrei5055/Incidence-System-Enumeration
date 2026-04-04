@@ -461,6 +461,7 @@
     <ClCompile Include="Source\initStartValues.cpp" />
     <ClCompile Include="Source\Intrinsics.cpp" />
     <ClCompile Include="Source\ioSupport.cpp" />
+    <ClCompile Include="Source\k1111p1f.cpp" />
     <ClCompile Include="Source\k1212_4_20.cpp">
       <EnableModules Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableModules>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</WholeProgramOptimization>
@@ -502,6 +503,7 @@
     <ClInclude Include="Include\Global.h" />
     <ClInclude Include="Include\GraphCanonizer.h" />
     <ClInclude Include="Include\groupInfo.h" />
+    <ClInclude Include="Include\k1111p1f.h" />
     <ClInclude Include="Include\k1212_4_20.h" />
     <ClInclude Include="Include\k16p1f.h" />
     <ClInclude Include="Include\TableLS.h" />

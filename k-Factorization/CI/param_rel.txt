@@ -20,21 +20,21 @@ StartFolder=../../LogsTestN1/; ResultFolder=../../LogsTestN1/
 UseMultiThreading=0; NRowsInStartMatrix=0; NRowsInResultMatrix=3; ExpectedResult=-1;
 Run_Job
 
-FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=4000; UseRowsPrecalculation=3
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=4000; UseRowsPrecalculation=3
 MaxNumberOfStartMatrices=15 // time test ***
 UseMultiThreading=1; NRowsInStartMatrix=3; NRowsInResultMatrix=9; ExpectedResult=-1;
 Run_Job
 
-FirstIndexOfStartMatrices=4000; MaxNumberOfStartMatrices=100000; UseRowsPrecalculation=3
+FirstIndexOfStartMatrices=4001; MaxNumberOfStartMatrices=100000; UseRowsPrecalculation=3
 MaxNumberOfStartMatrices=15 // time test ***
 UseMultiThreading=1; NRowsInStartMatrix=3; NRowsInResultMatrix=7; ExpectedResult=-1;
 Run_Job
 
-FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
 UseMultiThreading=1; NRowsInStartMatrix=9; NRowsInResultMatrix=0; ExpectedResult=0;
 Run_Job
 
-FirstIndexOfStartMatrices=0; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
 UseMultiThreading=1; NRowsInStartMatrix=7; NRowsInResultMatrix=0; ExpectedResult=0;
 
 End_Job

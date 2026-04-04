@@ -1,5 +1,6 @@
 #include "TripleSys.h"
 #include "k1212_4_20.h"
+#include "k1111p1f.h"
 #include "k16p1f.h"
 #include "CheckCanon.h"
 #include "GraphCanonizer.h"
@@ -312,7 +313,8 @@ CC alldata::~alldata() {
 	releaseBinaryMatricesStorage();
 	delete m_pTestedTRs;
 	delete m_pK1212_4_20;
-	delete m_pK16p1f;
+	delete m_pK1111p1f;
+		delete m_pK16p1f;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif
@@ -352,7 +354,7 @@ bool alldata::FindIsomorphicBaseElements(const string& fn) {
 	CStorage<tchar> baseElements(2, lenSet);
 	int reserved = 2;
 	const auto nSets = readTable(fn, -1, lenSet, 1, 0, baseElements.getObjectsPntr(), reserved, 
-		param(t_nMaxNumberOfStartMatrices) + param(t_nFirstIndexOfStartMatrices));
+		param(t_nMaxNumberOfStartMatrices) + param(t_nFirstIndexOfStartMatrices) - 1);
 	if (!nSets) {
 		printfRed("Cannot read file \"%s\"\n", fn.c_str());
 		return false;

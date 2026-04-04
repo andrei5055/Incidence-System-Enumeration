@@ -223,11 +223,15 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 	const auto nc = m_numPlayers;
 	const auto len = nc * nr;
 	if (USE_INTRINSIC && m_groupSize == 2 && nc <= 32 && tr) {
+#if USE_INTRINSIC
 		alignas(32) tchar pTmp[32];
+#endif
 		auto * cii = mi;
 		for (int i = 0; i < nr; i++, coi += nc, cii += nc) {
+#if USE_INTRINSIC
 			transform32_and_sort_each_pair(cii, tr, pTmp, nc);
 			sortGroupsI(pTmp, coi, m_nGroups);
+#endif
 #if 0
 			tchar pTmp2[32];
 			tchar pTmp3[32];
@@ -353,14 +357,16 @@ CC int alldata::kmProcessOneNot1stRow2(ctchar* mi, int mind, tchar* tb, ctchar* 
 	const auto nc = m_numPlayers;
 	auto* mii = mi + mind * nc; 
 	if (USE_INTRINSIC && m_numPlayers <= 32) {
-		alignas(32) tchar pRow[32];
 		alignas(32) tchar pTr[32];
-		alignas(32) tchar pTmp[32];
+		alignas(32) tchar pRow[32];
 		alignas(32) tchar pSorted[32];
 		memcpy(pRow, mii, nc);
 		memcpy(pTr, tr, nc);
+#if USE_INTRINSIC
+		alignas(32) tchar pTmp[32];
 		transform32_and_sort_each_pair(pRow, pTr, pTmp, nc);
 		sortGroupsI(pTmp, pSorted, m_nGroups);
+#endif
 		const auto row2ndValue = pSorted[1];
 		ASSERT_IF(row2ndValue >= nc);
 		const int ncc = (row2ndValue - 1) * nc;

@@ -10,6 +10,7 @@
 #include "RowStorage.h"
 
 class K1212_4_20;
+class K1111P1F;
 class K16P1F;
 
 #define TestOption1 3
@@ -168,7 +169,7 @@ public:
 	CC alldata(const SizeParam& p, const kSysParam* pSysParam, const int createSecondRow = 0, CRowStorage* pRowStorage = NULL, bool useCheckLinksT = UseCheckLinksT,
 		int improveResult = ImproveResults, bool createImprovedResult = CreateImprovedMatrix);
 	CC ~alldata();
-	bool checkAndSave(ctchar* data);
+	bool checkAndSave(ctchar* data, int mode = 0);
 	CC sLongLong Run(int threadId=0, eThreadStartMode iCalcMode=eCalcResult, CStorageSet<tchar>* secondRowsDB=NULL,
 		ctchar* mstart0 = NULL, ctchar* mfirst = NULL,
 		int nrowsOut=0, sLongLong* pcnt=NULL, std::string* pOutResult = NULL, int iThread = 0);
@@ -434,6 +435,7 @@ private:
 	bool m_bAdjustRow4 = false;
 	bool m_bK1212_4_20 = false;
 	K1212_4_20* m_pK1212_4_20 = NULL;
+	K1111P1F* m_pK1111p1f = NULL;
 	K16P1F* m_pK16p1f = NULL;
 
 	CStorageIdx<tchar>** m_pRows = NULL;

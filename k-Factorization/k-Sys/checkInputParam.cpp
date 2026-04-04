@@ -90,9 +90,8 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		}
 	}
 
-	const auto nRowsOut = val[t_nRowsInResultMatrix];
-	if (nRowsOut == 1 || nRowsOut > numDays) {
-		printfRed("*** %s(%d) must be either 0 or within the range 2:%d\n", paramNames[t_nRowsInResultMatrix], nRowsOut, numDays);
+	if (val[t_nFirstIndexOfStartMatrices] < 1) {
+		printfRed("*** %s(%d) must be > 0\n", paramNames[t_nFirstIndexOfStartMatrices], val[t_nFirstIndexOfStartMatrices]);
 		return false;
 	}
 
@@ -162,7 +161,7 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			printfRed("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
 				"\"%s\"=%d is ignored and replaced with the maximum integer value (%d)\n", 
 				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], MaxNumberOfStartMatrices);
-			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices];
+			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices] + 1;
 		}
 	}
 	// current version does not work with nRowStart != nPrecalcRows

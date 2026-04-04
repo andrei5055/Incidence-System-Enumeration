@@ -1,5 +1,6 @@
 #include "TripleSys.h"
 #include "k1212_4_20.h"
+#include "k1111p1f.h"
 #include "k16p1f.h"
 #include <iostream>
 #include <filesystem>
@@ -52,6 +53,11 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 			if (m_pK1212_4_20) {
 				m_precalcMode = eCalculateMatrices;
 				m_pK1212_4_20->solve();
+				return eNoResult;
+			}
+			if (m_pK1111p1f) {
+				m_precalcMode = eCalculateMatrices;
+				m_pK1111p1f->solve();
 				return eNoResult;
 			}
 			if (m_pK16p1f) {
@@ -134,7 +140,10 @@ CC void alldata::addPrecalculatedRow()
 	tchar nb[MAX_PLAYER_NUMBER];
 	bool retVal;
 	if (m_pK1212_4_20) {
-		retVal = m_pK1212_4_20->addRow(m_secondPlayerInRow4/ 2, result(m_nPrecalcRows));
+		retVal = m_pK1212_4_20->addRow(m_secondPlayerInRow4 / 2, result(m_nPrecalcRows));
+	}
+	else if (m_pK1111p1f) {
+		retVal = m_pK1111p1f->addRow(m_secondPlayerInRow4 / 2, result(m_nPrecalcRows));
 	}
 	else if (m_pK16p1f) {
 		retVal = m_pK16p1f->addRow(m_secondPlayerInRow4 - 1, result(m_nPrecalcRows));
@@ -152,7 +161,7 @@ CC void alldata::addPrecalculatedRow()
 		m_nRows4 = m_nRows4Day = 0;
 	}
 #if !USE_CUDA
-	else if (m_test & 2048) {
+	else if (param(t_useKSolve) & 2) {
 		namespace fs = std::filesystem;
 		char name[32];
 		if (m_nRows4Day == 1 && m_secondPlayerInRow4 == m_secondPlayerInRow4First) {

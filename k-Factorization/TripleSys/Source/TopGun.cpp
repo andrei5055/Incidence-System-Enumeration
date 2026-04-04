@@ -109,21 +109,21 @@ int TopGun::Run()
 		}
 		const auto firstIndexOfStartMatrices = (uint)param(t_nFirstIndexOfStartMatrices);
 		const auto nMatrices = numMatrices2Process();
-		if (nMatrices && nMatrices <= firstIndexOfStartMatrices)
+		if (nMatrices && nMatrices < firstIndexOfStartMatrices)
 		{
-			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 0 to number of 'Start Matrices'(%d). Exit\n",
+			printfRed("*** Value of FirstIndexOfStartMatrices(%d) must be from 1 to number of 'Start Matrices'(%d). Exit\n",
 				firstIndexOfStartMatrices, nMatrices);
 			myExit(1);
 		}
-		if (!param(t_MultiThreading) == 1) {
-			if (numThreads > nMatrices - firstIndexOfStartMatrices)
-				numThreads = nMatrices - firstIndexOfStartMatrices;
+		if (param(t_MultiThreading) == 1) {
+			if (numThreads > nMatrices - firstIndexOfStartMatrices + 1)
+				numThreads = nMatrices - firstIndexOfStartMatrices + 1;
 		}
 		threads.resize(numThreads);
 
 		InitCnt(numThreads);
 		int nThreadsRunning = 1;
-		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices;
+		int nMatricesProc = m_iMatrix = firstIndexOfStartMatrices - 1;
 		mfirst = inputMatrices();
 		mstart = mfirst + m_iMatrix * inputMatrixSize();
 		mTime = clock() - iTime;
@@ -131,10 +131,10 @@ int TopGun::Run()
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
 
 		cTime = clock();
-		bool bResearch = (param(t_test) & (t_run_U1F_24_4_20 | 8192)) != 0;
-		int waitInterval  = bResearch ? 100 : 5;
+		bool bUseKSolve = param(t_useKSolve) != 0;
+		int waitInterval  = bUseKSolve ? 100 : 5;
 
-		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation);
+		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation) && !bUseKSolve;
 		if (bUseMultiThread2)
 		{
 			int icode = 0;
@@ -182,7 +182,7 @@ int TopGun::Run()
 				nMatricesProc++;
 				if (clock() - cTime > 20000)
 				{
-					if (!bResearch)
+					if (!bUseKSolve)
 						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
 					cTime = clock();
 				}
@@ -219,6 +219,11 @@ int TopGun::Run()
 							nMatricesProc++;
 							t.join();
 							threadStopped(iTask);
+							if (bUseKSolve) // && clock() - cTime > 5000)
+							{
+								printThreadsStat(nMatrices, nMatricesProc, iTime, false);
+								cTime = clock();
+							}
 						}
 					}
 					iTask++;
@@ -226,17 +231,16 @@ int TopGun::Run()
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(waitInterval));
 
-				if (clock() - cTime > 20000)
+				if (!bUseKSolve && clock() - cTime > 20000)
 				{
-					if (!bResearch)
-						printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
+					printThreadsStat(nMatrices, nMatricesProc, iTime, ((m_iPrintCount++) % 10) == 0);
 					cTime = clock();
 				}
 			}
 		}
 		waitAllThreadFinished();
 		rTime = clock() - iTime;
-		resultMatr = printThreadsStat(nMatrices, m_iMatrix, iTime, true);
+		resultMatr = printThreadsStat(nMatrices, m_iMatrix, iTime, true, !bUseKSolve);
 		const auto str = std::format("Total time={}ms (including prep time={}ms)\n", rTime, mTime);
 		printf(str.c_str());
 		m_reportInfo += str;

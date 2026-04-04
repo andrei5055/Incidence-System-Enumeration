@@ -83,6 +83,7 @@ typedef enum {
 	t_v4Row, t_v4RowB, t_v4RowC, t_v4RowD,
 	t_useCompatibilityCheck,
 	t_halfRowMode,
+	t_useKSolve,
 	t_lastParam,
 	// Indeces of parameters with the int* type values
 	t_v4Array = 0,
@@ -112,7 +113,6 @@ typedef enum {
 	t_noTest = 0,
 	t_ShortestCyclesFirst = 1 << 3,
 	t_useCompressedMasks = 1 << 8,
-	t_run_U1F_24_4_20 = 1 << 12,
 } featureFlags;
 
 typedef enum {

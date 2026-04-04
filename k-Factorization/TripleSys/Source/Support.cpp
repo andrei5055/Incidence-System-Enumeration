@@ -150,11 +150,11 @@ CC bool alldata::initPrevDay()
 
 CC void alldata::getPrevPlayer()
 {
-	ASSERT_IF(iPlayer > m_numPlayers);
 	if (iPlayer < m_numPlayers)
 	    indexPlayer[iPlayer] = m_indexPlayerMin[iPlayer];
 	while (--iPlayer >= 0)
 	{
+		ASSERT_IF(iPlayer >= m_numPlayers);
 		const auto iPlayerNumber = tmpPlayers[iPlayer];
 		const auto unsetLinkOk = unsetLinksForOnePlayer(tmpPlayers, iPlayer);
 		ASSERT_IF(!unsetLinkOk);

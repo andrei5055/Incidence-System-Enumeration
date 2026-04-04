@@ -1,5 +1,5 @@
-#ifndef K16P1F_H
-#define K16P1F_H
+#ifndef K1111P1F_H
+#define K1111P1F_H
 // Decoupled from TripleSys.h to prevent full rebuilds.
 
 #include <vector>
@@ -13,65 +13,53 @@
 #include <map>
 #include <set>
 #include <memory>
+#include <cstring>
 
 #ifdef _MSC_VER
 #define FORCE_INLINE __forceinline
-#define VECTOR_CALL __vectorcall
 #else
 #define FORCE_INLINE inline __attribute__((always_inline))
-#define VECTOR_CALL
 #endif
-#define K16_Use_rdtsc 0
-#define K16_N 16
-#define K16_MATCH 15
-#define K16_FIXED 3
-#define K16_SEARCH 12
-#define K16_M_MAX 60000
-#define K16_SORT_INPUT 0
-#define K16_USE_ROOT_SORT        1
 
-#define K16_DISABLE_IS_CANONICAL_R45_CHECK 0
-#define K16_BENCHMARK_EXIT     0
-
-#define K16_EDGE_PRUNE_ENABLED 1
-#define K16_EDGE_PRUNE_START   9 // 9
-#define K16_EDGE_PRUNE_END     12 // 12
-#define K16_PRUNE_THRESHOLD_HIGH 20000
-#define K16_PRUNE_THRESHOLD_LOW  500 // 500
-
-#define K16_USE_MRV              1
-#define K16_MRV_DEPTH_LIMIT      8 // Only reorder for depths < 8 
-#define K16_MRV_EARLY_EXIT       1
-#define K16_MRV_EARLY_EXIT_THRESHOLD 1
+#define K1111_DISABLE_IS_CANONICAL_R45_CHECK 0
+#define K1111_N 22
+#define K1111_MATCH 11
+#define K1111_FIXED 3
+#define K1111_SEARCH (K1111_MATCH - K1111_FIXED)
+#define K1111_M_MAX 250000
+#define K1111_SORT_INPUT 0
+#define K1111_USE_SIMD_CYCLE_CHECK 1
+#define K1111_USE_ROOT_SORT        1
+#define K1111_USE_BRANCH_FREE_EDGE 0
+#define K1111_USE_STATIC_V_ID      1
 
 typedef bool (*ResultCallback)(const void* cbClass, const unsigned char* results, int r4, int r5, int mode);
 
-class K16P1F {
+class K1111P1F {
 public:
-    struct Mask256 { uint64_t m[2] = { 0, 0 }; };
+    struct Mask256 { uint64_t m[3] = { 0, 0, 0 }; };
 
     struct alignas(64) PackedAdj { 
-        Mask256 edge_mask;
-        uint8_t adj[K16_N];
+        uint64_t m[4] = { 0, 0, 0, 0 }; 
         __m128i v_e2o;
         __m128i v_o2e;
     };
 
-    struct alignas(64) FastSortedFactor { uint8_t pairs[32]; };
+    struct alignas(64) FastSortedFactor { uint8_t pairs[64]; };
     struct FastRowTriplet { FastSortedFactor r[3]; };
 
     struct Factor {
-        uint8_t adj[K16_N];
-        uint8_t src[K16_N];
+        uint8_t adj[K1111_N];
+        uint8_t src[K1111_N];
         Mask256 edge_mask;
+        __m128i v_e2o;
+        __m128i v_o2e;
         FastSortedFactor fs;
-    __m128i v_e2o;
-    __m128i v_o2e;
-};
+    };
 
     // Bitset state for candidates in the search pool
-    #define K16_WORDS (((K16_M_MAX + 255) / 256 * 4) + 4)
-    struct State { alignas(64) uint64_t bits[K16_WORDS]; };
+    #define K1111_WORDS (((K1111_M_MAX + 255) / 256 * 4) + 4)
+    struct State { alignas(64) uint64_t bits[K1111_WORDS]; };
 
     struct RowRange { int start_word; int end_word; };
 
@@ -85,23 +73,19 @@ public:
     };
 
     struct SearchContext {
-        alignas(64) State pool[K16_SEARCH + 1];
+        alignas(64) State pool[K1111_SEARCH + 1];
         Mask256 used_edges;
-        uint8_t slots[K16_SEARCH];
+
+        const RowRange* ranges;
+        const uint64_t* adj;
+        size_t adj_size;
+        const size_t* offsets;
+        const Mask256* edge_masks;
+        const int* s_to_f;
+
         int r4_idx = 0;
         int r5_idx = 0;
-        int root_idx = 0;
-        uint16_t mrv_counts[K16_SEARCH + 1][K16_SEARCH]; // [depth][slot_idx]
-        bool counts_valid[K16_SEARCH + 1];
-    };
-
-    struct CycleMeter {
-        uint64_t total_cycles = 0;
-        uint64_t prop_cycles = 0;
-        uint64_t mask_cycles = 0;
-        uint64_t calls = 0;
-        uint64_t masks_checked = 0;
-        uint64_t props_done = 0;
+        double local_compression = 1.0;
     };
 
     struct alignas(64) ThreadLocalBuffers {
@@ -113,7 +97,6 @@ public:
         std::vector<size_t> local_offsets;
         std::vector<Mask256> local_edge_masks;
         std::vector<int> local_s_to_f;
-        State local_edge_presence[120];
         struct ActiveWord { int global_word_idx; uint64_t mask; int local_bit_start; };
         std::vector<ActiveWord> active_words;
 
@@ -126,21 +109,11 @@ public:
         
         // Search Phase Memory
         SearchContext local_ctx;
-        uint64_t r5_row_mask_in_s4[K16_SEARCH][K16_WORDS];
-        int dirty_s4_words[K16_SEARCH][K16_WORDS];
-        int dirty_s4_count[K16_SEARCH];
-        SubSamplePlanItem sub_sampling_plans[K16_SEARCH][K16_WORDS];
-        int sub_sampling_plan_sizes[K16_SEARCH];
-
-        // Constant pointers for the search (to keep SearchContext small)
-        const RowRange* ranges = nullptr;
-        const uint64_t* adj = nullptr;
-        const size_t* offsets = nullptr;
-        const Mask256* edge_masks = nullptr;
-        const int* s_to_f = nullptr;
-        double local_compression = 0.0;
-
-        CycleMeter meter;
+        int sub_sampling_plan_sizes[K1111_SEARCH];
+        uint64_t r5_row_mask_in_s4[K1111_SEARCH][K1111_WORDS];
+        int dirty_s4_words[K1111_SEARCH][K1111_WORDS];
+        int dirty_s4_count[K1111_SEARCH];
+        SubSamplePlanItem sub_sampling_plans[K1111_SEARCH][K1111_WORDS];
 
         ThreadLocalBuffers() {
             memset(dirty_s4_count, 0, sizeof(dirty_s4_count));
@@ -151,7 +124,7 @@ public:
     };
 
     // Canonicity structures
-    struct alignas(32) Permutation24 { 
+    struct alignas(32) Permutation22 { 
         uint8_t p[32]; 
         uint8_t p_inv[32]; 
         __m256i pv;
@@ -159,11 +132,11 @@ public:
         int swaps = 0;
         int padding[7]; // Ensure sizeof=160 (multiple of 32)
     };
-    struct TransInfo { Permutation24 perms[512]; int count = 0; };
-    struct CycleUnion { int cycles[16][16]; int lens[16]; int count = 0; };
+    struct TransInfo { Permutation22 perms[512]; int count = 0; };
+    struct CycleUnion { int cycles[24][24]; int lens[24]; int count = 0; };
 
-    K16P1F();
-    ~K16P1F();
+    K1111P1F();
+    ~K1111P1F();
 
     void init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr = NULL, bool bPrint = true);
     bool addRow(int iRow, const unsigned char* source);
@@ -171,23 +144,20 @@ public:
 
 private:
     void* cbClass = NULL;
-    int call_counter = 0;
     int kThreads;
     int fixed3RowsIndex = 0;
     ResultCallback resultCallback;
     bool bPrint = true;
-    Factor fixedRows[K16_FIXED];
-    PackedAdj fixed_packed[K16_FIXED];
+    Factor fixedRows[K1111_FIXED];
+    PackedAdj fixed_packed[K1111_FIXED];
     Mask256 fixedEdgesMask;
-    int edge_id_table[K16_N][K16_N];
-    uint8_t edge_to_u[128];
-    uint8_t edge_to_v[128];
+    int edge_id_table[K1111_N][K1111_N];
 
     std::vector<Factor> global_pool;
     std::vector<PackedAdj> packed_pool;
-    std::vector<int> temp_slot_ids[K16_SEARCH];
+    std::vector<int> temp_slot_ids[K1111_SEARCH];
     std::map<std::vector<uint8_t>, int> f_map;
-    std::set<int> row_factor_ids[K16_SEARCH];
+    std::set<int> row_factor_ids[K1111_SEARCH];
 
     // Search Structures
     std::vector<int> search_to_factor;
@@ -200,56 +170,65 @@ private:
     std::atomic<int> num_notCanon{ 0 };
     int total_roots = 0;
     int first_root = -1;
-    int restart_index;
     std::chrono::steady_clock::time_point solve_start_time;
     std::chrono::steady_clock::time_point start_time;
     std::chrono::steady_clock::time_point last_print_time;
 
+    // Thread Local State
     std::vector<std::unique_ptr<ThreadLocalBuffers>> thread_buffers;
     int thread_row4[256];
     int thread_row5[256];
     int thread_root_idx[256];
+    int diag_cnt = 0;
     std::vector<std::vector<unsigned char>> results_to_sort;
 
-    bool bTimeSet = false;
-
     // Internal Help Methods
-    void VECTOR_CALL internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* buf);
+    void internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx);
     void diagnostic_printout(double current_compr);
     PackedAdj pack_factor_adj(const uint8_t* adj);
     static FORCE_INLINE bool check_cycle_simd(__m128i v_e2o1, __m128i v_o2e2, __m128i v_id) {
-        __m128i v_sigma = _mm_shuffle_epi8(v_o2e2, v_e2o1);
-        // We want a single cycle of length 8 in the edge permutation for K16 Hamiltonian.
-        uint32_t mask1 = _mm_movemask_epi8(_mm_cmpeq_epi8(v_sigma, v_id)) & 0x00FF;
-        if (mask1) return false;
+        // v_e2o and v_o2e contain (v-offset)/2 values to map vertices to indices 0..10
+        __m128i v_sigma = _mm_shuffle_epi8(v_o2e2, v_e2o1); // σ acts on 11 elements
         
+        // P1F for n=11 requires a single cycle of length 11.
+        // This is true if σ^k has no fixed points for k=1..5.
         __m128i v_s2 = _mm_shuffle_epi8(v_sigma, v_sigma);
-        uint32_t mask2 = _mm_movemask_epi8(_mm_cmpeq_epi8(v_s2, v_id)) & 0x00FF;
-        if (mask2) return false;
-        
+        __m128i v_s3 = _mm_shuffle_epi8(v_s2, v_sigma);
         __m128i v_s4 = _mm_shuffle_epi8(v_s2, v_s2);
-        uint32_t mask4 = _mm_movemask_epi8(_mm_cmpeq_epi8(v_s4, v_id)) & 0x00FF;
-        if (mask4) return false;
-        
-        __m128i v_s8 = _mm_shuffle_epi8(v_s4, v_s4);
-        uint32_t mask8 = _mm_movemask_epi8(_mm_cmpeq_epi8(v_s8, v_id)) & 0x00FF;
-        return mask8 == 0x00FF;
+        __m128i v_s5 = _mm_shuffle_epi8(v_s4, v_sigma);
+
+        __m128i v_fix = _mm_cmpeq_epi8(v_sigma, v_id);
+        v_fix = _mm_or_si128(v_fix, _mm_cmpeq_epi8(v_s2, v_id));
+        v_fix = _mm_or_si128(v_fix, _mm_cmpeq_epi8(v_s3, v_id));
+        v_fix = _mm_or_si128(v_fix, _mm_cmpeq_epi8(v_s4, v_id));
+        v_fix = _mm_or_si128(v_fix, _mm_cmpeq_epi8(v_s5, v_id));
+
+        // Use mask for indices 0..10
+        uint32_t mask = _mm_movemask_epi8(v_fix) & 0x07FF;
+        return mask == 0;
     }
 
     FORCE_INLINE bool is_perfect_packed(const PackedAdj& p1, const PackedAdj& p2) {
-        if ((p1.edge_mask.m[0] & p2.edge_mask.m[0]) || (p1.edge_mask.m[1] & p2.edge_mask.m[1])) 
-            return false;
+        if (!_mm256_testz_si256(_mm256_load_si256((const __m256i*)&p1), _mm256_load_si256((const __m256i*)&p2))) return false;
+#if K1111_USE_SIMD_CYCLE_CHECK
+        const __m128i v_id = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+        return check_cycle_simd(_mm_load_si128(&p1.v_e2o), _mm_load_si128(&p2.v_o2e), v_id);
+#else
         return is_perfect_scalar(p1.adj, p2.adj);
+#endif
     }
     bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
 
     CycleUnion find_cycles(const uint8_t* adj1, const uint8_t* adj2);
     void get_transformations(const Factor& fi, const Factor& fj, TransInfo& info);
-    void apply_perm_16(const uint8_t* src_adj, const Permutation24& perm, uint8_t* dst_adj);
+    void apply_perm_22(const uint8_t* src_adj, const Permutation22& perm, uint8_t* dst_adj);
     FastSortedFactor get_fast_sorted(const uint8_t* adj);
     
+    // Canonicity Modes
+#define K1111_USE_STABILIZER_CANON 1 // 0=Brute Force Mode, 1=New Automorphism Mode
+
     bool is_canonical(int r4_fid, int r5_fid, const TransInfo* r4_dependent_trans);
-    bool is_canonical_stab(int r5_fid, const Permutation24* stab, int stab_count);
+    bool is_canonical_stab(int r5_fid, const Permutation22* stab, int stab_count);
 
     CycleUnion target_cu;
     TransInfo fixed_trans[3];
@@ -267,6 +246,7 @@ private:
     
     std::atomic<int> min_stab_size{ 1000000 };
     std::atomic<int> max_stab_size{ 0 };
+
     static bool compare_fast_sorted(const FastSortedFactor& a, const FastSortedFactor& b);
     static bool equal_fast_sorted(const FastSortedFactor& a, const FastSortedFactor& b);
     static bool compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b);

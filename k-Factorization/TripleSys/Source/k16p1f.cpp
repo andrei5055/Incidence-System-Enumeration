@@ -111,6 +111,7 @@ void K16P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3
     g_total_kept = 0;
     min_stab_size = 1000000;
     max_stab_size = 0;
+    results_to_sort.clear();
 }
 
 bool K16P1F::addRow(int iRow, const unsigned char* source) {
@@ -645,9 +646,8 @@ void K16P1F::solve() {
                                         if (buf.dirty_s4_count[r] < K16_WORDS) buf.dirty_s4_words[r][buf.dirty_s4_count[r]++] = w_idx;
                                     }
                                     buf.r5_row_mask_in_s4[r][w_idx] |= (1ULL << (s4_idx % 64));
-                                        buf.g_to_l[g_idx] = l_idx;
+                                    buf.g_to_l[g_idx] = l_idx;
                                     buf.local_to_global.push_back(g_idx);
-                                    buf.local_s_to_f.push_back(search_to_factor[g_idx]);
 
                                     // Populate local edge presence
                                     uint64_t e0 = fm.m[0];
@@ -675,8 +675,8 @@ void K16P1F::solve() {
             if (l_idx == 0) { roots_done[tid]++; continue; }
 
             buf.local_offsets.assign(l_idx, 0);
-            buf.local_edge_masks.resize(l_idx);
-            buf.local_s_to_f.resize(l_idx);
+            buf.local_edge_masks.assign(l_idx, { 0, 0 });
+            buf.local_s_to_f.assign(l_idx, -1);
             size_t l_coff = 0;
             int K = (int)buf.local_to_global.size();
             buf.local_compression = (double)Global_M_total / K;
@@ -781,6 +781,18 @@ void K16P1F::solve() {
             for (int gi : buf.local_to_global) if (gi != -1) buf.g_to_l[gi] = -1;
         }
     }, 1);
+
+    if (bPrint) { printf("Reporting %zd sorted results...\n", results_to_sort.size()); }
+    // Sort canonical results lexicographically
+    std::sort(results_to_sort.begin(), results_to_sort.end(), [](const std::vector<unsigned char>& a, const std::vector<unsigned char>& b) {
+        return memcmp(a.data(), b.data(), a.size()) < 0;
+        });
+
+    // Final callback loop with mode=0
+    for (const auto& res : results_to_sort) {
+        resultCallback(cbClass, res.data(), 0, 0, 0);
+    }
+    std::vector<std::vector<unsigned char>>().swap(results_to_sort);
 }
 
 void VECTOR_CALL K16P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* pBuf) {
@@ -801,15 +813,21 @@ void VECTOR_CALL K16P1F::internal_solve(int depth, std::vector<int>& clique, Sea
         
         {
             std::lock_guard<std::mutex> lock(this->result_mutex);
-            if (this->resultCallback(this->cbClass, results, ctx.r4_idx, ctx.r5_idx)) {
+            // Call with mode=1 to check canonicity
+            if (this->resultCallback(this->cbClass, results, ctx.r4_idx, ctx.r5_idx, 1)) {
+                results_to_sort.push_back(std::vector<unsigned char>(results, results + K16_MATCH * K16_N));
                 num_results++;
-                printf("[CAN] Found canonical result at Root Index %d (r4:%d, r5:%d) | Total: %d\n",
-                    ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_results);
+                if (0 && bPrint) {
+                    printf("[CAN] Found canonical result at Root Index %d (r4:%d, r5:%d) | Total: %d\n",
+                        ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_results);
+                }
             }
             else {
                 num_notCanon++;
-                printf("[NC] Found non-canonical result at Root Index %d (r4:%d, r5:%d) | Total NC: %d\n",
-                    ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_notCanon);
+                if (0 && bPrint) {
+                    printf("[NC] Found non-canonical result at Root Index %d (r4:%d, r5:%d) | Total NC: %d\n",
+                        ctx.root_idx, (int)ctx.r4_idx, (int)ctx.r5_idx, (int)num_notCanon);
+                }
             }
         }
         return;
@@ -1295,7 +1313,7 @@ void K16P1F::diagnostic_printout(double current_compr) {
         uint64_t avg_m = sum_pm ? sum_mask / sum_pm : 0;
 
         printf("[RUN] M/Restart: %04d/%5d | ", fixed3RowsIndex, min_idx);
-        printf("%%:%6.3f | Time/Exp:%4d/%4d | Results/NC:%3d/%2d ",
+        printf("%%:%6.3f | Time/Exp:%4d/%4d | Res(C/N):%d/%d ",
             pct_global, (int)elap, expected_run_time, (int)num_results.load(), (int)num_notCanon.load());
         printf("| Compr:%.1f | Threads:%d\n", current_compr, kThreads);
 #if K16_Use_rdtsc

@@ -193,7 +193,7 @@ void alldata::printResultWithHistory(char const* name, int nRows)
 
 }
 
-sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t& m_iTime, bool bPrintSetup)
+sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t& m_iTime, bool bPrintSetup, bool bPrintToScreen)
 {
 	const sLongLong* cntTotal = m_cntTotal;
 	const sLongLong* cnt = m_cnt;
@@ -225,7 +225,7 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 
 	m_reportInfo = std::format(
 		"T ={}: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
-		timeBuf, nProccesed - param(t_nFirstIndexOfStartMatrices), nMatrices - param(t_nFirstIndexOfStartMatrices), 
+		timeBuf, nProccesed - param(t_nFirstIndexOfStartMatrices) + 1, nMatrices - param(t_nFirstIndexOfStartMatrices) + 1, 
 		fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
 
 	if (bPrintSetup)
@@ -245,7 +245,8 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 		}
 		m_reportInfo += std::format("Thread:Matrices generated{}\n", buffer);
 	}
-	std::cout << m_reportInfo;
+	if (bPrintToScreen)
+		printfYellow("%s", m_reportInfo.c_str());
 	outputIntegratedResults(NULL, 3);
 	return sum1;
 }

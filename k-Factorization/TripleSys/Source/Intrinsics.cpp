@@ -9,12 +9,12 @@ CC void multiplyAll(ll* __restrict a, const ll* __restrict b, const ll* __restri
 	const int batch = 16;
 	for (; i + batch <= n; i += batch) {
 		const auto vb0 = _mm256_loadu_si256((__m256i const*)(b + i + 0));
-		const auto vc0 = _mm256_loadu_si256((__m256i const*)(c + i + 0));
 		const auto vb1 = _mm256_loadu_si256((__m256i const*)(b + i + 4));
-		const auto vc1 = _mm256_loadu_si256((__m256i const*)(c + i + 4));
 		const auto vb2 = _mm256_loadu_si256((__m256i const*)(b + i + 8));
-		const auto vc2 = _mm256_loadu_si256((__m256i const*)(c + i + 8));
 		const auto vb3 = _mm256_loadu_si256((__m256i const*)(b + i + 12));
+		const auto vc0 = _mm256_loadu_si256((__m256i const*)(c + i + 0));
+		const auto vc1 = _mm256_loadu_si256((__m256i const*)(c + i + 4));
+		const auto vc2 = _mm256_loadu_si256((__m256i const*)(c + i + 8));
 		const auto vc3 = _mm256_loadu_si256((__m256i const*)(c + i + 12));
 
 		_mm256_storeu_si256((__m256i*)(a + i + 0), _mm256_and_si256(vb0, vc0));
@@ -123,6 +123,7 @@ int sortGroupsAndCompare(ctchar* input_ptr, ctchar* target_ptr, tchar* sorted, i
 
 	return (a < b) ? -1 : 1;
 }
+#endif
 
 #ifdef USE_CUDA
 #define BIT_SCAN_FORWARD64 BitScanForward64_Cuda
@@ -140,7 +141,6 @@ CC void BitScanForward64_Cuda(unsigned long* _Index, unsigned long long _Mask) {
 #else
 #define BIT_SCAN_FORWARD64  _BitScanForward64
 #endif
-
 CC bool findAndClearNextBit(uint& first, uint last, ll *pCompSol) {
 	const auto lastB = IDX(last);
 	auto firstB = first >> SHIFT;
@@ -167,8 +167,7 @@ CC bool findAndClearNextBit(uint& first, uint last, ll *pCompSol) {
 	pCompSol[firstB] ^= (ll)1 << iBit;
 	return true;
 }
-
-#else
+#if !USE_INTRINSIC
 CC void multiplyAll(ll* a, const ll* b, const ll* c, int n) {
 	const int n8max = n & (~7);
 	int j = 0;

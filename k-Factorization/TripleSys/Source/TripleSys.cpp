@@ -2,6 +2,7 @@
 #include "TableLS.h"
 #include "TripleSys.h"
 #include "k1212_4_20.h"
+#include "k1111p1f.h"
 #include "k16p1f.h"
 #include "kOrbits.h"
 
@@ -16,14 +17,14 @@ using namespace std;
 #if CHECK_GET_ROW
 TableAut* pReslt = NULL;
 #endif
-bool alldata::checkAndSave(ctchar* data) {
+bool alldata::checkAndSave(ctchar* data, int mode) {
 	memcpy(result(0), data, m_numDaysResult * m_numPlayers);
 	//printTable("Result", result(), m_numDaysResult, m_numPlayers, m_groupSize);
 	m_lastRowWithTestedTrs = 0;
-	iDay = m_numDaysResult;
+iDay = m_numDaysResult;
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
-	
+
 	setArraysForLastRow(iDay);
 
 	if (!linksFromMatrix(links(), result(), iDay, false)) {
@@ -31,10 +32,12 @@ bool alldata::checkAndSave(ctchar* data) {
 		myExit(1);
 	}
 	if (!cnvCheckNew(0, iDay)) {
-		if (m_bPrint) 
-			printfYellow("*** Calculated result is not canonical (not recorded, skipped)\n");
+		//if (m_bPrint) 
+		//	printfYellow("*** Calculated result is not canonical (not recorded, skipped)\n");
 		return false;
 	}
+	if (mode == 1)
+		return true;
 	nLoops++;
 	m_finalKMindex++;
 	TableAut* pResult = (TableAut*) m_pRes;
@@ -48,25 +51,29 @@ bool alldata::checkAndSave(ctchar* data) {
 			pResult->printTable(result(), true, false, numDaysResult());
 		}
 		if (m_bPrint) {
-			printf("%d(%zd): " AUT "%d, % s\n", m_threadNumber, nLoops, orderOfGroup(), stat);
+			//printf("%d(%zd): " AUT "%d, % s\n", m_threadNumber, nLoops, orderOfGroup(), stat);
 			// print on screen result with highlighted differences from prev result
-			printResultWithHistory("", iDay);
+			//printResultWithHistory("", iDay);
 			if (m_printMatrices & 2)
 				printPermutationMatrices(2);
 		}
 	}
 	return true;
 }
-bool K1212SaveResult(void* pAppData, ctchar* result) {
-	return ((alldata*)pAppData)->checkAndSave(result);
+bool K1212SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
+	return ((alldata*)pAppData)->checkAndSave(result, mode);
 }
-bool K16SaveResult(void* pAppData, ctchar* result) {
-	return ((alldata*)pAppData)->checkAndSave(result);
+bool K1111SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
+	return ((alldata*)pAppData)->checkAndSave(result, mode);
+}
+bool K16SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
+	return ((alldata*)pAppData)->checkAndSave(result, mode);
 }
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
 	ctchar* mStart0, ctchar* mfirst, int nrowsStart, sLongLong* pcnt, string* pOutResult, int iThread) {
 	// Input parameters:
 	const auto iCalcModeOrg = iCalcMode;
+	iPlayer = 0;
 	m_v4Row[0] = param(t_v4Row); m_v4Row[1] = param(t_v4RowB); m_v4Row[2] = param(t_v4RowC); m_v4Row[3] = param(t_v4RowD);
 	if (m_v4Row[0] || m_v4Row[1] || m_v4Row[2] || m_v4Row[3]) {
 		m_bAdjustRow4 = true;
@@ -297,42 +304,40 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
 		minRows = iDay--;
-
-		if ((m_test & t_run_U1F_24_4_20) != 0 && m_numPlayers == 24 && m_groupSize == 2 && bCBMP &&
-			m_precalcMode == eCalculateRows && m_nPrecalcRows == 3 &&
-			sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
-			sysParam()->u1fCycles[0][1] == 4 && sysParam()->u1fCycles[0][2] == 20) {
-			if (m_pK1212_4_20) {
-				printfRed("*** Internal error, K1212_4_20 already in use, exit\n");
+		if (param(t_useKSolve)) {
+			if (m_pK1212_4_20 || m_pK16p1f || m_pK1111p1f) {
+				printfRed("*** Internal error, K-Solve already in use, exit\n");
 				myExit(1);
 			}
-			
 			int kThreads = param(t_numKThreads);
 			kThreads = kThreads / param(t_numThreads);
 			if (kThreads < 1)
 				kThreads = 1;
 			if (m_bPrint)
-				printfYellow("Number of threads per K1212 process (KThreads): %d\n", kThreads);
-
-			m_pK1212_4_20 = new K1212_4_20();
-			m_pK1212_4_20->init(m_threadNumber, kThreads, result(0), (ResultCallback)K1212SaveResult, (void*)this, m_bPrint);
-		}
-		if ((m_test & 8192) != 0 && m_numPlayers == 16 && m_groupSize == 2 && !bCBMP &&
-			m_precalcMode == eCalculateRows && m_nPrecalcRows == 3) {
-			if (m_pK16p1f) {
-				printfRed("*** Internal error, K16P1F already in use, exit\n");
+				printf("Number of threads per K-Solve process (KThreads): %d\n", kThreads);
+			if (m_numPlayers == 24 && m_groupSize == 2 && bCBMP &&
+				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3 &&
+				sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+				sysParam()->u1fCycles[0][1] == 4 && sysParam()->u1fCycles[0][2] == 20) {
+				m_pK1212_4_20 = new K1212_4_20();
+				m_pK1212_4_20->init(m_threadNumber, kThreads, result(0), (ResultCallback)K1212SaveResult, (void*)this, m_bPrint);
+			}
+			else if (m_numPlayers == 16 && m_groupSize == 2 && !bCBMP &&
+				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3) {
+				m_pK16p1f = new K16P1F();
+				m_pK16p1f->init(m_threadNumber, kThreads, result(0), (ResultCallback)K16SaveResult, (void*)this, m_bPrint);
+			}
+			else if (m_numPlayers == 22 && m_groupSize == 2 && bCBMP &&
+				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3 &&
+				sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+				sysParam()->u1fCycles[0][1] == 22) {
+				m_pK1111p1f = new K1111P1F();
+				m_pK1111p1f->init(m_threadNumber, kThreads, result(0), (ResultCallback)K1111SaveResult, (void*)this, m_bPrint);
+			}
+			else {
+				printfRed("*** Internal error, UseKSolve requested, but no compatible K-Solve exists, exit\n");
 				myExit(1);
 			}
-
-			int kThreads = param(t_numKThreads);
-			kThreads = kThreads / param(t_numThreads);
-			if (kThreads < 1)
-				kThreads = 1;
-			if (m_bPrint)
-				printfYellow("Number of threads per K16P1F process (KThreads): %d\n", kThreads);
-
-			m_pK16p1f = new K16P1F();
-			m_pK16p1f->init(m_threadNumber, kThreads, result(0), (ResultCallback)K16SaveResult, (void*)this, m_bPrint);
 		}
 		goto checkCurrentMatrix;
 	}

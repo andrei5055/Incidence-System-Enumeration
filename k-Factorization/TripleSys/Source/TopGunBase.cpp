@@ -287,7 +287,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 
 	char buffer[128];
 	const auto finalReport = pParSet != NULL;
-	sprintf_s(buffer, "%s%05d.txt", pResFileName, param(t_nFirstIndexOfStartMatrices));
+	sprintf_s(buffer, "%s_%07d.txt", pResFileName, param(t_nFirstIndexOfStartMatrices));
 	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, buffer);
 	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
 	
@@ -386,8 +386,9 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	FCLOSE_F(f);
 	if (finalReport) {
 		char buffer[16];
-		sprintf_s(buffer, "-%05d.txt", m_iMatrix - 1);
+		sprintf_s(buffer, "-%07d.txt", m_iMatrix);
 		std::string finalName = IntegratedResults.substr(0, IntegratedResults.size() - 4) + buffer;
+		//std::filesystem::remove(finalName); Looks like we do not diid it
 		std::filesystem::rename(IntegratedResults, finalName);
 	}
 }

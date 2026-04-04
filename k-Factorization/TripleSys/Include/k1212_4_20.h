@@ -32,7 +32,7 @@
 #define K1212_USE_BRANCH_FREE_EDGE 0
 #define K1212_USE_STATIC_V_ID      1
 
-typedef bool (*ResultCallback)(const void* cbClass, const unsigned char* results, int r4, int r5);
+typedef bool (*ResultCallback)(const void* cbClass, const unsigned char* results, int r4, int r5, int mode);
 
 class K1212_4_20 {
 public:
@@ -166,6 +166,7 @@ private:
     std::vector<size_t> factor_offsets;
     int roots_done[256] = { 0 };
     std::atomic<int> num_results{ 0 };
+    std::atomic<int> num_notCanon{ 0 };
     int total_roots = 0;
     int first_root = -1;
     std::chrono::steady_clock::time_point solve_start_time;
@@ -178,6 +179,7 @@ private:
     int thread_row5[256];
     int thread_root_idx[256];
     int diag_cnt = 0;
+    std::vector<std::vector<unsigned char>> results_to_sort;
 
     // Internal Help Methods
     void internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx);

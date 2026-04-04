@@ -77,6 +77,7 @@ const char* intParamNames[]{
 	"v4Row", "v4RowB", "v4RowC", "v4RowD",
 	"UseCompatibilityCheck",
 	"HalfRowMode",
+	"UseKSolve",
 };
 
 const char* intArraysParamNames[]{

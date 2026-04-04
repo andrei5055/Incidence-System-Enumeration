@@ -45,7 +45,7 @@ protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
 	int readMatrices(int tFolder = t_StartFolder, int nRows = 0);
 	void InitCnt(size_t nThrds)				{ m_cnt = new sLongLong[2 * nThrds]; memset(m_cnt, 0, 2 * nThrds * sizeof(long long)); }
-	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices) + param(t_nFirstIndexOfStartMatrices); }
+	inline auto nMatricesMax() const		{ return param(t_nMaxNumberOfStartMatrices) + param(t_nFirstIndexOfStartMatrices) - 1; }
 	inline auto nMatricesReserved() const	{ return nMatricesMax() > 100000 ? 100000 : nMatricesMax(); } // Memory will be reserved for the specified number of matrices before the reading process begins.
 	inline void updateMatrReserved(bool v)	{ m_bUpdateMatrixReserved = v; }
 	inline auto updateMatrReserved()		{ return m_bUpdateMatrixReserved; }
@@ -92,7 +92,7 @@ public:
 	inline static K_SYS_LIBRARY_API auto secondRowDB()		{ return m_pSecondRowsDB; }
 private:
 	void deleteOldFiles();
-	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup);
+	sLongLong printThreadsStat(int nMatrices, int nProcessed, const clock_t& iTime, bool bPrintSetup, bool bPrintToScreen = true);
 	//void orderAndExploreMatices(int nRows, bool exploreMatrices) const;
 	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);

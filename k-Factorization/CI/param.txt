@@ -8,7 +8,7 @@ UseCompatibilityCheck=1
 StartFolder="../Logs_CI/"
 ResultFolder="../Logs_CI/"
 
-FirstIndexOfStartMatrices=0
+FirstIndexOfStartMatrices=1
 MaxNumberOfStartMatrices=100000
 
 // Single thread tests:
