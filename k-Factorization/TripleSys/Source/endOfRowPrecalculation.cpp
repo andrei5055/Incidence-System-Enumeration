@@ -50,19 +50,9 @@ CC ePrecalculateReturn alldata::endOfRowPrecalculation(eThreadStartMode iCalcMod
 				printf("Total number of precalculated row solutions = %5d\n", m_nRows4);
 
 			m_lastRowWithTestedTrs = 0;
-			if (m_pK1212_4_20) {
-				m_precalcMode = eCalculateMatrices;
-				m_pK1212_4_20->solve();
-				return eNoResult;
-			}
-			if (m_pK1111p1f) {
-				m_precalcMode = eCalculateMatrices;
-				m_pK1111p1f->solve();
-				return eNoResult;
-			}
-			if (m_pK16p1f) {
-				m_precalcMode = eCalculateMatrices;
-				m_pK16p1f->solve();
+			if (m_pKSolver) {
+				m_precalcMode = eCalculateMatrices; // need to be before solve to correctly check results for canonicity
+				m_pKSolver->solve(0);
 				return eNoResult;
 			}
 			
@@ -139,14 +129,8 @@ CC void alldata::addPrecalculatedRow()
 #endif
 	tchar nb[MAX_PLAYER_NUMBER];
 	bool retVal;
-	if (m_pK1212_4_20) {
-		retVal = m_pK1212_4_20->addRow(m_secondPlayerInRow4 / 2, result(m_nPrecalcRows));
-	}
-	else if (m_pK1111p1f) {
-		retVal = m_pK1111p1f->addRow(m_secondPlayerInRow4 / 2, result(m_nPrecalcRows));
-	}
-	else if (m_pK16p1f) {
-		retVal = m_pK16p1f->addRow(m_secondPlayerInRow4 - 1, result(m_nPrecalcRows));
+	if (m_pKSolver) {
+		retVal = m_pKSolver->addRow(m_secondPlayerInRow4, result(m_nPrecalcRows));
 	}
 	else {
 		u1fSetTableRow(nb, result(m_nPrecalcRows), true);
@@ -161,13 +145,14 @@ CC void alldata::addPrecalculatedRow()
 		m_nRows4 = m_nRows4Day = 0;
 	}
 #if !USE_CUDA
-	else if (param(t_useKSolve) & 2) {
+	else if (param(t_useKSolve) & 4) {
 		namespace fs = std::filesystem;
 		char name[32];
+		const auto startMatrix = param(t_nFirstIndexOfStartMatrices);
 		if (m_nRows4Day == 1 && m_secondPlayerInRow4 == m_secondPlayerInRow4First) {
-			sprintf_s(name, sizeof(name), "./%05d", param(t_nFirstIndexOfStartMatrices));
+			sprintf_s(name, sizeof(name), "./%05d", startMatrix);
 			fs::create_directories(name);
-			sprintf_s(name, sizeof(name), "./%05d/%05d.txt", param(t_nFirstIndexOfStartMatrices), param(t_nFirstIndexOfStartMatrices));
+			sprintf_s(name, sizeof(name), "./%05d/%05d.txt", startMatrix, startMatrix);
 			FOPEN_F(f, name, "w");
 			for (int j = 0; j < m_nPrecalcRows; j++) {
 				for (int i = 0; i < m_numPlayers; i++)
@@ -176,7 +161,7 @@ CC void alldata::addPrecalculatedRow()
 			}
 			FCLOSE_F(f);
 		}
-		sprintf_s(name, sizeof(name), "./%05d/Row%02d.txt", param(t_nFirstIndexOfStartMatrices), result(m_nPrecalcRows)[1]);
+		sprintf_s(name, sizeof(name), "./%05d/Row%02d.txt", startMatrix, result(m_nPrecalcRows)[1]);
 		FOPEN_F(f, name, m_nRows4Day == 1 ? "w" : "a");
 		for (int i = 0; i < m_numPlayers; i++)
 			fprintf(f, "%3d", result(m_nPrecalcRows)[i]);

@@ -5,6 +5,7 @@ copy %ROOT%\k-Sys.exe .
 copy %ROOT%\*.dll .
 
 @echo off
+cd /d "%~dp0"
 SET _free=1000
 SET _used=2000
 k-Sys.exe paramU1F.txt

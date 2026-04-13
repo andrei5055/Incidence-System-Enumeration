@@ -91,7 +91,7 @@ ProcessPrecalculatedRow:
 #endif
 						goto ProcessPrecalculatedRow;
 			}
-
+			m_rTime = m_cTime;
 			m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if CheckMissingMatrix
 			//if (memcmp(missingMatrix, result(), iDay * m_numPlayers) == 0) 

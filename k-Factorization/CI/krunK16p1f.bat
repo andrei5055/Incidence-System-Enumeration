@@ -1,0 +1,41 @@
+@echo off
+cd /d "%~dp0"
+taskkill /F /IM k-Sys.exe /T >nul 2>nul
+ping 127.0.0.1 -n 3 >nul
+setlocal enabledelayedexpansion
+
+SET "ROOT=..\x64\Release"
+copy "%ROOT%\k-Sys.exe" .
+if %ERRORLEVEL% NEQ 0 ( echo FATAL: Failed to copy k-Sys.exe. & timeout /t 10 & exit /b 1 )
+copy "%ROOT%\*.dll" .
+if %ERRORLEVEL% NEQ 0 ( echo FATAL: Failed to copy TripleSys DLLs. & timeout /t 10 & exit /b 1 )
+
+k-Sys.exe kparamK16p1f.txt
+
+:: Check if solver failed
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Solver failed with code %ERRORLEVEL%.
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+SET "WINMERGE=C:\Users\%username%\AppData\Local\Programs\WinMerge\WinMergeU.exe"
+SET "FILE1=.\ExpectedResults\Complete_graphs\16\16x15x2_16\P0000000001.txt"
+SET "FILE2=..\LOGS_CK\Complete_graphs\16\16x15x2_16\P0000000001.txt"
+
+:: Run WinMerge directly
+"%WINMERGE%" /noninteractive /minimize /enableexitcode "%FILE1%" "%FILE2%"
+
+if %ERRORLEVEL% EQU 0 (
+    echo "Success: Files are identical"
+    if "%1" == "" pause
+    exit /b
+)
+
+:: If it gets here, ERRORLEVEL was not 0
+echo Differences found (Code %ERRORLEVEL%).
+if "%1" == "" (
+    echo Opening WinMerge for review.
+    "%WINMERGE%" "%FILE1%" "%FILE2%"
+    pause
+)

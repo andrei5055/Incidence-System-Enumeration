@@ -1,21 +1,19 @@
 #include "K1111P1F.h"
-#include <map>
 #include <algorithm>
 #include <numeric>
 #include <cstring>
 #include <cstdio>
 #include <iostream>
 #include <format>
-#include <set>
 #include <iterator>
 #include <utility>
 
-K1111P1F::K1111P1F() {
+K1111P1F::K1111P1F(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr, bool bPrint) : KBipartBase(factParam, bPrint) {
     int id_cnt = 0;
     diag_cnt = 0;
     memset(edge_id_table, -1, sizeof(edge_id_table));
-    for (int i = 0; i < K1111_N; i += 2) { // 0, 2, ... (Even nodes)
-        for (int j = 1; j < K1111_N; j += 2) { // 1, 3, ... (Odd nodes)
+    for (int i = 0; i < m_nPlayers; i += 2) { // 0, 2, ... (Even nodes)
+        for (int j = 1; j < m_nPlayers; j += 2) { // 1, 3, ... (Odd nodes)
             edge_id_table[i][j] = id_cnt++;
             edge_id_table[j][i] = edge_id_table[i][j];
         }
@@ -40,16 +38,15 @@ K1111P1F::K1111P1F() {
         gfs_table_adj[m] = _mm_loadu_si128((const __m128i*)adj_mask);
         gfs_table_idx[m] = _mm_loadu_si128((const __m128i*)idx_mask);
     }
+
+    init(fixed3RowsIndex, kThreads, first3Rows, callback, cbClassPtr);
 }
 
-K1111P1F::~K1111P1F() {}
-
-void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr, bool bPrint) {
+void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr) {
     if (kThreads > 256) kThreads = 256;
     this->thread_buffers.clear();
     for (int i = 0; i < kThreads; i++) this->thread_buffers.push_back(std::make_unique<ThreadLocalBuffers>());
-    this->bPrint = bPrint;
-    if (bPrint) {
+    if (m_bPrint) {
         std::cout << "Init: K(11,11) P1F, MS Compiler: " << _MSC_FULL_VER << ", kThreads: " << kThreads << std::endl;
     }
     this->fixed3RowsIndex = fixed3RowsIndex;
@@ -60,9 +57,9 @@ void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* firs
     last_print_time = start_time;
 
     fixedEdgesMask = { 0, 0, 0 };
-    for (int s = 0; s < K1111_FIXED; s++) {
-        memcpy(fixedRows[s].src, first3Rows + s * K1111_N, K1111_N);
-        for (int i = 0; i < K1111_N; i += 2) {
+    for (int s = 0; s < m_nFixedRows; s++) {
+        memcpy(fixedRows[s].src, first3Rows + s * m_nPlayers, m_nPlayers);
+        for (int i = 0; i < m_nPlayers; i += 2) {
             const auto a = fixedRows[s].src[i]; const auto b = fixedRows[s].src[i + 1];
             fixedRows[s].adj[a] = b; fixedRows[s].adj[b] = a;
             int eid = edge_id_table[a][b];
@@ -73,12 +70,12 @@ void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* firs
     }
 
     target_cu = find_cycles(fixedRows[0].adj, fixedRows[1].adj);
-    for (int s = 0; s < K1111_FIXED; s++) fixedRows[s].fs = get_fast_sorted(fixedRows[s].adj);
+    for (int s = 0; s < m_nFixedRows; s++) fixedRows[s].fs = get_fast_sorted(fixedRows[s].adj);
     r1_can = fixedRows[0].fs;
     r2_can = fixedRows[1].fs;
 
 #if K1111_USE_SIMD_CYCLE_CHECK
-    for (int i = 0; i < K1111_FIXED; i++) {
+    for (int i = 0; i < m_nFixedRows; i++) {
         alignas(16) uint8_t e2o[16] = { 0 };
         alignas(16) uint8_t o2e[16] = { 0 };
         for (int j = 0; j < 11; j++) {
@@ -90,7 +87,7 @@ void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* firs
         fixed_packed[i] = pack_factor_adj(fixedRows[i].adj);
     }
 #else
-    for (int i = 0; i < K1111_FIXED; i++) {
+    for (int i = 0; i < m_nFixedRows; i++) {
         fixed_packed[i] = pack_factor_adj(fixedRows[i].adj);
     }
 #endif
@@ -103,39 +100,26 @@ void K1111P1F::init(int fixed3RowsIndex, int kThreads, const unsigned char* firs
     global_pool.clear();
     packed_pool.clear();
     f_map.clear();
-    for (int i = 0; i < K1111_SEARCH; i++) {
-        temp_slot_ids[i].clear();
-        row_factor_ids[i].clear();
-    }
     memset(roots_done, 0, sizeof(roots_done));
-    num_results = 0;
-    num_notCanon = 0;
-    g_total_pairs_checked = 0;
-    g_rejected_edges = 0;
-    g_rejected_cycles = 0;
-    g_rejected_canon = 0;
-    g_total_rejected = 0;
-    g_total_kept = 0;
-    min_stab_size = 1000000;
-    max_stab_size = 0;
-    results_to_sort.clear();
+    KBase::init();
 }
 
 bool K1111P1F::addRow(int iRow, const unsigned char* source) {
-    if (iRow < K1111_FIXED || iRow >= K1111_MATCH) return false;
-    int slot = iRow - K1111_FIXED;
+    iRow /= 2;
+    if (iRow < m_nFixedRows || iRow >= m_nMatched) return false;
+    int slot = iRow - m_nFixedRows;
 
     Factor f; memset(&f, 0, sizeof(f));
-    memcpy(f.src, source, K1111_N);
-    for (int i = 0; i < K1111_N; i += 2) {
+    memcpy(f.src, source, m_nPlayers);
+    for (int i = 0; i < m_nPlayers; i += 2) {
         const auto a = f.src[i]; const auto b = f.src[i + 1];
-        if (a >= K1111_N || b >= K1111_N) return false; // Safety check
+        if (a >= m_nPlayers || b >= m_nPlayers) return false; // Safety check
         f.adj[a] = b; f.adj[b] = a;
     }
 
     f.edge_mask = { 0, 0, 0 };
-    for (int i = 0; i < K1111_N; i += 2) {
-        int eid = edge_id_table[f.src[i]][f.src[i + 1]];
+    for (int i = 0; i < m_nPlayers; i += 2) {
+        const int eid = edge_id_table[f.src[i]][f.src[i + 1]];
         if (eid < 64) f.edge_mask.m[0] |= (1ULL << eid);
         else if (eid < 128) f.edge_mask.m[1] |= (1ULL << (eid - 64));
         else f.edge_mask.m[2] |= (1ULL << (eid - 128));
@@ -148,7 +132,7 @@ bool K1111P1F::addRow(int iRow, const unsigned char* source) {
 
     // Check cycle structure with fixed rows (r1, r2, r3)
     PackedAdj pf = pack_factor_adj(f.adj);
-    for (int i = 0; i < K1111_FIXED; i++) {
+    for (int i = 0; i < m_nFixedRows; i++) {
         if (!is_perfect_packed(pf, fixed_packed[i])) {
             printf("\n*** Error: Row has incorrect cycle structure with fixed row %d!\n", i + 1);
             exit(1);
@@ -157,12 +141,12 @@ bool K1111P1F::addRow(int iRow, const unsigned char* source) {
 
     f.fs = get_fast_sorted(f.adj);
 
-    std::vector<uint8_t> k(f.adj, f.adj + K1111_N);
+    std::vector<uint8_t> k(f.adj, f.adj + m_nPlayers);
     int factor_id;
     auto it = f_map.find(k);
     if (it == f_map.end()) {
         factor_id = (int)global_pool.size();
-        if (factor_id >= K1111_M_MAX) return false;
+        if (factor_id >= m_nMax) return false;
         f_map[k] = factor_id;
         global_pool.push_back(f);
         packed_pool.push_back(pack_factor_adj(f.adj));
@@ -171,10 +155,7 @@ bool K1111P1F::addRow(int iRow, const unsigned char* source) {
         factor_id = it->second;
     }
 
-    if (row_factor_ids[slot].find(factor_id) == row_factor_ids[slot].end()) {
-        temp_slot_ids[slot].push_back(factor_id);
-        row_factor_ids[slot].insert(factor_id);
-    }
+    addFactorToSlot(slot, factor_id);
     return true;
 }
 
@@ -200,18 +181,18 @@ void K1111P1F::parallel_for(int start, int end, std::function<void(int, int)> ta
     for (auto& w : workers) w.join();
 }
 
-void K1111P1F::solve() {
+void K1111P1F::solve(int mode) {
     int Global_M_total = (int)global_pool.size();
-    if (bPrint) {
+    if (m_bPrint) {
         printf("Row slots size: ");
-        for (int s = 0; s < K1111_SEARCH; s++) printf("%d:%zd ", s * 2 + 7, temp_slot_ids[s].size());
+        for (int s = 0; s < m_nSearch; s++) printf("%d:%zd ", s * 2 + 7, temp_slot_ids[s].size());
         printf("\n");
         printf("Iterative Global Filtering (Arc Consistency):\n");
         printf("Total candidates: %d ", Global_M_total);
     }
     std::vector<uint8_t> active(Global_M_total, 1);
     std::vector<uint32_t> f_rows_mask(Global_M_total, 0);
-    for (int s = 0; s < K1111_SEARCH; s++) for (int id : temp_slot_ids[s]) f_rows_mask[id] |= (1 << s);
+    for (int s = 0; s < m_nSearch; s++) for (int id : temp_slot_ids[s]) f_rows_mask[id] |= (1 << s);
 
     std::atomic<bool> changed{ true };
     int iter = 0;
@@ -220,7 +201,7 @@ void K1111P1F::solve() {
         parallel_for(0, Global_M_total, [&](int i, int tid) {
             if (!active[i]) return;
             const PackedAdj& pi = packed_pool[i];
-            for (int r = 0; r < K1111_SEARCH; r++) {
+            for (int r = 0; r < m_nSearch; r++) {
                 if (f_rows_mask[i] & (1 << r)) continue;
                 bool row_found = false;
                 const __m128i v_e2o_i = _mm_load_si128(&pi.v_e2o);
@@ -237,56 +218,51 @@ void K1111P1F::solve() {
             }, 128);
         int rem = 0; for (int i = 0; i < Global_M_total; i++) if (active[i]) rem++;
         iter++;
-        if (bPrint) { printf(" Remaining(%d):%d ", iter, rem); }
+        if (m_bPrint) { printf(" Remaining(%d):%d ", iter, rem); }
     }
-    if (bPrint) { printf("\n"); }
+    if (m_bPrint) { printf("\n"); }
 
     std::vector<int> old_to_new(Global_M_total, -1);
     std::vector<Factor> f_pool_new; std::vector<PackedAdj> p_pool_new;
     for (int i = 0; i < Global_M_total; i++) if (active[i]) { old_to_new[i] = (int)f_pool_new.size(); f_pool_new.push_back(global_pool[i]); p_pool_new.push_back(packed_pool[i]); }
     global_pool = std::move(f_pool_new); packed_pool = std::move(p_pool_new);
 
-    std::vector<std::vector<int>> new_slot_ids(K1111_SEARCH);
-    if (bPrint) printf("Row: Candidates ");
-    for (int s = 0; s < K1111_SEARCH; s++) {
+    std::vector<std::vector<int>> new_slot_ids(m_nSearch);
+    if (m_bPrint) printf("Row: Candidates ");
+    for (int s = 0; s < m_nSearch; s++) {
         for (int id : temp_slot_ids[s])
             if (active[id]) new_slot_ids[s].push_back(old_to_new[id]);
-        if (bPrint) { printf("%d:%d ", s * 2 + 7, (int)new_slot_ids[s].size()); }
+        if (m_bPrint) { printf("%d:%d ", s * 2 + 7, (int)new_slot_ids[s].size()); }
     }
-    if (bPrint) { printf("\n"); }
+    if (m_bPrint) { printf("\n"); }
 
     const int M = (int)global_pool.size();
     std::vector<int> deg(M, 0);
-    if (bPrint) { printf("Calculating candidate degrees(%%): 0 "); }
+    if (m_bPrint) { printf("Calculating candidate degrees(%%): 0 "); }
     auto last_deg_report = std::chrono::steady_clock::now();
     parallel_for(0, M, [&](int i, int tid) {
         PackedAdj pi = packed_pool[i];
         const __m128i v_e2o_i = _mm_load_si128(&pi.v_e2o);
         const __m128i v_id = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-        for (int r = 0; r < K1111_SEARCH; r++) for (int id : new_slot_ids[r]) if (check_cycle_simd(v_e2o_i, _mm_load_si128(&packed_pool[id].v_o2e), v_id)) deg[i]++;
+        for (int r = 0; r < m_nSearch; r++) for (int id : new_slot_ids[r]) if (check_cycle_simd(v_e2o_i, _mm_load_si128(&packed_pool[id].v_o2e), v_id)) deg[i]++;
 
         if (tid == 0) {
             auto now = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(now - last_deg_report).count() >= 5) {
                 last_deg_report = now;
-                if (bPrint) { printf("%d ", (int)(i * 100LL / M)); }
+                if (m_bPrint) { printf("%d ", (int)(i * 100LL / M)); }
             }
         }
         }, 256);
-    if (bPrint) {
+    if (m_bPrint) {
         printf("100%% Done.\n");
     }
 
     struct SortItem { int global_id, row_id, degree; };
     std::vector<SortItem> items_sorted;
-    for (int s = 0; s < K1111_SEARCH; ++s) {
+    for (int s = 0; s < m_nSearch; ++s) {
         std::vector<SortItem> row_items;
         for (int id : new_slot_ids[s]) row_items.push_back({ id, s, deg[id] });
-        std::sort(row_items.begin(), row_items.end(), [](const SortItem& a, const SortItem& b) {
-            if (K1111_SORT_INPUT == 1) return a.degree < b.degree;
-            if (K1111_SORT_INPUT == 2) return a.degree > b.degree;
-            return false;
-            });
         while (items_sorted.size() % 256 != 0) items_sorted.push_back({ -1, s, 0 });
         items_sorted.insert(items_sorted.end(), row_items.begin(), row_items.end());
     }
@@ -300,7 +276,7 @@ void K1111P1F::solve() {
     for (int i = 0; i < MS; i++) {
         if (items[i].global_id == -1) continue;
         const Factor& f = global_pool[items[i].global_id];
-        for (int u = 0; u < K1111_N; u += 2) {
+        for (int u = 0; u < m_nPlayers; u += 2) {
             int v = f.adj[u];
             int id = edge_id_table[u][v];
             if (id != -1) {
@@ -311,9 +287,9 @@ void K1111P1F::solve() {
         }
     }
 
-    row_ranges.assign(K1111_SEARCH, { 0, 0 });
+    row_ranges.assign(m_nSearch, { 0, 0 });
     int cp = 0;
-    for (int s = 0; s < K1111_SEARCH; ++s) {
+    for (int s = 0; s < m_nSearch; ++s) {
         row_ranges[s].start_word = cp / 64;
         int count = 0; for (const auto& it : items) if (it.row_id == s) count++;
         cp += count; row_ranges[s].end_word = (cp + 63) / 64;
@@ -322,10 +298,10 @@ void K1111P1F::solve() {
     factor_offsets.assign(MS, 0); size_t coff = 0;
     for (int i = 0; i < MS; i++) {
         factor_offsets[i] = coff; int d = items[i].row_id;
-        if (d + 1 < K1111_SEARCH) { int wn = (row_ranges[K1111_SEARCH - 1].end_word - row_ranges[d + 1].start_word + 3) / 4 * 4; coff += wn; }
+        if (d + 1 < m_nSearch) { int wn = (row_ranges[m_nSearch - 1].end_word - row_ranges[d + 1].start_word + 3) / 4 * 4; coff += wn; }
     }
     adj_matrix.assign(coff, 0);
-    if (bPrint) { printf("Populating adj_matrix (%%): "); }
+    if (m_bPrint) { printf("Populating adj_matrix (%%): "); }
     auto last_matrix_report = std::chrono::steady_clock::now();
 
     // Create sorted pools for contiguous AVX access
@@ -340,7 +316,7 @@ void K1111P1F::solve() {
 
     parallel_for(0, MS, [&](int i, int tid) {
         if (items[i].global_id == -1) return;
-        int d = items[i].row_id; if (d + 1 >= K1111_SEARCH) return;
+        int d = items[i].row_id; if (d + 1 >= m_nSearch) return;
         const PackedAdj& pi = sorted_packed[i];
         const uint8_t* adj_i = global_pool[items[i].global_id].adj;
         __m256i mi = _mm256_load_si256((const __m256i*) & pi);
@@ -368,11 +344,11 @@ void K1111P1F::solve() {
             auto now = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(now - last_matrix_report).count() >= 5 || done == MS) {
                 last_matrix_report = now;
-                if (bPrint) { printf("%d ", (int)(done * 100LL / MS)); }
+                if (m_bPrint) { printf("%d ", (int)(done * 100LL / MS)); }
             }
         }
         }, 64);
-    if (bPrint) { printf("100%% Done.\n"); }
+    if (m_bPrint) { printf("100%% Done.\n"); }
 
 
     std::vector<int> r4ids;
@@ -382,7 +358,7 @@ void K1111P1F::solve() {
 
     struct RootPair { int r4_v; int r5_v; };
     std::vector<RootPair> potential_roots;
-    if (bPrint) { printf("Gathering potential Root Pairs and filtering (%%): "); }
+    if (m_bPrint) { printf("Gathering potential Root Pairs and filtering (%%): "); }
     auto last_canon_report = std::chrono::steady_clock::now();
     auto canon_start = last_canon_report;
     std::atomic<int> canon_done{ 0 };
@@ -408,7 +384,7 @@ void K1111P1F::solve() {
 #if !K1111_DISABLE_IS_CANONICAL_R45_CHECK
 #if K1111_USE_STABILIZER_CANON
         // 1. New: Pre-calculate 4-row stabilizer (Automorphisms of prefix r1..r4)
-        auto stabilizer_buf = std::make_unique<Permutation22[]>(512);
+        auto stabilizer_buf = std::make_unique<Permutation[]>(512);
         int stab_count = 0;
 
         // Find automorphisms (non-trivial only as requested)
@@ -526,7 +502,7 @@ void K1111P1F::solve() {
             auto now = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(now - last_canon_report).count() >= 5 || done == np) {
                 last_canon_report = now;
-                if (bPrint) { printf("%d ", (int)(done * 100LL / np)); }
+                if (m_bPrint) { printf("%d ", (int)(done * 100LL / np)); }
             }
         }
         }, 128);
@@ -539,7 +515,7 @@ void K1111P1F::solve() {
     total_roots = (int)potential_roots.size();
     auto canon_end = std::chrono::steady_clock::now();
     auto canon_elap = std::chrono::duration_cast<std::chrono::seconds>(canon_end - canon_start).count();
-    if (bPrint) {
+    if (m_bPrint) {
         printf("100%% Done in %lld seconds.\n", canon_elap);
         printf("Total: %d, Kept: %d, Rejected: %d (Edges: %d, Cycles: %d, Canon: %d)\n",
             (int)g_total_pairs_checked, (int)g_total_kept, (int)g_total_rejected,
@@ -562,7 +538,7 @@ void K1111P1F::solve() {
 
     solve_start_time = std::chrono::steady_clock::now();
     last_print_time = solve_start_time;
-    if (bPrint) { printf("Solving with Group-by-r4 optimization. Groups: %zd\n", r4_groups.size()); }
+    if (m_bPrint) { printf("Solving with Group-by-r4 optimization. Groups: %zd\n", r4_groups.size()); }
 
     parallel_for(0, (int)r4_groups.size(), [&](int group_idx, int tid) {
 
@@ -574,15 +550,15 @@ void K1111P1F::solve() {
         const int r4_col_sw = row_ranges[1].start_word;
 
         ThreadLocalBuffers& buf = *thread_buffers[tid];
-        if (buf.global_to_s4.empty()) buf.global_to_s4.assign(K1111_M_MAX, -1);
-        if (buf.g_to_l.empty()) buf.g_to_l.assign(K1111_M_MAX, -1);
+        if (buf.global_to_s4.empty()) buf.global_to_s4.assign(m_nMax, -1);
+        if (buf.g_to_l.empty()) buf.g_to_l.assign(m_nMax, -1);
 
         buf.s4_to_global.clear();
         buf.active_words.clear();
 
         // 1. S4 = {f | f compatible with r4, row(f) >= 2}
 
-        for (int r = 2; r < K1111_SEARCH; r++) {
+        for (int r = 2; r < m_nSearch; r++) {
             while (buf.s4_to_global.size() % 64 != 0) buf.s4_to_global.push_back(-1); // Align row starts for bitwise logic
             const int sw = row_ranges[r].start_word;
             const int ew = row_ranges[r].end_word;
@@ -623,22 +599,21 @@ void K1111P1F::solve() {
         }
         for (int j = 0; j < S4K; j++) buf.s4_offsets[j] = (size_t)j * s4_words;
 
-        int s4_sw[K1111_SEARCH], s4_ew[K1111_SEARCH];
-        int s4_l_cur = 0;
-        for (int r = 2; r < K1111_SEARCH; r++) {
-            s4_l_cur = (s4_l_cur + 63) / 64 * 64;
-            s4_sw[r] = s4_l_cur / 64;
-            while (s4_l_cur < S4K && buf.s4_to_global[s4_l_cur] != -1 && items[buf.s4_to_global[s4_l_cur]].row_id == r) s4_l_cur++;
-            s4_ew[r] = (s4_l_cur + 63) / 64;
-        }
 
+        int s4_l_cur = 0;
+        for (int r = 2; r < m_nSearch; r++) {
+            s4_l_cur = (s4_l_cur + 63) / 64 * 64;
+            while (s4_l_cur < S4K && buf.s4_to_global[s4_l_cur] != -1 && items[buf.s4_to_global[s4_l_cur]].row_id == r) 
+                s4_l_cur++;
+        }
+        
 
         for (int j = 0; j < S4K; j++) {
             int gj = buf.s4_to_global[j];
             if (gj == -1) continue; // Skip alignment padding
             int r_j = items[gj].row_id;
             uint64_t* s4_row = &buf.s4_adj[buf.s4_offsets[j]];
-            if (r_j + 1 >= K1111_SEARCH) continue;
+            if (r_j + 1 >= m_nSearch) continue;
             const uint64_t* g_row = &adj_matrix[factor_offsets[gj]];
             const int g_sw = row_ranges[r_j + 1].start_word;
 
@@ -667,12 +642,12 @@ void K1111P1F::solve() {
             thread_row5[tid] = (r5_v - row_ranges[1].start_word * 64) + 1;
             thread_root_idx[tid] = i;
 
-            buf.local_ranges.assign(K1111_SEARCH + 1, { 0, 0 });
+            buf.local_ranges.assign(m_nSearch + 1, { 0, 0 });
             buf.local_to_global.clear();
             buf.local_s_to_f.clear();
             // NEW: Use heap-allocated buffers from ThreadLocalBuffers to avoid stack overflow
             SearchContext& local_ctx = buf.local_ctx;
-            for (int r = 2; r < K1111_SEARCH; r++) {
+            for (int r = 2; r < m_nSearch; r++) {
                 for (int j = 0; j < buf.dirty_s4_count[r]; j++) buf.r5_row_mask_in_s4[r][buf.dirty_s4_words[r][j]] = 0;
                 buf.dirty_s4_count[r] = 0;
                 buf.sub_sampling_plan_sizes[r] = 0;
@@ -681,7 +656,7 @@ void K1111P1F::solve() {
             buf.local_to_global.clear();
             buf.local_s_to_f.clear();
 
-            for (int r = 2; r < K1111_SEARCH; r++) {
+            for (int r = 2; r < m_nSearch; r++) {
                 l_idx = (l_idx + 255) / 256 * 256;
                 buf.local_ranges[r].start_word = l_idx / 64;
                 const int g_sw = row_ranges[r].start_word;
@@ -697,7 +672,7 @@ void K1111P1F::solve() {
                             if (s4_idx != -1) {
                                 int w_idx = s4_idx / 64;
                                 if (buf.r5_row_mask_in_s4[r][w_idx] == 0) {
-                                    if (buf.dirty_s4_count[r] < K1111_WORDS) buf.dirty_s4_words[r][buf.dirty_s4_count[r]++] = w_idx;
+                                    if (buf.dirty_s4_count[r] < m_nWords) buf.dirty_s4_words[r][buf.dirty_s4_count[r]++] = w_idx;
                                 }
                                 buf.r5_row_mask_in_s4[r][w_idx] |= (1ULL << (s4_idx % 64));
                                 buf.g_to_l[g_idx] = l_idx++;
@@ -726,8 +701,8 @@ void K1111P1F::solve() {
                 buf.local_s_to_f[li] = search_to_factor[gi];
                 buf.local_offsets[li] = l_coff;
                 int d = items[gi].row_id;
-                if (d + 1 < K1111_SEARCH) {
-                    int wn = (buf.local_ranges[K1111_SEARCH - 1].end_word - buf.local_ranges[d + 1].start_word + 3) / 4 * 4;
+                if (d + 1 < m_nSearch) {
+                    int wn = (buf.local_ranges[m_nSearch - 1].end_word - buf.local_ranges[d + 1].start_word + 3) / 4 * 4;
                     l_coff += (size_t)wn;
                 }
             }
@@ -736,7 +711,7 @@ void K1111P1F::solve() {
 
             // Sub-sample S4_adj into local_adj
             // Generate sub-sampling plan once for this r5 mate
-            for (int r = 2; r < K1111_SEARCH; r++) {
+            for (int r = 2; r < m_nSearch; r++) {
                 if (buf.dirty_s4_count[r] == 0) continue;
                 std::sort(buf.dirty_s4_words[r], buf.dirty_s4_words[r] + buf.dirty_s4_count[r]);
 
@@ -765,10 +740,10 @@ void K1111P1F::solve() {
                 uint64_t* l_row = &aligned_base[buf.local_offsets[li]];
                 const uint64_t* s4_row_ptr = &buf.s4_adj[buf.s4_offsets[s4_j]];
                 const int l_row_sw = buf.local_ranges[d + 1].start_word;
-                const int l_row_ew = buf.local_ranges[K1111_SEARCH - 1].end_word;
+                const int l_row_ew = buf.local_ranges[m_nSearch - 1].end_word;
                 const int l_row_wn = l_row_ew - l_row_sw;
 
-                for (int r = d + 1; r < K1111_SEARCH; r++) {
+                for (int r = d + 1; r < m_nSearch; r++) {
                     int p_size = buf.sub_sampling_plan_sizes[r];
                     const auto* plan = buf.sub_sampling_plans[r];
                     for (int j = 0; j < p_size; j++) {
@@ -811,7 +786,7 @@ void K1111P1F::solve() {
         for (int gi : buf.local_to_global) if (gi != -1) buf.g_to_l[gi] = -1;
         }, 1);
 
-    if (bPrint) { printf("Reporting %zd sorted results...\n", results_to_sort.size()); }
+    if (m_bPrint) { printf("Reporting %zd sorted results...\n", results_to_sort.size()); }
     // Sort canonical results lexicographically
     std::sort(results_to_sort.begin(), results_to_sort.end(), [](const std::vector<unsigned char>& a, const std::vector<unsigned char>& b) {
         return memcmp(a.data(), b.data(), a.size()) < 0;
@@ -826,20 +801,18 @@ void K1111P1F::solve() {
 
 
 void K1111P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx) {
-    if (depth == 2 && bPrint) diagnostic_printout(ctx.local_compression);
-    if (depth == K1111_SEARCH) {
-        unsigned char results[K1111_MATCH * K1111_N];
-        for (int i = 0; i < K1111_FIXED; i++) memcpy(results + i * K1111_N, fixedRows[i].src, K1111_N);
+    if (depth == 2 && m_bPrint) diagnostic_printout(ctx.local_compression);
+    if (depth == m_nSearch) {
+        for (int i = 0; i < m_nFixedRows; i++) memcpy(m_pResults + i * m_nPlayers, fixedRows[i].src, m_nPlayers);
         std::vector<Factor> sol_factors;
         for (int fid : clique) sol_factors.push_back(global_pool[fid]);
-        std::sort(sol_factors.begin(), sol_factors.end(), [](const Factor& a, const Factor& b) { return a.src[1] < b.src[1]; });
-        for (int i = 0; i < K1111_SEARCH; i++) memcpy(results + (i + K1111_FIXED) * K1111_N, sol_factors[i].src, K1111_N);
-
+//        std::sort(sol_factors.begin(), sol_factors.end(), [](const Factor& a, const Factor& b) { return a.src[1] < b.src[1]; });
+        for (int i = 0; i < m_nSearch; i++) memcpy(m_pResults + (i + m_nFixedRows) * m_nPlayers, sol_factors[i].src, m_nPlayers);
         {
             std::lock_guard<std::mutex> lock(result_mutex);
             // Call with mode=1 to check canonicity
-            if (resultCallback(cbClass, results, ctx.r4_idx, ctx.r5_idx, 1)) {
-                results_to_sort.push_back(std::vector<unsigned char>(results, results + K1111_MATCH * K1111_N));
+            if (resultCallback(cbClass, m_pResults, ctx.r4_idx, ctx.r5_idx, 1)) {
+                results_to_sort.push_back(std::vector<unsigned char>(m_pResults, m_pResults + m_nMatched * m_nPlayers));
                 num_results++;
             }
             else {
@@ -871,11 +844,11 @@ void K1111P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext
 #endif
                     word &= (word - 1); continue;
                 }
-                if (depth + 1 < K1111_SEARCH) {
+                if (depth + 1 < m_nSearch) {
                     State& next_P = ctx.pool[depth + 1];
                     const uint64_t* rel_adj = &ctx.adj[ctx.offsets[v]];
                     int n_start = ctx.ranges[depth + 1].start_word;
-                    int n_end = ctx.ranges[K1111_SEARCH - 1].end_word;
+                    int n_end = ctx.ranges[m_nSearch - 1].end_word;
                     for (int j = 0; j < (n_end - n_start); j += 4) {
                         __m256i p_vec = _mm256_load_si256((__m256i*) & P.bits[j + n_start]);
                         __m256i a_vec = _mm256_load_si256((__m256i*) & rel_adj[j]);
@@ -884,7 +857,7 @@ void K1111P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext
                 }
 
                 bool domain_wipeout = false;
-                for (int d = depth + 1; d < K1111_SEARCH; d++) {
+                for (int d = depth + 1; d < m_nSearch; d++) {
                     bool row_possible = false;
                     int w = ctx.ranges[d].start_word;
                     int wMax = ctx.ranges[d].end_word;
@@ -912,7 +885,7 @@ void K1111P1F::internal_solve(int depth, std::vector<int>& clique, SearchContext
 
 K1111P1F::PackedAdj K1111P1F::pack_factor_adj(const uint8_t * adj) {
     PackedAdj res; memset(&res, 0, sizeof(res));
-    for (int i = 0; i < K1111_N; i++) {
+    for (int i = 0; i < m_nPlayers; i++) {
         int v = adj[i];
         if (i < v) {
             int eid = edge_id_table[i][v];
@@ -951,7 +924,7 @@ bool K1111P1F::is_perfect_scalar(const uint8_t * adj1, const uint8_t * adj2) {
 K1111P1F::CycleUnion K1111P1F::find_cycles(const uint8_t * adj1, const uint8_t * adj2) {
     CycleUnion cu; memset(&cu, 0, sizeof(cu));
     uint32_t visited = 0;
-    for (int start = 0; start < K1111_N; start++) {
+    for (int start = 0; start < m_nPlayers; start++) {
         if (visited & (1 << start)) continue;
         int curr = start, prev = -1, len = 0;
         do {
@@ -961,7 +934,7 @@ K1111P1F::CycleUnion K1111P1F::find_cycles(const uint8_t * adj1, const uint8_t *
             prev = curr; curr = next;
         } while (curr != start);
         cu.lens[cu.count++] = len;
-        if (cu.count >= K1111_N) break;
+        if (cu.count >= m_nPlayers) break;
     }
     return cu;
 }
@@ -975,7 +948,7 @@ void K1111P1F::get_transformations(const Factor & fi, const Factor & fj, TransIn
     for (int dir = 0; dir < 2; dir++) {
         for (int start_offset = 0; start_offset < 22; start_offset++) {
             if (info.count >= 512) break;
-            Permutation22& p_total = info.perms[info.count++];
+            auto& p_total = info.perms[info.count++];
             memset(p_total.p, 0xFF, sizeof(p_total.p));
             memset(p_total.p_inv, 0xFF, sizeof(p_total.p_inv));
             
@@ -995,7 +968,7 @@ void K1111P1F::get_transformations(const Factor & fi, const Factor & fj, TransIn
     for (int k = 0; k < info.count; ++k) {
         const auto& p = info.perms[k].p;
         int par_swap = p[0] % 2;
-        for (int i = 0; i < K1111_N; i++) {
+        for (int i = 0; i < m_nPlayers; i++) {
             if ((p[i] % 2) != (i % 2 ^ par_swap)) {
                 printf("FATAL: Bipartite consistency check FAILED! perm[%d]=%d, p[0]=%d\n", i, p[i], p[0]);
                 exit(1);
@@ -1005,7 +978,7 @@ void K1111P1F::get_transformations(const Factor & fi, const Factor & fj, TransIn
 #endif
 }
 
-void K1111P1F::apply_perm_22(const uint8_t * src_adj, const Permutation22 & perm, uint8_t * dst_adj) {
+void K1111P1F::apply_perm_22(const uint8_t * src_adj, const Permutation& perm, uint8_t * dst_adj) {
     // dst[perm.p[i]] = perm.p[src[i]]
     // Equivalent to lookup: dst[j] = perm.p[src[perm.p_inv[j]]]
 
@@ -1015,24 +988,8 @@ void K1111P1F::apply_perm_22(const uint8_t * src_adj, const Permutation22 & perm
     uint64_t tail_safe = 0; memcpy(&tail_safe, src_adj + 16, 6);
     v_src = _mm256_inserti128_si256(v_src, _mm_loadl_epi64((const __m128i*)&tail_safe), 1);
 
-    auto lookup22_v = [](__m256i table, __m256i idx) {
-        __m256i table_swapped = _mm256_permute2x128_si256(table, table, 0x01);
-        __m256i res_in_place = _mm256_shuffle_epi8(table, idx);
-        __m256i res_swapped = _mm256_shuffle_epi8(table_swapped, idx);
-
-        alignas(32) static const uint8_t dest_lane_data[32] = {
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,
-            0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10
-        };
-        __m256i dest_lane_bit = _mm256_load_si256((__m256i*)dest_lane_data);
-        __m256i src_lane_bit = _mm256_and_si256(idx, _mm256_set1_epi8(0x10));
-        __m256i match = _mm256_cmpeq_epi8(dest_lane_bit, src_lane_bit);
-        return _mm256_blendv_epi8(res_swapped, res_in_place, match);
-        };
-
-    __m256i v_reordered = lookup22_v(v_src, perm.pinvv);
-    __m256i v_final = lookup22_v(perm.pv, v_reordered);
+    __m256i v_reordered = lookup_v(v_src, perm.pinvv);
+    __m256i v_final = lookup_v(perm.pv, v_reordered);
 
     // Save result. First 16 bytes.
     _mm_storeu_si128((__m128i*)dst_adj, _mm256_castsi256_si128(v_final));
@@ -1042,10 +999,10 @@ void K1111P1F::apply_perm_22(const uint8_t * src_adj, const Permutation22 & perm
     memcpy(dst_adj + 16, &tail, 6);
 }
 #if 0
-K1111P1F::FastSortedFactor K1111P1F::get_fast_sorted(const uint8_t * adj) {
+KBipartBase::FastSortedFactor K1111P1F::get_fast_sorted(const uint8_t * adj) {
     FastSortedFactor sf; memset(&sf, 0, sizeof(sf));
     int count = 0;
-    for (int i = 0; i < K1111_N; ++i) {
+    for (int i = 0; i < m_nPlayers; ++i) {
         if (i < adj[i]) {
             sf.pairs[count * 2] = (uint8_t)i;
             sf.pairs[count * 2 + 1] = adj[i];
@@ -1055,7 +1012,8 @@ K1111P1F::FastSortedFactor K1111P1F::get_fast_sorted(const uint8_t * adj) {
     return sf;
 }
 #endif
-K1111P1F::FastSortedFactor K1111P1F::get_fast_sorted(const uint8_t * adj) {
+
+KBipartBase::FastSortedFactor K1111P1F::get_fast_sorted(const uint8_t * adj) {
     alignas(32) uint8_t indices[32] = {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
         16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -1112,8 +1070,8 @@ bool K1111P1F::is_canonical(int r4_fid, int r5_fid, const K1111P1F::TransInfo * 
     target_triplet.r[0] = fixedRows[2].fs;
     target_triplet.r[1] = global_pool[r4_fid].fs;
     target_triplet.r[2] = global_pool[r5_fid].fs;
-    std::sort(target_triplet.r, target_triplet.r + 3, [](const K1111P1F::FastSortedFactor& a, const K1111P1F::FastSortedFactor& b) {
-        return K1111P1F::compare_fast_sorted(a, b);
+    std::sort(target_triplet.r, target_triplet.r + 3, [](const FastSortedFactor& a, const FastSortedFactor& b) {
+        return compare_fast_sorted(a, b);
         });
 
     auto check_trans = [&](const K1111P1F::TransInfo& info, int i, int j) {
@@ -1126,29 +1084,29 @@ bool K1111P1F::is_canonical(int r4_fid, int r5_fid, const K1111P1F::TransInfo * 
             FastSortedFactor fs_i = get_fast_sorted(tr_fi);
             FastSortedFactor fs_j = get_fast_sorted(tr_fj);
 
-            bool fi_r1 = K1111P1F::equal_fast_sorted(fs_i, r1_can);
-            bool fi_r2 = K1111P1F::equal_fast_sorted(fs_i, r2_can);
-            bool fj_r1 = K1111P1F::equal_fast_sorted(fs_j, r1_can);
-            bool fj_r2 = K1111P1F::equal_fast_sorted(fs_j, r2_can);
+            bool fi_r1 = equal_fast_sorted(fs_i, r1_can);
+            bool fi_r2 = equal_fast_sorted(fs_i, r2_can);
+            bool fj_r1 = equal_fast_sorted(fs_j, r1_can);
+            bool fj_r2 = equal_fast_sorted(fs_j, r2_can);
 
             if (!((fi_r1 && fj_r2) || (fi_r2 && fj_r1))) continue;
 
-            K1111P1F::FastSortedFactor nt_r[3]; int nt_count = 0;
+            FastSortedFactor nt_r[3]; int nt_count = 0;
             for (int m = 0; m < 5; ++m) {
                 if (m == i || m == j) continue;
                 uint8_t tr_m[22]; apply_perm_22(r_adj[m], perm, tr_m);
                 nt_r[nt_count++] = get_fast_sorted(tr_m);
             }
 
-            if (K1111P1F::compare_fast_sorted(nt_r[1], nt_r[0])) std::swap(nt_r[0], nt_r[1]);
-            if (K1111P1F::compare_fast_sorted(nt_r[2], nt_r[1])) {
+            if (compare_fast_sorted(nt_r[1], nt_r[0])) std::swap(nt_r[0], nt_r[1]);
+            if (compare_fast_sorted(nt_r[2], nt_r[1])) {
                 std::swap(nt_r[1], nt_r[2]);
-                if (K1111P1F::compare_fast_sorted(nt_r[1], nt_r[0])) std::swap(nt_r[0], nt_r[1]);
+                if (compare_fast_sorted(nt_r[1], nt_r[0])) std::swap(nt_r[0], nt_r[1]);
             }
 
             for (int m = 0; m < 3; m++) {
-                if (K1111P1F::compare_fast_sorted(nt_r[m], target_triplet.r[m])) return false;
-                if (K1111P1F::compare_fast_sorted(target_triplet.r[m], nt_r[m])) break;
+                if (compare_fast_sorted(nt_r[m], target_triplet.r[m])) return false;
+                if (compare_fast_sorted(target_triplet.r[m], nt_r[m])) break;
             }
         }
         return true;
@@ -1169,7 +1127,7 @@ bool K1111P1F::is_canonical(int r4_fid, int r5_fid, const K1111P1F::TransInfo * 
     return true;
 }
 
-bool K1111P1F::is_canonical_stab(int r5_fid, const Permutation22 * stab, int stab_count) {
+bool K1111P1F::is_canonical_stab(int r5_fid, const Permutation* stab, int stab_count) {
     const Factor& f5 = global_pool[r5_fid];
 
     for (int k = 0; k < stab_count; k++) {
@@ -1205,8 +1163,7 @@ void K1111P1F::diagnostic_printout(double current_compr) {
         }
     }
 }
-bool K1111P1F::compare_fast_sorted(const K1111P1F::FastSortedFactor & a, const K1111P1F::FastSortedFactor & b) { return memcmp(a.pairs, b.pairs, 22) < 0; }
-bool K1111P1F::equal_fast_sorted(const K1111P1F::FastSortedFactor & a, const K1111P1F::FastSortedFactor & b) { return memcmp(a.pairs, b.pairs, 22) == 0; }
+
 bool K1111P1F::compare_triplets(const K1111P1F::FastRowTriplet & a, const K1111P1F::FastRowTriplet & b) {
     for (int i = 0; i < 3; i++) {
         if (!K1111P1F::equal_fast_sorted(a.r[i], b.r[i])) return K1111P1F::compare_fast_sorted(a.r[i], b.r[i]);

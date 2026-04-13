@@ -388,7 +388,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		char buffer[16];
 		sprintf_s(buffer, "-%07d.txt", m_iMatrix);
 		std::string finalName = IntegratedResults.substr(0, IntegratedResults.size() - 4) + buffer;
-		//std::filesystem::remove(finalName); Looks like we do not diid it
+		//std::filesystem::remove(finalName); Looks like we do not need it
 		std::filesystem::rename(IntegratedResults, finalName);
 	}
 }
@@ -437,8 +437,12 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 }
 
 void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exploreMatrices) {
+	const auto n = numMatrices2Process();
+	if (!n)
+		return;
+
 	const auto nDuplicate = orderMatrices(orderMatrixMode);
-	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", numMatrices2Process(), matrixType(nRows), nDuplicate);
+	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", n, matrixType(nRows), nDuplicate);
 	m_nMatrices -= nDuplicate;
 	if (orderMatrixMode != 2)
 		return;
@@ -447,7 +451,9 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	Result.allocateBuffer(32);
 	std::string ResultFile;
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
+	Result.setOutFileName(ResultFile.c_str());
 
+	const bool updateDB = totalObjects() == 0;
 	SRGToolkit* pSRGtoolkit = NULL;
 	if (exploreMatrices) {
 #if OUT_SRG_TO_SEPARATE_FILE
@@ -461,15 +467,25 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		m_pGraphDB = new GraphDB[2]();
 		for (int i = 0; i < 2; i++)
 			m_pGraphDB[i].setGraphType(i + 1);
-	}
+	} else
+		Result.openOutFile();
 
-	Result.setOutFileName(ResultFile.c_str());
-	printfGreen("Saved to a file: \"%s\"\n", ResultFile.c_str());
-	for (uint i = 0; i < numMatrices2Process(); i++) {
+	const auto ip = (n > 100000 ? 1 : n > 10000 ? 2 : n > 1000 ? 10 : 101) * n / 100;
+	if (ip < n)
+		printf("Saved(%%):");
+
+	const auto skipedBytes = strlen("Cycles:");
+	for (uint i = 0; i < n; i++) {
+		if (((i + 1) % ip) == 0)
+			printf(" %d", (i + 1) / ip);
 		const auto idx = m_pMatrixPerm[i];
 		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
+		const auto pCicleInfo = m_pMatrixInfo->cycleInfo(idx);
+		if (updateDB)
+			addObjDescriptor(groupOrder, pCicleInfo + skipedBytes);
+
 		Result.setGroupOrder(groupOrder);
-		Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
+		Result.setInfo(pCicleInfo);
 		const auto pMatr = inputMatrices() + idx * inputMatrixSize();
 		Result.printTable(pMatr, true, false, nRows);
 		if (groupOrder > 1)
@@ -482,6 +498,11 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 			}
 		}
 	}
+
+	Result.closeOutFile();
+	if (ip < n)
+		printf("\n");
+	printfGreen("All results are saved in the file: \"%s\"\n", ResultFile.c_str());
 
 	if (pSRGtoolkit) {
 		pSRGtoolkit->printStat();

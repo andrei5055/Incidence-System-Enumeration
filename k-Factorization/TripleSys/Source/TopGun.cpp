@@ -131,7 +131,7 @@ int TopGun::Run()
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
 
 		cTime = clock();
-		bool bUseKSolve = param(t_useKSolve) != 0;
+		bool bUseKSolve = param(t_useKSolve) != 0 && (param(t_useKSolve) & 8) == 0;
 		int waitInterval  = bUseKSolve ? 100 : 5;
 
 		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation) && !bUseKSolve;

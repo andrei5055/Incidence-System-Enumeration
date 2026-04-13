@@ -9,8 +9,7 @@
 #include "cycles.h"
 #include "RowStorage.h"
 
-class K1212_4_20;
-class K1111P1F;
+class KSolver;
 class K16P1F;
 
 #define TestOption1 3
@@ -434,9 +433,7 @@ private:
 	tchar m_v4Row[4] = { 0 }, m_v4[4] = { 0 };
 	bool m_bAdjustRow4 = false;
 	bool m_bK1212_4_20 = false;
-	K1212_4_20* m_pK1212_4_20 = NULL;
-	K1111P1F* m_pK1111p1f = NULL;
-	K16P1F* m_pK16p1f = NULL;
+	KSolver* m_pKSolver = NULL;
 
 	CStorageIdx<tchar>** m_pRows = NULL;
 	tchar *m_firstPrecalcRow;

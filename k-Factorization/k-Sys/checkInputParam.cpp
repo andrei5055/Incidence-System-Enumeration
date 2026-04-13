@@ -156,10 +156,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				return false;
 			}
 		}
-		else {
+		else if (val[t_nMaxNumberOfStartMatrices] < MaxNumberOfStartMatrices) {
 			// When we order the set of matrices, we need to read all of them.
 			printfRed("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
-				"\"%s\"=%d is ignored and replaced with the maximum integer value (%d)\n", 
+				"\"%s\"=%d is ignored and replaced with the default maximum value (%d)\n", 
 				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], MaxNumberOfStartMatrices);
 			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices] + 1;
 		}

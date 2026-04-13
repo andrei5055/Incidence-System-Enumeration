@@ -4,6 +4,7 @@
 #include "k1212_4_20.h"
 #include "k1111p1f.h"
 #include "k16p1f.h"
+#include "KSolveGen.h"
 #include "kOrbits.h"
 
 #if !USE_CUDA && USE_BINARY_CANONIZER
@@ -21,7 +22,7 @@ bool alldata::checkAndSave(ctchar* data, int mode) {
 	memcpy(result(0), data, m_numDaysResult * m_numPlayers);
 	//printTable("Result", result(), m_numDaysResult, m_numPlayers, m_groupSize);
 	m_lastRowWithTestedTrs = 0;
-iDay = m_numDaysResult;
+	iDay = m_numDaysResult;
 	for (int i = 0; i < iDay; i++)
 		u1fSetTableRow(neighbors(i), result(i));
 
@@ -57,6 +58,14 @@ iDay = m_numDaysResult;
 			if (m_printMatrices & 2)
 				printPermutationMatrices(2);
 		}
+		/**
+		if (orderOfGroup() > 1) {
+			for (int i = 0; i < countof(pAutGroup); i++) {
+				if (pAutGroup[i])
+					pAutGroup[i]->makeGroupOutput(this, m_bPrint);
+			}
+		}
+		*/
 	}
 	return true;
 }
@@ -67,6 +76,9 @@ bool K1111SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
 	return ((alldata*)pAppData)->checkAndSave(result, mode);
 }
 bool K16SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
+	return ((alldata*)pAppData)->checkAndSave(result, mode);
+}
+bool KGenSaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
 	return ((alldata*)pAppData)->checkAndSave(result, mode);
 }
 CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorageSet<tchar>* secondRowsDB,
@@ -288,24 +300,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #endif
 
 	bPrevResult = false;
-
-#if 1 && !USE_CUDA 
-	if (testGroupOrderEachSubmatrix(m_printMatrices, iCalcModeOrg)) {
-		goto noResult;
-	}
-#endif
-
-	if (iCalcMode == eCalculateMatrices)
-		m_pRowUsage->init(iThread, param(t_numThreads));
-
-	else if (iDay > 0) {
-		if (m_precalcMode == eCalculateRows)
-			m_pRowStorage->initPlayerMask(mfirst, maxPlayerInFirstGroup);
-		setArraysForLastRow(iDay);
-		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
-		minRows = iDay--;
-		if (param(t_useKSolve)) {
-			if (m_pK1212_4_20 || m_pK16p1f || m_pK1111p1f) {
+	
+	if (iDay > 0 && param(t_useKSolve)) {
+		if (m_groupSize == 2 && m_numDays == m_numDaysResult && m_nPrecalcRows == 3 && 
+			param(t_allowUndefinedCycles) == 0 && param(t_any2RowsConvertToFirst2) == 1 && param(t_CBMP_Graph) <= 2 &&
+			param(t_MultiThreading) == 1 && iDay == 3 && m_precalcMode == eCalculateRows) {
+			if (m_pKSolver) {
 				printfRed("*** Internal error, K-Solve already in use, exit\n");
 				myExit(1);
 			}
@@ -315,30 +315,106 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				kThreads = 1;
 			if (m_bPrint)
 				printf("Number of threads per K-Solve process (KThreads): %d\n", kThreads);
-			if (m_numPlayers == 24 && m_groupSize == 2 && bCBMP &&
-				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3 &&
-				sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
-				sysParam()->u1fCycles[0][1] == 4 && sysParam()->u1fCycles[0][2] == 20) {
-				m_pK1212_4_20 = new K1212_4_20();
-				m_pK1212_4_20->init(m_threadNumber, kThreads, result(0), (ResultCallback)K1212SaveResult, (void*)this, m_bPrint);
+
+			bool bCBMP = !completeGraph();
+
+			if (param(t_useKSolve) & 1) {
+				if (m_numPlayers == 16 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 16)
+				{
+					const FactorParams factParam = { K16_N, K16_MATCH, K16_FIXED, K16_M_MAX };
+					m_pKSolver = new K16P1F(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K16SaveResult, (void*)this, m_bPrint);
+				}
+
+				else if (m_numPlayers == 22 && bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 22)
+				{
+					const FactorParams factParam = { K1111_N, K1111_MATCH, K1111_FIXED, K1111_M_MAX };
+					m_pKSolver = new K1111P1F(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K1111SaveResult, (void*)this, m_bPrint);
+				}
+
+				if (m_numPlayers == 24 && bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 4 && sysParam()->u1fCycles[0][2] == 20)
+				{
+					const FactorParams factParam = { K1212_N, K1212_MATCH, K1212_FIXED, K1111_M_MAX };
+					m_pKSolver = new K1212_4_20(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K1212SaveResult, (void*)this, m_bPrint);
+				}
 			}
-			else if (m_numPlayers == 16 && m_groupSize == 2 && !bCBMP &&
-				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3) {
-				m_pK16p1f = new K16P1F();
-				m_pK16p1f->init(m_threadNumber, kThreads, result(0), (ResultCallback)K16SaveResult, (void*)this, m_bPrint);
-			}
-			else if (m_numPlayers == 22 && m_groupSize == 2 && bCBMP &&
-				m_precalcMode == eCalculateRows && m_nPrecalcRows == 3 &&
-				sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
-				sysParam()->u1fCycles[0][1] == 22) {
-				m_pK1111p1f = new K1111P1F();
-				m_pK1111p1f->init(m_threadNumber, kThreads, result(0), (ResultCallback)K1111SaveResult, (void*)this, m_bPrint);
-			}
-			else {
-				printfRed("*** Internal error, UseKSolve requested, but no compatible K-Solve exists, exit\n");
-				myExit(1);
+			// Fallback to KSolveGen (Bit 1)
+			if (!m_pKSolver && (param(t_useKSolve) & 2)) {
+				tchar cycle[2] = { 0 }, * p = cycle;
+				int k = 1;
+				cycle[0] = m_numPlayers;
+				if (sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1)
+					p = (tchar*)sysParam()->u1fCycles[0] + 1;
+				for (k = 0; k < MAX_CYCLES_PER_SET; k++)
+					if (p[k] == 0)
+						break;
+
+				const FactorParams factParam = { m_numPlayers, bCBMP ? m_numPlayers / 2 : m_numPlayers - 1, 3, KGEN_M_MAX };
+				m_pKSolver = new KSolveGen(factParam, bCBMP, p, k,
+					m_threadNumber, kThreads, result(0),
+					(ResultCallback)KGenSaveResult, (void*)this, m_bPrint,
+					m_v4Row, m_v4);
+				m_pKSolver->preSolve();
+				m_lastRowWithTestedTrs = 0;
+				iDay = m_nPrecalcRows;
+				m_precalcMode = eCalculateRows; // needed for cnvCheckNew
+				if (!cnvCheckNew(0, m_nPrecalcRows, false)) {
+					printfRed("*** Internal error, fixed rows are not canonical\n");
+					printTable("", result(), m_nPrecalcRows, m_numPlayers, m_groupSize);
+					exit(1);
+				}
+				iDay = m_nPrecalcRows + 1;
+				if (m_bPrint)
+					printf("Candidates filtered by canonicity (slot/before/after):");
+				m_secondPlayerInRow4First = 1 + m_nPrecalcRows * (completeGraph() ? 1 : 2);
+				for (int i = 0; i < m_numDaysResult - m_nPrecalcRows; i++) {
+					int nRows = m_pKSolver->getCandidateCount(i);
+					int nRowsAfter = 0;
+					m_secondPlayerInRow4 = 1 + (m_nPrecalcRows + i) * (completeGraph() ? 1 : 2);
+					for (int j = 0; j < nRows; j++) {
+						if (!m_pKSolver->getCandidate(i, j, result(m_nPrecalcRows))) {
+							printfRed("*** Internal error, i=%d, j=%d\n", i, j); exit(1);
+						}
+						m_lastRowWithTestedTrs = m_nPrecalcRows - 1;
+						u1fSetTableRow(neighbors(m_nPrecalcRows), result(m_nPrecalcRows));
+						if (!cnvCheckNew(0, m_nPrecalcRows + 1, true))
+							m_pKSolver->deleteCandidate(i, j);
+						else
+							nRowsAfter++;
+					}
+					m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
+					if (m_bPrint)
+						printf(" %d/%d/%d", i, nRows, nRowsAfter);
+				}
+				if (m_bPrint)
+					printf("\n");
+				m_pKSolver->solve(1);
+				goto noResult;
 			}
 		}
+		if (!m_pKSolver) {
+			printfRed("*** Internal error, UseKSolve(%d) requested, but no compatible K-Solve exists, exit\n", param(t_useKSolve));
+			myExit(1);
+		}
+	}
+#if 1 && !USE_CUDA
+	if (testGroupOrderEachSubmatrix(m_printMatrices, iCalcModeOrg)) {
+		goto noResult;
+	}
+#endif
+	if (iCalcMode == eCalculateMatrices)
+		m_pRowUsage->init(iThread, param(t_numThreads));
+	else if (iDay > 0) {
+		if (m_precalcMode == eCalculateRows)
+			m_pRowStorage->initPlayerMask(mfirst, maxPlayerInFirstGroup);
+	 	setArraysForLastRow(iDay);
+		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
+		minRows = iDay--;
 		goto checkCurrentMatrix;
 	}
 

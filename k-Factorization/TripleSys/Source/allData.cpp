@@ -312,9 +312,7 @@ CC alldata::~alldata() {
 	delete m_pGraphCanonizer;
 	releaseBinaryMatricesStorage();
 	delete m_pTestedTRs;
-	delete m_pK1212_4_20;
-	delete m_pK1111p1f;
-		delete m_pK16p1f;
+	delete m_pKSolver;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

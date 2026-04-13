@@ -72,6 +72,8 @@ public:
 	}
 	virtual void outLS(ctchar* c, int nl, FILE* f, bool outToScreen) {}
 	virtual bool isLSCreated() const			{ return false; }
+	FILE *openOutFile()							{ fopen_s(&m_pFile, this->m_pFileName, "a"); return m_pFile; }
+	void closeOutFile()							{ if (m_pFile) { fclose(m_pFile); m_pFile = NULL; } }
 protected:
 	inline auto groupSize() const				{ return m_np; }
 
@@ -80,6 +82,7 @@ protected:
 	const int m_nl;
 	const int m_ns;
 	const int m_np;
+	FILE* m_pFile = NULL;
 private:
 	const bool m_makeString;
 	bool m_bOutCntr;          // When true, the counter will be added to the Table Name
@@ -330,7 +333,7 @@ template<typename T>
 void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, const char* pStartLine, const int *idx)
 {
 	char buffer[1024], *pBuf = buffer;
-	FOPEN_F(f, this->m_pFileName, "a");
+	FOPEN_W(f, this->m_pFileName, "a", m_pFile);
 	if (outCntr)
 		m_cntr++;
 
@@ -436,7 +439,7 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 		}
 	}
 #endif
-	FCLOSE_F(f);
+	FCLOSE_W(f, m_pFile);
 }
 
 template<typename T>
@@ -444,7 +447,7 @@ void Table<T>::printTableInfo(const char* pInfo) {
 	if (!pInfo)
 		return;
 
-	FOPEN_F(f, this->m_pFileName, "a");
+	FOPEN_W(f, this->m_pFileName, "a", m_pFile);
 	fprintf(f, pInfo);
-	FCLOSE_F(f);
+	FCLOSE_W(f, m_pFile);
 }

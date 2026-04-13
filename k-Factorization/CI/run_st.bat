@@ -1,3 +1,5 @@
+@echo off
+cd /d "%~dp0"
 start /wait C:\Users\%username%\AppData\Local\Programs\WinMerge\WinMergeU.exe -noninteractive -minimize /f *.*  /enableexitcode /r ../../LOGS_CI_ST ../LOGS_CI
 if %ERRORLEVEL% EQU 0 (
    echo Success
