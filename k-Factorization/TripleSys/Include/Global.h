@@ -85,7 +85,7 @@ typedef enum {
 	t_halfRowMode,
 	t_useKSolve,
 	t_lastParam,
-	// Indeces of parameters with the int* type values
+	// Indices of parameters with the int* type values
 	t_v4Array = 0,
 	t_lastIntArryParam,
 	// indices of parameters with the string type values

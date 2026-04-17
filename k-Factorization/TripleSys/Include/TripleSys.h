@@ -443,6 +443,7 @@ private:
 	TrCycles* m_TrCyclesFirst2Rows = NULL;
 	bool m_allRowPairsSameCycles = false;
 	trDB* m_pTestedTRs = NULL;
+	LS_DB* m_lsDB = NULL;
 };
 
 inline bool is_number(const std::string& s)

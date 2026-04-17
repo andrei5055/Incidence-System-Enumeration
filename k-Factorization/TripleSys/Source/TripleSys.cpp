@@ -174,8 +174,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	
 	TableAut* pResult = NULL;
 	int iSaveLS = m_groupSize <= 3 ? param(t_saveLatinSquareType) : 0;
-	if (iSaveLS)
+	if (iSaveLS) {
 		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
+		m_lsDB = new LS_DB();
+	}
 	else
 		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
@@ -614,6 +616,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				char stat[1024];
 				getAllCycles(neighbors(), iDay);
 				m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+				if (m_lsDB)
+					m_lsDB->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+
 				pResult->setInfo(stat);
 				pResult->setGroupOrder(orderOfGroup());
 #if 0			// record result and print on screen (if m_bPrint==true)
@@ -631,6 +636,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						if (m_bPrint)
 							printfYellow("Latin Square (%sAtomic, %sTotally symmetric) saved with the matrix below\n",
 								pResultLS->isAtomicLS() ? "" : "Not ", pResultLS->isSymmetricLS() ? "" : "Not ");
+
 					}
 				}
 

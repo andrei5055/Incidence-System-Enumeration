@@ -1,33 +1,6 @@
 #include "MatrixDB.h"
 #include <ctime>
 
-void MatrixDB::transferMatrixDB(MatrixDB* matrDB) {
-	if (this == matrDB) return; // prevent self-transfer
-
-	// Lock both MatrixDBs' mutexes using std::scoped_lock (C++17+)
-	std::scoped_lock lock(this->m_descrMutex[1], matrDB->m_descrMutex[1]);
-
-	// Move ownership from matrDB to this
-	this->descrStorage() = std::move(matrDB->descrStorage());
-}
-
-void MatrixDB::addMatrixDB(MatrixDB* matrDB) {
-	if (!matrDB->descrStorage().empty()) {
-		for (const auto& record : matrDB->descrStorage()) {
-			addObjDescriptor(record->groupOrder(), record->objDescr(), record->numObjects());
-		}
-	}
-}
-
-void MatrixDB::updateMatrixDB(MatrixDB* db)
-{
-	std::lock_guard<std::mutex> lock(m_descrMutex[0]);
-	if (!descrStorage().empty())
-		addMatrixDB(db);
-	else
-		transferMatrixDB(db);
-}
-
 void out_date_time(FILE* f) {
 	time_t timestamp = time(NULL);
 	struct tm datetime;
