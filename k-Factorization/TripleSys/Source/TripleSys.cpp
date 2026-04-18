@@ -615,9 +615,12 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			{
 				char stat[1024];
 				getAllCycles(neighbors(), iDay);
+				auto* pResultLS = static_cast<const TableLS*>(pResult);
 				m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				if (m_lsDB)
-					m_lsDB->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+				if (m_lsDB) {
+					const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
+					m_lsDB->addObjDescriptor(orderOfGroup(), &lsType);
+				}
 
 				pResult->setInfo(stat);
 				pResult->setGroupOrder(orderOfGroup());
@@ -628,7 +631,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					pResult->printTable(result(), true, false, numDaysResult());
 					if (pResult->isLSCreated()) {
 						m_nLS++;
-						auto* pResultLS = static_cast<const TableLS*>(pResult);
 						if (pResultLS->isAtomicLS())
 							m_atomicLS++;
 						if (pResultLS->isSymmetricLS())
