@@ -22,6 +22,7 @@ const char* intParamNames[]{
 	"UseMultiThreading",
 	"NThreads",
 	"KThreads",
+	"numGThreads",
 	"NRowsInStartMatrix",
 	"NRowsInResultMatrix",
 	"MaxNumberOfStartMatrices",
@@ -229,6 +230,7 @@ int main(int argc, const char* argv[])
 #endif
 	val[t_MultiThreading] = UseMultiThreading;
 	val[t_numThreads] = NThreads;
+	val[t_numGThreads] = 0;
 	val[t_numKThreads] = 1;
 	val[t_nRowsInStartMatrix] = NRowsInStartMatrix;
 	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;

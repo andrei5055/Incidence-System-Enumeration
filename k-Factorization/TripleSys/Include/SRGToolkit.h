@@ -23,6 +23,7 @@ public:
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	void printStat();
+	inline SRGParam* graphParam(int i) const { return m_pGraphParam[i]; }
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);

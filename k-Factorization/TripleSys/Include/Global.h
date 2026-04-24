@@ -40,6 +40,7 @@ typedef enum {
 	t_MultiThreading,
 	t_numThreads,
 	t_numKThreads,
+	t_numGThreads,
 	t_nRowsInStartMatrix,
 	t_nRowsInResultMatrix,
 	t_nMaxNumberOfStartMatrices,

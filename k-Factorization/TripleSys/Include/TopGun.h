@@ -1,5 +1,6 @@
 #pragma once
 #include <thread>
+#include <functional>
 #include "TripleSys.h"
 
 class RowDB : public CStorageSet<tchar>, public kSysParam {
@@ -25,6 +26,8 @@ public:
 		return true;
 	}
 };
+
+class TableAut;
 
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
@@ -64,6 +67,7 @@ protected:
 	std::string m_reportInfo;
 	GraphDB *m_pGraphDB = NULL;
 	uint m_iMatrix;
+	void parallel_for(int start, int end, std::function<void(int, int)> task, int nThreads);
 private:
 	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
 	int readInputDataFile(const std::string& fn, tchar* pData, int nMatricesMax, int nRows, int nCols);
@@ -79,6 +83,8 @@ private:
 	}
 	cchar* matrixType(int nRows) const		{ return !nRows || nRows == nRowsStart() ? "Start" : "Constructed"; }
 	void allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode);
+	const tchar* getNextMatrixInfo(uint i, uint& groupOrder, uint *pIdx = NULL) const;
+	const tchar* outputNextMatrixInfo(uint i, uint& groupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes);
 
 	bool m_bUpdateMatrixReserved = true;
 };
