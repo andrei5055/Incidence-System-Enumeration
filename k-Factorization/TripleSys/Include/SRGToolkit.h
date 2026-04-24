@@ -21,24 +21,30 @@ class SRGToolkit : public CGraphCanonizer
 public:
 	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
+	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
 	void printStat();
-	inline SRGParam* graphParam(int i) const { return m_pGraphParam[i]; }
+	inline SRGParam* graphParam(int i) const	{ return m_pGraphParam[i]; }
+	inline void reportOnScreen(bool val)		{ m_reportOnScreen = val; }
+	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
+	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
+	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph);
 
 	const int m_nRows; 
 	const std::string m_resFileName;
 	const int m_nExploreMatrices;
 
+	uint m_srcGroupOrder;		// The order of the group of the source matrix (the matrix from which the SRG is constructed).
 	int m_nPrevMatrNumb = 0;
 	bool m_bChekMatr[2];
 	ushort* m_subgraphVertex = nullptr;
 	SRGParam *m_pGraphParam[2] = { nullptr };
 	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
 	const kSysParam* m_pParam;
+	bool m_reportOnScreen = false;
 };
 

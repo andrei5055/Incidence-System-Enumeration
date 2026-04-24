@@ -459,19 +459,20 @@ void TopGunBase::parallel_for(int start, int end, std::function<void(int, int)> 
 	for (auto& w : workers) w.join();
 }
 
-const tchar* TopGunBase::getNextMatrixInfo(uint i, uint& groupOrder, uint *pIdx) const {
+const tchar* TopGunBase::getNextMatrixInfo(uint i, uint* pGroupOrder, uint *pIdx) const {
 	const auto idx = m_pMatrixPerm ? m_pMatrixPerm[i] : i;
-	groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
+	*pGroupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
 	if (pIdx)
 		*pIdx = idx;
 	return inputMatrices() + idx * inputMatrixSize();
 }
 
-const tchar *TopGunBase::outputNextMatrixInfo(uint i, uint &groupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes) {
+const tchar *TopGunBase::outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes) {
 	uint idx;
-	const auto pMatr = getNextMatrixInfo(i, groupOrder, &idx);
+	const auto pMatr = getNextMatrixInfo(i, pGroupOrder, &idx);
 	if (pResult) {
 		const auto pCicleInfo = m_pMatrixInfo->cycleInfo(idx);
+		const auto groupOrder = *pGroupOrder;
 		if (updateDB)
 			addObjDescriptor(groupOrder, pCicleInfo + skipedBytes);
 
@@ -508,7 +509,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		Result.openOutFile();
 		uint groupOrder;
 		for (uint i = 0; i < n; i++)
-			outputNextMatrixInfo(i, groupOrder, &Result, updateDB, nRows, skipedBytes);
+			outputNextMatrixInfo(i, &groupOrder, &Result, updateDB, nRows, skipedBytes);
 
 		Result.closeOutFile();
 		printfGreen("All ordered matrices are saved in the file: \"%s\"\n", ResultFile.c_str());
@@ -522,6 +523,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	createFolderAndFileName(srgResFile, paramPtr(), t_ResultFolder, nRows, "_SRG_Type_");
 #endif
 	pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
+	pSRGtoolkit->reportOnScreen(paramPtr()->val[t_printMatrices] & t_printExploringSRG);
 	m_pGraphDB = new GraphDB[2]();
 	for (int i = 0; i < 2; i++)
 		m_pGraphDB[i].setGraphType(i + 1);
@@ -545,15 +547,14 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		}
 
 		parallel_for(0, (int)n, [&](int i, int threadIdx) {
-			uint groupOrder;
-			auto* pMatr = getNextMatrixInfo(i, groupOrder);
+			auto* pMatr = getNextMatrixInfo(i, toolkits[threadIdx]->srcGroupOrderPntr());
 
 			/*		if (updateDB) {
 						std::lock_guard<std::mutex> lock(resMutex);
 						addObjDescriptor(groupOrder, pCycleInfo + skipedBytes);
 					}
 			*/
-			toolkits[threadIdx]->exploreMatrix(pMatr, localGraphDBs[threadIdx].get(), i + 1, groupOrder);
+			toolkits[threadIdx]->exploreMatrix(pMatr, localGraphDBs[threadIdx].get(), i + 1);
 			}, numProcessThreads);
 
 #if 0
@@ -579,13 +580,12 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 #endif
 	}
 	else {
-		uint groupOrder;
 		for (uint i = 0; i < n; i++) {
 			if (((i + 1) % ip) == 0)
 				printf(" %d", (i + 1) / ip);
 
-			auto* pMatr = outputNextMatrixInfo(i, groupOrder, &Result, updateDB, nRows, skipedBytes);
-			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i + 1, groupOrder)) {
+			auto* pMatr = outputNextMatrixInfo(i, pSRGtoolkit->srcGroupOrderPntr(), &Result, updateDB, nRows, skipedBytes);
+			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i + 1)) {
 				delete pSRGtoolkit;
 				pSRGtoolkit = NULL;
 			}

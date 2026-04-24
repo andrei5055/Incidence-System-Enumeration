@@ -96,13 +96,13 @@ SRGToolkit::~SRGToolkit() {
 	}
 }
 
-bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
 		if (!m_bChekMatr[i])
 			continue;
 
-		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID, srcGroupOrder))
+		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID))
 			counter++;
 		else
 			if (!(m_nExploreMatrices & 2))
@@ -112,9 +112,8 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 	return counter > 0;
 }
 
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder) {
-	const bool reportOnScreen = m_pParam->val[t_printMatrices] & t_printExploringSRG;
-	if (reportOnScreen)
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
+	if (reportOnScreen())
 		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
 	const auto groupSize = m_pParam->val[t_groupSize];
@@ -313,73 +312,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 		m_nPrevMatrNumb++;
 
 	if (newGraph) {
-		pBuf = buf;
-		// New SRG constructed
-		if (!prevMatrNumb) {
-			std::string fileName;
-#if OUT_SRG_TO_SEPARATE_FILE
-			SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
-			fileName = m_resFileName + buf;
-#else
-			fileName = m_resFileName;
-#endif			
-			const auto len = fileName.length() + 1;
-			delete[] outFileName();
-			memcpy(pBuf = new char[len], fileName.c_str(), len);
-			setOutFileName(pBuf, false);
-		}
-
-		FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
-		SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
-		pBuf = buf;
-#if OUT_SRG_TO_SEPARATE_FILE
-		if (!prevMatrNumb) {
-			if (graphType != t_regular)
-				fprintf(f, "List of SRGs of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
-			else
-				fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
-		}
-
-		SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
-#else
-#if PRINT_NUM_CUR_GRAPH
-		SPRINTFD(pBuf, buf, "\n  *** numCurrGraph = %d ***", numCurrGraph);
-#endif
-		if (graphType != t_regular)
-			SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):",
-				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, graphParam->λ, graphParam->μ);
-		else
-			SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d):",
-				prevMatrNumb + 1, typeIdx + 1, v, graphParam->k);
-
-		SPRINTFD(pBuf, buf, " |Aut(G)| = %zd", groupOrder());
-		if (reportOnScreen)
-			std::cout << buf << "\n";
-#endif
-		if (rank3)
-			SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
-		else
-			if (graphType == t_4_vert)
-				SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
-
-
-		if (rank3 || graphType == t_4_vert)
-			SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
-
-		if (graphType != t_regular) {
-			const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
-			const auto grOrder = canonize ? groupOrder() : 0;
-			srgSummary.outSRG_info(v, graphParam, graphType, rank3graph, grOrder, groupSize, nCols / groupSize, srcGroupOrder);
-		}
-
-		fprintf(f, "%s\n", buf);
-		if (pResGraph)
-			outAdjMatrix(pResGraph, f);
-
-		FCLOSE_F(f);
-
-		if (pResGraph && groupOrder() > 1)
-			makeGroupOutput(NULL, false, false);
+		outputGraph(typeIdx, prevMatrNumb, graphType, rank3, pResGraph);
 	}
 	else {
 		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
@@ -399,6 +332,82 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return true;
+}
+
+void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph)
+{
+	char buf[512], *pBuf = buf;
+	// New SRG constructed
+	if (!prevMatrNumb) {
+		std::string fileName;
+#if OUT_SRG_TO_SEPARATE_FILE
+		SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
+		fileName = m_resFileName + buf;
+#else
+		fileName = m_resFileName;
+#endif			
+		const auto len = fileName.length() + 1;
+		delete[] outFileName();
+		memcpy(pBuf = new char[len], fileName.c_str(), len);
+		setOutFileName(pBuf, false);
+	}
+
+	FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
+	SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
+	pBuf = buf;
+	const auto v = groupDegree();
+	auto graphParam = m_pGraphParam[typeIdx];
+#if OUT_SRG_TO_SEPARATE_FILE
+	if (!prevMatrNumb) {
+		if (graphType != t_regular)
+			fprintf(f, "List of SRGs of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):\n", typeIdx + 1, m_v, graphParam->k, graphParam->λ, graphParam->μ);
+		else
+			fprintf(f, "List of regular graphs of type %d with parameters (v,k) = (%d,%2d):\n", typeIdx + 1, m_v, graphParam->k);
+	}
+
+	SPRINTFD(pBuf, buf, "\nGraph #%d:  |Aut(G)| = %zd", prevMatrNumb + 1, groupOrder());
+#else
+#if PRINT_NUM_CUR_GRAPH
+	SPRINTFD(pBuf, buf, "\n  *** numCurrGraph = %d ***", numCurrGraph);
+#endif
+	if (graphType != t_regular)
+		SPRINTFD(pBuf, buf, "\nSRG #%d of type %d with parameters (v,k,λ,μ) = (%d,%2d,%d,%d):",
+			prevMatrNumb + 1, typeIdx + 1, v, graphParam->k, graphParam->λ, graphParam->μ);
+	else
+		SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d):",
+			prevMatrNumb + 1, typeIdx + 1, v, graphParam->k);
+
+	SPRINTFD(pBuf, buf, " |Aut(G)| = %zd", groupOrder());
+	if (reportOnScreen())
+		std::cout << buf << "\n";
+#endif
+	if (rank3)
+		SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
+	else
+		if (graphType == t_4_vert)
+			SPRINTFD(pBuf, buf, "\n4-vertex condition satisfied");
+
+
+	if (rank3 || graphType == t_4_vert)
+		SPRINTFD(pBuf, buf, " (α, β) = (%d, %d)", graphParam->α, graphParam->β);
+
+	if (graphType != t_regular) {
+		const bool canonize = m_nExploreMatrices > 0;
+		const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
+		const auto grOrder = canonize ? groupOrder() : 0;
+		const auto groupSize = m_pParam->val[t_groupSize];
+		const auto nCols = m_pParam->val[t_numPlayers];
+		srgSummary.outSRG_info(v, graphParam, graphType, rank3graph, grOrder, groupSize, nCols / groupSize, m_srcGroupOrder);
+	}
+
+	fprintf(f, "%s\n", buf);
+	if (pResGraph)
+		outAdjMatrix(pResGraph, f);
+
+	FCLOSE_F(f);
+
+	if (pResGraph && groupOrder() > 1)
+		makeGroupOutput(NULL, false, false);
 }
 
 t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {

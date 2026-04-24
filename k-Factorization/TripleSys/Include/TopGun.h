@@ -83,8 +83,8 @@ private:
 	}
 	cchar* matrixType(int nRows) const		{ return !nRows || nRows == nRowsStart() ? "Start" : "Constructed"; }
 	void allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode);
-	const tchar* getNextMatrixInfo(uint i, uint& groupOrder, uint *pIdx = NULL) const;
-	const tchar* outputNextMatrixInfo(uint i, uint& groupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes);
+	const tchar* getNextMatrixInfo(uint i, uint* pGroupOrder, uint *pIdx = NULL) const;
+	const tchar* outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes);
 
 	bool m_bUpdateMatrixReserved = true;
 };
