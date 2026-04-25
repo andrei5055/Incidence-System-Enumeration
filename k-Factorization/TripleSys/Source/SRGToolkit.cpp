@@ -72,37 +72,34 @@ void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 	}
 }
 
-SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices) :
+SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster) :
 	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
 	m_resFileName(resFileName), CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
 
+	m_pMaster = pMaster;
 	setOutFileName(NULL);
 	const int coeff = PRINT_MATRICES ? 3 : 0;
 	m_subgraphVertex = new ushort[groupDegree()];
-	const auto len = groupDegree() * (groupDegree() - 1) / 2;
 	for (int i = 0; i < 2; i++) {
 		m_bChekMatr[i] = true;
 		m_pGraphParam[i] = new SRGParam();
-		m_pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50);
 	}
 }
 
 SRGToolkit::~SRGToolkit() {
 	delete[] m_subgraphVertex;
 	delete[] outFileName();
-	for (int i = 0; i < 2; i++) {
-		delete m_pMarixStorage[i];
+	for (int i = 0; i < 2; i++)
 		delete m_pGraphParam[i];
-	}
 }
 
-bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
 		if (!m_bChekMatr[i])
 			continue;
 
-		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID))
+		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID, ppMarixStorage[i]))
 			counter++;
 		else
 			if (!(m_nExploreMatrices & 2))
@@ -112,7 +109,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatr
 	return counter > 0;
 }
 
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID) {
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
 	if (reportOnScreen())
 		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
@@ -283,6 +280,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 #endif
 	}
 
+//	pGraphDB->setGraphType(graphType);
 	const char* pGraphDescr = "";
 	if (rank3)
 		pGraphDescr = "rank 3 graph";
@@ -304,9 +302,9 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	bool newGraph = true;
 	int prevMatrNumb = m_nPrevMatrNumb;
 	if (pUpperDiag) {
-		prevMatrNumb = m_pMarixStorage[typeIdx]->numObjects();
-		m_pMarixStorage[typeIdx]->updateRepo(pUpperDiag);
-		newGraph = prevMatrNumb < m_pMarixStorage[typeIdx]->numObjects() ? 1 : 0;
+		prevMatrNumb = pMarixStorage->numObjects();
+		pMarixStorage->updateRepo(pUpperDiag);
+		newGraph = prevMatrNumb < pMarixStorage->numObjects() ? 1 : 0;
 	}
 	else
 		m_nPrevMatrNumb++;

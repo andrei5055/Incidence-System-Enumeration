@@ -524,9 +524,15 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 #endif
 	pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
 	pSRGtoolkit->reportOnScreen(paramPtr()->val[t_printMatrices] & t_printExploringSRG);
+	const auto v = pSRGtoolkit->groupDegree();
+	const auto len = v * (v - 1) / 2;
+
 	m_pGraphDB = new GraphDB[2]();
-	for (int i = 0; i < 2; i++)
+	CBinaryMatrixStorage* pMarixStorage[2];
+	for (int i = 0; i < 2; i++) {
 		m_pGraphDB[i].setGraphType(i + 1);
+		pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50);
+	}
 
 	const auto ip = (n > 100000 ? 1 : n > 10000 ? 2 : n > 1000 ? 10 : 101) * n / 100;
 	if (ip < n)
@@ -554,10 +560,10 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 						addObjDescriptor(groupOrder, pCycleInfo + skipedBytes);
 					}
 			*/
-			toolkits[threadIdx]->exploreMatrix(pMatr, localGraphDBs[threadIdx].get(), i + 1);
+			toolkits[threadIdx]->exploreMatrix(pMatr, localGraphDBs[threadIdx].get(), i + 1, pMarixStorage);
 			}, numProcessThreads);
 
-#if 0
+#if 1
 		for (int t = 0; t < numProcessThreads; t++) {
 			for (int i = 0; i < 2; i++) {
 				GraphDB* pLocalGraphDB = &localGraphDBs[t][i];
@@ -585,7 +591,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 				printf(" %d", (i + 1) / ip);
 
 			auto* pMatr = outputNextMatrixInfo(i, pSRGtoolkit->srcGroupOrderPntr(), &Result, updateDB, nRows, skipedBytes);
-			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i + 1)) {
+			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i + 1, pMarixStorage)) {
 				delete pSRGtoolkit;
 				pSRGtoolkit = NULL;
 			}
@@ -595,12 +601,16 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	Result.closeOutFile();
 	if (ip < n)
 		printf("\n");
+
 	printfGreen("All results with the constructed graphs are saved in the file: \"%s\"\n", ResultFile.c_str());
 
 	if (pSRGtoolkit) {
 		pSRGtoolkit->printStat();
 		delete pSRGtoolkit;
 	}
+
+	for (int i = 0; i < 2; i++)
+		delete pMarixStorage[i];
 }
 
 void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {

@@ -19,16 +19,16 @@ typedef struct SRGParam {
 class SRGToolkit : public CGraphCanonizer
 {
 public:
-	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices);
+	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster = NULL);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID);
+	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage);
 	void printStat();
 	inline SRGParam* graphParam(int i) const	{ return m_pGraphParam[i]; }
 	inline void reportOnScreen(bool val)		{ m_reportOnScreen = val; }
 	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
 	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
@@ -43,8 +43,8 @@ private:
 	bool m_bChekMatr[2];
 	ushort* m_subgraphVertex = nullptr;
 	SRGParam *m_pGraphParam[2] = { nullptr };
-	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
 	const kSysParam* m_pParam;
 	bool m_reportOnScreen = false;
+	SRGToolkit *m_pMaster = nullptr;
 };
 
