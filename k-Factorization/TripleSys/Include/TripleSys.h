@@ -154,8 +154,18 @@ typedef struct TrCycles {
 	int irow2;
 } TrCycles;
 
+class CBinaryMatrixStorage : public CRepository<tchar> {
+public:
+	CBinaryMatrixStorage(int lenObj, int numObjects = 0, GraphDB* pGraphDB = NULL) : CRepository<tchar>(lenObj, numObjects) { setGraphDB(pGraphDB); }
+	inline void setMutex(std::mutex* pMutex)	{ m_pMutex = pMutex; }
+	inline auto getMutext() const				{ return m_pMutex; }
+	inline void setGraphDB(GraphDB* pGraphDB)	{ m_pGraphDB = pGraphDB; }
+	inline auto graphDB() const					{ return m_pGraphDB; }
+private:
+	std::mutex* m_pMutex = NULL; 
+	GraphDB* m_pGraphDB = NULL;
+};
 
-typedef CRepository<tchar> CBinaryMatrixStorage;
 class CKOrbits;
 class CGraphCanonizer;
 

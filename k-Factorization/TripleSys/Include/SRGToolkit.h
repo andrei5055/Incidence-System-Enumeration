@@ -21,19 +21,22 @@ class SRGToolkit : public CGraphCanonizer
 public:
 	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster = NULL);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage);
+	bool exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage);
 	void printStat();
 	inline SRGParam* graphParam(int i) const	{ return m_pGraphParam[i]; }
 	inline void reportOnScreen(bool val)		{ m_reportOnScreen = val; }
 	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
 	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
+	inline void setMaster(SRGToolkit* pMaster)	{ m_pMaster = pMaster; }
+	void outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar* pResGraph, ctchar* pUpperDiag);
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
+	inline auto getMaster() const				{ return m_pMaster; }
 	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph);
-
+	
 	const int m_nRows; 
 	const std::string m_resFileName;
 	const int m_nExploreMatrices;

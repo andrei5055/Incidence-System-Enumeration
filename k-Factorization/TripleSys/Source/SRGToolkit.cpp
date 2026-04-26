@@ -93,23 +93,26 @@ SRGToolkit::~SRGToolkit() {
 		delete m_pGraphParam[i];
 }
 
-bool SRGToolkit::exploreMatrix(ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage) {
+bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage) {
 	int counter = 0;
 	for (int i = 0; i < 2; i++) {
 		if (!m_bChekMatr[i])
 			continue;
 
-		if (exploreMatrixOfType(i, pMatr, pGraphDB + i, sourceMatrID, ppMarixStorage[i]))
+		if (exploreMatrixOfType(i, pMatr, sourceMatrID, ppMarixStorage[i]))
 			counter++;
-		else
+		else {
+			delete m_pGraphParam[i];
+			m_pGraphParam[i] = NULL;
 			if (!(m_nExploreMatrices & 2))
 				m_bChekMatr[i] = false;
+		}
 	}
 
 	return counter > 0;
 }
 
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
 	if (reportOnScreen())
 		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
@@ -162,24 +165,26 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	}
 
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
-	pGraphDB->setGraphType(graphType);
+	{
+		std::optional<std::lock_guard<std::mutex>> guard;
+		if (auto* mtx = pMarixStorage->getMutext())
+			guard.emplace(*mtx);
+
+		pMarixStorage->graphDB()->setGraphType(graphType);
+	}
+
 	int flg = 1;
 	switch (graphType) {
 	case t_nonregular:
 	case t_complete:
-		delete graphParam;
-		m_pGraphParam[typeIdx] = NULL;
 		return false;
 	case t_regular:
 		flg = 2;
 	}
 
 	const bool canonize = m_nExploreMatrices > 0;
-	if (!((canonize ? m_nExploreMatrices : -m_nExploreMatrices) & flg)) {
-		delete graphParam;
-		m_pGraphParam[typeIdx] = NULL;
+	if (!((canonize ? m_nExploreMatrices : -m_nExploreMatrices) & flg))
 		return false;
-	}
 
 	bool rank3 = false;
 	tchar* pGraph[2] = { NULL, NULL };
@@ -280,7 +285,48 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 #endif
 	}
 
-//	pGraphDB->setGraphType(graphType);
+	std::optional<std::lock_guard<std::mutex>> guard;		
+	SRGToolkit* pMaster = this;
+	if (auto* mtx = pMarixStorage->getMutext()) {
+		guard.emplace(*mtx);
+		pMaster = getMaster();
+	}
+
+	bool newGraph = true;
+	int prevMatrNumb = m_nPrevMatrNumb;
+	if (pUpperDiag) {
+		// We are here only if the graph was canonized. 
+		// Let's check if this graph is isomorphic to a previously constructed one.
+		prevMatrNumb = pMarixStorage->numObjects();
+		pMarixStorage->updateRepo(pUpperDiag);
+		newGraph = prevMatrNumb < pMarixStorage->numObjects();
+	}
+	else
+		m_nPrevMatrNumb++;
+
+	if (newGraph) {
+		std::optional<std::lock_guard<std::mutex>> guard;
+		if (auto* mtx = pMarixStorage->getMutext()) {
+			guard.emplace(*mtx);
+
+		}
+
+		pMaster->outputGraph(typeIdx, prevMatrNumb, graphType, rank3, pResGraph);
+
+		if (rank3)
+			graphParam->m_cntr[4]++;
+	}
+	else {
+		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
+		--graphParam->m_cntr[0];
+		--graphParam->m_cntr[1];
+		if (graphType != t_regular)
+			--graphParam->m_cntr[2];
+
+		if (graphType == t_4_vert)
+			--graphParam->m_cntr[3];
+	}
+
 	const char* pGraphDescr = "";
 	if (rank3)
 		pGraphDescr = "rank 3 graph";
@@ -295,22 +341,41 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 	else
 		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", v, graphParam->k);
 
+	auto pGraphDB = pMarixStorage->graphDB();
 	pGraphDB->setTableTitle(buf);
-	if (rank3)
-		graphParam->m_cntr[4]++;
 
+	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
+
+	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
+	return true;
+}
+
+void SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar *pResGraph, ctchar* pUpperDiag)
+{
 	bool newGraph = true;
 	int prevMatrNumb = m_nPrevMatrNumb;
 	if (pUpperDiag) {
+		// We are here only if the graph was canonized. 
+		// Let's check if this graph is isomorphic to a previously constructed one.
 		prevMatrNumb = pMarixStorage->numObjects();
 		pMarixStorage->updateRepo(pUpperDiag);
-		newGraph = prevMatrNumb < pMarixStorage->numObjects() ? 1 : 0;
+		newGraph = prevMatrNumb < pMarixStorage->numObjects();
 	}
 	else
 		m_nPrevMatrNumb++;
 
+	auto graphParam = m_pGraphParam[typeIdx];
 	if (newGraph) {
+		std::optional<std::lock_guard<std::mutex>> guard;
+		if (auto* mtx = pMarixStorage->getMutext()) {
+			guard.emplace(*mtx);
+
+		}
+
 		outputGraph(typeIdx, prevMatrNumb, graphType, rank3, pResGraph);
+
+		if (rank3)
+			graphParam->m_cntr[4]++;
 	}
 	else {
 		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
@@ -321,15 +386,29 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraph
 
 		if (graphType == t_4_vert)
 			--graphParam->m_cntr[3];
-
-		if (rank3)
-			--graphParam->m_cntr[4];
 	}
+
+	const char* pGraphDescr = "";
+	if (rank3)
+		pGraphDescr = "rank 3 graph";
+	else
+		if (graphType == t_4_vert)
+			pGraphDescr = "4-vertex condition";
+
+	const auto v = groupDegree();
+	char buf[512], * pBuf = buf;
+	if (graphType != t_regular)
+		SPRINTFD(pBuf, buf, "Strongly regular graphs with parameters: (v,k,λ,μ) = (%d,%2d,%d,%d)",
+			v, graphParam->k, graphParam->λ, graphParam->μ);
+	else
+		SPRINTFD(pBuf, buf, "Regular graphs with parameters: (v,k) = (%d,%2d)", v, graphParam->k);
+
+	auto pGraphDB = pMarixStorage->graphDB();
+	pGraphDB->setTableTitle(buf);
 
 	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
 
 	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
-	return true;
 }
 
 void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph)
