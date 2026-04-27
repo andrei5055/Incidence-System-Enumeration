@@ -539,7 +539,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		printf("Saved(%%):");
 
 	const int numProcessThreads = (std::max)(1, (int)param(t_numGThreads));
-	if (numProcessThreads > 1 && n > 1) {
+	if (numProcessThreads >= 1 && n > 1) {
 		std::mutex resMutex[2];
 		std::vector<std::unique_ptr<GraphDB[]>> localGraphDBs(numProcessThreads);
 		std::vector < std::unique_ptr <TableAut>> localResults(numProcessThreads);
@@ -550,9 +550,9 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		for (int t = 0; t < numProcessThreads; t++) {
 			localGraphDBs[t] = std::unique_ptr<GraphDB[]>(new GraphDB[2]());
 			for (int i = 0; i < 2; i++) localGraphDBs[t][i].setGraphType(i + 1);
-			toolkits[t] = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
-			localResults[t] = std::unique_ptr<TableAut>(new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true));
-			localResults[t]->allocateBuffer(32);
+			toolkits[t] = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices, pSRGtoolkit);
+//			localResults[t] = std::unique_ptr<TableAut>(new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true));
+//			localResults[t]->allocateBuffer(32);
 		}
 
 		parallel_for(0, (int)n, [&](int i, int threadIdx) {
@@ -566,7 +566,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 			toolkits[threadIdx]->exploreMatrix(pMatr, i + 1, pMarixStorage);
 			}, numProcessThreads);
 
-#if 1
+#if 0
 		for (int t = 0; t < numProcessThreads; t++) {
 			for (int i = 0; i < 2; i++) {
 				GraphDB* pLocalGraphDB = &localGraphDBs[t][i];

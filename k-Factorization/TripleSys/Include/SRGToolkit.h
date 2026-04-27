@@ -28,7 +28,7 @@ public:
 	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
 	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
 	inline void setMaster(SRGToolkit* pMaster)	{ m_pMaster = pMaster; }
-	void outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar* pResGraph, ctchar* pUpperDiag);
+	void outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, SRGParam* graphParam, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar* pResGraph, ctchar* pUpperDiag);
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
