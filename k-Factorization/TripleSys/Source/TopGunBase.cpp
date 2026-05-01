@@ -566,9 +566,15 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 			toolkits[threadIdx]->exploreMatrix(pMatr, i + 1, pMarixStorage);
 			}, numProcessThreads);
 
-#if 0
+
 		for (int t = 0; t < numProcessThreads; t++) {
+			const auto toolkit = toolkits[t];
 			for (int i = 0; i < 2; i++) {
+				const auto grCntrs = toolkit->graphParam(i)->m_cntr;
+				auto grCounters = pSRGtoolkit->graphParam(i)->m_cntr;
+				for (int j = countof(SRGParam::m_cntr); j--;)
+					grCounters[j] += grCntrs[j];
+					/*
 				GraphDB* pLocalGraphDB = &localGraphDBs[t][i];
 				m_pGraphDB[i].addObjectDB(pLocalGraphDB);
 				SRGToolkit* pLocalToolkit = toolkits[t];
@@ -576,7 +582,6 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 				SRGParam* pLocalParam = pLocalToolkit->graphParam(i);
 				SRGParam* pGlobalParam = pSRGtoolkit->graphParam(i);
 				for (int c = 0; c < 7; c++) pGlobalParam->m_cntr[c] += pLocalParam->m_cntr[c];
-				/*
 				if (pLocalParam->k) pGlobalParam->k = pLocalParam->k;
 				if (pLocalParam->lambda) pGlobalParam->lambda = pLocalParam->lambda;
 				if (pLocalParam->mu) pGlobalParam->mu = pLocalParam->mu;
@@ -584,9 +589,8 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 				if (pLocalParam->beta) pGlobalParam->beta = pLocalParam->beta;
 				*/
 			}
-			delete toolkits[t];
+			delete toolkit;
 		}
-#endif
 	}
 	else {
 		for (uint i = 0; i < n; i++) {

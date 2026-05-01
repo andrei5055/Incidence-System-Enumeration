@@ -28,14 +28,15 @@ public:
 	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
 	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
 	inline void setMaster(SRGToolkit* pMaster)	{ m_pMaster = pMaster; }
-	void outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, SRGParam* graphParam, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar* pResGraph, ctchar* pUpperDiag);
+	bool outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, 
+		bool rank3, ctchar* pResGraph, ctchar* pUpperDiag, SRGToolkit* pSlaveToolKit);
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
 	inline auto getMaster() const				{ return m_pMaster; }
-	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph);
+	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit);
 	
 	const int m_nRows; 
 	const std::string m_resFileName;

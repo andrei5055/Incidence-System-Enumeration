@@ -171,8 +171,11 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 			guard.emplace(*mtx);
 			auto* pGrParam = getMaster()->graphParam(typeIdx);
 			if (!pGrParam->k) {
-				auto const cntrLen = sizeof(pGrParam->m_cntr);
-				memcpy(pGrParam + cntrLen, graphParam + cntrLen, sizeof(*pGrParam) - cntrLen);
+				pGrParam->k = graphParam->k;
+				pGrParam->λ = graphParam->λ;
+				pGrParam->μ = graphParam->μ;
+				pGrParam->α = graphParam->α;
+				pGrParam->β = graphParam->β;
 			}
 		}
 
@@ -298,11 +301,27 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 		(pMaster = getMaster())->setGroupOrder(groupOrder());
 	}
 
-	pMaster->outputGraph(typeIdx, graphType, sourceMatrID, graphParam, pMarixStorage, rank3, pResGraph, pUpperDiag);
+	const auto newGraph = pMaster->outputGraph(typeIdx, graphType, sourceMatrID, pMarixStorage, rank3, pResGraph, pUpperDiag, this);
+	if (!newGraph) {
+		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
+		--graphParam->m_cntr[0];
+		--graphParam->m_cntr[1];
+		if (graphType != t_regular)
+			--graphParam->m_cntr[2];
+
+		if (graphType == t_4_vert)
+			--graphParam->m_cntr[3];
+	}
+	else {
+		if (rank3)
+			graphParam->m_cntr[4]++;
+	}
+
 	return true;
 }
 
-void SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, SRGParam* graphParam, CBinaryMatrixStorage* pMarixStorage, bool rank3, ctchar *pResGraph, ctchar* pUpperDiag)
+bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, 
+	bool rank3, ctchar *pResGraph, ctchar* pUpperDiag, SRGToolkit *pSlaveToolKit)
 {
 	bool newGraph = true;
 	int prevMatrNumb = m_nPrevMatrNumb;
@@ -316,23 +335,9 @@ void SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 	else
 		m_nPrevMatrNumb++;
 
-//	auto graphParam = m_pGraphParam[typeIdx];
-	if (newGraph) {
-		outputGraph(typeIdx, prevMatrNumb, graphType, rank3, pResGraph);
-
-		if (rank3)
-			graphParam->m_cntr[4]++;
-	}
-	else {
-		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
-		--graphParam->m_cntr[0];
-		--graphParam->m_cntr[1];
-		if (graphType != t_regular)
-			--graphParam->m_cntr[2];
-
-		if (graphType == t_4_vert)
-			--graphParam->m_cntr[3];
-	}
+	auto graphParam = m_pGraphParam[typeIdx];
+	if (newGraph)
+		outputGraph(typeIdx, prevMatrNumb, graphType, rank3, pResGraph, pSlaveToolKit);
 
 	const char* pGraphDescr = "";
 	if (rank3)
@@ -355,9 +360,10 @@ void SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID);
 
 	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
+	return newGraph;
 }
 
-void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph)
+void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit)
 {
 	char buf[512], *pBuf = buf;
 	// New SRG constructed
@@ -430,7 +436,7 @@ void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphTy
 	FCLOSE_F(f);
 
 	if (pResGraph && groupOrder() > 1)
-		makeGroupOutput(NULL, false, false);
+		pSlaveToolKit->makeGroupOutput(NULL, false, false);
 }
 
 t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
