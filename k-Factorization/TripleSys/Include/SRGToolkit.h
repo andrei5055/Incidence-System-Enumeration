@@ -39,9 +39,9 @@ private:
 	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit);
 	
 	const int m_nRows; 
-	const std::string m_resFileName;
 	const int m_nExploreMatrices;
 
+	std::string m_resFileName[2];
 	uint m_srcGroupOrder;		// The order of the group of the source matrix (the matrix from which the SRG is constructed).
 	int m_nPrevMatrNumb = 0;
 	bool m_bChekMatr[2];

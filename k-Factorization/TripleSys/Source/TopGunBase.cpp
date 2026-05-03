@@ -501,7 +501,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	Result.allocateBuffer(32);
 	std::string ResultFile;
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
-	Result.setOutFileName(ResultFile.c_str());
+	Result.setOutFileName(ResultFile.c_str(), true);
 
 	const bool updateDB = totalObjects() == 0;
 	const auto skipedBytes = (int)strlen("Cycles:");
@@ -519,9 +519,6 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	SRGToolkit* pSRGtoolkit = nullptr;
 	std::string srgResFile(ResultFile);
 
-#if OUT_SRG_TO_SEPARATE_FILE
-	createFolderAndFileName(srgResFile, paramPtr(), t_ResultFolder, nRows, "_SRG_Type_");
-#endif
 	pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
 	pSRGtoolkit->reportOnScreen(paramPtr()->val[t_printMatrices] & t_printExploringSRG);
 	const auto v = pSRGtoolkit->groupDegree();
@@ -539,7 +536,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		printf("Saved(%%):");
 
 	const int numProcessThreads = (std::max)(1, (int)param(t_numGThreads));
-	if (numProcessThreads >= 1 && n > 1) {
+	if (numProcessThreads > 1 && n > 1) {
 		std::mutex resMutex[2];
 		std::vector<std::unique_ptr<GraphDB[]>> localGraphDBs(numProcessThreads);
 		std::vector < std::unique_ptr <TableAut>> localResults(numProcessThreads);

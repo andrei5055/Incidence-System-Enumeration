@@ -215,13 +215,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				param(t_keepPrevResult), pResFile);
 			myExit(1);
 		}
-		pResult->setOutFileName(pResFile);
+		pResult->setOutFileName(pResFile, true);
 		m_pRes = pResult;
 
 		if (outAutGroup) {
 			for (int i = 0; i < countof(pAutGroup); i++) {
 				if (pAutGroup[i])
-					pAutGroup[i]->setOutFileName(pResFile, false);
+					pAutGroup[i]->setOutFileName(pResFile);
 			}
 		}
 	}

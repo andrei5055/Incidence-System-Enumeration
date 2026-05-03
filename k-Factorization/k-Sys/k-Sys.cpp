@@ -252,8 +252,6 @@ int main(int argc, const char* argv[])
 	// Set default string parameters:
 	auto* strVal = param.strVal;
 	memset(strVal, 0, t_lastStrParam * sizeof(strVal[0]));
-	//if (U1FName)// && strlen(U1FName))
-	//	strVal[t_UFname] = new string(U1FName);
 
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
@@ -382,6 +380,8 @@ int main(int argc, const char* argv[])
 			}
 		}
 
+		delete strVal[t_UFname];
+		strVal[t_UFname] = NULL;
 		for (auto i = countof(params); i--;) {
 			auto& tmpParam = params[i].m_pTmpParamStorage;
 			for (size_t j = 0; j < tmpParam->size(); j++) {

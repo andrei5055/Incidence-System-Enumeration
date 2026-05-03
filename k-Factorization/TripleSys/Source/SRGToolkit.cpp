@@ -74,7 +74,7 @@ void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 
 SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster) :
 	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
-	m_resFileName(resFileName), CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
+	CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
 
 	m_pMaster = pMaster;
 	setOutFileName(NULL);
@@ -83,10 +83,17 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFile
 	for (int i = 0; i < 2; i++) {
 		m_bChekMatr[i] = true;
 		m_pGraphParam[i] = new SRGParam();
+		m_resFileName[i] = resFileName;
+#if OUT_SRG_TO_SEPARATE_FILE
+		char buf[32], *pBuf = buf
+		SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
+		m_resFileName[i] += buf;
+#endif	
 	}
 }
 
 SRGToolkit::~SRGToolkit() {
+	setOutFileName(NULL);
 	delete[] m_subgraphVertex;
 	delete[] outFileName();
 	for (int i = 0; i < 2; i++)
@@ -365,25 +372,12 @@ bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 
 void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit)
 {
-	char buf[512], *pBuf = buf;
 	// New SRG constructed
-	if (!prevMatrNumb) {
-		std::string fileName;
-#if OUT_SRG_TO_SEPARATE_FILE
-		SPRINTFD(pBuf, buf, "%d_matrices.txt", typeIdx + 1);
-		fileName = m_resFileName + buf;
-#else
-		fileName = m_resFileName;
-#endif			
-		const auto len = fileName.length() + 1;
-		delete[] outFileName();
-		memcpy(pBuf = new char[len], fileName.c_str(), len);
-		setOutFileName(pBuf, false);
-	}
+	setOutFileName(m_resFileName[typeIdx].c_str());
 
 	FOPEN_F(f, outFileName(), prevMatrNumb || !OUT_SRG_TO_SEPARATE_FILE ? "a" : "w");
 	SrgSummary srgSummary(m_pParam->strVal[t_ResultFolder], param(t_out_CSV_file), m_pParam->strVal[t_CSV_FileName]);
-	pBuf = buf;
+	char buf[512], * pBuf = buf;
 	const auto v = groupDegree();
 	auto graphParam = m_pGraphParam[typeIdx];
 #if OUT_SRG_TO_SEPARATE_FILE
@@ -435,8 +429,10 @@ void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphTy
 
 	FCLOSE_F(f);
 
-	if (pResGraph && groupOrder() > 1)
+	if (pResGraph && groupOrder() > 1) {
+		pSlaveToolKit->setOutFileName(outFileName());
 		pSlaveToolKit->makeGroupOutput(NULL, false, false);
+	}
 }
 
 t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {

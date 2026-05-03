@@ -46,7 +46,7 @@ class IOutGroupHandle {
 public:
 	virtual void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) = 0;
 	virtual ~IOutGroupHandle() {}
-	inline void setOutFileName(const char* pFileName, bool resetFile = true) {
+	inline void setOutFileName(const char* pFileName, bool resetFile = false) {
 		if ((m_pFileName = pFileName) && resetFile)
 			std::remove(pFileName);
 	}
