@@ -31,6 +31,7 @@ TopGun::~TopGun() {
 	delete[] threadActive;
 	reportEOJ(m_errCode);
 }
+
 void TopGun::deleteOldFiles()
 {
 	namespace fs = std::filesystem;

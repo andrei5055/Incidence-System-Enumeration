@@ -450,7 +450,7 @@ void TopGunBase::parallel_for(int start, int end, std::function<void(int, int)> 
 	for (int t = 0; t < nThreads; ++t) {
 		workers.emplace_back([&, t]() {
 			while (true) {
-				int i = next_idx.fetch_add(1);
+				const auto i = next_idx.fetch_add(1);
 				if (i >= end) break;
 				task(i, t);
 			}
@@ -536,32 +536,22 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		printf("Saved(%%):");
 
 	const int numProcessThreads = (std::max)(1, (int)param(t_numGThreads));
-	if (numProcessThreads > 1 && n > 1) {
+	if (numProcessThreads >= 1 && n > 1) {
+		MatrixReportData reportData = { &Result, updateDB, skipedBytes };
+		setMatrixeReportData(&reportData);
+
 		std::mutex resMutex[2];
-		std::vector<std::unique_ptr<GraphDB[]>> localGraphDBs(numProcessThreads);
-		std::vector < std::unique_ptr <TableAut>> localResults(numProcessThreads);
 		std::vector<SRGToolkit*> toolkits(numProcessThreads, nullptr);
 		for (int i = 0; i < 2; i++)
 			pMarixStorage[i]->setMutex(&resMutex[i]);
 
-		for (int t = 0; t < numProcessThreads; t++) {
-			localGraphDBs[t] = std::unique_ptr<GraphDB[]>(new GraphDB[2]());
-			for (int i = 0; i < 2; i++) localGraphDBs[t][i].setGraphType(i + 1);
-			toolkits[t] = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices, pSRGtoolkit);
-//			localResults[t] = std::unique_ptr<TableAut>(new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true));
-//			localResults[t]->allocateBuffer(32);
-		}
+		for (int t = 0; t < numProcessThreads; t++) 
+			toolkits[t] = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices, pSRGtoolkit, this);
 
 		parallel_for(0, (int)n, [&](int i, int threadIdx) {
 			auto* pMatr = getNextMatrixInfo(i, toolkits[threadIdx]->srcGroupOrderPntr());
-
-			/*		if (updateDB) {
-						std::lock_guard<std::mutex> lock(resMutex);
-						addObjDescriptor(groupOrder, pCycleInfo + skipedBytes);
-					}
-			*/
 			toolkits[threadIdx]->exploreMatrix(pMatr, i + 1, pMarixStorage);
-			}, numProcessThreads);
+		}, numProcessThreads);
 
 
 		for (int t = 0; t < numProcessThreads; t++) {
@@ -571,21 +561,8 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 				auto grCounters = pSRGtoolkit->graphParam(i)->m_cntr;
 				for (int j = countof(SRGParam::m_cntr); j--;)
 					grCounters[j] += grCntrs[j];
-					/*
-				GraphDB* pLocalGraphDB = &localGraphDBs[t][i];
-				m_pGraphDB[i].addObjectDB(pLocalGraphDB);
-				SRGToolkit* pLocalToolkit = toolkits[t];
-				if (!pLocalToolkit) continue;
-				SRGParam* pLocalParam = pLocalToolkit->graphParam(i);
-				SRGParam* pGlobalParam = pSRGtoolkit->graphParam(i);
-				for (int c = 0; c < 7; c++) pGlobalParam->m_cntr[c] += pLocalParam->m_cntr[c];
-				if (pLocalParam->k) pGlobalParam->k = pLocalParam->k;
-				if (pLocalParam->lambda) pGlobalParam->lambda = pLocalParam->lambda;
-				if (pLocalParam->mu) pGlobalParam->mu = pLocalParam->mu;
-				if (pLocalParam->alpha) pGlobalParam->alpha = pLocalParam->alpha;
-				if (pLocalParam->beta) pGlobalParam->beta = pLocalParam->beta;
-				*/
 			}
+
 			delete toolkit;
 		}
 	}
@@ -626,5 +603,19 @@ void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {
 	if (orderMatrixMode == 2) {
 		m_pMatrixInfo = new CMatrixInfo((uint)nMatr);
 		updateMatrReserved(false);
+	}
+}
+
+void TopGunBase::outputMatrix(uint sourceMatrID) {
+	uint groupOrder;
+	auto pReportData = matrixReportData();
+	outputNextMatrixInfo(sourceMatrID - 1, &groupOrder, pReportData->pResult, pReportData->updateDB, nRowsOut(), pReportData->skipedBytes);
+}
+
+void SRGToolkit::outputMatrix(uint sourceMatrID) {
+	if (!m_bFactorizationOutputCompleted) {
+		//   The factorization matrix was not written to the output file.
+		m_bFactorizationOutputCompleted = true;
+		topGun()->outputMatrix(sourceMatrID);
 	}
 }

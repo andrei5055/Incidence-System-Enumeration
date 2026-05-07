@@ -72,11 +72,11 @@ void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 	}
 }
 
-SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster) :
+SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster, TopGunBase* pTopGunBase) :
 	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
 	CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
-
 	m_pMaster = pMaster;
+	m_pTopGunBase = pTopGunBase;
 	setOutFileName(NULL);
 	const int coeff = PRINT_MATRICES ? 3 : 0;
 	m_subgraphVertex = new ushort[groupDegree()];
@@ -102,6 +102,7 @@ SRGToolkit::~SRGToolkit() {
 
 bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage) {
 	int counter = 0;
+	m_bFactorizationOutputCompleted = false;
 	for (int i = 0; i < 2; i++) {
 		if (!m_bChekMatr[i])
 			continue;
@@ -301,14 +302,18 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 #endif
 	}
 
-	std::optional<std::lock_guard<std::mutex>> guard;		
-	SRGToolkit* pMaster = this;
-	if (auto* mtx = pMarixStorage->getMutext()) {
-		guard.emplace(*mtx);
-		(pMaster = getMaster())->setGroupOrder(groupOrder());
+	bool newGraph = false;
+	{
+		std::optional<std::lock_guard<std::mutex>> guard;
+		SRGToolkit* pMaster = this;
+		if (auto* mtx = pMarixStorage->getMutext()) {
+			guard.emplace(*mtx);
+			(pMaster = getMaster())->setGroupOrder(groupOrder());
+		}
+
+		newGraph = pMaster->outputGraph(typeIdx, graphType, sourceMatrID, pMarixStorage, rank3, pResGraph, pUpperDiag, this);
 	}
 
-	const auto newGraph = pMaster->outputGraph(typeIdx, graphType, sourceMatrID, pMarixStorage, rank3, pResGraph, pUpperDiag, this);
 	if (!newGraph) {
 		// Graph is isomorphic to a previously constructed one — adjust statistics to avoid duplicate counting.
 		--graphParam->m_cntr[0];
@@ -330,6 +335,12 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, 
 	bool rank3, ctchar *pResGraph, ctchar* pUpperDiag, SRGToolkit *pSlaveToolKit)
 {
+	if (this != pSlaveToolKit) {
+		// Output of factorization matrix
+		// It needs to be here only if SRA Toolkit::explorer Matrix is ​​invoked in multi-threaded mode;
+		pSlaveToolKit->outputMatrix(sourceMatrID);
+	}
+
 	bool newGraph = true;
 	int prevMatrNumb = m_nPrevMatrNumb;
 	if (pUpperDiag) {
