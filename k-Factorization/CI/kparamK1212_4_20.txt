@@ -1,0 +1,24 @@
+PrintMatrices=1
+GroupSize=2
+KeepPrevResult=0
+ExploreMatrices=0
+AutSaveTestedTrs=1
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+Out_CSV_File=-1
+CSV_FileName=../../SRG.csv
+OutAutomorphismGroup=0
+UseCompatibilityCheck=1
+StartFolder="./ExpectedResults/"
+nPlayers=24; CBMP_Graph=2;
+U1FCycles={{4,20}}
+
+TestName = "UseKSolve KSolveGen K12,12 (4,20)"
+ResultFolder="../Logs_CK/"
+UseKSolve=2;
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3;
+NThreads=1; KThreads=12; UseMultiThreading=1; 
+v4Row=7; v4=6; v4RowB=9; v4B=8; v4RowC=11; v4C=10
+NRowsInStartMatrix=3; NRowsInResultMatrix=12; ExpectedResult=2;
+
+END_JOB

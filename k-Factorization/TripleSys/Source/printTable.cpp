@@ -1,4 +1,4 @@
-#include "TopGun.h"
+﻿#include "TopGun.h"
 #if !USE_CUDA
 void _printf(FILE* f, bool toScreen, const char* format, const char* pStr) {
 	if (f)
@@ -57,7 +57,7 @@ void alldata::reportCurrentMatrix()
 	{
 	//	if (m_bPrint)
 		{
-			printf("Thread %d: Current data for %s-matrix %zd: rows=%d, build time=%d, time since start=%d\n",
+			printf("Matrix index %d: Current data for %s-matrix %zd: rows=%d, build time=%d, time since start=%d\n",
 				m_threadNumber, m_fHdr, nLoops + 1, iDay + 1, m_cTime - m_rTime, m_cTime - m_iTime);
 			printResultWithHistory("Current matrix", iDay + 1);
 		}
@@ -144,6 +144,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 	for (int j = 0; j < nl; j++, ind += nc)
 	{
 		if (makeString) printf("\"");
+		const auto frmt = nc > 16 ? "%2d" : "%3d";
 		for (int i = 0; i < nc; i++)
 		{
 			ctchar v = c[ind + i];
@@ -151,9 +152,12 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 				printf(" ");
 			if (co) {
 				if (v == co[ind + i])
-					nc > 16 ? printf("%2d", v) : printf("%3d", v);
+					printf(frmt, v);
 				else
-					nc > 16 ? printfGreen("%2d", v) : printfGreen("%3d", v);
+					if (nc > 16)
+						printfGreen("%2d", v);
+					else
+						printfGreen("%3d", v);
 			}
 			else if (v < 67)
 			{
@@ -218,32 +222,47 @@ sLongLong TopGun::printThreadsStat(int nMatrices, int nProccesed, const clock_t&
 		time[i] %= multTime[i];
 	}
 	
-	char timeBuf[256], * pTime = timeBuf;
-	for (int i = countof(time); i--;)
-		if (time[i] || pTime != timeBuf || !i)
-			SPRINTFD(pTime, timeBuf, "%2d%c", time[i], pUnitTime[i]);
+	m_reportInfo = "";
+	if (!param(t_timing_output_mode)) {
+		char timeBuf[256], * pTime = timeBuf;
+		for (int i = countof(time); i--;)
+			if (time[i] || pTime != timeBuf || !i)
+				SPRINTFD(pTime, timeBuf, "%2d%c", time[i], pUnitTime[i]);
 
-	m_reportInfo = std::format(
-		"T ={}: {} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
-		timeBuf, nProccesed - param(t_nFirstIndexOfStartMatrices) + 1, nMatrices - param(t_nFirstIndexOfStartMatrices) + 1, 
+		m_reportInfo = std::format("T = {}: ", timeBuf);
+	}
+
+	m_reportInfo += std::format(
+		"{} (from {}) {}-matrices ({}x{}) processed by {} threads. {} {}-matrices ({}x{}) generated\n",
+		nProccesed - param(t_nFirstIndexOfStartMatrices) + 1, nMatrices - param(t_nFirstIndexOfStartMatrices) + 1, 
 		fhdr, numPlayers(), nRowsStart(), numThreads, sum1, fhdr, numPlayers(), nRowsOut());
 
-	if (bPrintSetup)
+	if (bPrintSetup && !param(t_timing_output_mode)) 
 	{
-		char buffer[256], *pBuf = buffer;
+		char buffer[1024], *pBuf = buffer;
 		const auto lenBuf = sizeof(buffer);
+		bool bAC = true;
 		for (uint i = 0; i < numThreads; i++)
 		{
-			if ((i % 20) == 0)
+			if ((i % 10) == 0)
 				SPRINTFS(pBuf, buffer, lenBuf, "\n");
 
 			const auto j = i * 2;
 			sLongLong d = cnt[j];
 			if (d < 0)
 				d = -1 - d;
-			SPRINTFS(pBuf, buffer, lenBuf, " %d:%zd", i + 1, cntTotal[j] + d);
+			auto cIdle = threadActive[i] ? "" : ".I";
+			if (cntTotal[j] + d > 0) {
+				SPRINTFS(pBuf, buffer, lenBuf, " %d[%zd].%d[%zd]%s", i + 1, cntTotal[j] + d, matrixIndex[i], d, cIdle);
+				bAC = false;
+			}
+			else
+				SPRINTFS(pBuf, buffer, lenBuf, " %d.%d%s", i + 1, matrixIndex[i], cIdle);
 		}
-		m_reportInfo += std::format("Thread:Matrices generated{}\n", buffer);
+		if (bAC)
+			m_reportInfo += std::format("Data format below: 'Thread.Current_Index[.Idle]':{}\n", buffer);
+		else
+			m_reportInfo += std::format("Data format below: 'Thread[Results].Current_Index[Results][.Idle]':{}\n", buffer);
 	}
 	if (bPrintToScreen)
 		printfYellow("%s", m_reportInfo.c_str());
@@ -259,4 +278,123 @@ void printTransformed(int nrows, int ncols, int groupSize, const tchar* tr, cons
 	printTable("Tr actual", ttr, 1, ncols, groupSize);
 	printTable("Original", pImatr, nrows, ncols, groupSize);
 	printTable("Translated", pTmatr, nrows, ncols, groupSize);
+}
+void printWithPowers_(const char* str) {
+	if (!str) return;
+	if (!g_useColors) {
+		std::printf(str);
+		return;
+	}
+	while (*str) {
+		if (*str == '^') {
+			str++; // Skip the '^' character
+
+			// Loop through all consecutive digits after '^'
+			while (*str && std::isdigit(static_cast<unsigned char>(*str))) {
+				char digit = *str;
+
+				// Map digits to their UTF-16/UTF-8 superscript byte sequences
+				if (digit == '0')      std::printf("\xE2\x81\xB0");
+				else if (digit == '1') std::printf("\xC2\xB9");
+				else if (digit == '2') std::printf("\xC2\xB2");
+				else if (digit == '3') std::printf("\xC2\xB3");
+				else if (digit >= '4' && digit <= '9') {
+					// 4 to 9 map directly to \xE2\x81\xB4 through \xE2\x81\xB9
+					char hex_offset = 0xB4 + (digit - '4');
+					std::printf("\xE2\x81%c", hex_offset);
+				}
+				str++;
+			}
+		}
+		else {
+			// Print regular characters normally
+			std::putchar(*str);
+			str++;
+		}
+	}
+}
+std::string printWithPowers(const char* str) {
+	if (!str)
+		return {};
+
+	// If colors/superscripts are disabled, just return the original string
+	if (!g_useColors)
+		return std::string(str);
+
+	std::string result;
+
+	while (*str) {
+		if (*str == '^') {
+			str++; // Skip '^'
+
+			// Convert all consecutive digits to superscripts
+			while (*str && std::isdigit(static_cast<unsigned char>(*str))) {
+				char digit = *str;
+
+				switch (digit) {
+				case '0': result += "\xE2\x81\xB0"; break; // ⁰
+				case '1': result += "\xC2\xB9";     break; // ¹
+				case '2': result += "\xC2\xB2";     break; // ²
+				case '3': result += "\xC2\xB3";     break; // ³
+
+				case '4': result += "\xE2\x81\xB4"; break; // ⁴
+				case '5': result += "\xE2\x81\xB5"; break; // ⁵
+				case '6': result += "\xE2\x81\xB6"; break; // ⁶
+				case '7': result += "\xE2\x81\xB7"; break; // ⁷
+				case '8': result += "\xE2\x81\xB8"; break; // ⁸
+				case '9': result += "\xE2\x81\xB9"; break; // ⁹
+				}
+
+				str++;
+			}
+		}
+		else {
+			result += *str;
+			str++;
+		}
+	}
+
+	return result;
+}
+std::string getPrimeFactorization(UInt n) {
+	if (n == 0) return "0";
+	if (n == 1) return "1";
+
+	std::string result = "";
+	bool first = true;
+
+	// 1. Factor out the power of 2
+	int count = 0;
+	while (n % 2 == 0) {
+		count++;
+		n = n / 2;
+	}
+	if (count > 0) {
+		result += "2";
+		if (count > 1) result += "^" + std::to_string(count);
+		first = false;
+	}
+
+	// 2. Factor out odd primes
+	for (UInt i = 3; i * i <= n; i = i + 2) {
+		count = 0;
+		while (n % i == 0) {
+			count++;
+			n = n / i;
+		}
+		if (count > 0) {
+			if (!first) result += "*";
+			result += TO_STRING(i);
+			if (count > 1) result += "^" + std::to_string(count);
+			first = false;
+		}
+	}
+
+	// 3. If n is still greater than 1, the remaining n is a prime itself
+	if (n > 1) {
+		if (!first) result += "*";
+		result += TO_STRING(n);
+	}
+
+	return result;
 }

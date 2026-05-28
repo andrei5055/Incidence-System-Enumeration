@@ -77,12 +77,11 @@ CC bool alldata::cnvCheck2P1F(int nrows, int nrowsToUseForTrs)
 						goto ret;
 					}
 					// save Tr (if icmp not -1 or 1), continue if Tr was already processed
-					//if (bSaveTestedTrs && icmp != 1 && pTestedTRs->isProcessed(tr))
+					//printfRed("*** %d\n", icmp);
 					if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
 						continue;
-					if (icmp == 0) {
+					if (icmp == 0)
 						updateGroup(tr);
-					}
 				}
 			}
 		}
@@ -154,8 +153,10 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 			}
 		}
 		bool bCollectInfo = bCurrentSet && (param(t_printMatrices) & t_printTransformed);
-		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult());
+		bool bPrintInfo = bCollectInfo && (nrows == numDaysResult()) && m_createSecondRow == 0;
 		bool bUseTestedTrs = bCurrentSet && ((param(t_autSaveTestedTrs) > 0) || bCollectInfo);
+		if (bPrintInfo)
+			printfGreen("\nCanonization data for %d rows:\n", nrows);
 		// get first row
 		for (int iRowLast = 1; iRowLast < nrowsToUseForTrs; iRowLast++) {
 			bool bSaveTestedTrs = bUseTestedTrs && ((iRowLast < m_numDaysResult - 1) || bCollectInfo);
@@ -186,8 +187,12 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 								if (m_playerIndex > (iRowLast + 1) * m_numPlayers - m_groupSize - 1)
 									m_playerIndex = (iRowLast + 1) * m_numPlayers - m_groupSize - 1;
 							}
-							if (icmp == 0)
-								updateGroup(trt);
+							if (icmp == 0) {
+								if (updateGroup(trt) >= 0) {
+									if (bPrintInfo)
+										printTable("Tr(p)", trt, 1, m_numPlayers, 0);
+								}
+							}
 							else if (icmp < 0) {
 								bRet = false;
 								if (m_doNotExitEarlyIfNotCanonical)
@@ -236,7 +241,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 											if (bPrintInfo) {
 												tchar ts[MAX_PLAYER_NUMBER];
 												icmp = kmProcessMatrix(result(), tr, nrows, 0, ts);
-#if !USE_CUDA
+#if 0 // !USE_CUDA
 												if (!icmp)
 													printTable("Aut", ts, 1, nrows, 1);
 #endif
@@ -268,9 +273,12 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 										//if (bSaveTestedTrs && icmp != 1 && pTestedTRs->isProcessed(tr))
 										if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
 											continue;
-
-										if (icmp == 0)
-											updateGroup(tr);
+										if (icmp == 0) {
+											if (updateGroup(tr) >= 0) {
+												if (bPrintInfo)
+													printTable("Tr(n)", tr, 1, m_numPlayers, 0);
+											}
+										}
 									}
 								} while (ProceedToNextMapping());
 								//break; // if not p1f we can't break;
@@ -293,7 +301,7 @@ CC bool alldata::cnvCheck3U1F(int nrows, int nrowsToUseForTrs)
 							}
 						}
 					}
-#if !USE_CUDA
+#if 0 //!USE_CUDA
 					if (bPrintInfo) {
 						char stat[256];
 						matrixStatOutput(stat, sizeof(stat), m_TrCyclesPair);

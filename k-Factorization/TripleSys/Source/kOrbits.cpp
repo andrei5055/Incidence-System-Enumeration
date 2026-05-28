@@ -63,7 +63,7 @@ void CKOrbits::encodeSolution(ctchar* pSolution) {
 }
 
 int CKOrbits::createGroupAndOrbits(const CRepository<tchar>* pElemGroup) {
-    m_pKOrbGenerators->setOutFileName(outFileName(), false);
+    m_pKOrbGenerators->setOutFileName(outFileName());
     m_pKOrbGenerators->resetOrbits();
     setOrbitsCreated(false);
     return RowGenerators::createGroupAndOrbits(pElemGroup);

@@ -1,0 +1,23 @@
+PrintMatrices=1
+UseKSolve=1;
+nPlayers=22; CBMP_Graph=2;
+GroupSize=2
+KeepPrevResult=0
+ExploreMatrices=0
+AutSaveTestedTrs=1
+NThreads=1; KThreads=12; UseMultiThreading=1
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+Out_CSV_File=-1
+CSV_FileName=../../SRG.csv
+OutAutomorphismGroup=0
+UseCompatibilityCheck=1
+StartFolder="./ExpectedResults/"
+U1FCycles={{22}}TestName = "UseKSolve K11,11 P1F"
+ResultFolder="../Logs_CK/"
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3;
+NThreads=1; KThreads=12; UseMultiThreading=1; 
+v4Row=7; v4=8; v4RowB=9; v4B=12; v4RowC=11; v4C=18
+NRowsInStartMatrix=3; NRowsInResultMatrix=11; ExpectedResult=9;
+
+END_JOB

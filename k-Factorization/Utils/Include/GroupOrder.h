@@ -3,6 +3,7 @@
 
 #ifndef CD_TOOLS
 #include "CudaAttributes.h"
+#include "Global.h"
 
 #define SIZE_TYPE				unsigned char
 #define ELEMENT_MAX				static_cast<SIZE_TYPE>(-1)
@@ -17,7 +18,6 @@
 #else
 #define printfYellow_TGO(...)
 #endif
-
 
 #define IDX_MAX				(ELEMENT_MAX - 1)
 typedef unsigned short ushort;
@@ -52,7 +52,7 @@ template<typename T>
 class CGroupOrder {
 public:
 	CC inline auto groupOrder() const { return this ? m_nGroupOrder : 1; }
-	CC inline void setGroupOrder(size_t val) { m_nGroupOrder = val; }
+	CC inline void setGroupOrder(UInt val) { m_nGroupOrder = val; }
     CC void addAutomorphism(ushort degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
         if (!needUpdate(permRow, pOrbits))
             return;
@@ -68,11 +68,7 @@ public:
 				len++;
 		}
 
-        printfYellow_TGO("%zd,%zd\n", len, groupOrder());
-#if 0
-        if (len == 1 && groupOrder() == 1)
-            len = 1;
-#endif
+        printfYellow_TGO(ORDER_FRMT("%4zd * ", "\n"), len, GR_ORDER(groupOrder()));
 		setGroupOrder(len * groupOrder());
 	}
     CC inline void setStabilizerLengthAut(ushort l) { m_nStabLengthAut = l; }
@@ -107,7 +103,7 @@ private:
 
 	ushort m_nStabLength;
 	ushort m_nStabLengthAut;
-	size_t m_nGroupOrder;
+	UInt m_nGroupOrder;
 };
 
 template<typename T>

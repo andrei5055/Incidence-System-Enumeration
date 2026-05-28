@@ -8,9 +8,9 @@
 #include "MatrixDB.h"
 #include "cycles.h"
 #include "RowStorage.h"
+#include "ZStabilizer.h"
 
-class K1212_4_20;
-class K1111P1F;
+class KSolver;
 class K16P1F;
 
 #define TestOption1 3
@@ -155,8 +155,18 @@ typedef struct TrCycles {
 	int irow2;
 } TrCycles;
 
+class CBinaryMatrixStorage : public CRepository<tchar> {
+public:
+	CBinaryMatrixStorage(int lenObj, int numObjects = 0, GraphDB* pGraphDB = NULL) : CRepository<tchar>(lenObj, numObjects) { setGraphDB(pGraphDB); }
+	inline void setMutex(std::mutex* pMutex)	{ m_pMutex = pMutex; }
+	inline auto getMutext() const				{ return m_pMutex; }
+	inline void setGraphDB(GraphDB* pGraphDB)	{ m_pGraphDB = pGraphDB; }
+	inline auto graphDB() const					{ return m_pGraphDB; }
+private:
+	std::mutex* m_pMutex = NULL; 
+	GraphDB* m_pGraphDB = NULL;
+};
 
-typedef CRepository<tchar> CBinaryMatrixStorage;
 class CKOrbits;
 class CGraphCanonizer;
 
@@ -225,6 +235,7 @@ private:
 	CC bool unsetLinksForOnePlayer(ctchar* p, int ip) const;
 	void setCheckLinks();
 	CC bool processOneDay();
+	CC bool processZDay();
 	CC int checkPlayer1(int iPlayerNumber);
 	CC int checkPlayer3(int iPlayerNumber, int lastPlayer);
 #if !USE_CUDA && PrintImprovedResults
@@ -295,7 +306,7 @@ private:
 
 	inline void addCanonCall(int idx = 0)		{ m_nCanonCalls[idx]++; }
 	inline auto canonCalls(int idx) const		{ return m_nCanonCalls[idx]; }
-	CC inline bool checkSubmatrix() const		{ return iDay == m_matrixCanonInterval; }
+	CC inline bool checkSubmatrix() const		{ return iDay <= m_matrixCanonInterval; }
 	//CC inline bool checkSubmatrix() const       { return m_matrixCanonInterval != 0 && (iDay % m_matrixCanonInterval) == 0; }
 	CC void kmSortGroups3(tchar* mi, int nr) const;
 	CC void kmSortGroups2(tchar* mi, int nr) const;
@@ -367,6 +378,8 @@ private:
 	int m_secondPlayerInRow4Last;
 	int m_numDaysResult;
 	int m_lastRowWithTestedTrs;
+	int m_useZStabilizer = 0;
+	ZStabilizer* m_ZStabilizer = NULL;
 	int m_test = 0; // 1-use matrix from data.h, 
 					// 2-use all tr during canonization (do not exit early). 
 					// 8-if one of requested cycle length=4 then allow only rows with "first cycle" length equal 4
@@ -425,6 +438,7 @@ private:
 	clock_t m_iTime = 0;
 	clock_t m_rTime = 0;
 	clock_t m_cTime = 0;
+	clock_t m_pTime = 0;
 	const char* m_fHdr = NULL;
 	int m_threadNumber = 0;
 	bool m_bPrint = false;
@@ -434,9 +448,7 @@ private:
 	tchar m_v4Row[4] = { 0 }, m_v4[4] = { 0 };
 	bool m_bAdjustRow4 = false;
 	bool m_bK1212_4_20 = false;
-	K1212_4_20* m_pK1212_4_20 = NULL;
-	K1111P1F* m_pK1111p1f = NULL;
-	K16P1F* m_pK16p1f = NULL;
+	KSolver* m_pKSolver = NULL;
 
 	CStorageIdx<tchar>** m_pRows = NULL;
 	tchar *m_firstPrecalcRow;
@@ -446,6 +458,7 @@ private:
 	TrCycles* m_TrCyclesFirst2Rows = NULL;
 	bool m_allRowPairsSameCycles = false;
 	trDB* m_pTestedTRs = NULL;
+	LS_DB* m_lsDB = NULL;
 };
 
 inline bool is_number(const std::string& s)

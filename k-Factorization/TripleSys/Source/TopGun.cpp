@@ -21,6 +21,8 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 		memset(m_cntTotal, 0, 2 * numThreads * sizeof(m_cntTotal[0]));
 		threadActive = new bool[numThreads];
 		memset(threadActive, false, numThreads * sizeof(threadActive[0]));
+		matrixIndex = new int[numThreads];
+		memset(matrixIndex, 0, numThreads * sizeof(matrixIndex[0]));
 	}
 
 	m_iPrintCount = m_iMatrix = 0;
@@ -29,8 +31,10 @@ TopGun::TopGun(const kSysParam& param) : TopGunBase(param) {
 TopGun::~TopGun() {
 	delete[] m_cntTotal;
 	delete[] threadActive;
+	delete[] matrixIndex;
 	reportEOJ(m_errCode);
 }
+
 void TopGun::deleteOldFiles()
 {
 	namespace fs = std::filesystem;
@@ -103,7 +107,7 @@ int TopGun::Run()
 			deleteOldFiles();
 
 		if (orderMatrixMode) {
-			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, exploreMatrices > 1);
+			orderAndExploreMatrices(nRowsStart(), orderMatrixMode, exploreMatrices >= 1);
 			if (orderMatrixMode == 2)
 				return 0;
 		}
@@ -131,7 +135,7 @@ int TopGun::Run()
 		printfYellow("\nMultithread Matrices Calculation started (time=%dsec)\n", mTime / 1000);
 
 		cTime = clock();
-		bool bUseKSolve = param(t_useKSolve) != 0;
+		bool bUseKSolve = param(t_useKSolve) != 0 && (param(t_useKSolve) & 8) == 0;
 		int waitInterval  = bUseKSolve ? 100 : 5;
 
 		const bool bUseMultiThread2 = param(t_MultiThreading) == 2 && param(t_useRowsPrecalculation) && !bUseKSolve;
@@ -239,11 +243,12 @@ int TopGun::Run()
 			}
 		}
 		waitAllThreadFinished();
-		rTime = clock() - iTime;
 		resultMatr = printThreadsStat(nMatrices, m_iMatrix, iTime, true, !bUseKSolve);
-		const auto str = std::format("Total time={}ms (including prep time={}ms)\n", rTime, mTime);
-		printf(str.c_str());
-		m_reportInfo += str;
+		if (!param(t_timing_output_mode)) {
+			const auto str = std::format("Total time={}ms (including prep time={}ms)\n", clock() - iTime, mTime);
+			printf(str.c_str());
+			m_reportInfo += str;
+		}
 	}
 	else {
 		if (!param(t_keepPrevResult))
@@ -252,7 +257,7 @@ int TopGun::Run()
 		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		m_iMatrix = (uint)resultMatr;
-		transferMatrixDB(sys.matrixDB());
+		transferObjectDB(sys.matrixDB());
 	}
 
 	const auto expectedResult = param(t_expectedResult);

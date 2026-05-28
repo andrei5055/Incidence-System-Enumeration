@@ -299,12 +299,16 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers)/nParts);
 
 		setTableTitle(buffer);
-		const auto totalMatr = reportResult(f);
+		const auto totalMatr = reportResult(f, !param(t_timing_output_mode));
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
-			reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
-			if (readMatrices(t_ResultFolder, nRows) >= 0) {
-				orderAndExploreMatrices(nRowsOut(), 2, exploreMatrices);
+			if (nRowsStart() != nRowsOut()) {
+				// The case were nRowsStart() == nRowsOut() was handled in TopGunBase::Run() 
+				reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
+				if (readMatrices(t_ResultFolder, nRows) >= 0)
+					orderAndExploreMatrices(nRowsOut(), 2, exploreMatrices);
+			} 
 
+			if (m_pGraphDB) {
 				for (int i = 0; i < 2; i++)
 					(m_pGraphDB + i)->reportResult(f, false);
 			}
@@ -341,11 +345,11 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			break;
 
 		case 1:
-			fprintf(f, "\n%s\n", SECTION_PARAM_STRINGS);
+		case 2:
+			fprintf(f, "\n%s\n", j == 1? SECTION_PARAM_ARRAY : SECTION_PARAM_STRINGS);
 			for (int i = 0; i < iMax; i++) {
 				const auto ptr = paramPtr()->strVal[i];
-				if (ptr)
-					fprintf(f, "%30s: %s\n", paramNames[i], ptr->c_str());
+				fprintf(f, "%30s: %s\n", paramNames[i], ptr? ptr->c_str() : "");
 			}
 			break;
 		default: {
@@ -388,7 +392,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		char buffer[16];
 		sprintf_s(buffer, "-%07d.txt", m_iMatrix);
 		std::string finalName = IntegratedResults.substr(0, IntegratedResults.size() - 4) + buffer;
-		//std::filesystem::remove(finalName); Looks like we do not diid it
+		//std::filesystem::remove(finalName); Looks like we do not need it
 		std::filesystem::rename(IntegratedResults, finalName);
 	}
 }
@@ -436,9 +440,59 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 	return nDuplicate;
 }
 
+void TopGunBase::parallel_for(int start, int end, std::function<void(int, int)> task, int nThreads) {
+	if (nThreads <= 1 || end <= start) {
+		for (int i = start; i < end; ++i) task(i, 0);
+		return;
+	}
+	std::atomic<int> next_idx{ start };
+	std::vector<std::thread> workers;
+	for (int t = 0; t < nThreads; ++t) {
+		workers.emplace_back([&, t]() {
+			while (true) {
+				const auto i = next_idx.fetch_add(1);
+				if (i >= end) break;
+				task(i, t);
+			}
+		});
+	}
+	for (auto& w : workers) w.join();
+}
+
+const tchar* TopGunBase::getNextMatrixInfo(uint i, uint* pGroupOrder, uint *pIdx) const {
+	const auto idx = m_pMatrixPerm ? m_pMatrixPerm[i] : i;
+	*pGroupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
+	if (pIdx)
+		*pIdx = idx;
+	return inputMatrices() + idx * inputMatrixSize();
+}
+
+const tchar *TopGunBase::outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes) {
+	uint idx;
+	const auto pMatr = getNextMatrixInfo(i, pGroupOrder, &idx);
+	if (pResult) {
+		const auto pCicleInfo = m_pMatrixInfo->cycleInfo(idx);
+		const auto groupOrder = *pGroupOrder;
+		if (updateDB)
+			addObjDescriptor(groupOrder, pCicleInfo + skipedBytes);
+
+		pResult->setGroupOrder(groupOrder);
+		pResult->setInfo(pCicleInfo);
+		pResult->printTable(pMatr, true, false, nRows);
+		if (groupOrder > 1)
+			pResult->printTableInfo(m_pMatrixInfo->groupInfo(idx));
+	}
+
+	return pMatr;
+}
+
 void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exploreMatrices) {
+	const auto n = numMatrices2Process();
+	if (!n)
+		return;
+
 	const auto nDuplicate = orderMatrices(orderMatrixMode);
-	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", numMatrices2Process(), matrixType(nRows), nDuplicate);
+	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", n, matrixType(nRows), nDuplicate);
 	m_nMatrices -= nDuplicate;
 	if (orderMatrixMode != 2)
 		return;
@@ -447,46 +501,98 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	Result.allocateBuffer(32);
 	std::string ResultFile;
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
+	Result.setOutFileName(ResultFile.c_str(), true);
 
-	SRGToolkit* pSRGtoolkit = NULL;
-	if (exploreMatrices) {
-#if OUT_SRG_TO_SEPARATE_FILE
-		std::string ResultSRGFile;
-		createFolderAndFileName(ResultSRGFile, paramPtr(), t_ResultFolder, nRows, "_SRG_Type_");
-		const auto& srgResFile = ResultSRGFile;
-#else
-		const auto& srgResFile = ResultFile;
-#endif
-		pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
-		m_pGraphDB = new GraphDB[2]();
-		for (int i = 0; i < 2; i++)
-			m_pGraphDB[i].setGraphType(i + 1);
+	const bool updateDB = totalObjects() == 0;
+
+	const auto skipedBytes = (int)strlen("Cycles:");
+	if (!exploreMatrices) {
+		Result.openOutFile();
+		uint groupOrder;
+		for (uint i = 0; i < n; i++)
+			outputNextMatrixInfo(i, &groupOrder, &Result, updateDB, nRows, skipedBytes);
+
+		Result.closeOutFile();
+		printfGreen("All ordered matrices are saved in the file: \"%s\"\n", ResultFile.c_str());
+		return;
 	}
 
-	Result.setOutFileName(ResultFile.c_str());
-	printfGreen("Saved to a file: \"%s\"\n", ResultFile.c_str());
-	for (uint i = 0; i < numMatrices2Process(); i++) {
-		const auto idx = m_pMatrixPerm[i];
-		const auto groupOrder = (*m_pMatrixInfo->groupOrdersPntr())[idx];
-		Result.setGroupOrder(groupOrder);
-		Result.setInfo(m_pMatrixInfo->cycleInfo(idx));
-		const auto pMatr = inputMatrices() + idx * inputMatrixSize();
-		Result.printTable(pMatr, true, false, nRows);
-		if (groupOrder > 1)
-			Result.printTableInfo(m_pMatrixInfo->groupInfo(idx));
+	SRGToolkit* pSRGtoolkit = nullptr;
+	std::string srgResFile(ResultFile);
 
-		if (pSRGtoolkit) {
-			if (!pSRGtoolkit->exploreMatrix(pMatr, m_pGraphDB, i+1, groupOrder)) {
+	pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
+	pSRGtoolkit->reportOnScreen(paramPtr()->val[t_printMatrices] & t_printExploringSRG);
+	const auto v = pSRGtoolkit->groupDegree();
+	const auto len = v * (v - 1) / 2;
+
+	m_pGraphDB = new GraphDB[2]();
+	CBinaryMatrixStorage* pMarixStorage[2];
+	for (int i = 0; i < 2; i++) {
+		m_pGraphDB[i].setGraphType(i + 1);
+		pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50, m_pGraphDB + i);
+	}
+
+	const auto ip = (n > 100000 ? 1 : n > 10000 ? 2 : n > 1000 ? 10 : 101) * n / 100;
+	if (ip < n)
+		printf("Saved(%%):");
+
+	const int numProcessThreads = (std::max)(1, (int)param(t_numGThreads));
+	if (numProcessThreads > 1 && n > 1) {
+		MatrixReportData reportData = { &Result, updateDB, skipedBytes };
+		setMatrixeReportData(&reportData);
+
+		std::mutex resMutex[2];
+		std::vector<SRGToolkit*> toolkits(numProcessThreads, nullptr);
+		for (int i = 0; i < 2; i++)
+			pMarixStorage[i]->setMutex(&resMutex[i]);
+
+		for (int t = 0; t < numProcessThreads; t++) 
+			toolkits[t] = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices, pSRGtoolkit, this);
+
+		parallel_for(0, (int)n, [&](int i, int threadIdx) {
+			auto* pMatr = getNextMatrixInfo(i, toolkits[threadIdx]->srcGroupOrderPntr());
+			toolkits[threadIdx]->exploreMatrix(pMatr, i, pMarixStorage);
+		}, numProcessThreads);
+
+
+		for (int t = 0; t < numProcessThreads; t++) {
+			const auto toolkit = toolkits[t];
+			for (int i = 0; i < 2; i++) {
+				const auto grCntrs = toolkit->graphParam(i)->m_cntr;
+				auto grCounters = pSRGtoolkit->graphParam(i)->m_cntr;
+				for (int j = countof(SRGParam::m_cntr); j--;)
+					grCounters[j] += grCntrs[j];
+			}
+
+			delete toolkit;
+		}
+	}
+	else {
+		for (uint i = 0; i < n; i++) {
+			if ((ip < n) && ((i + 1) % ip) == 0)
+				printf(" %d", (i + 1) / ip);
+
+			auto* pMatr = outputNextMatrixInfo(i, pSRGtoolkit->srcGroupOrderPntr(), &Result, updateDB, nRows, skipedBytes);
+			if (!pSRGtoolkit->exploreMatrix(pMatr, i, pMarixStorage)) {
 				delete pSRGtoolkit;
 				pSRGtoolkit = NULL;
 			}
 		}
 	}
 
+	Result.closeOutFile();
+	if (ip < n)
+		printf("\n");
+
+	printfGreen("All results with the constructed graphs are saved in the file: \"%s\"\n", ResultFile.c_str());
+
 	if (pSRGtoolkit) {
 		pSRGtoolkit->printStat();
 		delete pSRGtoolkit;
 	}
+
+	for (int i = 0; i < 2; i++)
+		delete pMarixStorage[i];
 }
 
 void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {
@@ -498,5 +604,19 @@ void TopGunBase::allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode) {
 	if (orderMatrixMode == 2) {
 		m_pMatrixInfo = new CMatrixInfo((uint)nMatr);
 		updateMatrReserved(false);
+	}
+}
+
+void TopGunBase::outputMatrix(uint sourceMatrID) {
+	uint groupOrder;
+	auto pReportData = matrixReportData();
+	outputNextMatrixInfo(sourceMatrID, &groupOrder, pReportData->pResult, pReportData->updateDB, nRowsOut(), pReportData->skipedBytes);
+}
+
+void SRGToolkit::outputMatrix(uint sourceMatrID) {
+	if (!m_bFactorizationOutputCompleted) {
+		//   The factorization matrix was not written to the output file.
+		m_bFactorizationOutputCompleted = true;
+		topGun()->outputMatrix(sourceMatrID);
 	}
 }

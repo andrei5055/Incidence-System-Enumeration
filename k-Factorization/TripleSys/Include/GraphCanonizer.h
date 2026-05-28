@@ -34,8 +34,9 @@ public:
 	inline auto* graphPntr(int idx = 0) const { ASSERT_IF(idx < 0 || idx > 1); return m_pGraph[idx]; }
 protected:
 	int canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVert = 0);
-	inline auto lenGraphMatr() const { return m_lenGraphMatr; }
-	inline auto* groupOrbits() const { return m_pGroupOrbits; }
+	inline auto lenGraphMatr() const	{ return m_lenGraphMatr; }
+	inline auto* groupOrbits() const	{ return m_pGroupOrbits; }
+	inline auto numVertices() const		{ return m_v; }
 	void outAdjMatrix(ctchar* pGraphOut, FILE* f, int endVertex = 0) const;
 	void printAdjMatrix(ctchar* pGraphOut, int idx = 0, int endVertex = 0, ushort* pOrb = NULL, const char* fName = "aaa", cchar *mode = "w", cchar* frmt = "%s_%02d.txt") const;
 	void printAdjMatrix(ctchar* pGraphOut, const char* fileName, int endVertex, int idx = 0, ushort* pOrb = NULL, cchar * mode = "w") const;

@@ -30,7 +30,7 @@
 
 #define LatinSquareData1stColumn '*'
 #define AUT			"|Aut(M)| = "
-#define MATR_ATTR	"\n\n"##AUT
+#define MATR_ATTR	"\n\n" AUT
 
 extern UTIL_LIBRARY bool g_useColors;
 
@@ -44,9 +44,19 @@ extern UTIL_LIBRARY bool g_useColors;
 #define YellowText (g_useColors ? ANSI_YELLOW : "")
 #define ResetTextColor (g_useColors ? ANSI_RESET : "")
 
-#define printfRed(fmt, ...) (g_useColors ? printf(ANSI_RED fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
-#define printfGreen(fmt, ...) (g_useColors ? printf(ANSI_GREEN fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
-#define printfYellow(fmt, ...) (g_useColors ? printf(ANSI_YELLOW fmt ANSI_RESET, __VA_ARGS__) : printf(fmt, __VA_ARGS__))
+#define printfColor(fmt, color, ...)               \
+    do {                                           \
+        if (g_useColors)                           \
+            printf(color fmt ANSI_RESET            \
+                   __VA_OPT__(,) __VA_ARGS__);     \
+        else                                       \
+            printf(fmt                             \
+                   __VA_OPT__(,) __VA_ARGS__);     \
+    } while(0)
+
+#define printfRed(fmt, ...) printfColor(fmt, ANSI_RED, __VA_ARGS__)
+#define printfGreen(fmt, ...) printfColor(fmt, ANSI_GREEN, __VA_ARGS__)
+#define printfYellow(fmt, ...) printfColor(fmt, ANSI_YELLOW, __VA_ARGS__)
 
 void myAssert(int code, const char* file, int line);
 

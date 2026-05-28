@@ -4,20 +4,17 @@ CC bool alldata::processOneDay()
 	//if (iPlayer == 0)
 	//	updateIndexPlayerMinMax();
 	unsigned int cnt = 0;
+	bool bCheckZCandidate = iDay >= 3 && m_useZStabilizer == 2;
+	if (bCheckZCandidate)
+ 		return processZDay();
 	while (iPlayer < m_numPlayers)
 	{
 		if (m_printMatrices && cnt++ > 300000000) {
 #if !USE_CUDA
-			printTableColor("processOneDay", tmpPlayers, 1, m_numPlayers, m_groupSize);
+			printTableColor("Current row", tmpPlayers, 1, m_numPlayers, m_groupSize);
 #endif
 			cnt = 0;
 		}
-#if 0
-		static tchar a[] = { 0, 4,10,  1, 8, 9,  2, 7,13,  3,11,12,  5, 6, };
-		if (memcmp(a, tmpPlayers, 14) == 0 && iDay == 2)
-			printTableColor("processOneDay", tmpPlayers, 1, m_numPlayers, m_groupSize);
-		iDay = iDay;
-#endif
 		if (iPlayer < 0)
 			return false;
 		const auto iPlayerNumber = getNextPlayer();
@@ -47,14 +44,109 @@ CC bool alldata::processOneDay()
 				memcpy(result(iDay), tmpPlayers, m_numPlayers);
 				//printTableColor("r2", result(1), 1, m_numPlayers, m_groupSize);
 				m_playerIndex = m_numPlayers * (iDay + 1) - m_groupSize - 1;
-				if (/**m_groupSize <= 3 && **/ !checkNewRow(neighbors(), iDay + 1))
-				{
-					while (iDay * m_numPlayers + iPlayer > m_playerIndex)
+				if (!checkNewRow(neighbors(), iDay + 1)) {
+							while (iDay * m_numPlayers + iPlayer > m_playerIndex)
+								getPrevPlayer();
+					m_playerIndex = 0;
+					continue;
+					}
+				m_playerIndex = 0;
+				if (m_useZStabilizer == 2) {
+					int index = iPlayer - m_groupSize - 1;
+					int index1 = index;
+					int ic = m_ZStabilizer->check(tmpPlayers, result(iDay - 1), &index, iDay);
+					if (ic == 1)
+						return true;
+					while (iPlayer > index)
 						getPrevPlayer();
 				}
-				m_playerIndex = 0;
 			}
 		}
+	}
+	return true;
+}
+
+CC bool alldata::processZDay()
+{   // returns: false - go to prev day, true - day processed
+	unsigned int cnt = 0;
+	int iZStabilizerRow = completeGraph() ? m_indexPlayerMin[1] - 1 : m_indexPlayerMin[1] / 2;
+	if (iPlayer == 0) {
+		m_ZStabilizer->generateCandidates(result(0), iZStabilizerRow);
+	}
+	tchar* pRow;
+	while (1)
+	{
+		if (iPlayer < 0)
+			return false;
+		if (m_printMatrices && cnt++ > 300000000) {
+#if !USE_CUDA
+			printTableColor("Current z-row", tmpPlayers, 1, m_numPlayers, m_groupSize);
+#endif
+			cnt = 0;
+		}
+		if (!(pRow = m_ZStabilizer->getCandidate(iZStabilizerRow))) {
+			iPlayer = -1;
+			if (!linksFromMatrix(links(), result(), iDay, false, true)) {
+				//continue;
+				printTable("*** Internal error: duplicate links", result(), m_numDaysResult, m_numPlayers, m_groupSize);
+				myExit(1);
+			}
+			return false;
+		}
+		else {
+			if (iPlayer >= m_numPlayers)
+				iPlayer = m_numPlayers - m_groupSize - 1;
+			if (iPlayer > 0 && memcmp(pRow, tmpPlayers, iPlayer) <= 0)
+				continue;
+			iPlayer = m_numPlayers;
+			memcpy(tmpPlayers, pRow, m_numPlayers);
+			memcpy(result(iDay), tmpPlayers, m_numPlayers);
+			if (!linksFromMatrix(links(), result(), iDay + 1, false, false)) {
+				continue;
+				printTable("*** Internal error: 1", result(), iDay + 1, m_numPlayers, m_groupSize);
+				myExit(1);
+			}
+		}
+#if 0
+		static tchar r24[24] = 
+		//{ 0,4,1,8,2,6,3,10,5,12,7,14,9,16,11,18,13,20,15,22,17,23,19,21 };
+		{ 0,5,1,9,2,11,3,7,4,13,6,15,8,17,10,19,12,21,14,23,16,22,18,20 };
+		tchar r22[22] = { 0,7,1,8,2,11,3,16,4,15,5,12,6,19,9,20,10,13,14,21,17,18 };
+		int icmp = 2;
+		if (iZStabilizerRow == 4) {
+			//printTable("t", tmpPlayers, 1, m_numPlayers, 2);
+			icmp = memcmp(r24, tmpPlayers, 4);
+			//icmp = memcmp(nr, tmpPlayers, m_numPlayers - 8);
+			if (icmp > 0) {
+				getPrevPlayer(); 
+				continue;
+			}
+			else {
+				printTable("t", tmpPlayers, 1, m_numPlayers, 2);
+				icmp = icmp;
+			}
+			if (iPlayer == m_numPlayers && icmp == 0)
+				iDay = iDay;
+		}
+#endif
+		u1fSetTableRow(neighbors(iDay), tmpPlayers);
+		if (!m_use2RowsCanonization && !param(t_u1f))
+			break;
+		//printTableColor("r2", result(1), 1, m_numPlayers, m_groupSize);
+		m_playerIndex = m_numPlayers * (iDay + 1) - m_groupSize - 1;
+		if (!checkNewRow(neighbors(), iDay + 1)) {
+			iPlayer = m_playerIndex - m_numPlayers * iDay + 1;
+			m_playerIndex = 0;
+			continue;
+		}
+		m_playerIndex = 0;
+		if (m_nPrecalcRows && iZStabilizerRow > 3)
+			break;
+		int index = iPlayer - m_groupSize - 1;
+		int ic = m_ZStabilizer->check(tmpPlayers, result(iDay - 1), &index, iDay); // note: must be last check, or you need to cleanup aut.
+		if (ic == 1)
+			break;
+		iPlayer = index + 1;
 	}
 	return true;
 }

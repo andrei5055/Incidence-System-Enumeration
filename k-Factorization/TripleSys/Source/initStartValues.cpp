@@ -1,5 +1,5 @@
 #include "TripleSys.h"
-CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfError) const
+CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfError, bool bPrint) const
 { // ANDREI ??? ctchar* iv
 	auto* iv_id = (tchar*)iv;
 	const auto np = m_numPlayers;
@@ -11,6 +11,7 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 			const auto ivId = iv_id[j];
 			if (ivId >= np) {
 #if !USE_CUDA
+				if (bPrint)
 				printfRed("*** Init: value(%d) in row %d position %d is incorrect\n", ivId, i, j);
 
 				if (exitIfError)
@@ -26,6 +27,7 @@ CC bool SizeParam::linksFromMatrix(tchar* lnk, ctchar* iv, int nr, bool exitIfEr
 					const auto lDay = *(lnk + ivId * np + iv0);
 					if (lDay != unset) {
 #if !USE_CUDA
+						if (bPrint)
 						printfRed("*** Init: pair (%d,%d) in row %d already defined in row %d\n", iv0, ivId, i, lDay);
 						if (exitIfError)
 							myExit(1);
@@ -50,22 +52,26 @@ bool alldata::initStartValues(const char* ivcb, bool printStartValues)
 		tchar cv = 0, ip0, ip1;
 		for (id = 0; id < m_numDays; id++) {
 			for (ind = 0; ind < m_numPlayers; ind++) {
+				while (*ivcb == ' ')
+					ivcb++;
 				ip0 = *ivcb;
-				if (ip0 != ' ' && (ip0 < '1' || ip0 > '9'))
+				if (ip0 < '0' || ip0 > '9')
 					goto doneInit;
 				ip1 = *(ivcb + 1);
-				if (ip1 != ' ' && (ip1 < '0' || ip1 > '9'))
-					goto doneInit;
-				cv = (ip0 == ' ' ? 0 : ip0 - '0') * 10 + (ip1 - '0');
+				if (ip1 < '0' || ip1 > '9') {
+					cv = ip0 - '0';
+					ivcb++;
+				}
+				else {
+					cv = (ip0 - '0') * 10 + (ip1 - '0');
+					ivcb += 2;
+				}
 				if (cv >= m_numPlayers)
 					goto doneInit;
 				result(id)[ind] = cv;
 				lastInd = ind;
-				ivcb += 2;
 				if (*ivcb == 0 || *(ivcb + 1) == 0)
 					goto doneInit;
-				if (!((ind + 1) % m_groupSize))
-					ivcb++;
 			}
 		}
 		goto doneInit;

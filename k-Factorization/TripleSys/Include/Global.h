@@ -40,6 +40,7 @@ typedef enum {
 	t_MultiThreading,
 	t_numThreads,
 	t_numKThreads,
+	t_numGThreads,
 	t_nRowsInStartMatrix,
 	t_nRowsInResultMatrix,
 	t_nMaxNumberOfStartMatrices,
@@ -84,8 +85,10 @@ typedef enum {
 	t_useCompatibilityCheck,
 	t_halfRowMode,
 	t_useKSolve,
+	t_useZStabilizer,
+	t_timing_output_mode,
 	t_lastParam,
-	// Indeces of parameters with the int* type values
+	// Indices of parameters with the int* type values
 	t_v4Array = 0,
 	t_lastIntArryParam,
 	// indices of parameters with the string type values
@@ -174,6 +177,33 @@ private:
 	bool m_b_dataOwner;
 };
 
+
+#define FORMAT_SPEC(TYPE, ...) \
+    "%" __VA_OPT__(__VA_ARGS__) TYPE
+
+#define ORDER_FRMT_END(ENTRY_FRMT, END_FRMT, ...) \
+    FORMAT_SPEC(ENTRY_FRMT, __VA_ARGS__) " " END_FRMT
+
+#define ORDER_PRINT_FRMT(START_FRMT, ENTRY_FRMT, END_FRMT, ...) \
+    START_FRMT " " ORDER_FRMT_END(ENTRY_FRMT, END_FRMT, __VA_ARGS__)
+
+#define USE_INT128 1
+#if USE_INT128
+#include "UInt128.h"
+#define UInt UInt128
+#define ORDER_FRMT(START_FRMT, END_FRMT,...) \
+	ORDER_PRINT_FRMT(START_FRMT, "s", END_FRMT, __VA_ARGS__)
+#define GR_ORDER(order)		order.toString().c_str()
+#define TO_STRING(x) x.toString()
+#else
+#define UInt size_t
+#define ORDER_FRMT(START_FRMT, END_FRMT,...) \
+	ORDER_PRINT_FRMT(START_FRMT, "zu", END_FRMT, __VA_ARGS__)
+#define GR_ORDER(order)		order
+#define TO_STRING(x) std::to_string(x)
+#endif
+
 #define SECTION_PARAM_MAIN		"Main parameters:"
-#define SECTION_PARAM_STRINGS	"Parameters of string type:"
+#define SECTION_PARAM_ARRAY     "Array type parameters:"
+#define SECTION_PARAM_STRINGS	"String type parameters:"
 #define SECTION_PARAM_U1F_CONF	"U1F configurations:"

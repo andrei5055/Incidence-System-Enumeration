@@ -1,5 +1,6 @@
 #pragma once
 #include <thread>
+#include <functional>
 #include "TripleSys.h"
 
 class RowDB : public CStorageSet<tchar>, public kSysParam {
@@ -26,6 +27,14 @@ public:
 	}
 };
 
+class TableAut;
+
+typedef struct MatrixReportData {
+	TableAut* pResult;
+	bool updateDB;
+	int skipedBytes;
+} MatrixReportData;
+
 class TopGunBase : public SizeParam, public MatrixDB {
 public:
 	TopGunBase(const kSysParam& param);
@@ -41,6 +50,8 @@ public:
 	inline sLongLong* cnt() const			{ return m_cnt; }
 	inline const auto* inputMatrices() const { return m_pInputMatrices; }
 	inline auto* paramPtr() const			{ return &m_param; }
+	inline const auto matrixReportData() const	{ return m_pMatrixReportData; }
+	void outputMatrix(uint sourceMatrID);
 protected:
 	inline int param(paramID id) const		{ return m_param.val[id]; }
 	int readMatrices(int tFolder = t_StartFolder, int nRows = 0);
@@ -64,8 +75,9 @@ protected:
 	std::string m_reportInfo;
 	GraphDB *m_pGraphDB = NULL;
 	uint m_iMatrix;
+	void parallel_for(int start, int end, std::function<void(int, int)> task, int nThreads);
 private:
-	inline void setInputMatrixSize(int size){ m_nInputMatrixSize = size; }
+	inline void setInputMatrixSize(int size)		{ m_nInputMatrixSize = size; }
 	int readInputDataFile(const std::string& fn, tchar* pData, int nMatricesMax, int nRows, int nCols);
 	int loadMatrices(int tFolder, int nRows);
 	int readInputData(const std::string& fn, int nRows, int nTotal, tchar** ppSm, int nm, int &reservedElem, CMatrixInfo *pMatrixInfo = NULL) const {
@@ -79,8 +91,12 @@ private:
 	}
 	cchar* matrixType(int nRows) const		{ return !nRows || nRows == nRowsStart() ? "Start" : "Constructed"; }
 	void allocateMatrixInfoMemory(size_t nMatr, int orderMatrixMode);
+	const tchar* getNextMatrixInfo(uint i, uint* pGroupOrder, uint *pIdx = NULL) const;
+	const tchar* outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAut* pResult, bool updateDB, int nRows, int skipedBytes);
+	void setMatrixeReportData(const MatrixReportData* pReportData) { m_pMatrixReportData = pReportData; }
 
 	bool m_bUpdateMatrixReserved = true;
+	const MatrixReportData* m_pMatrixReportData;
 };
 
 class TopGun : public TopGunBase {
@@ -101,8 +117,9 @@ private:
 	sLongLong *m_cntTotal = NULL;
 	sLongLong dNumMatrices[2];
 	bool *threadActive = NULL;
+	int* matrixIndex = NULL;
 	int mLinksSize;
-	clock_t cTime = 0, rTime = 0, mTime = 0, iTime = 0;
+	clock_t cTime = 0, mTime = 0, iTime = 0;
 	ctchar* mstart = NULL, *mfirst = NULL;
 	uint numThreads;
 	int m_iPrintCount;

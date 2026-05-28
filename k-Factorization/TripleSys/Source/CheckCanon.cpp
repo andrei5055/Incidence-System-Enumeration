@@ -1,5 +1,6 @@
 #include "TripleSys.h"
 #include "CheckCanon.h"
+#include "UInt128.h"
 
 typedef enum {
 	t_reasonUnknown,
@@ -473,7 +474,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 				for (T i = 0; i < numElem; i++)
 					SPRINTFD(ptr, buffer, " %3d", orbits()[i]);
 
-				SPRINTFD(ptr, buffer, ":  |Aut(G)| = %zd\n", CGroupOrder<T>::groupOrder());
+				SPRINTFD(ptr, buffer, ORDER_FRMT(":  |Aut(G)| = ", "\n", GR_ORDER(CGroupOrder<T>::groupOrder()));
 				_printf(f, false, buffer);
 				FCLOSE_F(f);
 			}
@@ -501,7 +502,7 @@ CheckerCanon(bool)::checkWithGroup(T numElem, int (CCheckerCanon<T>::*func)(cons
 #if PRINT_PERMUT
 	if (calcGroupOrder) {
 		FOPEN_F(f, fName, "a");
-		sprintf_s(buffer, "%4d: |Aut(G)| = %zd\n", ++ctr_canon, CGroupOrder<T>::groupOrder());
+		sprintf_s(buffer, ORDER_FRMT("%4d: |Aut(G)| = ", "\n"), ++ctr_canon, GR_ORDER(CGroupOrder<T>::groupOrder()));
 		_printf(f, false, buffer);
 		FCLOSE_F(f);
 	}
@@ -1392,3 +1393,7 @@ CheckerCanon(bool)::CheckPermutations(const T* result, const T* pMatrix, int nRo
 	return counter[1] == 0;
 }
 
+std::ostream& operator<<(std::ostream& os, const UInt128& x) {
+	os << x.toString();
+	return os;
+}

@@ -60,7 +60,7 @@ CC int alldata::checkCurrentResult(int iPrintMatrices, void* pIS_Canonizer)
 #if 1
 		if ((iDay == numDaysResult())
 			|| checkSubmatrix()
-			|| (param(t_submatrixGroupOrderMin) > 0)
+			|| (param(t_submatrixGroupOrderMin) > 0 && m_useZStabilizer != 2)
 			|| (param(t_nestedGroups) > 1)
 			|| (m_use2RowsCanonization && m_groupSize == 3) // slightly faster (for 15,7,3)
 			// next check makes 14x2 p1f x10 times faster. Supported by canonizator (SW checks only m_nPrecalcRows rows)

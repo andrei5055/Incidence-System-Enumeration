@@ -22,6 +22,7 @@ const char* intParamNames[]{
 	"UseMultiThreading",
 	"NThreads",
 	"KThreads",
+	"GThreads",
 	"NRowsInStartMatrix",
 	"NRowsInResultMatrix",
 	"MaxNumberOfStartMatrices",
@@ -78,6 +79,8 @@ const char* intParamNames[]{
 	"UseCompatibilityCheck",
 	"HalfRowMode",
 	"UseKSolve",
+	"UseZStabilizer",
+	"TimingOutputMode",     // Write timeStamp into the output file name (default: 0 - out all timing info, 1 - no timing info)
 };
 
 const char* intArraysParamNames[]{
@@ -229,6 +232,7 @@ int main(int argc, const char* argv[])
 #endif
 	val[t_MultiThreading] = UseMultiThreading;
 	val[t_numThreads] = NThreads;
+	val[t_numGThreads] = 0;
 	val[t_numKThreads] = 1;
 	val[t_nRowsInStartMatrix] = NRowsInStartMatrix;
 	val[t_nRowsInResultMatrix] = NRowsInResultMatrix;
@@ -246,12 +250,11 @@ int main(int argc, const char* argv[])
 	val[t_gridSize] = 32;
 	val[t_blockSize] = 24;
 	val[t_any2RowsConvertToFirst2] = Any2RowsConvertToFirst2;
+	val[t_timing_output_mode] = 0;
 
 	// Set default string parameters:
 	auto* strVal = param.strVal;
 	memset(strVal, 0, t_lastStrParam * sizeof(strVal[0]));
-	//if (U1FName)// && strlen(U1FName))
-	//	strVal[t_UFname] = new string(U1FName);
 
 	strVal[t_StartFolder] = new string(StartFolder);
 	strVal[t_ResultFolder] = new string(ResultFolder);
@@ -380,6 +383,8 @@ int main(int argc, const char* argv[])
 			}
 		}
 
+		delete strVal[t_UFname];
+		strVal[t_UFname] = NULL;
 		for (auto i = countof(params); i--;) {
 			auto& tmpParam = params[i].m_pTmpParamStorage;
 			for (size_t j = 0; j < tmpParam->size(); j++) {

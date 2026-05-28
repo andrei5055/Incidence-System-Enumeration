@@ -15,7 +15,7 @@ int canonMatrCntr = 0;
 #endif
 
 #if PRINT_MATRICES || PRINT_NUM_CUR_GRAPH
-extern int numCurrGraph;
+int numCurrGraph;
 #endif
 
 #if PRINT_MATRICES
@@ -137,7 +137,8 @@ void CGraphCanonizer::initVertexGroupOrbits() {
 	setStabilizerLengthAut(m_v);
 	for (int i = m_v; i--;)
 		m_pGroupOrbits[i] = i;
-	memcpy(this->getObject(1), m_pGroupOrbits, m_v * sizeof(m_pGroupOrbits[0]));
+
+	memcpy(this->getObject(1), groupOrbits(), m_v * sizeof(m_pGroupOrbits[0]));
 }
 
 tchar* CGraphCanonizer::createGraphOut(ctchar* pGraph, tchar* pGraphOut, int startVertex, int endVertex, const ushort* pOrb) const {
@@ -227,7 +228,7 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 				}
 
 				if (i < 0) {
-					updateGroupOrder(m_v, m_pGroupOrbits);
+					updateGroupOrder(m_v, groupOrbits());
 					return 0;
 				}
 
@@ -236,7 +237,7 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 				indVertMax = *(pLenOrbitsPrev = pLenOrbits);
 			}
 
-			const auto pGroupOrbs = m_pGroupOrbits + i;
+			const auto pGroupOrbs = groupOrbits() + i;
 			while (++indVert <= indVertMax && pGroupOrbs[indVert] != i + indVert);
 #if FFF
 			if (DO_PRINT(nIter)) {
@@ -347,10 +348,10 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 #endif
 				flag = memcmp(pGraphLast, pGraph + i * m_v, m_v * (m_v - i));
 				if (!flag) {
-					addAutomorphism(m_v, m_pOrbits, m_pGroupOrbits, true);
+					addAutomorphism(m_v, m_pOrbits, groupOrbits(), true);
 					if (!m_pOrbits[0]) {
 						// Set vertex orbits under the stabilizer of vertex 0
-						memcpy(this->getObject(1), m_pGroupOrbits, sizeof(m_pGroupOrbits[0]) * m_v);
+						memcpy(this->getObject(1), groupOrbits(), sizeof(*groupOrbits()) * m_v);
 					}
 				}
 			}
@@ -362,19 +363,17 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 			}
 #else
 			while (i < m_v) {
-				if (idxRight)
-					flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
-				else {
+				if (!idxRight) {
 					const auto vertIdx = i++;
 					const auto pVertexIn = pGraph + m_pOrbits[vertIdx] * m_v;
 					auto pVertOut = pGraphOut + vertIdx * m_v;
 					for (int j = 0; j < m_v; j++)
 						pVertOut[j] = pVertexIn[m_pOrbits[j]];
 
-					flag = memcmp(pVertOut, pGraph + vertIdx * m_v, m_v);
-					if (flag)
+					if (flag = memcmp(pVertOut, pGraph + vertIdx * m_v, m_v))
 						return lastUnfixedVertexIndex;
-				}
+				} else
+					flag = canonizeMatrixRow(pGraph, pGraphOut, i++, &pLenOrbits, idxRight, flag, lastUnfixedVertexIndex);
 			}
 
 #if 0
@@ -383,8 +382,6 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 			// Run CI, to see the problem. 
 			firstVert = lastUnfixedVertexIndex;
 			goto startCanonize;
-#else
-			return 0;
 #endif
 #endif
 		}

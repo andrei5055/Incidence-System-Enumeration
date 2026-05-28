@@ -1,7 +1,57 @@
 #include "TripleSys.h"
 
 extern const char* arrayParamNames[];
+/**
+ * Returns false if the given cycle structure is theoretically impossible
+ * for a Uniform 1-Factorization (U1F).
+ *
+ * @param cycles     Array of cycle lengths (e.g., {4, 6, 16})
+ * @param nCycles    Number of cycles in the array
+ * @param bBipartite True if the graph is K_{n,n}, false if it is K_{2n}
+ */
+bool isTheoreticalPossible(unsigned char* cycles, int nCycles, bool bBipartite) {
+	int totalVertices = 0;
 
+	for (int i = 0; i < nCycles; ++i) {
+		// 1. Every cycle in the union of two 1-factors must be EVEN.
+		// The union of two matchings is bipartite, so it cannot have odd cycles.
+		if (cycles[i] % 2 != 0) return false;
+
+		totalVertices += cycles[i];
+	}
+
+	// 2. A 1-factorization requires an even number of total vertices.
+	if (totalVertices % 2 != 0) return false;
+
+	// 3. Kotzig's Theorem for Complete Bipartite Graphs (K_{n,n})
+	// A P1F (one cycle of length 2n) exists in K_{n,n} ONLY if n is odd.
+	if (bBipartite) {
+		int n = totalVertices / 2;
+		// If it's a Perfect 1-Factorization (only one cycle)
+		if (nCycles == 1) {
+			// If n is even, K_{n,n} cannot have a P1F.
+			if (n % 2 == 0) return false;
+		}
+		/*
+		 * Checks if a cycle structure is theoretically possible for K_{n,n}.
+		 * In bipartite graphs, the union of two 1-factors must correspond
+		 * to an EVEN permutation if the 1-factorization is to be consistent.
+		 */
+		int evenPermutationCycleCount = 0;
+		for (int k = 0; k < nCycles; k++) {
+			// A graph cycle of length G actually represents 
+			// a permutation cycle of length L = G / 2.
+			int L = cycles[k] / 2;
+			if (L % 2 == 0) {
+				evenPermutationCycleCount++;
+			}
+		}
+		if (evenPermutationCycleCount % 2 != 0) {
+			return false;
+		}
+	}
+	return true;
+}
 bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto& val = param.val;
 #ifndef USE_CUDA
@@ -17,6 +67,9 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 	const auto bCBMPgraph = vCBMPgraph > 1;
 	const auto nRowStart = val[t_nRowsInStartMatrix];
 	const auto nPrecalcRows = val[t_useRowsPrecalculation];
+	const auto pCycles = param.u1fCycles[0];
+	bool bP1f = (!pCycles || pCycles[1] == numPlayers) && !val[t_allowUndefinedCycles];
+	int nCycles = pCycles ? pCycles[0] : 1;
 	if (numPlayers > MAX_PLAYER_NUMBER) {
 		printfRed("*** Program is compiled for %d players maximum, but %s=%d is used\n", MAX_PLAYER_NUMBER, paramNames[t_numPlayers], numPlayers);
 		return false;
@@ -95,8 +148,6 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		return false;
 	}
 
-	const auto pCycles = param.u1fCycles[0];
-	bool bP1f = (!pCycles || pCycles[1] == numPlayers) && !val[t_allowUndefinedCycles];
 	if (bP1f && val[t_useCompatibilityCheck] > 1) {
 		printfRed("*** %s(%d) > 1 can be used only with P1F\n", paramNames[t_useCompatibilityCheck], val[t_useCompatibilityCheck]);
 		return false;
@@ -156,10 +207,10 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 				return false;
 			}
 		}
-		else {
+		else if (val[t_nMaxNumberOfStartMatrices] < MaxNumberOfStartMatrices) {
 			// When we order the set of matrices, we need to read all of them.
-			printfRed("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
-				"\"%s\"=%d is ignored and replaced with the maximum integer value (%d)\n", 
+			printfYellow("*** Because matrix ordering requires considering all previously found configurations, the input value\n"
+				"%s=%d is ignored and replaced with the default maximum value (%d)\n", 
 				paramNames[t_nMaxNumberOfStartMatrices], val[t_nMaxNumberOfStartMatrices], MaxNumberOfStartMatrices);
 			*(int *)(val + t_nMaxNumberOfStartMatrices) = MaxNumberOfStartMatrices - val[t_nFirstIndexOfStartMatrices] + 1;
 		}
@@ -195,6 +246,25 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 		printfRed("*** %s(%d) with %s must be in range 2:%d\n",
 			paramNames[t_nRowsInStartMatrix], nRowStart, paramNames[t_MultiThreading], numDays);
 		return false;
+	}
+	if (val[t_groupSize] == 2 && val[t_any2RowsConvertToFirst2]) {
+		for (int i = 0; i < nCycles; i++) {
+			tchar cycle[2] = { 0 }, * cycles = cycle;
+			cycle[0] = numPlayers;
+			int iCycleLength = 1;
+			if (pCycles) {
+				cycles = pCycles + 1 + i * MAX_CYCLES_PER_SET;
+				for (iCycleLength = 1; iCycleLength < MAX_CYCLES_PER_SET && cycles[iCycleLength] != 0; iCycleLength++)
+					if (cycles[iCycleLength] == 0)
+						break;
+			}
+			if (!isTheoreticalPossible(cycles, iCycleLength, vCBMPgraph == 2)) {
+				printfRed("*** Cycle {%d", cycles[0]);
+				for (int j = 1; j < iCycleLength; j++) printfRed(",%d", cycles[j]);
+				printfRed("} is theoretically impossible\n");
+				return false;
+			}
+		}
 	}
 
 	return true;

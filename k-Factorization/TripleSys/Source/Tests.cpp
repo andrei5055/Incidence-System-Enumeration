@@ -320,10 +320,12 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 		return false;
 	else {
 		printf("Submatrices Automorphism and Cycles:\n");
-		printTable("The Matrix", result(), iDay, m_numPlayers, m_groupSize);
+		printTable("The Matrix", result(), iDay, m_numPlayers, m_groupSize, 0, true);
 		m_numDaysResult = iDay;
-		for (int i = 2; i <= iDay; i++) {
+		int iStart = iDay > 2 ? 3 : 2;
+		for (int i = iStart; i <= iDay; i++) {
 			char stat[256];
+			m_numDaysResult = i;
 			bool bRet = cnvCheckNew(0, i, false);
 			//bool bRet2 = checkNewRow(neighbors(), i);
 			getAllCycles(neighbors(), i);
@@ -331,8 +333,8 @@ bool alldata::testGroupOrderEachSubmatrix(int iPrintMatrices, eThreadStartMode i
 			printf("%d rows: %s, AUT=%d, %s\n", i,
 				bRet ? "Canonical" : "Not canonical", orderOfGroup(), stat);
 		}
-		printf("\n");
-		exit(1);
+		printf("\nDone");
+		exit(0);
 	}
 	return true;
 }

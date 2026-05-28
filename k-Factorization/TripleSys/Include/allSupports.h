@@ -122,6 +122,8 @@ CC void elemOrdering(T* pElems, size_t numElem, size_t groupSize) {
 
 bool _CheckMatrix(ctchar* matrix, int nl, int nc, int gs, tchar* links, bool printError, int* errLine, int* errGroup, int* dubLine, int nr);
 void printTransformed(int nrows, int ncols, int groupSize, ctchar* tr, ctchar* ttr, ctchar* pImatr, ctchar* pTmatr, int numRow = 0, sLongLong nLoops = 0, int finalKMindex = 0);
+std::string printWithPowers(const char* str);
+std::string getPrimeFactorization(UInt n);
 void createStartFolderAndFileName(char* fn, size_t fns, const char* folder, const char* fileNameFmt, int np, int nr, int gs);
 CC bool p1fCheck2(ctchar* u1fCycles, ctchar* neigborsi, ctchar* neighborsj, int nc);
 CC tchar checkForUnexpectedCycle(ctchar iv, ctchar ic, ctchar nc, ctchar* lnk, ctchar* v);

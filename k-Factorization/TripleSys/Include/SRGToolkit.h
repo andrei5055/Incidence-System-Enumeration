@@ -16,28 +16,46 @@ typedef struct SRGParam {
 	t_graphType updateParam(int* pCommon, bool flag_4_ver);
 } SRGParam;
 
+class TopGunBase;
+
 class SRGToolkit : public CGraphCanonizer
 {
 public:
-	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices);
+	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster = NULL, TopGunBase* pTopGunBase = NULL);
 	~SRGToolkit();
-	bool exploreMatrix(ctchar* pMatr, GraphDB *ppGraphDB, uint sourceMatrID, uint srcGroupOrder);
+	bool exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage);
 	void printStat();
+	inline SRGParam* graphParam(int i) const	{ return m_pGraphParam[i]; }
+	inline void reportOnScreen(bool val)		{ m_reportOnScreen = val; }
+	inline bool reportOnScreen() const			{ return m_reportOnScreen; }
+	inline auto srcGroupOrderPntr()		        { return &m_srcGroupOrder; }
+	inline void setMaster(SRGToolkit* pMaster)	{ m_pMaster = pMaster; }
+	bool outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, 
+		bool rank3, ctchar* pResGraph, ctchar* pUpperDiag, SRGToolkit* pSlaveToolKit);
+	void outputMatrix(uint sourceMatrID);
 private:
-	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, GraphDB* pGraphDB, uint sourceMatrID, uint srcGroupOrder);
+	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
-
+	inline auto getMaster() const				{ return m_pMaster; }
+	inline auto nRows() const					{ return m_nRows;}
+	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit);
+	void buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx) const;
+	auto topGun() const							{ return m_pTopGunBase; }
+	
 	const int m_nRows; 
-	const std::string m_resFileName;
 	const int m_nExploreMatrices;
 
+	std::string m_resFileName[2];
+	uint m_srcGroupOrder;		// The order of the group of the source matrix (the matrix from which the SRG is constructed).
 	int m_nPrevMatrNumb = 0;
 	bool m_bChekMatr[2];
 	ushort* m_subgraphVertex = nullptr;
 	SRGParam *m_pGraphParam[2] = { nullptr };
-	CBinaryMatrixStorage* m_pMarixStorage[2] = { nullptr };
 	const kSysParam* m_pParam;
+	bool m_reportOnScreen = false;
+	SRGToolkit *m_pMaster = nullptr;
+	TopGunBase* m_pTopGunBase = nullptr;
+	bool m_bFactorizationOutputCompleted;
 };
-

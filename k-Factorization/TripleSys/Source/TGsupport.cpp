@@ -5,7 +5,7 @@ void RunThread(int threadId, eThreadStartMode iMode,
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
-	pMaster->updateMatrixDB(sys.matrixDB());
+	pMaster->updateObjectDB(sys.matrixDB());
 }
 void TopGun::waitAllThreadFinished()
 {
@@ -39,6 +39,7 @@ void TopGun::startThread(int iTask, int iTaskId, eThreadStartMode iMode, CRowSto
 
 	m_cnt[iTask * 2] = -1;
 	m_cnt[iTask * 2 + 1] = 0;
+	matrixIndex[iTask] = iTaskId;
 	threads[iTask] = std::thread{ RunThread, iTaskId, iMode,
 		this, m_pSecondRowsDB, mstart, mfirst, m_cnt + iTask * 2, iTask, pRowStorage};
 	threadActive[iTask] = true;

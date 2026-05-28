@@ -245,8 +245,8 @@ bool alldata::cnvCheckOneRow(ctchar* tr, ctchar* pRow, ctchar tRow, bool bCalcLe
 #if USE_INTRINSIC
 // Function to translate 16 bytes and sort each internal pair
 void transform16_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut) {
-	static const __m128i swap_mask = _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
-	static const __m128i merge_mask = _mm_setr_epi8(0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1);
+	const __m128i swap_mask = _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+	const __m128i merge_mask = _mm_setr_epi8(0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1);
 	// 1. Load Data
 	__m128i inp = _mm_loadu_si128((__m128i*)pIn);
 	__m128i trTable = _mm_loadu_si128((__m128i*)pTr);
@@ -269,7 +269,7 @@ void transform16_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut) {
 // Returns true if found, or false if not found.
 bool find_2byte_sequence(short int* data, int ng, unsigned short* trSearch) {
 	if (ng <= 8) {
-		static const __m128i masks[9] = {
+		const __m128i masks[9] = {
 			_mm_setr_epi16(0,0,0,0,0,0,0,0), // N=0
 			_mm_setr_epi16(-1,0,0,0,0,0,0,0), // N=1
 			_mm_setr_epi16(-1,-1,0,0,0,0,0,0), // N=2
@@ -309,7 +309,7 @@ bool find_2byte_sequence(short int* data, int ng, unsigned short* trSearch) {
 	if (ng < 16) {
 		// Create a mask with -1 (0xFFFF) for the first 'ng' shorts and 0 for the rest
 		// In practice, for small fixed ranges, a lookup table like your masks[9] is fastest.
-		alignas(32) static const short m_data[32] = {
+		alignas(32) const short m_data[32] = {
 			-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
 			 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0
 		};
@@ -349,7 +349,6 @@ void transform32_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut, int c
 	__m256i valid_mask = _mm256_cmpgt_epi8(v_count, indices);
 
 	// 2. Load and Clean Input
-	// Any byte > 23 in your 24-byte case is forced to 0
 	__m256i input = _mm256_and_si256(_mm256_loadu_si256((const __m256i*)pIn), valid_mask);
 	__m256i trans = _mm256_loadu_si256((const __m256i*)pTr);
 
@@ -367,10 +366,10 @@ void transform32_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut, int c
 	__m256i transformed = _mm256_blendv_epi8(res_low, res_high, is_high);
 
 	// 4. Byte-Pair Sorting [min, max]
-	static const __m256i swap_mask = _mm256_setr_epi8(
+	const __m256i swap_mask = _mm256_setr_epi8(
 		1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14,
 		17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 31, 30);
-	static const __m256i merge_mask = _mm256_setr_epi8(
+	const __m256i merge_mask = _mm256_setr_epi8(
 		0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1,
 		0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1);
 

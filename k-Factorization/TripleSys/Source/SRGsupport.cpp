@@ -33,7 +33,7 @@ SrgSummary::SrgSummary(const string* logFolder, int iMode, const string* extFile
 	outFile2 = extFile ? *extFile : *logFolder + SRG_CSV;
 }
 
-void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType graphType, int rank3, size_t grOrder, int srcGroupSize, int srcGroups, int srcAut) {
+void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType graphType, int rank3, UInt grOrder, int srcGroupSize, int srcGroups, int srcAut) {
 	if (!mode)
 		return;
 
@@ -71,7 +71,8 @@ void SrgSummary::outSRG_info(int v, const SRGParam* graphParam, t_graphType grap
 	const auto v_2k = v - 2 * k;
 	SPRINTFD(pBuf, buf, ",%c,%d,%d,%d,", rank2Symb, v - k - 1, v_2k + μ - 2, v_2k + λ);
 	if (grOrder != -1)
-		SPRINTFD(pBuf, buf, "%zu", grOrder);
+		SPRINTFD(pBuf, buf, ORDER_FRMT("", ""), GR_ORDER(grOrder));
+
 	SPRINTFD(pBuf, buf, ",%d,%d,%d\n", srcGroupSize, srcGroups, srcAut);
 
 	// merge (if requested) new row with existing SRG_CSV

@@ -131,7 +131,6 @@ CC bool alldata::cnvCheck2U1F(int nrows, int nrowsToUseForTrs)
 						//if (bSaveTestedTrs && icmp != 1 && pTestedTRs->isProcessed(tr))
 						if (bSaveTestedTrs && pTestedTRs->isProcessed(tr))
 							continue;
-
 						if (icmp == 0)
 							updateGroup(tr);
 

@@ -4,7 +4,7 @@
 #if USE_INTRINSIC
 extern void transform16_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut);
 extern void transform32_and_sort_each_pair(ctchar* pIn, ctchar* pTr, tchar* pOut, int count);
-extern void sortGroupsI(tchar* pIn, tchar* pOut, int nPairs);
+extern void sortGroupsI(ctchar* pIn, tchar* pOut, int nPairs);
 #endif
 #define SetUpToTwoGroups2(i, m, j, ta, tb) \
 		if (ta[i]) \

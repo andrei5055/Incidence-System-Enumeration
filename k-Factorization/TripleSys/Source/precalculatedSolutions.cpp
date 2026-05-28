@@ -87,11 +87,11 @@ ProcessPrecalculatedRow:
 				if (!p1f_counter || ((++m_p1f_counter) % p1f_counter))
 #endif
 #if !USE_CUDA
-					if (!m_bPrintAll || m_cTime - m_rTime < ReportInterval)
+					if (!m_bPrintAll || m_cTime - m_pTime < ReportInterval)
 #endif
 						goto ProcessPrecalculatedRow;
 			}
-
+			m_pTime = m_cTime;
 			m_pRowUsage->getMatrix(result(), neighbors(), iDay);
 #if CheckMissingMatrix
 			//if (memcmp(missingMatrix, result(), iDay * m_numPlayers) == 0) 
