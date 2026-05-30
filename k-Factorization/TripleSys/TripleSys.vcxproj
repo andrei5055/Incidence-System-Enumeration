@@ -279,7 +279,7 @@
       <ConformanceMode>true</ConformanceMode>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ForcedIncludeFiles>MemoryLeak.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>

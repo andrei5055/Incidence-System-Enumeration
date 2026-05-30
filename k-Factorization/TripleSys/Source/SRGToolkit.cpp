@@ -121,8 +121,10 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixSt
 	return counter > 0;
 }
 
-void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx) const
-{
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
+	if (reportOnScreen())
+		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
+
 	const auto groupSize = m_pParam->val[t_groupSize];
 	const auto nCols = m_pParam->val[t_numPlayers];
 	const auto numGroups = nCols / groupSize;

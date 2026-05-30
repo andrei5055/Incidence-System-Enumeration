@@ -1,5 +1,7 @@
 @echo off
 taskkill /F /IM k-Sys.exe /T >nul 2>nul
+del /q x64\Release\k-Sys.exe >nul 2>nul
+del /q x64\Release\TripleSys.lib >nul 2>nul
 set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist %VSWHERE% (
     echo "Error: vswhere not found. Please install Visual Studio."
