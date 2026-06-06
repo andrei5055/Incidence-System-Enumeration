@@ -108,14 +108,13 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixSt
 		if (!m_bChekMatr[i])
 			continue;
 
-		if (exploreMatrixOfType(i, pMatr, sourceMatrID, ppMarixStorage[i]))
-			counter++;
-		else {
+		if (!exploreMatrixOfType(i, pMatr, sourceMatrID, ppMarixStorage[i])) {
 			delete m_pGraphParam[i];
 			m_pGraphParam[i] = NULL;
 			if (!(m_nExploreMatrices & 2))
 				m_bChekMatr[i] = false;
-		}
+		} else
+			counter++;
 	}
 
 	return counter > 0;
@@ -123,8 +122,8 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixSt
 
 void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx) const
 {
-	const auto groupSize = m_pParam->val[t_groupSize];
-	const auto nCols = m_pParam->val[t_numPlayers];
+	const auto groupSize = m_pParam->paramVal(t_groupSize);
+	const auto nCols = m_pParam->paramVal(t_numPlayers);
 	const auto numGroups = nCols / groupSize;
 	const auto pVertexLast = pMatr + m_nRows * nCols;
 	const auto cond = typeIdx != 0;
@@ -169,11 +168,26 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 }
 
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
+	const auto groupSize = m_pParam->paramVal(t_groupSize);
+	if (!typeIdx) {
+		// Check whether the graph is a triangular graph
+		if (m_pParam->completeGraph() && groupSize == 2) {
+			std::unique_lock<std::mutex> guard;
+			if (auto* mtx = pMarixStorage->getMutext()) {
+				guard = std::unique_lock<std::mutex>(*mtx);
+				pMarixStorage->graphDB()->setGraphType(t_triangular);
+			}
+			else
+				pMarixStorage->graphDB()->setGraphType(t_triangular);
+
+			return false;
+		}
+	}
+
 	if (reportOnScreen())
 		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
-	const auto groupSize = m_pParam->val[t_groupSize];
-	const auto nCols = m_pParam->val[t_numPlayers];
+	const auto nCols = m_pParam->paramVal(t_numPlayers);
 	const auto numGroups = nCols / groupSize;
 	const auto pVertexLast = pMatr + m_nRows * nCols;
 
@@ -183,7 +197,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	// Create graph
 	auto pAdjacencyMatrix = graphPntr(0);
 	memset(pAdjacencyMatrix, 0, lenGraphMatr() * sizeof(pAdjacencyMatrix[0]));
-	const auto v = groupDegree();
 #if 1
 	buildGraph(pMatr, pAdjacencyMatrix, typeIdx);
 #else
@@ -229,6 +242,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	tchar* pUpperDiag = NULL;
 	ctchar* pResGraph = NULL;
 	if (canonize) {
+		const auto v = groupDegree();
 		int i = 0;
 		// Copy elements above the main diagonal into the array.
 		auto pFrom = pResGraph = canonize_graph(NULL, &i);
@@ -457,8 +471,8 @@ void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphTy
 		const bool canonize = m_nExploreMatrices > 0;
 		const auto rank3graph = rank3 ? 1 : (canonize ? -1 : 0);
 		const auto grOrder = canonize ? groupOrder() : 0;
-		const auto groupSize = m_pParam->val[t_groupSize];
-		const auto nCols = m_pParam->val[t_numPlayers];
+		const auto groupSize = m_pParam->paramVal(t_groupSize);
+		const auto nCols = m_pParam->paramVal(t_numPlayers);
 		srgSummary.outSRG_info(v, graphParam, graphType, rank3graph, grOrder, groupSize, nCols / groupSize, m_srcGroupOrder);
 	}
 

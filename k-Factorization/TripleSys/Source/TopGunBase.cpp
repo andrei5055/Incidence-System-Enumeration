@@ -298,8 +298,8 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 		else
 			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers)/nParts);
 
-		setTableTitle(buffer);
-		const auto totalMatr = reportResult(f, !param(t_timing_output_mode));
+		matrixDB()->setTableTitle(buffer);
+		const auto totalMatr = matrixDB()->reportResult(f, !param(t_timing_output_mode));
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			if (nRowsStart() != nRowsOut()) {
 				// The case were nRowsStart() == nRowsOut() was handled in TopGunBase::Run() 
@@ -313,6 +313,11 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 					(m_pGraphDB + i)->reportResult(f, false);
 			}
 		}
+
+
+//		if (m_lsDB)
+//			m_lsDB->reportResult(NULL, false);
+
 		if (!m_reportInfo.empty())
 			fprintf(f, m_reportInfo.c_str());
 	}
@@ -381,7 +386,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	fprintf(f, "\n");
 
 	if (!finalReport) {
-		reportResult(f);
+		matrixDB()->reportResult(f);
 		if (!m_reportInfo.empty())
 			fprintf(f, m_reportInfo.c_str());
 	}
@@ -474,7 +479,7 @@ const tchar *TopGunBase::outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAu
 		const auto pCicleInfo = m_pMatrixInfo->cycleInfo(idx);
 		const auto groupOrder = *pGroupOrder;
 		if (updateDB)
-			addObjDescriptor(groupOrder, pCicleInfo + skipedBytes);
+			matrixDB()->addObjDescriptor(groupOrder, pCicleInfo + skipedBytes);
 
 		pResult->setGroupOrder(groupOrder);
 		pResult->setInfo(pCicleInfo);
@@ -503,7 +508,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	createFolderAndFileName(ResultFile, paramPtr(), t_ResultFolder, nRows, "_OrderedMatrices.txt");
 	Result.setOutFileName(ResultFile.c_str(), true);
 
-	const bool updateDB = totalObjects() == 0;
+	const bool updateDB = matrixDB()->totalObjects() == 0;
 
 	const auto skipedBytes = (int)strlen("Cycles:");
 	if (!exploreMatrices) {

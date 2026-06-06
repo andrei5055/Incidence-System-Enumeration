@@ -21,6 +21,7 @@ typedef enum {
 	t_regular = 1 << 0,
 	t_srg = t_regular + (1 << 1),
 	t_4_vert = t_srg + (1 << 2),
+	t_triangular,
 	t_complete = -1
 } t_graphType;
 
@@ -152,6 +153,7 @@ public:
 	CC inline auto completeGraph() const	{ return partiteNumb() == 1; }
 	inline auto partitionSize() const		{ return val[t_numPlayers] / partiteNumb(); }
 	CC inline auto numFactors() const		{ return m_numFactors; }
+	CC inline auto numGroups() const		{ return val[t_numPlayers] / val[t_groupSize]; }
 	void setup();
 
 	int val[t_lastParam];

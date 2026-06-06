@@ -460,6 +460,14 @@ CC bool alldata::checkNewRow(ctchar* table, int nr)
 		{
 			tchar* fp = m_TrCycles.fullPath + m_TrCycles.start[0] * 2;
 			int fpLength = m_TrCycles.length[0] * 2;
+#if 0
+			if (m_bPrint && m > 2) {
+				printf("Cycle Length=%d i=%d m=%d\n", fpLength / 2, i, m);
+				printTable("i", result(i), 1, nc, m_groupSize);
+				printTable("m", result(m), 1, nc, m_groupSize);
+				//exit(0);
+			}
+#endif
 			adjustPlayerPosition(fp, fpLength, nr);
 			ret = false;
 			break;

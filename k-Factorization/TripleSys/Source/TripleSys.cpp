@@ -45,7 +45,7 @@ bool alldata::checkAndSave(ctchar* data, int mode) {
 	if (pResult) {
 		char stat[1024];
 		getAllCycles(neighbors(), iDay);
-		m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+		matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 		pResult->setInfo(stat); 
 		pResult->setGroupOrder(orderOfGroup());
 		if (param(t_savingMatricesToDisk)) {
@@ -174,7 +174,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	
 	TableAut* pResult = NULL;
-	int iSaveLS = m_groupSize <= 3 ? param(t_saveLatinSquareType) : 0;
+	const auto iSaveLS = m_groupSize <= 3 ? param(t_saveLatinSquareType) : 0;
 	if (iSaveLS) {
 		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
 		m_lsDB = new LS_DB();
@@ -418,11 +418,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	 	setArraysForLastRow(iDay);
 		//printTable("p1f", neighbors(), iDay, m_numPlayers, m_groupSize);
 		m_useZStabilizer = param(t_useZStabilizer) && !m_doNotExitEarlyIfNotCanonical && bNotSpecialMode &&
-			param(t_MultiThreading) == 1 && iDay == 3 && m_groupSize == 2 /**&& m_nPrecalcRows == 0 **/ ? 1 : 0;
+			param(t_MultiThreading) == 1 && iDay == 3 && m_groupSize == 2 && m_nPrecalcRows == 0 ? 1 : 0;
 
 		if (m_useZStabilizer) {
 			m_ZStabilizer = new ZStabilizer();
-			m_ZStabilizer->init(m_numPlayers, param(t_submatrixGroupOrderMin), m_nPrecalcRows != 0, bCBMP, m_bPrint);
+			m_ZStabilizer->init(m_numPlayers, param(t_submatrixGroupOrderMin), bCBMP, m_bPrint);
 			m_lastRowWithTestedTrs = 0;
 			cnvCheckNew(0, iDay - 1);
 			m_ZStabilizer->goDown();
@@ -629,10 +629,10 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				char stat[1024];
 				getAllCycles(neighbors(), iDay);
 				auto* pResultLS = static_cast<const TableLS*>(pResult);
-				m_matrixDB.addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+				matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 				if (m_lsDB) {
 					const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
-					m_lsDB->addObjDescriptor(orderOfGroup(), &lsType);
+					m_lsDB->addObjDescriptor(orderOfGroup(), (const char *)& lsType);
 				}
 
 				pResult->setInfo(stat);
@@ -728,12 +728,12 @@ noResult:
 
 	if (m_bPrint && param(t_saveLatinSquareType) && m_nLS)
 		printfYellow("Matrix index %d: Latin Squares=%d, Atomic=%d, Totally symmetric=%d\n", threadNumber, m_nLS, m_atomicLS, m_symmetricLS);
+
 	if (pcnt)
 	{
 		*pcnt = m_finalKMindex;
 		*(pcnt + 1) = nLoops;
 	}
-
 	else {
 		if (param(t_MultiThreading) <= 1) {
 			std::string str;

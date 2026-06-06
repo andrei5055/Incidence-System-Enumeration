@@ -170,7 +170,7 @@ private:
 class CKOrbits;
 class CGraphCanonizer;
 
-class alldata : public CGroupUtilisation, public CChecklLink, private CGroupInfo, CycleSupport {
+class alldata : public CombinedDB, public CGroupUtilisation, public CChecklLink, private CGroupInfo, CycleSupport {
 	typedef bool(alldata::*checkU1F)(int, int);
 	typedef void(alldata::*sortGroups)(tchar *, int) const;
 	typedef int(alldata::*processMatrix2)(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const;
@@ -195,7 +195,7 @@ public:
 	CC inline auto RowStorage() const			{ return m_pRowStorage; }
 	CC inline auto groupSize()	const			{ return m_groupSize; }
 #if !USE_CUDA
-	inline MatrixDB* matrixDB()					{ return &m_matrixDB; }
+	inline LS_DB* lsDB()						{ return m_lsDB; }
 	void printPermutationMatrices(const int iMode) const;
 #endif
 	CC inline void initCheckByGroup(tchar iDay, tchar iMode) {
@@ -421,7 +421,6 @@ private:
 	std::string ImprovedResultFile;
 	std::string ResultFile;
 	FILE* m_file = NULL;    // File for output of improved matrices.
-	MatrixDB m_matrixDB;
 #endif
 	void* m_pRes;
 	TrCycles m_TrCycles;

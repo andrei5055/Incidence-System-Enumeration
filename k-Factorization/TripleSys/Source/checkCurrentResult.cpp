@@ -12,7 +12,10 @@ CC void alldata::goBack()
 		printTable("Input matrix", result(), iDay, m_numPlayers, m_groupSize, 0, true);
 		abort();
 	)
-
+	if (m_playerIndex <= 0) {
+		printfRed("*** Internal error: m_playerIndex = %d, exit(1)\n", m_playerIndex);
+		exit(1);
+	}
 	if (iDay == m_numDays)
 	{
 		if (m_playerIndex > (m_numDays - 1) * m_numPlayers - m_groupSize - 1)

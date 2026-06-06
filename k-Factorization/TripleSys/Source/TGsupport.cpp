@@ -5,7 +5,7 @@ void RunThread(int threadId, eThreadStartMode iMode,
 {
 	alldata sys(*pMaster, pMaster->paramPtr(), 0, pRowStorage);
 	sys.Run(threadId, iMode, secondRowsDB, mstart0, mfirst, pMaster->nRowsStart(), pcnt, 0, iThread);
-	pMaster->updateObjectDB(sys.matrixDB());
+	pMaster->updateDBs(sys);
 }
 void TopGun::waitAllThreadFinished()
 {

@@ -8,6 +8,8 @@ private:
 	// transition_stack[i] = list of automorphisms of the submatrix (rows 1 to i)
 	std::vector<std::vector<std::vector<unsigned char>>> transition_stack;
 	std::vector<std::vector<std::vector<unsigned char>>> candidates;
+	// Fast bitmask solver variables
+	uint8_t active_cand_adj[32] = { 0 };
 	int current_index[32];
 	int num_rows = 0;
 	int current_row;
@@ -18,15 +20,14 @@ private:
 	tchar* transformedPre = NULL;
 	bool bBipartite = false;
 	bool bPrint = true;
-	bool bUseKSolve = false;
 	int zebra_size = 2;
 
 public:
 	ZStabilizer() {}
 
-	void init(int size, int min_aut, bool useKSolve, bool bipartite, bool print);
+	void init(int size, int min_aut, bool bipartite, bool print);
 	void clearCurrent(int iRow);
-	void addTr(ctchar* tr, ctchar* row3, int iRow);
+	void addTr(ctchar* tr, ctchar* rows, int iRow);
 	void goUp();
 	void goDown();
 	tchar* getTr(int iRow, int iTr);
@@ -37,8 +38,9 @@ public:
 	int setPlayerIndex(ctchar* tr, ctchar* co, ctchar* ci, ctchar* ciFrom);
 	int setPlayerIndexByPos(ctchar* tr, ctchar* co, ctchar* ciFrom, int ip);
 	void checkCandidate(ctchar* rows, ctchar* candidate, int iRow);
-	void generateRow(ctchar* rows, ctchar* automorphism, int iRow);
-	void generateCandidates(ctchar* rows, int iRow);
+	int generateRow(ctchar* rows, ctchar* automorphism, int iRow);
+	bool isP1F(ctchar* rows, int iRow);
+	bool generateCandidates(ctchar* rows, int iRow);
 	// Structure to hold a single edge
 	struct Edge {
 		uint8_t u, v;

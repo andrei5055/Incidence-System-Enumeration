@@ -257,7 +257,7 @@ int TopGun::Run()
 		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);
 		m_iMatrix = (uint)resultMatr;
-		transferObjectDB(sys.matrixDB());
+		transferDBs(sys);
 	}
 
 	const auto expectedResult = param(t_expectedResult);

@@ -35,7 +35,7 @@ typedef struct MatrixReportData {
 	int skipedBytes;
 } MatrixReportData;
 
-class TopGunBase : public SizeParam, public MatrixDB {
+class TopGunBase : public SizeParam, public CombinedDB {
 public:
 	TopGunBase(const kSysParam& param);
 	virtual ~TopGunBase();

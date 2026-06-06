@@ -319,7 +319,7 @@ CC bool alldata::canonizator(int iMode, int nrows)
 		if (m_useZStabilizer == 1) {
 			int i = 0;
 			while (i < orderOfGroup())
-				m_ZStabilizer->addTr(getObjAddr(i++), result(2), nrows - 1);
+				m_ZStabilizer->addTr(getObjAddr(i++), result(0), nrows - 1);
 		}
 		if (m_precalcMode != eCalculateRows || nrows < param(t_useRowsPrecalculation))
 			saveGroup(*this, nrows);
