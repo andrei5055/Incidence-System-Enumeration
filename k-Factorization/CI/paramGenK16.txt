@@ -1,0 +1,18 @@
+PrintMatrices=1
+GroupSize=2
+KeepPrevResult=0
+ExploreMatrices=0
+NThreads=1; KThreads=0; UseMultiThreading=1
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+CSV_FileName=../../SRG.csv
+OutAutomorphismGroup=0
+StartFolder="../LogsGen16Inp/"
+ResultFolder="../LogsGen16/"
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000; UseRowsPrecalculation=0; NRowsInStartMatrix=15;
+nPlayers=16; CBMP_Graph=0;
+OrderMatrices=1;
+U1FCycles={{16}}
+CanonizeInput=1;
+NRowsInResultMatrix=15; ExpectedResult=-1
+END_JOB

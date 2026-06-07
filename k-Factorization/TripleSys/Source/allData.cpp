@@ -123,7 +123,10 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	bool bp1f = ((!u1fPntr || u1fPntr[1] == m_numPlayers) && !m_allowUndefinedCycles);
 	m_pCheckFunc = NULL;
 	if (m_use2RowsCanonization) {
-		if (m_groupSize == 2) {
+		if (param(t_CanonizeInput) || param(t_generateMatrixExample) ||
+			sysParam()->strVal[t_InputDataFileName]->length() || (param(t_test) & 1))
+			m_pCheckFunc = &alldata::cnvCheck3U1F;
+		else if (m_groupSize == 2) {
 			if (param(t_useFastCanonizerForG2))
 				m_pCheckFunc = &alldata::cnvCheck3U1F;
 			else 

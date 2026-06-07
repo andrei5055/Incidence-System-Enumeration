@@ -56,3 +56,26 @@ public:
 		}
 	};
 };
+#if 1
+// Each array represents the mapping: target_permutation[input_element] = output_element
+
+// 1. Shape A: Order-7 Pair (7^2 1^2)
+// Cycles: (0 1 2 3 4 5 6)(7 8 9 10 11 12 13)(14)(15)
+// Expected Result: Exactly 1 primary master family
+const char perm_shape_A[16] = { 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 7, 14, 15 };
+
+// 2. Shape B: Order-5 Triple (5^3 1^1)
+// Cycles: (0 1 2 3 4)(5 6 7 8 9)(10 11 12 13 14)(15)
+// Expected Result: Exactly 1 primary master family
+const char perm_shape_B[16] = { 1, 2, 3, 4, 0, 6, 7, 8, 9, 5, 11, 12, 13, 14, 10, 15 };
+
+// 3. Shape C: Order-3 Quintuple (3^5 1^1)
+// Cycles: (0 1 2)(3 4 5)(6 7 8)(9 10 11)(12 13 14)(15)
+// Expected Result: Exactly 4 primary master families
+const char perm_shape_C[16] = { 1, 2, 0, 4, 5, 3, 7, 8, 6, 10, 11, 9, 13, 14, 12, 15 };
+
+// 4. Shape D: Order-2 Septuple (2^7 1^2)
+// Cycles: (0 1)(2 3)(4 5)(6 7)(8 9)(10 11)(12 13)(14)(15)
+// Expected Result: Exactly 23 primary master families
+const char perm_shape_D[16] = { 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 14, 15 };
+#endif

@@ -88,6 +88,7 @@ typedef enum {
 	t_useKSolve,
 	t_useZStabilizer,
 	t_timing_output_mode,
+	t_CanonizeInput,
 	t_lastParam,
 	// Indices of parameters with the int* type values
 	t_v4Array = 0,

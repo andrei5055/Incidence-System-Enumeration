@@ -431,21 +431,6 @@ CC bool alldata::checkNewRow(ctchar* table, int nr)
 		return true;
 	bool ret = true;
 	const auto nc = m_numPlayers;
-#if 0
-	if (m_use2RowsCanonization /** && !param(t_u1f) **/ && m_groupSize == 3)
-	{
-		if (param(t_p1f_counter) && (++m_p1f_counter >= param(t_p1f_counter)) && nr > 2) {
-			m_p1f_counter = 0;
-			if (!((this->*m_pCheckFunc)(nr, nr - 1))) {
-#if !USE_CUDA
-				if (m_bPrint)
-					reportCurrentMatrix();
-#endif
-				return false;
-			}
-		}
-	}
-#endif
 	int m = nr - 1;
 	auto* rowm = table + m * nc;
 	auto* rowi = table;
@@ -686,29 +671,21 @@ CC int alldata::p1fCheck2ndRow() const
 
 CC void alldata::p1fCheckStartMatrix(int nr) 
 {
-	bool bCBMP = !completeGraph();
-	auto u1fPntr = sysParam()->u1fCycles[0];
-	for (int i = 1; i < nr; i++)
-	{
-		TrCycles trCycles;
-		int iret;
-		if (bCBMP)
-			iret = getCyclesAndPathCBMP(&trCycles, neighbors(0), neighbors(i), result(0), result(i), 0, eCheckErrors) > 0;
-		else
-			iret = getCyclesAndPathFromNeighbors(&trCycles, neighbors(0), neighbors(i), NULL, NULL, eCheckErrors) > 0;
-#if 0
-		if (iret) {
-			if ((!u1fPntr && trCycles.ncycles != 1) || (u1fPntr && MEMCMP(u1fPntr+1, trCycles.length, trCycles.ncycles)))
-				iret = 0;
-		}
-#endif
-		CUDA_PRINTF("*** p1fCheck DONE for rows = 0,%d  iret = %d\n", i, iret);
-		ASSERT_IF(iret <= 0, 
-			printfRed("*** Error in input 'Start matrix' - rows (0, %d) are not with requested cycles), Exit\n", i);
+#if !USE_CUDA
+	if (m_use2RowsCanonization || param(t_u1f)) {
+		if (!param(t_generateMatrixExample)) {
+			for (int i = 1; i < nr; i++) {
+				m_playerIndex = m_numPlayers * i - m_groupSize - 1;
+				if (!checkNewRow(neighbors(), i)) {
+					printfRed("*** Error in input 'Start matrix' - rows (%d, %d) are not with requested cycles), Exit\n", 
+						m_TrCycles.irow1, i);
 			printTable("Incorrect 'Start matrix'", result(), nr, m_numPlayers, m_groupSize);
 			myExit(1);
-		)
 	}
+			}
+		}
+	}
+#endif
 }
 CC int alldata::getAllV0(tchar* allv, int maxv, ctchar* t2, ctchar* res1) const
 {

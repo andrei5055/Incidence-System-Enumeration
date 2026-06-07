@@ -246,7 +246,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 		tchar tr[MAX_PLAYER_NUMBER];
 		memset(tr, 0, m_numPlayers);
-		for (int i = 0;i < m_numPlayers; i++)
+		for (int i = 0; i < m_numPlayers; i++)
 			tr[result(0)[i]] = i;
 		kmTranslate(result(0), result(0), tr, m_numDays * m_numPlayers);
 		if (!canonizeMatrix(m_numDays))
@@ -257,13 +257,16 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		}
 	}
 #endif
-
-	if (iDay >= 2 && (m_use2RowsCanonization || param(t_u1f)))
-	{
-		if (groupSize_2 && !param(t_generateMatrixExample))		// need to be implemented for 3?
-			p1fCheckStartMatrix(iDay);
-	}
+	p1fCheckStartMatrix(iDay);
 	m_playerIndex = 0;
+	if (param(t_CanonizeInput) && iDay > 2) {
+		if (!canonizeMatrix(iDay))
+			goto noResult;
+		if (!linksFromMatrix(links(), result(), iDay, false)) {
+			printfRed("*** Internal error: Canonize input, set links\n");
+			goto noResult;
+		}
+	}
 #if !USE_CUDA
 #if 1   // Matrix from data.h
 	if ((m_test & 1) && (iCalcModeOrg != eCalcSecondRow)){

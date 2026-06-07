@@ -17,6 +17,7 @@ set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Inc
 set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.* ./EngineGPU/EngineGPU.* ./EngineGPU/*.cu
 set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
 set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
+set TARFILES=%TARFILES% ./GenKn/*.cpp ./GenKn/*.h ./GenKn/*.vcxproj ./GenKn/*.ba
 set TARFILES=%TARFILES% ./CI/ExpectedResults
 
 REM Conditionally add CI files if they exist

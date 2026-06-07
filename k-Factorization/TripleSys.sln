@@ -33,6 +33,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "k-Sys", "k-Sys\k-Sys.vcxpro
 		{FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3} = {FDD7CD7E-0B1A-4A5E-9B0F-780A84D19EE3}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GenKn", "GenKn\GenKn.vcxproj", "{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with GPU|Any CPU = Debug with GPU|Any CPU
@@ -224,6 +226,42 @@ Global
 		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x64.Build.0 = Release|x64
 		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.ActiveCfg = Release|Win32
 		{55610ADD-EBAD-4CBE-9ED9-618CDFE7A825}.Release|x86.Build.0 = Release|Win32
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|Any CPU.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|Any CPU.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|x64.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|x64.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|x86.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with GPU|x86.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|Any CPU.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|Any CPU.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|x64.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|x64.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|x86.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug with OneApp|x86.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|Any CPU.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|x64.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|x64.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|x86.ActiveCfg = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Debug|x86.Build.0 = Debug|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|Any CPU.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|Any CPU.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|x64.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|x64.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|x86.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with GPU|x86.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|Any CPU.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|Any CPU.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|x64.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|x64.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|x86.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release with OneApp|x86.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|Any CPU.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|Any CPU.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|x64.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|x64.Build.0 = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|x86.ActiveCfg = Release|x64
+		{A6C502FB-12C9-4C5F-8E07-A57D00D84BD4}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

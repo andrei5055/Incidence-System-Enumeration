@@ -81,6 +81,7 @@ const char* intParamNames[]{
 	"UseKSolve",
 	"UseZStabilizer",
 	"TimingOutputMode",     // Write timeStamp into the output file name (default: 0 - out all timing info, 1 - no timing info)
+	"CanonizeInput",
 };
 
 const char* intArraysParamNames[]{

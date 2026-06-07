@@ -1,4 +1,7 @@
 #include "triplesys.h"
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 #include <new>
 #include <map>
 
@@ -373,7 +376,6 @@ int ZStabilizer::check(unsigned char* row, unsigned char* preRow, int* playerInd
 	// Align current_row down to match iRow
 	while (iRow > current_row)
 		goDown();
-
 	if ((int)transition_stack[current_row - zebra_size].size() + 1 < min_aut_val) {
 		*playerIndex = 0;
 		return -2;
@@ -673,7 +675,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 		bool vertex_conflict = false;
 		// Calculate vertex coverage bitmask for the orbit and check for overlap
 		for (const auto& edge : orbit) {
-			uint32_t edge_mask = (1UL << edge.u) | (1UL << edge.v);
+			uint32_t edge_mask = (1ull << edge.u) | (1ull << edge.v);
 			if ((mask & edge_mask) != 0) {
 				vertex_conflict = true;
 				break;
@@ -756,13 +758,12 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 	// Fast bitmask solver variables
 	memset(active_cand_adj, 0, 32);
 
+	// Initialize direct matching array (0xFF represents unmatched/unassigned)
+	uint8_t direct_match[32];
+	std::fill(direct_match, direct_match + 32, 0xFF);
+
 	auto get_match = [&](uint8_t v) -> int {
-		if (v == 0) {
-			return active_cand_adj[0] == 0 ? -1 : active_cand_adj[0];
-		}
-		if (active_cand_adj[v] != 0) return active_cand_adj[v];
-		if (active_cand_adj[0] == v) return 0;
-		return -1;
+		return direct_match[v] == 0xFF ? -1 : direct_match[v];
 	};
 
 	auto check_new_subcycles = [&](const std::vector<Edge>& orbit, int num_r) -> bool {
@@ -775,7 +776,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 				uint8_t u = edge.u;
 				uint8_t v = edge.v;
 				uint8_t curr = v;
-				uint32_t path_mask = (1UL << u) | (1UL << v);
+				uint32_t path_mask = (1ull << u) | (1ull << v);
 				bool is_cycle = false;
 				// Chase alternating pointers until we close a cycle, hit a path end, or detect an infinite loop
 				while (true) {
@@ -784,12 +785,12 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 						is_cycle = true;
 						break;
 					}
-					path_mask |= (1UL << curr);
+					path_mask |= (1ull << curr);
 					int next = get_match(curr);
 					if (next == -1) {
 						break; // Path ends
 					}
-					if (path_mask & (1UL << next)) {
+					if (path_mask & (1ull << next)) {
 						break; // Already visited
 					}
 					curr = next;
@@ -805,6 +806,16 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 		return false;
 	};
 
+	// Pre-index valid_orbits by vertex coverage to speed up the solver loop
+	std::vector<size_t> orbits_by_vertex[32];
+	for (size_t idx = 0; idx < valid_orbits.size(); ++idx) {
+		for (uint8_t v = 0; v < row_size; ++v) {
+			if (orbit_masks[idx] & (1ull << v)) {
+				orbits_by_vertex[v].push_back(idx);
+			}
+		}
+	}
+
 	// Pre-select the target orbit
 	std::vector<size_t> chosen_indices;
 	uint32_t initial_vertices = 0;
@@ -815,6 +826,8 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 		for (const auto& edge : valid_orbits[target_orbit_idx]) {
 			active_cand_adj[edge.u] = edge.v;
 			active_cand_adj[edge.v] = edge.u;
+			direct_match[edge.u] = edge.v;
+			direct_match[edge.v] = edge.u;
 		}
 		if (check_new_subcycles(valid_orbits[target_orbit_idx], iRow)) {
 			memset(active_cand_adj, 0, 32);
@@ -847,7 +860,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 					// Fast trace of alternate paths starting from vertex 0
 					do {
 						curr = base_adj[curr];
-						curr = active_cand_adj[curr];
+						curr = direct_match[curr];
 						visited_count += 2;
 					} while (curr != 0 && visited_count <= row_size);
 
@@ -872,7 +885,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 				for (int i = 0; i < row_size; i += 2) {
 					uint8_t mapped_u = automorphism[prev_row[i]];
 					uint8_t mapped_v = automorphism[prev_row[i + 1]];
-					if (active_cand_adj[mapped_u] != mapped_v) {
+					if (direct_match[mapped_u] != mapped_v) {
 						candidate_matches_swap = false;
 						break;
 					}
@@ -900,7 +913,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 					twin_visited[curr] = true;
 					curr = swap_adj[curr];
 					twin_visited[curr] = true;
-					curr = active_cand_adj[curr];
+					curr = direct_match[curr];
 					twin_visited_count += 2;
 				} while (curr != 0);
 
@@ -920,7 +933,7 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 			for (size_t idx : chosen_indices) {
 				// Verify active edge assignments against the current solver configuration
 				for (const auto& edge : valid_orbits[idx]) {
-					if (active_cand_adj[edge.u] == edge.v) {
+					if (direct_match[edge.u] == edge.v) {
 						candidate_edges.push_back(edge);
 					}
 				}
@@ -943,23 +956,35 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 
 		// 1. Choose the first uncovered vertex
 		int c = -1;
-		// Search bitmask to choose the first uncovered vertex (Exact Cover column selection)
+		#if defined(_MSC_VER)
+		unsigned long index;
+		if (_BitScanForward(&index, ~current_vertices)) {
+			c = (int)index;
+		}
+		#elif defined(__GNUC__) || defined(__clang__)
+		if (~current_vertices != 0) {
+			c = __builtin_ctz(~current_vertices);
+		}
+		#else
 		for (int i = 0; i < row_size; ++i) {
-			if (!(current_vertices & (1UL << i))) {
+			if (!(current_vertices & (1ull << i))) {
 				c = i;
 				break;
 			}
 		}
-		if (c == -1) return;
+		#endif
+		if (c == -1 || c >= row_size) return;
 
 		// 2. Branch only on compatible orbits covering vertex 'c'
 		// Branch on all candidate orbits that cover the selected vertex 'c'
-		for (size_t idx = 0; idx < valid_orbits.size(); ++idx) {
-			if ((orbit_masks[idx] & (1UL << c)) && (current_vertices & orbit_masks[idx]) == 0) {
+		for (size_t idx : orbits_by_vertex[c]) {
+			if ((current_vertices & orbit_masks[idx]) == 0) {
 				// Temporarily place the candidate orbit edge matches into the active adjacency
 				for (const auto& edge : valid_orbits[idx]) {
 					active_cand_adj[edge.u] = edge.v;
 					active_cand_adj[edge.v] = edge.u;
+					direct_match[edge.u] = edge.v;
+					direct_match[edge.v] = edge.u;
 				}
 
 				if (!check_new_subcycles(valid_orbits[idx], iRow)) {
@@ -972,6 +997,8 @@ int ZStabilizer::generateRow(ctchar* rows, ctchar* automorphism, int iRow) {
 				for (const auto& edge : valid_orbits[idx]) {
 					active_cand_adj[edge.u] = 0;
 					active_cand_adj[edge.v] = 0;
+					direct_match[edge.u] = 0xFF;
+					direct_match[edge.v] = 0xFF;
 				}
 			}
 		}

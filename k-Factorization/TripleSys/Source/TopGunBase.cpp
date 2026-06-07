@@ -19,7 +19,6 @@ TopGunBase::~TopGunBase() {
 	delete[] cnt();
 	delete m_pMatrixInfo;
 	delete[] m_pMatrixPerm;
-	delete [] m_pGraphDB;
 }
 
 int TopGunBase::readMatrices(int tFolder, int nRows) {
@@ -309,15 +308,9 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 					orderAndExploreMatrices(nRowsOut(), 2, exploreMatrices);
 			} 
 
-			if (m_pGraphDB) {
-				for (int i = 0; i < 2; i++)
-					(m_pGraphDB + i)->reportResult(f, false);
-			}
+			getDB(db_graph_1)->reportResult(f, false);
+			getDB(db_graph_2)->reportResult(f, false);
 		}
-
-
-//		if (m_lsDB)
-//			m_lsDB->reportResult(NULL, false);
 
 		if (!m_reportInfo.empty())
 			fprintf(f, m_reportInfo.c_str());
@@ -531,11 +524,11 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 	const auto v = pSRGtoolkit->groupDegree();
 	const auto len = v * (v - 1) / 2;
 
-	m_pGraphDB = new GraphDB[2]();
 	CBinaryMatrixStorage* pMarixStorage[2];
 	for (int i = 0; i < 2; i++) {
-		m_pGraphDB[i].setGraphType(i + 1);
-		pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50, m_pGraphDB + i);
+		auto* pGraphDB = static_cast<GraphDB *>(addDB(t_dbType(db_graph_1 + i)));
+		pGraphDB->setGraphType(i + 1);
+		pMarixStorage[i] = new CBinaryMatrixStorage((int)len, 50, pGraphDB);
 	}
 
 	const auto ip = (n > 100000 ? 1 : n > 10000 ? 2 : n > 1000 ? 10 : 101) * n / 100;

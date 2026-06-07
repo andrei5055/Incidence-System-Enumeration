@@ -73,7 +73,6 @@ protected:
 	sLongLong *m_cnt = NULL;
 	const kSysParam m_param;
 	std::string m_reportInfo;
-	GraphDB *m_pGraphDB = NULL;
 	uint m_iMatrix;
 	void parallel_for(int start, int end, std::function<void(int, int)> task, int nThreads);
 private:
