@@ -174,10 +174,11 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 	
 	TableAut* pResult = NULL;
-	const auto iSaveLS = m_groupSize <= 3 ? param(t_saveLatinSquareType) : 0;
+	IDatabase* pLS_DB = NULL;
+	const auto iSaveLS = m_groupSize <= 3 && param(t_saveLatinSquareType);
 	if (iSaveLS) {
 		pResult = new TableLS(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true, iSaveLS, bCBMP);
-		m_lsDB = new LS_DB();
+		pLS_DB = addDB(db_LS);
 	}
 	else
 		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
@@ -630,9 +631,9 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				getAllCycles(neighbors(), iDay);
 				auto* pResultLS = static_cast<const TableLS*>(pResult);
 				matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				if (m_lsDB) {
+				if (pLS_DB) {
 					const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
-					m_lsDB->addObjDescriptor(orderOfGroup(), (const char *)& lsType);
+					pLS_DB->addObjDescriptor(orderOfGroup(), (const char *)&lsType);
 				}
 
 				pResult->setInfo(stat);

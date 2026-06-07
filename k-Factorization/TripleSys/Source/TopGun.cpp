@@ -90,6 +90,9 @@ int TopGun::Run()
 			// b) m_pSecondRowsDB->getObject(int idx)  for accessing record # idx 
 			// c) m_pSecondRowsDB->numObjects()        when you need to get the number of records (second rows) in DB
 			//
+			if (m_groupSize <= 3 && param(t_saveLatinSquareType))
+				addDB(db_LS);
+
 			resultMatr = sys.Run(1, eCalcSecondRow, m_pSecondRowsDB, NULL, NULL, 0, NULL, &m_reportInfo);
 			if (resultMatr == 0) {
 				if (param(t_generateMatrixExample))
@@ -154,7 +157,6 @@ int TopGun::Run()
 						startThread(iTask, m_iMatrix * numThreads + iTask + 1, eCalculateMatrices, sys.RowStorage());
 
 					while (1) {
-
 						std::this_thread::sleep_for(std::chrono::milliseconds(waitInterval));
 
 						int iTask = 0;
@@ -253,6 +255,7 @@ int TopGun::Run()
 	else {
 		if (!param(t_keepPrevResult))
 			deleteOldFiles();
+
 		alldata sys(*this, paramPtr());
 		sys.initStartValues(MatrixFromDatah);// can be used for testing to start from matrix selected in data.h
 		resultMatr = sys.Run(1, eCalcResult, m_pSecondRowsDB, NULL, NULL, nRowsStart(), NULL, &m_reportInfo);

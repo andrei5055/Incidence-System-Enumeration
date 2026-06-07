@@ -299,7 +299,8 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			sprintf_s(buffer, "Factorization of K(%dx%d)", nParts, param(t_numPlayers)/nParts);
 
 		matrixDB()->setTableTitle(buffer);
-		const auto totalMatr = matrixDB()->reportResult(f, !param(t_timing_output_mode));
+		size_t totalMatr;
+		reportAllResults(f, !param(t_timing_output_mode), &totalMatr);
 		if (exploreMatrices && totalMatr && nRowsOut() == m_numDays) {
 			if (nRowsStart() != nRowsOut()) {
 				// The case were nRowsStart() == nRowsOut() was handled in TopGunBase::Run() 

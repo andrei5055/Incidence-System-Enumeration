@@ -313,7 +313,6 @@ CC alldata::~alldata() {
 	releaseBinaryMatricesStorage();
 	delete m_pTestedTRs;
 	delete m_pKSolver;
-	delete m_lsDB;
 #if !USE_CUDA
 	FCLOSE_F(m_file);
 #endif

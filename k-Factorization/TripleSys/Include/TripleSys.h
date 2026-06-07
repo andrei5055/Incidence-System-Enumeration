@@ -195,7 +195,6 @@ public:
 	CC inline auto RowStorage() const			{ return m_pRowStorage; }
 	CC inline auto groupSize()	const			{ return m_groupSize; }
 #if !USE_CUDA
-	inline LS_DB* lsDB()						{ return m_lsDB; }
 	void printPermutationMatrices(const int iMode) const;
 #endif
 	CC inline void initCheckByGroup(tchar iDay, tchar iMode) {
@@ -457,7 +456,6 @@ private:
 	TrCycles* m_TrCyclesFirst2Rows = NULL;
 	bool m_allRowPairsSameCycles = false;
 	trDB* m_pTestedTRs = NULL;
-	LS_DB* m_lsDB = NULL;
 };
 
 inline bool is_number(const std::string& s)
