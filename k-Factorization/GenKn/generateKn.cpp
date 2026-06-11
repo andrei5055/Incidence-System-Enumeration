@@ -355,7 +355,7 @@ void backtrack_matching(
                 }
                 printf(" \"\n");
             }
-            printf("\n\n\n\n");
+            printf("\n");
             fflush(stdout);
         }
         return;
@@ -474,16 +474,16 @@ void backtrack_matching(
                 matrix[ep.f][ep.w] = ep.u;
                 factor_assigned_mask[ep.f] |= (1 << ep.u) | (1 << ep.w);
             }
-
-            // Check look-ahead subcycles on the fly using forms_subcycle_general
             bool subcycle = false;
+            /**
+            // Check look-ahead subcycles on the fly using forms_subcycle_general
             for (int i = 0; i < num_placements; ++i) {
                 const auto& ep = placements[i];
                 if (forms_subcycle_general(N, ep.u, ep.w, ep.f, matrix, factor_assigned_mask)) {
                     subcycle = true;
                     break;
                 }
-            }
+            }**/
 
             // Restore ALL edges of the orbit
             for (int i = 0; i < num_placements; ++i) {
@@ -834,22 +834,7 @@ int generateKn(int N, int target_p, int target_k, int target_m, int num_threads,
         monitor_thread.join();
     }
 
-    // Print all unique matrices found
-    int matrix_idx = 1;
-    for (const auto& matrix : unique_matrices) {
-        printf("        %5d: | Aut(M) | = 1\n", matrix_idx++);
-        //std::cout << "[SUCCESS] Valid P1F Matrix #" << matrix_idx++ << " discovered!" << std::endl;
-        for (const auto& row : matrix) {
-            printf(" \"");
-            for (size_t i = 0; i < row.size(); i += 2) {
-                printf(" %3d%3d", row[i], row[i + 1]);
-            }
-            printf(" \"\n");
-        }
-        printf("\n\n\n\n");
-    }
-
     std::cout << get_timestamp() << "[INFO] Search complete. Total configurations processed: " << total_configurations_checked << std::endl;
-    std::cout << get_timestamp() << "[INFO] Total unique P1F matrices found: " << unique_matrices.size() << std::endl;
+    std::cout << get_timestamp() << "[INFO] \7Total unique P1F matrices found: " << unique_matrices.size() << std::endl;
     return 0;
 }

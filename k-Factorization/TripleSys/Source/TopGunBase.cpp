@@ -421,6 +421,17 @@ int TopGunBase::orderMatrices(int orderMatrixMode) {
 
 		pStartMatrix = inputMatrices();
 		std::qsort(m_pMatrixPerm, nMatrices, sizeof(m_pMatrixPerm[0]), compare_matr_fn_perm);
+
+		// Remove duplicates from the sorted permutation array
+		uint uniqueCount = 0;
+		for (uint i = 1; i < nMatrices; i++) {
+			const auto pPrev = pStartMatrix + matrixSize * m_pMatrixPerm[uniqueCount];
+			const auto pCurr = pStartMatrix + matrixSize * m_pMatrixPerm[i];
+			if (memcmp(pPrev, pCurr, matrixSize))
+				m_pMatrixPerm[++uniqueCount] = m_pMatrixPerm[i];
+			else
+				nDuplicate++;
+		}
 	}
 	else {
 		auto* pMatrixDst = (tchar*)inputMatrices();
@@ -486,13 +497,13 @@ const tchar *TopGunBase::outputNextMatrixInfo(uint i, uint* pGroupOrder, TableAu
 }
 
 void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exploreMatrices) {
-	const auto n = numMatrices2Process();
+	auto n = numMatrices2Process();
 	if (!n)
 		return;
 
 	const auto nDuplicate = orderMatrices(orderMatrixMode);
 	printfGreen("%d '%s Matrices' sorted, %d duplicate matrices removed\n", n, matrixType(nRows), nDuplicate);
-	m_nMatrices -= nDuplicate;
+	n = (m_nMatrices -= nDuplicate);
 	if (orderMatrixMode != 2)
 		return;
 

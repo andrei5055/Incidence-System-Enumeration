@@ -12,7 +12,12 @@ public:
 		if (outLS) {
 			m_nColumns = (!bCBMP && np == 2) ? nc - 1 : ((!bCBMP && np == 3) ? nc : nc / np);
 			m_latinSquares = new tchar[m_nColumns * m_nColumns * 6];
-			m_tmpLS = new tchar[m_nColumns * m_nColumns];
+			m_tmpLS = new tchar[m_nColumns * m_nColumns];		
+			nRows = nl;
+			if (!m_bCBMP && m_np == 3)
+				nRows = m_nColumns;
+			else if (nRows > m_nColumns)
+				nRows = m_nColumns;
 		}
 	}
 	~TableLS() {
@@ -22,7 +27,7 @@ public:
 		}
 	}
 
-	virtual void outLS(ctchar* c, int nl, FILE *f, bool outToScreen) {
+	void constructLS(ctchar* c, int nl) {
 		if (m_outLS < 1 || m_outLS > 6 || m_np > 3)
 			return;
 
@@ -38,17 +43,8 @@ public:
 			(c, s, r) : Another derived Latin square.
 			(s, r, c) : Another derived Latin square.
 		*/
-		const char* lsName[] = { "RCS", "CRS", "SCR", "RSC", "CSR", "SRC" };
-		const char startLineLS[] = {'*', ' ', '\0'};
-		bool rowHamiltonian[6];
-		memset(rowHamiltonian, false, 6);
-		int nRows = nl;
-		if (!m_bCBMP && m_np == 3)
-			nRows = m_nColumns;
-		else if (nRows > m_nColumns)
-			nRows = m_nColumns;
-		int lsSize = m_nColumns * m_nColumns;
-		tchar* pls[6];
+
+		const int lsSize = m_nColumns * m_nColumns;
 		memset(m_latinSquares, 0, lsSize * 6);
 		for (int k = 0; k < 6; k++)
 			pls[k] = m_latinSquares + k * lsSize;
@@ -104,9 +100,9 @@ public:
 					*(pls[k] + j * m_nColumns + j) = j;
 			}
 		}
-		m_isLSCreated = true;
-		m_isSymmetricLS = true;
-		m_isAtomicLS = true;
+
+		memset(rowHamiltonian, false, 6);
+		m_isAtomicLS = m_isSymmetricLS = m_isLSCreated = true;
 		for (int k = 0; k < 6; k++) {
 			sortLS(pls[k], m_tmpLS, nRows, m_nColumns);
 			if (!(rowHamiltonian[k] = isRowHamiltonian(pls[k], m_tmpLS, nRows, m_nColumns)))
@@ -114,6 +110,13 @@ public:
 			if (k > 0 && MEMCMP(pls[0], pls[k], lsSize))
 				m_isSymmetricLS = false;
 		}
+	}
+	virtual void outLS(ctchar* c, int nl, FILE *f, bool outToScreen) {
+		if (!isLSCreated())
+			return;
+
+		const char* lsName[] = { "RCS", "CRS", "SCR", "RSC", "CSR", "SRC" };
+		const char startLineLS[] = { '*', ' ', '\0' };
 		char buffer[1024], *pBuf = buffer;
 		for (int ki = m_outLS - 1; ki < m_outLS; ki++) {
 			int k = (ki <= 0 || ki >= 6) ? 0 : ki;
@@ -144,4 +147,7 @@ private:
 	int m_nColumns;
 	tchar* m_tmpLS;
 	tchar* m_latinSquares;
+	int nRows;
+	tchar* pls[6];
+	bool rowHamiltonian[6];
 };

@@ -7,7 +7,7 @@
 #include <set>
 #include <memory>
 
-typedef bool (*ResultCallback)(const void* cbClass, const unsigned char* results, int r4, int r5, int mode);
+typedef bool (*ResultCallback)(void* cbClass, const unsigned char* results, int r4, int r5, int mode);
 
 struct RowRange { int start_word; int end_word; };
 
@@ -51,7 +51,7 @@ struct LocalBufers {
     std::vector<uint8_t> s4_canonical;
 };
 
-class KSolver {
+class alignas(64) KSolver {
 public:
     virtual ~KSolver() = default;
     virtual void solve(int mode = 0) = 0;

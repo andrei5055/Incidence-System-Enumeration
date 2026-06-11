@@ -4,6 +4,8 @@
 #include "k1212_4_20.h"
 #include "k1111p1f.h"
 #include "k16p1f.h"
+#include "k16A2.h"
+#include "k20a2.h"
 #include "KSolveGen.h"
 #include "kOrbits.h"
 
@@ -32,10 +34,12 @@ bool alldata::checkAndSave(ctchar* data, int mode) {
 		printTable("*** Internal error: 1", result(), m_numDaysResult, m_numPlayers, m_groupSize);
 		myExit(1);
 	}
-	if (!cnvCheckNew(0, iDay)) {
-		//if (m_bPrint) 
-		//	printfYellow("*** Calculated result is not canonical (not recorded, skipped)\n");
-		return false;
+	if (mode != 2) {
+		if (!cnvCheckNew(0, iDay)) {
+			//if (m_bPrint) 
+			//	printfYellow("*** Calculated result is not canonical (not recorded, skipped)\n");
+			return false;
+		}
 	}
 	if (mode == 1)
 		return true;
@@ -68,15 +72,6 @@ bool alldata::checkAndSave(ctchar* data, int mode) {
 		*/
 	}
 	return true;
-}
-bool K1212SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
-	return ((alldata*)pAppData)->checkAndSave(result, mode);
-}
-bool K1111SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
-	return ((alldata*)pAppData)->checkAndSave(result, mode);
-}
-bool K16SaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
-	return ((alldata*)pAppData)->checkAndSave(result, mode);
 }
 bool KGenSaveResult(void* pAppData, ctchar* result, int r4, int r5, int mode) {
 	return ((alldata*)pAppData)->checkAndSave(result, mode);
@@ -325,13 +320,31 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 			bool bCBMP = !completeGraph();
 
-			if (param(t_useKSolve) & 1) {
+			if (param(t_useKSolve) & 32) {
+				if (m_numPlayers == 16 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 16)
+				{
+					const FactorParams factParam = { K20_N, K20_MATCH, K20_FIXED, K20_M_MAX };
+					m_pKSolver = new K20A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
+				}
+			}
+			else if (param(t_useKSolve) & 16) {
 				if (m_numPlayers == 16 && !bCBMP &&
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
 					sysParam()->u1fCycles[0][1] == 16)
 				{
 					const FactorParams factParam = { K16_N, K16_MATCH, K16_FIXED, K16_M_MAX };
-					m_pKSolver = new K16P1F(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K16SaveResult, (void*)this, m_bPrint);
+					m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
+				}
+			}
+			else if (param(t_useKSolve) & 1) {
+				if (m_numPlayers == 16 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 16)
+				{
+					const FactorParams factParam = { K16_N, K16_MATCH, K16_FIXED, K16_M_MAX };
+					m_pKSolver = new K16P1F(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
 				}
 
 				else if (m_numPlayers == 22 && bCBMP &&
@@ -339,7 +352,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					sysParam()->u1fCycles[0][1] == 22)
 				{
 					const FactorParams factParam = { K1111_N, K1111_MATCH, K1111_FIXED, K1111_M_MAX };
-					m_pKSolver = new K1111P1F(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K1111SaveResult, (void*)this, m_bPrint);
+					m_pKSolver = new K1111P1F(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
 				}
 
 				if (m_numPlayers == 24 && bCBMP &&
@@ -347,7 +360,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					sysParam()->u1fCycles[0][1] == 4 && sysParam()->u1fCycles[0][2] == 20)
 				{
 					const FactorParams factParam = { K1212_N, K1212_MATCH, K1212_FIXED, K1111_M_MAX };
-					m_pKSolver = new K1212_4_20(factParam, m_threadNumber, kThreads, result(0), (ResultCallback)K1212SaveResult, (void*)this, m_bPrint);
+					m_pKSolver = new K1212_4_20(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
 				}
 			}
 			// Fallback to KSolveGen (Bit 1)
@@ -362,10 +375,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						break;
 
 				const FactorParams factParam = { m_numPlayers, bCBMP ? m_numPlayers / 2 : m_numPlayers - 1, 3, KGEN_M_MAX };
-				m_pKSolver = new KSolveGen(factParam, bCBMP, p, k,
-					m_threadNumber, kThreads, result(0),
-					(ResultCallback)KGenSaveResult, (void*)this, m_bPrint,
-					m_v4Row, m_v4);
+				m_pKSolver = new KSolveGen(factParam, bCBMP, p, k, m_threadNumber, kThreads, result(0),
+					KGenSaveResult, this, m_bPrint, m_v4Row, m_v4);
 				m_pKSolver->preSolve();
 				m_lastRowWithTestedTrs = 0;
 				iDay = m_nPrecalcRows;
@@ -628,19 +639,22 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				printf("\n%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, m_fHdr, matr_cntr);
 #endif
 			}
-			if (m_bPrint || bSavingMatricesToDisk)
-			{
-				char stat[1024];
-				getAllCycles(neighbors(), iDay);
-				auto* pResultLS = static_cast<const TableLS*>(pResult);
-				matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
-				if (pLS_DB) {
-					const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
-					pLS_DB->addObjDescriptor(orderOfGroup(), (const char *)&lsType);
-				}
 
-				pResult->setInfo(stat);
-				pResult->setGroupOrder(orderOfGroup());
+			char stat[1024];
+			getAllCycles(neighbors(), iDay);
+	
+			matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
+			if (pLS_DB) {
+				auto* pResultLS = static_cast<TableLS*>(pResult);
+				pResultLS->constructLS(result(), numDaysResult());
+				const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
+				pLS_DB->addObjDescriptor(orderOfGroup(), (const char*)&lsType);
+			}
+
+			pResult->setInfo(stat);
+			pResult->setGroupOrder(orderOfGroup());
+
+			if (m_bPrint || bSavingMatricesToDisk) {
 #if 0			// record result and print on screen (if m_bPrint==true)
 				pResult->printTable(result(), true, m_bPrint, numDaysResult());
 #else			// record result without print on screen
@@ -648,6 +662,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					pResult->printTable(result(), true, false, numDaysResult());
 					if (pResult->isLSCreated()) {
 						m_nLS++;
+						auto* pResultLS = static_cast<TableLS*>(pResult);
 						if (pResultLS->isAtomicLS())
 							m_atomicLS++;
 						if (pResultLS->isSymmetricLS())
@@ -655,7 +670,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 						if (m_bPrint)
 							printfYellow("Latin Square (%sAtomic, %sTotally symmetric) saved with the matrix below\n",
 								pResultLS->isAtomicLS() ? "" : "Not ", pResultLS->isSymmetricLS() ? "" : "Not ");
-
 					}
 				}
 
@@ -749,10 +763,10 @@ noResult:
 			else {
 				str = format("\nThread {}: {} non-isomorphic matrices ({},{},{}) created\n",
 					threadNumber, m_finalKMindex, m_numPlayers, numDaysResult(), m_groupSize);
-				/**
+				
 				if (param(t_saveLatinSquareType))
 					str += format("Latin Squares {}, Atomic: {}, Totally symmetric: {}\n", m_nLS, m_atomicLS, m_symmetricLS);
-				**/
+				
 				if (!param(t_timing_output_mode))
 					str += format("Thread execution time = {} ms\n", clock() - m_iTime);
 			}

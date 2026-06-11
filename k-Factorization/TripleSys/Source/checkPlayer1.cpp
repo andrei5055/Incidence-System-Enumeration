@@ -122,7 +122,11 @@ PlayerOk1:
 #endif
 		}
 	}
-	if (iDay == 1 && completeGraph() && m_groupSizeRemainder[iPlayerNumber] && selPlayers[iPlayerNumber - 1] == unset)
-		return iPlayerNumber + 1;
+	if (iDay == 1) {
+		if (iPlayerNumber >= m_numPlayers || iPlayerNumber < 1)
+			return m_numPlayers;
+		if (completeGraph() && m_groupSizeRemainder[iPlayerNumber] && selPlayers[iPlayerNumber - 1] == unset)
+			return iPlayerNumber + 1;
+	}
 	return iPlayerNumber;
 }

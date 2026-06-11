@@ -306,6 +306,7 @@
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ForcedIncludeFiles>MemoryLeak.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -327,6 +328,7 @@
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ForcedIncludeFiles>MemoryLeak.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -392,6 +394,7 @@
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -421,6 +424,7 @@
       <AdditionalIncludeDirectories>./Include;../Utils/Include;../../Source;../OneApp</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -470,6 +474,8 @@
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</WholeProgramOptimization>
     </ClCompile>
     <ClCompile Include="Source\k16p1f.cpp" />
+    <ClCompile Include="Source\k16A2.cpp" />
+    <ClCompile Include="Source\k20a2.cpp" />
     <ClCompile Include="Source\kBase.cpp" />
     <ClCompile Include="Source\kmSupport.cpp" />
     <ClCompile Include="Source\KSolveGen.cpp" />
@@ -515,6 +521,8 @@
     <ClInclude Include="Include\k1111p1f.h" />
     <ClInclude Include="Include\k1212_4_20.h" />
     <ClInclude Include="Include\k16p1f.h" />
+    <ClInclude Include="Include\k16A2.h" />
+    <ClInclude Include="Include\k20a2.h" />
     <ClInclude Include="Include\kBase.h" />
     <ClInclude Include="Include\kBipartBase.h" />
     <ClInclude Include="Include\KSolveGen.h" />
