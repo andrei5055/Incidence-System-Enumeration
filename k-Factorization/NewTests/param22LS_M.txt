@@ -1,0 +1,25 @@
+PrintMatrices=0 // use 97 to see all details during conversion of input data to //canonical matrices
+ExploreMatrices=1; orderMatrices=2; UseFastCanonizerForG2=0
+SaveLatinSquareType=0
+NPlayers=22
+GroupSize=2; CBMP_Graph=2
+NPlayersMax=0
+AutSaveTestedTrs=1; NThreads=30 //8
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+AutDirection=1; AutLevelMinDef=2; AutLevelMaxDef=3; AutLevelMinApp=2; AutLevelMaxApp=3; AutGroupsToTest=0
+MatrixCanonInterval=0; SavingMatricesToDisk=1; UseCheckLinksV=1 //
+CSV_FileName="../../SRG.csv"
+GenerateMatrixExample=0
+KeepPrevResult=0
+
+StartFolder="C:/Users/andre/Downloads/LogsTestB22_LS/";  ResultFolder="C:/Users/andre/Downloads/LogsTestB22_LS_M"
+SubmatrixGroupOrderMin=0
+UseKSolve=0
+U1FCycles={{22}}
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+UseMultiThreading=1; NRowsInStartMatrix=11; NRowsInResultMatrix=11; ExpectedResult=-1
+End_Job
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0
+UseMultiThreading=1; NRowsInStartMatrix=11; NRowsInResultMatrix=11; ExpectedResult=-1
+End_Job

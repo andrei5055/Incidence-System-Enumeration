@@ -2,12 +2,16 @@
 #define K18A2_H
 
 #include <vector>
+#include <array>
 #include <cstdint>
 #include <atomic>
 #include <chrono>
 #include <immintrin.h>
 #include "kBase.h"
 #include <unordered_map>
+#include <new>
+#include <malloc.h>
+#include <crtdbg.h>
 
 #ifdef _MSC_VER
 #define FORCE_INLINE __forceinline
@@ -41,8 +45,29 @@
 
 struct Mask18_C { uint64_t m[4] = { 0, 0, 0, 0 }; };
 
+#pragma push_macro("new")
+#undef new
+
 class K18A2 : public KBase<Mask18_C> {
 public:
+    void* operator new(size_t size) {
+        void* p = _aligned_malloc(size, 64);
+        if (!p) throw std::bad_alloc();
+        return p;
+    }
+    void operator delete(void* p) {
+        _aligned_free(p);
+    }
+#if defined(_DEBUG) && defined(_MSC_VER)
+    void* operator new(size_t size, int blockType, const char* filename, int linenumber) {
+        void* p = _aligned_malloc_dbg(size, 64, filename, linenumber);
+        if (!p) throw std::bad_alloc();
+        return p;
+    }
+    void operator delete(void* p, int blockType, const char* filename, int linenumber) {
+        _aligned_free(p);
+    }
+#endif
 
     struct alignas(64) PackedAdj { 
         Mask18_C edge_mask;
@@ -111,6 +136,24 @@ public:
             memset(dirty_s4_words, 0, sizeof(dirty_s4_words));
             memset(r5_row_mask_in_s4, 0, sizeof(r5_row_mask_in_s4));
         }
+        void* operator new(size_t size) {
+            void* p = _aligned_malloc(size, 64);
+            if (!p) throw std::bad_alloc();
+            return p;
+        }
+        void operator delete(void* p) {
+            _aligned_free(p);
+        }
+#if defined(_DEBUG) && defined(_MSC_VER)
+        void* operator new(size_t size, int blockType, const char* filename, int linenumber) {
+            void* p = _aligned_malloc_dbg(size, 64, filename, linenumber);
+            if (!p) throw std::bad_alloc();
+            return p;
+        }
+        void operator delete(void* p, int blockType, const char* filename, int linenumber) {
+            _aligned_free(p);
+        }
+#endif
     };
 
     struct TransInfo { Permutation perms[512]; int count = 0; };
@@ -121,9 +164,27 @@ public:
 
     bool addRow(int iRow, const unsigned char* source);
     void solve(int mode = 0);
+    
+    void setTransitionConfig(const int config[5]) {
+        for (int i = 0; i < 5; i++) trans_config[i] = config[i];
+    }
 
 private:
+    //int trans_config[5] = { 1, 2, 3, 2, 4 }; //lot of matrices generated, after canonization only 1 or 2 uniq
+    int trans_config[5] = { 1, 2, 3, 4, 3 };
+
     void init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr);
+
+    struct ValidChain {
+        Permutation alpha;
+        uint8_t factors_adj[18][18];
+        PackedAdj factors_packed[18];
+        bool step_present[18];
+    };
+    std::vector<ValidChain> valid_chains;
+    std::vector<Permutation> saved_transitions;
+    int max_row_seen;
+    uint64_t rejected_candidates[18];
 
     void* cbClass = NULL;
     int call_counter = 0;
@@ -139,16 +200,16 @@ private:
     std::vector<Factor> global_pool;
     std::vector<PackedAdj> packed_pool;
 
-    struct VectorHash {
-        size_t operator()(const std::vector<uint8_t>& v) const {
+    struct ArrayHash {
+        size_t operator()(const std::array<uint8_t, 18>& a) const {
             size_t hash = 17;
-            for (uint8_t x : v) {
+            for (uint8_t x : a) {
                 hash = hash * 31 + x;
             }
             return hash;
         }
     };
-    std::unordered_map<std::vector<uint8_t>, int, VectorHash> f_map_unordered;
+    std::unordered_map<std::array<uint8_t, 18>, int, ArrayHash> f_map_unordered;
 
     int restart_index;
 
@@ -164,6 +225,20 @@ private:
     void diagnostic_printout(double current_compr);
     PackedAdj pack_factor_adj(const uint8_t* adj);
 
+    FORCE_INLINE bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2) {
+        uint8_t curr = 0;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr]; if (curr == 0) return false;
+        curr = adj1[curr]; curr = adj2[curr];
+        return curr == 0;
+    }
+
     FORCE_INLINE bool is_perfect_packed(const PackedAdj& p1, const PackedAdj& p2) {
         if ((p1.edge_mask.m[0] & p2.edge_mask.m[0]) || 
             (p1.edge_mask.m[1] & p2.edge_mask.m[1]) ||
@@ -171,12 +246,32 @@ private:
             return false;
         return is_perfect_scalar(p1.adj, p2.adj);
     }
-    bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
 
     CycleUnion find_cycles(const uint8_t* adj1, const uint8_t* adj2);
     void get_transformations(const Factor& fi, const Factor& fj, TransInfo& info);
     void get_transformations_general(const Factor& fi, const Factor& fj, const Factor& fk, const Factor& fl, TransInfo& info);
-    void apply_perm_18(const uint8_t* src_adj, const Permutation& perm, uint8_t* dst_adj);
+    
+    FORCE_INLINE void apply_perm_18(const uint8_t* src_adj, const Permutation& perm, uint8_t* dst_adj) {
+        dst_adj[perm.p[0]] = perm.p[src_adj[0]];
+        dst_adj[perm.p[1]] = perm.p[src_adj[1]];
+        dst_adj[perm.p[2]] = perm.p[src_adj[2]];
+        dst_adj[perm.p[3]] = perm.p[src_adj[3]];
+        dst_adj[perm.p[4]] = perm.p[src_adj[4]];
+        dst_adj[perm.p[5]] = perm.p[src_adj[5]];
+        dst_adj[perm.p[6]] = perm.p[src_adj[6]];
+        dst_adj[perm.p[7]] = perm.p[src_adj[7]];
+        dst_adj[perm.p[8]] = perm.p[src_adj[8]];
+        dst_adj[perm.p[9]] = perm.p[src_adj[9]];
+        dst_adj[perm.p[10]] = perm.p[src_adj[10]];
+        dst_adj[perm.p[11]] = perm.p[src_adj[11]];
+        dst_adj[perm.p[12]] = perm.p[src_adj[12]];
+        dst_adj[perm.p[13]] = perm.p[src_adj[13]];
+        dst_adj[perm.p[14]] = perm.p[src_adj[14]];
+        dst_adj[perm.p[15]] = perm.p[src_adj[15]];
+        dst_adj[perm.p[16]] = perm.p[src_adj[16]];
+        dst_adj[perm.p[17]] = perm.p[src_adj[17]];
+    }
+
     FastSortedFactor get_fast_sorted(const uint8_t* adj);
     
     CycleUnion target_cu;
@@ -188,7 +283,77 @@ private:
     bool equal_fast_sorted(const FastSortedFactor& a, const FastSortedFactor& b)     { return memcmp(a.pairs, b.pairs, 18) == 0; }
     bool compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b);
 
+    struct CycleBacktrackState {
+        K18A2* self;
+        uint64_t total_generated = 0;
+        uint64_t total_passed_p1f = 0;
+        std::vector<std::array<uint8_t, 18>> valid_alphas;
+        uint8_t F[9][18];
+        uint8_t pair_elements[8][2];
+        int vertex_to_pair[18];
+        int vertex_to_pos[18];
+        uint8_t v0;
+
+        void apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj);
+        bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
+        void backtrack(int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void backtrackRecurse(int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void tryVertexForCycle(int v, int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void recurseWithVertex(int v, int depth, int next_pairs, uint8_t* c, bool* used, int L);
+        void processCandidate(uint8_t* c, bool* used, int L);
+        void buildPermutation(uint8_t* c, uint8_t* alpha_p, int L);
+        bool checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L);
+        bool validateCandidateL(const uint8_t* alpha_p, bool* used, int L);
+        void saveAlpha(const uint8_t* alpha_p);
+        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L);
+    };
+
+    struct CycleLengthStats {
+        int L = 0;
+        long long inputs = 0;
+        long long passed = 0;
+        size_t unique_classes = 0;
+    };
+
+    void runExhaustiveSearch();
+    void searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_results, CycleLengthStats& stats);
+    bool checkCyclesCompatibility(const uint8_t G[][18], int L);
+    bool decomposeMissingEdges(const uint8_t G[][18], int L, uint8_t H[][18]);
+    bool backtrackColor(int edge_idx, int num_edges, int num_colors,
+                        const std::pair<uint8_t, uint8_t>* edges,
+                        uint8_t matchings[][18], const uint8_t* G0);
+    void recordIsomorphicResults(const uint8_t H[][18],
+                                 std::set<std::vector<uint8_t>>& unique_results);
+    void setupBacktrackState(CycleBacktrackState& state, int search_type);
+    void constructFullH(const uint8_t G[][18], int L, const uint8_t* alpha, uint8_t H[][18]);
+    void processAutomorphism(const std::array<uint8_t, 18>& alpha_arr, int L, std::set<std::vector<uint8_t>>& unique_results);
+    void adj_to_src(const uint8_t* adj, unsigned char* src);
+    void reportTotalResults(const std::set<std::vector<uint8_t>>& unique_results, std::chrono::high_resolution_clock::time_point start);
+    void sendResultsToCallback(const std::set<std::vector<uint8_t>>& unique_results);
+    void setupPairsTable(CycleBacktrackState& state, int search_type);
+    void fillPairsTable(CycleBacktrackState& state, int search_type);
+    void storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8_t v);
+    void constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][18]);
+    void findMissingEdges(const uint8_t G[][18], int L, std::pair<uint8_t, uint8_t>* edges);
+    bool isEdgeMissing(const uint8_t G[][18], int L, int u, int v);
+    bool checkMatchingsCompatibility(uint8_t matchings[][18], int num_colors, const uint8_t* G0);
+    bool tryColoringEdge(int edge_idx, int num_edges, int num_colors, const std::pair<uint8_t, uint8_t>* edges, uint8_t matchings[][18], const uint8_t* G0);
+    int getSymmetryBreakingLimit(uint8_t matchings[][18], int num_colors);
+    bool isColorUsed(const uint8_t* matching);
+    void copyMatchingsToH(uint8_t matchings[][18], int num_colors, const uint8_t G[][18], int L, uint8_t H[][18]);
+    void tryIsomorphicMapping(const uint8_t H[][18], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results);
+    void buildStarterCycle(uint8_t* cyc_R);
+    void buildHCycle(const uint8_t H[][18], int v, uint8_t* cyc_H);
+    void buildMappingPermutation(const uint8_t* cyc_H, const uint8_t* cyc_R, uint8_t* p);
+    void checkAndRecordPermutedH(const uint8_t H[][18], const uint8_t* p, std::set<std::vector<uint8_t>>& unique_results);
+    void applyPermToH(const uint8_t H[][18], const uint8_t* p, uint8_t S[][18]);
+    bool doesSMatchFixedRows(const uint8_t S[][18]);
+    void recordS(const uint8_t S[][18], std::set<std::vector<uint8_t>>& unique_results);
+    void verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique);
+
     std::mutex result_mutex;
 };
+
+#pragma pop_macro("new")
 
 #endif

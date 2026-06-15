@@ -1,5 +1,3 @@
-// generateLatinSquare.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 // converted from Java to c++ to calculate Latin Squares. 
 // Java code was developed by Paul Hankin.
 // According to Paul Hankin: "his Java implementation loosely based on the Java implementation described 
@@ -10,7 +8,6 @@
 #include <tuple>
 #include <vector>
 #include <random>
-#include <ctime>
 #include <array>
 using namespace std;
 

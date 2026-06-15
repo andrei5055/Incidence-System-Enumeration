@@ -72,9 +72,10 @@ struct FactorParams {
     const int m_nMax;
     const int m_nWords;
     const int m_nSearch;
-    FactorParams(int numPlayers, int numMatched, int numFixedRows, int nMax) : 
+    const int m_nResultRows;
+    FactorParams(int numPlayers, int numMatched, int numFixedRows, int nMax, int numResultRows = 0) : 
         m_nPlayers(numPlayers), m_nMatched(numMatched), m_nFixedRows(numFixedRows), m_nMax(nMax), 
-        m_nWords((((nMax + 255) / 256 * 4) + 4)), m_nSearch(numMatched - numFixedRows) {}
+        m_nWords((((nMax + 255) / 256 * 4) + 4)), m_nSearch(numMatched - numFixedRows), m_nResultRows(numResultRows) {}
 };
 
 template<typename T>

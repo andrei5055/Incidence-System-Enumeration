@@ -1,4 +1,4 @@
-#include "k20a2.h"
+#include "k18a2.h"
 #include <algorithm>
 #include <cstring>
 #include <cstdio>
@@ -7,15 +7,15 @@
 #include <mutex>
 #include <intrin.h>
 
-K20A2::K20A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr, bool bPrint) : KBase<Mask256_C>(factParam, bPrint) {
+K18A2::K18A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr, bool bPrint) : KBase<Mask18_C>(factParam, bPrint) {
     int id_cnt = 0;
     memset(edge_id_table, -1, sizeof(edge_id_table));
-    for (int i = 0; i < K20_N; i++) {
-        for (int j = i + 1; j < K20_N; j++) {
+    for (int i = 0; i < K18_N; i++) {
+        for (int j = i + 1; j < K18_N; j++) {
             int eid = id_cnt++;
             edge_id_table[i][j] = eid;
             edge_id_table[j][i] = eid;
-            if (eid < 128) {
+            if (eid < 256) {
                 edge_to_u[eid] = (uint8_t)i;
                 edge_to_v[eid] = (uint8_t)j;
             }
@@ -26,31 +26,15 @@ K20A2::K20A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, c
         roots_done[t] = 0;
     }
 
-    for (int m = 0; m < 256; m++) {
-        uint8_t adj_mask[16], idx_mask[16];
-        memset(adj_mask, 0xFF, 16);
-        memset(idx_mask, 0, 16);
-        uint8_t count = 0;
-        for (int i = 0; i < 8; i++) {
-            if (m & (1 << i)) {
-                adj_mask[count] = i;
-                idx_mask[count] = i;
-                count++;
-            }
-        }
-        gfs_table_adj[m] = _mm_loadu_si128((const __m128i*)adj_mask);
-        gfs_table_idx[m] = _mm_loadu_si128((const __m128i*)idx_mask);
-    }
-
     init(fixed3RowsIndex, kThreads, first3Rows, callback, cbClassPtr);
 }
 
-void K20A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr) {
+void K18A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr) {
     if (kThreads > 256) kThreads = 256;
     this->thread_buffers.clear();
     for (int i = 0; i < kThreads; i++) this->thread_buffers.push_back(std::make_unique<ThreadLocalBuffers>());
     if (m_bPrint) {
-        std::cout << "Init: K20A2 solver (Simplified), MS Compiler: " << _MSC_FULL_VER << ", kThreads: " << kThreads << std::endl;
+        std::cout << "Init: K18A2 solver (Path Progress version), Compiled: " << __DATE__ << " " << __TIME__ << ", MS Compiler: " << _MSC_FULL_VER << ", kThreads: " << kThreads << std::endl;
     }
     this->fixed3RowsIndex = fixed3RowsIndex;
     this->kThreads = kThreads;
@@ -61,15 +45,16 @@ void K20A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
     bTimeSet = false;
     call_counter = 0;
 
-    fixedEdgesMask = Mask256_C();
+    fixedEdgesMask = Mask18_C();
     for (int s = 0; s < m_nFixedRows; s++) {
-        memcpy(fixedRows[s].src, first3Rows + s * K20_N, K20_N);
-        for (int i = 0; i < K20_N; i += 2) {
+        memcpy(fixedRows[s].src, first3Rows + s * K18_N, K18_N);
+        for (int i = 0; i < K18_N; i += 2) {
             const auto a = fixedRows[s].src[i]; const auto b = fixedRows[s].src[i + 1];
             fixedRows[s].adj[a] = b; fixedRows[s].adj[b] = a;
             int eid = edge_id_table[a][b];
             if (eid < 64) fixedEdgesMask.m[0] |= (1ULL << eid);
             else if (eid < 128) fixedEdgesMask.m[1] |= (1ULL << (eid - 64));
+            else if (eid < 192) fixedEdgesMask.m[2] |= (1ULL << (eid - 128));
         }
     }
 
@@ -88,9 +73,11 @@ void K20A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
     global_pool.clear();
     packed_pool.clear();
     f_map.clear();
+    f_map_unordered.clear();
     for (int s = 0; s < m_nFixedRows; s++) {
-        std::vector<uint8_t> k(fixedRows[s].adj, fixedRows[s].adj + K20_N);
+        std::vector<uint8_t> k(fixedRows[s].adj, fixedRows[s].adj + K18_N);
         f_map[k] = s;
+        f_map_unordered[k] = s;
         global_pool.push_back(fixedRows[s]);
         packed_pool.push_back(pack_factor_adj(fixedRows[s].adj));
     }
@@ -101,27 +88,31 @@ void K20A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
     KBase::init();
 }
 
-bool K20A2::addRow(int iRow, const unsigned char* source) {
+bool K18A2::addRow(int iRow, const unsigned char* source) {
     iRow--;
-    if (iRow < m_nFixedRows || iRow >= K20_MATCH) return false;
+    if (iRow < m_nFixedRows || iRow >= K18_MATCH)
+        return false;
     int slot = iRow - m_nFixedRows;
 
     Factor f; memset(&f, 0, sizeof(f));
-    memcpy(f.src, source, K20_N);
-    for (int i = 0; i < K20_N; i += 2) { 
+    memcpy(f.src, source, K18_N);
+    for (int i = 0; i < K18_N; i += 2) { 
         const auto a = f.src[i]; const auto b = f.src[i + 1]; 
-        if (a >= K20_N || b >= K20_N) return false;
+        if (a >= K18_N || b >= K18_N) return false;
         f.adj[a] = b; f.adj[b] = a; 
     }
 
-    f.edge_mask = Mask256_C();
-    for (int i = 0; i < K20_N; i += 2) {
+    f.edge_mask = Mask18_C();
+    for (int i = 0; i < K18_N; i += 2) {
         int eid = edge_id_table[f.src[i]][f.src[i+1]];
         if (eid < 64) f.edge_mask.m[0] |= (1ULL << eid);
         else if (eid < 128) f.edge_mask.m[1] |= (1ULL << (eid - 64));
+        else if (eid < 192) f.edge_mask.m[2] |= (1ULL << (eid - 128));
     }
 
-    if ((f.edge_mask.m[0] & fixedEdgesMask.m[0]) || (f.edge_mask.m[1] & fixedEdgesMask.m[1])) {
+    if ((f.edge_mask.m[0] & fixedEdgesMask.m[0]) || 
+        (f.edge_mask.m[1] & fixedEdgesMask.m[1]) ||
+        (f.edge_mask.m[2] & fixedEdgesMask.m[2])) {
         printf("\n*** Error: Row has common edges with fixed rows!\n");
         exit(1);
     }
@@ -136,13 +127,18 @@ bool K20A2::addRow(int iRow, const unsigned char* source) {
 
     f.fs = get_fast_sorted(f.adj);
 
-    std::vector<uint8_t> k(f.adj, f.adj + K20_N);
+    std::vector<uint8_t> k(f.adj, f.adj + K18_N);
     int factor_id;
-    auto it = f_map.find(k);
-    if (it == f_map.end()) {
+    auto it = f_map_unordered.find(k);
+    if (it == f_map_unordered.end()) {
         factor_id = (int)global_pool.size();
-        if (factor_id >= K20_M_MAX) return false;
+        if (factor_id >= K18_M_MAX) {
+            printf("\nError: Number of input candidates > limit(%d), exit(1)\n", factor_id);
+            exit(1);
+            //return false;
+        }
         f_map[k] = factor_id;
+        f_map_unordered[k] = factor_id;
         global_pool.push_back(f);
         packed_pool.push_back(pack_factor_adj(f.adj));
     } else {
@@ -153,21 +149,21 @@ bool K20A2::addRow(int iRow, const unsigned char* source) {
     return true;
 }
 
-bool K20A2::is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2) {
+bool K18A2::is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2) {
     uint8_t curr = 0;
     int visited_count = 0;
     do {
         curr = adj1[curr];
         curr = adj2[curr];
         visited_count += 2;
-    } while (curr != 0 && visited_count <= 16);
-    return curr == 0 && visited_count == 16;
+    } while (curr != 0 && visited_count <= 18);
+    return curr == 0 && visited_count == 18;
 }
 
-K20A2::CycleUnion K20A2::find_cycles(const uint8_t* adj1, const uint8_t* adj2) {
-    CycleUnion cu;
-    bool visited[16] = { false };
-    for (int i = 0; i < 16; ++i) {
+K18A2::CycleUnion K18A2::find_cycles(const uint8_t* adj1, const uint8_t* adj2) {
+    CycleUnion cu; memset(&cu, 0, sizeof(cu));
+    bool visited[18] = { false };
+    for (int i = 0; i < 18; ++i) {
         if (visited[i]) continue;
         int curr = i;
         int cycle_pos = 0;
@@ -185,127 +181,92 @@ K20A2::CycleUnion K20A2::find_cycles(const uint8_t* adj1, const uint8_t* adj2) {
     return cu;
 }
 
-void K20A2::get_transformations(const Factor& fi, const Factor& fj, TransInfo& info) {
+void K18A2::get_transformations(const Factor& fi, const Factor& fj, TransInfo& info) {
     CycleUnion source_cu = find_cycles(fi.adj, fj.adj);
-    if (source_cu.count != 1 || source_cu.lens[0] != 16) return;
-    if (target_cu.count != 1 || target_cu.lens[0] != 16) return;
+    if (source_cu.count != 1 || source_cu.lens[0] != 18) return;
+    if (target_cu.count != 1 || target_cu.lens[0] != 18) return;
 
     for (int dir = 0; dir < 2; dir++) {
-        for (int start_offset = 0; start_offset < 16; start_offset++) {
+        for (int start_offset = 0; start_offset < 18; start_offset++) {
             if (info.count >= 512) break;
             auto& p_total = info.perms[info.count++];
             memset(p_total.p, 0xFF, sizeof(p_total.p));
             memset(p_total.p_inv, 0xFF, sizeof(p_total.p_inv));
             
-            for (int i = 0; i < 16; i++) {
-                int src_pos = (dir == 0) ? (start_offset + i) % 16 : (start_offset - i + 16) % 16;
+            for (int i = 0; i < 18; i++) {
+                int src_pos = (dir == 0) ? (start_offset + i) % 18 : (start_offset - i + 18) % 18;
                 uint8_t src_v = (uint8_t)source_cu.cycles[0][src_pos];
                 uint8_t tgt_v = (uint8_t)target_cu.cycles[0][i];
                 p_total.p[src_v] = tgt_v;
                 p_total.p_inv[tgt_v] = src_v;
             }
-            p_total.pv = _mm256_loadu_si256((const __m256i*)p_total.p);
-            p_total.pinvv = _mm256_loadu_si256((const __m256i*)p_total.p_inv);
         }
     }
 }
 
-void K20A2::get_transformations_general(const Factor& fi, const Factor& fj, const Factor& fk, const Factor& fl, TransInfo& info) {
+void K18A2::get_transformations_general(const Factor& fi, const Factor& fj, const Factor& fk, const Factor& fl, TransInfo& info) {
     info.count = 0;
     CycleUnion cu_src = find_cycles(fi.adj, fj.adj);
-    if (cu_src.count != 1 || cu_src.lens[0] != 16) return;
+    if (cu_src.count != 1 || cu_src.lens[0] != 18) return;
     CycleUnion cu_tgt = find_cycles(fk.adj, fl.adj);
-    if (cu_tgt.count != 1 || cu_tgt.lens[0] != 16) return;
+    if (cu_tgt.count != 1 || cu_tgt.lens[0] != 18) return;
 
     for (int dir = 0; dir < 2; dir++) {
-        for (int start_offset = (dir == 0 ? 0 : 1); start_offset < 16; start_offset += 2) {
+        for (int start_offset = (dir == 0 ? 0 : 1); start_offset < 18; start_offset += 2) {
             if (info.count >= 512) break;
             auto& p_total = info.perms[info.count++];
             memset(p_total.p, 0xFF, sizeof(p_total.p));
             memset(p_total.p_inv, 0xFF, sizeof(p_total.p_inv));
             
-            for (int i = 0; i < 16; i++) {
-                int src_pos = (dir == 0) ? (start_offset + i) % 16 : (start_offset - i + 16) % 16;
+            for (int i = 0; i < 18; i++) {
+                int src_pos = (dir == 0) ? (start_offset + i) % 18 : (start_offset - i + 18) % 18;
                 uint8_t src_v = (uint8_t)cu_src.cycles[0][src_pos];
                 uint8_t tgt_v = (uint8_t)cu_tgt.cycles[0][i];
                 p_total.p[src_v] = tgt_v;
                 p_total.p_inv[tgt_v] = src_v;
             }
-            p_total.pv = _mm256_loadu_si256((const __m256i*)p_total.p);
-            p_total.pinvv = _mm256_loadu_si256((const __m256i*)p_total.p_inv);
         }
     }
 }
 
-void K20A2::apply_perm_16(const uint8_t* src_adj, const Permutation& perm, uint8_t* dst_adj) {
-    __m128i v_src = _mm_loadu_si128((const __m128i*)src_adj);
-    __m128i v_p = _mm256_castsi256_si128(perm.pv);
-    __m128i v_pinv = _mm256_castsi256_si128(perm.pinvv);
-    
-    __m128i v_reordered = _mm_shuffle_epi8(v_src, v_pinv);
-    __m128i v_final = _mm_shuffle_epi8(v_p, v_reordered);
-    _mm_storeu_si128((__m128i*)dst_adj, v_final);
+void K18A2::apply_perm_18(const uint8_t* src_adj, const Permutation& perm, uint8_t* dst_adj) {
+    for (int i = 0; i < 18; i++) {
+        dst_adj[perm.p[i]] = perm.p[src_adj[i]];
+    }
 }
 
-K20A2::FastSortedFactor K20A2::get_fast_sorted(const uint8_t* adj) {
-    alignas(32) uint8_t indices[16] = {
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-    };
-    __m128i v_indices = _mm_loadu_si128((const __m128i*)indices);
-    __m128i v_adj = _mm_loadu_si128((const __m128i*)adj);
-    uint32_t mask = _mm_movemask_epi8(_mm_cmpgt_epi8(v_adj, v_indices)) & 0xFFFF;
-
+K18A2::FastSortedFactor K18A2::get_fast_sorted(const uint8_t* adj) {
     FastSortedFactor sf; memset(&sf, 0, sizeof(sf));
     uint8_t* out = sf.pairs;
-
-    auto process_chunk = [&](uint32_t m, const uint8_t* adj_ptr, int offset) {
-        __m128i v_adj_chunk = _mm_loadl_epi64((const __m128i*)adj_ptr);
-        __m128i v_table_adj = _mm_load_si128(&gfs_table_adj[m]);
-        __m128i v_table_idx = _mm_load_si128(&gfs_table_idx[m]);
-        __m128i p_adj = _mm_shuffle_epi8(v_adj_chunk, v_table_adj);
-        __m128i p_idx = _mm_add_epi8(v_table_idx, _mm_set1_epi8((char)offset));
-        __m128i pairs = _mm_unpacklo_epi8(p_idx, p_adj);
-        _mm_storeu_si128((__m128i*)out, pairs);
-        out += __popcnt(m) * 2;
-    };
-
-    process_chunk(mask & 0xFF, adj, 0);
-    process_chunk((mask >> 8) & 0xFF, adj + 8, 8);
-
+    int count = 0;
+    for (int u = 0; u < 18; u++) {
+        int v = adj[u];
+        if (u < v) {
+            out[count * 2] = (uint8_t)u;
+            out[count * 2 + 1] = (uint8_t)v;
+            count++;
+        }
+    }
     return sf;
 }
 
-K20A2::PackedAdj K20A2::pack_factor_adj(const uint8_t* adj) {
+K18A2::PackedAdj K18A2::pack_factor_adj(const uint8_t* adj) {
     PackedAdj pa;
-    memcpy(pa.adj, adj, 16);
-    pa.edge_mask = Mask256_C();
-    for (int u = 0; u < 16; u++) {
+    memcpy(pa.adj, adj, 18);
+    pa.edge_mask = Mask18_C();
+    for (int u = 0; u < 18; u++) {
         int v = adj[u];
         if (u < v) {
             int eid = edge_id_table[u][v];
             if (eid < 64) pa.edge_mask.m[0] |= (1ULL << eid);
             else if (eid < 128) pa.edge_mask.m[1] |= (1ULL << (eid - 64));
+            else if (eid < 192) pa.edge_mask.m[2] |= (1ULL << (eid - 128));
         }
     }
-    
-    uint8_t e2o[16];
-    uint8_t o2e[16];
-    int even_count = 0;
-    int odd_count = 0;
-    for (int u = 0; u < 16; u++) {
-        int v = adj[u];
-        if (u % 2 == 0) {
-            e2o[even_count++] = v;
-        } else {
-            o2e[odd_count++] = v;
-        }
-    }
-    pa.v_e2o = _mm_loadu_si128((const __m128i*)e2o);
-    pa.v_o2e = _mm_loadu_si128((const __m128i*)o2e);
     return pa;
 }
 
-bool K20A2::compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b) {
+bool K18A2::compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b) {
     for (int i = 0; i < 3; i++) {
         if (compare_fast_sorted(a.r[i], b.r[i])) return true;
         if (compare_fast_sorted(b.r[i], a.r[i])) return false;
@@ -313,11 +274,10 @@ bool K20A2::compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b) {
     return false;
 }
 
-// Helper to determine if a permutation of 16 elements has prime order target_p
-static bool has_prime_order_k20(const uint8_t* p, int target_p) {
-    bool visited[16] = { false };
+static bool has_prime_order_k18(const uint8_t* p, int target_p) {
+    bool visited[18] = { false };
     bool found_target_cycle = false;
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 18; i++) {
         if (visited[i]) continue;
         int len = 0;
         int curr = i;
@@ -334,56 +294,27 @@ static bool has_prime_order_k20(const uint8_t* p, int target_p) {
     return found_target_cycle;
 }
 
-void K20A2::solve(int mode) {
+void K18A2::solve(int mode) {
     int debug_print_limit = 1000;
     int Global_M_total = (int)global_pool.size();
     if (m_bPrint) {
-        printf("K20A2 solver starting (Simplified on-the-fly pair transition search)...\n");
+        printf("K18A2 solver starting (Simplified on-the-fly pair transition search)...\n");
         printf("Row slots size: ");
-        for (int s = 0; s < K20_SEARCH; s++) printf("%d:%zd ", s * 2 + 7, temp_slot_ids[s].size());
+        for (int s = 0; s < K18_SEARCH; s++) printf("%d:%zd ", s * 2 + 7, temp_slot_ids[s].size());
         printf("\n");
         printf("Total candidates: %d\n", Global_M_total);
     }
     std::vector<uint8_t> active(Global_M_total, 1);
     std::vector<uint32_t> f_rows_mask(Global_M_total, 0);
-    for (int s = 0; s < K20_SEARCH; s++) {
+    for (int s = 0; s < K18_SEARCH; s++) {
         for (int id : temp_slot_ids[s]) {
             f_rows_mask[id] |= (1 << s);
         }
     }
 
-    bool changed = true;
-    int iter = 0;
-    while (changed) {
-        changed = false;
-        for (int i = 0; i < Global_M_total; i++) {
-            if (!active[i]) continue;
-            if (i < 3) continue;
-            const PackedAdj& pi = packed_pool[i];
-            for (int r = 0; r < K20_SEARCH; r++) {
-                if (f_rows_mask[i] & (1 << r)) continue; 
-                bool row_found = false;
-                for (int id : temp_slot_ids[r]) {
-                    if (active[id] && is_perfect_packed(pi, packed_pool[id])) { 
-                        row_found = true; 
-                        break; 
-                    }
-                }
-                if (!row_found) {
-                    active[i] = 0;
-                    changed = true;
-                    break;
-                }
-            }
-        }
-        int rem = 0; for (int i = 0; i < Global_M_total; i++) if (active[i]) rem++;
-        iter++;
-        if (m_bPrint) { printf(" Remaining(%d):%d ", iter, rem); }
-        if (rem == 0) {
-            printf("\nAll candidates filtered by Arc consistency check\n");
-            return;
-        }
-    }
+    // Skip slow global Arc Consistency check for K18 due to large candidate pool size (820,000+ candidates)
+    int rem = Global_M_total;
+    if (m_bPrint) { printf(" Skipped Arc Consistency check (Active candidates: %d)\n", rem); }
     if (m_bPrint) {
         printf("\n");
         printf("DEBUG: Rebuilding active slots...\n");
@@ -391,8 +322,8 @@ void K20A2::solve(int mode) {
 
     // Rebuild active slots map for O(1) lookup
     std::vector<int> active_slots(Global_M_total, -1);
-    std::vector<std::vector<int>> new_slot_ids(K20_SEARCH);
-    for (int s = 0; s < K20_SEARCH; s++) {
+    std::vector<std::vector<int>> new_slot_ids(K18_SEARCH);
+    for (int s = 0; s < K18_SEARCH; s++) {
         for (int id : temp_slot_ids[s]) {
             if (active[id]) {
                 new_slot_ids[s].push_back(id);
@@ -401,10 +332,24 @@ void K20A2::solve(int mode) {
         }
     }
 
+    struct StarterTransition {
+        int type1; int val1; int type2; int val2;
+    };
+    std::vector<StarterTransition> transitions_to_run = {
+        {0, 0, 0, 1},
+#if 0 // set to 0 to temporary process only one transition
+        {0, 0, 0, 2},
+        {0, 1, 0, 0},
+        {0, 1, 0, 2},
+        {0, 2, 0, 0},
+        {0, 2, 0, 1}
+#endif
+    };
+
     std::mutex results_mutex;
-    std::vector<int> target_primes = {7, 5, 3, 2};
+    std::vector<int> target_primes = {17, 13, 11, 7, 5, 3, 2};
     int pairs_processed = 0;
-    uint64_t total_pairs_to_process = 6;
+    uint64_t total_pairs_to_process = transitions_to_run.size();
     auto start_time = std::chrono::steady_clock::now();
 
     auto run_search_for_pair = [&](int type1, int val1, int type2, int val2) {
@@ -418,14 +363,14 @@ void K20A2::solve(int mode) {
 
         auto process_permutation = [&](const Permutation& alpha) {
             for (int p : target_primes) {
-                if (!has_prime_order_k20(alpha.p, p)) continue;
+                if (!has_prime_order_k18(alpha.p, p)) continue;
 
                 // Build orbits under alpha for all factors
                 struct Orbit {
                     std::vector<int> fids;
                     std::vector<int> slots;
                     uint16_t slots_mask = 0;
-                    Mask256_C edge_mask;
+                    Mask18_C edge_mask;
                 };
 
                 std::vector<Orbit> fixed_orbits;
@@ -446,12 +391,12 @@ void K20A2::solve(int mode) {
                         orb.fids.push_back(curr_fid);
                         orb.slots.push_back(active_slots[curr_fid]);
 
-                        uint8_t tr_f[16];
-                        apply_perm_16(global_pool[curr_fid].adj, alpha, tr_f);
+                        uint8_t tr_f[18];
+                        apply_perm_18(global_pool[curr_fid].adj, alpha, tr_f);
 
-                        std::vector<uint8_t> key_f(tr_f, tr_f + 16);
-                        auto it_f = f_map.find(key_f);
-                        if (it_f == f_map.end()) {
+                        std::vector<uint8_t> key_f(tr_f, tr_f + 18);
+                        auto it_f = f_map_unordered.find(key_f);
+                        if (it_f == f_map_unordered.end()) {
                             orb_ok = false;
                             break;
                         }
@@ -507,16 +452,18 @@ void K20A2::solve(int mode) {
                         }
                         
                         // Check internal edge conflict
-                        orb.edge_mask = Mask256_C();
+                        orb.edge_mask = Mask18_C();
                         bool conflict = false;
                         for (int f_id : orb.fids) {
                             if ((orb.edge_mask.m[0] & packed_pool[f_id].edge_mask.m[0]) ||
-                                (orb.edge_mask.m[1] & packed_pool[f_id].edge_mask.m[1])) {
+                                (orb.edge_mask.m[1] & packed_pool[f_id].edge_mask.m[1]) ||
+                                (orb.edge_mask.m[2] & packed_pool[f_id].edge_mask.m[2])) {
                                 conflict = true;
                                 break;
                             }
                             orb.edge_mask.m[0] |= packed_pool[f_id].edge_mask.m[0];
                             orb.edge_mask.m[1] |= packed_pool[f_id].edge_mask.m[1];
+                            orb.edge_mask.m[2] |= packed_pool[f_id].edge_mask.m[2];
                         }
                         if (conflict) {
                             alpha_valid = false;
@@ -526,16 +473,18 @@ void K20A2::solve(int mode) {
                     } else {
                         if (orb_ok && (orb.fids.size() == 1 || orb.fids.size() == p) && cycle_ok && !slot_conflict) {
                             // Check internal edge conflict
-                            orb.edge_mask = Mask256_C();
+                            orb.edge_mask = Mask18_C();
                             bool conflict = false;
                             for (int f_id : orb.fids) {
                                 if ((orb.edge_mask.m[0] & packed_pool[f_id].edge_mask.m[0]) ||
-                                    (orb.edge_mask.m[1] & packed_pool[f_id].edge_mask.m[1])) {
+                                    (orb.edge_mask.m[1] & packed_pool[f_id].edge_mask.m[1]) ||
+                                    (orb.edge_mask.m[2] & packed_pool[f_id].edge_mask.m[2])) {
                                     conflict = true;
                                     break;
                                 }
                                 orb.edge_mask.m[0] |= packed_pool[f_id].edge_mask.m[0];
                                 orb.edge_mask.m[1] |= packed_pool[f_id].edge_mask.m[1];
+                                orb.edge_mask.m[2] |= packed_pool[f_id].edge_mask.m[2];
                             }
                             if (!conflict) {
                                 valid_orbits.push_back(orb);
@@ -550,19 +499,22 @@ void K20A2::solve(int mode) {
                 for (int f_id = 0; f_id < Global_M_total; f_id++) visited_factor[f_id] = 0;
 
                 // Check compatibility among fixed orbits and initialize search state
-                Mask256_C initial_edges;
+                Mask18_C initial_edges;
                 uint16_t initial_slots_mask = 0;
                 bool fixed_compatible = true;
 
                 std::vector<int> fixed_fids;
                 for (const auto& orb : fixed_orbits) {
                     // Check edge conflicts
-                    if ((initial_edges.m[0] & orb.edge_mask.m[0]) || (initial_edges.m[1] & orb.edge_mask.m[1])) {
+                    if ((initial_edges.m[0] & orb.edge_mask.m[0]) || 
+                        (initial_edges.m[1] & orb.edge_mask.m[1]) ||
+                        (initial_edges.m[2] & orb.edge_mask.m[2])) {
                         fixed_compatible = false;
                         break;
                     }
                     initial_edges.m[0] |= orb.edge_mask.m[0];
                     initial_edges.m[1] |= orb.edge_mask.m[1];
+                    initial_edges.m[2] |= orb.edge_mask.m[2];
 
                     // Check slot conflicts and set mask
                     if (initial_slots_mask & orb.slots_mask) {
@@ -598,7 +550,9 @@ void K20A2::solve(int mode) {
                 for (const auto& orb : valid_orbits) {
                     bool compatible = true;
                     // Check edge conflict with fixed orbits
-                    if ((initial_edges.m[0] & orb.edge_mask.m[0]) || (initial_edges.m[1] & orb.edge_mask.m[1])) {
+                    if ((initial_edges.m[0] & orb.edge_mask.m[0]) || 
+                        (initial_edges.m[1] & orb.edge_mask.m[1]) ||
+                        (initial_edges.m[2] & orb.edge_mask.m[2])) {
                         compatible = false;
                     } else {
                         // Check slot overlap with fixed orbits
@@ -640,7 +594,9 @@ void K20A2::solve(int mode) {
                             compatible = false;
                         } else {
                             // Check edge conflict
-                            if ((orb_i.edge_mask.m[0] & orb_j.edge_mask.m[0]) || (orb_i.edge_mask.m[1] & orb_j.edge_mask.m[1])) {
+                            if ((orb_i.edge_mask.m[0] & orb_j.edge_mask.m[0]) || 
+                                (orb_i.edge_mask.m[1] & orb_j.edge_mask.m[1]) ||
+                                (orb_i.edge_mask.m[2] & orb_j.edge_mask.m[2])) {
                                 compatible = false;
                             } else {
                                 // Check pairwise compatibility of factors
@@ -663,7 +619,7 @@ void K20A2::solve(int mode) {
                 }
 
                 // Pre-index the valid orbits by slot to enable exact cover backtracking search
-                std::vector<int> orbits_by_slot[K20_SEARCH];
+                std::vector<int> orbits_by_slot[K18_SEARCH];
                 for (int o_idx = 0; o_idx < num_orbits; o_idx++) {
                     for (int s : filtered_valid[o_idx].slots) {
                         if (s >= 0) {
@@ -673,9 +629,9 @@ void K20A2::solve(int mode) {
                 }
 
                 // Build slot orbits bitset and non-zero words list
-                std::vector<std::vector<uint64_t>> slot_orbits_bitset(K20_SEARCH, std::vector<uint64_t>(num_words, 0));
-                std::vector<std::vector<int>> non_zero_words_by_slot(K20_SEARCH);
-                for (int s = 0; s < K20_SEARCH; s++) {
+                std::vector<std::vector<uint64_t>> slot_orbits_bitset(K18_SEARCH, std::vector<uint64_t>(num_words, 0));
+                std::vector<std::vector<int>> non_zero_words_by_slot(K18_SEARCH);
+                for (int s = 0; s < K18_SEARCH; s++) {
                     for (int o_idx : orbits_by_slot[s]) {
                         slot_orbits_bitset[s][o_idx / 64] |= (1ULL << (o_idx % 64));
                     }
@@ -687,8 +643,8 @@ void K20A2::solve(int mode) {
                 }
 
                 // Sort slot indices by number of candidate orbits (static MRV)
-                std::vector<int> slot_order(K20_SEARCH);
-                for (int i = 0; i < K20_SEARCH; i++) slot_order[i] = i;
+                std::vector<int> slot_order(K18_SEARCH);
+                for (int i = 0; i < K18_SEARCH; i++) slot_order[i] = i;
                 std::sort(slot_order.begin(), slot_order.end(), [&](int a, int b) {
                     return orbits_by_slot[a].size() < orbits_by_slot[b].size();
                 });
@@ -697,18 +653,21 @@ void K20A2::solve(int mode) {
                     debug_print_limit -= 3;
                     printf("  DEBUG [pair %d/%d, p=%d]: fixed=%zd, valid=%zd, filtered=%zd\n", val1, val2, p, fixed_orbits.size(), valid_orbits.size(), filtered_valid.size());
                     printf("  DEBUG [pair %d/%d, p=%d]: slot sizes: ", val1, val2, p);
-                    for (int i = 0; i < K20_SEARCH; i++) printf("%d:%zd ", i, orbits_by_slot[i].size());
+                    for (int i = 0; i < K18_SEARCH; i++) printf("%d:%zd ", i, orbits_by_slot[i].size());
                     printf("\n  DEBUG [pair %d/%d, p=%d]: slot_order: ", val1, val2, p);
-                    for (int i = 0; i < K20_SEARCH; i++) printf("%d ", slot_order[i]);
+                    for (int i = 0; i < K18_SEARCH; i++) printf("%d ", slot_order[i]);
                     printf("\n");
                 }
 
                 // Search state
-                std::vector<std::vector<uint64_t>> allowed_at_depth(K20_SEARCH + 1, std::vector<uint64_t>(num_words, ~0ULL));
+                std::vector<std::vector<uint64_t>> allowed_at_depth(K18_SEARCH + 1, std::vector<uint64_t>(num_words, ~0ULL));
+
+                int total_branches_at_depth[K18_SEARCH + 1] = { 0 };
+                int branch_idx_at_depth[K18_SEARCH + 1] = { 0 };
 
                 // Clique of orbits search
                 std::vector<int> chosen_orbits;
-                auto find_clique = [&](auto& self, uint16_t slots_mask, Mask256_C edges_mask) -> void {
+                auto find_clique = [&](auto& self, uint16_t slots_mask, Mask18_C edges_mask) -> void {
                     uint64_t calls = ++total_clique_calls;
                     int d = (int)chosen_orbits.size();
 
@@ -724,13 +683,30 @@ void K20A2::solve(int mode) {
                             last_print_time = current_time;
                             auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
                             double elapsed_min = (double)elapsed_ms / 60000.0;
-                            double pct = (double)pairs_processed * 100.0 / total_pairs_to_process;
-                            double est_rem_min = (pairs_processed > 0) ? (elapsed_min * (total_pairs_to_process - pairs_processed) / pairs_processed) : 0.0;
-                            printf("Progress: %.1f%% executed. p=%d, calls=%llu. Elapsed: %.1f min. Est. remaining: %.1f min\n",
-                                pct, p, calls, elapsed_min, est_rem_min);
+                            double current_pair_progress = 0.0;
+                            double weight = 1.0;
+                            char path_str[256] = "";
+                            int pos = 0;
+                            for (int dep = 0; dep < d; dep++) {
+                                if (total_branches_at_depth[dep] > 0) {
+                                    current_pair_progress += weight * branch_idx_at_depth[dep] / total_branches_at_depth[dep];
+                                    weight /= total_branches_at_depth[dep];
+                                    if (dep < 8) {
+                                        pos += sprintf_s(path_str + pos, 256 - pos, "%d/%d > ", 
+                                            branch_idx_at_depth[dep], total_branches_at_depth[dep]);
+                                    }
+                                }
+                            }
+                            if (pos >= 3) {
+                                path_str[pos - 3] = '\0'; // Remove trailing " > "
+                            }
+                            double pct = (pairs_processed + current_pair_progress) * 100.0 / total_pairs_to_process;
+                            double est_rem_min = (pct > 0.0) ? (elapsed_min * (100.0 - pct) / pct) : 0.0;
+                            printf("Progress: %.4f%% executed. Path: %s. p=%d, calls=%llu. Elapsed: %.4f min. Est. remaining: %.4f min\n",
+                                pct, path_str, p, calls, elapsed_min, est_rem_min);
                         }
                     }
-                    if (slots_mask == 0x0FFF) {
+                    if (slots_mask == 0x3FFF) {
                         std::vector<int> solution_fids;
                         for (int fid : fixed_fids) {
                             solution_fids.push_back(fid);
@@ -755,13 +731,13 @@ void K20A2::solve(int mode) {
                         }
                         if (!sol_perfect) return;
 
-                        unsigned char results[K20_MATCH * K20_N];
+                        unsigned char results[K18_MATCH * K18_N];
                         std::vector<Factor> sol_factors;
                         for (int fid : solution_fids) {
                             sol_factors.push_back(global_pool[fid]);
                         }
                         std::sort(sol_factors.begin(), sol_factors.end(), [](const Factor& a, const Factor& b) { return a.src[1] < b.src[1]; });
-                        for (int i = 0; i < K20_MATCH; i++) memcpy(results + i * K20_N, sol_factors[i].src, K20_N);
+                        for (int i = 0; i < K18_MATCH; i++) memcpy(results + i * K18_N, sol_factors[i].src, K18_N);
 
                         std::lock_guard<std::mutex> lock(results_mutex);
                         resultCallback(cbClass, results, val1, val2, 2);
@@ -769,7 +745,7 @@ void K20A2::solve(int mode) {
                     }
 
                     // Look-ahead: check if any uncovered slot has 0 compatible candidate orbits (break early)
-                    for (int i = 0; i < K20_SEARCH; i++) {
+                    for (int i = 0; i < K18_SEARCH; i++) {
                         int slot = slot_order[i];
                         if (slots_mask & (1 << slot)) continue;
                         
@@ -779,18 +755,18 @@ void K20A2::solve(int mode) {
                             total_lookahead_orbits++;
                             if (allowed_at_depth[d][w] & slot_orbits_bitset[slot][w]) {
                                 has_compatible = true;
-                                break; // Found one, this slot is fine!
+                                break; 
                             }
                         }
                         if (!has_compatible) {
                             total_lookahead_failures++;
-                            return; // Slot has 0 compatible candidates, backtrack immediately!
+                            return; 
                         }
                     }
 
                     // Find the first uncovered slot in slot_order (static MRV)
                     int s = -1;
-                    for (int i = 0; i < K20_SEARCH; i++) {
+                    for (int i = 0; i < K18_SEARCH; i++) {
                         int slot = slot_order[i];
                         if (!(slots_mask & (1 << slot))) {
                             s = slot;
@@ -798,6 +774,14 @@ void K20A2::solve(int mode) {
                         }
                     }
                     if (s == -1) return;
+
+                    int total_b = 0;
+                    for (int w : non_zero_words_by_slot[s]) {
+                        uint64_t mask = allowed_at_depth[d][w] & slot_orbits_bitset[s][w];
+                        total_b += (int)__popcnt64(mask);
+                    }
+                    total_branches_at_depth[d] = total_b;
+                    branch_idx_at_depth[d] = 0;
 
                     if (m_bPrint && debug_print_limit > 0) {
                         int compatible_count = 0;
@@ -810,7 +794,6 @@ void K20A2::solve(int mode) {
                         printf("  CLIQUE_DEBUG [pair %d/%d, p=%d]: Selected slot s=%d (static candidates=%zd). %d compatible candidate orbits remaining\n",
                             val1, val2, p, s, orbits_by_slot[s].size(), compatible_count);
                         
-                        // Print info about the first 3 candidate orbits for slot s
                         int print_cnt = 0;
                         for (int o_idx : orbits_by_slot[s]) {
                             if (print_cnt >= 3) break;
@@ -824,6 +807,7 @@ void K20A2::solve(int mode) {
                     }
 
                     // Branch on all candidate orbits covering slot s
+                    int branch_idx = 0;
                     for (int w : non_zero_words_by_slot[s]) {
                         uint64_t mask = allowed_at_depth[d][w] & slot_orbits_bitset[s][w];
                         while (mask > 0) {
@@ -832,19 +816,23 @@ void K20A2::solve(int mode) {
                             int o_idx = w * 64 + bit_pos;
                             const Orbit& orb = filtered_valid[o_idx];
 
+                            branch_idx_at_depth[d] = branch_idx;
+                            branch_idx++;
+
                             // Setup allowed orbits for the next depth
                             for (int wd = 0; wd < num_words; wd++) {
                                 allowed_at_depth[d + 1][wd] = allowed_at_depth[d][wd] & local_compat[(size_t)o_idx * num_words + wd];
                             }
 
                             chosen_orbits.push_back(o_idx);
-                            Mask256_C new_edges;
+                            Mask18_C new_edges;
                             new_edges.m[0] = edges_mask.m[0] | orb.edge_mask.m[0];
                             new_edges.m[1] = edges_mask.m[1] | orb.edge_mask.m[1];
+                            new_edges.m[2] = edges_mask.m[2] | orb.edge_mask.m[2];
                             self(self, slots_mask | orb.slots_mask, new_edges);
                             chosen_orbits.pop_back();
 
-                            mask &= mask - 1; // Clear lowest set bit
+                            mask &= mask - 1; 
                         }
                     }
                 };
@@ -871,11 +859,11 @@ void K20A2::solve(int mode) {
             char t1_str[64] = "";
             char t2_str[64] = "";
             int p1 = 0, p2 = 0;
-            for (int i = 0; i < 16; i += 2) {
+            for (int i = 0; i < 18; i += 2) {
                 p1 += sprintf_s(t1_str + p1, 64 - p1, "%d-%d ", T1.src[i], T1.src[i + 1]);
                 p2 += sprintf_s(t2_str + p2, 64 - p2, "%d-%d ", T2.src[i], T2.src[i + 1]);
             }
-            printf("Processed pair transition %d/%lld (%.1f%% executed). Current T1: %s | T2: %s. Elapsed: %.1f min. Est. remaining: %.1f min\n",
+            printf("Processed pair transition %d/%lld (%.4f%% executed). Current T1: %s | T2: %s. Elapsed: %.4f min. Est. remaining: %.4f min\n",
                 processed, total_pairs_to_process, pct, t1_str, t2_str, elapsed_min, est_rem_min);
             printf("  STATS [pair %d/%d]: clique_calls=%llu, lookahead_slots=%llu, lookahead_orbits=%llu, lookahead_failures=%llu\n",
                 val1, val2, total_clique_calls, total_lookahead_slots, total_lookahead_orbits, total_lookahead_failures);
@@ -883,13 +871,10 @@ void K20A2::solve(int mode) {
     };
 
     if (m_bPrint)
-        printf("DEBUG: Starting simplified transition search (6 starter transitions)...\n");
+        printf("DEBUG: Starting simplified transition search (%lld active starter transitions)...\n", total_pairs_to_process);
 
-    // Process starter row target pairs only (6 transitions)
-    run_search_for_pair(0, 0, 0, 1); // (R1, R2) -> (R1, R2)
-    run_search_for_pair(0, 0, 0, 2); // (R1, R2) -> (R1, R3)
-    run_search_for_pair(0, 1, 0, 0); // (R1, R2) -> (R2, R1)
-    run_search_for_pair(0, 1, 0, 2); // (R1, R2) -> (R2, R3)
-    run_search_for_pair(0, 2, 0, 0); // (R1, R2) -> (R3, R1)
-    run_search_for_pair(0, 2, 0, 1); // (R1, R2) -> (R3, R2)
+    // Process starter row target pairs only
+    for (const auto& tr : transitions_to_run) {
+        run_search_for_pair(tr.type1, tr.val1, tr.type2, tr.val2);
+    }
 }

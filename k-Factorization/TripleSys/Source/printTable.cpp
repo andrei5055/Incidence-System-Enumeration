@@ -159,7 +159,7 @@ void printTableColor(char const* name, ctchar* c, int nl, int nc, int np, int ns
 					else
 						printfGreen("%3d", v);
 			}
-			else if (v < 67)
+			else if (v < 67 || (np > 1 && np < 7))
 			{
 				if (g_useColors) printf("\x1b[38;5;%dm%2d", 28 + ((np > 1 && np < 7) ? __colors[v % np] : v) * 3, v);
 				else printf("%2d", v);

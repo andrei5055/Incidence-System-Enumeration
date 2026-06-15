@@ -241,7 +241,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	if (canonize) {
 		const auto v = groupDegree();
 		int i = 0;
-		// Copy elements above the main diagonal into the array.		
+		// Copy elements above the main diagonal into the array.
 		auto pFrom = pResGraph = canonize_graph(NULL, &i);
 		auto pTo = pUpperDiag = graphPntr(1 - i);
 		for (int j = v, i = 0; --j; pTo += j, pFrom += v)

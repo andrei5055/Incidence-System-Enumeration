@@ -13,8 +13,7 @@ for /r %%f in (*.bat) do (
 )
 
 REM Build list of files for tar
-set TARFILES=./*.md
-set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals
+set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals ./*.md
 set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.* ./EngineGPU/EngineGPU.* ./EngineGPU/*.cu
 set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
 set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
@@ -22,8 +21,11 @@ set TARFILES=%TARFILES% ./OldTests/ExpectedResults ./OldTests/*.ba ./OldTests/*.
 set TARFILES=%TARFILES% ./NewTests/*.ba ./NewTests/*.txt
 set TARFILES=%TARFILES% ./CI/*.ba ./CI/*.txt
 
+SET "clean_time=%TIME: =0%"
+SET "hhmmss=%clean_time:~0,2%%clean_time:~3,2%%clean_time:~6,2%"
+
 REM Create archive, ignore missing files
-tar -c -J -f "%ARX%_%TODAY%.tar" %TARFILES%
+tar -c -J -f "%ARX%_%TODAY%_%hhmmss%.tar" %TARFILES%
 
 REM Cleanup: delete all *.ba files
 del /s /q /f *.ba >nul 2>&1

@@ -53,7 +53,7 @@ CC alldata::alldata(const SizeParam& p, const kSysParam* pSysParam, int createSe
 	m_tx = new tchar[m_numPlayers * (m_numPlayers - 2) / 2];
 	const auto np2 = m_numPlayers * m_numPlayers;
 	m_Km = new tchar[np2];		// m_Km can be used for sort and needs m_numPlayers rows
-	m_Ktmp = new tchar[np2];	// m_Ktmp can be used for sort and needs m_numPlayers rows
+	m_Ktmp = new tchar[np2 * 2];	// m_Ktmp can be used for sort and needs m_numPlayers rows, for canonize we need double size
 	m_Km2ndRowInd = new tchar[m_numPlayers];
 	memset(m_Km2ndRowInd, 0, m_numPlayers);
 	m_trmk = new tchar[m_numPlayers + 32];

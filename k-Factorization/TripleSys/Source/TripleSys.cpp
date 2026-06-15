@@ -228,15 +228,33 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	CUDA_PRINTF("*** mStart0 = %p\n", mStart0);
 #if !USE_CUDA
 	if (param(t_generateMatrixExample)) {
-		iDay = m_numDaysResult;
-		nrowsStart = m_numDaysResult;
-		if (!generateMatrixExample())
-			goto noResult;
-		if (m_createSecondRow) {
-			memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
-			m_finalKMindex = 1;
-			nLoops = 1;
-			goto noResult;
+		if (m_numPlayers >= 4 && param(t_CBMP_Graph) < 2 && m_groupSize == 2 && !m_createSecondRow) {
+			iDay = m_numDaysResult;
+			for (int i = 0; i < m_numPlayers; i++)
+				result(0)[i] = i;
+			if (m_pSecondRowsDB && m_pSecondRowsDB->numObjects() > 0) {
+				memcpy(result(1), m_pSecondRowsDB->getObject(0), m_numPlayers);
+			}
+			else {
+				memset(result(1), 0, m_numPlayers);
+			}
+			generateKn(result(0), m_numPlayers, m_numDaysResult);
+			//printTable("input matrix", result(0), m_numDaysResult, m_numPlayers, m_groupSize);
+			if (!canonizeMatrix(iDay)) {
+				printfYellow("*** Can't canonize generated matrix\n");
+			}
+		}
+		else if (param(t_CBMP_Graph) > 1) {
+			iDay = m_numDaysResult;
+			nrowsStart = m_numDaysResult;
+			if (!generateMatrixExample())
+				goto noResult;
+			if (m_createSecondRow) {
+				memcpy(m_pSecondRowsDB->getNextObject(), result(1), m_numPlayers);
+				m_finalKMindex = 1;
+				nLoops = 1;
+				goto noResult;
+			}
 		}
 	}
 	else if (sysParam()->strVal[t_InputDataFileName]->length() && !m_createSecondRow) {
@@ -306,7 +324,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	bPrevResult = false;
 	
 	if (iDay > 0 && param(t_useKSolve)) {
-		if (m_groupSize == 2 && m_numDays == m_numDaysResult && m_nPrecalcRows == 3 && 
+		if (m_groupSize == 2 && m_numDays == m_numDaysResult && m_nPrecalcRows == 3 &&
 			param(t_allowUndefinedCycles) == 0 && param(t_any2RowsConvertToFirst2) == 1 && param(t_CBMP_Graph) <= 2 &&
 			param(t_MultiThreading) == 1 && iDay == 3 && m_precalcMode == eCalculateRows) {
 			if (m_pKSolver) {
@@ -334,8 +352,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
 					sysParam()->u1fCycles[0][1] == 18)
 				{
-					const FactorParams factParam = { K18_N, K18_MATCH, K18_FIXED, K18_M_MAX };
+					const FactorParams factParam = { K18_N, K18_MATCH, K18_FIXED, K18_M_MAX, m_numDaysResult };
 					m_pKSolver = new K18A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+
+					m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
+
+					m_pKSolver->solve(1);
+
+					goto noResult;
 				}
 			}
 			else if (param(t_useKSolve) & 1) {
@@ -492,7 +516,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				tchar* l = links(0);
 				for (int i = 0;i < m_numPlayers * m_numPlayers; i++) {
 					if (l[i] == iDay) {
-						printfRed("Bad link(%d) at %dx%d\n", l[i], i / m_numPlayers, i % m_numPlayers);
+						printfRed("Bad link(%d) at %d,%d\n", l[i], i / m_numPlayers, i % m_numPlayers);
 						//exit(1);
 					}
 				}
@@ -556,7 +580,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 #if 1
 			switch (checkCurrentResult(m_printMatrices, pIS_Canonizer)) {
 			case -1:
-				if (param(t_generateMatrixExample)) {
+				if (!m_createSecondRow && param(t_generateMatrixExample)) {
 					printfYellow("\n*** GenerateMatrixExample=%d: generated matrix below processed but it is not canonical", param(t_generateMatrixExample));
 					break;
 				}
@@ -633,7 +657,8 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 				setConsoleOutputMode();
 				//report result
 #if !DEBUG_NextPermut
-				printf("\n%d(%zd): %s-Matrix, build time=%d, time since start=%d\n", threadNumber, nLoops, m_fHdr, m_cTime - mTime, m_cTime - m_iTime);
+				printf("\n%d(%zd): %s-Matrix (%d,%d), build time=%d, time since start=%d\n", 
+					threadNumber, nLoops, m_fHdr, m_numPlayers, numDaysResult(), m_cTime - mTime, m_cTime - m_iTime);
 #else
 				extern int matr_cntr;
 				printf("\n%5zd: %s-Matrix, matr_cntr = %d\n", nLoops, m_fHdr, matr_cntr);

@@ -178,7 +178,8 @@ CC int alldata::getCyclesAndPathFromNeighbors(TrCycles* trc, ctchar* tt1, ctchar
 			{
 				if (k == unset || k1 == unset)
 					break;
-				ASSERT_IF(ip >= nc*2);
+				if (ip >= nc*2)
+					break;
 				trc->fullPath[ip] = k;
 				if (m_groupSize == 3)
 					trc->fullPath[++ip] = tt3[k];

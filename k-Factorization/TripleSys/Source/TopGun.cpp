@@ -215,6 +215,7 @@ int TopGun::Run()
 						nThreadsRunning++;
 						if (m_cnt[iTask * 2] >= 0)
 						{
+							//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
 							// thread finished - join defensively and reset thread state
 							nMatricesProc++;
 							stopThread(t, iTask);

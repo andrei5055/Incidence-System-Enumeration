@@ -1,0 +1,29 @@
+PrintMatrices=1
+UseKSolve=2;           // Use the generic solver
+GroupSize=2
+KeepPrevResult=0
+ExploreMatrices=0
+AutSaveTestedTrs=1
+NThreads=1; KThreads=12; UseMultiThreading=0
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+Out_CSV_File=0
+CSV_FileName=../../SRG.csv
+ResultFolder="../Logs_CK/"
+OutAutomorphismGroup=0
+/*
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=0; NRowsInStartMatrix=0
+nPlayers=14; CBMP_Graph=2;
+U1FCycles={{4,4,6}}
+NRowsInResultMatrix=3; ExpectedResult=2;
+Run_JOB
+*/
+NThreads=1; KThreads=12; UseMultiThreading=1
+StartFolder="./ExpectedResults/"
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=100; UseRowsPrecalculation=3; NRowsInStartMatrix=3
+nPlayers=14; CBMP_Graph=2;
+U1FCycles={{4,4,6}}
+NRowsInResultMatrix=0; ExpectedResult=1;
+RunEND_JOB
+
+

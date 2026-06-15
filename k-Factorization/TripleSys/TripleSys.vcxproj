@@ -102,7 +102,6 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug with GPU|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -122,7 +121,6 @@
     <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release with GPU|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -478,6 +476,7 @@
     <ClCompile Include="Source\k16p1f.cpp" />
     <ClCompile Include="Source\k16A2.cpp" />
     <ClCompile Include="Source\k18a2.cpp" />
+    <ClCompile Include="Source\k18a2support.cpp" />
     <ClCompile Include="Source\kBase.cpp" />
     <ClCompile Include="Source\kmSupport.cpp" />
     <ClCompile Include="Source\KSolveGen.cpp" />

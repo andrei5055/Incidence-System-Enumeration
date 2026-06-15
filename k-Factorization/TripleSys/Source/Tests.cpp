@@ -216,19 +216,24 @@ bool alldata::canonizeMatrix(int nRows)
 	auto precalcMode = m_precalcMode;
 	m_precalcMode = eCalcResult;
 	tchar tm[MAX_PLAYER_NUMBER];
-	memset(tm, 0, sizeof(tm));
-	memcpy(m_Km, result(), nRows * m_numPlayers);
+	auto* pResPhase1 = m_Ktmp + m_numPlayers * m_numPlayers;
+	auto* pRes1 = m_Km;
+	char stat[1024];
+	const auto pProcessMatrix = m_pProcessMatrix;
+	m_pProcessMatrix = &alldata::kmProcessMatrix;
+	int iteration = 0;
+	memcpy(pRes1, result(), nRows * m_numPlayers);
 	(this->*m_pSortGroups)(m_Km, nRows);
 	auto* coi = m_Ktmp;
 	auto* cii = m_Km;
 	for (int i = 0; i < nRows; i++, coi += m_numPlayers, cii += m_numPlayers)
 		kmSortGroupsByFirstValue(cii, coi);
 	// Result of the loop above is in m_Ktmp, sort and send it to m_Km.
+	memset(tm, 0, sizeof(tm));
 	kmSortRowsBy2ndValue(nRows, tm);
 	memcpy(result(), m_Km, nRows * m_numPlayers);
 	// sort matrix 
 	kmProcessMatrix(result(), NULL, nRows);
-	auto* pRes1 = m_Km;
 	int iret = memcmp(pRes1, result(), nRows * m_numPlayers);
 	if (iret)
 	{
@@ -238,16 +243,13 @@ bool alldata::canonizeMatrix(int nRows)
 		if (m_printMatrices & 64)
 			printTable("Sorted", result(), nRows, m_numPlayers, m_groupSize);
 	}
-	char stat[1024];
-	const auto pProcessMatrix = m_pProcessMatrix;
-	m_pProcessMatrix = &alldata::kmProcessMatrix;
-	int order = 0;
 	bool bRet = false;
-	m_lastRowWithTestedTrs = 0;
-	int i = 0;
 	while (1)
 	{
-		i++;
+		iteration++;
+		if (m_printMatrices & 64) {
+			printf("Canonize: iteration %d\n", iteration);
+		}
 
 		m_lastRowWithTestedTrs = 0;
 
@@ -259,9 +261,10 @@ bool alldata::canonizeMatrix(int nRows)
 
 			if (m_printMatrices & 64)
 				printTable("Input matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+			exit(0);
 			return false;
 		}
-
+		m_lastRowWithTestedTrs = 0;
 		int errLine = 0, errGroup = 0, dubLine = 0;
 		if (!CheckMatrix(result(), nRows, m_numPlayers, m_groupSize, true, &errLine, &errGroup, &dubLine))
 		{
@@ -270,21 +273,15 @@ bool alldata::canonizeMatrix(int nRows)
 			printfYellow("Duplicate pair in group=%d row=%d (already present in row=%d)\n", errGroup, errLine, dubLine);
 			return false;
 		}
+
+		if (iteration == 1) {
+			if (m_printMatrices & 64)
+				printTable("Initial matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+		}
 		m_lastRowWithTestedTrs = 0;
 		bRet = cnvCheckNew(0, nRows);
 		if (bRet)
 			break;
-
-		if (i == 1) {
-			if (m_printMatrices & 64)
-				printTable("Initial matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
-		}
-		else {
-			if (m_printMatrices & 64) {
-				printf("Result of canonization (iteration %d):\n", i);
-				printTable("", result(), nRows, m_numPlayers, m_groupSize, 0, true);
-			}
-		}
 		iret = memcmp(pRes1, result(), nRows * m_numPlayers);
 		if (iret >= 0)
 		{
@@ -293,19 +290,31 @@ bool alldata::canonizeMatrix(int nRows)
 		}
 		memcpy(result(0), pRes1, m_nLenResults);
 	}
-
 	memcpy(m_pResultsPrev, result(), nRows * m_numPlayers);
 	memcpy(m_pResultsPrev2, result(), nRows * m_numPlayers);
+
+	m_lastRowWithTestedTrs = 0;
+
+	for (int j = 0; j < nRows; j++) {
+		setArraysForLastRow(nRows);
+		u1fSetTableRow(neighbors(j), result(j));
+	}
+	if (!linksFromMatrix(links(), result(), nRows, false)) {
+
+		if (m_printMatrices & 64)
+			printTable("canonized matrix", result(), nRows, m_numPlayers, m_groupSize, 0, true);
+		return false;
+	}
 
 	bool needOutput = false;
 	getAllCycles(neighbors(), nRows);
 	matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll);
 	if (m_printMatrices & 64) {
 		printf("%d rows: AUT=%d, %s\n", nRows, orderOfGroup(), stat);
-		if (i == 1)
+		if (iteration == 2)
 			printTable("Input matrix (canonical)", result(), nRows, m_numPlayers, m_groupSize, 0, true);
 		else {
-			printf("Input matrix (after %d canonization iterations):\n", i);
+			printf("Input matrix (after %d canonization iterations):\n", iteration);
 			printTable("", result(), nRows, m_numPlayers, m_groupSize, 0, true);
 		}
 	}
@@ -389,4 +398,225 @@ bool alldata::generateMatrixExample() {
 	}
 	return true;
 }
+#include <iostream>
+#include <vector>
+#include <iomanip>
+#include <iostream>
+#include <vector>
+#include <iomanip>
+
+static unsigned char getPartner(const unsigned char* result, int row, unsigned char x, int n) {
+	const unsigned char* r = result + row * n;
+	for (int i = 0; i < n; ++i) {
+		if (r[i] == x) {
+			if (i % 2 == 0) return r[i + 1];
+			else return r[i - 1];
+		}
+	}
+	return 255;
+}
+
+#include <algorithm>
+
+struct KnSolver {
+	int n;
+	int nr;
+	unsigned char* result;
+	std::vector<std::vector<bool>> used_edge;
+	std::vector<bool> used_vertex;
+
+	KnSolver(int n, int nr, unsigned char* res) : n(n), nr(nr), result(res) {
+		used_edge.assign(n, std::vector<bool>(n, false));
+		used_vertex.assign(n, false);
+
+		// Mark edges from the first two rows as used
+		for (int r = 0; r < 2; ++r) {
+			for (int i = 0; i < n; i += 2) {
+				int u = res[r * n + i];
+				int v = res[r * n + i + 1];
+				used_edge[u][v] = true;
+				used_edge[v][u] = true;
+			}
+		}
+	}
+
+	bool solve(int r, int pair_idx) {
+		if (r == nr) {
+			return true;
+		}
+
+		if (pair_idx == n / 2) {
+			std::fill(used_vertex.begin(), used_vertex.end(), false);
+			return solve(r + 1, 0);
+		}
+
+		int best_u = -1;
+		int min_choices = n + 1;
+
+		for (int u = 0; u < n; ++u) {
+			if (used_vertex[u]) continue;
+
+			int choices = 0;
+			for (int v = 0; v < n; ++v) {
+				if (u != v && !used_vertex[v] && !used_edge[u][v]) {
+					choices++;
+				}
+			}
+
+			if (choices < min_choices) {
+				min_choices = choices;
+				best_u = u;
+			}
+		}
+
+		if (best_u == -1 || min_choices == 0) {
+			return false;
+		}
+
+		int u = best_u;
+		used_vertex[u] = true;
+
+		for (int v = 0; v < n; ++v) {
+			if (u != v && !used_vertex[v] && !used_edge[u][v]) {
+				used_vertex[v] = true;
+				used_edge[u][v] = true;
+				used_edge[v][u] = true;
+
+				result[r * n + 2 * pair_idx] = u;
+				result[r * n + 2 * pair_idx + 1] = v;
+
+				if (solve(r, pair_idx + 1)) {
+					return true;
+				}
+
+				used_edge[u][v] = false;
+				used_edge[v][u] = false;
+				used_vertex[v] = false;
+			}
+		}
+
+		used_vertex[u] = false;
+		return false;
+	}
+};
+
+int generateKn(unsigned char* result, int n, int nRows) {
+	const int nr = nRows;
+	const int nv = n;
+	printf("generateKn matrix started (%d,%d,2)\n", nv, nr);
+
+	// Check if the input first two rows are valid and form a single cycle of length n
+	bool is_valid_cycle = true;
+	std::vector<unsigned char> w(nv, 0);
+	std::vector<bool> visited(nv, false);
+	
+	if (result[0] >= nv) {
+		is_valid_cycle = false;
+	} else {
+		w[0] = result[0];
+		visited[w[0]] = true;
+
+		for (int i = 0; i < nv - 1; ++i) {
+			unsigned char partner = getPartner(result, i % 2, w[i], nv);
+			if (partner >= nv || visited[partner]) {
+				is_valid_cycle = false;
+				break;
+			}
+			w[i + 1] = partner;
+			visited[partner] = true;
+		}
+
+		// Double check that the cycle closes back to w[0] via M_1
+		if (is_valid_cycle) {
+			unsigned char final_partner = getPartner(result, 1, w[nv - 1], nv);
+			if (final_partner != w[0]) {
+				is_valid_cycle = false;
+			}
+		}
+	}
+
+	if (is_valid_cycle) {
+		std::vector<unsigned char> S(nv);
+		S[0] = nv - 1;
+		for (int i = 1; i < nv; ++i) {
+			if (i % 2 == 0) {
+				S[i] = i;
+			} else {
+				S[i] = (nv - i) % (nv - 1);
+			}
+		}
+
+		std::vector<unsigned char> gk_to_input(nv);
+		for (int i = 0; i < nv; ++i) {
+			gk_to_input[S[i]] = w[i];
+		}
+
+		// Generate rows 2 to nRows - 1 (0-indexed) using the mapping
+		for (int m = 2; m < nr; ++m) {
+			int buffer_index = m * nv;
+
+			// 1. The Infinity Edge: Vertex 'm' pairs with Vertex n-1
+			result[buffer_index++] = gk_to_input[m];
+			result[buffer_index++] = gk_to_input[nv - 1];
+
+			std::vector<bool> used(nr, false);
+			used[m] = true;
+
+			// 2. The Finite Cyclic Edges (remaining edges)
+			for (int u = 0; u < nr; ++u) {
+				if (used[u]) continue;
+
+				int v = (2 * m - u + nr) % nr;
+
+				if (u < v) {
+					result[buffer_index++] = gk_to_input[u];
+					result[buffer_index++] = gk_to_input[v];
+
+					used[u] = true;
+					used[v] = true;
+				}
+			}
+		}
+	} else {
+		printf("Input first two rows do not form a single cycle. Running backtracking solver...\n");
+		KnSolver solver(nv, nr, result);
+		if (!solver.solve(2, 0)) {
+			printfYellow("Warning: Could not complete 1-factorization for the given first two rows. Falling back to default GK-construction.\n");
+			int buffer_index = 0;
+			for (int m = 0; m < nr; ++m) {
+				unsigned char u_inf = static_cast<unsigned char>(m);
+				unsigned char v_inf = nv - 1;
+				result[buffer_index++] = u_inf;
+				result[buffer_index++] = v_inf;
+
+				std::vector<bool> used(nr, false);
+				used[m] = true;
+
+				for (int u = 0; u < nr; ++u) {
+					if (used[u]) continue;
+					int v = (2 * m - u + nr) % nr;
+					if (u < v) {
+						result[buffer_index++] = static_cast<unsigned char>(u);
+						result[buffer_index++] = static_cast<unsigned char>(v);
+						used[u] = true;
+						used[v] = true;
+					}
+				}
+			}
+		}
+	}
+
+	// Print all matchings (Rows) to console as before
+#if 0
+	for (int m = 0; m < nr; ++m) {
+		std::cout << "Matching " << std::setw(2) << m << " (" << (nv / 2) << " Edges): ";
+		for (int i = 0; i < (nv / 2); ++i) {
+			std::cout << "(" << (int)result[m * nv + 2 * i] << "," << (int)result[m * nv + 2 * i + 1] << ") ";
+		}
+		std::cout << "\n";
+	}
+#endif
+	return 0;
+}
+
 #endif

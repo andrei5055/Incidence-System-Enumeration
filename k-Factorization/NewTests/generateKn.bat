@@ -16,7 +16,7 @@ SET "ROOT=..\x64\Release"
 copy "%ROOT%\k-Sys.exe" . >nul
 copy "%ROOT%\*.dll" . >nul
 
-k-Sys.exe param20a2.txt
+k-Sys.exe generateKn.txt
 
     if %nopause% == 0 pause
     exit /b %ERRORLEVEL%

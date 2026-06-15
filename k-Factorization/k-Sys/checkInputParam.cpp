@@ -107,8 +107,8 @@ bool checkInputParam(const kSysParam &param, const char** paramNames) {
 			return false;
 		}
 
-		if (!bCBMPgraph) {
-			printfRed("*** Program can generate (GenerateMatrixExample=%d) only n-partite graph, but CBMP_Graph=%d, Exit\n",
+		if (!bCBMPgraph && groupSize != 2) {
+			printfRed("*** Program can generate matrix (GenerateMatrixExample=%d) only for group size=2 (if CBMP_Graph=%d), Exit\n",
 				val[t_generateMatrixExample], vCBMPgraph);
 			return false;
 		}

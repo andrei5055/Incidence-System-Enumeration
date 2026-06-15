@@ -275,13 +275,15 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 CC int alldata::kmProcessMatrix(ctchar* mi, ctchar* tr, int nr, tchar ind, tchar* ts) const
 {
 	tchar tm[MAX_PLAYER_NUMBER];
-	if (!ts)
+	const auto nc = m_numPlayers;
+	if (!ts) {
 		ts = tm;
+		memset(ts, 0, nc);
+	}
 
 	if (!kmSortMatrixForReorderedPlayers(mi, nr, tr, ts, param(t_nestedGroups) > 1))
 		return 0;
 
-	const auto nc = m_numPlayers;
 	const int nrr = param(t_useRowsPrecalculation);
 	bool bPrecalcRow = false;
 	if (m_precalcMode == eCalculateRows) {
