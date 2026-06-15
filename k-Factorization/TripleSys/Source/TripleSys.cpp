@@ -5,7 +5,7 @@
 #include "k1111p1f.h"
 #include "k16p1f.h"
 #include "k16A2.h"
-#include "k20a2.h"
+#include "k18a2.h"
 #include "KSolveGen.h"
 #include "kOrbits.h"
 
@@ -95,6 +95,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	m_fHdr = getFileNameAttr(sysParam());
 	m_cTime = m_rTime = m_iTime = m_pTime = clock();
 #endif
+	bool bSaveMatrix = false;
 	const bool bNotSpecialMode = iCalcModeOrg != eCalcSecondRow && iCalcModeOrg != eCalculateRows;
 	const auto bSavingMatricesToDisk = bNotSpecialMode ? param(t_savingMatricesToDisk) : false;
 
@@ -178,6 +179,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	else
 		pResult = new TableAut(MATR_ATTR, m_numDays, m_numPlayers, 0, m_groupSize, true, true);
 
+	auto* pResultLS = static_cast<TableLS*>(pResult);
 #if CHECK_GET_ROW
 	pReslt = pResult;
 #endif
@@ -325,17 +327,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
 					sysParam()->u1fCycles[0][1] == 16)
 				{
-					const FactorParams factParam = { K20_N, K20_MATCH, K20_FIXED, K20_M_MAX };
-					m_pKSolver = new K20A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
-				}
-			}
-			else if (param(t_useKSolve) & 16) {
-				if (m_numPlayers == 16 && !bCBMP &&
-					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
-					sysParam()->u1fCycles[0][1] == 16)
-				{
 					const FactorParams factParam = { K16_N, K16_MATCH, K16_FIXED, K16_M_MAX };
-					m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, this, m_bPrint);
+					m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+				}
+				else if (m_numPlayers == 18 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 18)
+				{
+					const FactorParams factParam = { K18_N, K18_MATCH, K18_FIXED, K18_M_MAX };
+					m_pKSolver = new K18A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
 				}
 			}
 			else if (param(t_useKSolve) & 1) {
@@ -645,7 +645,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	
 			matrixDB()->addObjDescriptor(orderOfGroup(), matrixStatOutput(stat, sizeof(stat), m_TrCyclesAll));
 			if (pLS_DB) {
-				auto* pResultLS = static_cast<TableLS*>(pResult);
 				pResultLS->constructLS(result(), numDaysResult());
 				const LS_Type lsType = { pResultLS->isAtomicLS(), pResultLS->isSymmetricLS() };
 				pLS_DB->addObjDescriptor(orderOfGroup(), (const char*)&lsType);
@@ -654,15 +653,15 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			pResult->setInfo(stat);
 			pResult->setGroupOrder(orderOfGroup());
 
-			if (m_bPrint || bSavingMatricesToDisk) {
+			bSaveMatrix = bSavingMatricesToDisk && (!pLS_DB || pResultLS->isAtomicLS() || pResultLS->isSymmetricLS());
+			if (m_bPrint || bSaveMatrix) {
 #if 0			// record result and print on screen (if m_bPrint==true)
 				pResult->printTable(result(), true, m_bPrint, numDaysResult());
 #else			// record result without print on screen
-				if (bSavingMatricesToDisk) {
+				if (bSaveMatrix) {
 					pResult->printTable(result(), true, false, numDaysResult());
 					if (pResult->isLSCreated()) {
 						m_nLS++;
-						auto* pResultLS = static_cast<TableLS*>(pResult);
 						if (pResultLS->isAtomicLS())
 							m_atomicLS++;
 						if (pResultLS->isSymmetricLS())

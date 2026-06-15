@@ -75,10 +75,10 @@ CC T* reallocStorageMemory(T** pObjects, size_t lenObj, size_t lenObjPrev = 0, b
 	if (!lenObjPrev)
 		lenObjPrev = lenObj >> 1;
 
-	memcpy(pNewObjMemory, *pObjects, lenObjPrev * sizeof(pNewObjMemory[0]));
+	memcpy(pNewObjMemory, *pObjects, lenObjPrev * sizeof(T));
 	if (bPointers) {
 		// After pointer reallocation, set to NULL's all unused pointers
-		memset(pNewObjMemory + lenObjPrev, 0, (lenObj - lenObjPrev) * sizeof(void *));
+		memset(pNewObjMemory + lenObjPrev, 0, (lenObj - lenObjPrev) * sizeof(T));
 	}
 
 	delete[] *pObjects;

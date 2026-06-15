@@ -16,14 +16,13 @@ void GraphDescr::addSourceObj(size_t sourceID) {
 		if (m_prevID == -1)
 			m_source = std::to_string(sourceID);
 		else {
-			if (m_cntr > 1)
-				m_source += "-" + std::to_string(m_prevID);
-			else
-				if (m_cntr == 1 && sourceID == -1)
-					sourceID = m_prevID;
+			if (m_cntr >= 1)
+				m_source += (m_cntr > 1? "-" : ",") + std::to_string(m_prevID);
 
 			if (sourceID != -1)
 				m_source += "," + std::to_string(sourceID);
+			else
+				m_SavedPrevID = m_prevID;
 		}
 
 		m_cntr = 0;

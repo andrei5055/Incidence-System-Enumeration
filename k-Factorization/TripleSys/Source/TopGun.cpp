@@ -166,13 +166,8 @@ int TopGun::Run()
 							if (threadActive[iTask])
 							{
 								nThreadsRunning++;
-								if (m_cnt[iTask * 2] >= 0)
-								{
-									//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
-									// thread finished
-									t.join();
-									threadStopped(iTask);
-								}
+                                if (m_cnt[iTask * 2] >= 0)
+									stopThread(t, iTask);
 							}
 							iTask++;
 						}
@@ -220,11 +215,9 @@ int TopGun::Run()
 						nThreadsRunning++;
 						if (m_cnt[iTask * 2] >= 0)
 						{
-							//printf("thread %d ended, %zd matrices processed\n", iTask, m_cnt[iTask * 2]);
-							// thread finished
+							// thread finished - join defensively and reset thread state
 							nMatricesProc++;
-							t.join();
-							threadStopped(iTask);
+							stopThread(t, iTask);
 							if (bUseKSolve) // && clock() - cTime > 5000)
 							{
 								printThreadsStat(nMatrices, nMatricesProc, iTime, false);
@@ -267,8 +260,25 @@ int TopGun::Run()
 	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
 	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
-	
+
 	return m_errCode;
+}
+
+void TopGun::stopThread(std::thread& t, int iTask) {
+	// thread finished - join defensively and reset thread state
+	if (t.joinable()) {
+		try {
+			t.join();
+		}
+		catch (...) {
+			// swallow exceptions from join() to avoid termination during cleanup
+		}
+	}
+	threadStopped(iTask);
+	// ensure state is cleared so no stale/dangling calls occur
+	threadActive[iTask] = false;
+	matrixIndex[iTask] = 0;
+	t = std::thread();
 }
 
 #include <mutex>

@@ -1,0 +1,57 @@
+PrintMatrices=1
+UseKSolve=4;
+GroupSize=2
+KeepPrevResult=1
+ExploreMatrices=0
+AutSaveTestedTrs=1
+NThreads=1; KThreads=1; UseMultiThreading=0
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+Out_CSV_File=-1
+CSV_FileName=../../SRG.csv
+U1FCycles={{18}}
+OutAutomorphismGroup=0
+UseCompatibilityCheck=1
+ResultFolder="../../Logs_18-3-A1/"
+v4Row=0; v4=0; v4RowB=0; v4B=0; v4RowC=0; v4C=0
+UseKSolve=0;
+//NestedGroups=2; 
+ResultGroupOrderMin=0
+//SubmatrixGroupOrderMin=3
+nPlayers=18; CBMP_Graph=0;
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0; NRowsInStartMatrix=0;
+NRowsInResultMatrix=3; ExpectedResult=-1
+//RUN_JOB
+
+PrintMatrices=1
+UseKSolve=32;
+UseMultiThreading=1
+StartFolder="../../Logs_18-3-A1/"
+ResultFolder="../../Logs_18-17-A2_Tmp/"
+ResultGroupOrderMin=0
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3; NRowsInStartMatrix=3;
+// KSolve tests:
+TestName="UseKSolve K18A2"
+nPlayers=18; CBMP_Graph=0; 
+//v4Row=4; v4=3; v4RowB=5; v4B=2; v4RowC=6; v4C=12
+NRowsInResultMatrix=17; ExpectedResult=-1
+RUN_JOB
+
+PrintMatrices=0
+StartFolder="../../Logs_18-17-A2_Tmp/"
+ResultFolder="../../Logs_18-17-A2_Result/"
+v4Row=0; v4=0; v4RowB=0; v4B=0; v4RowC=0; v4C=0
+UseKSolve=0;
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0; NRowsInStartMatrix=17;
+OrderMatrices=1;
+CanonizeInput=1;
+NRowsInResultMatrix=17; ExpectedResult=-1
+RUN_JOB
+
+StartFolder="../Logs_CK_18A2_Tmp2/"
+ResultFolder="../Logs_CK_18A2/"
+OrderMatrices=2;
+CanonizeInput=0;
+NRowsInResultMatrix=17; ExpectedResult=-1
+
+END_JOB

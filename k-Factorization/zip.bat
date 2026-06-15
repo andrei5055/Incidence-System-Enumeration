@@ -13,22 +13,14 @@ for /r %%f in (*.bat) do (
 )
 
 REM Build list of files for tar
+set TARFILES=./*.md
 set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals
 set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.* ./EngineGPU/EngineGPU.* ./EngineGPU/*.cu
 set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
 set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
-set TARFILES=%TARFILES% ./GenKn/*.cpp ./GenKn/*.h ./GenKn/*.vcxproj ./GenKn/*.ba
-set TARFILES=%TARFILES% ./CI/ExpectedResults
-
-REM Conditionally add CI files if they exist
-set CI_FILES=
-if exist "./CI/param*.txt" set CI_FILES=%CI_FILES% ./CI/param*.txt
-if exist "./CI/kparam*.txt" set CI_FILES=%CI_FILES% ./CI/kparam*.txt
-if exist "./CI/*.ba" set CI_FILES=%CI_FILES% ./CI/*.ba
-
-
-REM Append CI files to archive list
-if defined CI_FILES set TARFILES=%TARFILES% %CI_FILES%
+set TARFILES=%TARFILES% ./OldTests/ExpectedResults ./OldTests/*.ba ./OldTests/*.txt
+set TARFILES=%TARFILES% ./NewTests/*.ba ./NewTests/*.txt
+set TARFILES=%TARFILES% ./CI/*.ba ./CI/*.txt
 
 REM Create archive, ignore missing files
 tar -c -J -f "%ARX%_%TODAY%.tar" %TARFILES%

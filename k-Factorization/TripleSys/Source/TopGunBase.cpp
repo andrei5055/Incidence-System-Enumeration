@@ -289,7 +289,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	sprintf_s(buffer, "%s_%07d.txt", pResFileName, param(t_nFirstIndexOfStartMatrices));
 	createFolderAndFileName(IntegratedResults, paramPtr(), t_ResultFolder, nRows, buffer);
 	FOPEN_F(f, IntegratedResults.c_str(), finalReport || !numParamSet? "w" : "r+");
-	
+
 	if (finalReport) {
 		const auto nParts = param(t_CBMP_Graph);
 		if (nParts <= 1) 
@@ -304,12 +304,14 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 			if (nRowsStart() != nRowsOut()) {
 				// The case were nRowsStart() == nRowsOut() was handled in TopGunBase::Run() 
 				reserveInputMatrixMemory(nRows, (int)totalMatr, 2);
-				if (readMatrices(t_ResultFolder, nRows) >= 0)
+				if (readMatrices(t_ResultFolder, nRows) >= 0) {
 					orderAndExploreMatrices(nRowsOut(), 2, exploreMatrices);
+					getDB(db_graph_1)->reportResult(f, false);
+					getDB(db_graph_2)->reportResult(f, false);
+				}
+				else
+					printfRed("*** Can't load '%s Matrices' for exploration. Skip exploration step\n", matrixType(nRows));
 			} 
-
-			getDB(db_graph_1)->reportResult(f, false);
-			getDB(db_graph_2)->reportResult(f, false);
 		}
 
 		if (!m_reportInfo.empty())

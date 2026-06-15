@@ -170,16 +170,13 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
 	const auto groupSize = m_pParam->paramVal(t_groupSize);
 	if (!typeIdx) {
-		// Check whether the graph is a triangular graph
-		if (m_pParam->completeGraph() && groupSize == 2) {
+		// Check whether the graph is a Triangular or Lattice graph
+		if (groupSize == 2 && m_pParam->partiteNumb() <= 2) {
 			std::unique_lock<std::mutex> guard;
-			if (auto* mtx = pMarixStorage->getMutext()) {
+			if (auto* mtx = pMarixStorage->getMutext())
 				guard = std::unique_lock<std::mutex>(*mtx);
-				pMarixStorage->graphDB()->setGraphType(t_triangular);
-			}
-			else
-				pMarixStorage->graphDB()->setGraphType(t_triangular);
 
+			pMarixStorage->graphDB()->setGraphType(m_pParam->partiteNumb()==1? t_triangular : t_lattice);
 			return false;
 		}
 	}
@@ -244,7 +241,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	if (canonize) {
 		const auto v = groupDegree();
 		int i = 0;
-		// Copy elements above the main diagonal into the array.
+		// Copy elements above the main diagonal into the array.		
 		auto pFrom = pResGraph = canonize_graph(NULL, &i);
 		auto pTo = pUpperDiag = graphPntr(1 - i);
 		for (int j = v, i = 0; --j; pTo += j, pFrom += v)
@@ -340,9 +337,6 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	bool newGraph = false;
 	{
 		SRGToolkit* pMaster = this;
-		/**std::optional<std::lock_guard<std::mutex>> guard;
-		if (auto* mtx = pMarixStorage->getMutext()) {
-			guard.emplace(*mtx);**/
 		std::unique_lock<std::mutex> guard;
 		if (auto* mtx = pMarixStorage->getMutext()) {
 			guard = std::unique_lock<std::mutex>(*mtx);

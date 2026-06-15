@@ -50,8 +50,7 @@ int CGraphCanonizer::Init(int nVert) {
 
 	const auto len = nVert * (nVert - 1) / 2;
 	m_pLenOrbits = new ushort[3 * len];
-	m_pSavedOrbits = m_pLenOrbits + len;
-	m_pSavedOrbIdx = m_pSavedOrbits + len;
+	m_pSavedOrbIdx = (m_pSavedOrbits = m_pLenOrbits + len) + len;
 	return 0;
 }
 
@@ -76,8 +75,8 @@ ctchar* CGraphCanonizer::canonize_graph(ctchar* pGraph, int* pCanonIndex) {
 	if (pGraph)
 		memcpy(m_pGraph[0], pGraph, m_lenGraphMatr);
 
-	int i, firstVert = 0;
-	i = 0;
+	int i, firstVert;
+	i = firstVert = 0;
 
 	PRINT_ADJ_MATRIX(m_pGraph[0], ++canonMatrCntr, m_v, NULL, CANON_MATR_LOG, (SAME_FILE_OUTPUT && canonMatrCntr? "a" : "w"), CANON_MATR_FRMT);
 
@@ -395,7 +394,6 @@ int CGraphCanonizer::canonizeGraph(ctchar* pGraph, tchar* pGraphOut, int firstVe
 
 int CGraphCanonizer::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int vertIdx,
 	ushort** ppLenOrbits, int& idxRight, int flag, int& lastUnfixedVertexIndex) {
-
 	auto idxLast = vertIdx;
 	const auto vertIdxNext = vertIdx + 1;
 	auto len = m_v - vertIdxNext;
@@ -409,7 +407,7 @@ int CGraphCanonizer::canonizeMatrixRow(ctchar* pGraph, tchar* pGraphOut, int ver
 	if (!--pLenOrbits[0]) {
 		// The current vertex is the sole member of its orbit; 
 		// removing the orbit entirely
-		memcpy(pLenOrbitsNext, ++pLenOrbits, len);
+		memcpy(pLenOrbitsNext, ++pLenOrbits, len - sizeof(pLenOrbits[0]));
 		m_pNumOrbits[vertIdx]--;
 	}
 	else {

@@ -111,6 +111,7 @@ private:
 	//void orderAndExploreMatices(int nRows, bool exploreMatrices) const;
 	void startThread(int iTask, int iTaskId, eThreadStartMode iMode = eCalcResult, CRowStorage* pRowStorage = NULL);
 	void threadStopped(int iTask);
+	void stopThread(std::thread& t, int iTask);
 	void waitAllThreadFinished();
 
 	sLongLong *m_cntTotal = NULL;

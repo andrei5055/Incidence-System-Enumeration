@@ -22,6 +22,7 @@ typedef enum {
 	t_srg = t_regular + (1 << 1),
 	t_4_vert = t_srg + (1 << 2),
 	t_triangular,
+	t_lattice,
 	t_complete = -1
 } t_graphType;
 
