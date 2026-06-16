@@ -252,24 +252,25 @@ private:
     void get_transformations_general(const Factor& fi, const Factor& fj, const Factor& fk, const Factor& fl, TransInfo& info);
     
     FORCE_INLINE void apply_perm_18(const uint8_t* src_adj, const Permutation& perm, uint8_t* dst_adj) {
-        dst_adj[perm.p[0]] = perm.p[src_adj[0]];
-        dst_adj[perm.p[1]] = perm.p[src_adj[1]];
-        dst_adj[perm.p[2]] = perm.p[src_adj[2]];
-        dst_adj[perm.p[3]] = perm.p[src_adj[3]];
-        dst_adj[perm.p[4]] = perm.p[src_adj[4]];
-        dst_adj[perm.p[5]] = perm.p[src_adj[5]];
-        dst_adj[perm.p[6]] = perm.p[src_adj[6]];
-        dst_adj[perm.p[7]] = perm.p[src_adj[7]];
-        dst_adj[perm.p[8]] = perm.p[src_adj[8]];
-        dst_adj[perm.p[9]] = perm.p[src_adj[9]];
-        dst_adj[perm.p[10]] = perm.p[src_adj[10]];
-        dst_adj[perm.p[11]] = perm.p[src_adj[11]];
-        dst_adj[perm.p[12]] = perm.p[src_adj[12]];
-        dst_adj[perm.p[13]] = perm.p[src_adj[13]];
-        dst_adj[perm.p[14]] = perm.p[src_adj[14]];
-        dst_adj[perm.p[15]] = perm.p[src_adj[15]];
-        dst_adj[perm.p[16]] = perm.p[src_adj[16]];
-        dst_adj[perm.p[17]] = perm.p[src_adj[17]];
+		const auto& p = perm.p;
+        dst_adj[p[0]] = p[src_adj[0]];
+        dst_adj[p[1]] = p[src_adj[1]];
+        dst_adj[p[2]] = p[src_adj[2]];
+        dst_adj[p[3]] = p[src_adj[3]];
+        dst_adj[p[4]] = p[src_adj[4]];
+        dst_adj[p[5]] = p[src_adj[5]];
+        dst_adj[p[6]] = p[src_adj[6]];
+        dst_adj[p[7]] = p[src_adj[7]];
+        dst_adj[p[8]] = p[src_adj[8]];
+        dst_adj[p[9]] = p[src_adj[9]];
+        dst_adj[p[10]] = p[src_adj[10]];
+        dst_adj[p[11]] = p[src_adj[11]];
+        dst_adj[p[12]] = p[src_adj[12]];
+        dst_adj[p[13]] = p[src_adj[13]];
+        dst_adj[p[14]] = p[src_adj[14]];
+        dst_adj[p[15]] = p[src_adj[15]];
+        dst_adj[p[16]] = p[src_adj[16]];
+        dst_adj[p[17]] = p[src_adj[17]];
     }
 
     FastSortedFactor get_fast_sorted(const uint8_t* adj);

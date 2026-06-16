@@ -406,8 +406,11 @@ bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 
 	auto pGraphDB = pMarixStorage->graphDB();
 	pGraphDB->setTableTitle(buf);
-
+#if USE_GRAPH_TYPE_STRUCT
+	pGraphDB->addObjDescriptor(groupOrder(), &GraphType(pGraphDescr), newGraph, sourceMatrID + 1);
+#else
 	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID + 1);
+#endif
 
 	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return newGraph;
