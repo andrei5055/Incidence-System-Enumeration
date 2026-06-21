@@ -5,6 +5,7 @@
 #include "k1111p1f.h"
 #include "k16p1f.h"
 #include "k16A2.h"
+#include "k16a2Old.h"
 #include "k18a2.h"
 #include "KSolveGen.h"
 #include "kOrbits.h"
@@ -340,13 +341,23 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 
 			bool bCBMP = !completeGraph();
 
-			if (param(t_useKSolve) & 32) {
+			if (param(t_useKSolve) & (32 + 64)) {
 				if (m_numPlayers == 16 && !bCBMP &&
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
 					sysParam()->u1fCycles[0][1] == 16)
 				{
 					const FactorParams factParam = { K16_N, K16_MATCH, K16_FIXED, K16_M_MAX };
+
+					if (param(t_useKSolve) & 64)
+						m_pKSolver = new K16A2Old(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+					else {
 					m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+						m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
+
+						m_pKSolver->solve(1);
+
+						goto noResult;
+					}
 				}
 				else if (m_numPlayers == 18 && !bCBMP &&
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&

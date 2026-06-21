@@ -12,6 +12,7 @@ public:
 	CC inline T* reallocStorageMemory(int numObjects) {
 		return ::reallocStorageMemory(&m_pObjects, m_lenObj * numObjects);
 	}
+	CC virtual int getObjectID(int idx) const	{ return idx; }
 	CC virtual T* getObject(int idx = 0) const	{ return m_pObjects + idx * m_lenObj; }
 	CC inline T** getObjectsPntr()				{ return &m_pObjects; }
 	CC inline auto lenObject() const			{ return m_lenObj; }
@@ -140,22 +141,23 @@ public:
 		if (numObjects)
 			m_pIdx = new int[numObjects];
 	}
-	CC ~CStorageIdx() { delete[] m_pIdx; }
-	CC inline T* getObjPntr(int idx) const { return CStorage<T>::getObject(m_pIdx[idx]); }
-	CC virtual T* getObject(int idx = 0) const { return CStorage<T>::getObject(m_pIdx[idx]); }
+	CC ~CStorageIdx()							{ delete[] m_pIdx; }
+	CC inline T* getObjPntr(int idx) const		{ return CStorage<T>::getObject(m_pIdx[idx]); }
+	CC virtual T* getObject(int idx = 0) const	{ return CStorage<T>::getObject(m_pIdx[idx]); }
+	CC virtual int getObjectID(int idx) const	{ return m_pIdx[idx]; }
 	CC T* reallocStorageMemory() {
 		const auto retVal = CStorageSet<T>::reallocStorageMemory();
 		::reallocStorageMemory(&m_pIdx, this->m_numObjectsMax);
 		return retVal;
 	}
-	CC inline void push_back(int idx) { m_pIdx[this->m_numObjects++] = idx; }
+	CC inline void push_back(int idx)			{ m_pIdx[this->m_numObjects++] = idx; }
 	CC inline void insert(int idx, int value) {
 		const auto pSrc = m_pIdx + idx;
 		MEMMOVE((void*)(pSrc + 1), pSrc, (this->m_numObjects++ - idx) * sizeof(m_pIdx[0]));
 		m_pIdx[idx] = value;
 	}
 	CC T* getObjAddr(int idx) { return idx < this->m_numObjectsMax ? CStorage<T>::getObject(idx) : reallocStorageMemory(); }
-	CC inline int* getIndices() const { return m_pIdx; }
+	CC inline int* getIndices() const			{ return m_pIdx; }
 	CC CStorageIdx& operator = (const CStorageIdx& other) {
 		auto** ppStorage = CStorage<T>::getObjectsPntr();
 		delete[] * ppStorage;

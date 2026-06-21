@@ -16,7 +16,8 @@ SET "ROOT=..\x64\Release"
 copy "%ROOT%\k-Sys.exe" . >nul
 copy "%ROOT%\*.dll" . >nul
 
-k-Sys.exe param16a2.txt
+k-Sys.exe param16A2Old.txt
 
     if %nopause% == 0 pause
     exit /b %ERRORLEVEL%
+

@@ -1,0 +1,14 @@
+PrintMatrices=0
+TimingOutputMode = 1
+ExploreMatrices=0
+OutAutomorphismGroup=0
+StartFolder="../Logs_CI/"
+ResultFolder="../Logs_CI/"
+
+GroupSize=2
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+nPlayers=18
+ExpectedResult=-1
+RUN_JOB
+END_JOB

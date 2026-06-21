@@ -374,12 +374,12 @@ bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 	}
 
 	bool newGraph = true;
-	int prevMatrNumb = m_nPrevMatrNumb;
+	int idxMatr = 0, prevMatrNumb = m_nPrevMatrNumb;
 	if (pUpperDiag) {
 		// We are here only if the graph was canonized. 
 		// Let's check if this graph is isomorphic to a previously constructed one.
 		prevMatrNumb = pMarixStorage->numObjects();
-		pMarixStorage->updateRepo(pUpperDiag);
+		idxMatr = pMarixStorage->updateRepo(pUpperDiag);
 		newGraph = prevMatrNumb < pMarixStorage->numObjects();
 	}
 	else
@@ -406,11 +406,9 @@ bool SRGToolkit::outputGraph(int typeIdx, t_graphType graphType, uint sourceMatr
 
 	auto pGraphDB = pMarixStorage->graphDB();
 	pGraphDB->setTableTitle(buf);
-#if USE_GRAPH_TYPE_STRUCT
-	pGraphDB->addObjDescriptor(groupOrder(), &GraphType(pGraphDescr), newGraph, sourceMatrID + 1);
-#else
-	pGraphDB->addObjDescriptor(groupOrder(), pGraphDescr, newGraph, sourceMatrID + 1);
-#endif
+	const auto graphIdx = newGraph ? pMarixStorage->numObjects() : pMarixStorage->getObjectID(-idxMatr - 1) + 1;
+	GraphType graphDescr(pGraphDescr, graphIdx);
+	pGraphDB->addObjDescriptor(groupOrder(), &graphDescr, newGraph, sourceMatrID + 1);
 
 	//	PRINT_ADJ_MATRIX(pResGraph, m_pMarixStorage[typeIdx]->numObjects(), m_v);
 	return newGraph;

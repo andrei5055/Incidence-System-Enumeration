@@ -475,6 +475,7 @@
     </ClCompile>
     <ClCompile Include="Source\k16p1f.cpp" />
     <ClCompile Include="Source\k16A2.cpp" />
+    <ClCompile Include="Source\k16a2Old.cpp" />
     <ClCompile Include="Source\k18a2.cpp" />
     <ClCompile Include="Source\k18a2support.cpp" />
     <ClCompile Include="Source\kBase.cpp" />
@@ -523,6 +524,7 @@
     <ClInclude Include="Include\k1212_4_20.h" />
     <ClInclude Include="Include\k16p1f.h" />
     <ClInclude Include="Include\k16A2.h" />
+    <ClInclude Include="Include\k16a2Old.h" />
     <ClInclude Include="Include\k18a2.h" />
     <ClInclude Include="Include\kBase.h" />
     <ClInclude Include="Include\kBipartBase.h" />
