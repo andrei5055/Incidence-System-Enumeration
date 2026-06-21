@@ -52,26 +52,6 @@ K18A2::K18A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, c
 }
 
 void K18A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr) {
-    // Initialize static edge mask lookup table
-    for (int i = 0; i < 18; i++) {
-        for (int j = 0; j < 18; j++) {
-            edge_mask_table[i][j] = Mask18_C();
-            if (i != j) {
-                int eid = edge_id_table[i][j];
-                if (eid != -1) {
-                    if (eid < 64) edge_mask_table[i][j].m[0] |= (1ULL << eid);
-                    else if (eid < 128) edge_mask_table[i][j].m[1] |= (1ULL << (eid - 64));
-                    else if (eid < 192) edge_mask_table[i][j].m[2] |= (1ULL << (eid - 128));
-                }
-            }
-        }
-    }
-
-    // Reset lazy candidate cache states
-    for (int i = 0; i < K18_SEARCH; i++) {
-        slot_generated[i] = false;
-    }
-
     if (kThreads > 256) kThreads = 256;
     this->thread_buffers.clear();
     for (int i = 0; i < kThreads; i++) this->thread_buffers.push_back(std::make_unique<ThreadLocalBuffers>());
@@ -229,50 +209,9 @@ void K18A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
 }
 
 bool K18A2::addRow(int rowNum, const unsigned char* source) {
-    Factor f;
-    memcpy(f.src, source, 18);
-    for (int i = 0; i < 18; i += 2) {
-        uint8_t u = f.src[i]; uint8_t v = f.src[i + 1];
-        f.adj[u] = v; f.adj[v] = u;
-    }
-
-    PackedAdj pf = pack_factor_adj(f.adj);
-    
-    // Check overlap with fixed rows
-    if ((pf.edge_mask.m[0] & fixedEdgesMask.m[0]) ||
-        (pf.edge_mask.m[1] & fixedEdgesMask.m[1]) ||
-        (pf.edge_mask.m[2] & fixedEdgesMask.m[2])) return false;
-
-    // Check compatibility with the 3 fixed rows
-    for (int i = 0; i < K18_FIXED; i++) {
-        if (!is_perfect_packed(pf, fixed_packed[i])) return false;
-    }
-
-    f.edge_mask = pf.edge_mask;
-    f.fs = get_fast_sorted(f.adj);
-
-    std::vector<uint8_t> key(f.adj, f.adj + 18);
-    std::array<uint8_t, 18> key_arr;
-    std::copy(f.adj, f.adj + 18, key_arr.begin());
-
-    int factor_id;
-    {
-        std::lock_guard<std::mutex> lock(pool_mutex);
-        auto it = f_map.find(key);
-        if (it == f_map.end()) {
-            factor_id = (int)global_pool.size();
-            f_map[key] = factor_id;
-            f_map_unordered[key_arr] = factor_id;
-            global_pool.push_back(f);
-            packed_pool.push_back(pf);
-        } else {
-            factor_id = it->second;
-        }
-    }
-
-    int slot = rowNum - 4;
-    addFactorToSlot(slot, factor_id);
-    return true;
+    printf("not supported\n");
+    exit(1);
+    return false;
 }
 
 
@@ -388,5 +327,5 @@ bool K18A2::compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b) {
 }
 
 void K18A2::solve(int mode) {
-    runTransitionSearch();
+    runExhaustiveSearch();
 }

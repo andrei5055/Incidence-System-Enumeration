@@ -10,7 +10,6 @@
 #include "kBase.h"
 #include <unordered_map>
 #include <set>
-#include <mutex>
 #include <new>
 #include <malloc.h>
 #include <crtdbg.h>
@@ -33,10 +32,6 @@
 #ifndef K16P1F_H
 struct Mask256_C { uint64_t m[2] = { 0, 0 }; };
 #endif
-
-FORCE_INLINE bool is_disjoint(const Mask256_C& a, const Mask256_C& b) {
-    return ((a.m[0] & b.m[0]) | (a.m[1] & b.m[1])) == 0;
-}
 
 #pragma push_macro("new")
 #undef new
@@ -203,16 +198,6 @@ private:
     };
     std::unordered_map<std::array<uint8_t, 16>, int, ArrayHash> f_map_unordered;
 
-    // Lazy Candidate Caching States
-    bool slot_generated[K16_SEARCH];
-    std::mutex slot_mutex[K16_SEARCH];
-    std::mutex pool_mutex;
-
-    // Lazy generation methods
-    void ensureSlotGenerated(int slotIndex);
-    void generateSlotCandidates(int slotIndex);
-    void generateRecursive(int depth, uint64_t usedMask, uint8_t* factor, int slotIndex, int P0);
-
     int restart_index;
 
     std::vector<std::unique_ptr<ThreadLocalBuffers>> thread_buffers;
@@ -291,9 +276,6 @@ private:
         int vertex_to_pair[16];
         int vertex_to_pos[16];
         uint8_t v0;
-        uint8_t fixed_point = 0;
-        int transposed_point = 1;
-        int search_type = 1;
 
         void apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj);
         bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
@@ -306,8 +288,7 @@ private:
         bool checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L);
         bool validateCandidateL(const uint8_t* alpha_p, bool* used, int L);
         void saveAlpha(const uint8_t* alpha_p);
-        bool is_partial_permutation_ok(const uint8_t* alpha_p, const bool* defined);
-        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, bool* defined, uint8_t* alpha_p, int L);
+        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L);
     };
 
     struct CycleLengthStats {
@@ -326,7 +307,7 @@ private:
                         uint8_t matchings[][16], const uint8_t* G0);
     void recordIsomorphicResults(const uint8_t H[][16],
                                  std::set<std::vector<uint8_t>>& unique_results);
-    void setupBacktrackState(CycleBacktrackState& state, int search_type, int fixed_point = 0, int transposed_point = 1, int override_v0 = -1);
+    void setupBacktrackState(CycleBacktrackState& state, int search_type);
     void constructFullH(const uint8_t G[][16], int L, const uint8_t* alpha, uint8_t H[][16]);
     void processAutomorphism(const std::array<uint8_t, 16>& alpha_arr, int L, std::set<std::vector<uint8_t>>& unique_results);
     void adj_to_src(const uint8_t* adj, unsigned char* src);
@@ -335,7 +316,7 @@ private:
     void setupPairsTable(CycleBacktrackState& state, int search_type);
     void fillPairsTable(CycleBacktrackState& state, int search_type);
     void storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8_t v);
-    bool constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][16]);
+    void constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][16]);
     void findMissingEdges(const uint8_t G[][16], int L, std::pair<uint8_t, uint8_t>* edges);
     bool isEdgeMissing(const uint8_t G[][16], int L, int u, int v);
     bool checkMatchingsCompatibility(uint8_t matchings[][16], int num_colors, const uint8_t* G0);
@@ -344,9 +325,9 @@ private:
     bool is_color_compatible(int c, int num_colors, uint8_t matchings[][16], const uint8_t* G0);
     bool isColorUsed(const uint8_t* matching);
     void copyMatchingsToH(uint8_t matchings[][16], int num_colors, const uint8_t G[][16], int L, uint8_t H[][16]);
-    void tryIsomorphicMapping(const uint8_t H[][16], int a, int b, const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results);
+    void tryIsomorphicMapping(const uint8_t H[][16], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results);
     void buildStarterCycle(uint8_t* cyc_R);
-    void buildHCycle(const uint8_t H[][16], int a, int b, int v, uint8_t* cyc_H);
+    void buildHCycle(const uint8_t H[][16], int v, uint8_t* cyc_H);
     void buildMappingPermutation(const uint8_t* cyc_H, const uint8_t* cyc_R, uint8_t* p);
     void checkAndRecordPermutedH(const uint8_t H[][16], const uint8_t* p, std::set<std::vector<uint8_t>>& unique_results);
     void applyPermToH(const uint8_t H[][16], const uint8_t* p, uint8_t S[][16]);

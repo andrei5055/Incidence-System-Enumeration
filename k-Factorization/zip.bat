@@ -1,7 +1,4 @@
 @echo off
-rem Define the true ESCAPE character
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
-
 cd /d "%~dp0"
 
 REM Archive name
@@ -28,16 +25,7 @@ set TARFILES=%TARFILES% ./NewTests/*.ba ./NewTests/*.txt
 set TARFILES=%TARFILES% ./CI/*.ba ./CI/*.txt
 
 REM Create archive, ignore missing files
-if not exist ".\ZIP" mkdir ".\ZIP"
 tar -c -J -f ".\ZIP\%ARX%_%TODAY%_%hhmmss%.tar" %TARFILES%
-rem Check the exit status and print colored results
-if %errorlevel% equ 0 (
-    echo %ESC%[32m[ OK ] Tar completed successfully.%ESC%[0m
-) else (
-    echo %ESC%[31m[ FAULT ] Tar command failed.%ESC%[0m
-)
 
-rem Cleanup: delete all *.ba files
+REM Cleanup: delete all *.ba files
 del /s /q /f *.ba >nul 2>&1
-
-pause

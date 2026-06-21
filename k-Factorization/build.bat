@@ -28,7 +28,7 @@ if not defined MSBUILD (
 )
 
 echo Building TripleSys.sln...
-%MSBUILD% TripleSys.sln /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64
+%MSBUILD% TripleSys.sln /p:Configuration=Release /p:Platform=x64
 if %ERRORLEVEL% neq 0 (
     echo "Build failed."
     if %nopause% == 0 pause

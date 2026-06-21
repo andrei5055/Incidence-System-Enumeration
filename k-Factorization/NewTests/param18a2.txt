@@ -1,6 +1,6 @@
 PrintMatrices=1
 GroupSize=2
-KeepPrevResult=0
+KeepPrevResult=1
 ExploreMatrices=0
 AutSaveTestedTrs=1
 NThreads=10; KThreads=1; UseMultiThreading=0
@@ -10,18 +10,7 @@ Out_CSV_File=-1
 CSV_FileName=../../SRG.csv
 U1FCycles={{18}}
 OutAutomorphismGroup=0
-/**
-KeepPrevResult=1
-UseKSolve=0;
-nPlayers=18; CBMP_Graph=0;
-ResultFolder="../../Logs_18-3-A1/"
-FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0; NRowsInStartMatrix=0;
-NRowsIn
-ResultMatrix=3; ExpectedResult=-1
-END_JOB
 KeepPrevResult=0
-**/
-
 PrintMatrices=1
 UseKSolve=32;
 UseMultiThreading=1
@@ -30,7 +19,7 @@ ResultFolder="../../Logs_18-17-A2_Tmp/"
 ResultGroupOrderMin=0
 FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3; NRowsInStartMatrix=3;
 // KSolve tests:
-TestName="K18A2"
+TestName="UseKSolve K18A2"
 nPlayers=18; CBMP_Graph=0; 
 NRowsInResultMatrix=0; ExpectedResult=-1
 RUN_JOB
@@ -46,7 +35,7 @@ CanonizeInput=1;
 FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0; ExpectedResult=-1
 RUN_JOB
 
-OutAutomorphismGroup=0; //21
+OutAutomorphismGroup=21
 nThreads=1;
 StartFolder="../../Logs_18-17-A2_Tmp1/"
 ResultFolder="../../Logs_18-17-A2_Result/"

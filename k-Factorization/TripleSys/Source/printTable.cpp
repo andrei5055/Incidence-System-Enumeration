@@ -279,43 +279,8 @@ void printTransformed(int nrows, int ncols, int groupSize, const tchar* tr, cons
 	printTable("Original", pImatr, nrows, ncols, groupSize);
 	printTable("Translated", pTmatr, nrows, ncols, groupSize);
 }
-void printWithPowers_(const char* str) {
-	if (!str) return;
-	if (!g_useColors) {
-		std::printf(str);
-		return;
-	}
-	while (*str) {
-		if (*str == '^') {
-			str++; // Skip the '^' character
-
-			// Loop through all consecutive digits after '^'
-			while (*str && std::isdigit(static_cast<unsigned char>(*str))) {
-				char digit = *str;
-
-				// Map digits to their UTF-16/UTF-8 superscript byte sequences
-				if (digit == '0')      std::printf("\xE2\x81\xB0");
-				else if (digit == '1') std::printf("\xC2\xB9");
-				else if (digit == '2') std::printf("\xC2\xB2");
-				else if (digit == '3') std::printf("\xC2\xB3");
-				else if (digit >= '4' && digit <= '9') {
-					// 4 to 9 map directly to \xE2\x81\xB4 through \xE2\x81\xB9
-					char hex_offset = 0xB4 + (digit - '4');
-					std::printf("\xE2\x81%c", hex_offset);
-				}
-				str++;
-			}
-		}
-		else {
-			// Print regular characters normally
-			std::putchar(*str);
-			str++;
-		}
-	}
-}
-std::string printWithPowers(const char* str) {
-	if (!str)
-		return {};
+std::string printWithPowers(const std::string& strInput) {
+	auto str = strInput.c_str();
 
 	// If colors/superscripts are disabled, just return the original string
 	if (!g_useColors)
@@ -325,10 +290,10 @@ std::string printWithPowers(const char* str) {
 
 	while (*str) {
 		if (*str == '^') {
-			str++; // Skip '^'
+			//str++; // Skip '^'
 
 			// Convert all consecutive digits to superscripts
-			while (*str && std::isdigit(static_cast<unsigned char>(*str))) {
+			while (*++str && std::isdigit(static_cast<unsigned char>(*str))) {
 				char digit = *str;
 
 				switch (digit) {
@@ -345,13 +310,11 @@ std::string printWithPowers(const char* str) {
 				case '9': result += "\xE2\x81\xB9"; break; // ⁹
 				}
 
-				str++;
+				//str++;
 			}
 		}
-		else {
-			result += *str;
-			str++;
-		}
+		else
+			result += *str++;
 	}
 
 	return result;

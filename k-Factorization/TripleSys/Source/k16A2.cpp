@@ -67,11 +67,6 @@ void K16A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
     bTimeSet = false;
     call_counter = 0;
 
-    // Reset lazy candidate cache states
-    for (int i = 0; i < K16_SEARCH; i++) {
-        slot_generated[i] = false;
-    }
-
     fixedEdgesMask = Mask256_C();
     for (int s = 0; s < m_nFixedRows; s++) {
         memcpy(fixedRows[s].src, first3Rows + s * K16_N, K16_N);
@@ -82,14 +77,6 @@ void K16A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
             if (eid < 64) fixedEdgesMask.m[0] |= (1ULL << eid);
             else if (eid < 128) fixedEdgesMask.m[1] |= (1ULL << (eid - 64));
         }
-    }
-
-    if (m_bPrint) {
-        printf("fixedRows[2] (Row 3) adj: ");
-        for (int i = 0; i < 16; i++) {
-            printf("%d ", fixedRows[2].adj[i]);
-        }
-        printf("\n");
     }
 
     target_cu = find_cycles(fixedRows[0].adj, fixedRows[1].adj);
@@ -129,99 +116,86 @@ void K16A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
     saved_transitions.clear();
     memset(rejected_candidates, 0, sizeof(rejected_candidates));
 
-    int configs[6][3] = {
-        { 1, 2, 3 },
-        { 1, 3, 2 },
-        { 2, 1, 3 },
-        { 2, 3, 1 },
-        { 3, 1, 2 },
-        { 3, 2, 1 }
-    };
+    int a = trans_config[0];
+    int b = trans_config[1];
+    int c = trans_config[2];
 
-    int total_candidates = 0;
+    Factor R_a = fixedRows[a - 1];
+    Factor R_b = fixedRows[b - 1];
+    Factor R_c = fixedRows[c - 1];
+
+    TransInfo info_init;
+    get_transformations_general(R_a, R_b, R_b, R_c, info_init);
+    int total_candidates = info_init.count;
     int valid_starter_chains = 0;
 
-    for (int cfg_idx = 0; cfg_idx < 6; cfg_idx++) {
-        int a = configs[cfg_idx][0];
-        int b = configs[cfg_idx][1];
-        int c = configs[cfg_idx][2];
+    for (int p_idx = 0; p_idx < info_init.count; p_idx++) {
+        const Permutation& alpha = info_init.perms[p_idx];
 
-        Factor R_a = fixedRows[a - 1];
-        Factor R_b = fixedRows[b - 1];
-        Factor R_c = fixedRows[c - 1];
+        if (!has_prime_order_k16(alpha.p, 15)) {
+            continue;
+        }
 
-        TransInfo info_init;
-        get_transformations_general(R_a, R_b, R_b, R_c, info_init);
-        total_candidates += info_init.count;
+        bool used_v0[16] = { false };
+        used_v0[fixedRows[0].adj[0]] = true;
+        used_v0[fixedRows[1].adj[0]] = true;
+        used_v0[fixedRows[2].adj[0]] = true;
 
-        for (int p_idx = 0; p_idx < info_init.count; p_idx++) {
-            const Permutation& alpha = info_init.perms[p_idx];
+        bool chain_ok = true;
+        uint8_t current_adj[16];
+        memcpy(current_adj, R_c.adj, 16);
 
-            if (!has_prime_order_k16(alpha.p, 15)) {
-                continue;
+        ValidChain chain;
+        chain.alpha = alpha;
+        memcpy(chain.factors_adj[1], R_a.adj, 16);
+        memcpy(chain.factors_adj[2], R_b.adj, 16);
+        memcpy(chain.factors_adj[3], R_c.adj, 16);
+        chain.factors_packed[1] = pack_factor_adj(R_a.adj);
+        chain.factors_packed[2] = pack_factor_adj(R_b.adj);
+        chain.factors_packed[3] = pack_factor_adj(R_c.adj);
+
+        // Check initial compatibility
+        if (!is_perfect_packed(chain.factors_packed[1], chain.factors_packed[2]) ||
+            !is_perfect_packed(chain.factors_packed[1], chain.factors_packed[3]) ||
+            !is_perfect_packed(chain.factors_packed[2], chain.factors_packed[3])) {
+            continue;
+        }
+
+        for (int k = 4; k <= 15; k++) {
+            uint8_t next_adj[16];
+            apply_perm_16(current_adj, alpha, next_adj);
+
+            uint8_t v0 = next_adj[0];
+            if (used_v0[v0]) {
+                chain_ok = false;
+                break;
             }
+            used_v0[v0] = true;
 
-            bool used_v0[16] = { false };
-            used_v0[fixedRows[0].adj[0]] = true;
-            used_v0[fixedRows[1].adj[0]] = true;
-            used_v0[fixedRows[2].adj[0]] = true;
+            memcpy(chain.factors_adj[k], next_adj, 16);
+            chain.factors_packed[k] = pack_factor_adj(next_adj);
 
-            bool chain_ok = true;
-            uint8_t current_adj[16];
-            memcpy(current_adj, R_c.adj, 16);
-
-            ValidChain chain;
-            chain.alpha = alpha;
-            memcpy(chain.factors_adj[1], R_a.adj, 16);
-            memcpy(chain.factors_adj[2], R_b.adj, 16);
-            memcpy(chain.factors_adj[3], R_c.adj, 16);
-            chain.factors_packed[1] = pack_factor_adj(R_a.adj);
-            chain.factors_packed[2] = pack_factor_adj(R_b.adj);
-            chain.factors_packed[3] = pack_factor_adj(R_c.adj);
-
-            // Check initial compatibility
-            if (!is_perfect_packed(chain.factors_packed[1], chain.factors_packed[2]) ||
-                !is_perfect_packed(chain.factors_packed[1], chain.factors_packed[3]) ||
-                !is_perfect_packed(chain.factors_packed[2], chain.factors_packed[3])) {
-                continue;
-            }
-
-            for (int k = 4; k <= 15; k++) {
-                uint8_t next_adj[16];
-                apply_perm_16(current_adj, alpha, next_adj);
-
-                uint8_t v0 = next_adj[0];
-                if (used_v0[v0]) {
+            // Check compatibility with all previously generated factors in the chain
+            for (int prev = 1; prev < k; prev++) {
+                if (!is_perfect_packed(chain.factors_packed[prev], chain.factors_packed[k])) {
                     chain_ok = false;
                     break;
                 }
-                used_v0[v0] = true;
-
-                memcpy(chain.factors_adj[k], next_adj, 16);
-                chain.factors_packed[k] = pack_factor_adj(next_adj);
-
-                // Check compatibility with all previously generated factors in the chain
-                for (int prev = 1; prev < k; prev++) {
-                    if (!is_perfect_packed(chain.factors_packed[prev], chain.factors_packed[k])) {
-                        chain_ok = false;
-                        break;
-                    }
-                }
-                if (!chain_ok) {
-                    break;
-                }
-
-                memcpy(current_adj, next_adj, 16);
+            }
+            if (!chain_ok) {
+                break;
             }
 
-            if (chain_ok) {
-                valid_starter_chains++;
-                std::lock_guard<std::mutex> lock(result_mutex);
-                if (std::find_if(saved_transitions.begin(), saved_transitions.end(), [&](const Permutation& p) {
-                    return memcmp(p.p, alpha.p, 16) == 0;
-                }) == saved_transitions.end()) {
-                    saved_transitions.push_back(alpha);
-                }
+            memcpy(current_adj, next_adj, 16);
+        }
+
+        if (chain_ok) {
+            valid_starter_chains++;
+            std::lock_guard<std::mutex> lock(result_mutex);
+            if (std::find_if(saved_transitions.begin(), saved_transitions.end(), [&](const Permutation& p) {
+                return memcmp(p.p, alpha.p, 16) == 0;
+            }) == saved_transitions.end()) {
+                saved_transitions.push_back(alpha);
             }
         }
     }
@@ -232,49 +206,9 @@ void K16A2::init(int fixed3RowsIndex, int kThreads, const unsigned char* first3R
 }
 
 bool K16A2::addRow(int rowNum, const unsigned char* source) {
-    Factor f;
-    memcpy(f.src, source, 16);
-    for (int i = 0; i < 16; i += 2) {
-        uint8_t u = f.src[i]; uint8_t v = f.src[i + 1];
-        f.adj[u] = v; f.adj[v] = u;
-    }
-
-    PackedAdj pf = pack_factor_adj(f.adj);
-    
-    // Check overlap with fixed rows
-    if ((pf.edge_mask.m[0] & fixedEdgesMask.m[0]) ||
-        (pf.edge_mask.m[1] & fixedEdgesMask.m[1])) return false;
-
-    // Check compatibility with the 3 fixed rows
-    for (int i = 0; i < K16_FIXED; i++) {
-        if (!is_perfect_packed(pf, fixed_packed[i])) return false;
-    }
-
-    f.edge_mask = pf.edge_mask;
-    f.fs = get_fast_sorted(f.adj);
-
-    std::vector<uint8_t> key(f.adj, f.adj + 16);
-    std::array<uint8_t, 16> key_arr;
-    std::copy(f.adj, f.adj + 16, key_arr.begin());
-
-    int factor_id;
-    {
-        std::lock_guard<std::mutex> lock(pool_mutex);
-        auto it = f_map.find(key);
-        if (it == f_map.end()) {
-            factor_id = (int)global_pool.size();
-            f_map[key] = factor_id;
-            f_map_unordered[key_arr] = factor_id;
-            global_pool.push_back(f);
-            packed_pool.push_back(pf);
-        } else {
-            factor_id = it->second;
-        }
-    }
-
-    int slot = rowNum - 4;
-    addFactorToSlot(slot, factor_id);
-    return true;
+    printf("not supported\n");
+    exit(1);
+    return false;
 }
 
 K16A2::CycleUnion K16A2::find_cycles(const uint8_t* adj1, const uint8_t* adj2) {
@@ -285,21 +219,11 @@ K16A2::CycleUnion K16A2::find_cycles(const uint8_t* adj1, const uint8_t* adj2) {
         int curr = i;
         int cycle_pos = 0;
         do {
-            if (curr >= 16 || cycle_pos >= 16) {
-                memset(&cu, 0, sizeof(cu));
-                return cu;
-            }
             visited[curr] = true;
             cu.cycles[cu.count][cycle_pos++] = curr;
-            
             curr = adj1[curr];
-            if (curr >= 16 || cycle_pos >= 16) {
-                memset(&cu, 0, sizeof(cu));
-                return cu;
-            }
             visited[curr] = true;
             cu.cycles[cu.count][cycle_pos++] = curr;
-            
             curr = adj2[curr];
         } while (curr != i);
         cu.lens[cu.count] = cycle_pos;
@@ -475,9 +399,10 @@ void K16A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L)
     uint8_t alpha_p[16];
     buildPermutation(c, alpha_p, L);
     
+    int search_type = (v0 == 3) ? 2 : 1;
     if (search_type == 2) {
-        alpha_p[0] = transposed_point;
-        alpha_p[transposed_point] = 0;
+        alpha_p[0] = 1;
+        alpha_p[1] = 0;
     }
     
     bool in_main_cycle[16] = { false };
@@ -486,34 +411,20 @@ void K16A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L)
         in_main_cycle[c[i]] = true;
     }
     
-    bool defined[16] = { false };
-    defined[v0] = true;
-    for (int i = 0; i < L - 1; i++) defined[c[i]] = true;
-    if (search_type == 1) defined[fixed_point] = true;
-    if (search_type == 2) {
-        defined[0] = true;
-        defined[transposed_point] = true;
-    }
-    
-    if (!is_partial_permutation_ok(alpha_p, defined)) {
-        return;
-    }
-    
     uint8_t rem[16];
     int rem_size = 0;
-    for (int u = 0; u < 16; u++) {
-        if (search_type == 2 && (u == 0 || u == transposed_point)) continue;
-        if (search_type == 1 && u == fixed_point) continue;
+    int start_u = (search_type == 2) ? 2 : 1;
+    for (int u = start_u; u < 16; u++) {
         if (!in_main_cycle[u]) {
             rem[rem_size++] = u;
         }
     }
     
     bool rem_used[16] = { false };
-    generate_remaining_cycles(0, rem, rem_size, rem_used, defined, alpha_p, L);
+    generate_remaining_cycles(0, rem, rem_size, rem_used, alpha_p, L);
 }
 
-void K16A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, bool* defined, uint8_t* alpha_p, int L) {
+void K16A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L) {
     if (self->case_timed_out) return;
     int first_unused = -1;
     for (int i = start_idx; i < rem_size; i++) {
@@ -535,15 +446,10 @@ void K16A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
     
     for (int d = 1; d <= rem_size; d++) {
         if (L % d != 0) continue;
-        if (search_type == 2 && d == 1) continue;
         
         if (d == 1) {
             alpha_p[v0_rem] = v0_rem;
-            defined[v0_rem] = true;
-            if (is_partial_permutation_ok(alpha_p, defined)) {
-                generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, defined, alpha_p, L);
-            }
-            defined[v0_rem] = false;
+            generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L);
         } else {
             int unused_indices[16];
             int unused_count = 0;
@@ -568,20 +474,14 @@ void K16A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
                         for (int k = 0; k < d - 1; k++) {
                             alpha_p[cycle_nodes[k]] = cycle_nodes[k + 1];
                             rem_used[unused_indices[perm[k]]] = true;
-                            defined[cycle_nodes[k]] = true;
                         }
                         alpha_p[cycle_nodes[d - 1]] = cycle_nodes[0];
-                        defined[cycle_nodes[d - 1]] = true;
                         
-                        if (is_partial_permutation_ok(alpha_p, defined)) {
-                            generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, defined, alpha_p, L);
-                        }
+                        generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L);
                         
                         for (int k = 0; k < d - 1; k++) {
                             rem_used[unused_indices[perm[k]]] = false;
-                            defined[cycle_nodes[k]] = false;
                         }
-                        defined[cycle_nodes[d - 1]] = false;
                         return;
                     }
                     for (int j = 0; j < unused_count; j++) {
@@ -611,162 +511,23 @@ void K16A2::CycleBacktrackState::buildPermutation(uint8_t* c, uint8_t* alpha_p, 
 }
 
 bool K16A2::CycleBacktrackState::checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L) {
-    // Build and verify orbits of fixedRows[0], fixedRows[1], fixedRows[2] under alpha_p
-    std::vector<std::array<uint8_t, 16>> orbit_factors;
-    Permutation perm;
-    memcpy(perm.p, alpha_p, 16);
-
-    for (int r = 0; r < 3; r++) {
-        uint8_t curr_factor[16];
-        memcpy(curr_factor, self->fixedRows[r].adj, 16);
-        
-        while (true) {
-            std::array<uint8_t, 16> curr_arr;
-            std::copy(curr_factor, curr_factor + 16, curr_arr.begin());
-            
-            // Check if already visited in this orbit
-            bool visited = false;
-            for (const auto& f : orbit_factors) {
-                if (f == curr_arr) {
-                    visited = true;
-                    break;
-                }
-            }
-            if (visited) {
-                break; // Wrapped around
-            }
-
-            // Check compatibility with all already placed factors in the orbits
-            for (const auto& f : orbit_factors) {
-                if (!is_perfect_scalar(f.data(), curr_factor)) {
-                    return false;
-                }
-            }
-
-            if (orbit_factors.size() >= 15) {
-                return false;
-            }
-            orbit_factors.push_back(curr_arr);
-
-            uint8_t next_factor[16];
-            self->apply_perm_16(curr_factor, perm, next_factor);
-            memcpy(curr_factor, next_factor, 16);
-        }
+    uint8_t G[8][16];
+    memcpy(G[0], F[0], 16);
+    int limit = L / 2;
+    for (int j = 1; j <= limit; j++) {
+        apply_perm(G[j - 1], alpha_p, G[j]);
+        if (!is_perfect_scalar(G[0], G[j])) return false;
     }
-
     return validateCandidateL(alpha_p, used, L);
 }
 
 bool K16A2::CycleBacktrackState::validateCandidateL(const uint8_t* alpha_p, bool* used, int L) {
     if (L == 15) return true;
-
-    // 1. Build the orbit of Row 1 under alpha_p
     uint8_t G[15][16];
-    memcpy(G[0], self->fixedRows[0].adj, 16);
-    int L_row1 = 1;
-    Permutation perm;
-    memcpy(perm.p, alpha_p, 16);
-
-    while (true) {
-        if (L_row1 >= 15) {
-            return false;
-        }
-        uint8_t next_factor[16];
-        self->apply_perm_16(G[L_row1 - 1], perm, next_factor);
-        if (memcmp(next_factor, G[0], 16) == 0) {
-            break;
-        }
-        memcpy(G[L_row1], next_factor, 16);
-        L_row1++;
-    }
-
-    // 2. Check compatibility of all orbit elements G
-    if (!self->checkCyclesCompatibility(G, L_row1)) return false;
-
-    // 3. Verify Row 2 and Row 3 are compatible and check slots
-    uint8_t r2_nb = self->fixedRows[1].adj[0];
-    uint8_t r3_nb = self->fixedRows[2].adj[0];
-
-    bool found_r2 = false;
-    bool found_r3 = false;
-
-    for (int k = 0; k < L_row1; k++) {
-        uint8_t nb = G[k][0];
-        if (nb == r2_nb) {
-            if (memcmp(G[k], self->fixedRows[1].adj, 16) != 0) return false;
-            found_r2 = true;
-        }
-        if (nb == r3_nb) {
-            if (memcmp(G[k], self->fixedRows[2].adj, 16) != 0) return false;
-            found_r3 = true;
-        }
-    }
-
-    if (!found_r2) {
-        if (!is_perfect_scalar(G[0], self->fixedRows[1].adj)) return false;
-        for (int u = 0; u < 16; u++) {
-            int v = self->fixedRows[1].adj[u];
-            if (u < v) {
-                if (!self->isEdgeMissing(G, L_row1, u, v)) return false;
-            }
-        }
-    }
-
-    if (!found_r3) {
-        if (!is_perfect_scalar(G[0], self->fixedRows[2].adj)) return false;
-        for (int u = 0; u < 16; u++) {
-            int v = self->fixedRows[2].adj[u];
-            if (u < v) {
-                if (!self->isEdgeMissing(G, L_row1, u, v)) return false;
-            }
-        }
-    }
-
-    if (!found_r2 && !found_r3) {
-        if (!is_perfect_scalar(self->fixedRows[1].adj, self->fixedRows[2].adj)) return false;
-    }
-
+    self->constructFullH(G, L, alpha_p, G);
+    if (!self->checkCyclesCompatibility(G, L)) return false;
     uint8_t H[16][16];
-    return self->decomposeMissingEdges(G, L_row1, H);
-}
-
-bool K16A2::CycleBacktrackState::is_partial_permutation_ok(const uint8_t* alpha_p, const bool* defined) {
-    int target_for_row[3] = { -2, -2, -2 }; // -2: undetermined, -1: outside, 0/1/2: fixed row index
-    for (int r = 0; r < 3; r++) {
-        const uint8_t* adj = self->fixedRows[r].adj;
-        for (int u = 0; u < 16; u++) {
-            int v = adj[u];
-            if (u < v) {
-                if (defined[u] && defined[v]) {
-                    int img_u = alpha_p[u];
-                    int img_v = alpha_p[v];
-                    
-                    int current_target = -1; // Default to outside
-                    if (self->fixedRows[0].adj[img_u] == img_v) {
-                        current_target = 0;
-                    } else if (self->fixedRows[1].adj[img_u] == img_v) {
-                        current_target = 1;
-                    } else if (self->fixedRows[2].adj[img_u] == img_v) {
-                        current_target = 2;
-                    }
-                    
-                    if (target_for_row[r] == -2) {
-                        target_for_row[r] = current_target;
-                    } else if (target_for_row[r] != current_target) {
-                        return false; // Inconsistent target factor for row r
-                    }
-                }
-            }
-        }
-    }
-    // Injectivity: no two source rows can map to the same target row (except -1/outside)
-    if (target_for_row[0] >= 0) {
-        if (target_for_row[0] == target_for_row[1] || target_for_row[0] == target_for_row[2]) return false;
-    }
-    if (target_for_row[1] >= 0) {
-        if (target_for_row[1] == target_for_row[2]) return false;
-    }
-    return true;
+    return self->decomposeMissingEdges(G, L, H);
 }
 
 void K16A2::CycleBacktrackState::saveAlpha(const uint8_t* alpha_p) {
@@ -776,7 +537,6 @@ void K16A2::CycleBacktrackState::saveAlpha(const uint8_t* alpha_p) {
     total_passed_p1f++;
 }
 void K16A2::printEstimatedTime(int L, long long checked_reps) {
-    if (!m_bPrint) return;
     long long orbit_reps[16] = {
         0, 1, 1, 2, 4, 10, 26, 72, 232, 504, 2619, 5040, 34650, 124740, 405405, 135135
     };
@@ -791,6 +551,7 @@ void K16A2::printEstimatedTime(int L, long long checked_reps) {
             double est_rem = est_total - elapsed_total;
             printf("\r   [L=%d] Rep %lld/%lld. Est. time to end: %.1f min       ", 
                    L, checked_reps, total_reps, est_rem / 60.0);
+            fflush(stdout);
         }
     }
 }
@@ -816,7 +577,7 @@ void K16A2::runExhaustiveSearch() {
     }
     
     std::set<std::vector<uint8_t>> local_l14_unique;
-    int cycle_lengths[] = { 15, 14, 12, 10, 8, 6, 4, 2 };
+    int cycle_lengths[] = { 15, 14, 12, 10, 8, 6, 4, 3, 2 };
     for (int L : cycle_lengths) {
         if (unique_results.size() >= 2000) {
             stats[L].run = false;
@@ -848,12 +609,10 @@ void K16A2::runExhaustiveSearch() {
     }
     
     // Print the summary table
-    if (m_bPrint) {
-        printf("\n");
-        printf("=========================================================================================================================================================\n");
-        printf(" L   Cycle Structures Covered                           Orbit Reps   Checked Perms   Passed Filter   Unique Reps  Short Status / Description\n");
-        printf("---------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-    }
+    printf("\n");
+    printf("=========================================================================================================================================================\n");
+    printf(" L   Cycle Structures Covered                           Orbit Reps   Checked Perms   Passed Filter   Unique Reps  Short Status / Description\n");
+    printf("---------------------------------------------------------------------------------------------------------------------------------------------------------\n");
     
     long long orbit_reps[16] = {
         0, // L=0
@@ -928,27 +687,23 @@ void K16A2::runExhaustiveSearch() {
             }
         }
         
-        if (m_bPrint) {
-            printf("%2d   %-50s  %11s  %14s  %14s  %12s  %s\n",
-                   L, cycle_str, reps_str, checked_str, passed_str, reps_count_str, desc);
-                   
-            if (L == 14 && stats[14].run) {
-                printf("14R  %-50s  %11s  %14s  %14s  %12s  %s\n",
-                       "Reflection pairing verification", "-", "-", "-", "2", "Verified pairing");
-            }
+        printf("%2d   %-50s  %11s  %14s  %14s  %12s  %s\n",
+               L, cycle_str, reps_str, checked_str, passed_str, reps_count_str, desc);
+               
+        if (L == 14 && stats[14].run) {
+            printf("14R  %-50s  %11s  %14s  %14s  %12s  %s\n",
+                   "Reflection pairing verification", "-", "-", "-", "2", "Verified pairing");
         }
     }
-    if (m_bPrint) {
-        printf("=========================================================================================================================================================\n");
-        printf("\n");
-    }
+    printf("=========================================================================================================================================================\n");
+    printf("\n");
     
     reportTotalResults(unique_results, search_start);
 }
 
 void K16A2::verifyL14Pairing(const std::set<std::vector<uint8_t>>& local_unique) {
-    if (!m_bPrint) return;
     printf("-> Entering Case: L = 14 Reflection Pairing Verification\n");
+    fflush(stdout);
     
     std::vector<std::vector<uint8_t>> mats(local_unique.begin(), local_unique.end());
     size_t n = mats.size();
@@ -1029,115 +784,83 @@ void K16A2::verifyL14Pairing(const std::set<std::vector<uint8_t>>& local_unique)
 }
 
 void K16A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_results, CycleLengthStats& stats) {
-    if (m_bPrint) {
-        printf("-> Entering Case: L = %d, Search Type 1 (Fixed out-of-cycle points)\n", L);
-    }
+    printf("-> Entering Case: L = %d, Search Type 1 (Fixed out-of-cycle points)\n", L);
+    fflush(stdout);
 
     case_start_time = std::chrono::steady_clock::now();
     last_print_time = case_start_time;
     case_timed_out = false;
     current_checked_reps = 0;
 
-    long long total_gen1 = 0;
-    long long total_pass1 = 0;
-    std::vector<std::array<uint8_t, 16>> accumulated_alphas1;
+    CycleBacktrackState state1;
+    state1.self = this;
+    setupBacktrackState(state1, 1);
+    uint8_t c1[16];
+    bool used1[16];
+    memset(used1, 0, sizeof(used1));
+    used1[0] = true;
+    used1[state1.v0] = true;
 
-    int f_start = 0;
-    int f_end = 16;
-
-    for (int f = f_start; f < f_end; f++) {
-        if (case_timed_out) break;
-
-        std::vector<int> v0_choices;
-        if (L < 15) {
-            for (int v = 0; v < 16; v++) {
-                if (v != f) v0_choices.push_back(v);
-            }
+    // Calculate total top-level branches for state1
+    int total_branches1 = 0;
+    for (int v = 0; v < 16; v++) {
+        if (used1[v]) continue;
+        int p_idx = state1.vertex_to_pair[v];
+        if (p_idx == -2) {
+            total_branches1++;
         } else {
-            v0_choices.push_back(fixedRows[0].adj[f]);
-        }
-
-        for (int v0_candidate : v0_choices) {
-            if (case_timed_out) break;
-            CycleBacktrackState state1;
-            state1.self = this;
-            setupBacktrackState(state1, 1, f, 0, v0_candidate);
-            uint8_t c1[16];
-            bool used1[16];
-            memset(used1, 0, sizeof(used1));
-            used1[f] = true;
-            used1[state1.v0] = true;
-
-            // Calculate total top-level branches for state1
-            int total_branches1 = 0;
-            for (int v = 0; v < 16; v++) {
-                if (used1[v]) continue;
-                int p_idx = state1.vertex_to_pair[v];
-                if (p_idx == -2) {
-                    total_branches1++;
-                } else {
-                    bool pair_visited = used1[state1.pair_elements[p_idx][0]] || used1[state1.pair_elements[p_idx][1]];
-                    if (pair_visited) {
-                        total_branches1++;
-                    } else if (v == state1.pair_elements[0][0]) {
-                        total_branches1++;
-                    }
-                }
+            bool pair_visited = used1[state1.pair_elements[p_idx][0]] || used1[state1.pair_elements[p_idx][1]];
+            if (pair_visited) {
+                total_branches1++;
+            } else if (v == state1.pair_elements[0][0]) {
+                total_branches1++;
             }
-            this->total_top_branches = total_branches1;
-            this->current_top_branch_idx = 0;
-
-            state1.backtrack(0, 0, c1, used1, L);
-            
-            total_gen1 += state1.total_generated;
-            total_pass1 += state1.total_passed_p1f;
-            accumulated_alphas1.insert(accumulated_alphas1.end(), state1.valid_alphas.begin(), state1.valid_alphas.end());
         }
     }
+    this->total_top_branches = total_branches1;
+    this->current_top_branch_idx = 0;
 
+    state1.backtrack(0, 0, c1, used1, L);
+    
     CycleBacktrackState state2;
     if (!case_timed_out && L >= 2 && L <= 14 && L % 2 == 0) {
-        if (m_bPrint) {
-            printf("-> Entering Case: L = %d, Search Type 2 (Transposed out-of-cycle points)\n", L);
-        }
+        printf("-> Entering Case: L = %d, Search Type 2 (Transposed out-of-cycle points)\n", L);
+        fflush(stdout);
 
         state2.self = this;
-        for (int t = 1; t < 16; t++) {
-            if (case_timed_out) break;
-            setupBacktrackState(state2, 2, 0, t);
-            uint8_t c2[16];
-            bool used2[16];
-            memset(used2, 0, sizeof(used2));
-            used2[0] = true;
-            used2[t] = true;
-            used2[state2.v0] = true;
+        setupBacktrackState(state2, 2);
+        uint8_t c2[16];
+        bool used2[16];
+        memset(used2, 0, sizeof(used2));
+        used2[0] = true;
+        used2[1] = true;
+        used2[state2.v0] = true;
 
-            // Calculate total top-level branches for state2
-            int total_branches2 = 0;
-            for (int v = 0; v < 16; v++) {
-                if (used2[v]) continue;
-                int p_idx = state2.vertex_to_pair[v];
-                if (p_idx == -2) {
+        // Calculate total top-level branches for state2
+        int total_branches2 = 0;
+        for (int v = 0; v < 16; v++) {
+            if (used2[v]) continue;
+            int p_idx = state2.vertex_to_pair[v];
+            if (p_idx == -2) {
+                total_branches2++;
+            } else {
+                bool pair_visited = used2[state2.pair_elements[p_idx][0]] || used2[state2.pair_elements[p_idx][1]];
+                if (pair_visited) {
                     total_branches2++;
-                } else {
-                    bool pair_visited = used2[state2.pair_elements[p_idx][0]] || used2[state2.pair_elements[p_idx][1]];
-                    if (pair_visited) {
-                        total_branches2++;
-                    } else if (v == state2.pair_elements[0][0]) {
-                        total_branches2++;
-                    }
+                } else if (v == state2.pair_elements[0][0]) {
+                    total_branches2++;
                 }
             }
-            this->total_top_branches = total_branches2;
-            this->current_top_branch_idx = 0;
-
-            state2.backtrack(0, 0, c2, used2, L);
         }
+        this->total_top_branches = total_branches2;
+        this->current_top_branch_idx = 0;
+
+        state2.backtrack(0, 0, c2, used2, L);
     }
     
     std::set<std::vector<uint8_t>> local_unique;
     if (!case_timed_out) {
-        for (const auto& alpha : accumulated_alphas1) {
+        for (const auto& alpha : state1.valid_alphas) {
             if (unique_results.size() + local_unique.size() >= 2000) break;
             std::set<std::vector<uint8_t>> temp_unique;
             processAutomorphism(alpha, L, temp_unique);
@@ -1162,8 +885,8 @@ void K16A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     }
     
     stats.L = L;
-    stats.inputs = total_gen1 + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_generated : 0);
-    stats.passed = total_pass1 + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_passed_p1f : 0);
+    stats.inputs = state1.total_generated + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_generated : 0);
+    stats.passed = state1.total_passed_p1f + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_passed_p1f : 0);
     stats.unique_classes = local_unique.size();
     
     unique_results.insert(local_unique.begin(), local_unique.end());
@@ -1180,41 +903,30 @@ void K16A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
         if (checked_reps > 0) {
             estimated_time = elapsed * ((double)total_reps / checked_reps);
         }
-        if (m_bPrint) {
-            printf("\n   [L=%d] TIMEOUT reached. Checked %lld / %lld orbit reps in %.2f seconds.\n", 
-                   L, checked_reps, total_reps, elapsed);
-            if (estimated_time >= 0) {
-                printf("   [L=%d] Estimated total time needed without timeout: %.2f seconds (%.2f hours)\n", 
-                       L, estimated_time, estimated_time / 3600.0);
-            } else {
-                printf("   [L=%d] Estimated total time: infinite/unknown (checked 0 reps)\n", L);
-            }
+        printf("\n   [L=%d] TIMEOUT reached. Checked %lld / %lld orbit reps in %.2f seconds.\n", 
+               L, checked_reps, total_reps, elapsed);
+        if (estimated_time >= 0) {
+            printf("   [L=%d] Estimated total time needed without timeout: %.2f seconds (%.2f hours)\n", 
+                   L, estimated_time, estimated_time / 3600.0);
+        } else {
+            printf("   [L=%d] Estimated total time: infinite/unknown (checked 0 reps)\n", L);
         }
     } else {
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double>(now - case_start_time).count();
         if (elapsed >= 30.0) {
-            if (m_bPrint) {
-                printf("\n");
-            }
+            printf("\n");
         }
     }
+    fflush(stdout);
 }
 
-void K16A2::setupBacktrackState(CycleBacktrackState& state, int search_type, int fixed_point, int transposed_point, int override_v0) {
-    state.search_type = search_type;
-    state.fixed_point = fixed_point;
-    state.transposed_point = transposed_point;
+void K16A2::setupBacktrackState(CycleBacktrackState& state, int search_type) {
     memcpy(state.F[0], fixedRows[0].adj, 16);
     if (search_type == 2) {
-        state.v0 = (transposed_point == 1) ? 2 : 1;
-        state.fixed_point = 0;
+        state.v0 = 3;
     } else {
-        if (override_v0 != -1) {
-            state.v0 = override_v0;
-        } else {
-            state.v0 = fixedRows[0].adj[fixed_point];
-        }
+        state.v0 = fixedRows[0].adj[0];
     }
     setupPairsTable(state, search_type);
 }
@@ -1232,9 +944,8 @@ void K16A2::setupPairsTable(CycleBacktrackState& state, int search_type) {
 
 void K16A2::fillPairsTable(CycleBacktrackState& state, int search_type) {
     int pair_count = 0;
-    for (int u = 0; u < 16; u++) {
-        if (search_type == 2 && (u == 0 || u == state.transposed_point)) continue;
-        if (search_type == 1 && u == state.fixed_point) continue;
+    for (int u = 1; u < 16; u++) {
+        if (search_type == 2 && u == 1) continue;
         if (u == state.v0) continue;
         uint8_t v = fixedRows[0].adj[u];
         if (v == state.v0) continue;
@@ -1256,35 +967,18 @@ void K16A2::processAutomorphism(const std::array<uint8_t, 16>& alpha_arr, int L,
     uint8_t alpha[16];
     std::copy(alpha_arr.begin(), alpha_arr.end(), alpha);
     uint8_t H[16][16];
-    if (constructFullHFromAut(alpha, L, H)) {
-        recordIsomorphicResults(H, unique_results);
-    }
+    constructFullHFromAut(alpha, L, H);
+    recordIsomorphicResults(H, unique_results);
 }
 
-bool K16A2::constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][16]) {
+void K16A2::constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][16]) {
+    uint8_t G[15][16];
+    memcpy(G[0], fixedRows[0].adj, 16);
+    constructFullH(G, L, alpha, G);
     if (L == 15) {
-        uint8_t G[15][16];
-        memcpy(G[0], fixedRows[0].adj, 16);
-        constructFullH(G, L, alpha, G);
         copyMatchingsToH(nullptr, 0, G, L, H);
-        return true;
     } else {
-        uint8_t G[15][16];
-        memcpy(G[0], fixedRows[0].adj, 16);
-        int L_row1 = 1;
-        Permutation perm;
-        memcpy(perm.p, alpha, 16);
-
-        while (true) {
-            uint8_t next_factor[16];
-            apply_perm_16(G[L_row1 - 1], perm, next_factor);
-            if (memcmp(next_factor, G[0], 16) == 0) {
-                break;
-            }
-            memcpy(G[L_row1], next_factor, 16);
-            L_row1++;
-        }
-        return decomposeMissingEdges(G, L_row1, H);
+        decomposeMissingEdges(G, L, H);
     }
 }
 
@@ -1308,290 +1002,124 @@ bool K16A2::checkCyclesCompatibility(const uint8_t G[][16], int L) {
 
 bool K16A2::decomposeMissingEdges(const uint8_t G[][16], int L, uint8_t H[][16]) {
     if (case_timed_out) return false;
-
-    // 1. Identify missing slots
-    // Pre-generate orbits of fixedRows[0], fixedRows[1], and fixedRows[2] under alpha
-    bool in_orbit[16] = { false };
-    uint8_t matchings[15][16];
-    memset(matchings, 0xFF, sizeof(matchings));
-
-    // Extract alpha permutation from G
-    Permutation alpha;
-    for (int i = 0; i < 32; i++) {
-        alpha.p[i] = (uint8_t)i;
-        alpha.p_inv[i] = (uint8_t)i;
+    int num_colors = 15 - L;
+    
+    // 1. Build adjacency matrix of the complement graph
+    bool complement_adj[16][16];
+    memset(complement_adj, false, sizeof(complement_adj));
+    for (int u = 0; u < 16; u++) {
+        for (int v = u + 1; v < 16; v++) {
+            if (isEdgeMissing(G, L, u, v)) {
+                complement_adj[u][v] = true;
+                complement_adj[v][u] = true;
+            }
+        }
     }
     
-    TransInfo info;
-    Factor F0, F1, F2;
-    memcpy(F0.adj, G[0], 16);
-    memcpy(F1.adj, G[1], 16);
-    if (L > 2) {
-        memcpy(F2.adj, G[2], 16);
-        get_transformations_general(F0, F1, F1, F2, info);
-    } else {
-        get_transformations_general(F0, F1, F0, F1, info);
-    }
+    // 2. Generate all perfect matchings in complement graph compatible with G[0]
+    std::vector<std::array<uint8_t, 16>> pool;
+    uint8_t current_matching[16];
+    memset(current_matching, 0xFF, sizeof(current_matching));
+    bool used[16] = { false };
     
-    bool found_alpha = false;
-    for (int p_idx = 0; p_idx < info.count; p_idx++) {
-        const auto& perm = info.perms[p_idx];
-        bool ok = true;
-        uint8_t temp[16];
-        for (int k = 1; k < L; k++) {
-            apply_perm_16(G[k-1], perm, temp);
-            if (memcmp(temp, G[k], 16) != 0) { ok = false; break; }
+    auto forms_disjoint_cycle = [&](int u, int v, const uint8_t* matching) -> bool {
+        uint8_t curr = G[0][u];
+        int len = 2;
+        while (curr != v) {
+            uint8_t next_v = matching[curr];
+            if (next_v == 0xFF) return false;
+            curr = G[0][next_v];
+            len += 2;
         }
-        if (ok) {
-            alpha = perm;
-            found_alpha = true;
-            break;
-        }
-    }
-    if (!found_alpha) return false;
-
-    // Now, pre-generate orbits of fixedRows[0], fixedRows[1], and fixedRows[2] under alpha
-    for (int r = 0; r < 3; r++) {
-        uint8_t curr_factor[16];
-        memcpy(curr_factor, fixedRows[r].adj, 16);
-        while (true) {
-            uint8_t u = curr_factor[0];
-            if (u >= 4 && u < 16) {
-                int slot = u - 4;
-                memcpy(matchings[slot], curr_factor, 16);
-            }
-            in_orbit[u] = true;
-
-            uint8_t next_factor[16];
-            apply_perm_16(curr_factor, alpha, next_factor);
-            if (memcmp(next_factor, fixedRows[r].adj, 16) == 0) {
-                break;
-            }
-            memcpy(curr_factor, next_factor, 16);
-        }
-    }
-
-    std::vector<int> missing_slots;
-    for (int u = 4; u < 16; u++) {
-        if (!in_orbit[u]) {
-            int slot = u - 4;
-            ensureSlotGenerated(slot);
-            missing_slots.push_back(slot);
-        }
-    }
-
-    int num_missing = (int)missing_slots.size();
-    if (num_missing == 0) {
-        copyMatchingsToH(matchings, 12, G, L, H);
-        return true;
-    }
-
-    // 2. Prepare initial used edges mask (fixed rows + orbit factors)
-    Mask256_C used_edges_init = fixedEdgesMask;
-    for (int k = 0; k < L; k++) {
-        PackedAdj pg = pack_factor_adj(G[k]);
-        used_edges_init.m[0] |= pg.edge_mask.m[0];
-        used_edges_init.m[1] |= pg.edge_mask.m[1];
-    }
-
-    // 3. Pre-generate orbits of candidate factors under alpha
-    struct StaticOrbit {
-        std::vector<int> fids;
-        std::vector<int> slots;
-        uint16_t slots_mask = 0;
-        Mask256_C edge_mask;
+        return len < 16;
     };
-
-    std::vector<StaticOrbit> valid_orbits;
-    std::vector<uint8_t> visited_factor(global_pool.size(), 0);
-
-    for (int slot : missing_slots) {
-        for (int fid : temp_slot_ids[slot]) {
-            if (visited_factor[fid]) continue;
-
-            StaticOrbit orb;
-            int curr_fid = fid;
-            bool orb_ok = true;
-
-            while (true) {
-                visited_factor[curr_fid] = 1;
-                orb.fids.push_back(curr_fid);
-
-                uint8_t u = global_pool[curr_fid].adj[0];
-                if (u < 4 || u >= 16) { orb_ok = false; break; }
-                int s_idx = u - 4;
-                orb.slots.push_back(s_idx);
-
-                if (std::find(missing_slots.begin(), missing_slots.end(), s_idx) == missing_slots.end()) {
-                    orb_ok = false; break;
+    
+    auto generate_matchings = [&](auto& self_fn, int u) -> void {
+        if (case_timed_out) return;
+        if (u == 16) {
+            std::array<uint8_t, 16> m;
+            memcpy(m.data(), current_matching, 16);
+            pool.push_back(m);
+            return;
+        }
+        if (used[u]) {
+            self_fn(self_fn, u + 1);
+            return;
+        }
+        used[u] = true;
+        for (int v = u + 1; v < 16; v++) {
+            if (!used[v] && complement_adj[u][v]) {
+                if (!forms_disjoint_cycle(u, v, current_matching)) {
+                    used[v] = true;
+                    current_matching[u] = (uint8_t)v;
+                    current_matching[v] = (uint8_t)u;
+                    self_fn(self_fn, u + 1);
+                    used[v] = false;
+                    current_matching[u] = 0xFF;
+                    current_matching[v] = 0xFF;
                 }
-
-                uint8_t next_adj[16];
-                apply_perm_16(global_pool[curr_fid].adj, alpha, next_adj);
-
-                if (memcmp(next_adj, global_pool[fid].adj, 16) == 0) {
+            }
+        }
+        used[u] = false;
+    };
+    generate_matchings(generate_matchings, 0);
+    
+    if (pool.size() < (size_t)num_colors) return false;
+    
+    // 3. Find a clique of size num_colors of pairwise compatible matchings
+    std::vector<int> clique;
+    
+    auto find_clique = [&](auto& self_fn, int start_idx, int depth) -> bool {
+        if (case_timed_out) return false;
+        static thread_local int find_clique_call_count = 0;
+        if (++find_clique_call_count >= 1000) {
+            find_clique_call_count = 0;
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - case_start_time).count();
+            if (elapsed > case_timeout_seconds) {
+                case_timed_out = true;
+                return false;
+            }
+            printEstimatedTime(L, current_checked_reps);
+        }
+        if (depth == num_colors) return true;
+        
+        for (int i = start_idx; i < pool.size(); i++) {
+            bool ok = true;
+            for (int idx : clique) {
+                // Edge-disjoint check
+                for (int v = 0; v < 16; v++) {
+                    if (pool[i][v] == pool[idx][v]) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) break;
+                
+                // Cycle compatibility check
+                if (!is_perfect_scalar(pool[i].data(), pool[idx].data())) {
+                    ok = false;
                     break;
                 }
-
-                std::array<uint8_t, 16> key_arr;
-                std::copy(next_adj, next_adj + 16, key_arr.begin());
-                auto it = f_map_unordered.find(key_arr);
-                if (it == f_map_unordered.end()) {
-                    orb_ok = false; break;
-                }
-                int next_fid = it->second;
-                if (std::find(orb.fids.begin(), orb.fids.end(), next_fid) != orb.fids.end()) {
-                    orb_ok = false; break;
-                }
-                curr_fid = next_fid;
             }
-
-            if (!orb_ok) continue;
-
-            orb.slots_mask = 0;
-            bool slot_conflict = false;
-            for (int s : orb.slots) {
-                if (orb.slots_mask & (1 << s)) {
-                    slot_conflict = true; break;
-                }
-                orb.slots_mask |= (1 << s);
-            }
-            if (slot_conflict) continue;
-
-            bool internal_ok = true;
-            orb.edge_mask = Mask256_C();
-            for (size_t i = 0; i < orb.fids.size(); i++) {
-                int f1 = orb.fids[i];
-                if (!is_perfect_scalar(G[0], global_pool[f1].adj)) {
-                    internal_ok = false; break;
-                }
-                if (!is_disjoint(packed_pool[f1].edge_mask, used_edges_init)) {
-                    internal_ok = false; break;
-                }
-                if (!is_disjoint(packed_pool[f1].edge_mask, orb.edge_mask)) {
-                    internal_ok = false; break;
-                }
-                orb.edge_mask.m[0] |= packed_pool[f1].edge_mask.m[0];
-                orb.edge_mask.m[1] |= packed_pool[f1].edge_mask.m[1];
-
-                for (size_t j = i + 1; j < orb.fids.size(); j++) {
-                    int f2 = orb.fids[j];
-                    if (!is_perfect_scalar(global_pool[f1].adj, global_pool[f2].adj)) {
-                        internal_ok = false; break;
-                    }
-                }
-                if (!internal_ok) break;
-            }
-
-            if (internal_ok) {
-                valid_orbits.push_back(std::move(orb));
+            if (ok) {
+                clique.push_back(i);
+                if (self_fn(self_fn, i + 1, depth + 1)) return true;
+                clique.pop_back();
             }
         }
-    }
-
-    // Index valid orbits by slot for fast lookup
-    std::vector<int> orbits_by_slot[12];
-    for (int o_idx = 0; o_idx < (int)valid_orbits.size(); o_idx++) {
-        for (int s : valid_orbits[o_idx].slots) {
-            orbits_by_slot[s].push_back(o_idx);
-        }
-    }
-
-    bool slot_filled[12] = { false };
-    uint16_t initial_slots_mask = 0;
-    for (int s = 0; s < 12; s++) {
-        if (matchings[s][0] != 0xFF) {
-            slot_filled[s] = true;
-            initial_slots_mask |= (1 << s);
-        }
-    }
-
-    std::vector<int> chosen_orbits;
-
-    auto solve_dynamic = [&](auto& self_fn, uint16_t slots_mask, Mask256_C edges_mask) -> bool {
-        if (case_timed_out) return false;
-
-        // Dynamic MRV: Find the unfilled slot with the minimum number of compatible candidate orbits
-        int best_slot = -1;
-        int min_compatible = 999999;
-        std::vector<int> compatible_orbit_indices;
-
-        for (int slot : missing_slots) {
-            if (slots_mask & (1 << slot)) continue;
-
-            std::vector<int> temp_compatible;
-            for (int o_idx : orbits_by_slot[slot]) {
-                const auto& orb = valid_orbits[o_idx];
-
-                if (slots_mask & orb.slots_mask) continue;
-                if (!is_disjoint(edges_mask, orb.edge_mask)) continue;
-
-                bool cycle_ok = true;
-                for (int chosen_idx : chosen_orbits) {
-                    const auto& chosen_orb = valid_orbits[chosen_idx];
-                    for (int f1 : chosen_orb.fids) {
-                        for (int f2 : orb.fids) {
-                            if (!is_perfect_scalar(global_pool[f1].adj, global_pool[f2].adj)) {
-                                cycle_ok = false; break;
-                            }
-                        }
-                        if (!cycle_ok) break;
-                    }
-                    if (!cycle_ok) break;
-                }
-                if (!cycle_ok) continue;
-
-                temp_compatible.push_back(o_idx);
-            }
-
-            int count = (int)temp_compatible.size();
-            if (count < min_compatible) {
-                min_compatible = count;
-                best_slot = slot;
-                compatible_orbit_indices = std::move(temp_compatible);
-                if (min_compatible == 0) break; // Lookahead prune!
-            }
-        }
-
-        if (best_slot == -1) {
-            return true; // All slots covered!
-        }
-
-        if (min_compatible == 0) {
-            return false; // Prune branch
-        }
-
-        // Branch on the compatible orbits covering best_slot
-        for (int o_idx : compatible_orbit_indices) {
-            const auto& orb = valid_orbits[o_idx];
-
-            chosen_orbits.push_back(o_idx);
-            Mask256_C new_edges_mask = edges_mask;
-            new_edges_mask.m[0] |= orb.edge_mask.m[0];
-            new_edges_mask.m[1] |= orb.edge_mask.m[1];
-
-            if (self_fn(self_fn, slots_mask | orb.slots_mask, new_edges_mask)) {
-                return true;
-            }
-
-            chosen_orbits.pop_back();
-        }
-
         return false;
     };
-
-    if (!solve_dynamic(solve_dynamic, initial_slots_mask, used_edges_init)) return false;
-
-    // Commit chosen orbits to matchings
-    for (int o_idx : chosen_orbits) {
-        const auto& orb = valid_orbits[o_idx];
-        for (size_t j = 0; j < orb.slots.size(); j++) {
-            memcpy(matchings[orb.slots[j]], global_pool[orb.fids[j]].adj, 16);
-        }
+    
+    if (!find_clique(find_clique, 0, 0)) return false;
+    
+    // 4. Copy the found clique of matchings to H
+    uint8_t matchings[15][16];
+    memset(matchings, 0xFF, sizeof(matchings));
+    for (int c = 0; c < num_colors; c++) {
+        memcpy(matchings[c], pool[clique[c]].data(), 16);
     }
-
-    // 4. Copy completed matchings to H
-    copyMatchingsToH(matchings, 12, G, L, H);
+    copyMatchingsToH(matchings, num_colors, G, L, H);
     return true;
 }
 
@@ -1700,50 +1228,27 @@ void K16A2::copyMatchingsToH(uint8_t matchings[][16], int num_colors,
         uint8_t nb = G[k][0];
         memcpy(H[nb], G[k], 16);
     }
-    // Copy fixed rows if they are not in H already
-    if (H[fixedRows[1].adj[0]][0] == 0) {
-        memcpy(H[fixedRows[1].adj[0]], fixedRows[1].adj, 16);
-    }
-    if (H[fixedRows[2].adj[0]][0] == 0) {
-        memcpy(H[fixedRows[2].adj[0]], fixedRows[2].adj, 16);
-    }
     for (int c = 0; c < num_colors; c++) {
         uint8_t nb = matchings[c][0];
-        if (nb == 0xFF || nb >= 16) continue;
         memcpy(H[nb], matchings[c], 16);
     }
 }
 
 void K16A2::recordIsomorphicResults(const uint8_t H[][16], std::set<std::vector<uint8_t>>& unique_results) {
-    for (int a = 1; a <= 15; a++) {
-        for (int b = 1; b <= 15; b++) {
-            if (a == b) continue;
-            CycleUnion cu_H = find_cycles(H[a], H[b]);
-            if (cu_H.count != 1 || cu_H.lens[0] != 16) continue;
-            for (int v = 0; v < 16; v++) {
-                tryIsomorphicMapping(H, a, b, cu_H, v, unique_results);
-            }
-        }
+    CycleUnion cu_H = find_cycles(H[1], H[2]);
+    if (cu_H.count != 1 || cu_H.lens[0] != 16) return;
+    for (int v = 0; v < 16; v++) {
+        tryIsomorphicMapping(H, cu_H, v, unique_results);
     }
 }
 
-void K16A2::tryIsomorphicMapping(const uint8_t H[][16], int a, int b, const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::tryIsomorphicMapping(const uint8_t H[][16], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results) {
     uint8_t cyc_R[16];
     buildStarterCycle(cyc_R);
-    
-    // Forward direction
     uint8_t cyc_H[16];
-    buildHCycle(H, a, b, v, cyc_H);
+    buildHCycle(H, v, cyc_H);
     uint8_t p[16];
     buildMappingPermutation(cyc_H, cyc_R, p);
-    checkAndRecordPermutedH(H, p, unique_results);
-    
-    // Backward direction
-    uint8_t cyc_H_rev[16];
-    for (int i = 0; i < 16; i++) {
-        cyc_H_rev[i] = cyc_H[15 - i];
-    }
-    buildMappingPermutation(cyc_H_rev, cyc_R, p);
     checkAndRecordPermutedH(H, p, unique_results);
 }
 
@@ -1757,13 +1262,13 @@ void K16A2::buildStarterCycle(uint8_t* cyc_R) {
     }
 }
 
-void K16A2::buildHCycle(const uint8_t H[][16], int a, int b, int v, uint8_t* cyc_H) {
+void K16A2::buildHCycle(const uint8_t H[][16], int v, uint8_t* cyc_H) {
     uint8_t curr = v;
     for (int i = 0; i < 8; i++) {
         cyc_H[2 * i] = curr;
-        curr = H[a][curr];
+        curr = H[1][curr];
         cyc_H[2 * i + 1] = curr;
-        curr = H[b][curr];
+        curr = H[2][curr];
     }
 }
 
@@ -1794,10 +1299,8 @@ void K16A2::applyPermToH(const uint8_t H[][16], const uint8_t* p, uint8_t S[][16
 }
 
 bool K16A2::doesSMatchFixedRows(const uint8_t S[][16]) {
-    bool match1 = memcmp(S[1], fixedRows[0].adj, 16) == 0;
-    bool match2 = memcmp(S[2], fixedRows[1].adj, 16) == 0;
-    bool match3 = memcmp(S[3], fixedRows[2].adj, 16) == 0;
-    return match1 && match2 && match3;
+    return memcmp(S[1], fixedRows[0].adj, 16) == 0 &&
+           memcmp(S[2], fixedRows[1].adj, 16) == 0;
 }
 
 void K16A2::recordS(const uint8_t S[][16], std::set<std::vector<uint8_t>>& unique_results) {
@@ -1813,9 +1316,7 @@ void K16A2::reportTotalResults(const std::set<std::vector<uint8_t>>& unique_resu
                                std::chrono::high_resolution_clock::time_point start) {
     auto end = std::chrono::high_resolution_clock::now();
     double elapsed = std::chrono::duration<double>(end - start).count();
-    if (m_bPrint) {
-        printf("Exhaustive search completed. Unique P1Fs: %zu. Time: %.4f seconds\n", unique_results.size(), elapsed);
-    }
+    printf("Exhaustive search completed. Unique P1Fs: %zu. Time: %.4f seconds\n", unique_results.size(), elapsed);
     sendResultsToCallback(unique_results);
 }
 
@@ -1841,44 +1342,5 @@ void K16A2::adj_to_src(const uint8_t* adj, unsigned char* src) {
             visited[adj[u]] = true;
             idx += 2;
         }
-    }
-}
-
-void K16A2::ensureSlotGenerated(int slotIndex) {
-    if (slot_generated[slotIndex]) return;
-    std::lock_guard<std::mutex> lock(slot_mutex[slotIndex]);
-    if (slot_generated[slotIndex]) return;
-
-    generateSlotCandidates(slotIndex);
-    slot_generated[slotIndex] = true;
-}
-
-void K16A2::generateSlotCandidates(int slotIndex) {
-    int P0 = slotIndex + 4;
-    uint8_t factor[16];
-    factor[0] = 0; factor[1] = (uint8_t)P0;
-    uint64_t usedMask = (1ULL << 0) | (1ULL << P0);
-    generateRecursive(0, usedMask, factor, slotIndex, P0);
-}
-
-void K16A2::generateRecursive(int depth, uint64_t usedMask, uint8_t* factor, int slotIndex, int P0) {
-    if (depth == K16_N / 2 - 1) {
-        addRow(P0, factor);
-        return;
-    }
-
-    unsigned long u;
-    if (!_BitScanForward64(&u, ~usedMask)) return;
-
-    for (int v = 0; v < K16_N; ++v) {
-        if (usedMask & (1ULL << v)) continue;
-        if (v <= (int)u) continue;
-
-        int eid = edge_id_table[u][v];
-        if (eid != -1 && fixedEdgesMask.m[eid >> 6] & (1ULL << (eid & 63))) continue;
-
-        factor[(depth + 1) * 2] = (uint8_t)u;
-        factor[(depth + 1) * 2 + 1] = (uint8_t)v;
-        generateRecursive(depth + 1, usedMask | (1ULL << u) | (1ULL << v), factor, slotIndex, P0);
     }
 }

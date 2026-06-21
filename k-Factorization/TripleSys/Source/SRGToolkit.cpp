@@ -11,6 +11,8 @@
                             //  1 always use complement graph
                              
 
+using namespace std;
+
 // Use PERMUT equal 
 //    0 to find the automorphism of original matrix (it will be in vvv.txt)
 //    1 to find the automorphism of canonized complement matrix
@@ -73,7 +75,10 @@ void reportNestedGroupCheckResult(int retVal, bool outToScreen) {
 	}
 }
 
-SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster, TopGunBase* pTopGunBase) :
+string currentGraphParam;
+
+
+SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const string& resFileName, int exploreMatrices, SRGToolkit* pMaster, TopGunBase* pTopGunBase) :
 	m_pParam(p), m_nRows(nRows), m_nExploreMatrices(exploreMatrices),
 	CGraphCanonizer(nRows * p->val[t_numPlayers] / p->val[t_groupSize]) {
 	m_pMaster = pMaster;
@@ -111,8 +116,7 @@ bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixSt
 		if (!exploreMatrixOfType(i, pMatr, sourceMatrID, ppMarixStorage[i])) {
 			delete m_pGraphParam[i];
 			m_pGraphParam[i] = NULL;
-			if (!(m_nExploreMatrices & 2))
-				m_bChekMatr[i] = false;
+			m_bChekMatr[i] = false;
 		} else
 			counter++;
 	}
@@ -170,19 +174,48 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
 	const auto groupSize = m_pParam->paramVal(t_groupSize);
 	if (!typeIdx) {
-		// Check whether the graph is a Triangular or Lattice graph
-		if (groupSize == 2 && m_pParam->partiteNumb() <= 2) {
-			std::unique_lock<std::mutex> guard;
+		// Check whether the graph is a Triangular or Rock graph
+		if (groupSize == 2 && m_pParam->partiteNumb() <= 2 && !m_pParam->paramVal(t_constructLatticeGraphs)) {
+			unique_lock<mutex> guard;
 			if (auto* mtx = pMarixStorage->getMutext())
-				guard = std::unique_lock<std::mutex>(*mtx);
+				guard = unique_lock<mutex>(*mtx);
 
-			pMarixStorage->graphDB()->setGraphType(m_pParam->partiteNumb()==1? t_triangular : t_lattice);
+			const auto graphType = m_pParam->partiteNumb() == 1 ? t_triangular : t_rock;
+			pMarixStorage->graphDB()->setGraphType(graphType);
+
+			// Output of the parameters for graphs that will not be constructed.
+			SRGParam graphParam;
+			int n = 0;
+			switch (graphType) {
+			case t_triangular: // (v, k, λ, μ) = (n(n-1)/2, 2(n-2), n-2, 4)
+				n = static_cast<uint32_t>(
+					sqrt(static_cast<double>(1 + 8 * numVertices())));
+				n = (1 + n) / 2;
+				graphParam.k = 4 * (n - 2);
+				graphParam.μ = 4;
+				break;
+			case t_rock:		//  (v, k, λ, μ) = (n^2, 2(n−1), n−2, 2)
+				n = static_cast<uint32_t>(
+					sqrt(static_cast<double>(numVertices())));
+				graphParam.k = 2 * (n - 1);
+				graphParam.λ = n - 2;
+				graphParam.μ = 2;
+			default: break;
+			}
+
+			// λ, α and β are calculated identicaly for both families of graphs:
+			graphParam.λ = n - 2;
+			graphParam.α = (n - 2) * (n - 3) / 2;
+			graphParam.β = 0;
+			currentGraphParam = format("(v,k,λ,μ) = ({},{:2},{},{}),  (α,β) = ({},{})",
+				numVertices(), graphParam.k, graphParam.λ, graphParam.μ, graphParam.α, graphParam.β);
+
 			return false;
 		}
 	}
 
 	if (reportOnScreen())
-		std::cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
+		cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
 	const auto nCols = m_pParam->paramVal(t_numPlayers);
 	const auto numGroups = nCols / groupSize;
@@ -205,9 +238,9 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 #endif
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
 	{
-		std::unique_lock<std::mutex> guard;
+		unique_lock<mutex> guard;
 		if (auto* mtx = pMarixStorage->getMutext()) {
-			guard = std::unique_lock<std::mutex>(*mtx);
+			guard = unique_lock<mutex>(*mtx);
 			auto* pGrParam = getMaster()->graphParam(typeIdx);
 			if (!pGrParam->k) {
 				pGrParam->k = graphParam->k;
@@ -337,9 +370,9 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	bool newGraph = false;
 	{
 		SRGToolkit* pMaster = this;
-		std::unique_lock<std::mutex> guard;
+		unique_lock<mutex> guard;
 		if (auto* mtx = pMarixStorage->getMutext()) {
-			guard = std::unique_lock<std::mutex>(*mtx);
+			guard = unique_lock<mutex>(*mtx);
 			(pMaster = getMaster())->setGroupOrder(groupOrder());
 		}
 
@@ -444,13 +477,14 @@ void SRGToolkit::outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphTy
 		SPRINTFD(pBuf, buf, "\nRegular graph #%d of type %d with parameters (v,k) = (%d,%2d):",
 			prevMatrNumb + 1, typeIdx + 1, v, graphParam->k);
 
-	const auto primeFactor = getPrimeFactorization(groupOrder());
-	SPRINTFD(pBuf, buf, ORDER_FRMT(" |Aut(G)| = ", " = %s"), GR_ORDER(groupOrder()), primeFactor.c_str());
-	if (g_useColors)
-		SPRINTFD(pBuf, buf, " = %s", printWithPowers(primeFactor.c_str()).c_str());
+	SPRINTFD(pBuf, buf, ORDER_FRMT(" |Aut(G)| =", ""), GR_ORDER(groupOrder()));
+	if (groupOrder() > 1) {
+		const auto primeFactor = getPrimeFactorization(groupOrder());
+		SPRINTFD(pBuf, buf, "= %s", g_useColors? printWithPowers(primeFactor).c_str() : primeFactor.c_str());
+	}
 
 	if (reportOnScreen())
-		std::cout << buf << "\n";
+		cout << buf << "\n";
 #endif
 	if (rank3)
 		SPRINTFD(pBuf, buf, "\nIt's a rank 3 graph with");
@@ -707,4 +741,14 @@ void Generators<tchar>::makeGroupOutput(const CRepository<tchar>* pElemGroup, bo
 	}
 
 	setOrbitsCreated(false);
+}
+
+const char* graphTypeStr(t_graphType grType) {
+	switch (grType) {
+	case t_regular:		return "merely regular";
+	case t_triangular:	return "triangular";
+	case t_rock:		return "rock";
+	case t_complete:
+	default:			return "complete";
+	}
 }

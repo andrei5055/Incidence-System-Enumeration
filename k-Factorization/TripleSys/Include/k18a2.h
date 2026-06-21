@@ -43,13 +43,7 @@
 #define K18_MRV_EARLY_EXIT       1
 #define K18_MRV_EARLY_EXIT_THRESHOLD 1
 
-struct alignas(32) Mask18_C { uint64_t m[4] = { 0, 0, 0, 0 }; };
-
-FORCE_INLINE bool is_disjoint(const Mask18_C& a, const Mask18_C& b) {
-    __m256i va = _mm256_loadu_si256((const __m256i*)&a);
-    __m256i vb = _mm256_loadu_si256((const __m256i*)&b);
-    return _mm256_testz_si256(va, vb) != 0;
-}
+struct Mask18_C { uint64_t m[4] = { 0, 0, 0, 0 }; };
 
 #pragma push_macro("new")
 #undef new
@@ -168,7 +162,7 @@ public:
     K18A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads, const unsigned char* first3Rows, ResultCallback callback, void* cbClassPtr = NULL, bool bPrint = true);
     ~K18A2() {}
 
-    bool addRow(int iRow, const unsigned char* source) override;
+    bool addRow(int iRow, const unsigned char* source);
     void solve(int mode = 0);
     
     void setTransitionConfig(const int config[5]) {
@@ -226,19 +220,6 @@ private:
 
     bool bTimeSet = false;
 
-    // Precalculated static edge mask table
-    Mask18_C edge_mask_table[18][18];
-
-    // Lazy Candidate Caching States
-    bool slot_generated[K18_SEARCH];
-    std::mutex slot_mutex[K18_SEARCH];
-    std::mutex pool_mutex;
-
-    // Lazy generation methods
-    void ensureSlotGenerated(int slotIndex);
-    void generateSlotCandidates(int slotIndex);
-    void generateRecursive(int depth, uint64_t usedMask, uint8_t* factor, int slotIndex, int P0);
-
     // Internal Help Methods
     void VECTOR_CALL internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* buf);
     void diagnostic_printout(double current_compr);
@@ -259,7 +240,9 @@ private:
     }
 
     FORCE_INLINE bool is_perfect_packed(const PackedAdj& p1, const PackedAdj& p2) {
-        if (!is_disjoint(p1.edge_mask, p2.edge_mask)) 
+        if ((p1.edge_mask.m[0] & p2.edge_mask.m[0]) || 
+            (p1.edge_mask.m[1] & p2.edge_mask.m[1]) ||
+            (p1.edge_mask.m[2] & p2.edge_mask.m[2])) 
             return false;
         return is_perfect_scalar(p1.adj, p2.adj);
     }
@@ -300,7 +283,89 @@ private:
     bool equal_fast_sorted(const FastSortedFactor& a, const FastSortedFactor& b)     { return memcmp(a.pairs, b.pairs, 18) == 0; }
     bool compare_triplets(const FastRowTriplet& a, const FastRowTriplet& b);
 
-    void runTransitionSearch();
+    struct CycleBacktrackState {
+        K18A2* self;
+        uint64_t total_generated = 0;
+        uint64_t total_passed_p1f = 0;
+        std::vector<std::array<uint8_t, 18>> valid_alphas;
+        uint8_t F[9][18];
+        uint8_t pair_elements[8][2];
+        int vertex_to_pair[18];
+        int vertex_to_pos[18];
+        uint8_t v0;
+
+        void apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj);
+        bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
+        void backtrack(int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void backtrackRecurse(int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void tryVertexForCycle(int v, int depth, int pairs_visited, uint8_t* c, bool* used, int L);
+        void recurseWithVertex(int v, int depth, int next_pairs, uint8_t* c, bool* used, int L);
+        void processCandidate(uint8_t* c, bool* used, int L);
+        void buildPermutation(uint8_t* c, uint8_t* alpha_p, int L);
+        bool checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L);
+        bool validateCandidateL(const uint8_t* alpha_p, bool* used, int L);
+        void saveAlpha(const uint8_t* alpha_p);
+        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L);
+        void arrange_remaining_cycle_perm(
+            int depth, int d, int unused_count, const int* unused_indices, int* perm, bool* perm_used,
+            uint8_t* cycle_nodes, uint8_t* alpha_p, bool* rem_used, const uint8_t* rem, int rem_size, int L, int first_unused);
+        void checkTimeoutAndReport(int L, long long checked_reps);
+    };
+
+    struct CycleLengthStats {
+        int L = 0;
+        long long inputs = 0;
+        long long passed = 0;
+        size_t unique_classes = 0;
+    };
+
+    void runExhaustiveSearch();
+    void searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_results, CycleLengthStats& stats);
+    bool checkCyclesCompatibility(const uint8_t G[][18], int L);
+    bool decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* alpha_p, uint8_t H[][18]);
+    bool backtrackColor(int edge_idx, int num_edges, int num_colors,
+                        const std::pair<uint8_t, uint8_t>* edges,
+                        uint8_t matchings[][18], const uint8_t* G0);
+    void recordIsomorphicResults(const uint8_t H[][18],
+                                 std::set<std::vector<uint8_t>>& unique_results);
+    void setupBacktrackState(CycleBacktrackState& state, int search_type);
+    void constructFullH(const uint8_t G[][18], int L, const uint8_t* alpha, uint8_t H[][18]);
+    void processAutomorphism(const std::array<uint8_t, 18>& alpha_arr, int L, std::set<std::vector<uint8_t>>& unique_results);
+    void adj_to_src(const uint8_t* adj, unsigned char* src);
+    void reportTotalResults(const std::set<std::vector<uint8_t>>& unique_results, std::chrono::high_resolution_clock::time_point start);
+    void sendResultsToCallback(const std::set<std::vector<uint8_t>>& unique_results);
+    void setupPairsTable(CycleBacktrackState& state, int search_type);
+    void fillPairsTable(CycleBacktrackState& state, int search_type);
+    void storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8_t v);
+    void constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][18]);
+    void findMissingEdges(const uint8_t G[][18], int L, std::pair<uint8_t, uint8_t>* edges);
+    bool isEdgeMissing(const uint8_t G[][18], int L, int u, int v);
+    bool checkMatchingsCompatibility(uint8_t matchings[][18], int num_colors, const uint8_t* G0);
+    bool tryColoringEdge(int edge_idx, int num_edges, int num_colors, const std::pair<uint8_t, uint8_t>* edges, uint8_t matchings[][18], const uint8_t* G0);
+    int getSymmetryBreakingLimit(uint8_t matchings[][18], int num_colors);
+    bool is_color_compatible(int c, int num_colors, uint8_t matchings[][18], const uint8_t* G0);
+    bool isColorUsed(const uint8_t* matching);
+    void copyMatchingsToH(uint8_t matchings[][18], int num_colors, const uint8_t G[][18], int L, uint8_t H[][18]);
+    void tryIsomorphicMapping(const uint8_t H[][18], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results);
+    void buildStarterCycle(uint8_t* cyc_R);
+    void buildHCycle(const uint8_t H[][18], int v, uint8_t* cyc_H);
+    void buildMappingPermutation(const uint8_t* cyc_H, const uint8_t* cyc_R, uint8_t* p);
+    void checkAndRecordPermutedH(const uint8_t H[][18], const uint8_t* p, std::set<std::vector<uint8_t>>& unique_results);
+    void applyPermToH(const uint8_t H[][18], const uint8_t* p, uint8_t S[][18]);
+    bool doesSMatchFixedRows(const uint8_t S[][18]);
+    void recordS(const uint8_t S[][18], std::set<std::vector<uint8_t>>& unique_results);
+    void verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique);
+    std::chrono::steady_clock::time_point case_start_time;
+    std::chrono::steady_clock::time_point last_print_time;
+    double case_timeout_seconds = 1e9; // 30 minutes case timeout limit (aligns with K16A2)
+    int min_cycle_length = 2; // Minimum cycle length to run (e.g. 10 for Option B).
+    bool case_timed_out = false;
+    long long current_checked_reps = 0;
+    int current_top_branch_idx = 0;
+    int total_top_branches = 0;
+    std::set<std::vector<uint8_t>>* p_unique_results = nullptr;
+
+    void printEstimatedTime(int L, long long checked_reps, int search_type);
 
     std::mutex result_mutex;
 };
