@@ -1,4 +1,5 @@
 #include "k18a2.h"
+#include <thread>
 #include <algorithm>
 #include <cstring>
 #include <cstdio>
@@ -9,13 +10,17 @@
 #include <chrono>
 #include <atomic>
 
-#define USE_ORBIT_OPTIMIZATION 0
-
 static std::atomic<long long> g_candidates_processed{0};
 static std::atomic<long long> g_candidates_passed_perfect{0};
 static std::atomic<long long> g_candidates_passed_validate{0};
 static std::atomic<long long> g_generate_matchings_calls{0};
 static std::atomic<long long> g_generate_matchings_total_matchings{0};
+// Phase timers (nanoseconds) for decomposeMissingEdges — profiling.
+static std::atomic<long long> g_ns_enum{0};   // generate_matchings (pool enumeration)
+static std::atomic<long long> g_ns_group{0};  // sort + hashmap + orbit grouping + compat
+static std::atomic<long long> g_ns_cover{0};  // exact-cover on orbits
+static std::atomic<long long> g_parallel_tasks{0}; // tasks fanned out in generateRemainingParallel
+static std::atomic<long long> g_tasks_done{0};      // parallel tasks completed (for live ETA)
 
 struct FlatMatchingMap {
     struct Entry {
@@ -107,26 +112,107 @@ void K18A2::CycleBacktrackState::backtrack(int depth, int pairs_visited, uint8_t
     static thread_local int backtrack_call_count = 0;
     if (++backtrack_call_count >= 1000) {
         backtrack_call_count = 0;
-        checkTimeoutAndReport(L, total_generated);
+        checkTimeoutAndReport(L, g_candidates_processed.load());
+    }
+    if (is_collecting && depth == target_depth) {
+        SearchNode node;
+        memcpy(node.c, c, 18);
+        memcpy(node.used, used, 18);
+        node.pairs_visited = pairs_visited;
+        p_nodes->push_back(node);
+        return;
     }
     if (depth == L - 1) {
         processCandidate(c, used, L);
         return;
     }
+    if (depth == 0 && !is_collecting && self->kThreads > 1) {
+        int t_depth = std::min(5, L - 1);
+        if (t_depth > 0) {
+            std::vector<SearchNode> nodes;
+            
+            // Set up collection state
+            this->is_collecting = true;
+            this->target_depth = t_depth;
+            this->p_nodes = &nodes;
+            
+            // Run search to collect nodes at target_depth
+            backtrackRecurse(0, pairs_visited, c, used, L);
+            
+            this->is_collecting = false;
+
+            if (!nodes.empty() && (int)nodes.size() < self->kThreads) {
+                // Small L: too few main-cycle work items to fill the thread pool.
+                // Run the candidates sequentially on this thread, but parallelize
+                // each one's remaining-cycle generation so all threads stay busy.
+                // (For small L the collected nodes are complete main cycles, i.e.
+                // t_depth == L - 1, so each backtrack call reaches processCandidate.)
+                this->parallel_remaining = true;
+                for (auto& nd : nodes) {
+                    uint8_t local_c[18];
+                    bool local_used[18];
+                    memcpy(local_c, nd.c, 18);
+                    memcpy(local_used, nd.used, 18);
+                    backtrack(t_depth, nd.pairs_visited, local_c, local_used, L);
+                }
+                this->parallel_remaining = false;
+                return;
+            }
+            if (!nodes.empty()) {
+                std::atomic<size_t> next_node_idx{ 0 };
+                std::vector<std::thread> workers;
+                std::mutex stats_mutex;
+                uint64_t accumulated_generated = 0;
+                uint64_t accumulated_passed_p1f = 0;
+                
+                for (int t = 0; t < self->kThreads; t++) {
+                    workers.emplace_back([&]() {
+                        uint8_t local_c[18];
+                        bool local_used[18];
+                        
+                        while (true) {
+                            size_t idx = next_node_idx.fetch_add(1);
+                            if (idx >= nodes.size()) break;
+                            
+                            {
+                                std::lock_guard<std::mutex> lock(stats_mutex);
+                                self->current_top_branch_idx++;
+                            }
+                            
+                            CycleBacktrackState thread_state = *this;
+                            thread_state.total_generated = 0;
+                            thread_state.total_passed_p1f = 0;
+                            thread_state.is_collecting = false;
+                            
+                            memcpy(local_c, nodes[idx].c, 18);
+                            memcpy(local_used, nodes[idx].used, 18);
+                            
+                            thread_state.backtrack(t_depth, nodes[idx].pairs_visited, local_c, local_used, L);
+                            
+                            {
+                                std::lock_guard<std::mutex> lock(stats_mutex);
+                                accumulated_generated += thread_state.total_generated;
+                                accumulated_passed_p1f += thread_state.total_passed_p1f;
+                                this->valid_alphas.insert(this->valid_alphas.end(), thread_state.valid_alphas.begin(), thread_state.valid_alphas.end());
+                            }
+                        }
+                    });
+                }
+                
+                for (auto& w : workers) {
+                    w.join();
+                }
+                
+                this->total_generated = accumulated_generated;
+                this->total_passed_p1f = accumulated_passed_p1f;
+                return;
+            }
+        }
+    }
     backtrackRecurse(depth, pairs_visited, c, used, L);
 }
 
 void K18A2::CycleBacktrackState::backtrackRecurse(int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
-#if USE_ORBIT_OPTIMIZATION
-    // Force c[0] = 2 for search_type == 1 to optimize orbit matching
-    if (depth == 0 && v0 != 3) {
-        int target_v = self->fixedRows[1].adj[0];
-        if (!used[target_v]) {
-            tryVertexForCycle(target_v, depth, pairs_visited, c, used, L);
-        }
-        return;
-    }
-#endif
     for (int v = 0; v < 18; v++) {
         if (used[v]) continue;
         tryVertexForCycle(v, depth, pairs_visited, c, used, L);
@@ -150,7 +236,7 @@ void K18A2::CycleBacktrackState::tryVertexForCycle(int v, int depth, int pairs_v
 void K18A2::CycleBacktrackState::recurseWithVertex(int v, int depth, int next_pairs, uint8_t* c, bool* used, int L) {
     if (depth == 0) {
         self->current_top_branch_idx++;
-        self->printEstimatedTime(L, total_generated, (v0 == 3) ? 2 : 1);
+        self->printEstimatedTime(L, g_candidates_processed.load(), (v0 == 3) ? 2 : 1);
     }
     used[v] = true;
     c[depth] = v;
@@ -178,42 +264,13 @@ static bool validateDefinedOrbits(const uint8_t* alpha_p, int L, const bool* def
     return true;
 }
 
-static bool validateNewCycleCompatibility(const uint8_t* alpha_p, int L, const uint8_t* cycle_nodes, int d, const bool* defined, const uint8_t F0[][18]) {
-    int limit = L / 2;
-    for (int i = 0; i < d; i++) {
-        uint8_t u = cycle_nodes[i];
-        uint8_t v = F0[0][u];
-        if (!defined[v]) continue;
-        
-        bool v_in_C = false;
-        for (int k = 0; k < d; k++) {
-            if (cycle_nodes[k] == v) {
-                v_in_C = true;
-                break;
-            }
-        }
-        if (v_in_C && u > v) continue;
-
-        uint8_t curr_u = u;
-        uint8_t curr_v = v;
-        for (int j = 1; j <= limit; j++) {
-            curr_u = alpha_p[curr_u];
-            curr_v = alpha_p[curr_v];
-            if (F0[0][curr_u] == curr_v) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 void K18A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L) {
-    g_candidates_processed++;
+    long long count = g_candidates_processed.fetch_add(1) + 1;
     total_generated++;
-    self->current_checked_reps = total_generated;
+    self->current_checked_reps = count;
 
-    if (g_candidates_processed % 100 == 0) {
-        self->printEstimatedTime(L, total_generated, (v0 == 3) ? 2 : 1);
+    if (count % 100 == 0) {
+        self->printEstimatedTime(L, count, (v0 == 3) ? 2 : 1);
     }
 
     // Prune candidates where the main cycle antipodal edges are not missing.
@@ -232,44 +289,6 @@ void K18A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L)
         }
         if (!antipodal_ok) {
             return;
-        }
-    }
-
-    // Early pruning filter for L = 6:
-    // Any valid completion for L = 6 must contain at least one factor invariant under alpha_p^3
-    // (since divisor parity dictates a_1 + 2*a_2 + 3*a_3 + 6*a_6 = 11 => a_1 + a_3 must be odd, 
-    // meaning there is at least one orbit of size 1 or 3 under alpha_p, which is invariant under alpha_p^3).
-    // An invariant factor under alpha_p^3 must match the main cycle vertices to each other.
-    // Specifically, the matching on the main cycle must be one of:
-    //   M0: (c_0, c_1), (c_2, c_3), (c_4, c_5) [even cycle edges]
-    //   M2: (c_1, c_2), (c_3, c_4), (c_5, c_0) [odd cycle edges]
-    //   M1: (c_0, c_3), (c_1, c_4), (c_2, c_5) [antipodal edges]
-    // For these factors to exist in the completion, their edges must be missing in G[0] ... G[5].
-    // Since the union of G[0] ... G[5] is closed under alpha_p (shift by 1):
-    // - If G[0] (stored in F[0]) contains any cycle edge, then ALL cycle edges are present in G (blocking M0 and M2).
-    // - If G[0] contains any antipodal edge, then ALL antipodal edges are present in G (blocking M1).
-    // Thus, if G[0] contains both a cycle edge AND an antipodal edge of the main cycle, then all possible 
-    // invariant factors are blocked, making completion mathematically impossible. We prune such candidates early.
-    if (L == 6) {
-        uint8_t cyc[6] = { v0, c[0], c[1], c[2], c[3], c[4] };
-        bool has_cycle_edge = false;
-        for (int i = 0; i < 6; i++) {
-            if (F[0][cyc[i]] == cyc[(i + 1) % 6]) {
-                has_cycle_edge = true;
-                break;
-            }
-        }
-        if (has_cycle_edge) {
-            bool has_antipodal_edge = false;
-            for (int i = 0; i < 3; i++) {
-                if (F[0][cyc[i]] == cyc[i + 3]) {
-                    has_antipodal_edge = true;
-                    break;
-                }
-            }
-            if (has_antipodal_edge) {
-                return;
-            }
         }
     }
 
@@ -310,11 +329,25 @@ void K18A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L)
     }
     
     bool rem_used[18] = { false };
-    generate_remaining_cycles(0, rem, rem_size, rem_used, alpha_p, L);
+    if (parallel_remaining) {
+        generateRemainingParallel(rem, rem_size, alpha_p, L);
+    } else {
+        generate_remaining_cycles(0, rem, rem_size, rem_used, alpha_p, L, 0);
+    }
 }
 
-void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L) {
+void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L, int depth) {
     if (self->case_timed_out) return;
+    // Parallel task collection: snapshot the branch state at the target depth
+    // (a fully-placed first remaining cycle) instead of recursing further.
+    if (collecting_rem && depth == rem_target_depth) {
+        RemTask t;
+        memcpy(t.alpha_p, alpha_p, 18);
+        for (int i = 0; i < rem_size; i++) t.rem_used[i] = rem_used[i] ? 1 : 0;
+        t.start_idx = start_idx;
+        p_rem_tasks->push_back(t);
+        return;
+    }
     static thread_local int rem_call_count = 0;
     if (++rem_call_count >= 1000) {
         rem_call_count = 0;
@@ -352,9 +385,8 @@ void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
                 }
             }
             
-            uint8_t cycle_nodes[1] = { v0_rem };
-            if (validateNewCycleCompatibility(alpha_p, L, cycle_nodes, 1, defined, F)) {
-                generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L);
+            if (validateDefinedOrbits(alpha_p, L, defined, F)) {
+                generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L, depth + 1);
             }
         } else {
             int unused_indices[18];
@@ -372,8 +404,44 @@ void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
                 int perm[18];
                 bool perm_used[18] = { false };
                 
-                arrange_remaining_cycle_perm(0, d, unused_count, unused_indices, perm, perm_used,
-                                             cycle_nodes, alpha_p, rem_used, rem, rem_size, L, first_unused);
+                auto arrange_stack = [&](auto& self_fn, int pos) -> void {
+                    if (pos == d - 1) {
+                        for (int k = 0; k < d - 1; k++) {
+                            cycle_nodes[k + 1] = rem[unused_indices[perm[k]]];
+                        }
+                        for (int k = 0; k < d - 1; k++) {
+                            alpha_p[cycle_nodes[k]] = cycle_nodes[k + 1];
+                            rem_used[unused_indices[perm[k]]] = true;
+                        }
+                        alpha_p[cycle_nodes[d - 1]] = cycle_nodes[0];
+                        
+                        bool defined[18];
+                        for (int i = 0; i < 18; i++) defined[i] = true;
+                        for (int i = 0; i < rem_size; i++) {
+                            if (!rem_used[i]) {
+                                defined[rem[i]] = false;
+                            }
+                        }
+                        
+                        if (validateDefinedOrbits(alpha_p, L, defined, F)) {
+                            generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L, depth + 1);
+                        }
+
+                        for (int k = 0; k < d - 1; k++) {
+                            rem_used[unused_indices[perm[k]]] = false;
+                        }
+                        return;
+                    }
+                    for (int j = 0; j < unused_count; j++) {
+                        if (!perm_used[j]) {
+                            perm_used[j] = true;
+                            perm[pos] = j;
+                            self_fn(self_fn, pos + 1);
+                            perm_used[j] = false;
+                        }
+                    }
+                };
+                arrange_stack(arrange_stack, 0);
             }
         }
     }
@@ -381,46 +449,56 @@ void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
     rem_used[first_unused] = false;
 }
 
-void K18A2::CycleBacktrackState::arrange_remaining_cycle_perm(
-    int depth, int d, int unused_count, const int* unused_indices, int* perm, bool* perm_used,
-    uint8_t* cycle_nodes, uint8_t* alpha_p, bool* rem_used, const uint8_t* rem, int rem_size, int L, int first_unused) 
-{
-    if (depth == d - 1) {
-        for (int k = 0; k < d - 1; k++) {
-            cycle_nodes[k + 1] = rem[unused_indices[perm[k]]];
-        }
-        for (int k = 0; k < d - 1; k++) {
-            alpha_p[cycle_nodes[k]] = cycle_nodes[k + 1];
-            rem_used[unused_indices[perm[k]]] = true;
-        }
-        alpha_p[cycle_nodes[d - 1]] = cycle_nodes[0];
-        
-        bool defined[18];
-        for (int i = 0; i < 18; i++) defined[i] = true;
-        for (int i = 0; i < rem_size; i++) {
-            if (!rem_used[i]) {
-                defined[rem[i]] = false;
-            }
-        }
-        
-        if (validateNewCycleCompatibility(alpha_p, L, cycle_nodes, d, defined, F)) {
-            generate_remaining_cycles(first_unused + 1, rem, rem_size, rem_used, alpha_p, L);
-        }
-        
-        for (int k = 0; k < d - 1; k++) {
-            rem_used[unused_indices[perm[k]]] = false;
-        }
+void K18A2::CycleBacktrackState::generateRemainingParallel(const uint8_t* rem, int rem_size, uint8_t* alpha_p, int L) {
+    // Nothing to fan out over: run the sequential path directly.
+    if (rem_size == 0 || self->kThreads <= 1) {
+        bool rem_used[18] = { false };
+        generate_remaining_cycles(0, rem, rem_size, rem_used, alpha_p, L, 0);
         return;
     }
-    for (int j = 0; j < unused_count; j++) {
-        if (!perm_used[j]) {
-            perm_used[j] = true;
-            perm[depth] = j;
-            arrange_remaining_cycle_perm(depth + 1, d, unused_count, unused_indices, perm, perm_used,
-                                         cycle_nodes, alpha_p, rem_used, rem, rem_size, L, first_unused);
-            perm_used[j] = false;
-        }
+
+    // Phase 1 (single-threaded): collect the first-remaining-cycle branches as
+    // independent tasks. This explores exactly the branches the sequential path
+    // would, snapshotting each by value at depth 1.
+    std::vector<RemTask> tasks;
+    {
+        bool rem_used[18] = { false };
+        collecting_rem = true;
+        rem_target_depth = 2;   // finer task granularity for load balancing
+        p_rem_tasks = &tasks;
+        generate_remaining_cycles(0, rem, rem_size, rem_used, alpha_p, L, 0);
+        collecting_rem = false;
+        p_rem_tasks = nullptr;
     }
+    g_parallel_tasks += (long long)tasks.size();
+    if (tasks.empty()) return;  // this candidate yields no completions
+
+    // Phase 2: replay each task to completion across the thread pool.
+    std::atomic<size_t> next_task{ 0 };
+    std::vector<std::thread> workers;
+    std::mutex merge_mutex;
+    for (int w = 0; w < self->kThreads; w++) {
+        workers.emplace_back([&]() {
+            CycleBacktrackState ts = *this;  // copy ctor resets counters & flags
+            ts.parallel_remaining = false;
+            ts.collecting_rem = false;
+            while (true) {
+                size_t i = next_task.fetch_add(1);
+                if (i >= tasks.size()) break;
+                uint8_t local_alpha[18];
+                bool local_rem_used[18] = { false };
+                memcpy(local_alpha, tasks[i].alpha_p, 18);
+                for (int k = 0; k < rem_size; k++) local_rem_used[k] = tasks[i].rem_used[k] != 0;
+                ts.generate_remaining_cycles(tasks[i].start_idx, rem, rem_size, local_rem_used, local_alpha, L, 1);
+                g_tasks_done.fetch_add(1);
+            }
+            std::lock_guard<std::mutex> lock(merge_mutex);
+            this->valid_alphas.insert(this->valid_alphas.end(), ts.valid_alphas.begin(), ts.valid_alphas.end());
+            this->total_generated += ts.total_generated;
+            this->total_passed_p1f += ts.total_passed_p1f;
+        });
+    }
+    for (auto& w : workers) w.join();
 }
 
 void K18A2::CycleBacktrackState::buildPermutation(uint8_t* c, uint8_t* alpha_p, int L) {
@@ -451,19 +529,13 @@ bool K18A2::CycleBacktrackState::validateCandidateL(const uint8_t* alpha_p, bool
     uint8_t G[17][18];
     self->constructFullH(G, L, alpha_p, G);
     uint8_t H[18][18];
-    if (!self->decomposeMissingEdges(G, L, alpha_p, H)) {
-        return false;
-    }
-    // Record results directly during backtrack search
-    if (self->p_unique_results) {
-        std::lock_guard<std::mutex> lock(self->result_mutex);
-        self->recordIsomorphicResults(H, *(self->p_unique_results));
-    }
-    return true;
+    return self->decomposeMissingEdges(G, L, alpha_p, H);
 }
 
 void K18A2::CycleBacktrackState::saveAlpha(const uint8_t* alpha_p) {
-    // Only increment stats. We bypass saving to valid_alphas to avoid redundant post-processing loop.
+    std::array<uint8_t, 18> a;
+    std::copy(alpha_p, alpha_p + 18, a.begin());
+    valid_alphas.push_back(a);
     total_passed_p1f++;
 }
 void K18A2::printEstimatedTime(int L, long long checked_reps, int search_type) {
@@ -479,23 +551,34 @@ void K18A2::printEstimatedTime(int L, long long checked_reps, int search_type) {
         long long total_reps = (L >= 2 && L <= 17) ? orbit_reps[L] : 1;
         if (total_reps <= 0) total_reps = 1;
         
-        double pct = (double)checked_reps * 100.0 / total_reps;
+        // Progress basis: when the parallel small-L path is active, use task
+        // completion (meaningful for small L). Otherwise fall back to orbit-rep
+        // coverage. NOTE: for small L the tasks are added per main candidate, so
+        // pct/ETA track the current candidate batch (see Cand for which one).
+        long long ttot = g_parallel_tasks.load();
+        long long tdone = g_tasks_done.load();
+        double pct;
+        if (ttot > 0) {
+            pct = 100.0 * (double)tdone / (double)ttot;
+        } else {
+            pct = (double)checked_reps * 100.0 / total_reps;
+        }
         if (pct > 100.0) pct = 100.0;
-        
+
         double est_rem = 0.0;
         if (pct > 0.00001) {
-            double est_total = elapsed_total * (100.0 / pct);
-            est_rem = est_total - elapsed_total;
+            est_rem = elapsed_total * (100.0 / pct) - elapsed_total;
             if (est_rem < 0.0) est_rem = 0.0;
         }
-        
-        printf("\r   [L=%d, Type %d] Progress: %.2f%% (%lld/%lld reps). Cand: %lld, Perf: %lld, Val: %lld, GenMatCalls: %lld. Elap: %.1f s. Est: %.1f min       ", 
-               L, search_type, pct, (long long)checked_reps, (long long)total_reps,
-               (long long)g_candidates_processed,
-               (long long)g_candidates_passed_perfect,
-               (long long)g_candidates_passed_validate,
-               (long long)g_generate_matchings_calls,
-               elapsed_total,
+
+        long long gmc = g_generate_matchings_calls;
+        double avg_pool = gmc ? (double)g_generate_matchings_total_matchings / (double)gmc : 0.0;
+        double s_en = g_ns_enum.load() / 1e9, s_gr = g_ns_group.load() / 1e9, s_cv = g_ns_cover.load() / 1e9;
+        double par = elapsed_total > 0 ? (s_en + s_gr + s_cv) / elapsed_total : 0.0;
+        printf("\r   [L=%d T%d] L-elapsed=%.0fs | %.2f%% (tasks %lld/%lld) | Cand: %lld | Decomp: %lld | AvgPool: %.0f | en/gr/cv: %.0f/%.0f/%.0f s | par~%.1fx | ETA(batch): %.1f min   ",
+               L, search_type, elapsed_total, pct, tdone, ttot,
+               (long long)g_candidates_processed, gmc, avg_pool,
+               s_en, s_gr, s_cv, par,
                est_rem / 60.0);
         fflush(stdout);
     }
@@ -528,7 +611,7 @@ void K18A2::runExhaustiveSearch() {
             stats[L].run = false;
             continue;
         }
-        if (unique_results.size() >= 2000) {
+        if (unique_results.size() >= 200000) {
             stats[L].run = false;
             continue;
         }
@@ -742,8 +825,6 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     printf("-> Entering Case: L = %d, Search Type 1 (Fixed out-of-cycle points)\n", L);
     fflush(stdout);
 
-    this->p_unique_results = &unique_results;
-
     case_start_time = std::chrono::steady_clock::now();
     last_print_time = case_start_time;
     case_timed_out = false;
@@ -754,6 +835,11 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     g_candidates_passed_validate = 0;
     g_generate_matchings_calls = 0;
     g_generate_matchings_total_matchings = 0;
+    g_ns_enum = 0;
+    g_ns_group = 0;
+    g_ns_cover = 0;
+    g_parallel_tasks = 0;
+    g_tasks_done = 0;
 
 
     CycleBacktrackState state1;
@@ -781,11 +867,7 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
             }
         }
     }
-#if USE_ORBIT_OPTIMIZATION
-    this->total_top_branches = 1;
-#else
     this->total_top_branches = total_branches1;
-#endif
     this->current_top_branch_idx = 0;
 
     state1.backtrack(0, 0, c1, used1, L);
@@ -828,25 +910,40 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     
     std::set<std::vector<uint8_t>> local_unique;
     if (!case_timed_out) {
-        for (const auto& alpha : state1.valid_alphas) {
-            if (unique_results.size() + local_unique.size() >= 2000) break;
-            std::set<std::vector<uint8_t>> temp_unique;
-            processAutomorphism(alpha, L, temp_unique);
-            for (const auto& res : temp_unique) {
+        // Gather all automorphisms from both search types for this L.
+        std::vector<std::array<uint8_t, 18>> all_alphas(state1.valid_alphas.begin(), state1.valid_alphas.end());
+        if (L >= 2 && L <= 16 && L % 2 == 0) {
+            all_alphas.insert(all_alphas.end(), state2.valid_alphas.begin(), state2.valid_alphas.end());
+        }
+
+        // Parallel post-processing: each alpha is independent (processAutomorphism /
+        // decomposeMissingEdges use thread-local buffers and only read shared state),
+        // so fan out across the pool. Results are identical to the sequential loop -
+        // they accumulate into an order-independent std::set.
+        int nthreads = (kThreads > 1) ? kThreads : 1;
+        std::vector<std::set<std::vector<uint8_t>>> per_thread(nthreads);
+        std::atomic<size_t> next_alpha{ 0 };
+        std::vector<std::thread> workers;
+        for (int t = 0; t < nthreads; t++) {
+            workers.emplace_back([&, t]() {
+                while (true) {
+                    if (case_timed_out) break;
+                    size_t i = next_alpha.fetch_add(1);
+                    if (i >= all_alphas.size()) break;
+                    std::set<std::vector<uint8_t>> temp_unique;
+                    processAutomorphism(all_alphas[i], L, temp_unique);
+                    per_thread[t].insert(temp_unique.begin(), temp_unique.end());
+                }
+            });
+        }
+        for (auto& w : workers) w.join();
+
+        // Merge single-threaded: dedup against prior-L results, honor the global cap.
+        for (auto& s : per_thread) {
+            for (const auto& res : s) {
+                if (unique_results.size() + local_unique.size() >= 200000) break;
                 if (unique_results.find(res) == unique_results.end()) {
                     local_unique.insert(res);
-                }
-            }
-        }
-        if (L >= 2 && L <= 16 && L % 2 == 0) {
-            for (const auto& alpha : state2.valid_alphas) {
-                if (unique_results.size() + local_unique.size() >= 2000) break;
-                std::set<std::vector<uint8_t>> temp_unique;
-                processAutomorphism(alpha, L, temp_unique);
-                for (const auto& res : temp_unique) {
-                    if (unique_results.find(res) == unique_results.end()) {
-                        local_unique.insert(res);
-                    }
                 }
             }
         }
@@ -972,7 +1069,7 @@ bool K18A2::checkCyclesCompatibility(const uint8_t G[][18], int L) {
 bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* alpha_p, uint8_t H[][18]) {
     if (case_timed_out) return false;
     int num_colors = 17 - L;
-    
+
     // 1. Build adjacency matrix of the complement graph
     bool complement_adj[18][18];
     memset(complement_adj, false, sizeof(complement_adj));
@@ -995,39 +1092,39 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
         int size = 0;
     };
     static thread_local std::vector<std::array<uint8_t, 18>> pool;
-    static thread_local std::unordered_map<std::array<uint8_t, 18>, int, ArrayHash> pool_lookup;
     static thread_local std::vector<Orbit> orbits;
     static thread_local std::vector<bool> pool_visited;
     static thread_local std::vector<std::vector<int>> orbit_edges;
     static thread_local std::vector<int> chosen_orbits;
     static thread_local std::vector<bool> edge_covered;
     static thread_local std::vector<bool> orbit_compat;
+    static thread_local std::vector<std::vector<int>> edge_to_orbits; // inverted index: edge -> orbits covering it
 
     pool.clear();
-    pool_lookup.clear();
     orbits.clear();
     pool_visited.clear();
     orbit_edges.clear();
     chosen_orbits.clear();
     edge_covered.clear();
     orbit_compat.clear();
+    edge_to_orbits.clear();
     
     uint8_t current_matching[18];
     memset(current_matching, 0xFF, sizeof(current_matching));
     bool used[18] = { false };
     
-    // Multi-factor early path endpoint tracking
-    uint8_t path_end_k[17][18];
+    // Multi-path endpoint tracking for all G[k]
+    uint8_t path_end[17][18];
     for (int k = 0; k < L; k++) {
         for (int i = 0; i < 18; i++) {
-            path_end_k[k][i] = G[k][i];
+            path_end[k][i] = G[k][i];
         }
     }
     
-    int match_call_count = 0;
     auto generate_matchings = [&](auto& self_fn, int u, int edge_count) -> void {
         if (case_timed_out) return;
-        if (++match_call_count >= 100000) {
+        static thread_local int match_call_count = 0;
+        if (++match_call_count >= 1000) {
             match_call_count = 0;
             auto now = std::chrono::steady_clock::now();
             double elapsed = std::chrono::duration<double>(now - case_start_time).count();
@@ -1052,25 +1149,23 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
         for (int i = 0; i < n_count; i++) {
             int v = neighbors[i];
             if (!used[v]) {
-                bool can_add = true;
+                bool ok = true;
                 if (edge_count < 8) {
                     for (int k = 0; k < L; k++) {
-                        if (path_end_k[k][u] == v) {
-                            can_add = false;
+                        if (path_end[k][u] == v) {
+                            ok = false;
                             break;
                         }
                     }
                 }
-                if (can_add) {
-                    uint8_t saved_ep_u[17];
-                    uint8_t saved_ep_v[17];
+                if (ok) {
+                    int ep_u[17];
+                    int ep_v[17];
                     for (int k = 0; k < L; k++) {
-                        uint8_t ep_u = path_end_k[k][u];
-                        uint8_t ep_v = path_end_k[k][v];
-                        saved_ep_u[k] = ep_u;
-                        saved_ep_v[k] = ep_v;
-                        path_end_k[k][ep_u] = ep_v;
-                        path_end_k[k][ep_v] = ep_u;
+                        ep_u[k] = path_end[k][u];
+                        ep_v[k] = path_end[k][v];
+                        path_end[k][ep_u[k]] = ep_v[k];
+                        path_end[k][ep_v[k]] = ep_u[k];
                     }
                     
                     used[v] = true;
@@ -1084,8 +1179,8 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
                     current_matching[v] = 0xFF;
                     
                     for (int k = 0; k < L; k++) {
-                        path_end_k[k][saved_ep_u[k]] = u;
-                        path_end_k[k][saved_ep_v[k]] = v;
+                        path_end[k][ep_u[k]] = u;
+                        path_end[k][ep_v[k]] = v;
                     }
                 }
             }
@@ -1093,11 +1188,15 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
         used[u] = false;
     };
     
+    auto _t_enum0 = std::chrono::steady_clock::now();
     generate_matchings(generate_matchings, 0, 0);
+    g_ns_enum += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - _t_enum0).count();
     g_generate_matchings_calls++;
     g_generate_matchings_total_matchings += pool.size();
+
     if (pool.size() < (size_t)num_colors) return false;
 
+    auto _t_grp0 = std::chrono::steady_clock::now();
     // 3. Build lookup map for O(1) matching search
     std::sort(pool.begin(), pool.end());
     FlatMatchingMap lookup;
@@ -1198,6 +1297,17 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
         }
     }
     
+    // 6b. Inverted index: for each complement edge, the orbits that cover it.
+    // Built by ascending orbit index, so each list is sorted -> iterating it
+    // reproduces the original "for o in 0..num_orbits if o covers e" order exactly.
+    // (Orbit members are mutually compatible => edge-disjoint, so no duplicates.)
+    edge_to_orbits.assign(comp_edge_cnt, {});
+    for (int i = 0; i < num_orbits; i++) {
+        for (int e_idx : orbit_edges[i]) {
+            edge_to_orbits[e_idx].push_back(i);
+        }
+    }
+
     // Proposal C: Precalculate Orbit Compatibility Matrix
     orbit_compat.assign(num_orbits * num_orbits, true);
     for (int i = 0; i < num_orbits; i++) {
@@ -1236,10 +1346,7 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
             if (edge_covered[e]) continue;
             
             int active_count = 0;
-            for (int o_idx = 0; o_idx < num_orbits; o_idx++) {
-                if (std::find(orbit_edges[o_idx].begin(), orbit_edges[o_idx].end(), e) == orbit_edges[o_idx].end()) {
-                    continue;
-                }
+            for (int o_idx : edge_to_orbits[e]) {
                 if (current_size_sum + orbits[o_idx].size > num_colors) {
                     continue;
                 }
@@ -1278,10 +1385,7 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
             return false;
         }
         
-        for (int o_idx = 0; o_idx < num_orbits; o_idx++) {
-            if (std::find(orbit_edges[o_idx].begin(), orbit_edges[o_idx].end(), best_edge) == orbit_edges[o_idx].end()) {
-                continue;
-            }
+        for (int o_idx : edge_to_orbits[best_edge]) {
             if (current_size_sum + orbits[o_idx].size > num_colors) {
                 continue;
             }
@@ -1322,7 +1426,11 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][18], int L, const uint8_t* a
         return false;
     };
     
-    if (!solve_exact_cover_orbits(solve_exact_cover_orbits)) return false;
+    g_ns_group += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - _t_grp0).count();
+    auto _t_cov0 = std::chrono::steady_clock::now();
+    bool _cover_ok = solve_exact_cover_orbits(solve_exact_cover_orbits);
+    g_ns_cover += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - _t_cov0).count();
+    if (!_cover_ok) return false;
     
     // 8. Copy the found clique of matchings from chosen orbits to H
     uint8_t matchings[17][18];
@@ -1451,34 +1559,8 @@ void K18A2::copyMatchingsToH(uint8_t matchings[][18], int num_colors,
 void K18A2::recordIsomorphicResults(const uint8_t H[][18], std::set<std::vector<uint8_t>>& unique_results) {
     CycleUnion cu_H = find_cycles(H[1], H[2]);
     if (cu_H.count != 1 || cu_H.lens[0] != 18) return;
-    
-    std::vector<uint8_t> best_res;
-    
     for (int v = 0; v < 18; v++) {
-        uint8_t cyc_R[18];
-        buildStarterCycle(cyc_R);
-        uint8_t cyc_H[18];
-        buildHCycle(H, v, cyc_H);
-        uint8_t p[18];
-        buildMappingPermutation(cyc_H, cyc_R, p);
-        
-        uint8_t S[18][18];
-        memset(S, 0, sizeof(S));
-        applyPermToH(H, p, S);
-        if (doesSMatchFixedRows(S)) {
-            unsigned char results[17 * 18];
-            for (int k = 1; k <= 17; k++) {
-                adj_to_src(S[k], results + (k - 1) * 18);
-            }
-            std::vector<uint8_t> res_vec(results, results + 17 * 18);
-            if (best_res.empty() || res_vec < best_res) {
-                best_res = res_vec;
-            }
-        }
-    }
-    
-    if (!best_res.empty()) {
-        unique_results.insert(best_res);
+        tryIsomorphicMapping(H, cu_H, v, unique_results);
     }
 }
 

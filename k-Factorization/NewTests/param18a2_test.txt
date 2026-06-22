@@ -1,8 +1,0 @@
-PrintMatrices=65
-KeepPrevResult=0
-GenerateMatrixExample=1
-nPlayers=18
-GroupSize=2
-NRowsInResultMatrix=17
-RUN_JOB
-END_JOB

@@ -351,12 +351,13 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					if (param(t_useKSolve) & 64)
 						m_pKSolver = new K16A2Old(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
 					else {
-					m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+						m_pKSolver = new K16A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
 						m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
 
 						m_pKSolver->solve(1);
 
 						goto noResult;
+
 					}
 				}
 				else if (m_numPlayers == 18 && !bCBMP &&

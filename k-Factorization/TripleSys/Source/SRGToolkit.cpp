@@ -541,10 +541,10 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			graphDegree = vertexDegree;
 	}
 
-	int nCommon[10];
+	ICNParam paramICN[2];
 	bool flag;
 	// Check if constructed graph is strongly regular
-	const auto graphType = checkSRG(pGraph, graphDegree, nCommon, sizeof(nCommon), flag);
+	const auto graphType = checkSRG(pGraph, graphDegree, paramICN, flag);
 	switch (graphType) {
 	case t_regular: 
 		if (pGraphParam && !pGraphParam->m_cntr[1]++)
@@ -552,7 +552,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	case t_complete:return graphType;
 
 	default: // Check if complementary graph is a complete graph or a set of complete graphs 
-		if (graphDegree == v - 1 || graphDegree == nCommon[1])
+		if (graphDegree == v - 1 || graphDegree == paramICN[1].numCommon)
 			return t_complete;
 	}
 
@@ -567,7 +567,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 
 			pVertex[i] = 0;
 		}
-		checkSRG(pGraph, graphDegree, nCommon, sizeof(nCommon), flag);
+		checkSRG(pGraph, graphDegree, paramICN, flag);
 		printfYellow_TGO("\ncomplement\n");
 	}
 	else
@@ -579,11 +579,12 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	if (pGraphParam && !pGraphParam->m_cntr[1]++)
 		pGraphParam->k = graphDegree;
 
-	return pGraphParam->updateParam(nCommon, flag);
+	return pGraphParam->updateParam(paramICN, flag);
 }
 
-t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCommon, size_t lenCommon, bool &flag) const {
-	memset(nCommon, 0, lenCommon);
+t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, ICNParam* pICN_param, bool &flag) const {
+	graphDegree--;
+	memset(pICN_param, 0, 2 * sizeof(ICNParam));
 	flag = true;
 	auto pFirstVertex = pGraph;
 	const auto v = groupDegree();
@@ -592,14 +593,13 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCo
 		for (int j = i; ++j < v;) {
 			pSecondVertex += v;
 			int nCommonCurr, alpha;
-			nCommonCurr = alpha = 0;
-			for (int k = 0; k < v; k++) {
+			for (int k = nCommonCurr = alpha = 0; k < v; k++) {
 				if (pFirstVertex[k] && pSecondVertex[k])
 					m_subgraphVertex[nCommonCurr++] = k;
 			}
 
 			if (flag) {
-				if (nCommonCurr == graphDegree - 1)
+				if (nCommonCurr == graphDegree)
 					return t_complete;   // Complete graph, we don't need them
 
 				// Count the number of edges in the subgraph of two vertices common neighbors 
@@ -612,33 +612,34 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCo
 			}
 
 			const auto idx = pFirstVertex[j] ? 0 : 1;
-			if (nCommon[idx]) {
-				if (nCommon[idx] != nCommonCurr) {
+			auto& pParam = pICN_param[idx];
+			if (pParam.numCommon) {
+				if (pParam.numCommon != nCommonCurr) {
 #if 0
 					printfRed("Graph is not strongly regular:\n"
 						"For(%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "mu" : "lambda", nCommonCurr, nCommon[idx], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+						i, j, idx ? "mu" : "lambda", nCommonCurr, pParam.numCommon, pParam.vertice[0], pParam.vertice[1]);
 					printAdjMatrix(pGraph);
 #endif
 					return t_regular;
 				}
 				if (flag) {
-					flag = (nCommon[idx + 2] == alpha);
+					flag = (pParam.numEdges == alpha);
 					if (flag)
 						continue;
 #if 0
 					printfRed("Graph does not satisfy 4-vertex condition\n"
 						"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "β" : "α", alpha, nCommon[idx + 2], nCommon[4 * idx + 4], nCommon[4 * idx + 5]);
+						i, j, idx ? "β" : "α", alpha, pParam.numEdges, pParam.vertice[0], pParam.vertice[1]);
 					printAdjMatrix(pGraph);
 #endif
 				}
 			}
 			else {
-				nCommon[idx] = nCommonCurr;
-				nCommon[idx + 2] = alpha;
-				nCommon[4 * idx + 4] = i;
-				nCommon[4 * idx + 5] = j;
+				pParam.numCommon = nCommonCurr;
+				pParam.numEdges = alpha;
+				pParam.vertice[0] = i;
+				pParam.vertice[1] = j;
 			}
 		}
 	}
@@ -646,20 +647,20 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, int * nCo
 	return t_srg;
 }
 
-t_graphType SRGParam::updateParam(int* pCommon, bool flag_4_ver) {
+t_graphType SRGParam::updateParam(const ICNParam* pCommon, bool flag_4_ver) {
 	if (this) {
 		if (flag_4_ver) {
-			if (α && α != pCommon[2] || β && β != pCommon[3])
+			if (α && α != pCommon[0].numEdges || β && β != pCommon[1].numEdges)
 				printfRed("Found graph with 4-vertex condition for different (α, β) = (%d, %d) != (%d, %d)\n",
-					pCommon[2], pCommon[3], α, β);
-			α = pCommon[2];
-			β = pCommon[3];
+					pCommon[0].numEdges, pCommon[1].numEdges, α, β);
+			α = pCommon[0].numEdges;
+			β = pCommon[1].numEdges;
 			m_cntr[3]++; // # of graphs satisfying 4-vertex condition
 		}
 
 		if (!m_cntr[2]++) {
-			λ = pCommon[0];
-			μ = pCommon[1];
+			λ = pCommon[0].numCommon;
+			μ = pCommon[1].numCommon;
 		}
 	}
 	return flag_4_ver ? t_4_vert : t_srg;

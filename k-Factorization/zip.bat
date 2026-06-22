@@ -24,6 +24,7 @@ set TARFILES=%TARFILES% ./OldTests/ExpectedResults ./OldTests/*.ba ./OldTests/*.
 set TARFILES=%TARFILES% ./NewTests/*.ba ./NewTests/*.txt
 set TARFILES=%TARFILES% ./CI/*.ba ./CI/*.txt
 
+md .\ZIP 2>nul
 REM Create archive, ignore missing files
 tar -c -J -f ".\ZIP\%ARX%_%TODAY%_%hhmmss%.tar" %TARFILES%
 

@@ -294,6 +294,70 @@ private:
         int vertex_to_pos[18];
         uint8_t v0;
 
+        struct SearchNode {
+            uint8_t c[18];
+            bool used[18];
+            int pairs_visited;
+        };
+        bool is_collecting = false;
+        int target_depth = 0;
+        std::vector<SearchNode>* p_nodes = nullptr;
+
+        // Parallel remaining-cycle generation. Used for small L, where the
+        // main-cycle search produces too few work items to fill all threads:
+        // we run the few main cycles sequentially but fan out each candidate's
+        // generate_remaining_cycles across the thread pool. Explores the exact
+        // same branches as the sequential path (results are identical).
+        struct RemTask {
+            uint8_t alpha_p[18];
+            uint8_t rem_used[18];
+            int start_idx;
+        };
+        bool parallel_remaining = false;
+        bool collecting_rem = false;
+        int rem_target_depth = 0;
+        std::vector<RemTask>* p_rem_tasks = nullptr;
+
+        CycleBacktrackState() = default;
+        CycleBacktrackState(const CycleBacktrackState& other) {
+            self = other.self;
+            total_generated = 0;
+            total_passed_p1f = 0;
+            memcpy(F, other.F, sizeof(F));
+            memcpy(pair_elements, other.pair_elements, sizeof(pair_elements));
+            memcpy(vertex_to_pair, other.vertex_to_pair, sizeof(vertex_to_pair));
+            memcpy(vertex_to_pos, other.vertex_to_pos, sizeof(vertex_to_pos));
+            v0 = other.v0;
+            is_collecting = false;
+            target_depth = 0;
+            p_nodes = nullptr;
+            parallel_remaining = false;
+            collecting_rem = false;
+            rem_target_depth = 0;
+            p_rem_tasks = nullptr;
+        }
+        CycleBacktrackState& operator=(const CycleBacktrackState& other) {
+            if (this != &other) {
+                self = other.self;
+                total_generated = 0;
+                total_passed_p1f = 0;
+                valid_alphas.clear();
+                memcpy(F, other.F, sizeof(F));
+                memcpy(pair_elements, other.pair_elements, sizeof(pair_elements));
+                memcpy(vertex_to_pair, other.vertex_to_pair, sizeof(vertex_to_pair));
+                memcpy(vertex_to_pos, other.vertex_to_pos, sizeof(vertex_to_pos));
+                v0 = other.v0;
+                is_collecting = false;
+                target_depth = 0;
+                p_nodes = nullptr;
+                parallel_remaining = false;
+                collecting_rem = false;
+                rem_target_depth = 0;
+                p_rem_tasks = nullptr;
+            }
+            return *this;
+        }
+
         void apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj);
         bool is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2);
         void backtrack(int depth, int pairs_visited, uint8_t* c, bool* used, int L);
@@ -305,10 +369,8 @@ private:
         bool checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L);
         bool validateCandidateL(const uint8_t* alpha_p, bool* used, int L);
         void saveAlpha(const uint8_t* alpha_p);
-        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L);
-        void arrange_remaining_cycle_perm(
-            int depth, int d, int unused_count, const int* unused_indices, int* perm, bool* perm_used,
-            uint8_t* cycle_nodes, uint8_t* alpha_p, bool* rem_used, const uint8_t* rem, int rem_size, int L, int first_unused);
+        void generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L, int depth);
+        void generateRemainingParallel(const uint8_t* rem, int rem_size, uint8_t* alpha_p, int L);
         void checkTimeoutAndReport(int L, long long checked_reps);
     };
 
@@ -357,13 +419,12 @@ private:
     void verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique);
     std::chrono::steady_clock::time_point case_start_time;
     std::chrono::steady_clock::time_point last_print_time;
-    double case_timeout_seconds = 1e9; // 30 minutes case timeout limit (aligns with K16A2)
-    int min_cycle_length = 2; // Minimum cycle length to run (e.g. 10 for Option B).
+    double case_timeout_seconds = 1e9; // Very large timeout value (effectively infinite)
+    int min_cycle_length = 3; // Minimum cycle length to run (3 => aut order > 2; skips infeasible L=2)
     bool case_timed_out = false;
     long long current_checked_reps = 0;
     int current_top_branch_idx = 0;
     int total_top_branches = 0;
-    std::set<std::vector<uint8_t>>* p_unique_results = nullptr;
 
     void printEstimatedTime(int L, long long checked_reps, int search_type);
 

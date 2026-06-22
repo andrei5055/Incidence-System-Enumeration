@@ -290,7 +290,6 @@ std::string printWithPowers(const std::string& strInput) {
 
 	while (*str) {
 		if (*str == '^') {
-			//str++; // Skip '^'
 
 			// Convert all consecutive digits to superscripts
 			while (*++str && std::isdigit(static_cast<unsigned char>(*str))) {
@@ -309,8 +308,6 @@ std::string printWithPowers(const std::string& strInput) {
 				case '8': result += "\xE2\x81\xB8"; break; // ⁸
 				case '9': result += "\xE2\x81\xB9"; break; // ⁹
 				}
-
-				//str++;
 			}
 		}
 		else

@@ -3,6 +3,13 @@
 
 #define OUT_SRG_TO_SEPARATE_FILE	0	// Set this value to 1 if you want to see the constructed SRG in a separate file.
 
+// Sructure describing the Induced Common Neighborhood parameters
+typedef struct ICNParam {
+	int numCommon;	// The number of common neighbors of two vertices.
+	int numEdges;	// The number of edge in ICN subgraph
+	int vertice[2];	// Vertex identifiers for which the subgraph of the ICN under consideration is defined.
+} ICNParam;
+
 typedef struct SRGParam {
 	unsigned int m_cntr[5];   // 0 - total, 1 - regular, 2 - SRG, 3 - 4-vert cond; 4 - rank 3 
 	int k;
@@ -13,7 +20,7 @@ typedef struct SRGParam {
 	int β;
 #endif
 	SRGParam() { memset(this, 0, sizeof(*this)); }
-	t_graphType updateParam(int* pCommon, bool flag_4_ver);
+	t_graphType updateParam(const ICNParam* pCommon, bool flag_4_ver);
 } SRGParam;
 
 class TopGunBase;
@@ -36,7 +43,7 @@ public:
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
-	t_graphType checkSRG(const tchar *pGraph, int graphDegree, int* nCommon, size_t lenCommon, bool& flag) const;
+	t_graphType checkSRG(const tchar *pGraph, int graphDegree, ICNParam* pICN_param, bool& flag) const;
 	inline int param(paramID id) const { return m_pParam->val[id]; }
 	inline auto getMaster() const				{ return m_pMaster; }
 	inline auto nRows() const					{ return m_nRows;}
