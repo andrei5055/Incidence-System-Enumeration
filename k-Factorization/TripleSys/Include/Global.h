@@ -23,6 +23,7 @@ typedef enum {
 	t_4_vert = t_srg + (1 << 2),
 	t_triangular,
 	t_rock,
+	t_quasi_srg,
 	t_complete = -1
 } t_graphType;
 
@@ -94,6 +95,7 @@ typedef enum {
 	t_lastParam,
 	// Indices of parameters with the int* type values
 	t_v4Array = 0,
+	t_numCommonNeighbors,
 	t_lastIntArryParam,
 	// indices of parameters with the string type values
 	t_UFname = 0,

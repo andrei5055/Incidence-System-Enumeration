@@ -40,16 +40,18 @@ public:
 	bool outputGraph(int typeIdx, t_graphType graphType, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage, 
 		bool rank3, ctchar* pResGraph, ctchar* pUpperDiag, SRGToolkit* pSlaveToolKit);
 	void outputMatrix(uint sourceMatrID);
+	const auto param_ICN() const				{ return m_pParam_ICN; }
 private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
-	t_graphType checkSRG(const tchar *pGraph, int graphDegree, ICNParam* pICN_param, bool& flag) const;
+	t_graphType checkSRG(const tchar *pGraph, int graphDegree, bool& flag);
 	inline int param(paramID id) const { return m_pParam->val[id]; }
 	inline auto getMaster() const				{ return m_pMaster; }
 	inline auto nRows() const					{ return m_nRows;}
 	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit);
 	void buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx) const;
-	auto topGun() const							{ return m_pTopGunBase; }
+	inline auto topGun() const					{ return m_pTopGunBase; }
+	inline auto numICN_param() const			{ return m_nNumCommonMax[0] + m_nNumCommonMax[1]; }
 	
 	const int m_nRows; 
 	const int m_nExploreMatrices;
@@ -65,4 +67,7 @@ private:
 	SRGToolkit *m_pMaster = nullptr;
 	TopGunBase* m_pTopGunBase = nullptr;
 	bool m_bFactorizationOutputCompleted;
+	int m_nNumCommonMax[2]; // Number of different values for {λ0, λ1, λ2,...} and {μ0, μ1, μ0,2,...}
+	int m_nNumCommon[2];	// Number of different values for {λ0, λ1, λ2,...} and {μ0, μ1, μ0,2,...} that are used in the constructed graphs.
+	ICNParam* m_pParam_ICN = nullptr;
 };

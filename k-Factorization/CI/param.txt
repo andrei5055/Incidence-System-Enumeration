@@ -1,5 +1,6 @@
 PrintMatrices=0
 TimingOutputMode = 1
+NumCommonNeighbors=[1,20]
 Test=256
 //GThreads=5
 ExploreMatrices=3

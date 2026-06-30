@@ -335,19 +335,38 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 	}
 
 	const auto allowUndefinedCycles = param(t_allowUndefinedCycles);
+	const char* sectionTitle[] = { SECTION_PARAM_MAIN, SECTION_PARAM_ARRAY, SECTION_PARAM_STRINGS };
+	const auto lenBuf = countof(buffer);
 	for (int j = 0; j < numParamSet; j++) {
 		auto* paramNames = pParSet[j].paramNames;
 		const int iMax = pParSet[j].numParams;
+		if (j < 3)
+			fprintf(f, "\n%s\n", sectionTitle[j]);
+
 		switch (j) {
 		case 0:
-			fprintf(f, "\n%s\n", SECTION_PARAM_MAIN);
 			for (int i = 0; i < iMax; i++)
 				fprintf(f, "%30s: %d\n", paramNames[i], param(static_cast<paramID>(i)));
 			break;
 
 		case 1:
+			for (int i = 0; i < iMax; i++) {
+				char *pBuf = nullptr;
+				const auto ptr = paramPtr()->arrVal[i];
+				if (ptr) {
+					pBuf = buffer;
+					SPRINTFS(pBuf, buffer, lenBuf, "[");
+					int k = 0;
+					while (k < ptr[0])
+						SPRINTFS(pBuf, buffer, lenBuf, "%d,", ptr[++k]);
+
+					pBuf--;
+					SPRINTFS(pBuf, buffer, lenBuf, "]");
+				}
+				fprintf(f, "%30s: %s\n", paramNames[i], ptr ? buffer : "");
+			}
+			break;
 		case 2:
-			fprintf(f, "\n%s\n", j == 1? SECTION_PARAM_ARRAY : SECTION_PARAM_STRINGS);
 			for (int i = 0; i < iMax; i++) {
 				const auto ptr = paramPtr()->strVal[i];
 				fprintf(f, "%30s: %s\n", paramNames[i], ptr? ptr->c_str() : "");
@@ -359,8 +378,7 @@ void TopGunBase::outputIntegratedResults(const paramDescr* pParSet, int numParam
 					break;
 
 				fprintf(f, "\n%s\n", SECTION_PARAM_U1F_CONF);
-				char buffer[256], *pBuf = buffer;
-				const auto lenBuf = countof(buffer);
+				char *pBuf = buffer;
 				SPRINTFS(pBuf, buffer, lenBuf, "%c", '{');
 				const auto ngrp = pntr[0];
 				pntr++;
@@ -585,10 +603,7 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 				printf(" %d", (i + 1) / ip);
 
 			auto* pMatr = outputNextMatrixInfo(i, pSRGtoolkit->srcGroupOrderPntr(), &Result, updateDB, nRows, skipedBytes);
-			if (!pSRGtoolkit->exploreMatrix(pMatr, i, pMarixStorage)) {
-				delete pSRGtoolkit;
-				pSRGtoolkit = NULL;
-			}
+			pSRGtoolkit->exploreMatrix(pMatr, i, pMarixStorage);
 		}
 	}
 

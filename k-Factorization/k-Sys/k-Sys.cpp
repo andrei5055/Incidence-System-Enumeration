@@ -62,11 +62,11 @@ const char* intParamNames[]{
 	"OrderMatrices",
 	"AllowUndefinedCycles",		// 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
-	"ExploreMatrices",			// -4 - No output of integrated results into "ID_Results.txt"
+	"ExploreMatrices",			// -8 - No output of integrated results into "ID_Results.txt"
 								//  0 - Do not construct graphs
 								//  1 (-1) - Construct: SRGs (no canonization)
-								//  2 (-2) -            regular graphs (no canonization)
-								//  3 (-3) -			SRGs and regular graphs (no canonization)
+								//  2 (-2) - Construct: quasi-SRG graphs (no canonization)
+								//  4 (-4) -            regular graphs (no canonization)
 	"ConstructLatticeGraphs",   
 	"SemiSymmetricGraphs",
 	"RejectCycleLength",
@@ -86,6 +86,7 @@ const char* intParamNames[]{
 
 const char* intArraysParamNames[]{
 	"v4Array",
+	"NumCommonNeighbors",
 };
 
 const char* strParamNames[]{

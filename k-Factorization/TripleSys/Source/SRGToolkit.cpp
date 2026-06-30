@@ -87,6 +87,7 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const string& resFileName,
 	const int coeff = PRINT_MATRICES ? 3 : 0;
 	m_subgraphVertex = new ushort[groupDegree()];
 	for (int i = 0; i < 2; i++) {
+		m_nNumCommonMax[i] = 1;
 		m_bChekMatr[i] = true;
 		m_pGraphParam[i] = new SRGParam();
 		m_resFileName[i] = resFileName;
@@ -96,6 +97,16 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const string& resFileName,
 		m_resFileName[i] += buf;
 #endif	
 	}
+
+	if (p->arrVal) {
+		const auto pCommon = p->arrVal[t_numCommonNeighbors];
+		if (pCommon) {
+			for (int i = 0; i < pCommon[0]; i++)
+				m_nNumCommonMax[i] = pCommon[i + 1];
+		}
+	}
+
+	m_pParam_ICN = new ICNParam[numICN_param()];
 }
 
 SRGToolkit::~SRGToolkit() {
@@ -104,6 +115,8 @@ SRGToolkit::~SRGToolkit() {
 	delete[] outFileName();
 	for (int i = 0; i < 2; i++)
 		delete m_pGraphParam[i];
+
+	delete[] m_pParam_ICN;
 }
 
 bool SRGToolkit::exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage) {
@@ -174,7 +187,7 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
 	const auto groupSize = m_pParam->paramVal(t_groupSize);
 	if (!typeIdx) {
-		// Check whether the graph is a Triangular or Rock graph
+		// Check whether the graph is Triangular or Rock graph
 		if (groupSize == 2 && m_pParam->partiteNumb() <= 2 && !m_pParam->paramVal(t_constructLatticeGraphs)) {
 			unique_lock<mutex> guard;
 			if (auto* mtx = pMarixStorage->getMutext())
@@ -237,30 +250,28 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	triangularGraph(nCols, pAdjacencyMatrix);
 #endif
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
-	{
-		unique_lock<mutex> guard;
-		if (auto* mtx = pMarixStorage->getMutext()) {
-			guard = unique_lock<mutex>(*mtx);
-			auto* pGrParam = getMaster()->graphParam(typeIdx);
-			if (!pGrParam->k) {
-				pGrParam->k = graphParam->k;
-				pGrParam->λ = graphParam->λ;
-				pGrParam->μ = graphParam->μ;
-				pGrParam->α = graphParam->α;
-				pGrParam->β = graphParam->β;
-			}
+	unique_lock<mutex> guard;
+	if (auto* mtx = pMarixStorage->getMutext()) {
+		guard = unique_lock<mutex>(*mtx);
+		auto* pGrParam = getMaster()->graphParam(typeIdx);
+		if (!pGrParam->k) {
+			// Save the parameters of the graph, but not counters.
+			pGrParam->k = graphParam->k;
+			pGrParam->λ = graphParam->λ;
+			pGrParam->μ = graphParam->μ;
+			pGrParam->α = graphParam->α;
+			pGrParam->β = graphParam->β;
 		}
-
-		pMarixStorage->graphDB()->setGraphType(graphType);
 	}
+
+	pMarixStorage->graphDB()->setGraphType(graphType);
 
 	int flg = 1;
 	switch (graphType) {
 	case t_nonregular:
-	case t_complete:
-		return false;
-	case t_regular:
-		flg = 2;
+	case t_complete:  return false;
+	case t_quasi_srg: flg = 2; break;
+	case t_regular:   flg = 4;
 	}
 
 	const bool canonize = m_nExploreMatrices > 0;
@@ -541,10 +552,9 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 			graphDegree = vertexDegree;
 	}
 
-	ICNParam paramICN[2];
 	bool flag;
 	// Check if constructed graph is strongly regular
-	const auto graphType = checkSRG(pGraph, graphDegree, paramICN, flag);
+	const auto graphType = checkSRG(pGraph, graphDegree, flag);
 	switch (graphType) {
 	case t_regular: 
 		if (pGraphParam && !pGraphParam->m_cntr[1]++)
@@ -552,7 +562,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	case t_complete:return graphType;
 
 	default: // Check if complementary graph is a complete graph or a set of complete graphs 
-		if (graphDegree == v - 1 || graphDegree == paramICN[1].numCommon)
+		if (graphDegree == v - 1 || graphDegree == m_pParam_ICN[1].numCommon)
 			return t_complete;
 	}
 
@@ -567,7 +577,7 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 
 			pVertex[i] = 0;
 		}
-		checkSRG(pGraph, graphDegree, paramICN, flag);
+		checkSRG(pGraph, graphDegree, flag);
 		printfYellow_TGO("\ncomplement\n");
 	}
 	else
@@ -579,12 +589,13 @@ t_graphType SRGToolkit::checkSRG(tchar* pGraph, SRGParam* pGraphParam) {
 	if (pGraphParam && !pGraphParam->m_cntr[1]++)
 		pGraphParam->k = graphDegree;
 
-	return pGraphParam->updateParam(paramICN, flag);
+	return pGraphParam->updateParam(m_pParam_ICN, flag);
 }
 
-t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, ICNParam* pICN_param, bool &flag) const {
+t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, bool &flag) {
 	graphDegree--;
-	memset(pICN_param, 0, 2 * sizeof(ICNParam));
+	memset(m_pParam_ICN, 0, numICN_param() * sizeof(ICNParam));
+	memset(m_nNumCommon, 0, sizeof(m_nNumCommon));
 	flag = true;
 	auto pFirstVertex = pGraph;
 	const auto v = groupDegree();
@@ -611,40 +622,48 @@ t_graphType SRGToolkit::checkSRG(const tchar *pGraph, int graphDegree, ICNParam*
 				}
 			}
 
-			const auto idx = pFirstVertex[j] ? 0 : 1;
-			auto& pParam = pICN_param[idx];
-			if (pParam.numCommon) {
-				if (pParam.numCommon != nCommonCurr) {
+			const auto idx = pFirstVertex[j] ? 0 : m_nNumCommonMax[0];
+			const auto iMax = idx ? m_nNumCommonMax[1] : m_nNumCommonMax[0];
+			int i = -1;
+			ICNParam *pParam = m_pParam_ICN + idx;
+			while (++i < iMax && pParam->numCommon && pParam->numCommon != nCommonCurr)
+				pParam++;
+
+			if (i == iMax) {
 #if 0
-					printfRed("Graph is not strongly regular:\n"
-						"For(%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "mu" : "lambda", nCommonCurr, pParam.numCommon, pParam.vertice[0], pParam.vertice[1]);
-					printAdjMatrix(pGraph);
+				printfRed("Graph is not %sstrongly regular:\n", m_nNumCommonMax[0] == 1 && m_nNumCommonMax[1] > 1? "quasi-" : "");
+				printfRed("For(%d, %d) %s is %d\n", i, j, idx ? "mu" : "lambda", nCommonCurr);
+				pParam = m_pParam_ICN + idx;
+				for (i = 0; i < iMax; i++, pParam++)
+					printfRed("  ... and not %d as it was for (%d, %d)\n", pParam->numCommon, pParam->vertice[0], pParam->vertice[1]);
+
+				PRINT_ADJ_MATRIX(pGraph);
 #endif
-					return t_regular;
-				}
-				if (flag) {
-					flag = (pParam.numEdges == alpha);
-					if (flag)
-						continue;
-#if 0
-					printfRed("Graph does not satisfy 4-vertex condition\n"
-						"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
-						i, j, idx ? "β" : "α", alpha, pParam.numEdges, pParam.vertice[0], pParam.vertice[1]);
-					printAdjMatrix(pGraph);
-#endif
-				}
+				return t_regular;
 			}
-			else {
-				pParam.numCommon = nCommonCurr;
-				pParam.numEdges = alpha;
-				pParam.vertice[0] = i;
-				pParam.vertice[1] = j;
+
+			if (pParam->numCommon) {
+				if (flag) {
+					flag = !i && (pParam->numEdges == alpha);
+#if 0
+					if (!flag) {
+						printfRed("Graph does not satisfy 4-vertex condition\n"
+							"For (%d, %d) %s is %d and not %d as it was for (%d, %d)\n",
+							i, j, idx ? "β" : "α", alpha, pParam->numEdges, pParam->vertice[0], pParam->vertice[1]);
+						PRINT_ADJ_MATRIX(pGraph);
+					}
+#endif
+				}
+			} else {
+				pParam->numCommon = nCommonCurr;
+				pParam->numEdges = alpha;
+				pParam->vertice[0] = i;
+				pParam->vertice[1] = j;
 			}
 		}
 	}
 
-	return t_srg;
+	return m_nNumCommon[0] == 1 && m_nNumCommon[1] == 1 ? t_srg : t_quasi_srg;
 }
 
 t_graphType SRGParam::updateParam(const ICNParam* pCommon, bool flag_4_ver) {
