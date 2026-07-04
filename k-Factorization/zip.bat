@@ -1,4 +1,7 @@
 @echo off
+rem Define the true ESCAPE character
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
 cd /d "%~dp0"
 
 REM Archive name
@@ -17,16 +20,28 @@ for /r %%f in (*.bat) do (
 
 REM Build list of files for tar
 set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals ./MD
-set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.* ./EngineGPU/EngineGPU.* ./EngineGPU/*.cu
+REM NOTE: use ".vcxproj*" not ".*" here. On Windows "TripleSys.*" ALSO matches an
+REM extensionless name, so a stray build dir "TripleSys\TripleSys\" gets matched and
+REM tar recurses its whole x64\Release tree (bloated the 260627 zip to 24MB). The
+REM ".vcxproj*" form grabs the .vcxproj/.filters/.user files and never a directory.
+set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.vcxproj* ./EngineGPU/EngineGPU.vcxproj* ./EngineGPU/*.cu
 set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
 set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
 set TARFILES=%TARFILES% ./OldTests/ExpectedResults ./OldTests/*.ba ./OldTests/*.txt
 set TARFILES=%TARFILES% ./NewTests/*.ba ./NewTests/*.txt
 set TARFILES=%TARFILES% ./CI/*.ba ./CI/*.txt
 
-md .\ZIP 2>nul
 REM Create archive, ignore missing files
+if not exist ".\ZIP" mkdir ".\ZIP"
 tar -c -J -f ".\ZIP\%ARX%_%TODAY%_%hhmmss%.tar" %TARFILES%
+rem Check the exit status and print colored results
+if %errorlevel% equ 0 (
+    echo %ESC%[32m[ OK ] File created: ".\ZIP\%ARX%_%TODAY%_%hhmmss%.tar" %ESC%[0m
+) else (
+    echo %ESC%[31m[ FAULT ] Tar command failed.%ESC%[0m
+)
 
-REM Cleanup: delete all *.ba files
+rem Cleanup: delete all *.ba files
 del /s /q /f *.ba >nul 2>&1
+
+pause

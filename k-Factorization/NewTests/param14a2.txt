@@ -1,0 +1,56 @@
+// K14 validation oracle (rep method only; K14A2 minimal host). Expected |Aut|>1
+// classification (this project's own solver, Logs_CI/.../14x13x2): 23 P1Fs total,
+// rep method reproduces the |Aut|>1 = 21: {2:3,3:5,4:1,6:5,12:5,84:1,156:1}.
+// Per order: order-2 -> 16 (PROVEN, incl fpf 2^7), order-3 -> 17, order-7 -> 1,
+// order-13 -> 1; order-4 -> 5 (order-4-ELEMENT count, not |Aut|-div-by-4).
+// Run: $env:REP_ORDERS='2,3,7,13'; k-Sys.exe param14a2.txt  (or REP_ORDER=N).
+// NEEDS one 14-player 3-row starter at <StartFolder>/Complete_graphs/14/14x3x2_14/
+// (rep is unseeded -- one starter just triggers the run-once dispatch; reuse a CI
+// 14x3x2 P-file, e.g. copy Logs_CI/Complete_graphs/14/14x3x2/P0000000001.txt there).
+PrintMatrices=1
+GroupSize=2
+KeepPrevResult=1
+ExploreMatrices=0
+AutSaveTestedTrs=1
+NThreads=1; KThreads=10; UseMultiThreading=0
+Use2RowsCanonization=1; UseUniform1Factorization=1;
+AllowUndefinedCycles=0; Any2RowsConvertToFirst2=1;
+Out_CSV_File=-1
+CSV_FileName=../../SRG.csv
+U1FCycles={{14}}
+OutAutomorphismGroup=0
+KeepPrevResult=0
+PrintMatrices=1
+UseKSolve=32;
+UseMultiThreading=1
+StartFolder="../../Logs_14-3-A1/"
+ResultFolder="../../Logs_14-13-A2_Tmp/"
+ResultGroupOrderMin=0
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3; NRowsInStartMatrix=3;
+// KSolve tests:
+TestName="UseKSolve K14A2"
+nPlayers=14; CBMP_Graph=0;
+NRowsInResultMatrix=0; ExpectedResult=-1
+RUN_JOB
+nThreads=10; UseMultiThreading=1
+nRowsInStartMatrix=13;
+KeepPrevResult=0
+PrintMatrices=0
+StartFolder="../../Logs_14-13-A2_Tmp/"
+ResultFolder="../../Logs_14-13-A2_Tmp1/"
+OrderMatrices=1;
+UseKSolve=0;
+CanonizeInput=1;
+FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalculation=0; ExpectedResult=-1
+RUN_JOB
+
+OutAutomorphismGroup=0;
+nThreads=1;
+StartFolder="../../Logs_14-13-A2_Tmp1/"
+ResultFolder="../../Logs_14-13-A2_Result/"
+PrintMatrices=1
+OrderMatrices=1;
+CanonizeInput=1;
+ExpectedResult=-1
+
+END_JOB

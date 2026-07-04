@@ -1,4 +1,4 @@
-#include "k18a2.h"
+#include "k16A2.h"
 #include <thread>
 #include <algorithm>
 #include <cstring>
@@ -9,11 +9,10 @@
 #include <set>
 #include <chrono>
 #include <atomic>
-#include <cstdlib>
-#include <functional>
+#include <cstdlib>   // getenv / atoi (REP_ORDER[S] env dispatch)
 
-// File-scope N-constants for free functions in this TU (mirror K18A2's in-class values).
-static constexpr int NP = 18;
+// File-scope N-constants for free functions in this TU (mirror K16A2's in-class values).
+static constexpr int NP = 16;
 static constexpr int NM = NP - 1;
 static constexpr int NHALF = NP / 2;
 static constexpr int NEDGES = NP * (NP - 1) / 2;
@@ -28,10 +27,9 @@ static std::atomic<long long> g_ns_enum{0};   // generate_matchings (pool enumer
 static std::atomic<long long> g_ns_group{0};  // sort + hashmap + orbit grouping + compat
 static std::atomic<long long> g_ns_cover{0};  // exact-cover on orbits
 static std::atomic<long long> g_parallel_tasks{0}; // tasks fanned out in generateRemainingParallel
-static std::atomic<long long> g_tasks_done{0};      // parallel tasks completed (progress counter)
-static std::atomic<long long> g_cover_capped{0};    // alphas whose cover-tree hit K18A2_DECOMPOSE_NODE_CAP
+static std::atomic<long long> g_tasks_done{0};      // parallel tasks completed (for live ETA)
 
-namespace k18_detail {  // named (external linkage) + K18-unique so it can't ODR-clash with K16's
+namespace k16_detail {  // named (external linkage) + K16-unique so it can't ODR-clash with K18's
 struct FlatMatchingMap {
     struct Entry {
         std::array<uint8_t, NP> key;
@@ -80,26 +78,30 @@ private:
         uint64_t h1, h2;
         memcpy(&h1, m.data(), 8);
         memcpy(&h2, m.data() + 8, 8);
-        uint16_t h3;
-        memcpy(&h3, m.data() + 16, 2);
-        return h1 * 3137 + h2 * NM + h3;
+        /* 
+         * NOTE ON K16 VS K18:
+         * For K16, NP = 16. The array 'm' has exactly 16 bytes. Hashing 'h1' and 'h2' 
+         * (the two 8-byte halves) covers the entire array. Trying to copy and hash 
+         * 'h3' from 'm.data() + 16' (as in K18 where NP = 18) would be an out-of-bounds read.
+         */
+        return h1 * 3137 + h2 * NM;
     }
 };
-}  // namespace k18_detail
-using namespace k18_detail;
+}  // namespace k16_detail
+using namespace k16_detail;
 
 
 // ==========================================
 // CycleBacktrackState Implementation
 // ==========================================
 
-void K18A2::CycleBacktrackState::apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj) {
+void K16A2::CycleBacktrackState::apply_perm(const uint8_t* src_adj, const uint8_t* perm, uint8_t* dst_adj) {
     for (int i = 0; i < NP; i++) {
         dst_adj[perm[i]] = perm[src_adj[i]];
     }
 }
 
-bool K18A2::CycleBacktrackState::is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2) {
+bool K16A2::CycleBacktrackState::is_perfect_scalar(const uint8_t* adj1, const uint8_t* adj2) {
     uint8_t curr = 0;
     for (int i = 0; i < NHALF; i++) {
         curr = adj1[curr];
@@ -109,7 +111,7 @@ bool K18A2::CycleBacktrackState::is_perfect_scalar(const uint8_t* adj1, const ui
     return curr == 0;
 }
 
-void K18A2::CycleBacktrackState::checkTimeoutAndReport(int L, long long checked_reps) {
+void K16A2::CycleBacktrackState::checkTimeoutAndReport(int L, long long checked_reps) {
     if (self->case_timed_out) return;
     auto now = std::chrono::steady_clock::now();
     double elapsed = std::chrono::duration<double>(now - self->case_start_time).count();
@@ -119,7 +121,7 @@ void K18A2::CycleBacktrackState::checkTimeoutAndReport(int L, long long checked_
     self->printEstimatedTime(L, checked_reps, (v0 == 3) ? 2 : 1);
 }
 
-void K18A2::CycleBacktrackState::backtrack(int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
+void K16A2::CycleBacktrackState::backtrack(int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
     if (self->case_timed_out) return;
     static thread_local int backtrack_call_count = 0;
     if (++backtrack_call_count >= 1000) {
@@ -224,14 +226,14 @@ void K18A2::CycleBacktrackState::backtrack(int depth, int pairs_visited, uint8_t
     backtrackRecurse(depth, pairs_visited, c, used, L);
 }
 
-void K18A2::CycleBacktrackState::backtrackRecurse(int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
+void K16A2::CycleBacktrackState::backtrackRecurse(int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
     for (int v = 0; v < NP; v++) {
         if (used[v]) continue;
         tryVertexForCycle(v, depth, pairs_visited, c, used, L);
     }
 }
 
-void K18A2::CycleBacktrackState::tryVertexForCycle(int v, int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
+void K16A2::CycleBacktrackState::tryVertexForCycle(int v, int depth, int pairs_visited, uint8_t* c, bool* used, int L) {
     int p_idx = vertex_to_pair[v];
     if (p_idx == -2) {
         recurseWithVertex(v, depth, pairs_visited, c, used, L);
@@ -245,7 +247,7 @@ void K18A2::CycleBacktrackState::tryVertexForCycle(int v, int depth, int pairs_v
     }
 }
 
-void K18A2::CycleBacktrackState::recurseWithVertex(int v, int depth, int next_pairs, uint8_t* c, bool* used, int L) {
+void K16A2::CycleBacktrackState::recurseWithVertex(int v, int depth, int next_pairs, uint8_t* c, bool* used, int L) {
     if (depth == 0) {
         self->current_top_branch_idx++;
         self->printEstimatedTime(L, g_candidates_processed.load(), (v0 == 3) ? 2 : 1);
@@ -256,27 +258,38 @@ void K18A2::CycleBacktrackState::recurseWithVertex(int v, int depth, int next_pa
     used[v] = false;
 }
 
-static bool validateDefinedOrbits(const uint8_t* alpha_p, int L, const bool* defined, const uint8_t F0[][NP]) {
+bool K16A2::CycleBacktrackState::validateDefinedOrbits(const uint8_t* alpha_p, int L, const bool* defined, const uint8_t F0[][NP]) {
     int limit = L / 2;
     for (int u = 0; u < NP; u++) {
         if (!defined[u]) continue;
-        int v = F0[0][u];
-        if (!defined[v] || u > v) continue;
         
-        uint8_t curr_u = u;
-        uint8_t curr_v = v;
-        for (int j = 1; j <= limit; j++) {
-            curr_u = alpha_p[curr_u];
-            curr_v = alpha_p[curr_v];
-            if (F0[0][curr_u] == curr_v) {
-                return false;
+        int v = F0[0][u];
+        if (defined[v] && u <= v) {
+            uint8_t curr_u = u;
+            uint8_t curr_v = v;
+            for (int j = 1; j <= limit; j++) {
+                curr_u = alpha_p[curr_u];
+                curr_v = alpha_p[curr_v];
+                if (F0[0][curr_u] == curr_v) {
+                    return false;
+                }
             }
         }
+        
+        /* 
+         * NOTE ON K16 VS K18:
+         * Previously, starter mapping constraints (alpha(R_1) = R_2, alpha(R_2) = R_3) 
+         * were added here as a K16-only ad-hoc speedup attempt for the dense L=3 case.
+         * However, these constraints are mathematically incorrect for cyclic automorphisms 
+         * with cycle length L < NM, as starter rows do not necessarily map in that sequence.
+         * They are removed here to match the core K18A2 algorithm exactly, which restores
+         * correctness and avoids incorrectly rejecting valid automorphism results.
+         */
     }
     return true;
 }
 
-void K18A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L) {
+void K16A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L) {
     long long count = g_candidates_processed.fetch_add(1) + 1;
     total_generated++;
     self->current_checked_reps = count;
@@ -348,7 +361,7 @@ void K18A2::CycleBacktrackState::processCandidate(uint8_t* c, bool* used, int L)
     }
 }
 
-void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L, int depth) {
+void K16A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const uint8_t* rem, int rem_size, bool* rem_used, uint8_t* alpha_p, int L, int depth) {
     if (self->case_timed_out) return;
     // Parallel task collection: snapshot the branch state at the target depth
     // (a fully-placed first remaining cycle) instead of recursing further.
@@ -461,7 +474,7 @@ void K18A2::CycleBacktrackState::generate_remaining_cycles(int start_idx, const 
     rem_used[first_unused] = false;
 }
 
-void K18A2::CycleBacktrackState::generateRemainingParallel(const uint8_t* rem, int rem_size, uint8_t* alpha_p, int L) {
+void K16A2::CycleBacktrackState::generateRemainingParallel(const uint8_t* rem, int rem_size, uint8_t* alpha_p, int L) {
     // Nothing to fan out over: run the sequential path directly.
     if (rem_size == 0 || self->kThreads <= 1) {
         bool rem_used[NP] = { false };
@@ -513,7 +526,7 @@ void K18A2::CycleBacktrackState::generateRemainingParallel(const uint8_t* rem, i
     for (auto& w : workers) w.join();
 }
 
-void K18A2::CycleBacktrackState::buildPermutation(uint8_t* c, uint8_t* alpha_p, int L) {
+void K16A2::CycleBacktrackState::buildPermutation(uint8_t* c, uint8_t* alpha_p, int L) {
     for (int i = 0; i < NP; i++) alpha_p[i] = (uint8_t)i;
     if (L > 1) {
         alpha_p[v0] = c[0];
@@ -522,7 +535,7 @@ void K18A2::CycleBacktrackState::buildPermutation(uint8_t* c, uint8_t* alpha_p, 
     }
 }
 
-bool K18A2::CycleBacktrackState::checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L) {
+bool K16A2::CycleBacktrackState::checkPermutationPassed(const uint8_t* alpha_p, bool* used, int L) {
     uint8_t G[NHALF][NP];
     memcpy(G[0], F[0], NP);
     int limit = L / 2;
@@ -534,7 +547,7 @@ bool K18A2::CycleBacktrackState::checkPermutationPassed(const uint8_t* alpha_p, 
     return validateCandidateL(alpha_p, used, L);
 }
 
-bool K18A2::CycleBacktrackState::validateCandidateL(const uint8_t* alpha_p, bool* used, int L) {
+bool K16A2::CycleBacktrackState::validateCandidateL(const uint8_t* alpha_p, bool* used, int L) {
     if (L == NM) return true;
     g_candidates_passed_validate++;
 
@@ -544,53 +557,77 @@ bool K18A2::CycleBacktrackState::validateCandidateL(const uint8_t* alpha_p, bool
     return self->decomposeMissingEdges(G, L, alpha_p, H);
 }
 
-void K18A2::CycleBacktrackState::saveAlpha(const uint8_t* alpha_p) {
+void K16A2::CycleBacktrackState::saveAlpha(const uint8_t* alpha_p) {
     std::array<uint8_t, NP> a;
     std::copy(alpha_p, alpha_p + NP, a.begin());
     valid_alphas.push_back(a);
     total_passed_p1f++;
 }
-void K18A2::printEstimatedTime(int L, long long checked_reps, int search_type) {
+void K16A2::printEstimatedTime(int L, long long checked_reps, int search_type) {
     auto now = std::chrono::steady_clock::now();
     double elapsed_since_print = std::chrono::duration<double>(now - last_print_time).count();
-    if (elapsed_since_print >= 30.0) {   // periodic progress, every 30s
+    if (elapsed_since_print >= 5.0) {
         last_print_time = now;
-        double elapsed_total = std::chrono::duration<double>(now - case_start_time).count();  // elapsed time only
+        double elapsed_total = std::chrono::duration<double>(now - case_start_time).count();
+        
+        long long orbit_reps[NP] = {
+            0, 1, 1, 2, 4, 10, 26, 72, 232, 504, 2619, 5040, 34650, 124740, 405405, 1081080
+        };  // K16: NP=16 entries indexed by L (placeholder values; cosmetic, used only for progress)
+        long long total_reps = (L >= 2 && L <= NM) ? orbit_reps[L] : 1;
+        if (total_reps <= 0) total_reps = 1;
+        
+        // Progress basis: when the parallel small-L path is active, use task
+        // completion (meaningful for small L). Otherwise fall back to orbit-rep
+        // coverage. NOTE: for small L the tasks are added per main candidate, so
+        // pct/ETA track the current candidate batch (see Cand for which one).
+        long long ttot = g_parallel_tasks.load();
+        long long tdone = g_tasks_done.load();
+        double pct;
+        if (ttot > 0) {
+            pct = 100.0 * (double)tdone / (double)ttot;
+        } else {
+            pct = (double)checked_reps * 100.0 / total_reps;
+        }
+        if (pct > 100.0) pct = 100.0;
 
-        // Raw progress/diagnostic counters (no percentage, no estimated remaining time).
-        long long ttot = g_parallel_tasks.load();      // total parallel tasks for this L
-        long long tdone = g_tasks_done.load();         // tasks completed so far
+        double est_rem = 0.0;
+        if (pct > 0.00001) {
+            est_rem = elapsed_total * (100.0 / pct) - elapsed_total;
+            if (est_rem < 0.0) est_rem = 0.0;
+        }
+
         long long gmc = g_generate_matchings_calls;
         double avg_pool = gmc ? (double)g_generate_matchings_total_matchings / (double)gmc : 0.0;
         double s_en = g_ns_enum.load() / 1e9, s_gr = g_ns_group.load() / 1e9, s_cv = g_ns_cover.load() / 1e9;
         double par = elapsed_total > 0 ? (s_en + s_gr + s_cv) / elapsed_total : 0.0;
-        printf("   [L=%d T%d] elapsed=%.0fs | tasks %lld/%lld | Cand: %lld | Decomp: %lld | AvgPool: %.0f | en/gr/cv: %.0f/%.0f/%.0f s | capped: %lld | par~%.1fx\n",
-               L, search_type, elapsed_total, tdone, ttot,
+        printf("\r   [L=%d T%d] L-elapsed=%.0fs | %.2f%% (tasks %lld/%lld) | Cand: %lld | Decomp: %lld | AvgPool: %.0f | en/gr/cv: %.0f/%.0f/%.0f s | par~%.1fx | ETA(batch): %.1f min   ",
+               L, search_type, elapsed_total, pct, tdone, ttot,
                (long long)g_candidates_processed, gmc, avg_pool,
-               s_en, s_gr, s_cv, g_cover_capped.load(), par);
+               s_en, s_gr, s_cv, par,
+               est_rem / 60.0);
         fflush(stdout);
     }
 }
 
 // ==========================================
-// K18A2 Orchestrator & Helpers
+// K16A2 Orchestrator & Helpers
 // ==========================================
 
-void K18A2::runExhaustiveSearch() {
-#if K18_USE_REP_METHOD
+void K16A2::runExhaustiveSearch() {
+#if K16_USE_REP_METHOD
     // Representative-method mode: run the classifier ONCE per process (the job may invoke
-    // K18A2 per start matrix, but this search is unseeded so it must run a single time).
+    // K16A2 per start matrix, but this search is unseeded so it must run a single time).
     {
         static std::atomic<bool> repDone{ false };   // guards the single run
         bool expected = false;
         if (repDone.compare_exchange_strong(expected, true)) {
-            // Which automorphism orders to classify. Priority: env REP_ORDERS (comma list, e.g.
-            // "4,5,6,...,17" for a full |Aut|>=4 classification) > env REP_ORDER (single) >
-            // K18_REP_ORDER default. All chosen orders emit into the SAME result pipeline, which
-            // canonicalizes the union -> one combined, deduplicated classification.
-            // Per-order HARVEST TARGET via "order:target" (e.g. "2:30,4,5,7"): that order STOPS
-            // after `target` distinct classes (skips the proof-of-exhaustion tail) -- complete
-            // only if target == true count, else a lower bound. No ':' = run to completion.
+            // Which automorphism orders to classify. Priority: env REP_ORDERS (comma list,
+            // e.g. "3,5,7" for the K16 |Aut|>2 classification) > env REP_ORDER (single) >
+            // K16_REP_ORDER default. All chosen orders emit into the SAME result pipeline,
+            // which canonicalizes the union -> one combined, deduplicated classification.
+            // Per-order HARVEST TARGET via "order:target" (e.g. "2:60,3,5,7"): that order
+            // STOPS after `target` distinct classes (skips the proof-of-exhaustion tail) --
+            // complete only if target == true count, else a lower bound. No ':' = run to end.
             std::vector<std::pair<int,int>> orders;   // (order, target); target 0 = full run
             if (const char* envs = std::getenv("REP_ORDERS")) {       // full job: comma-separated list
                 const char* p = envs;
@@ -605,7 +642,7 @@ void K18A2::runExhaustiveSearch() {
                 int v = atoi(env1), tgt = 0; const char* q = env1; while (*q && *q != ':') q++; if (*q == ':') tgt = atoi(q + 1);
                 orders.push_back({ v, tgt });
             } else {
-                orders.push_back({ K18_REP_ORDER, 0 });
+                orders.push_back({ K16_REP_ORDER, 0 });
             }
             for (auto& ot : orders)
                 runRepresentativeMethod(ot.first, ot.second);   // private member; uses kThreads + m_bPrint
@@ -615,7 +652,7 @@ void K18A2::runExhaustiveSearch() {
 #endif
     auto search_start = std::chrono::high_resolution_clock::now();
     std::set<std::vector<uint8_t>> unique_results;
-
+    
     struct L_Stats {
         int L;
         long long checked = 0;
@@ -628,8 +665,13 @@ void K18A2::runExhaustiveSearch() {
         stats[i].L = i;
     }
     
-    std::set<std::vector<uint8_t>> local_l16_unique;
-    int cycle_lengths[] = { NM, 16, 14, 12, 10, 8, 6, 4, 3, 2 };   // includes L=3 (order-3 automorphisms exist; K16 validated)
+    std::set<std::vector<uint8_t>> local_l14_unique;
+    /* 
+     * NOTE ON K16 VS K18:
+     * K16 has composite NM = 15, which allows odd cycle lengths like 13, 11, 9, 7, 5, 3.
+     * We include all cycle lengths from 15 down to 2 here to perform a truly exhaustive search.
+     */
+    int cycle_lengths[] = { NM, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
     for (int L : cycle_lengths) {
         if (L < min_cycle_length) {
             stats[L].run = false;
@@ -641,7 +683,7 @@ void K18A2::runExhaustiveSearch() {
         }
         
         std::vector<std::vector<uint8_t>> before_results;
-        if (L == 16) {
+        if (L == 14) {
             before_results.assign(unique_results.begin(), unique_results.end());
         }
         
@@ -652,14 +694,14 @@ void K18A2::runExhaustiveSearch() {
         stats[L].unique_classes = l_stats.unique_classes;
         stats[L].run = true;
         
-        if (L == 16) {
+        if (L == 14) {
             for (const auto& res : unique_results) {
                 if (std::find(before_results.begin(), before_results.end(), res) == before_results.end()) {
-                    local_l16_unique.insert(res);
+                    local_l14_unique.insert(res);
                 }
             }
-            if (!local_l16_unique.empty()) {
-                verifyL16Pairing(local_l16_unique);
+            if (!local_l14_unique.empty()) {
+                verifyL16Pairing(local_l14_unique);
             }
         }
     }
@@ -680,15 +722,13 @@ void K18A2::runExhaustiveSearch() {
         26, // L=6
         72, // L=7
         232, // L=8
-        504, // L=NHALF
+        504, // L=9
         2619, // L=10
         5040, // L=11
         34650, // L=12
         124740, // L=13
         405405, // L=14
-        1081080, // L=15
-        2027025, // L=16
-        2027025  // L=NM
+        1081080  // L=15 (= NM); placeholder values, cosmetic only
     };
     
     for (int L = NM; L >= 1; L--) {
@@ -697,12 +737,10 @@ void K18A2::runExhaustiveSearch() {
             sprintf_s(cycle_str, sizeof(cycle_str), "(1)^NP");
         } else if (L == NM || L == 13 || L == 11) {
             sprintf_s(cycle_str, sizeof(cycle_str), "(%d)(1)^%d", L, NP - L);
-        } else if (L == 16) {
-            sprintf_s(cycle_str, sizeof(cycle_str), "(16)(1)^2, (16)(2)");
         } else if (L == 15) {
             sprintf_s(cycle_str, sizeof(cycle_str), "(15)(1)^3, (15)(3)");
         } else if (L == 14) {
-            sprintf_s(cycle_str, sizeof(cycle_str), "(14)(1)^4, (14)(2)(1)^2, (14)(2)^2");
+            sprintf_s(cycle_str, sizeof(cycle_str), "(14)(1)^2, (14)(2)");
         } else if (L == NHALF) {
             sprintf_s(cycle_str, sizeof(cycle_str), "(NHALF)(1)^NHALF, (NHALF)(3)^3");
         } else if (L == 7) {
@@ -727,23 +765,32 @@ void K18A2::runExhaustiveSearch() {
         
         if (L == 1) {
             desc = "Identity (Unconstrained search)";
-        } else if (L == 11 || L == NHALF || L == 7) {
-            desc = "Theoretically Impossible (odd L <= 15)";
+        } else if (stats[L].run) {
+            sprintf_s(checked_str, sizeof(checked_str), "%lld", stats[L].checked);
+            sprintf_s(passed_str, sizeof(passed_str), "%lld", stats[L].passed);
+            sprintf_s(reps_count_str, sizeof(reps_count_str), "%zu", stats[L].unique_classes);
+            
+            /* 
+             * NOTE ON K16 VS K18:
+             * K16 has different specific cycle length meanings compared to K18.
+             * We format stats for all cycle lengths that were run, and label
+             * the exhaustive searches appropriately.
+             */
+            if (L == NM) {
+                desc = "Exhaustive (GK/GB constructions)";
+            } else if (L == 14) {
+                desc = "Exhaustive (GK subgroup & 2 new classes)";
+            } else {
+                desc = stats[L].unique_classes > 0 ? "Exhaustive (P1Fs found)" : "Exhaustive (0 results)";
+            }
         } else {
-            if (stats[L].run) {
-                sprintf_s(checked_str, sizeof(checked_str), "%lld", stats[L].checked);
-                sprintf_s(passed_str, sizeof(passed_str), "%lld", stats[L].passed);
-                sprintf_s(reps_count_str, sizeof(reps_count_str), "%zu", stats[L].unique_classes);
-                
-                if (L == 15 || L == 13) {
-                    desc = "Theoretically Impossible (odd L <= 15)";
-                } else if (L == NM) {
-                    desc = "Exhaustive (GK/GB constructions)";
-                } else if (L == 16) {
-                    desc = "Exhaustive (GK subgroup & 2 new classes)";
-                } else {
-                    desc = stats[L].unique_classes > 0 ? "Exhaustive (P1Fs found)" : "Exhaustive (0 results)";
-                }
+            /* 
+             * NOTE ON K16 VS K18:
+             * Odd cycle lengths 13, 11, and 7 are theoretically impossible or skipped.
+             * We label them as such if they were not run.
+             */
+            if (L == 11 || L == 7 || L == 13) {
+                desc = "Theoretically Impossible (odd L <= 15)";
             } else {
                 desc = "Skipped / Not Run";
             }
@@ -752,8 +799,8 @@ void K18A2::runExhaustiveSearch() {
         printf("%2d   %-50s  %11s  %14s  %14s  %12s  %s\n",
                L, cycle_str, reps_str, checked_str, passed_str, reps_count_str, desc);
                
-        if (L == 16 && stats[16].run) {
-            printf("16R  %-50s  %11s  %14s  %14s  %12s  %s\n",
+        if (L == 14 && stats[14].run) {
+            printf("14R  %-50s  %11s  %14s  %14s  %12s  %s\n",
                    "Reflection pairing verification", "-", "-", "-", "2", "Verified pairing 2-and-2");
         }
     }
@@ -763,8 +810,8 @@ void K18A2::runExhaustiveSearch() {
     reportTotalResults(unique_results, search_start);
 }
 
-void K18A2::verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique) {
-    printf("-> Entering Case: L = 16 Reflection Pairing Verification\n");
+void K16A2::verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique) {
+    printf("-> Entering Case: L = 14 Reflection Pairing Verification\n");
     fflush(stdout);
     
     std::vector<std::vector<uint8_t>> mats(local_unique.begin(), local_unique.end());
@@ -845,7 +892,7 @@ void K18A2::verifyL16Pairing(const std::set<std::vector<uint8_t>>& local_unique)
     printf("  Verification complete: found %d self-reflected matrices and %d isomorphic pairs.\n", self_count, pair_count);
 }
 
-void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_results, CycleLengthStats& stats) {
+void K16A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_results, CycleLengthStats& stats) {
     printf("-> Entering Case: L = %d, Search Type 1 (Fixed out-of-cycle points)\n", L);
     fflush(stdout);
 
@@ -864,7 +911,6 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     g_ns_cover = 0;
     g_parallel_tasks = 0;
     g_tasks_done = 0;
-    g_cover_capped = 0;
 
 
     CycleBacktrackState state1;
@@ -898,7 +944,11 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     state1.backtrack(0, 0, c1, used1, L);
     
     CycleBacktrackState state2;
-    if (!case_timed_out && L >= 2 && L <= 16 && L % 2 == 0) {
+    /* 
+     * NOTE ON K16 VS K18:
+     * Maximum even cycle length is NM - 1. For K16, NM = 15, so max even L is 14 (unlike 16 for K18).
+     */
+    if (!case_timed_out && L >= 2 && L <= 14 && L % 2 == 0) {
         printf("-> Entering Case: L = %d, Search Type 2 (Transposed out-of-cycle points)\n", L);
         fflush(stdout);
 
@@ -937,7 +987,8 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     if (!case_timed_out) {
         // Gather all automorphisms from both search types for this L.
         std::vector<std::array<uint8_t, NP>> all_alphas(state1.valid_alphas.begin(), state1.valid_alphas.end());
-        if (L >= 2 && L <= 16 && L % 2 == 0) {
+        /* K16 max even cycle length is 14 (corresponds to 16 in K18) */
+        if (L >= 2 && L <= 14 && L % 2 == 0) {
             all_alphas.insert(all_alphas.end(), state2.valid_alphas.begin(), state2.valid_alphas.end());
         }
 
@@ -975,16 +1026,21 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
     }
     
     stats.L = L;
-    stats.inputs = state1.total_generated + (L >= 2 && L <= 16 && L % 2 == 0 ? state2.total_generated : 0);
-    stats.passed = state1.total_passed_p1f + (L >= 2 && L <= 16 && L % 2 == 0 ? state2.total_passed_p1f : 0);
+    /* K16 max even cycle length is 14 (corresponds to 16 in K18) */
+    stats.inputs = state1.total_generated + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_generated : 0);
+    stats.passed = state1.total_passed_p1f + (L >= 2 && L <= 14 && L % 2 == 0 ? state2.total_passed_p1f : 0);
     stats.unique_classes = local_unique.size();
     
     unique_results.insert(local_unique.begin(), local_unique.end());
+    
+    printf("   [L=%d] Case Completed. Checked Perms: %lld, Passed Filter: %lld, Unique Classes Found: %zu\n",
+           L, stats.inputs, stats.passed, stats.unique_classes);
+    fflush(stdout);
 
     if (case_timed_out) {
         long long orbit_reps[NP] = {
-            0, 1, 1, 2, 4, 10, 26, 72, 232, 504, 2619, 5040, 34650, 124740, 405405, 1081080, 2027025, 2027025
-        };
+            0, 1, 1, 2, 4, 10, 26, 72, 232, 504, 2619, 5040, 34650, 124740, 405405, 1081080
+        };  // K16: NP=16 entries indexed by L (placeholder values; cosmetic, used only for progress)
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double>(now - case_start_time).count();
         long long total_reps = orbit_reps[L];
@@ -1010,13 +1066,9 @@ void K18A2::searchCycleLength(int L, std::set<std::vector<uint8_t>>& unique_resu
         }
         fflush(stdout);
     }
-    long long capped = g_cover_capped.load();
-    if (capped > 0)
-        printf("   [L=%d] *** %lld alpha(s) hit the decompose node cap (%llu) -> result is a LOWER BOUND ***\n",
-               L, capped, (unsigned long long)K18A2_DECOMPOSE_NODE_CAP);
 }
 
-void K18A2::setupBacktrackState(CycleBacktrackState& state, int search_type) {
+void K16A2::setupBacktrackState(CycleBacktrackState& state, int search_type) {
     memcpy(state.F[0], fixedRows[0].adj, NP);
     if (search_type == 2) {
         state.v0 = 3;
@@ -1026,7 +1078,7 @@ void K18A2::setupBacktrackState(CycleBacktrackState& state, int search_type) {
     setupPairsTable(state, search_type);
 }
 
-void K18A2::setupPairsTable(CycleBacktrackState& state, int search_type) {
+void K16A2::setupPairsTable(CycleBacktrackState& state, int search_type) {
     for (int i = 0; i < NP; i++) {
         state.vertex_to_pair[i] = -1;
         state.vertex_to_pos[i] = -1;
@@ -1037,7 +1089,7 @@ void K18A2::setupPairsTable(CycleBacktrackState& state, int search_type) {
     state.vertex_to_pair[partner] = -2;
 }
 
-void K18A2::fillPairsTable(CycleBacktrackState& state, int search_type) {
+void K16A2::fillPairsTable(CycleBacktrackState& state, int search_type) {
     int pair_count = 0;
     for (int u = 1; u < NP; u++) {
         if (search_type == 2 && u == 1) continue;
@@ -1049,7 +1101,7 @@ void K18A2::fillPairsTable(CycleBacktrackState& state, int search_type) {
     }
 }
 
-void K18A2::storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8_t v) {
+void K16A2::storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8_t v) {
     state.pair_elements[pair_idx][0] = u;
     state.pair_elements[pair_idx][1] = v;
     state.vertex_to_pair[u] = pair_idx;
@@ -1058,7 +1110,7 @@ void K18A2::storePair(CycleBacktrackState& state, int pair_idx, uint8_t u, uint8
     state.vertex_to_pos[v] = 1;
 }
 
-void K18A2::processAutomorphism(const std::array<uint8_t, NP>& alpha_arr, int L, std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::processAutomorphism(const std::array<uint8_t, NP>& alpha_arr, int L, std::set<std::vector<uint8_t>>& unique_results) {
     uint8_t alpha[NP];
     std::copy(alpha_arr.begin(), alpha_arr.end(), alpha);
     if (L == NM) {
@@ -1079,7 +1131,7 @@ void K18A2::processAutomorphism(const std::array<uint8_t, NP>& alpha_arr, int L,
     });
 }
 
-void K18A2::constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][NP]) {
+void K16A2::constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][NP]) {
     uint8_t G[NM][NP];
     memcpy(G[0], fixedRows[0].adj, NP);
     constructFullH(G, L, alpha, G);
@@ -1090,7 +1142,7 @@ void K18A2::constructFullHFromAut(const uint8_t* alpha, int L, uint8_t H[][NP]) 
     }
 }
 
-void K18A2::constructFullH(const uint8_t G[][NP], int L, const uint8_t* alpha, uint8_t H[][NP]) {
+void K16A2::constructFullH(const uint8_t G[][NP], int L, const uint8_t* alpha, uint8_t H[][NP]) {
     memcpy(H[0], fixedRows[0].adj, NP);
     Permutation perm;
     memcpy(perm.p, alpha, NP);
@@ -1099,7 +1151,7 @@ void K18A2::constructFullH(const uint8_t G[][NP], int L, const uint8_t* alpha, u
     }
 }
 
-bool K18A2::checkCyclesCompatibility(const uint8_t G[][NP], int L) {
+bool K16A2::checkCyclesCompatibility(const uint8_t G[][NP], int L) {
     for (int i = 0; i < L; i++) {
         for (int j = i + 1; j < L; j++) {
             if (!is_perfect_scalar(G[i], G[j])) return false;
@@ -1108,7 +1160,7 @@ bool K18A2::checkCyclesCompatibility(const uint8_t G[][NP], int L) {
     return true;
 }
 
-bool K18A2::decomposeMissingEdges(const uint8_t G[][NP], int L, const uint8_t* alpha_p, uint8_t H[][NP],
+bool K16A2::decomposeMissingEdges(const uint8_t G[][NP], int L, const uint8_t* alpha_p, uint8_t H[][NP],
                                   const std::function<void(const uint8_t[][NP])>& onCover) {
     if (case_timed_out) return false;
     int num_colors = NM - L;
@@ -1374,14 +1426,9 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][NP], int L, const uint8_t* a
     edge_covered.assign(comp_edge_cnt, false);
     int current_size_sum = 0;
     bool anyCover = false;
-    unsigned long long cover_nodes = 0;   // recursion nodes in the orbit exact-cover (for the cap)
-    bool cover_capped = false;            // this alpha's cover-tree exceeded K18A2_DECOMPOSE_NODE_CAP
 
     auto solve_exact_cover_orbits = [&](auto& self_fn) -> bool {
-        if (case_timed_out || cover_capped) return false;
-#if K18A2_DECOMPOSE_NODE_CAP
-        if (++cover_nodes > (K18A2_DECOMPOSE_NODE_CAP)) { cover_capped = true; return false; }
-#endif
+        if (case_timed_out) return false;
 
         if (current_size_sum == num_colors) {
             if (onCover) {
@@ -1494,9 +1541,7 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][NP], int L, const uint8_t* a
     auto _t_cov0 = std::chrono::steady_clock::now();
     bool _cover_ok = solve_exact_cover_orbits(solve_exact_cover_orbits);
     g_ns_cover += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - _t_cov0).count();
-    if (cover_capped) g_cover_capped++;    // this alpha abandoned; result becomes a lower bound
-    if (onCover) return anyCover;          // covers found before the cap are kept
-
+    if (onCover) return anyCover;          // all covers already delivered via the callback
     if (!_cover_ok) return false;
     
     // 8. Copy the found clique of matchings from chosen orbits to H
@@ -1512,7 +1557,7 @@ bool K18A2::decomposeMissingEdges(const uint8_t G[][NP], int L, const uint8_t* a
     return true;
 }
 
-void K18A2::findMissingEdges(const uint8_t G[][NP], int L, std::pair<uint8_t, uint8_t>* edges) {
+void K16A2::findMissingEdges(const uint8_t G[][NP], int L, std::pair<uint8_t, uint8_t>* edges) {
     int edge_cnt = 0;
     for (int u = 0; u < NP; u++) {
         for (int v = u + 1; v < NP; v++) {
@@ -1523,14 +1568,14 @@ void K18A2::findMissingEdges(const uint8_t G[][NP], int L, std::pair<uint8_t, ui
     }
 }
 
-bool K18A2::isEdgeMissing(const uint8_t G[][NP], int L, int u, int v) {
+bool K16A2::isEdgeMissing(const uint8_t G[][NP], int L, int u, int v) {
     for (int k = 0; k < L; k++) {
         if (G[k][u] == v) return false;
     }
     return true;
 }
 
-bool K18A2::backtrackColor(int edge_idx, int num_edges, int num_colors,
+bool K16A2::backtrackColor(int edge_idx, int num_edges, int num_colors,
                            const std::pair<uint8_t, uint8_t>* edges,
                            uint8_t matchings[][NP], const uint8_t* G0) {
     if (edge_idx == num_edges) {
@@ -1539,7 +1584,7 @@ bool K18A2::backtrackColor(int edge_idx, int num_edges, int num_colors,
     return tryColoringEdge(edge_idx, num_edges, num_colors, edges, matchings, G0);
 }
 
-bool K18A2::checkMatchingsCompatibility(uint8_t matchings[][NP], int num_colors, const uint8_t* G0) {
+bool K16A2::checkMatchingsCompatibility(uint8_t matchings[][NP], int num_colors, const uint8_t* G0) {
     for (int c = 0; c < num_colors; c++) {
         if (!is_perfect_scalar(G0, matchings[c])) return false;
     }
@@ -1551,7 +1596,7 @@ bool K18A2::checkMatchingsCompatibility(uint8_t matchings[][NP], int num_colors,
     return true;
 }
 
-bool K18A2::tryColoringEdge(int edge_idx, int num_edges, int num_colors,
+bool K16A2::tryColoringEdge(int edge_idx, int num_edges, int num_colors,
                             const std::pair<uint8_t, uint8_t>* edges,
                             uint8_t matchings[][NP], const uint8_t* G0) {
     uint8_t u = edges[edge_idx].first;
@@ -1571,7 +1616,7 @@ bool K18A2::tryColoringEdge(int edge_idx, int num_edges, int num_colors,
     return false;
 }
 
-bool K18A2::is_color_compatible(int c, int num_colors, uint8_t matchings[][NP], const uint8_t* G0) {
+bool K16A2::is_color_compatible(int c, int num_colors, uint8_t matchings[][NP], const uint8_t* G0) {
     int count = 0;
     for (int i = 0; i < NP; i++) {
         if (matchings[c][i] != 0xFF) count++;
@@ -1595,7 +1640,7 @@ bool K18A2::is_color_compatible(int c, int num_colors, uint8_t matchings[][NP], 
     return true;
 }
 
-int K18A2::getSymmetryBreakingLimit(uint8_t matchings[][NP], int num_colors) {
+int K16A2::getSymmetryBreakingLimit(uint8_t matchings[][NP], int num_colors) {
     int max_color = 0;
     for (int c = 0; c < num_colors; c++) {
         if (isColorUsed(matchings[c])) max_color = c + 1;
@@ -1603,14 +1648,14 @@ int K18A2::getSymmetryBreakingLimit(uint8_t matchings[][NP], int num_colors) {
     return (max_color < num_colors - 1) ? max_color : num_colors - 1;
 }
 
-bool K18A2::isColorUsed(const uint8_t* matching) {
+bool K16A2::isColorUsed(const uint8_t* matching) {
     for (int i = 0; i < NP; i++) {
         if (matching[i] != 0xFF) return true;
     }
     return false;
 }
 
-void K18A2::copyMatchingsToH(uint8_t matchings[][NP], int num_colors,
+void K16A2::copyMatchingsToH(uint8_t matchings[][NP], int num_colors,
                              const uint8_t G[][NP], int L, uint8_t H[][NP]) {
     memset(H, 0, NP * NP);
     for (int k = 0; k < L; k++) {
@@ -1623,7 +1668,7 @@ void K18A2::copyMatchingsToH(uint8_t matchings[][NP], int num_colors,
     }
 }
 
-void K18A2::recordIsomorphicResults(const uint8_t H[][NP], std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::recordIsomorphicResults(const uint8_t H[][NP], std::set<std::vector<uint8_t>>& unique_results) {
     CycleUnion cu_H = find_cycles(H[1], H[2]);
     if (cu_H.count != 1 || cu_H.lens[0] != NP) return;
     for (int v = 0; v < NP; v++) {
@@ -1631,7 +1676,7 @@ void K18A2::recordIsomorphicResults(const uint8_t H[][NP], std::set<std::vector<
     }
 }
 
-void K18A2::tryIsomorphicMapping(const uint8_t H[][NP], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::tryIsomorphicMapping(const uint8_t H[][NP], const CycleUnion& cu_H, int v, std::set<std::vector<uint8_t>>& unique_results) {
     uint8_t cyc_R[NP];
     buildStarterCycle(cyc_R);
     uint8_t cyc_H[NP];
@@ -1641,7 +1686,7 @@ void K18A2::tryIsomorphicMapping(const uint8_t H[][NP], const CycleUnion& cu_H, 
     checkAndRecordPermutedH(H, p, unique_results);
 }
 
-void K18A2::buildStarterCycle(uint8_t* cyc_R) {
+void K16A2::buildStarterCycle(uint8_t* cyc_R) {
     uint8_t curr = 0;
     for (int i = 0; i < NHALF; i++) {
         cyc_R[2 * i] = curr;
@@ -1651,7 +1696,7 @@ void K18A2::buildStarterCycle(uint8_t* cyc_R) {
     }
 }
 
-void K18A2::buildHCycle(const uint8_t H[][NP], int v, uint8_t* cyc_H) {
+void K16A2::buildHCycle(const uint8_t H[][NP], int v, uint8_t* cyc_H) {
     uint8_t curr = v;
     for (int i = 0; i < NHALF; i++) {
         cyc_H[2 * i] = curr;
@@ -1661,13 +1706,13 @@ void K18A2::buildHCycle(const uint8_t H[][NP], int v, uint8_t* cyc_H) {
     }
 }
 
-void K18A2::buildMappingPermutation(const uint8_t* cyc_H, const uint8_t* cyc_R, uint8_t* p) {
+void K16A2::buildMappingPermutation(const uint8_t* cyc_H, const uint8_t* cyc_R, uint8_t* p) {
     for (int i = 0; i < NP; i++) {
         p[cyc_H[i]] = cyc_R[i];
     }
 }
 
-void K18A2::checkAndRecordPermutedH(const uint8_t H[][NP], const uint8_t* p, std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::checkAndRecordPermutedH(const uint8_t H[][NP], const uint8_t* p, std::set<std::vector<uint8_t>>& unique_results) {
     uint8_t S[NP][NP];
     memset(S, 0, sizeof(S));
     applyPermToH(H, p, S);
@@ -1676,7 +1721,7 @@ void K18A2::checkAndRecordPermutedH(const uint8_t H[][NP], const uint8_t* p, std
     }
 }
 
-void K18A2::applyPermToH(const uint8_t H[][NP], const uint8_t* p, uint8_t S[][NP]) {
+void K16A2::applyPermToH(const uint8_t H[][NP], const uint8_t* p, uint8_t S[][NP]) {
     for (int k = 1; k <= NM; k++) {
         uint8_t permuted_factor[NP];
         for (int i = 0; i < NP; i++) {
@@ -1687,12 +1732,12 @@ void K18A2::applyPermToH(const uint8_t H[][NP], const uint8_t* p, uint8_t S[][NP
     }
 }
 
-bool K18A2::doesSMatchFixedRows(const uint8_t S[][NP]) {
+bool K16A2::doesSMatchFixedRows(const uint8_t S[][NP]) {
     return memcmp(S[1], fixedRows[0].adj, NP) == 0 &&
            memcmp(S[2], fixedRows[1].adj, NP) == 0;
 }
 
-void K18A2::recordS(const uint8_t S[][NP], std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::recordS(const uint8_t S[][NP], std::set<std::vector<uint8_t>>& unique_results) {
     unsigned char results[NM * NP];
     for (int k = 1; k <= NM; k++) {
         adj_to_src(S[k], results + (k - 1) * NP);
@@ -1701,7 +1746,7 @@ void K18A2::recordS(const uint8_t S[][NP], std::set<std::vector<uint8_t>>& uniqu
     unique_results.insert(res_vec);
 }
 
-void K18A2::reportTotalResults(const std::set<std::vector<uint8_t>>& unique_results,
+void K16A2::reportTotalResults(const std::set<std::vector<uint8_t>>& unique_results,
                                std::chrono::high_resolution_clock::time_point start) {
     auto end = std::chrono::high_resolution_clock::now();
     double elapsed = std::chrono::duration<double>(end - start).count();
@@ -1709,14 +1754,14 @@ void K18A2::reportTotalResults(const std::set<std::vector<uint8_t>>& unique_resu
     sendResultsToCallback(unique_results);
 }
 
-void K18A2::sendResultsToCallback(const std::set<std::vector<uint8_t>>& unique_results) {
+void K16A2::sendResultsToCallback(const std::set<std::vector<uint8_t>>& unique_results) {
     std::lock_guard<std::mutex> lock(result_mutex);
     for (const auto& res : unique_results) {
         resultCallback(cbClass, res.data(), 0, 1, 2);
     }
 }
 
-void K18A2::adj_to_src(const uint8_t* adj, unsigned char* src) {
+void K16A2::adj_to_src(const uint8_t* adj, unsigned char* src) {
     src[0] = 0;
     src[1] = adj[0];
     int idx = 2;

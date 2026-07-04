@@ -7,6 +7,9 @@
 #include "k16A2.h"
 #include "k16a2Old.h"
 #include "k18a2.h"
+#include "k18a2Old.h"
+#include "k20a2.h"
+#include "k14a2.h"
 #include "KSolveGen.h"
 #include "kOrbits.h"
 
@@ -364,10 +367,50 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
 					sysParam()->u1fCycles[0][1] == 18)
 				{
-					const FactorParams factParam = { K18_N, K18_MATCH, K18_FIXED, K18_M_MAX, m_numDaysResult };
-					m_pKSolver = new K18A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+					const FactorParams factParam = { K18A2::NP, K18A2::NM, K18A2::NFIXED, K18A2::M_MAX, m_numDaysResult };
 
-					m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
+					if (param(t_useKSolve) & 64) {
+						// Starter pool + arc-consistency + orbit-clique (L=4 order-4 autos).
+						// Fed via addRow(); solve(0) is invoked later by endOfRowPrecalculation.
+						m_pKSolver = new K18A2Old(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+					}
+					else {
+						m_pKSolver = new K18A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+
+						m_precalcMode = eCalculateMatrices; // need to be before solve to check results for canonicity (but after cnvCheckNew())
+
+						m_pKSolver->solve(1);
+
+						goto noResult;
+					}
+				}
+				else if (m_numPlayers == 20 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 20)
+				{
+					// K20: no cyclic engine -- the unseeded representative method is the only
+					// solver path (UseKSolve & 32). Constructs the minimal host and runs once.
+					const FactorParams factParam = { K20A2::NP, K20A2::NM, K20A2::NFIXED, K20A2::M_MAX, m_numDaysResult };
+
+					m_pKSolver = new K20A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+
+					m_precalcMode = eCalculateMatrices; // before solve to check results for canonicity
+
+					m_pKSolver->solve(1);
+
+					goto noResult;
+				}
+				else if (m_numPlayers == 14 && !bCBMP &&
+					sysParam()->u1fCycles[0] && sysParam()->u1fCycles[0][0] == 1 &&
+					sysParam()->u1fCycles[0][1] == 14)
+				{
+					// K14: validation oracle (known P1F counts), rep method only. Same minimal-host
+					// path as K20 (UseKSolve & 32); constructs the host and runs once.
+					const FactorParams factParam = { K14A2::NP, K14A2::NM, K14A2::NFIXED, K14A2::M_MAX, m_numDaysResult };
+
+					m_pKSolver = new K14A2(factParam, m_threadNumber, kThreads, result(0), KGenSaveResult, (void*)this, m_bPrint);
+
+					m_precalcMode = eCalculateMatrices; // before solve to check results for canonicity
 
 					m_pKSolver->solve(1);
 

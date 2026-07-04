@@ -633,7 +633,12 @@ void K16A2Old::solve(int mode) {
                 }
 
                 int num_orbits = (int)filtered_valid.size();
-                if (num_orbits == 0) continue;
+                // NOTE: do NOT skip on num_orbits==0. When the fixed-row orbits already tile every
+                // search slot (e.g. an order-5 automorphism whose 3 fixed rows lie in 3 disjoint
+                // 5-orbits = all 15 factors), there are no free orbits, but find_clique must still
+                // emit. With num_orbits==0 the structures below are empty and find_clique(initial_
+                // slots_mask,.) emits immediately because initial_slots_mask == 0x0FFF.
+                // (Previously `continue` here silently dropped these P1Fs -> the "zero order-5" bug.)
 
                 // Build a tiny local compatibility mask for filtered_valid orbits
                 int num_words = (num_orbits + 63) / 64;

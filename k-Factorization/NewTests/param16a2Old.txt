@@ -30,7 +30,7 @@ TestName="UseKSolve K16A2"
 nPlayers=16; CBMP_Graph=0; 
 //v4Row=4; v4=3; v4RowB=5; v4B=2; v4RowC=6; v4C=12
 NRowsInResultMatrix=15; ExpectedResult=-1
-//RUN_JOB
+RUN_JOB
 
 PrintMatrices=0
 StartFolder="../../Logs_16-15-A2_TmpOld/"
@@ -41,7 +41,7 @@ FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1000000; UseRowsPrecalcula
 OrderMatrices=1;
 CanonizeInput=1;
 NRowsInResultMatrix=15; ExpectedResult=-1
-//RUN_JOB
+RUN_JOB
 
 StartFolder="../../Logs_16-15-A2_Tmp2Old/"
 ResultFolder="../../Logs_16-15-A2_resultOld/"
