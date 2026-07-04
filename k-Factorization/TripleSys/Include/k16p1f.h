@@ -90,6 +90,17 @@ public:
     struct alignas(64) ThreadLocalBuffers : LocalBufers<Mask256_C> {
 
         State local_edge_presence[120];
+
+        // ---- S4-space iterative search (GPU-kernel mirror; env K16_ITER=1) ----
+        // All sized per r4-group: s4w4 = s4_words rounded to a multiple of 4 so the
+        // 256-bit loops never read a neighbouring row.
+        int s4w4 = 0;
+        std::vector<RowRange> s4_ranges;         // slot word ranges in S4 space (index 2..K16_SEARCH-1)
+        std::vector<Mask256_C> s4_edge_masks;    // edge mask per S4 index (zero for padding)
+        std::vector<int> s4_factor_id;           // S4 index -> global factor id (-1 padding)
+        std::vector<uint64_t> s4_edge_presence;  // flat [120][s4w4]: S4 candidates covering edge e
+        std::vector<uint64_t> iter_pool;         // flat [(K16_SEARCH+1)][s4w4] pool stack
+        std::vector<uint64_t> r5_in_s4;          // per-root initial pool (S4 & adjrow(r5))
         // Search Phase Memory
         SearchContext local_ctx;
         uint64_t r5_row_mask_in_s4[K16_SEARCH][K16_WORDS];
@@ -143,6 +154,12 @@ private:
     std::vector<PackedAdj> packed_pool;
 
     int restart_index;
+    // Edge-MRV branching MEASURED SLOWER on the paramK16p1f.txt shard (A/B 2026-07-03:
+    // slot 3.22e9 nodes/115s vs edge 4.99e9 nodes/549s -- tree does NOT shrink, and the
+    // slot node is ~36ns so heavier per-node logic loses). Kept for experiments only.
+    bool m_useEdgeMRV = false;  // default: slot branching; env K16_EDGE_MRV=1 -> edge-MRV
+    bool m_useIter = false;     // env K16_ITER=1 -> S4-space iterative search (GPU-kernel mirror)
+    bool m_useGpu = false;      // env K16_GPU=1 -> K16GPU.dll (RTX); falls back to CPU if absent
 
     std::vector<std::unique_ptr<ThreadLocalBuffers>> thread_buffers;
     int thread_row4[256];
@@ -153,6 +170,19 @@ private:
 
     // Internal Help Methods
     void VECTOR_CALL internal_solve(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* buf);
+    // Edge-MRV branching variant: at every node branch on the candidates of the
+    // MOST-CONSTRAINED UNCOVERED EDGE (exact-cover style, like K16A2Old's clique
+    // assembly), instead of on row slots. Selected at runtime (env K16_EDGE_MRV=0
+    // reverts to the slot-branching internal_solve). Slot exclusivity is implicit:
+    // same-slot candidates share edge {0,partner}, so the adjacency matrix already
+    // marks them incompatible, and "slot empty" == "edge {0,partner} count 0".
+    void VECTOR_CALL internal_solve_edge(int depth, std::vector<int>& clique, SearchContext& ctx, ThreadLocalBuffers* buf);
+    void emit_solution(std::vector<int>& clique, SearchContext& ctx);
+    void emit_solution2(std::vector<int>& clique, int r4_idx, int r5_idx);
+    // Iterative (explicit-stack) DFS over S4 space — the exact algorithm the CUDA
+    // kernel will run (no per-root local compaction; pool words = whole r4-group).
+    // Validated against internal_solve on the paramK16p1f.txt shard. env K16_ITER=1.
+    void iter_solve_s4(int r4_fid, int r5_fid, int r4_v, int r5_v, ThreadLocalBuffers* buf);
     void diagnostic_printout(double current_compr);
     PackedAdj pack_factor_adj(const uint8_t* adj);
     static FORCE_INLINE bool check_cycle_simd(__m128i v_e2o1, __m128i v_o2e2, __m128i v_id) {

@@ -7,7 +7,7 @@ copy "%ROOT%\*.dll" . >nul
 
 cd /d "%~dp0"
 
-SET paramRel=.\paramU1F.txt
+SET paramRel=.\param22LS.txt
 SET nopause=0
 
 :parse

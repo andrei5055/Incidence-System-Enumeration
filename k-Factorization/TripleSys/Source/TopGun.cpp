@@ -166,7 +166,7 @@ int TopGun::Run()
 							if (threadActive[iTask])
 							{
 								nThreadsRunning++;
-                                if (m_cnt[iTask * 2] >= 0)
+								if (m_cnt[iTask * 2] >= 0)
 									stopThread(t, iTask);
 							}
 							iTask++;
@@ -261,7 +261,7 @@ int TopGun::Run()
 	m_errCode = expectedResult >= 0 && expectedResult != resultMatr ? 1 : 0;
 	if (m_errCode)
 		printfRed("*** Discrepancy Between Expected and Actual Number of Constructed Matrices: (%d != %lld)\n", expectedResult, resultMatr);
-
+	
 	return m_errCode;
 }
 

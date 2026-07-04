@@ -73,6 +73,9 @@ public:
     static constexpr int NHALF = NP / 2;               // half (was literal 9)
     static constexpr int NEDGES = NP * (NP - 1) / 2;   // complement edges (was literal NEDGES)
     static constexpr int NWORDS = (((M_MAX + 255) / 256 * 4) + 4); // bitset words (was NWORDS)
+    // Guard custom aligned operator new/delete from MemoryLeak.h's Debug `#define new DBG_NEW`.
+#pragma push_macro("new")
+#undef new
     void* operator new(size_t size) {
         void* p = _aligned_malloc(size, 64);
         if (!p) throw std::bad_alloc();
@@ -91,6 +94,7 @@ public:
         _aligned_free(p);
     }
 #endif
+#pragma pop_macro("new")
 
     struct alignas(64) PackedAdj { 
         Mask18_C edge_mask;

@@ -1,7 +1,7 @@
 // =============================================================================
 // k20a2rep.cpp — automorphism-REPRESENTATIVE method for classifying K20 Perfect
 // 1-Factorizations (P1Fs) by a given automorphism order. N=20 sibling of
-// k18a2rep.cpp / k16A2rep.cpp (the engine is N-generic; this file differs only
+// k16A2rep.cpp / k18a2rep.cpp (the engine is N-generic; this file differs only
 // in N and names). K20 has no cyclic engine at all -- this rep method is its
 // only solver path.
 //
@@ -9,26 +9,36 @@
 // cycle TYPE of the target order, it finds ALL alpha-invariant P1Fs by an exact
 // cover of the 190 edges of K20 with alpha-invariant factor-orbits, then
 // deduplicates across types with a labeling-independent canonical key. Fixed-
-// point-free cycle types (which the cyclic generators structurally miss) are
+// point-free cycle types (which cyclic generators structurally miss) are
 // included, so the classification is complete.
 //
 // The engine is validated on the smaller cases by the same code: K16 |Aut|>2 =
-// {3:19,5:5,7:4,14:1,15:1}=30, K18 order-4 = 179, order-8 -> 30, order-17 -> 2.
-// K20 P1F automorphism counts are (to our knowledge) not catalogued, so the
-// [K20-REP] output IS the result. Isomorph rejection is by
-// ORDERLY GENERATION: at every cover level the candidate factor-orbits covering
-// the lowest uncovered edge are deduplicated by the current centralizer
-// stabilizer G, and each chosen orbit O recurses with its sub-stabilizer
-// Stab_G(O). Sound for class counting because any g in G = Stab(partial cover)
-// is a class-preserving bijection between sibling subtrees; combined with the
-// shrinking stabilizer chain this collapses the dense high-centralizer types
-// (e.g. order-4 4^4 2^1) that the previous naive lex-leader prune could not
-// terminate. Types whose centralizer exceeds the enumeration cap (sparse, huge
-// S_k on fixed points) fall back to plain recursion + the global canonical key.
+// {3:19,5:5,7:4,14:1,15:1}=30 (Wanless catalogue), K18 order-4 = 179, order-17
+// -> 2. Known K20 anchors: order-19 -> 7 classes {19:3,57:1,171:2,342:1}
+// (342 = AGL(1,19)); the order-4 parity theorem (MD/order4_parity_theorem.md)
+// says K20 admits NO automorphism of order divisible by 4, so order-4 must
+// return 0. Isomorph rejection is by ORDERLY GENERATION: at every cover level
+// the candidate factor-orbits covering the lowest uncovered edge are
+// deduplicated by the current centralizer stabilizer G, and each chosen orbit O
+// recurses with its sub-stabilizer Stab_G(O). Sound for class counting because
+// any g in G = Stab(partial cover) is a class-preserving bijection between
+// sibling subtrees; combined with the shrinking stabilizer chain this collapses
+// the dense high-centralizer types that a naive lex-leader prune cannot
+// terminate.
 //
-// Parallelism: within each cycle type, the independent first-factor-orbit
-// branches are fanned out across `kThreads` worker threads, each with its own
-// search state; the per-type/global dedup is merged after the workers join.
+// Two symmetry-reduction paths, by whether C(alpha) fits the enumeration cap:
+//   * ENUMERABLE (|C(alpha)| <= cap): C(alpha) is materialized; cover() carries
+//     the stabilizer as indices into it and dedups candidates directly.
+//   * OVER-CAP (sparse / huge S_k on fixed points / every order-2 type): C(alpha)
+//     is held only as a generating set + BSGS (cgtEngine.h). coverGen() recomputes
+//     the EXACT setwise stabilizer Stab_C(P) of the current partial cover per node
+//     (full-strength dedup at every depth), and splitNode() feeds a shared
+//     work-queue so the few root reps still saturate all worker threads.
+//
+// Parallelism: enumerable types fan their independent first-orbit reps across
+// `kThreads` workers via an atomic index; over-cap types use a shared work-queue
+// of partial covers (each worker pops one, expands it one deduped level, pushes
+// the children back). The per-type/global dedup is merged after the workers join.
 //
 // Integration rules honored here:
 //   * The ONLY entry point is the private member K20A2::runRepresentativeMethod,
@@ -39,12 +49,14 @@
 // =============================================================================
 
 #include "k20a2.h"
+#include "cgtEngine.h"   // shared computational-group-theory engine (BSGS, edgeStabGens, setwiseStab)
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <vector>
 #include <array>
+#include <deque>
 #include <set>
 #include <map>
 #include <unordered_map>
@@ -69,7 +81,7 @@ typedef std::array<uint8_t, N> Match;  // a factor in adjacency form: m[u] = par
 typedef std::array<uint8_t, N> Perm;   // a vertex permutation: p[u] = image of u
 
 // ---- edge-id tables (filled once by initEdges) ------------------------------
-int     eidT[N][N];          // eidT[u][v] = canonical id (0..152) of edge {u,v}; symmetric
+int     eidT[N][N];          // eidT[u][v] = canonical id (0..189) of edge {u,v}; symmetric
 uint8_t edgeU[NEDGES];       // edgeU[e] = lower  endpoint of edge id e
 uint8_t edgeV[NEDGES];       // edgeV[e] = higher endpoint of edge id e
 
@@ -100,6 +112,12 @@ inline Match applyAlpha(const Match& m, const uint8_t* al) {
     for (int u = 0; u < N; u++) r[al[u]] = al[m[u]];
     return r;
 }
+
+// permutation composition (a o b)(x) = a(b(x)), and inverse. Group elements act on a
+// factor via applyAlpha; the actions compose as
+//   applyAlpha(applyAlpha(m, b), a) == applyAlpha(m, composePerm(a, b)).
+inline Perm composePerm(const Perm& a, const Perm& b) { Perm r; for (int x = 0; x < N; x++) r[x] = a[b[x]]; return r; }
+inline Perm invPerm(const Perm& a) { Perm r; for (int x = 0; x < N; x++) r[a[x]] = (uint8_t)x; return r; }
 
 // Canonical serialization of the alpha-orbit of factor m (the set {m, alpha m, ...}),
 // as the sorted concatenation of the orbit's factors. Used to (a) group first-orbit
@@ -241,6 +259,55 @@ void buildGenerators(const uint8_t* alpha, std::vector<Perm>& gens) {
     }
 }
 
+
+// Partition a set of candidate factor-orbits into orbits under the group G = <gens>, used
+// for the OVER-CAP types whose centralizer C(alpha) cannot be enumerated (so the group is
+// only available as a small generating set). Each candidate is a factor-orbit given by a
+// representative matching reps[i], its serialization keys[i], and the lookup keyIdx (orbit
+// key -> index). G acts on a factor-orbit O via applyAlpha (every g in C(alpha) commutes
+// with alpha, hence maps alpha-orbits to alpha-orbits); the image orbit is identified by
+// orbitKey. For each G-orbit we output one representative index and a generating set of (a
+// subgroup of) its setwise stabilizer Stab_G(O), obtained as the Schreier generators along
+// a candidate-restricted BFS tree.
+//
+// Soundness for class counting: every Schreier generator lies in Stab_G(O) (it maps O to
+// itself), so the recursion is always handed a genuine subgroup of the true stabilizer;
+// candidate marking only ever collapses two orbits that are genuine G-images of one another;
+// and the global canonKey is the final dedup. The BFS is restricted to the candidate set, so
+// the stabilizer it recovers may be an under-approximation of Stab_G(O) -- that can only cost
+// extra search work, never a missed class.
+void schreierDedup(const std::vector<Match>& reps, const std::vector<std::string>& keys,
+                   const std::unordered_map<std::string, int>& keyIdx,
+                   const std::vector<Perm>& gens, int order, const uint8_t* alpha,
+                   std::vector<int>& outRepIdx, std::vector<std::vector<Perm>>& outStab) {
+    (void)keys;                                          // (kept for signature symmetry/readability)
+    int n = (int)reps.size();
+    Perm idp; for (int x = 0; x < N; x++) idp[x] = (uint8_t)x;   // identity permutation
+    std::vector<char> marked(n, 0);                      // marked[j]: j already assigned to some output orbit
+    for (int i = 0; i < n; i++) {
+        if (marked[i]) continue;
+        std::vector<Perm> transv(n);     // transv[j] maps orbit_i -> orbit_j (valid where visited[j])
+        std::vector<char> visited(n, 0);
+        transv[i] = idp; visited[i] = 1; marked[i] = 1;
+        std::vector<int> q; q.push_back(i);              // BFS queue of candidate indices in orbit_i's class
+        std::set<Perm> stabSet;                          // distinct nontrivial Schreier gens of Stab_G(orbit_i)
+        for (size_t qh = 0; qh < q.size(); qh++) {
+            int x = q[qh];
+            for (const auto& g : gens) {
+                std::string ik = orbitKey(applyAlpha(reps[x], g.data()), alpha, order);
+                auto it = keyIdx.find(ik);
+                if (it == keyIdx.end()) continue;        // g moves this orbit out of the candidate set
+                int t = it->second;
+                Perm gx = composePerm(g, transv[x]);     // maps orbit_i -> orbit_t
+                if (!visited[t]) { visited[t] = 1; transv[t] = gx; marked[t] = 1; q.push_back(t); }
+                else { Perm s = composePerm(invPerm(transv[t]), gx); if (s != idp) stabSet.insert(s); }  // in Stab_G(orbit_i)
+            }
+        }
+        outRepIdx.push_back(i);
+        outStab.emplace_back(cgt::reduceGens<N>(std::vector<Perm>(stabSet.begin(), stabSet.end())));  // bound generator growth
+    }
+}
+
 // ---- read-only data shared by all worker threads for one cycle type ---------
 struct RepShared {
     uint8_t alpha[N];                 // representative automorphism (vertex perm)
@@ -248,6 +315,8 @@ struct RepShared {
     std::vector<Perm> Calpha;         // all elements of C(alpha) (empty if over the cap)
     std::vector<Perm> Cinv;           // Cinv[i] = inverse permutation of Calpha[i]
     std::vector<int>  rootActive;     // {0,1,...,|Calpha|-1}: the root active-gamma set
+    std::vector<Perm> rootCgens;      // generators of C(alpha) (over-cap path)
+    cgt::BSGS<N> rootBSGS;            // BSGS of C(alpha), built once per type; reused by setwiseStab each node
 };
 
 // One parallel work item: a representative first-factor-orbit (the orbit of the factor
@@ -255,8 +324,9 @@ struct RepShared {
 // for this orbit only needs `stab` for symmetry-breaking (Stab is far smaller than C(alpha),
 // which is what makes the dense types fast).
 struct Task {
-    Match m0;                 // the factor containing edge (0,1) (defines the first orbit)
-    std::vector<int> stab;    // indices into Calpha of the gammas fixing this orbit (setwise)
+    Match m0;                   // the factor containing edge (0,1) (defines the first orbit)
+    std::vector<int> stab;      // ENUMERABLE path: indices into Calpha of the gammas fixing this orbit
+    std::vector<Perm> stabGens; // OVER-CAP path: a generating set of Stab_{C(alpha)}(this orbit)
 };
 
 // ---- shared progress/print state (one classification run) -------------------
@@ -266,17 +336,45 @@ std::mutex g_print_mtx;               // serializes the periodic progress line
 std::chrono::steady_clock::time_point g_t0;         // run start time
 std::chrono::steady_clock::time_point g_last_print; // time of last progress line
 bool g_bprint = false;                // mirror of K20A2::m_bPrint (gate for ALL prints)
+long long g_last_print_nodes = 0;     // g_nodes at the previous progress line (for the rate)
+int  g_order = 0, g_typeIdx = 0, g_numTypes = 0;    // current order, current cycle type 1/N
+char g_typeStr[80] = "";              // current cycle type string (e.g. "2 2 2 2 2 2 2 2 2")
+std::atomic<int> g_reps_total{ 0 };   // representative first-orbit tasks for the current type
+std::atomic<int> g_reps_done{ 0 };    // of those, how many subtrees have finished (within-type progress)
 
 // ---- harvest mode (per-order class-count target) ----------------------------
 // When g_target>0, the run STOPS as soon as g_harvest holds g_target distinct classes,
 // skipping the (intractable) proof-of-exhaustion tail. g_harvest is the labeling-
 // independent distinct set across ALL workers (each emit() inserts under g_harvest_mtx),
 // so the count is exact even mid-run. Result is COMPLETE only if g_target == the true
-// count; otherwise it is an explicit LOWER BOUND.
+// count (e.g. a known/published number); otherwise it is an explicit LOWER BOUND.
 int g_target = 0;                     // 0 = run to completion; >0 = stop after this many distinct classes
 std::atomic<bool> g_stop{ false };    // set once g_harvest reaches g_target; all workers/recursion bail
 std::mutex g_harvest_mtx;             // guards g_harvest (locked only on a genuine new class -> rare)
 std::set<std::string> g_harvest;      // distinct canonical keys seen so far this order (harvest mode only)
+
+// One periodic progress line (every 30s) shared by cover()/coverGen(): shows the current
+// order + cycle type, how many of the type's representative subtrees are done (the best
+// completion-trend signal), node throughput since the last line, and classes found so far.
+inline void progressTick(long long& nodes_flush, std::atomic<long long>& g_nodesRef) {
+    if ((nodes_flush & 0x3FF) != 0) return;   // flush every 1024 nodes/worker (the 30s gate paces the actual print)
+    g_nodesRef.fetch_add(nodes_flush, std::memory_order_relaxed);
+    nodes_flush = 0;
+    if (!g_bprint) return;
+    auto now = std::chrono::steady_clock::now();
+    std::lock_guard<std::mutex> lk(g_print_mtx);
+    double sinceLast = std::chrono::duration<double>(now - g_last_print).count();
+    if (sinceLast < 30.0) return;
+    g_last_print = now;
+    long long cur = g_nodesRef.load();
+    double el = std::chrono::duration<double>(now - g_t0).count();
+    double rate = sinceLast > 0 ? (cur - g_last_print_nodes) / sinceLast : 0;
+    g_last_print_nodes = cur;
+    printf("    [rep] o%d type %d/%d \"%s\" reps %d/%d  elapsed=%.0fs nodes=%lld (%.0f/s) classes=%lld\n",
+           g_order, g_typeIdx, g_numTypes, g_typeStr, g_reps_done.load(), g_reps_total.load(),
+           el, cur, rate, g_emits.load());
+    fflush(stdout);
+}
 
 // ---- per-thread search worker ----------------------------------------------
 struct RepWorker {
@@ -443,25 +541,11 @@ struct RepWorker {
     // P+O2} whenever g*O1 = O2, so exploring one representative finds every class
     // the others would (the global canonical key dedups any residual repeats).
     void cover(const std::vector<int>& active) {
-        if (g_stop.load(std::memory_order_relaxed)) return;   // harvest target reached -> unwind the search
         // local node counter; periodically flush to the shared atomic and (if enabled)
         // print one progress line per 30s. No ETA, no percentage — elapsed time only.
         nodes++; nodes_flush++;
-        if ((nodes_flush & 0xFFFF) == 0) {
-            g_nodes.fetch_add(nodes_flush, std::memory_order_relaxed);
-            nodes_flush = 0;
-            if (g_bprint) {
-                auto now = std::chrono::steady_clock::now();
-                std::lock_guard<std::mutex> lk(g_print_mtx);
-                if (std::chrono::duration<double>(now - g_last_print).count() >= 30.0) {
-                    g_last_print = now;
-                    double el = std::chrono::duration<double>(now - g_t0).count();
-                    printf("    [rep] elapsed=%.0fs nodes=%lld classes=%lld\n",
-                           el, g_nodes.load(), g_emits.load());
-                    fflush(stdout);
-                }
-            }
-        }
+        progressTick(nodes_flush, g_nodes);
+        if (g_stop.load(std::memory_order_relaxed)) return;   // harvest target reached -> unwind the search
 
         int u0 = -1, v0 = -1;         // endpoints of the lowest uncovered edge (the cover anchor)
         for (int u = 0; u < N && u0 < 0; u++) for (int v = u + 1; v < N; v++) if (!covered[u][v]) { u0 = u; v0 = v; break; }
@@ -511,6 +595,106 @@ struct RepWorker {
         }
     }
 
+    // Cover step for OVER-CAP types, where C(alpha) is too large to enumerate (sh->Calpha
+    // empty). The candidate-collection is identical to cover(); the symmetry reduction
+    // recomputes the EXACT Stab_C(P) of the current partial cover from scratch each node
+    // (setwiseStab over C(alpha)'s generators), then dedups candidates by the stabilizer of
+    // the anchor edge within it. Computing Stab_C(P) exactly per node (rather than carrying an
+    // under-approximating generator chain) is what makes the dense types -- order-2 2^9 in
+    // particular -- terminate: the dedup is full strength at every depth. Sound for counting
+    // (dedup is by a genuine subgroup; global canonKey is the final net).
+    void coverGen() {
+        nodes++; nodes_flush++;
+        progressTick(nodes_flush, g_nodes);
+        if (g_stop.load(std::memory_order_relaxed)) return;   // harvest target reached -> unwind the search
+
+        int u0 = -1, v0 = -1;         // lowest uncovered edge (the cover anchor)
+        for (int u = 0; u < N && u0 < 0; u++) for (int v = u + 1; v < N; v++) if (!covered[u][v]) { u0 = u; v0 = v; break; }
+        if (u0 < 0) { if ((int)chosen.size() == NM) emit(); return; }
+        if (!imgUncovered(u0, v0)) return;
+
+        // 1. collect every candidate matching whose orbit covers the forced anchor edge
+        int nchosen = (int)chosen.size();
+        for (int k = 0; k < nchosen; k++) for (int x = 0; x < N; x++) path_end[k][x] = chosen[k][x];
+        Match M; for (int i = 0; i < N; i++) M[i] = 0xFF;
+        bool used[N]; memset(used, 0, sizeof(used));
+        M[u0] = (uint8_t)v0; M[v0] = (uint8_t)u0; used[u0] = used[v0] = true;
+        for (int k = 0; k < nchosen; k++) { uint8_t eu = path_end[k][u0], ev = path_end[k][v0]; path_end[k][eu] = ev; path_end[k][ev] = eu; }
+        std::vector<Match> cands;
+        collectInto = &cands; genM(M, used, 1); collectInto = nullptr;
+        if (cands.empty()) return;
+
+        // 2. collapse to one member per distinct alpha-orbit
+        std::unordered_map<std::string, int> keyIdx;
+        std::vector<std::string> keys;
+        std::vector<Match> reps;
+        for (auto& C : cands) {
+            std::string k = orbitKey(C, sh->alpha, sh->order);
+            if (keyIdx.emplace(k, (int)reps.size()).second) { keys.push_back(std::move(k)); reps.push_back(C); }
+        }
+
+        // 3. exact stabilizer of the current partial cover within C(alpha)
+        std::vector<Perm> Gp = cgt::setwiseStab<N>(sh->rootBSGS, chosen, covered);
+
+        // 3a. trivial stabilizer -> no usable symmetry anywhere below, explore every orbit
+        if (Gp.empty()) { for (auto& R : reps) processMGen(R); return; }
+
+        // 3b. dedup candidates by the stabilizer of the anchor edge within Stab_C(P). Its
+        //     generators fix (u0,v0), so the candidate-restricted BFS stays inside the
+        //     candidate set and recovers the full Stab_C(P)(edge)-orbit dedup at this node.
+        std::vector<Perm> hgens = cgt::edgeStabGens<N>(Gp, u0, v0);
+        std::vector<int> repIdx;
+        std::vector<std::vector<Perm>> stabs;            // (Schreier stabs unused: Stab is recomputed per node)
+        schreierDedup(reps, keys, keyIdx, hgens, sh->order, sh->alpha, repIdx, stabs);
+        for (size_t r = 0; r < repIdx.size(); r++) processMGen(reps[repIdx[r]]);
+    }
+
+    void processMGen(const Match& M) {                    // over-cap sibling of processM
+        std::vector<Match> orbit;
+        if (!buildAndValidateOrbit(M, orbit)) return;
+        size_t base = chosen.size();
+        commitOrbit(orbit);
+        coverGen();
+        rollbackTo(base);
+    }
+
+    // One-level expansion of the current partial cover (state already committed): collect the
+    // DEDUPED child partial covers (each = current chosen + a child orbit) into outChildren
+    // instead of recursing; complete covers are emitted here. Mirrors coverGen's dedup so the
+    // children are exactly the subtrees coverGen would explore. Used to build a fine task
+    // frontier so the dense over-cap types (few root reps) can use all worker threads.
+    void splitNode(std::vector<std::vector<Match>>& outChildren) {
+        nodes++; nodes_flush++;
+        progressTick(nodes_flush, g_nodes);
+        if (g_stop.load(std::memory_order_relaxed)) return;   // harvest target reached -> unwind the search
+        int u0 = -1, v0 = -1;
+        for (int u = 0; u < N && u0 < 0; u++) for (int v = u + 1; v < N; v++) if (!covered[u][v]) { u0 = u; v0 = v; break; }
+        if (u0 < 0) { if ((int)chosen.size() == NM) emit(); return; }     // leaf -> emit, no children
+        if (!imgUncovered(u0, v0)) return;                                // dead end
+        int nchosen = (int)chosen.size();
+        for (int k = 0; k < nchosen; k++) for (int x = 0; x < N; x++) path_end[k][x] = chosen[k][x];
+        Match M; for (int i = 0; i < N; i++) M[i] = 0xFF;
+        bool used[N]; memset(used, 0, sizeof(used));
+        M[u0] = (uint8_t)v0; M[v0] = (uint8_t)u0; used[u0] = used[v0] = true;
+        for (int k = 0; k < nchosen; k++) { uint8_t eu = path_end[k][u0], ev = path_end[k][v0]; path_end[k][eu] = ev; path_end[k][ev] = eu; }
+        std::vector<Match> cands;
+        collectInto = &cands; genM(M, used, 1); collectInto = nullptr;
+        if (cands.empty()) return;
+        std::unordered_map<std::string, int> keyIdx; std::vector<std::string> keys; std::vector<Match> reps;
+        for (auto& C : cands) { std::string k = orbitKey(C, sh->alpha, sh->order); if (keyIdx.emplace(k, (int)reps.size()).second) { keys.push_back(std::move(k)); reps.push_back(C); } }
+        std::vector<Perm> Gp = cgt::setwiseStab<N>(sh->rootBSGS, chosen, covered);
+        std::vector<int> repIdx;
+        if (Gp.empty()) { for (size_t i = 0; i < reps.size(); i++) repIdx.push_back((int)i); }
+        else { std::vector<Perm> hgens = cgt::edgeStabGens<N>(Gp, u0, v0); std::vector<std::vector<Perm>> stabs; schreierDedup(reps, keys, keyIdx, hgens, sh->order, sh->alpha, repIdx, stabs); }
+        for (int ri : repIdx) {
+            std::vector<Match> orbit;
+            if (!buildAndValidateOrbit(reps[ri], orbit)) continue;
+            std::vector<Match> child = chosen; for (auto& F : orbit) child.push_back(F);
+            outChildren.push_back(std::move(child));
+        }
+    }
+
+
     // collect the valid first-factor-orbits (parallel tasks) into `tasks`, by running
     // the root-level matching generation once. Each task is the matching M0 that
     // contains the lowest edge (0,1); its orbit is the first block of the cover.
@@ -525,14 +709,16 @@ struct RepWorker {
         collectInto = nullptr;
     }
 
-    // run one task: commit its first-orbit, then exact-cover the rest using ONLY the
-    // centralizer subgroup `active` that fixes this orbit (the right group for this subtree).
-    void runTask(const Match& M0, const std::vector<int>& active) {
+    // run one task: commit its first-orbit, then exact-cover the rest. Dispatch on whether
+    // C(alpha) was enumerated: enumerable types use the index-based cover() with the exact
+    // stabilizer; over-cap types use the generator-based coverGen() with Schreier stabilizers.
+    void runTask(const Task& tk) {
         clearState();
         std::vector<Match> orbit;
-        if (!buildAndValidateOrbit(M0, orbit)) return;   // safety (tasks are pre-validated)
+        if (!buildAndValidateOrbit(tk.m0, orbit)) return;   // safety (tasks are pre-validated)
         commitOrbit(orbit);
-        cover(active);
+        if (!sh->Calpha.empty()) cover(tk.stab);
+        else coverGen();
     }
 };
 
@@ -567,22 +753,23 @@ void enumTypes(int order, std::vector<std::vector<int>>& out) {
 // =============================================================================
 void K20A2::runRepresentativeMethod(int order, int target) {
     initEdges();
-    // Centralizer-enumeration cap. Types with |C(alpha)| <= symCap use the fast
-    // orderly per-level dedup; larger ones fall back to the slow generator path.
-    // Overridable at runtime via env REP_SYMCAP (e.g. raise it to pull a borderline
-    // dense type like order-3 3^5.1^5 (|C|=3.5M) onto the fast path).
+    // Centralizer-enumeration cap, overridable at runtime via env REP_SYMCAP (e.g. raise it
+    // to pull a borderline dense type like order-3 3^5.1^5 (|C|=3.5M) onto the fast path).
     long long symCap = K20_REP_SYMCAP;
     if (const char* env = std::getenv("REP_SYMCAP")) symCap = atoll(env);
     int nThreads = (kThreads > 0) ? kThreads : 1;   // worker count from the standard KThreads knob
 
     g_bprint = m_bPrint;
-    g_nodes.store(0); g_emits.store(0);
+    g_nodes.store(0); g_emits.store(0); g_last_print_nodes = 0;
     g_target = target; g_stop.store(false); g_harvest.clear();   // harvest mode (target>0 -> stop after `target` classes)
     g_t0 = std::chrono::steady_clock::now();
     g_last_print = g_t0;
+    g_order = order;
 
     std::vector<std::vector<int>> types;            // all cycle types of this order
     enumTypes(order, types);
+    g_numTypes = (int)types.size();
+    int g_typeCounter = 0;                          // 1-based index of the type currently processed
     if (m_bPrint) {
         printf("[K20-REP] order=%d : %zu cycle types, kThreads=%d, symCap=%lld\n", order, types.size(), nThreads, symCap);
         if (target > 0) printf("[K20-REP] HARVEST MODE: stop after %d distinct classes (COMPLETE only if %d == true count, else a LOWER BOUND)\n", target, target);
@@ -592,8 +779,10 @@ void K20A2::runRepresentativeMethod(int order, int target) {
     std::set<std::string>      gcanon;   // global distinct canonical keys (across all types)
     std::map<std::string, int> gautOf;   // global canonical key -> 2*|Aut|
 
+    static const bool only_fpf = (getenv("REP_FPF") != nullptr);   // [DIAG] isolate fixed-point-free type(s)
     for (auto& type : types) {
         if (g_stop.load(std::memory_order_relaxed)) break;   // harvest target already reached -> skip remaining types
+        if (only_fpf) { bool hasFix = false; for (int p : type) if (p == 1) hasFix = true; if (hasFix) continue; }
         RepShared sh;                    // shared read-only data for this type
         sh.order = order;
         for (int i = 0; i < N; i++) sh.alpha[i] = (uint8_t)i;
@@ -644,24 +833,18 @@ void K20A2::runRepresentativeMethod(int order, int target) {
                 reps.push_back(Task{ uniq[i], std::move(stab) });
             }
         } else {
-            // C(alpha) too large to enumerate (sparse types, huge S_k on fixed points): walk each
-            // C(alpha)-orbit through a GENERATING SET (BFS over tasks). These sparse types have
-            // small per-task subtrees, so reps need no per-rep symmetry-breaking; the global canon
-            // is the safety net for any residual labeling duplicates.
-            std::vector<Perm> gens; buildGenerators(sh.alpha, gens);
-            for (size_t i = 0; i < uniq.size(); i++) {
-                if (seen[i]) continue;
-                std::vector<int> q; q.push_back((int)i); seen[i] = 1;   // BFS queue of orbit members
-                for (size_t qh = 0; qh < q.size(); qh++) {
-                    int t = q[qh];
-                    for (auto& g : gens) {
-                        std::string img = orbitKey(applyAlpha(uniq[t], g.data()), sh.alpha, order);
-                        auto it = orbIdx.find(img);
-                        if (it != orbIdx.end() && !seen[it->second]) { seen[it->second] = 1; q.push_back(it->second); }
-                    }
-                }
-                reps.push_back(Task{ uniq[i], {} });    // empty stab -> plain subtree
-            }
+            // C(alpha) too large to enumerate (sparse types, AND every order-2 type, whose fixed
+            // points alone make |C| huge): represent the group by a GENERATING SET and, for each
+            // first-orbit task, compute Schreier generators of its setwise stabilizer in C(alpha)
+            // via a candidate-restricted BFS. These flow into coverGen so the over-cap subtrees get
+            // the same per-level orbit dedup the enumerable types get from explicit elements.
+            buildGenerators(sh.alpha, sh.rootCgens);              // seed for exact Stab_C(P) in coverGen
+            sh.rootBSGS = cgt::buildBSGS<N>(sh.rootCgens);        // built once per type, reused per node
+            std::vector<Perm> hgens = cgt::edgeStabGens<N>(sh.rootCgens, 0, 1);  // collectTasks forces the anchor edge (0,1)
+            std::vector<int> repIdx; std::vector<std::vector<Perm>> stabs;
+            schreierDedup(uniq, uniqKey, orbIdx, hgens, order, sh.alpha, repIdx, stabs);
+            for (size_t r = 0; r < repIdx.size(); r++)
+                reps.push_back(Task{ uniq[repIdx[r]], {}, std::move(stabs[r]) });
         }
 
         // 3. fan the representative tasks out across kThreads workers; each subtree breaks
@@ -669,25 +852,71 @@ void K20A2::runRepresentativeMethod(int order, int target) {
         size_t before = gcanon.size();   // classes known before this type
         auto ts = std::chrono::steady_clock::now();
         if (m_bPrint) {  // [diag] dedup finished; show task reduction and stabilizer size before the cover
+            size_t stab0 = reps.empty() ? 0 : (sh.Calpha.empty() ? reps[0].stabGens.size() : reps[0].stab.size());
             printf("[K20-REP]  type %-14s rawTasks %zu uniq %zu reps %zu stab0 %zu (dedup %.1fs) -> cover...\n",
-                   tstr, raw.size(), uniq.size(), reps.size(), reps.empty() ? 0 : reps[0].stab.size(),
+                   tstr, raw.size(), uniq.size(), reps.size(), stab0,
                    std::chrono::duration<double>(ts - tcollect).count());
             fflush(stdout);
         }
+        // publish current-type progress state for the 30s [rep] line
+        g_typeIdx = ++g_typeCounter; g_reps_done.store(0); g_reps_total.store(0);
+        snprintf(g_typeStr, sizeof(g_typeStr), "%s", tstr);
         std::vector<RepWorker> workers((size_t)nThreads);
-        std::atomic<size_t> next{ 0 };   // next representative-task index to hand out
         std::vector<std::thread> pool;
-        for (int t = 0; t < nThreads; t++) {
-            workers[t].sh = &sh;
-            pool.emplace_back([&, t]() {
-                RepWorker& w = workers[t];
-                for (;;) {
-                    if (g_stop.load(std::memory_order_relaxed)) break;   // harvest target reached
-                    size_t i = next.fetch_add(1);
-                    if (i >= reps.size()) break;
-                    w.runTask(reps[i].m0, reps[i].stab);
-                }
-            });
+        // Worker-shared state. MUST outlive the threads (joined after the if/else below), so it is
+        // declared here in the same scope as `pool`/the join -- NOT inside the branches, where it
+        // would be destroyed before the threads referencing it run.
+        std::deque<std::vector<Match>> queue;             // OVER-CAP: shared work queue of partial covers
+        std::mutex qmtx;                                  // OVER-CAP: guards `queue`
+        std::atomic<int> active{ 0 };                     // OVER-CAP: tasks currently being expanded
+        std::atomic<size_t> next{ 0 };                    // ENUMERABLE: next representative-task index
+        if (sh.Calpha.empty()) {
+            // OVER-CAP: a few root reps (order-2 2^9 has 5) would idle most cores with a per-rep
+            // fan-out. Use a SHARED WORK QUEUE of partial covers: each worker pops one, expands
+            // it ONE deduped level (splitNode -> children + leaf emits), and pushes the children
+            // back. This spreads the per-node stabilizer work (shallow AND deep) across all
+            // threads with load balancing. LIFO (push/pop back) keeps it DFS-like so the queue
+            // stays bounded. g_reps_total/done track tasks-created vs tasks-completed.
+            const size_t QCAP = 200000;                   // queue cap (~60MB); over it, workers drain subtrees locally
+            { RepWorker seed; seed.sh = &sh; for (auto& tk : reps) { std::vector<Match> orb; if (seed.buildAndValidateOrbit(tk.m0, orb)) queue.push_back(std::move(orb)); } }
+            g_reps_total.store((int)queue.size());
+            for (int t = 0; t < nThreads; t++) {
+                workers[t].sh = &sh;
+                pool.emplace_back([&, t]() {
+                    RepWorker& w = workers[t];
+                    for (;;) {
+                        if (g_stop.load(std::memory_order_relaxed)) break;   // harvest target reached
+                        std::vector<Match> task; bool have = false;
+                        {
+                            std::unique_lock<std::mutex> lk(qmtx);
+                            if (!queue.empty()) { task = std::move(queue.back()); queue.pop_back(); active.fetch_add(1); have = true; }
+                            else if (active.load() == 0) break;     // no work and nobody producing -> done
+                        }
+                        if (!have) { std::this_thread::yield(); continue; }
+                        w.clearState(); w.commitOrbit(task);
+                        std::vector<std::vector<Match>> kids; w.splitNode(kids);
+                        bool pushed = false;
+                        {
+                            std::unique_lock<std::mutex> lk(qmtx);
+                            if (queue.size() < QCAP) { for (auto& k : kids) queue.push_back(std::move(k)); pushed = true; }
+                        }
+                        if (pushed) g_reps_total.fetch_add((int)kids.size(), std::memory_order_relaxed);
+                        else for (auto& k : kids) { w.clearState(); w.commitOrbit(k); w.coverGen(); }  // queue full -> drain this subtree locally (bounds memory)
+                        g_reps_done.fetch_add(1, std::memory_order_relaxed);
+                        active.fetch_sub(1);
+                    }
+                });
+            }
+        } else {
+            // ENUMERABLE: many root reps already -> simple per-rep fan-out via an atomic index.
+            g_reps_total.store((int)reps.size());
+            for (int t = 0; t < nThreads; t++) {
+                workers[t].sh = &sh;
+                pool.emplace_back([&, t]() {
+                    RepWorker& w = workers[t];
+                    for (;;) { if (g_stop.load(std::memory_order_relaxed)) break; size_t i = next.fetch_add(1); if (i >= reps.size()) break; w.runTask(reps[i]); g_reps_done.fetch_add(1, std::memory_order_relaxed); }
+                });
+            }
         }
         for (auto& th : pool) th.join();
 

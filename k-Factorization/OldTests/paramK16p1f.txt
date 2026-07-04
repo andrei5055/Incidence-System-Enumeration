@@ -16,7 +16,8 @@ ResultFolder="../Logs_CK/"
 FirstIndexOfStartMatrices=1; MaxNumberOfStartMatrices=1; UseRowsPrecalculation=3; NRowsInStartMatrix=3;
 // KSolve tests:
 TestName="UseKSolve K16P1F"
-nPlayers=16; CBMP_Graph=0; v4Row=4; v4=3; v4RowB=5; v4B=2; v4RowC=6; v4C=12
+nPlayers=16; CBMP_Graph=0;
+v4Row=4; v4=3; v4RowB=5; v4B=2; v4RowC=6; v4C=12
 U1FCycles={{16}}
 NRowsInResultMatrix=15; ExpectedResult=4
 END_JOB

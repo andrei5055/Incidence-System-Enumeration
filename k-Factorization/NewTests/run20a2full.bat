@@ -5,7 +5,7 @@ REM  method. All orders below run in one pass; results flow into the same
 REM  pipeline, which canonicalizes the union -> one combined, deduplicated
 REM  classification in the result folder.
 REM
-REM  ORDER SET = {3,4,5,7,11,13,17,19}: the prime orders {3,5,7,11,13,17,19}
+REM  ORDER SET = {4,5,7,11,13,17,19,3}: the prime orders {3,5,7,11,13,17,19}
 REM  (Cauchy: every |Aut|>1 has an element of prime order) PLUS order-4 as the
 REM  tractable PROXY for order-2 (order-2 itself is intractable -- see below).
 REM  Composite orders 6,8,9,10,12,14,15,16,18 are intentionally DROPPED: every
@@ -13,10 +13,22 @@ REM  class they could find already has a prime-order or order-4 element in this
 REM  set, so they only add redundant zero/duplicate passes. This set is COMPLETE
 REM  for |Aut|>1 except the order-2-only part documented next.
 REM
+REM  ORDER-3 RUNS LAST (2026-07-03). The 2026-06/07 32-core run proved order-3 is
+REM  the wall: 80h / 15e9 nodes / 0 classes on the OLD (pre-CGT) K20 engine,
+REM  because its sparse types (3.1^17 ... 3^5.1^5) all exceed symCap and ran with
+REM  ZERO symmetry breaking, single-thread long-tail -- and the one productive
+REM  type 3^6.1^2 (the 4 known classes with |Aut| 57,171,171,342) is enumerated
+REM  LAST. k20a2rep.cpp now carries the K16/K18 CGT + work-queue engine (exact
+REM  per-node stabilizers for over-cap types; K18's analogous sparse order-3
+REM  types completed with it), so order-3 is EXPECTED to finish -- but it is
+REM  still the longest order by far. With 3 last, all other orders complete
+REM  first; if order-3 shows no progress for days (watch the "type i/6" and
+REM  "reps done/total" fields of the [rep] line), kill and rerun without 3.
+REM
 REM  KNOWN K20 RESULT SO FAR: only order-19 -> 7 classes {19:3,57:1,171:2,342:1}
-REM  (342 = AGL(1,19), the prime-power+1 construction). orders 5,7,11,13,17 -> 0;
-REM  order-4 -> 0. order-3 (type 3^5.1^5 over-cap) is SLOW (~hours) but completes
-REM  -> almost certainly 0; leave it running on the big PC.
+REM  (342 = AGL(1,19), the prime-power+1 construction; re-validated 2026-07-03 on
+REM  the CGT engine). orders 5,7,11,13,17 -> 0; order-4 -> 0 (order-4 parity
+REM  theorem: K20 admits no automorphism of order divisible by 4).
 REM
 REM  ORDER-2 IS OMITTED -- IT IS INTRACTABLE FOR THIS METHOD. order-2 has dense
 REM  over-cap involution types that do not terminate (the K20 analogs of K18's
@@ -47,7 +59,8 @@ GOTO parse
 REM Automorphism orders to classify (comma-separated, no spaces).
 REM Complete tractable |Aut|>1 set: primes {3,5,7,11,13,17,19} + order-4 proxy.
 REM order-2 deliberately excluded (intractable: 2^9.1^2 and 2^10). See header.
-SET REP_ORDERS=3,4,5,7,11,13,17,19
+REM order-3 LAST (the heavy one -- see header note above).
+SET REP_ORDERS=4,5,7,11,13,17,19,3
 
 SET "ROOT=..\x64\Release"
 copy "%ROOT%\k-Sys.exe" . >nul

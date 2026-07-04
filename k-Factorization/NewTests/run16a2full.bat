@@ -33,7 +33,9 @@ GOTO parse
 :end_parse
 
 REM Automorphism orders to classify (comma-separated, no spaces).
-SET REP_ORDERS=2,3,5,7
+rem SET REP_ORDERS=2:60,3,5,7
+rem SET REP_ORDERS=2:60,3,5,7
+SET REP_ORDERS=2,3
 
 SET "ROOT=..\x64\Release"
 copy "%ROOT%\k-Sys.exe" . >nul

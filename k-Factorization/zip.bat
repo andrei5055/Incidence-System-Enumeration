@@ -19,12 +19,12 @@ for /r %%f in (*.bat) do (
 )
 
 REM Build list of files for tar
-set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals ./MD
+set TARFILES=./k-Sys/*.vcxproj* ./k-Sys/*.cpp ./TripleSys/Source ./TripleSys/Include ./TripleSys/Manuals ./MD/*.tex
 REM NOTE: use ".vcxproj*" not ".*" here. On Windows "TripleSys.*" ALSO matches an
 REM extensionless name, so a stray build dir "TripleSys\TripleSys\" gets matched and
 REM tar recurses its whole x64\Release tree (bloated the 260627 zip to 24MB). The
 REM ".vcxproj*" form grabs the .vcxproj/.filters/.user files and never a directory.
-set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.vcxproj* ./EngineGPU/EngineGPU.vcxproj* ./EngineGPU/*.cu
+set TARFILES=%TARFILES% *.sln ./TripleSys/TripleSys.vcxproj* ./EngineGPU/EngineGPU.vcxproj* ./EngineGPU/*.cu ./EngineGPU/*.ba
 set TARFILES=%TARFILES% ./Utils/Include ./Utils/Source ./Utils/Utils.* *.ba
 set TARFILES=%TARFILES% ./OneApp/*.cpp ./OneApp/*.h ./OneApp/*.vcxproj ./OneApp/sycl_target_flags.props
 set TARFILES=%TARFILES% ./OldTests/ExpectedResults ./OldTests/*.ba ./OldTests/*.txt

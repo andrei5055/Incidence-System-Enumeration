@@ -60,7 +60,7 @@ const char* intParamNames[]{
 	"GridSize",
 	"BlockSize",
 	"OrderMatrices",
-	"AllowUndefinedCycles",		// 1  - allow rows pairs with cycles not defined in input params.
+	"AllowUndefinedCycles", 	// 1  - allow rows pairs with cycles not defined in input params.
 	"Any2RowsConvertToFirst2",
 	"ExploreMatrices",			// -8 - No output of integrated results into "ID_Results.txt"
 								//  0 - Do not construct graphs

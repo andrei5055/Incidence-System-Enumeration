@@ -35,6 +35,9 @@ public:
     static constexpr int NFIXED = 3;           // fixed starter rows (unused by rep)
     static constexpr int M_MAX  = 131072;      // pool cap (unused by rep; sizes nothing it touches)
 
+    // Guard custom aligned operator new/delete from MemoryLeak.h's Debug `#define new DBG_NEW`.
+#pragma push_macro("new")
+#undef new
     void* operator new(size_t size) {
         void* p = _aligned_malloc(size, 64);
         if (!p) throw std::bad_alloc();
@@ -53,6 +56,7 @@ public:
         _aligned_free(p);
     }
 #endif
+#pragma pop_macro("new")
 
     K14A2(const FactorParams& factParam, int fixed3RowsIndex, int kThreads,
           const unsigned char* first3Rows, ResultCallback callback,
