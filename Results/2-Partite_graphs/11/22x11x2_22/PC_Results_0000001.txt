@@ -1,0 +1,74 @@
+
+Main parameters:
+                      nPlayers: 22
+                   nPlayersMax: 22
+                     GroupSize: 2
+                    CBMP_Graph: 2
+         generateMatrixExample: 0
+      UseUniform1Factorization: 1
+          Use2RowsCanonization: 1
+         UseFastCanonizerForG2: 0
+        SubmatrixGroupOrderMin: 0
+           ResultGroupOrderMin: 0
+                       USE_GPU: 0
+             UseMultiThreading: 1
+                      NThreads: 1
+                      KThreads: 1
+            NRowsInStartMatrix: 11
+           NRowsInResultMatrix: 11
+      MaxNumberOfStartMatrices: 1000000
+     FirstIndexOfStartMatrices: 1
+                ExpectedResult: -1
+                UseCheckLinksV: 1
+         UseRowsPrecalculation: 0
+    UseSolutionCliquesAfterRow: 0
+           LastRowSecondPlayer: 0
+                 PrintMatrices: 0
+          SavingMatricesToDisk: 1
+           MatrixCanonInterval: 0
+      CheckConstructedMatrices: 0
+                         UseSS: 0
+                   p1f_counter: 5000
+                AutLevelMinDef: 2
+                AutLevelMaxDef: 10
+                AutLevelMinApp: 3
+                AutLevelMaxApp: 11
+                  AutDirection: 0
+               AutGroupsToTest: 0
+              AutSaveTestedTrs: 0
+              UseImproveMatrix: 0
+          UseCombinedSolutions: 0
+                  Out_CSV_file: 0
+          OutAutomorphismGroup: 0
+                  NestedGroups: 0
+                      GridSize: 32
+                     BlockSize: 24
+                 OrderMatrices: 2
+          AllowUndefinedCycles: 0
+       Any2RowsConvertToFirst2: 1
+               ExploreMatrices: 0
+           SemiSymmetricGraphs: 0
+             RejectCycleLength: 0
+                          Test: 0
+                KeepPrevResult: 0
+           SaveLatinSquareType: 0
+          InputLatinSquareType: 0
+                            v4: 0
+                           v4B: 0
+                           v4C: 0
+                           v4D: 0
+                         v4Row: 0
+                        v4RowB: 0
+                        v4RowC: 0
+                        v4RowD: 0
+         UseCompatibilityCheck: 0
+                   HalfRowMode: 0
+                     UseKSolve: 0
+
+Parameters of string type:
+                       v4Array: _22
+
+===>> 04/18/26: 19:39:22
+
+
+      *** Resulting matrix DB is empty *** 

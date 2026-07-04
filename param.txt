@@ -1,0 +1,670 @@
+PrintMatrices=0
+UseMultiThreading=0
+
+NPlayers=15
+AutSaveTestedTrs=0  ;    CBMP_Graph  = 1  // 
+
+StartFolder="../../LogsTest_B/"
+ResultFolder="../../LogsTest_B/"
+TestName = "K1F_15x7x3_SingleThread"
+
+GroupSize=3
+Use2RowsCanonization=0
+UseUniform1Factorization=0
+ExpectedResult=7
+UseMultiThreading=0
+NRowsInStartMatrix=0
+
+NRowsInResultMatrix=0
+
+NRowsInStartMatrix=7; NRowsInResultMatrix=7; OrderMatrices=2
+//OutAutomorphismGroup=1
+END_JOB
+
+
+//9414711899560390800992
+StartFolder="../../LogsTest_A/"
+ResultFolder="../../LogsTest_A/"
+
+MatrixCanonInterval=0
+AutGroupsToTest=0      // Number of automorphism groups that need to be tested.
+OutAutomorphismGroup   :    7
+SavingMatricesToDisk=1
+UseCheckLinksV=1
+p1f_counter=0 //5100 (224 sec for matrix 9,9,9; 11963 sec to confirm that there is only one result)
+USE_GPU=0
+MaxNumberOfStartMatrices=150000
+Use2RowsCanonization=0
+UseUniform1Factorization=0
+FirstIndexOfStartMatrices=0
+AutSaveTestedTrs=0;CMP_Graph=1
+//CMP_Graph=1
+
+AutLevelMinDef=2 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=1 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=1 // Number of automorphism groups that need to be tested.
+
+NestedGroups=0
+
+NThreads=10
+NPlayers=15
+U1FCycles={{15}}
+GroupSize=3
+UseAutForPrecRows=0
+UseRowsPrecalculation=0
+AllowUndefinedCycles=1 // 1  - allow additional (not selected) cycles.
+Any2RowsConvertToFirst2=0
+OrderMatrices=1
+SubmatrixGroupOrderMin=0
+ResultGroupOrderMin=0
+
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+U1FName="_10"
+RUN_JOB
+RUN_JOB
+END_JOB
+
+PrintMatrices=1
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+UseCheckLinksV=1
+OrderMatrices=0
+p1f_counter=500 // not used for group size=2; fastest for 27 - 500, for 9,9,9 - 4500
+MatrixCanonInterval=0
+
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+USE_GPU=0
+GroupSize=2
+
+
+BipartiteGraph=1
+
+UseAutForPrecRows=3
+
+UseRowsPrecalculation=3
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=0
+UseUniform1Factorization=0
+ResultGroupOrderMin=0
+SubmatrixGroupOrderMin=0
+
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+UseMultiThreading=0
+NThreads=1
+U1FCycles={{4,6},{10}}
+//U1FName=_14
+
+//LastRowSecondPlayer=7
+nPlayers=10
+END_JOB
+
+
+PrintMatrices=1
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+UseCheckLinksV=1
+OrderMatrices=0
+p1f_counter=4500 // not used for group size=2; fastest for 27 - 500, for 9,9,9 - 4500
+MatrixCanonInterval=0
+
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+USE_GPU=0
+GroupSize=3
+
+AutLevelMinDef=2 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=0 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=1 // Number of automorphism groups that need to be tested.
+
+UseAutForPrecRows=0
+
+UseRowsPrecalculation=0
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=0
+UseUniform1Factorization=0
+ResultGroupOrderMin=0
+SubmatrixGroupOrderMin=0
+NestedGroups=0
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+UseMultiThreading=0
+NThreads=1
+U1FCycles={{21}}
+//U1FName=_16
+
+nPlayers=21
+END_JOB
+
+
+PrintMatrices=0
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+UseCheckLinksV=1
+OrderMatrices=0
+p1f_counter=500 // fastest for 27 - 500, for 9,9,9 - 4500
+MatrixCanonInterval=0
+
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+USE_GPU=0
+GroupSize=2
+
+AutLevelMinDef=2 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=0 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=1     // Number of automorphism groups that need to be tested.
+
+UseAutForPrecRows=3
+UseRowsPrecalculation=3
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+ResultGroupOrderMin=0
+SubmatrixGroupOrderMin=0
+NestedGroups=0
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=3
+NRowsInResultMatrix=0
+UseMultiThreading=1
+NThreads=10
+//U1FCycles={{7,7}}
+//U1FName=_16
+
+nPlayers=14
+END_JOB
+
+PrintMatrices=1
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+UseCheckLinksV=0
+OrderMatrices=0
+p1f_counter=4500 // can we?
+MatrixCanonInterval=0
+
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+USE_GPU=0
+GroupSize=3
+
+AutLevelMinDef=3 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=0 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=0     // Number of automorphism groups that need to be tested.
+// ResultGroupOrderMin=2
+// SubmatrixGroupOrderMin=2 
+
+UseRowsPrecalculation=3
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+ResultGroupOrderMin=0
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=2
+NRowsInResultMatrix=3
+UseMultiThreading=1
+NThreads=10
+nPlayers=27 
+//U1FCycles={{21}}
+//U1FName=_21
+END_JOB
+
+
+PrintMatrices=1
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+UseCheckLinksV=0
+OrderMatrices=0
+p1f_counter=4500 // can we?
+MatrixCanonInterval=0
+
+StartFolder="../../Logs9/"
+ResultFolder="../../Logs9/"
+USE_GPU=0
+GroupSize=3
+
+AutLevelMinDef=3 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=0 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=0     // Number of automorphism groups that need to be tested.
+
+UseRowsPrecalculation=3
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+ResultGroupOrderMin=0
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=3
+NRowsInResultMatrix=0
+UseMultiThreading=1
+NThreads=1
+nPlayers=21
+U1FCycles={{21}}
+U1FName=_21
+END_JOB
+
+PrintMatrices=0
+OutAutomorphismGroup=1
+SavingMatricesToDisk=1
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=1
+UseCheckLinksV=1
+OrderMatrices=0
+p1f_counter=4500000
+MatrixCanonInterval=0
+
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+USE_GPU=0
+GroupSize=3
+
+AutLevelMinDef=3 // minimum and maximum numbers of matrix rows for which the
+AutLevelMaxDef=16 // automorphism groups will be calculated to filter solutions
+AutLevelMinApp=3 // minimum and maximum numbers of matrix rows for which
+AutLevelMaxApp=16 // solution filtering by automorphism groups will be applied
+AutDirection=0 // Direct (0) or reversed order.  0: G2, G3, ... Gt OR 1: Gt, ..., G3, G2
+AutGroupsToTest=0      // Number of automorphism groups that need to be tested.
+
+UseRowsPrecalculation=3
+
+MaxNumberOfStartMatrices=1000000
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+ResultGroupOrderMin=0
+FirstIndexOfStartMatrices=0
+
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+UseMultiThreading=0
+NThreads=1
+nPlayers=21
+U1FCycles={{21}}
+U1FName=_14
+END_JOB
+
+/*
+Total number of precalculated row solutions =  1299
+Total number of precalculated row solutions =  1350
+Total number of precalculated row solutions =  1374
+
+Error in code: m_numObjects(21)>1, and pRow[1](5) != 8, and pRow[1] != 9
+Total number of precalculated row solutions =  1344
+
+C:\Users\16507\source\repos\Incidence-System-Enumeration\CDTools\x64\Release\k-Sys.exe (process 24016) exited with code 1.
+Press any key to close this window . . .
+*/
+
+//UF={{21}, {6,6,9}, {6,15}, {9,12}, {21}}
+PrintMatrices=0
+
+UseRowsPrecalculation=4
+//MaxNumberOfStartMatrices=110
+//FirstIndexOfStartMatrices=109
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+NRowsInStartMatrix=3
+NRowsInResultMatrix=0
+UseMultiThreading=1
+NThreads=1
+
+ResultGroupOrderMin=0
+
+
+OrderMatrices=1
+MaxNumberOfStartMatrices= 3000000
+//UseBinaryCanonizer=2
+StartFolder="../../Logs_CI/"
+ResultFolder="../../Logs_CI/"
+// Single thread  u1f tests:
+//TestName="U1F_44"
+USE_GPU=0
+GroupSize=2
+Use2RowsCanonization=1
+UseUniform1Factorization=1
+UseRowsPrecalculation=3
+UseSolutionCliquesAfterRow=0
+UseCombinedSolutions=0
+//FirstIndexOfStartMatrices=1000000
+NRowsInStartMatrix=3
+NRowsInResultMatrix=0
+UseMultiThreading=1
+NThreads=10
+nPlayers=14
+AutLevelMinAPP=22
+AutLevelMinDEF=22
+//MatrixCanonInterval=5
+//U1FName="_u1f_14"
+//U1FCycles={{12}}
+//OutAutomorphismGroup
+ResultGroupOrderMin=0
+//ExpectedResult=23
+END_JOB
+
+//UF={{21}, {6,6,9}, {6,15}, {9,12}, {21}}
+PrintMatrices=0
+MaxNumberOfStartMatrices=3000000
+//UseBinaryCanonizer=2-
+StartFolder="../Logs_CI/"
+ResultFolder="../Logs_CI/"
+// Single thread  u1f tests:
+//TestName="U1F_44"
+USE_GPU=0
+GroupSize=2
+UsePerfect1Factorization=1
+UseUniform1Factorization=1
+FirstIndexOfStartMatrices=100
+NRowsInStartMatrix=3
+NRowsInResultMatrix=7
+UseMultiThreading=0
+NThreads=20
+nPlayers=18
+UFName="_u1f_4_14"
+UF={{4, 14}}
+//nPlayers=6
+END_JOB
+
+
+//UF={{21}, {6,6,9}, {6,15}, {9,12}, {21}}
+
+StartFolder=../Logs2/
+ResultFolder=../Logs2/
+p1f_counter = 5000
+nPlayers=15
+GroupSize=3
+UseSS=0
+UseUniform1Factorization=0
+UsePerfect1Factorization=0
+UseCheckLinksH=1
+UseCheckLinksV=1
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+MaxNumberOfStartMatrices=1000000
+FirstIndexOfStartMatrices=0
+USE_GPU=0
+NThreads=1
+UseBinaryCanonizer=1
+//OutAutomorphismGroup
+END_JOB
+
+nPlayers=27
+GroupSize=3
+UseSS=0
+UseUniform1Factorization=0
+UsePerfect1Factorization=1
+UseCheckLinksH=1
+UseCheckLinksV=1
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+MaxNumberOfStartMatrices=1000000
+FirstIndexOfStartMatrices=0
+USE_GPU=0
+UseMultiThreading=0
+AutLevelMinDef=1
+AutLevelMaxDef=0
+AutLevelMinApp=2
+AutLevelMaxApp=0
+AutDirection=1
+AutGroupsToTest=1
+NThreads=1
+//OutAutomorphismGroup
+UFName="_u1f_999"
+UF={{9,9,9}}
+//UF={{6, 6, 9}, {9, 12}}
+END_JOB
+
+
+//PrintMatrices=0
+StartFolder="../Logs_CI/"
+ResultFolder="../Logs_CI/"
+
+FirstIndexOfStartMatrices=0
+UseCheckLinksH=1
+// Single thread tests:
+USE_GPU=0
+GroupSize=3
+MaxNumberOfStartMatrices=100000
+UsePerfect1Factorization=1
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+UseMultiThreading=0
+//OutAutomorphismGroup
+
+nPlayers=21
+//MatrTest = FindIsomorphicBaseElements:../baseElements.txt
+END_JOB
+
+FirstIndexOfStartMatrices=0
+UseCheckLinksH=1
+// Single thread tests:
+USE_GPU=0
+TestName = "K1F_10x9x2_SingleThread"
+GroupSize=2
+MaxNumberOfStartMatrices=100000
+UsePerfect1Factorization=0
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+UseMultiThreading=0
+
+nPlayers=10
+ExpectedResult=396
+RUN_JOB
+
+TestName = "P1F_10x9x2_SingleThread"
+UsePerfect1Factorization=1
+ExpectedResult=1
+RUN_JOB
+
+TestName = "K1F_15x7x3_SingleThread"
+nPlayers=15
+GroupSize=3
+UsePerfect1Factorization=0
+ExpectedResult=7
+RUN_JOB
+
+TestName = "P1F_15x7x3_SingleThread"
+UsePerfect1Factorization=1
+ExpectedResult=2
+RUN_JOB
+
+TestName = "K1F_16x5x4_SingleThread"
+nPlayers=16
+GroupSize=4
+UsePerfect1Factorization=0
+ExpectedResult=1
+RUN_JOB
+
+// Preparing starting matrices for multithreaded tests
+TestName = "K1F_10x3x2_SingleThread"
+GroupSize=2
+nPlayers=10
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+UsePerfect1Factorization=0
+ExpectedResult=12
+RUN_JOB
+
+TestName = "P1F_10x3x2_SingleThread"
+UsePerfect1Factorization=1
+ExpectedResult=6
+RUN_JOB
+
+TestName = "K1F_15x4x3_SingleThread"
+GroupSize=3
+nPlayers=15
+UsePerfect1Factorization=0
+NRowsInResultMatrix=4
+ExpectedResult=26
+RUN_JOB
+
+TestName = "P1F_15x4x3_SingleThread"
+UsePerfect1Factorization=1
+ExpectedResult=3
+RUN_JOB
+
+// Execute the multithreaded tests
+NThreads=10
+UseMultiThreading=1
+NRowsInResultMatrix=0
+
+TestName = "K1F_10x9x2_10_Threads"
+GroupSize=2
+nPlayers=10
+NRowsInStartMatrix=3
+UsePerfect1Factorization=0
+ExpectedResult=396
+RUN_JOB
+	
+TestName = "P1F_10x9x2_10_Threads"
+UsePerfect1Factorization=1
+ExpectedResult=1
+RUN_JOB
+
+TestName = "K1F_15x7x3_10_Threads"
+nPlayers=15
+GroupSize=3
+NRowsInStartMatrix=4
+UsePerfect1Factorization=0
+ExpectedResult=7
+RUN_JOB
+
+TestName = "P1F_15x7x3_10_Threads"
+UsePerfect1Factorization=1
+ExpectedResult=2
+RUN_JOB  //END_JOB
+
+
+UseCheckLinksH=0
+UseMultiThreading=0
+// Single thread tests:
+TestName = "K1F_10x9x2_SingleThread Without CheckLinksH"
+USE_GPU=0
+GroupSize=2
+MaxNumberOfStartMatrices=100000
+UsePerfect1Factorization=0
+NRowsInStartMatrix=0
+NRowsInResultMatrix=0
+
+
+nPlayers=10
+ExpectedResult=396
+RUN_JOB
+
+TestName = "P1F_10x9x2_SingleThread Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=1
+RUN_JOB
+
+TestName = "K1F_15x7x3_SingleThread Without CheckLinksH"
+nPlayers=15
+GroupSize=3
+UsePerfect1Factorization=0
+ExpectedResult=7
+RUN_JOB
+
+TestName = "P1F_15x7x3_SingleThread Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=2
+RUN_JOB
+
+TestName = "K1F_16x5x4_v"
+nPlayers=16
+GroupSize=4
+UsePerfect1Factorization=0
+ExpectedResult=1
+RUN_JOB
+
+// Preparing starting matrices threads for multithreaded tests
+TestName = "K1F_10x3x2_SingleThread Without CheckLinksH"
+GroupSize=2
+nPlayers=10
+NRowsInStartMatrix=0
+NRowsInResultMatrix=3
+UsePerfect1Factorization=0
+ExpectedResult=12
+RUN_JOB
+
+TestName = "P1F_10x3x2_SingleThread Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=6
+RUN_JOB
+
+TestName = "K1F_15x4x3_SingleThread Without CheckLinksH"
+GroupSize=3
+nPlayers=15
+UsePerfect1Factorization=0
+NRowsInResultMatrix=4
+ExpectedResult=26
+RUN_JOB
+
+TestName = "P1F_15x4x3_SingleThread Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=3
+RUN_JOB
+
+// Execute the multithreaded tests
+UseMultiThreading=1
+NRowsInResultMatrix=0
+
+TestName = "K1F_10x9x2_10_Threads Without CheckLinksH"
+GroupSize=2
+nPlayers=10
+NRowsInStartMatrix=3
+UsePerfect1Factorization=0
+ExpectedResult=396
+RUN_JOB
+
+TestName = "P1F_10x9x2_10_Threads Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=1
+RUN_JOB
+
+TestName = "K1F_15x7x3_10_Threads Without CheckLinksH"
+nPlayers=15
+GroupSize=3
+NRowsInStartMatrix=4
+UsePerfect1Factorization=0
+ExpectedResult=7
+RUN_JOB
+
+TestName = "P1F_15x7x3_10_Threads Without CheckLinksH"
+UsePerfect1Factorization=1
+ExpectedResult=2
+
+END_JOB
+
