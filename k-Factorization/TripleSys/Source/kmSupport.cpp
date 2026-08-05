@@ -217,7 +217,7 @@ CC bool kmTranslate2AndCheck(tchar* mo, ctchar* mi, ctchar* tr, int len, tchar t
 	}
 	return false;
 }
-CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups, CKOrbits* pKOrb) const {
+CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, tchar* ts, bool useNestedGroups) const {
 	tchar* mo = m_Km;
 	auto* coi = m_Ktmp;
 	const auto nc = m_numPlayers;
@@ -262,8 +262,6 @@ CC int alldata::kmSortMatrixForReorderedPlayers(ctchar* mi, int nr, ctchar* tr, 
 		for (int i = 0; i < nr; i++, coi += nc, cii += nc)
 			kmSortGroupsByFirstValue(cii, coi);
 	}
-	if (pKOrb)
-		pKOrb->UpdateGroup(mo);
 
 	if (useNestedGroups && MEMCMP(mi, m_Ktmp, len) == 0)
 		return 0;

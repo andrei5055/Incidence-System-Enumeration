@@ -171,8 +171,6 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 	sLongLong nMCreated = 0;
 	auto mTime = clock();
 	unsigned char* bResults = NULL;
-
-	
 	TableAut* pResult = NULL;
 	IDatabase* pLS_DB = NULL;
 	const auto iSaveLS = m_groupSize <= 3 && param(t_saveLatinSquareType);
@@ -662,7 +660,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 		const auto minGroupSize = semiSymGraph ? m_numDaysResult * m_numPlayers / 2 : 0;
 		if (semiSymGraph && (flag = orderOfGroup() >= minGroupSize)) {
 			int i = 2;
-			for (; i <= 3; i++) {
+			for (; i < countof(pAutGroup); i++) {
 				auto* pGroup = static_cast<RowGenerators<tchar>*>(pAutGroup[i]);
 				pGroup->createGroupAndOrbits(this);
 				const auto *pObj = pGroup->getObject(0);
@@ -672,7 +670,7 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 					break;
 			}
 
-			flag = i > 3;
+			flag = i >= countof(pAutGroup);
 		}
 #else
 		bool flag = true;

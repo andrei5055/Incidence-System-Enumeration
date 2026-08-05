@@ -8,14 +8,10 @@ public:
 	CKOrbits(uint outGroupMask, int numElems, int groupSize, int nRows);
 	~CKOrbits();
 	int createGroupAndOrbits(const CRepository<tchar>* pElemGroup) override;
-	CC void UpdateGroup(ctchar* pSolution) {
-#if !USE_CUDA
-		encodeSolution(pSolution);
-		m_pRowGroup->updateGroup((ctchar*)m_pSolution);
-#endif
-	}
+	void updateKSetGroup(ctchar* pMatrix, ctchar* pElemPerm, ctchar* pRowPerm);
 protected:
 	void createTable(ctchar* pSolution) override;
+	void setOutGroup(bool val) override		{ m_pKOrbGenerators->setOutGroup(val); }
 	int createGroup(const CRepository<tchar>* pElemGroup) override {
 		return testNestedGroups(pElemGroup, NULL, ((alldata*)pElemGroup)->numDaysResult(), this);
 	}
@@ -25,7 +21,6 @@ protected:
 		m_pKOrbGenerators->makeGroupOutput(NULL, outToScreen, false);
 	}
 private:
-	void encodeSolution(ctchar* pSolution);
 
 	const int m_numElems;
 	const int m_numRows;
@@ -34,5 +29,6 @@ private:
 	ushort* m_pTable = NULL;
 	ushort* m_pSolution = NULL;
 	size_t m_len = 0;
+	std::vector<std::vector<tchar>> m_pSymGroup;
 };
 

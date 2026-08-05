@@ -50,9 +50,13 @@ public:
 		if ((m_pFileName = pFileName) && resetFile)
 			std::remove(pFileName);
 	}
-	const auto outFileName() const				{ return m_pFileName; }
+	inline const auto outFileName() const		{ return m_pFileName; }
+	inline void setOutGroup(bool val)			{ m_bOutGroup = val; }
 protected:
+	inline auto outGroup() const				{ return m_bOutGroup; }
+
 	const char* m_pFileName = NULL;
+	bool m_bOutGroup = true;
 };
 
 template<typename T>
@@ -208,37 +212,6 @@ void Generators<T>::createOrbitsSet(const CRepository<T>* pElemGroup) {
 }
 
 template<typename T>
-int Generators<T>::testNestedGroups(const CGroupInfo* pElemGroup, CGroupInfo* pRowGroup, int rowMin, CKOrbits* pKOrb) const {
-	const auto pntr = (const alldata*)pElemGroup;
-	if (pntr->param(t_nestedGroups) > 1)
-		rowMin = 2;
-	else
-		if (!pRowGroup && !pKOrb)
-			return -1;
-
-	tchar ts[MAX_PLAYER_NUMBER];
-	ctchar* mi = pntr->result();
-	CGroupInfo* pRowGroupOut = NULL;
-	const auto groupOrder = pElemGroup->numObjects();
-	const auto rowMax = pntr->numDaysResult();
-	for (int j = rowMin; j <= rowMax; j++) {
-		if (j == rowMax && !(pRowGroupOut = pRowGroup) && !pKOrb)
-			break;
-
-		const auto len = pElemGroup->lenObject() * j;
-		for (int i = 0; i < groupOrder; i++) {
-			pntr->kmSortMatrixForReorderedPlayers(mi, j, pElemGroup->getObject(i), ts, false, pKOrb);
-			if (MEMCMP(mi, pntr->transformedMatrix(), len))
-				return j;
-
-			if (pRowGroupOut)
-				pRowGroupOut->updateGroup(ts);
-		}
-	}
-	return rowMin == rowMax ? -1 : 0;
-}
-
-template<typename T>
 class RowGenerators : public Generators<T> {
 public:
     RowGenerators(uint outGroupMask, int rowNumb, int lenElem = 1) : 
@@ -256,12 +229,14 @@ protected:
 	int getGroup(const CRepository<tchar>* pElemGroup);
 	int lenElem() const						{ return m_lenElem; }
 	virtual void createTable(ctchar* pSolution)	{}
+	virtual void setOutGroup(bool val)		{ Generators<T>::setOutGroup(val); }
 	virtual int createGroup(const CRepository<tchar>* pElemGroup) {
 		return this->testNestedGroups(pElemGroup, m_pRowGroup, this->lenObject());
 	}
 	virtual void generatorOutput(bool outToScreen, const char* pErr = NULL) {
 		Generators<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
 	}
+
 
 	CRepository<T>* m_pRowGroup = NULL;
 	std::string m_sName;
@@ -281,9 +256,11 @@ void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool ou
 	if (retVal > 0)
 		snprintf(pErr = errBuf, sizeof(errBuf), "Nested groups check failed on row %d\n", retVal);
 
+	const auto groupOrder = m_pRowGroup ? m_pRowGroup->numObjects() : 0;
+	setOutGroup(groupOrder > 1);
 	if (this->m_outGroupMask & m_outMask) {
 		m_sName = std::format("\n{}Orbits and generators of Aut(M) acting on {} = {}",
-			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
+			(pErr ? pErr : ""), m_sActionOn, groupOrder);
 		Generators<T>::setName(name());
 		generatorOutput(outToScreen, pErr);
 		// To avoid writing this error (if any) to the file twice
@@ -291,7 +268,7 @@ void RowGenerators<T>::makeGroupOutput(const CRepository<T>* pElemGroup, bool ou
 	}
 	if (this->m_outGroupMask & (m_outMask << 1)) {
 		m_sName = std::format("\n{}Aut(M) acting on {} = {}",
-			(pErr ? pErr : ""), m_sActionOn, m_pRowGroup->orderOfGroup());
+			(pErr ? pErr : ""), m_sActionOn, groupOrder);
 		COutGroupHandle<T>::makeGroupOutput(m_pRowGroup, outToScreen, false);
 	}
 
@@ -340,7 +317,7 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 	auto* pName = name();
 	if (pName && strlen(pName)) {
 		if (outCntr && m_bOutCntr) {
-			// When pName starts with '\n', we need to place them before counter.
+			// When pName starts with '\n', we need to place it before counter.
 			while (*pName == '\n') {
 				pName++;
 				SPRINTFD(pBuf, buffer, "\n");
@@ -358,7 +335,13 @@ void Table<T>::printTable(const T *c, bool outCntr, bool outToScreen, int nl, co
 		for (int i = 0; i < nl; i++)
 			outMatrix(c + idx[i] * m_nc, 1, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine, -1, NULL, i == nl - 1);
 	} else
-		outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
+		if (IOutGroupHandle<T>::outGroup())
+			outMatrix(c, nl == 0 ? m_nl : nl, m_nc, m_np, m_ns, f, m_makeString, outToScreen, pStartLine);
+		else {
+			pBuf = buffer;
+			SPRINTFD(pBuf, buffer, "   Trivial automorphism group on %d elements; output suppressed\n", m_nc);
+			_printf(f, outToScreen, buffer);
+		}
 
 	outLS((ctchar *)c, nl, f, outToScreen);
 #if OUTPUT_VECTOR_STAT
