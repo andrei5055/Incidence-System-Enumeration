@@ -762,15 +762,21 @@ void SRGToolkit::printStat() {
 template<typename T>
 bool SRGToolkit::buildGroupGraph(const T* pPerm, tchar* pAdjacencyMatrix, tchar* pResGraph) const {
 	auto const* pFirstPerm = pPerm;
-	auto pSamePlaceElemNumb = pResGraph;
-	auto pElemNumb = pResGraph;
-	memset(pResGraph, 0, lenGraphMatr());
-	for (auto i = 0; i < numVertices(); i++) {
+	auto pElemNumbMem = new unsigned short[lenGraphMatr()];
+	auto* buf = new unsigned short[numVertices()];
+	unsigned short* pColorDegr = new unsigned short[4 * lenPerm()];
+	unsigned short* pColorDegrCmp = pColorDegr + 2 * lenPerm();
+	int lenCmp = 0;
+	auto pElemNumb = pElemNumbMem;
+	memset(pElemNumb, 0, lenGraphMatr() * sizeof(*pElemNumb));
+	int i = 0;
+	for (; i < numVertices(); i++) {
+		memset(buf, 0, numVertices() * sizeof(buf[0]));
 		// Copy previously defined elements
-		auto const* pntr = pSamePlaceElemNumb;
+		auto const* pntr = pElemNumbMem + i;
 		auto j = 0;
 		while (j < i) {
-			pElemNumb[j++] = *pntr;
+			buf[pElemNumb[j++] = *pntr]++;
 			pntr += numVertices();
 		}
 		
@@ -783,26 +789,11 @@ bool SRGToolkit::buildGroupGraph(const T* pPerm, tchar* pAdjacencyMatrix, tchar*
 				if (pFirstPerm[k] == pSecndPerm[k])
 					samePlace++;
 
-			pElemNumb[j] = samePlace;
+			buf[pElemNumb[j] = samePlace]++;
 		}
 
-		pFirstPerm += lenPerm();
-		pElemNumb += numVertices();
-		pSamePlaceElemNumb++;
-	}
-
-	auto const* pntr = pResGraph;
-	auto *buf = new unsigned short[numVertices()];
-	unsigned short* pColorDegr = new unsigned short[4 * lenPerm()];
-	unsigned short* pColorDegrCmp = pColorDegr + 2 * lenPerm();
-	int lenCmp = 0;
-	int i = numVertices();
-	do {		
-		memset(buf, 0, numVertices() * sizeof(buf[0]));
-		for (int j = 0; j < numVertices(); j++)
-			buf[pntr[j]]++;
-
-		int cntr = 0;
+		// Define color degrees of the association scheme
+		int cntr = 1;
 		int k = 0;
 		for (int j = 0; j < numVertices(); j++) {
 			if (buf[j]) {
@@ -813,16 +804,15 @@ bool SRGToolkit::buildGroupGraph(const T* pPerm, tchar* pAdjacencyMatrix, tchar*
 
 		ASSERT_IF(cntr != numVertices());
 		if (lenCmp) {
-			if (lenCmp != k)
+			if (lenCmp != k || memcmp(pColorDegrCmp, pColorDegr, k * sizeof(*pColorDegr)))
 				break;
-
-			memcmp(pColorDegrCmp, pColorDegr, k * sizeof(*pColorDegr));
 		}
 		else
 			memcpy(pColorDegrCmp, pColorDegr, (lenCmp = k) * sizeof(*pColorDegr));
-			
-		pntr += numVertices();
-	} while (--i);
+
+		pFirstPerm += lenPerm();
+		pElemNumb += numVertices();
+	}
 
 #if 0
 	FOPEN_F(f, "C:\\Users\\16507\\Downloads\\group_graphs.txt", "w");
@@ -833,7 +823,8 @@ bool SRGToolkit::buildGroupGraph(const T* pPerm, tchar* pAdjacencyMatrix, tchar*
 
 	delete[] buf;
 	delete[] pColorDegr;
-	return i == 0;
+	delete[] pElemNumbMem;
+	return i == numVertices();
 }
 
 template<>
