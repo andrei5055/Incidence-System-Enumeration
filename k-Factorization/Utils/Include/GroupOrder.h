@@ -51,8 +51,8 @@ void Update_Orbits(const T* permut, ushort lenPerm, T* pOrb, T idx = 0) {
 template<typename T>
 class CGroupOrder {
 public:
-	CC inline auto groupOrder() const { return this ? m_nGroupOrder : 1; }
-	CC inline void setGroupOrder(UInt val) { m_nGroupOrder = val; }
+	CC inline auto groupOrder() const       { return this ? m_nGroupOrder : 1; }
+	CC inline void setGroupOrder(UInt val)  { m_nGroupOrder = val; }
     CC void addAutomorphism(ushort degree, const T* permRow, T* pOrbits, bool rowPermut = true, bool savePermut = false, bool calcGroupOrder = true) {
         if (!needUpdate(permRow, pOrbits))
             return;

@@ -40,8 +40,8 @@ int CGraphCanonizer::Init(int nVert) {
 	m_lenGraphMatr = m_v * m_v;
 
 	const int coeff = PRINT_MATRICES ? 3 : 0;
-	m_pGraph[0] = new tchar[(2 + coeff) * m_lenGraphMatr];
-	m_pGraph[1] = m_pGraph[0] + m_lenGraphMatr;
+	m_pGraph[0] = new tchar[(2 + coeff) * lenGraphMatr()];
+	m_pGraph[1] = m_pGraph[0] + lenGraphMatr();
 
 	m_pNumOrbits = new ushort[(3 + coeff) * m_v];
 	m_pGroupOrbits = m_pNumOrbits + m_v;
@@ -73,7 +73,7 @@ void CGraphCanonizer::releaseCanonizerMemory() {
 ctchar* CGraphCanonizer::canonize_graph(ctchar* pGraph, int* pCanonIndex) {
 	initCanonizer();
 	if (pGraph)
-		memcpy(m_pGraph[0], pGraph, m_lenGraphMatr);
+		memcpy(m_pGraph[0], pGraph, lenGraphMatr());
 
 	int i, firstVert;
 	i = firstVert = 0;
@@ -94,8 +94,8 @@ ctchar* CGraphCanonizer::canonize_graph(ctchar* pGraph, int* pCanonIndex) {
 		for (int j = m_v; j--;)
 			m_pOrbits[j] = j;
 
-		memcpy(ptrGraph[0] = m_pGraph[i] + 2 * m_lenGraphMatr, m_pGraph[0], m_lenGraphMatr * sizeof(m_pGraph[0][0]));
-		ptrGraph[1] = ptrGraph[0] + m_lenGraphMatr;
+		memcpy(ptrGraph[0] = m_pGraph[i] + 2 * lenGraphMatr(), m_pGraph[0], lenGraphMatr() * sizeof(m_pGraph[0][0]));
+		ptrGraph[1] = ptrGraph[0] + lenGraphMatr();
 		memcpy(pInitOrbits, m_pOrbits, m_v * sizeof(m_pOrbits[0]));
 		PRINT_ADJ_MATRIX(m_pGraph[i], -1, m_v);
 	}
@@ -117,7 +117,7 @@ ctchar* CGraphCanonizer::canonize_graph(ctchar* pGraph, int* pCanonIndex) {
 			// Matrix after nIter iterations of canonization
 			// PRINT_ADJ_MATRIX(m_pGraph[1 - i], nIter, m_v);
 			// These two matrices should be identical
-			assert(!memcmp(ptrGraph[1], m_pGraph[1 - i], m_lenGraphMatr * sizeof(*ptrGraph[1])));
+			assert(!memcmp(ptrGraph[1], m_pGraph[1 - i], lenGraphMatr() * sizeof(*ptrGraph[1])));
 			nIter++;
 		}
 #endif

@@ -547,10 +547,9 @@ void TopGunBase::orderAndExploreMatrices(int nRows, int orderMatrixMode, int exp
 		return;
 	}
 
-	SRGToolkit* pSRGtoolkit = nullptr;
 	std::string srgResFile(ResultFile);
 
-	pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
+	auto pSRGtoolkit = new SRGToolkit(paramPtr(), nRows, srgResFile, exploreMatrices);
 	pSRGtoolkit->reportOnScreen(paramPtr()->val[t_printMatrices] & t_printExploringSRG);
 	const auto v = pSRGtoolkit->groupDegree();
 	const auto len = v * (v - 1) / 2;

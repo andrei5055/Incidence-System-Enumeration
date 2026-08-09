@@ -774,7 +774,14 @@ CC sLongLong alldata::Run(int threadNumber, eThreadStartMode iCalcMode, CStorage
 			//Result.printTable(neighbors(), true, ResultFile, m_bPrint, numDaysResult());
 			//reportCheckLinksData();
 			//printTable("p1f", neighbors(), iDay, m_numPlayers, 2);
-cont1:
+		cont1:
+			const auto idx = 2;
+
+			const auto pGroup = static_cast<RowGenerators<tchar>*>(pAutGroup[idx])->group();
+			void exploreGroupGraph(const CRepository<tchar>* pGroup, const kSysParam* paramPtr, int div);
+			exploreGroupGraph(pGroup, sysParam(), idx - 1);
+		
+			exploreGroupGraph(this, sysParam(), 1);
 			StatReportAfterEachResult(ResetStat, "Stat for matrix result. iDay", iDay, m_bPrint); // see stat.h to activate
 			if (pcnt) {
 				*pcnt = -m_finalKMindex - 1;

@@ -23,12 +23,20 @@ typedef struct SRGParam {
 	t_graphType updateParam(const ICNParam* pCommon, bool flag_4_ver);
 } SRGParam;
 
+typedef enum {
+	t_noCommonElem = 0,
+	t_oneCommonElem,
+	t_groupGraph,
+	t_graphSrcLast
+} t_graphSrc;
+
 class TopGunBase;
 
 class SRGToolkit : public CGraphCanonizer
 {
 public:
-	SRGToolkit(const kSysParam* pParam, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster = NULL, TopGunBase* pTopGunBase = NULL);
+	SRGToolkit(const kSysParam* p, int nRows, const std::string& resFileName, int exploreMatrices, SRGToolkit* pMaster = NULL, TopGunBase* pTopGunBase = NULL);
+	SRGToolkit(int groupOrder, const kSysParam* p, int lenPerm);
 	~SRGToolkit();
 	bool exploreMatrix(ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage** ppMarixStorage);
 	void printStat();
@@ -41,8 +49,8 @@ public:
 		bool rank3, ctchar* pResGraph, ctchar* pUpperDiag, SRGToolkit* pSlaveToolKit);
 	void outputMatrix(uint sourceMatrID);
 	const auto param_ICN() const				{ return m_pParam_ICN; }
-private:
 	bool exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage);
+private:
 	t_graphType checkSRG(tchar* pGraph, SRGParam* pGraphParam = nullptr);
 	t_graphType checkSRG(const tchar *pGraph, int graphDegree, bool& flag);
 	inline int param(paramID id) const { return m_pParam->val[id]; }
@@ -50,8 +58,11 @@ private:
 	inline auto nRows() const					{ return m_nRows;}
 	void outputGraph(int typeIdx, uint prevMatrNumb, t_graphType graphType, bool rank3, ctchar *pResGraph, SRGToolkit* pSlaveToolKit);
 	void buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx) const;
+	template<typename T>
+	bool buildGroupGraph(const T* pGroup, tchar* pAdjacencyMatrix, tchar* pInPlaceElemNumb) const;
 	inline auto topGun() const					{ return m_pTopGunBase; }
 	inline auto numICN_param() const			{ return m_nNumCommonMax[0] + m_nNumCommonMax[1]; }
+	inline auto lenPerm() const					{ return m_nRows; }
 	
 	const int m_nRows; 
 	const int m_nExploreMatrices;
@@ -61,7 +72,7 @@ private:
 	int m_nPrevMatrNumb = 0;
 	bool m_bChekMatr[2];
 	ushort* m_subgraphVertex = nullptr;
-	SRGParam *m_pGraphParam[2] = { nullptr };
+	SRGParam *m_pGraphParam[t_graphSrcLast] = { nullptr };
 	const kSysParam* m_pParam;
 	bool m_reportOnScreen = false;
 	SRGToolkit *m_pMaster = nullptr;

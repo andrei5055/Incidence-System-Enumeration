@@ -225,6 +225,7 @@ public:
 	void makeGroupOutput(const CRepository<T>* pElemInfo, bool outToScreen = false, bool checkNestedGroups = true) override;
 	const char* name() override				{ return m_sName.c_str(); }
 	virtual int createGroupAndOrbits(const CRepository<tchar>* pElemGroup);
+	const auto* group() const				{ return m_pRowGroup; }
 protected:
 	int getGroup(const CRepository<tchar>* pElemGroup);
 	int lenElem() const						{ return m_lenElem; }

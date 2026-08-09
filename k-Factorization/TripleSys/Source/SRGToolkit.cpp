@@ -109,6 +109,10 @@ SRGToolkit::SRGToolkit(const kSysParam* p, int nRows, const string& resFileName,
 	m_pParam_ICN = new ICNParam[numICN_param()];
 }
 
+SRGToolkit::SRGToolkit(int groupOrder, const kSysParam* p, int lenPerm) : m_pParam(p), m_nRows(lenPerm), m_nExploreMatrices(true), CGraphCanonizer(groupOrder) {
+
+}
+
 SRGToolkit::~SRGToolkit() {
 	setOutFileName(NULL);
 	delete[] m_subgraphVertex;
@@ -143,7 +147,7 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 	const auto nCols = m_pParam->paramVal(t_numPlayers);
 	const auto numGroups = nCols / groupSize;
 	const auto pVertexLast = pMatr + m_nRows * nCols;
-	const auto cond = typeIdx != 0;
+	const auto cond = typeIdx == t_oneCommonElem;
 	const auto mult = cond ? groupSize : numGroups - groupSize;
 	const auto v = groupDegree();
 
@@ -184,7 +188,7 @@ void SRGToolkit::buildGraph(ctchar* pMatr, tchar* pAdjacencyMatrix, int typeIdx)
 	}
 }
 
-bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage *pMarixStorage) {
+bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatrID, CBinaryMatrixStorage* pMarixStorage) {
 	const auto groupSize = m_pParam->paramVal(t_groupSize);
 	if (!typeIdx) {
 		// Check whether the graph is Triangular or Rock graph
@@ -228,27 +232,38 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 	}
 
 	if (reportOnScreen())
-		cout  << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
-
-	const auto nCols = m_pParam->paramVal(t_numPlayers);
-	const auto numGroups = nCols / groupSize;
-	const auto pVertexLast = pMatr + m_nRows * nCols;
+		cout << "\n" << " Exploring graph type " << (typeIdx + 1) << " for matrix #" << sourceMatrID << "\n";
 
 	auto graphParam = m_pGraphParam[typeIdx];
-	const auto cond = typeIdx != 0;
-	const auto mult = cond ? groupSize : numGroups - groupSize;
-	// Create graph
 	auto pAdjacencyMatrix = graphPntr(0);
 	memset(pAdjacencyMatrix, 0, lenGraphMatr() * sizeof(pAdjacencyMatrix[0]));
-#if 1
-	buildGraph(pMatr, pAdjacencyMatrix, typeIdx);
-#else
-	void triangularGraph(tchar N, tchar * A, bool verifyMatrix = false);
-	if (typeIdx)
-		return false;
+	if (typeIdx < t_groupGraph) {
+		const auto nCols = m_pParam->paramVal(t_numPlayers);
+		const auto numGroups = nCols / groupSize;
+		const auto pVertexLast = pMatr + m_nRows * nCols;
+		const auto cond = typeIdx != 0;
+		const auto mult = cond ? groupSize : numGroups - groupSize;
+		// Create graph
+	#if 1
+		buildGraph(pMatr, pAdjacencyMatrix, typeIdx);
+	#else
+		void triangularGraph(tchar N, tchar * A, bool verifyMatrix = false);
+		if (typeIdx)
+			return false;
 
-	triangularGraph(nCols, pAdjacencyMatrix);
-#endif
+		triangularGraph(nCols, pAdjacencyMatrix);
+	#endif
+	}
+	else {
+		bool retVal;
+		if (typeIdx > t_groupGraph) {
+			retVal = buildGroupGraph((const unsigned short*)pMatr, pAdjacencyMatrix, graphPntr(1));
+		} else
+			retVal = buildGroupGraph(pMatr, pAdjacencyMatrix, graphPntr(1));
+
+		return retVal;
+	}
+
 	const auto graphType = checkSRG(pAdjacencyMatrix, graphParam);
 	unique_lock<mutex> guard;
 	if (auto* mtx = pMarixStorage->getMutext()) {
@@ -330,7 +345,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 				s[j] = pResOrbits[pInitOrbits[j]];
 
 			createGraphOut(pResGraph, pGraph[1], 0, 0, s);
-			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			assert(!memcmp(pResGraph, pGraph[1], lenGraphMatr() * sizeof(*pGraph[0])));
 			PRINT_ADJ_MATRIX(pGraph[1], 0, v, s, "vvv");
 
 			ASSERT_IF(canonizeGraph(m_pGraph[i], m_pGraph[1 - i], 0));
@@ -338,7 +353,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 			pntr += (NUM_GENERATOR + 1) * v;  // pointer to the first non-trivial generator
 			// Check if it's an automorphism
 			createGraphOut(pResGraph, pGraph[1], 0, 0, pntr);
-			assert(!memcmp(pResGraph, pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			assert(!memcmp(pResGraph, pGraph[1], lenGraphMatr() * sizeof(*pGraph[0])));
 
 			// Multiply this automorphism by pInitOrbits
 			for (int j = m_v; j--;)
@@ -349,7 +364,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 
 			createGraphOut(pResGraph, pGraph[1], 0, 0, pInitOrbits);
 			PRINT_ADJ_MATRIX(pGraph[1], 0, v, pInitOrbits, "zzz");
-			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			assert(!memcmp(pGraph[0], pGraph[1], lenGraphMatr() * sizeof(*pGraph[0])));
 
 			// Using ChatGPT suggestion https://chatgpt.com/share/68ab681a-aa0c-8010-a03d-7c9afb22af14
 			// multiply q (saved in pResOrbits + m_v) by p^(-1) (which is pInitOrbits)
@@ -371,7 +386,7 @@ bool SRGToolkit::exploreMatrixOfType(int typeIdx, ctchar* pMatr, uint sourceMatr
 			// Obtained permutation (pResOrbits) should be an automorphism of pGraph[0]
 			// Let's check it
 			createGraphOut(pGraph[0], pGraph[1], 0, 0, s);
-			assert(!memcmp(pGraph[0], pGraph[1], m_lenGraphMatr * sizeof(*pGraph[0])));
+			assert(!memcmp(pGraph[0], pGraph[1], lenGraphMatr() * sizeof(*pGraph[0])));
 			PRINT_ADJ_MATRIX(pGraph[1], 0, m_v, s, "vvv");
 #endif
 		}
@@ -744,6 +759,83 @@ void SRGToolkit::printStat() {
 	}
 }
 
+template<typename T>
+bool SRGToolkit::buildGroupGraph(const T* pPerm, tchar* pAdjacencyMatrix, tchar* pResGraph) const {
+	auto const* pFirstPerm = pPerm;
+	auto pSamePlaceElemNumb = pResGraph;
+	auto pElemNumb = pResGraph;
+	memset(pResGraph, 0, lenGraphMatr());
+	for (auto i = 0; i < numVertices(); i++) {
+		// Copy previously defined elements
+		auto const* pntr = pSamePlaceElemNumb;
+		auto j = 0;
+		while (j < i) {
+			pElemNumb[j++] = *pntr;
+			pntr += numVertices();
+		}
+		
+		auto const* pSecndPerm = pFirstPerm;
+		pElemNumb[j] = 0;
+		while (++j < numVertices()) {
+			pSecndPerm += lenPerm();
+			int samePlace = 0;
+			for (auto k = lenPerm(); k--;)
+				if (pFirstPerm[k] == pSecndPerm[k])
+					samePlace++;
+
+			pElemNumb[j] = samePlace;
+		}
+
+		pFirstPerm += lenPerm();
+		pElemNumb += numVertices();
+		pSamePlaceElemNumb++;
+	}
+
+	auto const* pntr = pResGraph;
+	auto *buf = new unsigned short[numVertices()];
+	unsigned short* pColorDegr = new unsigned short[4 * lenPerm()];
+	unsigned short* pColorDegrCmp = pColorDegr + 2 * lenPerm();
+	int lenCmp = 0;
+	int i = numVertices();
+	do {		
+		memset(buf, 0, numVertices() * sizeof(buf[0]));
+		for (int j = 0; j < numVertices(); j++)
+			buf[pntr[j]]++;
+
+		int cntr = 0;
+		int k = 0;
+		for (int j = 0; j < numVertices(); j++) {
+			if (buf[j]) {
+				pColorDegr[k++] = j;
+				cntr += (pColorDegr[k++] = buf[j]);
+			}
+		}
+
+		ASSERT_IF(cntr != numVertices());
+		if (lenCmp) {
+			if (lenCmp != k)
+				break;
+
+			memcmp(pColorDegrCmp, pColorDegr, k * sizeof(*pColorDegr));
+		}
+		else
+			memcpy(pColorDegrCmp, pColorDegr, (lenCmp = k) * sizeof(*pColorDegr));
+			
+		pntr += numVertices();
+	} while (--i);
+
+#if 0
+	FOPEN_F(f, "C:\\Users\\16507\\Downloads\\group_graphs.txt", "w");
+	for (int i = 0; i < lenCmp; i += 2)
+		fprintf(f, "%3d -%3d ", pColorDegrCmp[i], pColorDegrCmp[i + 1]);
+	fclose(f);
+#endif
+
+	delete[] buf;
+	delete[] pColorDegr;
+	return i == 0;
+}
+
 template<>
 void Generators<ushort>::makeGroupOutput(const CRepository<ushort>* pElemGroup, bool outToScreen, bool checkNestedGroups) {
 	this->printTable(this->getObject(0), false, outToScreen, this->numObjects(), "");
@@ -771,4 +863,10 @@ const char* graphTypeStr(t_graphType grType) {
 	case t_complete:
 	default:			return "complete";
 	}
+}
+
+void exploreGroupGraph(const CRepository<tchar>* pGroup, const kSysParam* paramPtr, int div) {
+	SRGToolkit srg_TK(pGroup->numObjects(), paramPtr, pGroup->lenObject() / div);
+	const auto retVal = srg_TK.exploreMatrixOfType(t_groupGraph + div / 2, pGroup->getObject(), 0, NULL);
+	ASSERT_IF(!retVal);
 }
