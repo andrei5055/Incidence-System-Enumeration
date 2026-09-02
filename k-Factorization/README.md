@@ -1,6 +1,6 @@
 # Perfect One-Factorisations of K<sub>18</sub> with Non-Trivial Automorphism Group
 
-A complete catalogue of the isomorphism classes of perfect one-factorisations (P1Fs) of the complete graph on 18 vertices (K<sub>18</sub>) possessing non-trivial automorphism groups ($|\operatorname{Aut}(\mathcal{F})| > 1$).
+A complete catalogue of the isomorphism classes of perfect one-factorisations (P1Fs) of the complete graph on 18 vertices (K<sub>18</sub>) possessing non-trivial automorphism groups ($|Aut(\mathcal{F})| > 1$).
 
 **Total catalogued classes:** **10,710**
 
@@ -20,7 +20,7 @@ This dataset accompanies the classification of non-rigid perfect one-factorisati
 ## 2. Mathematical Background
 
 ### 2.1 One-Factorisations of K<sub>2n</sub>
-Let K<sub>2n</sub> = (V, E) denote the complete undirected graph on 2n vertices with |V| = 2n and $|E| = \binom{2n}{2}$. A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  K<sub>2n</sub>, comprising $n$ disjoint edges that partition $V$. 
+Let $K<sub>2n</sub> = (V, E)$ denote the complete undirected graph on 2n vertices with |V| = 2n and $|E| = \binom{2n}{2}$. A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  K<sub>2n</sub>, comprising $n$ disjoint edges that partition $V$. 
 
 A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a partition of the edge set $E(K_{2n})$ into $2n-1$ edge-disjoint one-factors. For $K_{18}$:
 - Vertex count: $|V| = 18$
@@ -32,16 +32,16 @@ A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a parti
 A one-factorisation $\mathcal{F}$ is **perfect** (a P1F) if the union of any two distinct one-factors $F_i, F_j \in \mathcal{F}$ ($i \neq j$) forms a single connected **Hamiltonian cycle** of length $2n$. For $K_{18}$, every one of the $\binom{17}{2} = 136$ factor pairs $F_i \cup F_j$ induces a cycle of length 18.
 
 ### 2.3 Isomorphism and Automorphisms
-Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $\pi \in S_{2n}$ of the vertex set such that $\pi(\mathcal{F}_A) = \mathcal{F}_B$. The **automorphism group** $\operatorname{Aut}(\mathcal{F})$ is the stabiliser of $\mathcal{F}$ in $S_{2n}$:
-$$\operatorname{Aut}(\mathcal{F}) = \{ \pi \in S_{2n} : \pi(F) \in \mathcal{F} \text{ for all } F \in \mathcal{F} \}$$
+Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $\pi \in S_{2n}$ of the vertex set such that $\pi(\mathcal{F}_A) = \mathcal{F}_B$. The **automorphism group** $\Aut(\mathcal{F})$ is the stabiliser of $\mathcal{F}$ in $S_{2n}$:
+$$Aut(\mathcal{F}) = \{ \pi \in S_{2n} : \pi(F) \in \mathcal{F} \text{ for all } F \in \mathcal{F} \}$$
 
-Classes with $|\operatorname{Aut}(\mathcal{F})| = 1$ (rigid factorisations) are outside the scope of this catalogue.
+Classes with $|Aut(\mathcal{F})| = 1$ (rigid factorisations) are outside the scope of this catalogue.
 
 ---
 
 ## 3. Census by Automorphism Group Order
 
-The catalogue contains all 10,710 pairwise non-isomorphic P1Fs of $K_{18}$ with $|\operatorname{Aut}(\mathcal{F})| > 1$. The distribution across group orders is as follows:
+The catalogue contains all 10,710 pairwise non-isomorphic P1Fs of $K_{18}$ with $|Aut(\mathcal{F})| > 1$. The distribution across group orders is as follows:
 
 
 | Automorphism Group Order | Number of Isomorphism Classes | Cumulative Share (%) |
@@ -61,9 +61,9 @@ The catalogue contains all 10,710 pairwise non-isomorphic P1Fs of $K_{18}$ with 
 
 ### 4.1 Prior Known Factorisations (6 Classes)
 Prior to this exhaustive enumeration, exactly six non-isomorphic P1Fs of $K_{18}$ were documented in the literature:
-- **Record #10710** ($|\operatorname{Aut}| = 272$): The sharply 2-transitive affine group $AGL(1, 17)$ acting on $\mathbb{F}_{17} \cup \{\infty\}$, corresponding to the classical construction $GK_{18}$.
-- **Record #10709** ($|\operatorname{Aut}| = 17$): The cyclic/starter-generated P1F admitting a regular automorphism of order 17 fixing the infinity point.
-- **Records with $|\operatorname{Aut}| \in \{8, 16\}$**: Four previously known symmetric constructions originating from quotient developments and Latin trade constructions (e.g., Anderson, Ihrig, Meszka, Rosa).
+- **Record #10710** ($|Aut| = 272$): The sharply 2-transitive affine group $AGL(1, 17)$ acting on $\mathbb{F}_{17} \cup \{\infty\}$, corresponding to the classical construction $GK_{18}$.
+- **Record #10709** ($|Aut| = 17$): The cyclic/starter-generated P1F admitting a regular automorphism of order 17 fixing the infinity point.
+- **Records with $|Aut| \in \{8, 16\}$**: Four previously known symmetric constructions originating from quotient developments and Latin trade constructions (e.g., Anderson, Ihrig, Meszka, Rosa).
   - *Record cross-references:* `[Record #XXXX, #YYYY, #ZZZZ, #WWWW]` *(refer to index table in supplementary documentation)*.
 
 ### 4.2 Atomic Latin Squares of Order 17
@@ -110,7 +110,7 @@ Every record in this dataset has undergone automated post-processing:
 2. **Partition of $E(K_{18})$:** Verified that $\bigcup_{i=1}^{17} F_i = E(K_{18})$ with $|E(K_{18})| = 153$.
 3. **Pairwise Hamiltonicity:** Checked all $\binom{17}{2} = 136$ pairs $(F_i, F_j)$ for every design; each pair forms a single 18-cycle.
 4. **Isomorphism Rejection:** Computed canonical graph certificates using `nauty` / `Traces` to guarantee zero duplicate classes.
-5. **Automorphism Group Order:** Independent re-computation of $|\operatorname{Aut}(\mathcal{F})|$ using stabilizer chain algorithms matching the census table.
+5. **Automorphism Group Order:** Independent re-computation of $|Aut(\mathcal{F})|$ using stabilizer chain algorithms matching the census table.
 
 ---
 
