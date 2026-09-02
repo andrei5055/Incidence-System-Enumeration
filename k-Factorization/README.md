@@ -33,7 +33,7 @@ A one-factorisation $\mathcal{F}$ is **perfect** (a P1F) if the union of any two
 
 ### 2.3 Isomorphism and Automorphisms
 Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $p$ &isin; $S_{2n}$ of the vertex set such that $p$$(\mathcal{F}_A) = \mathcal{F}_B$. The **automorphism group** $\Aut(\mathcal{F})$ is the stabiliser of $\mathcal{F}$ in $S_{2n}$:
-$Aut(\mathcal{F}) = \{p$ &isin; $S_{2n} : p(F)$ &isin; $\mathcal{F} \text{ for all } F$ &isin; $\mathcal{F} \}$
+XX
 
 Classes with $|Aut(\mathcal{F})| = 1$ (rigid factorisations) are outside the scope of this catalogue.
 
