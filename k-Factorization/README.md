@@ -1,6 +1,6 @@
-# Perfect One-Factorisations of K<sub>18</sub> with Non-Trivial Automorphism Group
+# Perfect One-Factorisations of $K_{2n}$ with Non-Trivial Automorphism Group
 
-A complete catalogue of the isomorphism classes of perfect one-factorisations (P1Fs) of the complete graph on 18 vertices (K<sub>18</sub>) possessing non-trivial automorphism groups ($|Aut(\mathcal{F})| > 1$).
+A complete catalogue of the isomorphism classes of perfect one-factorisations (P1Fs) of the complete graph on 18 vertices ($K_{2n}$) possessing non-trivial automorphism groups ($|Aut(\mathcal{F})| > 1$).
 
 **Total catalogued classes:** **10,710**
 
@@ -8,7 +8,7 @@ A complete catalogue of the isomorphism classes of perfect one-factorisations (P
 
 ## 1. Overview & Contents
 
-This dataset accompanies the classification of non-rigid perfect one-factorisations of K<sub>18</sub>. The archive contains:
+This dataset accompanies the classification of non-rigid perfect one-factorisations of $K_{2n}$. The archive contains:
 
 | Filename | Description | Format / Entries |
 | :--- | :--- | :--- |
@@ -19,8 +19,8 @@ This dataset accompanies the classification of non-rigid perfect one-factorisati
 
 ## 2. Mathematical Background
 
-### 2.1 One-Factorisations of K<sub>2n</sub>
-Let $K<sub>2n</sub> = (V, E)$ denote the complete undirected graph on 2n vertices with |V| = 2n and $|E| = \binom{2n}{2}$. A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  K<sub>2n</sub>, comprising $n$ disjoint edges that partition $V$. 
+### 2.1 One-Factorisations of $K_{2n}$
+Let $K_{2n} = (V, E)$ denote the complete undirected graph on 2n vertices with $|V| = 2n$ and $|E| = \binom{2n}{2}$. A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  $K_{2n}$, comprising $n$ disjoint edges that partition $V$. 
 
 A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a partition of the edge set $E(K_{2n})$ into $2n-1$ edge-disjoint one-factors. For $K_{18}$:
 - Vertex count: $|V| = 18$
@@ -32,8 +32,8 @@ A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a parti
 A one-factorisation $\mathcal{F}$ is **perfect** (a P1F) if the union of any two distinct one-factors $F_i, F_j \in \mathcal{F}$ ($i \neq j$) forms a single connected **Hamiltonian cycle** of length $2n$. For $K_{18}$, every one of the $\binom{17}{2} = 136$ factor pairs $F_i \cup F_j$ induces a cycle of length 18.
 
 ### 2.3 Isomorphism and Automorphisms
-Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $\pi \in S_{2n}$ of the vertex set such that $\pi(\mathcal{F}_A) = \mathcal{F}_B$. The **automorphism group** $\Aut(\mathcal{F})$ is the stabiliser of $\mathcal{F}$ in $S_{2n}$:
-$$Aut(\mathcal{F}) = \{ \pi \in S_{2n} : \pi(F) \in \mathcal{F} \text{ for all } F \in \mathcal{F} \}$$
+Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $p \in S_{2n}$ of the vertex set such that $p(\mathcal{F}_A) = \mathcal{F}_B$. The **automorphism group** $\Aut(\mathcal{F})$ is the stabiliser of $\mathcal{F}$ in $S_{2n}$:
+$$Aut(\mathcal{F}) = \{ p \in S_{2n} : p(F) \in \mathcal{F} \text{ for all } F \in \mathcal{F} \}$$
 
 Classes with $|Aut(\mathcal{F})| = 1$ (rigid factorisations) are outside the scope of this catalogue.
 
