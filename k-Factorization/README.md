@@ -32,7 +32,7 @@ A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a parti
 A one-factorisation $\mathcal{F}$ is **perfect** (a P1F) if the union of any two distinct one-factors $F_i, F_j \in \mathcal{F}$ ($i \neq j$) forms a single connected **Hamiltonian cycle** of length $2n$. For $K_{18}$, every one of the $\binom{17}{2} = 136$ factor pairs $F_i \cup F_j$ induces a cycle of length 18.
 
 ### 2.3 Isomorphism and Automorphisms
-Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation $p &isin; \mathcal{S}_{2n}$ of the vertex set such that
+Two factorisations $\mathcal{F}_A$ and $\mathcal{F}_B$ are **isomorphic** if there exists a permutation \(p \in S_{2n}\) of the vertex set such that
 XX
 
 Classes with $|Aut(\mathcal{F})| = 1$ (rigid factorisations) are outside the scope of this catalogue.
