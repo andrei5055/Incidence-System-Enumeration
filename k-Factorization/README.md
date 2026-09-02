@@ -20,7 +20,7 @@ This dataset accompanies the classification of non-rigid perfect one-factorisati
 ## 2. Mathematical Background
 
 ### 2.1 One-Factorisations of K<sub>2n</sub>
-Let K<sub>2n</sub> = (V, E) denote the complete undirected graph on 2n vertices with |V| = 2n and \(|E| = \binom{2n}{2}\). A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  K<sub>2n</sub>, comprising $n$ disjoint edges that partition $V$. 
+Let K<sub>2n</sub> = (V, E) denote the complete undirected graph on 2n vertices with |V| = 2n and $|E| = \binom{2n}{2}$. A **one-factor** (or perfect matching) is a 1-regular spanning subgraph of  K<sub>2n</sub>, comprising $n$ disjoint edges that partition $V$. 
 
 A **one-factorisation** $\mathcal{F} = \{F_1, F_2, \dots, F_{2n-1}\}$ is a partition of the edge set $E(K_{2n})$ into $2n-1$ edge-disjoint one-factors. For $K_{18}$:
 - Vertex count: $|V| = 18$
