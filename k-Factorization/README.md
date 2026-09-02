@@ -61,7 +61,7 @@ The catalogue contains all 10,710 pairwise non-isomorphic P1Fs of $K_{18}$ with 
 
 ### 4.1 Prior Known Factorisations (6 Classes)
 Prior to this exhaustive enumeration, exactly six non-isomorphic P1Fs of $K_{18}$ were documented in the literature:
-- **Record #10710** ($|Aut| = 272$): The sharply 2-transitive affine group $AGL(1, 17)$ acting on $\mathbb{F}_{17} \cup \{\infty\}$, corresponding to the classical construction $GK_{18}$.
+- **Record #10710** ($|Aut| = 272$): The sharply 2-transitive affine group $AGL(1, 17)$ acting on &#x1D53D;<sub>17</sub> &cup; {&infin;}, corresponding to the classical construction $GK_{18}$.
 - **Record #10709** ($|Aut| = 17$): The cyclic/starter-generated P1F admitting a regular automorphism of order 17 fixing the infinity point.
 - **Records with $|Aut| \in \{8, 16\}$**: Four previously known symmetric constructions originating from quotient developments and Latin trade constructions (e.g., Anderson, Ihrig, Meszka, Rosa).
   - *Record cross-references:* `[Record #XXXX, #YYYY, #ZZZZ, #WWWW]` *(refer to index table in supplementary documentation)*.
